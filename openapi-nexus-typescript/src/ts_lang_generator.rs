@@ -17,7 +17,7 @@ use crate::generator::{
 };
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_core::NamingConvention;
-use openapi_nexus_core::data::{ApiMethodData, ModelData, RuntimeData};
+use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, RuntimeData};
 use openapi_nexus_core::generator_registry::LanguageGenerator;
 use openapi_nexus_core::traits::code_generator::LanguageCodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileCategory, FileInfo, FileWriter};
@@ -45,16 +45,6 @@ impl TsLangGenerator {
     // Helper methods
 
     /// Extract OpenAPI metadata for file headers
-    fn get_openapi_metadata(
-        &self,
-        openapi: &OpenApi,
-    ) -> (Option<String>, Option<String>, Option<String>) {
-        (
-            Some(openapi.info.title.clone()),
-            openapi.info.description.clone(),
-            Some(openapi.info.version.clone()),
-        )
-    }
 
     /// Generate TypeScript type definitions from model data
     fn generate_model_type_definitions(
@@ -96,55 +86,6 @@ impl TsLangGenerator {
         format!("{}.ts", base_name)
     }
 
-    /// Generate files for all schemas with proper directory structure
-    fn generate_files(
-        &self,
-        api_classes: &HashMap<String, FileInfo>,
-        schemas: &HashMap<String, crate::ast::TsTypeDefinition>,
-        openapi: &OpenApi,
-    ) -> Result<Vec<FileInfo>, GeneratorError> {
-        let mut files = Vec::new();
-
-        // Generate models files
-        let (title, description, version) = self.get_openapi_metadata(openapi);
-        for (name, type_def) in schemas {
-            let filename = self.generate_filename(name);
-
-            // Emit model content using template
-            let content = self
-                .templating
-                .emit_model(
-                    type_def,
-                    title.as_deref(),
-                    description.as_deref(),
-                    version.as_deref(),
-                )
-                .map_err(|e| GeneratorError::Generic {
-                    message: format!("Failed to emit model {}: {}", name, e),
-                })?;
-
-            files.push(FileInfo::model(filename, content));
-        }
-
-        // Add API class files (already rendered)
-        files.extend(api_classes.values().cloned());
-
-        // Generate subdirectory index files
-        files.push(self.generate_apis_index_file(api_classes)?);
-        files.push(self.generate_models_index_file(schemas)?);
-
-        // Generate main index.ts
-        files.push(self.generate_main_index_file());
-
-        // Generate package files if configured
-        if self.config.generate_package {
-            let package_files = self.generate_package_files(openapi)?;
-            files.extend(package_files);
-        }
-
-        Ok(files)
-    }
-
     /// Generate apis/index.ts file
     fn generate_apis_index_file(
         &self,
@@ -180,10 +121,11 @@ impl TsLangGenerator {
             let import_name = filename.trim_end_matches(".ts");
             exports.push(format!("export * from './{}';", import_name));
         }
+        let content = exports.join("\n");
 
         Ok(FileInfo::new(
             "models/index.ts".to_string(),
-            exports.join("\n"),
+            content,
             FileCategory::ProjectFiles,
         ))
     }
@@ -199,12 +141,8 @@ impl TsLangGenerator {
             "export * from './apis';".to_string(),
             "export * from './models';".to_string(),
         ];
-
-        FileInfo::new(
-            "index.ts".to_string(),
-            exports.join("\n"),
-            FileCategory::ProjectFiles,
-        )
+        let content = exports.join("\n");
+        FileInfo::new("index.ts".to_string(), content, FileCategory::ProjectFiles)
     }
 
     /// Generate package files (package.json, tsconfig.json, etc.)
@@ -247,9 +185,12 @@ impl LanguageCodeGenerator for TsLangGenerator {
         _apis: Vec<ApiMethodData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let operations_by_tag = self.collect_operations_by_tag(openapi);
-        let (title, description, version) = self.get_openapi_metadata(openapi);
+        let header_data = HeaderData::from_openapi(openapi);
 
         let mut api_classes_map = HashMap::new();
+        let mut files = Vec::new();
+
+        // Generate API class files
         for (tag, operations) in operations_by_tag {
             if !operations.is_empty() {
                 let file_info = self
@@ -258,9 +199,9 @@ impl LanguageCodeGenerator for TsLangGenerator {
                         &tag,
                         &operations,
                         &self.templating,
-                        title.as_deref(),
-                        description.as_deref(),
-                        version.as_deref(),
+                        Some(&header_data.title),
+                        header_data.description.as_deref(),
+                        Some(&header_data.version),
                     )
                     .map_err(|e| GeneratorError::Generic {
                         message: format!("Failed to generate API class for tag {}: {}", tag, e),
@@ -269,19 +210,15 @@ impl LanguageCodeGenerator for TsLangGenerator {
             }
         }
 
-        let generated_files = self
-            .generate_files(&api_classes_map, &HashMap::new(), openapi)
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("File generation error: {}", e),
-            })?;
+        // Add API class files
+        files.extend(api_classes_map.values().cloned());
 
-        // Filter to only get API files (index files are in ProjectFiles category)
-        let file_infos: Vec<FileInfo> = generated_files
-            .into_iter()
-            .filter(|file| file.category == FileCategory::Apis)
-            .collect();
+        // Generate apis/index.ts file
+        if !api_classes_map.is_empty() {
+            files.push(self.generate_apis_index_file(&api_classes_map)?);
+        }
 
-        Ok(file_infos)
+        Ok(files)
     }
 
     fn generate_models(
@@ -295,19 +232,30 @@ impl LanguageCodeGenerator for TsLangGenerator {
             HashMap::new()
         };
 
-        let generated_files = self
-            .generate_files(&HashMap::new(), &schemas, openapi)
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("File generation error: {}", e),
-            })?;
+        let header_data = HeaderData::from_openapi(openapi);
+        let mut files = Vec::new();
 
-        // Filter to only get model files (index files are in ProjectFiles category)
-        let file_infos: Vec<FileInfo> = generated_files
-            .into_iter()
-            .filter(|file| file.category == FileCategory::Models)
-            .collect();
+        // Generate model files
+        for (name, type_def) in &schemas {
+            let filename = self.generate_filename(name);
 
-        Ok(file_infos)
+            // Emit model content using template
+            let content = self
+                .templating
+                .emit_model(type_def, &header_data)
+                .map_err(|e| GeneratorError::Generic {
+                    message: format!("Failed to emit model {}: {}", name, e),
+                })?;
+
+            files.push(FileInfo::model(filename, content));
+        }
+
+        // Generate models/index.ts file
+        if !schemas.is_empty() {
+            files.push(self.generate_models_index_file(&schemas)?);
+        }
+
+        Ok(files)
     }
 
     fn generate_runtime(
@@ -315,11 +263,11 @@ impl LanguageCodeGenerator for TsLangGenerator {
         openapi: &OpenApi,
         runtime_data: RuntimeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let (title, description, version) = self.get_openapi_metadata(openapi);
+        let header_data = HeaderData::from_openapi(openapi);
         let header_obj = minijinja::context! {
-            title => title,
-            description => description,
-            version => version,
+            title => Some(header_data.title.clone()),
+            description => header_data.description.clone(),
+            version => Some(header_data.version.clone()),
         };
         let template_context = minijinja::context! {
             base_path => runtime_data.base_path,

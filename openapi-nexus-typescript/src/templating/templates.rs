@@ -2,7 +2,6 @@
 //! Templates are loaded via minijinja_embed from build.rs
 
 use minijinja::{Environment, context};
-use tracing::debug;
 
 use super::environment::create_template_environment;
 use crate::ast::{
@@ -10,6 +9,7 @@ use crate::ast::{
     TsTypeDefinition,
 };
 use crate::emission::error::EmitError;
+use openapi_nexus_core::data::HeaderData;
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 
@@ -305,23 +305,13 @@ impl Templates {
     pub fn emit_model(
         &self,
         type_def: &TsTypeDefinition,
-        title: Option<&str>,
-        description: Option<&str>,
-        version: Option<&str>,
+        header: &HeaderData,
     ) -> Result<String, EmitError> {
         let type_def = type_def.clone();
 
-        let header_obj = context! {
-            title => title.map(|s| s.to_string()),
-            description => description.map(|s| s.to_string()),
-            version => version.map(|s| s.to_string()),
-        };
         let template_data = context! {
             type_definition => type_def,
-            header => header_obj,
-            title => title.map(|s| s.to_string()),
-            description => description.map(|s| s.to_string()),
-            version => version.map(|s| s.to_string()),
+            header,
         };
 
         // Get the model template and render directly
@@ -340,37 +330,6 @@ impl Templates {
             .render(template_data)
             .map_err(|e| EmitError::TemplateError {
                 message: format!("Failed to render template: {}", e),
-            })
-    }
-
-    /// Emit file header with optional OpenAPI metadata
-    pub fn emit_file_header(
-        &self,
-        title: &str,
-        description: &str,
-        version: &str,
-    ) -> Result<String, EmitError> {
-        debug!(%title, %description, %version, "Emit file header.");
-
-        let template = self
-            .env
-            .get_template(TemplateName::FileHeader.file_path())
-            .map_err(|e| EmitError::TemplateError {
-                message: format!(
-                    "Failed to get {} template: {}",
-                    TemplateName::FileHeader.file_path(),
-                    e
-                ),
-            })?;
-        let template_data = context! {
-            title => title,
-            description => description,
-            version => version,
-        };
-        template
-            .render(template_data)
-            .map_err(|e| EmitError::TemplateError {
-                message: format!("Failed to render file header template: {}", e),
             })
     }
 }
