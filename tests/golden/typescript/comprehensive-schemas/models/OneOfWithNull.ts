@@ -15,4 +15,3 @@ export type OneOfWithNull = string | null | {
     id: number;
     name: string;
   }
-

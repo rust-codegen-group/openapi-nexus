@@ -6,10 +6,8 @@ use minijinja::{Environment, context};
 use super::environment::create_template_environment;
 use crate::ast::{
     TsClassDefinition, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsProperty,
-    TsTypeDefinition,
 };
 use crate::emission::error::EmitError;
-use openapi_nexus_core::data::HeaderData;
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 
@@ -27,10 +25,12 @@ pub enum TemplateName {
     ApiClass,
 
     // FileCategory::Models
-    /// Model file template (type definition with helpers)
-    Model,
-    /// Model helper functions template (instanceOf/FromJSON/ToJSON/validation)
-    ModelHelpers,
+    /// Interface model template
+    ModelInterface,
+    /// Type alias model template
+    ModelTypeAlias,
+    /// Enum model template
+    ModelEnum,
 
     // FileCategory::Runtime
     /// Runtime utilities template
@@ -62,6 +62,8 @@ pub enum TemplateName {
     BuildRequestBody,
     /// Partial: Make HTTP request snippet
     MakeRequest,
+    /// Model helper functions template (instanceOf/FromJSON/ToJSON/validation)
+    ModelHelpers,
 }
 
 impl TemplateName {
@@ -75,8 +77,9 @@ impl TemplateName {
             Self::ApiClass => "api/api_class.j2",
 
             // FileCategory::Models
-            Self::Model => "models/model.j2",
-            Self::ModelHelpers => "models/model_helpers.j2",
+            Self::ModelInterface => "models/interface.j2",
+            Self::ModelTypeAlias => "models/type_alias.j2",
+            Self::ModelEnum => "models/enum.j2",
 
             // FileCategory::Runtime
             Self::Runtime => "runtime/runtime.j2",
@@ -94,6 +97,7 @@ impl TemplateName {
             Self::BuildHeaders => "api/method_bodies/partials/_build_headers.j2",
             Self::BuildRequestBody => "api/method_bodies/partials/_build_request_body.j2",
             Self::MakeRequest => "api/method_bodies/partials/_make_request.j2",
+            Self::ModelHelpers => "models/model_helpers.j2",
         }
     }
 
@@ -107,8 +111,9 @@ impl TemplateName {
             Self::ApiClass => FileCategory::Apis,
 
             // FileCategory::Models
-            Self::Model => FileCategory::Models,
-            Self::ModelHelpers => FileCategory::Models,
+            Self::ModelInterface => FileCategory::Models,
+            Self::ModelTypeAlias => FileCategory::Models,
+            Self::ModelEnum => FileCategory::Models,
 
             // FileCategory::Runtime
             Self::Runtime => FileCategory::Runtime,
@@ -126,7 +131,8 @@ impl TemplateName {
             | Self::BuildQueryParams
             | Self::BuildHeaders
             | Self::BuildRequestBody
-            | Self::MakeRequest => FileCategory::None,
+            | Self::MakeRequest
+            | Self::ModelHelpers => FileCategory::None,
         }
     }
 }
@@ -140,7 +146,9 @@ pub const TEMPLATE_PATHS: &[TemplateName] = &[
     // FileCategory::Apis
     TemplateName::ApiClass,
     // FileCategory::Models
-    TemplateName::Model,
+    TemplateName::ModelInterface,
+    TemplateName::ModelTypeAlias,
+    TemplateName::ModelEnum,
     TemplateName::ModelHelpers,
     // FileCategory::Runtime
     TemplateName::Runtime,
@@ -272,99 +280,6 @@ impl Templates {
                 message: format!(
                     "Failed to get {} template: {}",
                     TemplateName::ApiClass.file_path(),
-                    e
-                ),
-            })?;
-
-        template
-            .render(template_data)
-            .map_err(|e| EmitError::TemplateError {
-                message: format!("Failed to render template: {}", e),
-            })
-    }
-
-    /// Emit model helper functions (instanceOf/FromJSON/ToJSON/validation map)
-    pub fn emit_model_helpers(&self, data: &serde_json::Value) -> Result<String, EmitError> {
-        let template = self
-            .env
-            .get_template(TemplateName::ModelHelpers.file_path())
-            .map_err(|e| EmitError::TemplateError {
-                message: format!(
-                    "Failed to get {} template: {}",
-                    TemplateName::ModelHelpers.file_path(),
-                    e
-                ),
-            })?;
-
-        template.render(data).map_err(|e| EmitError::TemplateError {
-            message: format!("Failed to render model helpers template: {}", e),
-        })
-    }
-
-    /// Emit TypeScript code from a type definition
-    pub fn emit_model(
-        &self,
-        type_def: &TsTypeDefinition,
-        header: &HeaderData,
-    ) -> Result<String, EmitError> {
-        let type_def = type_def.clone();
-
-        // Prepare helper data for Interface types
-        let helper_data = match &type_def {
-            TsTypeDefinition::Interface(interface) => {
-                // Prepare required properties
-                let required_props: Vec<String> = interface
-                    .properties
-                    .iter()
-                    .filter(|p| !p.optional)
-                    .map(|p| p.name.clone())
-                    .filter(|name| !name.starts_with('['))
-                    .collect();
-
-                // Prepare properties with metadata
-                let properties: Vec<serde_json::Value> = interface
-                    .properties
-                    .iter()
-                    .map(|p| {
-                        serde_json::json!({
-                            "name": p.name,
-                            "optional": p.optional,
-                            "is_index_signature": p.name.starts_with('['),
-                        })
-                    })
-                    .collect();
-
-                Some(serde_json::json!({
-                    "name": interface.signature.name,
-                    "required_props": required_props,
-                    "properties": properties,
-                }))
-            }
-            _ => None,
-        };
-
-        let mut template_data = context! {
-            header,
-            type_definition => type_def,
-        };
-
-        // Add helper data to context if available
-        if let Some(helpers) = helper_data {
-            template_data = context! {
-                header,
-                type_definition => type_def,
-                helper_data => helpers,
-            };
-        }
-
-        // Get the model template and render directly
-        let template = self
-            .env
-            .get_template(TemplateName::Model.file_path())
-            .map_err(|e| EmitError::TemplateError {
-                message: format!(
-                    "Failed to get {} template: {}",
-                    TemplateName::Model.file_path(),
                     e
                 ),
             })?;

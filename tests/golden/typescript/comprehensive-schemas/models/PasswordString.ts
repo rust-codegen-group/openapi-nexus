@@ -12,4 +12,3 @@
  */
 /** String with password format */
 export type PasswordString = string
-

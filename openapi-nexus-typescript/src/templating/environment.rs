@@ -4,9 +4,8 @@ use minijinja::Environment;
 
 use super::filters::{
     format_class_signature_filter, format_doc_comment_filter, format_import_filter,
-    format_interface_signature_filter, format_method_signature_filter,
+    format_interface_signature_filter, format_method_signature_filter, format_rc_doc_filter,
     format_ts_class_property_filter, format_ts_property_filter, format_type_definition_filter,
-    from_json_line_filter, instance_guard_filter, to_json_line_filter,
 };
 use super::functions::file_header;
 
@@ -20,11 +19,6 @@ pub fn create_template_environment() -> Environment<'static> {
     // Load all embedded templates
     minijinja_embed::load_templates!(&mut env);
 
-    // Model helpers filters
-    env.add_filter("instance_guard", instance_guard_filter);
-    env.add_filter("from_json_line", from_json_line_filter);
-    env.add_filter("to_json_line", to_json_line_filter);
-
     // Format filters
     env.add_filter("format_class_signature", format_class_signature_filter);
     env.add_filter("format_doc_comment", format_doc_comment_filter);
@@ -34,6 +28,7 @@ pub fn create_template_environment() -> Environment<'static> {
         format_interface_signature_filter,
     );
     env.add_filter("format_method_signature", format_method_signature_filter);
+    env.add_filter("format_rc_doc", format_rc_doc_filter);
     env.add_filter("format_ts_class_property", format_ts_class_property_filter);
     env.add_filter("format_ts_property", format_ts_property_filter);
     env.add_filter("format_type_definition", format_type_definition_filter);

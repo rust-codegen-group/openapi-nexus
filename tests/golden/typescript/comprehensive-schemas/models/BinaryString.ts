@@ -12,4 +12,3 @@
  */
 /** String with binary format */
 export type BinaryString = string
-

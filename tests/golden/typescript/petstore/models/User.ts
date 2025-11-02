@@ -12,18 +12,18 @@
  */
 /** User model */
 export interface User {
-email?: string | null,
-first_name?: string | null,
-id?: number | null,
-last_name?: string | null,
-password?: string | null,
-phone?: string | null,
-user_status?: number | null,
-username?: string | null
+  email?: string | null,
+  first_name?: string | null,
+  id?: number | null,
+  last_name?: string | null,
+  password?: string | null,
+  phone?: string | null,
+  user_status?: number | null,
+  username?: string | null,
 }
 
 export function instanceOfUser(value: object): value is User {
-    return true;
+  return true;
 }
 
 export function UserFromJSON(json: any): User {
@@ -31,19 +31,19 @@ export function UserFromJSON(json: any): User {
 }
 
 export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'email': json['email'] ?? undefined,
-        'first_name': json['first_name'] ?? undefined,
-        'id': json['id'] ?? undefined,
-        'last_name': json['last_name'] ?? undefined,
-        'password': json['password'] ?? undefined,
-        'phone': json['phone'] ?? undefined,
-        'user_status': json['user_status'] ?? undefined,
-        'username': json['username'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'email': json['email'] ?? undefined,
+   'first_name': json['first_name'] ?? undefined,
+   'id': json['id'] ?? undefined,
+   'last_name': json['last_name'] ?? undefined,
+   'password': json['password'] ?? undefined,
+   'phone': json['phone'] ?? undefined,
+   'user_status': json['user_status'] ?? undefined,
+   'username': json['username'] ?? undefined,
+  };
 }
 
 export function UserToJSON(value?: User | null): any {
@@ -51,19 +51,19 @@ export function UserToJSON(value?: User | null): any {
 }
 
 export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'email': value['email'],
-        'first_name': value['first_name'],
-        'id': value['id'],
-        'last_name': value['last_name'],
-        'password': value['password'],
-        'phone': value['phone'],
-        'user_status': value['user_status'],
-        'username': value['username'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'email': value['email'],
+   'first_name': value['first_name'],
+   'id': value['id'],
+   'last_name': value['last_name'],
+   'password': value['password'],
+   'phone': value['phone'],
+   'user_status': value['user_status'],
+   'username': value['username'],
+  };
 }
 
 export const UserPropertyValidationAttributesMap: {

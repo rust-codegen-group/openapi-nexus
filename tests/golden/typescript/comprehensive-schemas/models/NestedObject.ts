@@ -12,11 +12,12 @@
  */
 /** Object with nested object property */
 export interface NestedObject {
-metadata?: { created: string }, user?: { id: number; name: string }
+  metadata?: { created: string },
+  user?: { id: number; name: string },
 }
 
 export function instanceOfNestedObject(value: object): value is NestedObject {
-    return true;
+  return true;
 }
 
 export function NestedObjectFromJSON(json: any): NestedObject {
@@ -24,13 +25,13 @@ export function NestedObjectFromJSON(json: any): NestedObject {
 }
 
 export function NestedObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean): NestedObject {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'metadata': json['metadata'] ?? undefined,
-        'user': json['user'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'metadata': json['metadata'] ?? undefined,
+   'user': json['user'] ?? undefined,
+  };
 }
 
 export function NestedObjectToJSON(value?: NestedObject | null): any {
@@ -38,13 +39,13 @@ export function NestedObjectToJSON(value?: NestedObject | null): any {
 }
 
 export function NestedObjectToJSONTyped(value?: NestedObject | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'metadata': value['metadata'],
-        'user': value['user'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'metadata': value['metadata'],
+   'user': value['user'],
+  };
 }
 
 export const NestedObjectPropertyValidationAttributesMap: {

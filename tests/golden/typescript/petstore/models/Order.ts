@@ -12,16 +12,16 @@
  */
 /** Order model */
 export interface Order {
-complete?: boolean | null,
-id?: number | null,
-pet_id?: number | null,
-quantity?: number | null,
-ship_date?: string | null,
-status?: null | "approved" | "delivered" | "placed"
+  complete?: boolean | null,
+  id?: number | null,
+  pet_id?: number | null,
+  quantity?: number | null,
+  ship_date?: string | null,
+  status?: null | "approved" | "delivered" | "placed",
 }
 
 export function instanceOfOrder(value: object): value is Order {
-    return true;
+  return true;
 }
 
 export function OrderFromJSON(json: any): Order {
@@ -29,17 +29,17 @@ export function OrderFromJSON(json: any): Order {
 }
 
 export function OrderFromJSONTyped(json: any, ignoreDiscriminator: boolean): Order {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'complete': json['complete'] ?? undefined,
-        'id': json['id'] ?? undefined,
-        'pet_id': json['pet_id'] ?? undefined,
-        'quantity': json['quantity'] ?? undefined,
-        'ship_date': json['ship_date'] ?? undefined,
-        'status': json['status'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'complete': json['complete'] ?? undefined,
+   'id': json['id'] ?? undefined,
+   'pet_id': json['pet_id'] ?? undefined,
+   'quantity': json['quantity'] ?? undefined,
+   'ship_date': json['ship_date'] ?? undefined,
+   'status': json['status'] ?? undefined,
+  };
 }
 
 export function OrderToJSON(value?: Order | null): any {
@@ -47,17 +47,17 @@ export function OrderToJSON(value?: Order | null): any {
 }
 
 export function OrderToJSONTyped(value?: Order | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'complete': value['complete'],
-        'id': value['id'],
-        'pet_id': value['pet_id'],
-        'quantity': value['quantity'],
-        'ship_date': value['ship_date'],
-        'status': value['status'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'complete': value['complete'],
+   'id': value['id'],
+   'pet_id': value['pet_id'],
+   'quantity': value['quantity'],
+   'ship_date': value['ship_date'],
+   'status': value['status'],
+  };
 }
 
 export const OrderPropertyValidationAttributesMap: {

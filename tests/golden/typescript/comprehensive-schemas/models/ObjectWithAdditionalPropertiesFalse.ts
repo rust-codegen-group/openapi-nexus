@@ -12,12 +12,12 @@
  */
 /** Object not allowing additional properties */
 export interface ObjectWithAdditionalPropertiesFalse {
-name: string
+  name: string,
 }
 
 export function instanceOfObjectWithAdditionalPropertiesFalse(value: object): value is ObjectWithAdditionalPropertiesFalse {
-    if (!('name' in value) || (value as any)['name'] === undefined) return false;
-    return true;
+  if (!('name' in value) || (value as any)['name'] === undefined) return false;
+  return true;
 }
 
 export function ObjectWithAdditionalPropertiesFalseFromJSON(json: any): ObjectWithAdditionalPropertiesFalse {
@@ -25,12 +25,12 @@ export function ObjectWithAdditionalPropertiesFalseFromJSON(json: any): ObjectWi
 }
 
 export function ObjectWithAdditionalPropertiesFalseFromJSONTyped(json: any, ignoreDiscriminator: boolean): ObjectWithAdditionalPropertiesFalse {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'name': json['name'],
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'name': json['name'],
+  };
 }
 
 export function ObjectWithAdditionalPropertiesFalseToJSON(value?: ObjectWithAdditionalPropertiesFalse | null): any {
@@ -38,12 +38,12 @@ export function ObjectWithAdditionalPropertiesFalseToJSON(value?: ObjectWithAddi
 }
 
 export function ObjectWithAdditionalPropertiesFalseToJSONTyped(value?: ObjectWithAdditionalPropertiesFalse | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'name': value['name'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'name': value['name'],
+  };
 }
 
 export const ObjectWithAdditionalPropertiesFalsePropertyValidationAttributesMap: {

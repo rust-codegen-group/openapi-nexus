@@ -11,14 +11,14 @@
  * Do not edit the file manually.
  */
 export interface ComplexNestedObject {
-id: number,
-user: { id: number; profile: { contact: { addresses: Array<{ city: string; street: string; zip: string }>; email: string; phone: string }; firstName: string; lastName: string } }
+  id: number,
+  user: { id: number; profile: { contact: { addresses: Array<{ city: string; street: string; zip: string }>; email: string; phone: string }; firstName: string; lastName: string } },
 }
 
 export function instanceOfComplexNestedObject(value: object): value is ComplexNestedObject {
-    if (!('id' in value) || (value as any)['id'] === undefined) return false;
-    if (!('user' in value) || (value as any)['user'] === undefined) return false;
-    return true;
+  if (!('id' in value) || (value as any)['id'] === undefined) return false;
+  if (!('user' in value) || (value as any)['user'] === undefined) return false;
+  return true;
 }
 
 export function ComplexNestedObjectFromJSON(json: any): ComplexNestedObject {
@@ -26,13 +26,13 @@ export function ComplexNestedObjectFromJSON(json: any): ComplexNestedObject {
 }
 
 export function ComplexNestedObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean): ComplexNestedObject {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'id': json['id'],
-        'user': json['user'],
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'id': json['id'],
+   'user': json['user'],
+  };
 }
 
 export function ComplexNestedObjectToJSON(value?: ComplexNestedObject | null): any {
@@ -40,13 +40,13 @@ export function ComplexNestedObjectToJSON(value?: ComplexNestedObject | null): a
 }
 
 export function ComplexNestedObjectToJSONTyped(value?: ComplexNestedObject | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'id': value['id'],
-        'user': value['user'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'id': value['id'],
+   'user': value['user'],
+  };
 }
 
 export const ComplexNestedObjectPropertyValidationAttributesMap: {

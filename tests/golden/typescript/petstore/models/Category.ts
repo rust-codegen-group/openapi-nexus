@@ -12,12 +12,12 @@
  */
 /** Category model */
 export interface Category {
-id?: number | null,
-name?: string | null
+  id?: number | null,
+  name?: string | null,
 }
 
 export function instanceOfCategory(value: object): value is Category {
-    return true;
+  return true;
 }
 
 export function CategoryFromJSON(json: any): Category {
@@ -25,13 +25,13 @@ export function CategoryFromJSON(json: any): Category {
 }
 
 export function CategoryFromJSONTyped(json: any, ignoreDiscriminator: boolean): Category {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'id': json['id'] ?? undefined,
-        'name': json['name'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'id': json['id'] ?? undefined,
+   'name': json['name'] ?? undefined,
+  };
 }
 
 export function CategoryToJSON(value?: Category | null): any {
@@ -39,13 +39,13 @@ export function CategoryToJSON(value?: Category | null): any {
 }
 
 export function CategoryToJSONTyped(value?: Category | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'id': value['id'],
-        'name': value['name'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'id': value['id'],
+   'name': value['name'],
+  };
 }
 
 export const CategoryPropertyValidationAttributesMap: {

@@ -12,12 +12,12 @@
  */
 /** Tag model */
 export interface Tag {
-id?: number | null,
-name?: string | null
+  id?: number | null,
+  name?: string | null,
 }
 
 export function instanceOfTag(value: object): value is Tag {
-    return true;
+  return true;
 }
 
 export function TagFromJSON(json: any): Tag {
@@ -25,13 +25,13 @@ export function TagFromJSON(json: any): Tag {
 }
 
 export function TagFromJSONTyped(json: any, ignoreDiscriminator: boolean): Tag {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'id': json['id'] ?? undefined,
-        'name': json['name'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'id': json['id'] ?? undefined,
+   'name': json['name'] ?? undefined,
+  };
 }
 
 export function TagToJSON(value?: Tag | null): any {
@@ -39,13 +39,13 @@ export function TagToJSON(value?: Tag | null): any {
 }
 
 export function TagToJSONTyped(value?: Tag | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'id': value['id'],
-        'name': value['name'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'id': value['id'],
+   'name': value['name'],
+  };
 }
 
 export const TagPropertyValidationAttributesMap: {

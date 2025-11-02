@@ -12,4 +12,3 @@
  */
 /** String with UUID format */
 export type UuidString = string
-

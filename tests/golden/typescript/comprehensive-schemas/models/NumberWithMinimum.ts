@@ -12,4 +12,3 @@
  */
 /** Number with minimum value */
 export type NumberWithMinimum = number
-

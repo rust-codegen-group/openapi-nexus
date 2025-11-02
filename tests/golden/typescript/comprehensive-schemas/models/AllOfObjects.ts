@@ -15,4 +15,3 @@ export type AllOfObjects = {
   id: number;
   name: string;
 } & { metadata: string }
-

@@ -12,4 +12,3 @@
  */
 /** Object without properties */
 export type EmptyObject = any
-

@@ -9,12 +9,14 @@ use tracing::warn;
 use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
+use crate::ast::TsTypeDefinition;
 use crate::config::TsConfig;
 use crate::core::GeneratorError;
 use crate::generator::{
     api_class_generator::ApiClassGenerator, package_files_generator::PackageFilesGenerator,
     schema_context::SchemaContext, schema_generator::SchemaGenerator,
 };
+use crate::templating::data::InterfaceData;
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, RuntimeData};
@@ -49,7 +51,7 @@ impl TsLangGenerator {
         &self,
         models: Vec<ModelData>,
         components: &openapi::Components,
-    ) -> HashMap<String, crate::ast::TsTypeDefinition> {
+    ) -> HashMap<String, TsTypeDefinition> {
         let mut schemas = HashMap::new();
         let mut visited = HashSet::new();
         let mut context = SchemaContext::new(&components.schemas, &mut visited);
@@ -108,7 +110,7 @@ impl TsLangGenerator {
     /// Generate models/index.ts file
     fn generate_models_index_file(
         &self,
-        schemas: &HashMap<String, crate::ast::TsTypeDefinition>,
+        schemas: &HashMap<String, TsTypeDefinition>,
     ) -> Result<FileInfo, GeneratorError> {
         let mut exports = Vec::new();
 
@@ -238,14 +240,46 @@ impl LanguageCodeGenerator for TsLangGenerator {
             let filename = self.generate_filename(name);
 
             // Emit model content using template
-            let content = self
-                .templating
-                .emit_model(type_def, &header_data)
-                .map_err(|e| GeneratorError::Generic {
-                    message: format!("Failed to emit model {}: {}", name, e),
-                })?;
+            let file = match type_def {
+                TsTypeDefinition::Interface(interface) => {
+                    // Create InterfaceData from interface definition
+                    let interface_data = InterfaceData::from_interface(interface);
 
-            files.push(FileInfo::model(filename, content));
+                    let template_context = minijinja::context! {
+                        header => header_data,
+                        interface => interface_data,
+                    };
+                    self.templating
+                        .render_template(TemplateName::ModelInterface, &filename, template_context)
+                        .map_err(|e| GeneratorError::Generic {
+                            message: format!("Failed to emit interface model {}: {}", name, e),
+                        })?
+                }
+                TsTypeDefinition::TypeAlias(type_alias) => {
+                    let template_context = minijinja::context! {
+                        header => header_data,
+                        type_alias => type_alias,
+                    };
+                    self.templating
+                        .render_template(TemplateName::ModelTypeAlias, &filename, template_context)
+                        .map_err(|e| GeneratorError::Generic {
+                            message: format!("Failed to emit type alias model {}: {}", name, e),
+                        })?
+                }
+                TsTypeDefinition::Enum(enum_def) => {
+                    let template_context = minijinja::context! {
+                        header => header_data,
+                        enum => enum_def,
+                    };
+                    self.templating
+                        .render_template(TemplateName::ModelEnum, &filename, template_context)
+                        .map_err(|e| GeneratorError::Generic {
+                            message: format!("Failed to emit enum model {}: {}", name, e),
+                        })?
+                }
+            };
+
+            files.push(file);
         }
 
         // Generate models/index.ts file

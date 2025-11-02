@@ -12,4 +12,3 @@
  */
 /** Basic integer type */
 export type IntegerType = number
-

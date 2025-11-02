@@ -12,4 +12,3 @@
  */
 /** String with regex pattern */
 export type StringWithPattern = string
-

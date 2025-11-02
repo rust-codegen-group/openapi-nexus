@@ -11,4 +11,3 @@
  * Do not edit the file manually.
  */
 export type NumberArray = Array<number>
-

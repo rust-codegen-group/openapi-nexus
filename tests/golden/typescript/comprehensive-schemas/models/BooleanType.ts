@@ -12,4 +12,3 @@
  */
 /** Boolean type */
 export type BooleanType = boolean
-

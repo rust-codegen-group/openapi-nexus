@@ -12,18 +12,18 @@
  */
 /** Pet model */
 export interface Pet {
-category?: null | { id: number | null; name: string | null },
-id?: number | null,
-name: string,
-photo_urls: Array<string>,
-status?: null | "available" | "pending" | "sold",
-tags?: Array<{ id: number | null; name: string | null }>
+  category?: null | { id: number | null; name: string | null },
+  id?: number | null,
+  name: string,
+  photo_urls: Array<string>,
+  status?: null | "available" | "pending" | "sold",
+  tags?: Array<{ id: number | null; name: string | null }>,
 }
 
 export function instanceOfPet(value: object): value is Pet {
-    if (!('name' in value) || (value as any)['name'] === undefined) return false;
-    if (!('photo_urls' in value) || (value as any)['photo_urls'] === undefined) return false;
-    return true;
+  if (!('name' in value) || (value as any)['name'] === undefined) return false;
+  if (!('photo_urls' in value) || (value as any)['photo_urls'] === undefined) return false;
+  return true;
 }
 
 export function PetFromJSON(json: any): Pet {
@@ -31,17 +31,17 @@ export function PetFromJSON(json: any): Pet {
 }
 
 export function PetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Pet {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'category': json['category'] ?? undefined,
-        'id': json['id'] ?? undefined,
-        'name': json['name'],
-        'photo_urls': json['photo_urls'],
-        'status': json['status'] ?? undefined,
-        'tags': json['tags'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'category': json['category'] ?? undefined,
+   'id': json['id'] ?? undefined,
+   'name': json['name'],
+   'photo_urls': json['photo_urls'],
+   'status': json['status'] ?? undefined,
+   'tags': json['tags'] ?? undefined,
+  };
 }
 
 export function PetToJSON(value?: Pet | null): any {
@@ -49,17 +49,17 @@ export function PetToJSON(value?: Pet | null): any {
 }
 
 export function PetToJSONTyped(value?: Pet | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'category': value['category'],
-        'id': value['id'],
-        'name': value['name'],
-        'photo_urls': value['photo_urls'],
-        'status': value['status'],
-        'tags': value['tags'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'category': value['category'],
+   'id': value['id'],
+   'name': value['name'],
+   'photo_urls': value['photo_urls'],
+   'status': value['status'],
+   'tags': value['tags'],
+  };
 }
 
 export const PetPropertyValidationAttributesMap: {

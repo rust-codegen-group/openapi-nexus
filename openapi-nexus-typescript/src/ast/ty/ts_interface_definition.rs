@@ -45,6 +45,16 @@ impl TsInterfaceDefinition {
         self.documentation = Some(documentation);
         self
     }
+
+    /// Get the names of the required properties.
+    /// Used for template generation.
+    pub fn required_prop_names(&self) -> Vec<String> {
+        self.properties
+            .iter()
+            .filter(|p| !p.optional)
+            .map(|p| p.name.clone())
+            .collect()
+    }
 }
 
 impl ToRcDocWithContext for TsInterfaceDefinition {

@@ -12,4 +12,3 @@
  */
 /** Basic string type */
 export type StringType = string
-

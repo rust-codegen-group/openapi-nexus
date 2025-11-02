@@ -12,13 +12,13 @@
  */
 /** Object with default values */
 export interface ObjectWithDefaults {
-active?: boolean,
-age?: number,
-name?: string
+  active?: boolean,
+  age?: number,
+  name?: string,
 }
 
 export function instanceOfObjectWithDefaults(value: object): value is ObjectWithDefaults {
-    return true;
+  return true;
 }
 
 export function ObjectWithDefaultsFromJSON(json: any): ObjectWithDefaults {
@@ -26,14 +26,14 @@ export function ObjectWithDefaultsFromJSON(json: any): ObjectWithDefaults {
 }
 
 export function ObjectWithDefaultsFromJSONTyped(json: any, ignoreDiscriminator: boolean): ObjectWithDefaults {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'active': json['active'] ?? undefined,
-        'age': json['age'] ?? undefined,
-        'name': json['name'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'active': json['active'] ?? undefined,
+   'age': json['age'] ?? undefined,
+   'name': json['name'] ?? undefined,
+  };
 }
 
 export function ObjectWithDefaultsToJSON(value?: ObjectWithDefaults | null): any {
@@ -41,14 +41,14 @@ export function ObjectWithDefaultsToJSON(value?: ObjectWithDefaults | null): any
 }
 
 export function ObjectWithDefaultsToJSONTyped(value?: ObjectWithDefaults | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'active': value['active'],
-        'age': value['age'],
-        'name': value['name'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'active': value['active'],
+   'age': value['age'],
+   'name': value['name'],
+  };
 }
 
 export const ObjectWithDefaultsPropertyValidationAttributesMap: {

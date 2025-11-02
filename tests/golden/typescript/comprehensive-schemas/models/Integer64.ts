@@ -12,4 +12,3 @@
  */
 /** 64-bit integer */
 export type Integer64 = number
-

@@ -12,13 +12,14 @@
  */
 /** Error response model */
 export interface ErrorResponse {
-code: number, message: string
+  code: number,
+  message: string,
 }
 
 export function instanceOfErrorResponse(value: object): value is ErrorResponse {
-    if (!('code' in value) || (value as any)['code'] === undefined) return false;
-    if (!('message' in value) || (value as any)['message'] === undefined) return false;
-    return true;
+  if (!('code' in value) || (value as any)['code'] === undefined) return false;
+  if (!('message' in value) || (value as any)['message'] === undefined) return false;
+  return true;
 }
 
 export function ErrorResponseFromJSON(json: any): ErrorResponse {
@@ -26,13 +27,13 @@ export function ErrorResponseFromJSON(json: any): ErrorResponse {
 }
 
 export function ErrorResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): ErrorResponse {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'code': json['code'],
-        'message': json['message'],
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'code': json['code'],
+   'message': json['message'],
+  };
 }
 
 export function ErrorResponseToJSON(value?: ErrorResponse | null): any {
@@ -40,13 +41,13 @@ export function ErrorResponseToJSON(value?: ErrorResponse | null): any {
 }
 
 export function ErrorResponseToJSONTyped(value?: ErrorResponse | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'code': value['code'],
-        'message': value['message'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'code': value['code'],
+   'message': value['message'],
+  };
 }
 
 export const ErrorResponsePropertyValidationAttributesMap: {

@@ -12,4 +12,3 @@
  */
 /** Number divisible by multipleOf */
 export type NumberWithMultipleOf = number
-

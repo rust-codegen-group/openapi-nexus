@@ -12,12 +12,12 @@
  */
 /** Required enum field in object */
 export interface RequiredEnumField {
-status: "active" | "inactive"
+  status: "active" | "inactive",
 }
 
 export function instanceOfRequiredEnumField(value: object): value is RequiredEnumField {
-    if (!('status' in value) || (value as any)['status'] === undefined) return false;
-    return true;
+  if (!('status' in value) || (value as any)['status'] === undefined) return false;
+  return true;
 }
 
 export function RequiredEnumFieldFromJSON(json: any): RequiredEnumField {
@@ -25,12 +25,12 @@ export function RequiredEnumFieldFromJSON(json: any): RequiredEnumField {
 }
 
 export function RequiredEnumFieldFromJSONTyped(json: any, ignoreDiscriminator: boolean): RequiredEnumField {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'status': json['status'],
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'status': json['status'],
+  };
 }
 
 export function RequiredEnumFieldToJSON(value?: RequiredEnumField | null): any {
@@ -38,12 +38,12 @@ export function RequiredEnumFieldToJSON(value?: RequiredEnumField | null): any {
 }
 
 export function RequiredEnumFieldToJSONTyped(value?: RequiredEnumField | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'status': value['status'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'status': value['status'],
+  };
 }
 
 export const RequiredEnumFieldPropertyValidationAttributesMap: {

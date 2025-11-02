@@ -12,4 +12,3 @@
  */
 /** String with email format */
 export type EmailString = string
-

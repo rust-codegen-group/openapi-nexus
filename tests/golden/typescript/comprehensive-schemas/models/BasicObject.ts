@@ -12,15 +12,15 @@
  */
 /** Basic object with properties */
 export interface BasicObject {
-active?: boolean,
-id: number,
-name: string
+  active?: boolean,
+  id: number,
+  name: string,
 }
 
 export function instanceOfBasicObject(value: object): value is BasicObject {
-    if (!('id' in value) || (value as any)['id'] === undefined) return false;
-    if (!('name' in value) || (value as any)['name'] === undefined) return false;
-    return true;
+  if (!('id' in value) || (value as any)['id'] === undefined) return false;
+  if (!('name' in value) || (value as any)['name'] === undefined) return false;
+  return true;
 }
 
 export function BasicObjectFromJSON(json: any): BasicObject {
@@ -28,14 +28,14 @@ export function BasicObjectFromJSON(json: any): BasicObject {
 }
 
 export function BasicObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean): BasicObject {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'active': json['active'] ?? undefined,
-        'id': json['id'],
-        'name': json['name'],
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'active': json['active'] ?? undefined,
+   'id': json['id'],
+   'name': json['name'],
+  };
 }
 
 export function BasicObjectToJSON(value?: BasicObject | null): any {
@@ -43,14 +43,14 @@ export function BasicObjectToJSON(value?: BasicObject | null): any {
 }
 
 export function BasicObjectToJSONTyped(value?: BasicObject | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'active': value['active'],
-        'id': value['id'],
-        'name': value['name'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'active': value['active'],
+   'id': value['id'],
+   'name': value['name'],
+  };
 }
 
 export const BasicObjectPropertyValidationAttributesMap: {

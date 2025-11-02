@@ -12,4 +12,3 @@
  */
 /** Floating point number */
 export type FloatType = number
-

@@ -12,13 +12,13 @@
  */
 /** API response model */
 export interface ApiResponse {
-code?: number | null,
-message?: string | null,
-type?: string | null
+  code?: number | null,
+  message?: string | null,
+  type?: string | null,
 }
 
 export function instanceOfApiResponse(value: object): value is ApiResponse {
-    return true;
+  return true;
 }
 
 export function ApiResponseFromJSON(json: any): ApiResponse {
@@ -26,14 +26,14 @@ export function ApiResponseFromJSON(json: any): ApiResponse {
 }
 
 export function ApiResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiResponse {
-    if (json == null) {
-        return json;
-    }
-    return {
-        'code': json['code'] ?? undefined,
-        'message': json['message'] ?? undefined,
-        'type': json['type'] ?? undefined,
-    };
+  if (json == null) {
+    return json;
+  }
+  return {
+   'code': json['code'] ?? undefined,
+   'message': json['message'] ?? undefined,
+   'type': json['type'] ?? undefined,
+  };
 }
 
 export function ApiResponseToJSON(value?: ApiResponse | null): any {
@@ -41,14 +41,14 @@ export function ApiResponseToJSON(value?: ApiResponse | null): any {
 }
 
 export function ApiResponseToJSONTyped(value?: ApiResponse | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-    return {
-        'code': value['code'],
-        'message': value['message'],
-        'type': value['type'],
-    };
+  if (value == null) {
+    return value;
+  }
+  return {
+   'code': value['code'],
+   'message': value['message'],
+   'type': value['type'],
+  };
 }
 
 export const ApiResponsePropertyValidationAttributesMap: {
