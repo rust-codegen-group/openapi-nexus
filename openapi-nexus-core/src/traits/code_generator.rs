@@ -240,9 +240,10 @@ fn extract_return_type_from_responses(
     for (status_code, response_ref) in operation.responses.responses.iter() {
         if status_code.starts_with('2')
             && let openapi::RefOr::T(response) = response_ref
-                && let Some(json_content) = response.content.get("application/json") {
-                    return json_content.schema.clone();
-                }
+            && let Some(json_content) = response.content.get("application/json")
+        {
+            return json_content.schema.clone();
+        }
     }
     None
 }

@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use crate::ast::{TsExpression, TsNode, TsTypeDefinition};
+use crate::ast::{TsExpression, TsTypeDefinition};
 use crate::utils::typescript_types::{is_primitive_type, is_runtime_type};
 
 /// Analyzes TypeScript AST nodes to extract type dependencies
@@ -14,48 +14,41 @@ impl TsDependencyAnalyzer {
         Self
     }
 
-    /// Extract all type dependencies from a collection of AST nodes
-    pub fn analyze_dependencies(&self, nodes: &[TsNode]) -> DependencySet {
+    /// Extract all type dependencies from a collection of type definitions
+    pub fn analyze_dependencies(&self, type_defs: &[TsTypeDefinition]) -> DependencySet {
         let mut dependencies = DependencySet::new();
 
-        for node in nodes {
-            self.extract_node_dependencies(node, &mut dependencies);
+        for type_def in type_defs {
+            self.extract_type_definition_dependencies(type_def, &mut dependencies);
         }
 
         dependencies
     }
 
-    /// Extract dependencies from a single AST node
-    fn extract_node_dependencies(&self, node: &TsNode, dependencies: &mut DependencySet) {
-        match node {
-            TsNode::TypeDefinition(type_def) => {
-                match type_def {
-                    TsTypeDefinition::Interface(interface) => {
-                        // Extract dependencies from interface properties
-                        for property in &interface.properties {
-                            Self::extract_type_dependencies(&property.type_expr, dependencies);
-                        }
+    /// Extract dependencies from a single type definition
+    fn extract_type_definition_dependencies(
+        &self,
+        type_def: &TsTypeDefinition,
+        dependencies: &mut DependencySet,
+    ) {
+        match type_def {
+            TsTypeDefinition::Interface(interface) => {
+                // Extract dependencies from interface properties
+                for property in &interface.properties {
+                    Self::extract_type_dependencies(&property.type_expr, dependencies);
+                }
 
-                        // Extract dependencies from extends clause
-                        for extend in &interface.signature.extends {
-                            dependencies.add_model_dependency(extend.clone());
-                        }
-                    }
-                    TsTypeDefinition::TypeAlias(type_alias) => {
-                        // Extract dependencies from type alias definition
-                        Self::extract_type_dependencies(&type_alias.type_expr, dependencies);
-                    }
-                    TsTypeDefinition::Enum(_) => {
-                        // Enums don't typically have dependencies
-                    }
+                // Extract dependencies from extends clause
+                for extend in &interface.signature.extends {
+                    dependencies.add_model_dependency(extend.clone());
                 }
             }
-            TsNode::Class(_) => {
-                // Classes handled separately - they use template-based emission
-                // Dependencies are managed through the template system
+            TsTypeDefinition::TypeAlias(type_alias) => {
+                // Extract dependencies from type alias definition
+                Self::extract_type_dependencies(&type_alias.type_expr, dependencies);
             }
-            TsNode::Import(_) => {
-                // Imports don't have dependencies to analyze
+            TsTypeDefinition::Enum(_) => {
+                // Enums don't typically have dependencies
             }
         }
     }

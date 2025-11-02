@@ -33,10 +33,7 @@ impl Object for ProjectFileData {
     fn get_value(self: &Arc<Self>, key: &Value) -> Option<Value> {
         let key_str = key.as_str()?;
         match key_str {
-            "readme_data" => self
-                .readme_data
-                .as_ref()
-                .map(Value::from_serialize),
+            "readme_data" => self.readme_data.as_ref().map(Value::from_serialize),
             "package_name" => Some(Value::from(self.package_name.clone())),
             "version" => Some(Value::from(self.version.clone())),
             _ => None,

@@ -56,23 +56,24 @@ impl TsLangGenerator {
         )
     }
 
-    /// Generate TypeScript nodes from model data
-    fn generate_model_nodes(
+    /// Generate TypeScript type definitions from model data
+    fn generate_model_type_definitions(
         &self,
         models: Vec<ModelData>,
         components: &openapi::Components,
-    ) -> HashMap<String, crate::ast::TsNode> {
+    ) -> HashMap<String, crate::ast::TsTypeDefinition> {
         let mut schemas = HashMap::new();
         let mut visited = HashSet::new();
         let mut context = SchemaContext::new(&components.schemas, &mut visited);
 
         for model in models {
-            match self
-                .schema_generator
-                .schema_to_ts_node(&model.name, &model.schema, &mut context)
-            {
-                Ok(node) => {
-                    schemas.insert(model.name, node);
+            match self.schema_generator.schema_to_ts_type_definition(
+                &model.name,
+                &model.schema,
+                &mut context,
+            ) {
+                Ok(type_def) => {
+                    schemas.insert(model.name, type_def);
                 }
                 Err(e) => {
                     warn!("Failed to convert schema {}: {}", model.name, e);
@@ -99,35 +100,28 @@ impl TsLangGenerator {
     fn generate_files(
         &self,
         api_classes: &HashMap<String, FileInfo>,
-        schemas: &HashMap<String, crate::ast::TsNode>,
+        schemas: &HashMap<String, crate::ast::TsTypeDefinition>,
         openapi: &OpenApi,
     ) -> Result<Vec<FileInfo>, GeneratorError> {
         let mut files = Vec::new();
 
         // Generate models files
         let (title, description, version) = self.get_openapi_metadata(openapi);
-        for (name, node) in schemas {
+        for (name, type_def) in schemas {
             let filename = self.generate_filename(name);
 
             // Emit model content using template
-            let content = match node {
-                crate::ast::TsNode::TypeDefinition(type_def) => self
-                    .templating
-                    .emit_model(
-                        type_def,
-                        title.as_deref(),
-                        description.as_deref(),
-                        version.as_deref(),
-                    )
-                    .map_err(|e| GeneratorError::Generic {
-                        message: format!("Failed to emit model {}: {}", name, e),
-                    })?,
-                _ => {
-                    return Err(GeneratorError::Generic {
-                        message: format!("Unsupported node type for model: {:?}", node),
-                    });
-                }
-            };
+            let content = self
+                .templating
+                .emit_model(
+                    type_def,
+                    title.as_deref(),
+                    description.as_deref(),
+                    version.as_deref(),
+                )
+                .map_err(|e| GeneratorError::Generic {
+                    message: format!("Failed to emit model {}: {}", name, e),
+                })?;
 
             files.push(FileInfo::model(filename, content));
         }
@@ -175,7 +169,7 @@ impl TsLangGenerator {
     /// Generate models/index.ts file
     fn generate_models_index_file(
         &self,
-        schemas: &HashMap<String, crate::ast::TsNode>,
+        schemas: &HashMap<String, crate::ast::TsTypeDefinition>,
     ) -> Result<FileInfo, GeneratorError> {
         let mut exports = Vec::new();
 
@@ -296,7 +290,7 @@ impl LanguageCodeGenerator for TsLangGenerator {
         models: Vec<ModelData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let schemas = if let Some(components) = &openapi.components {
-            self.generate_model_nodes(models, components)
+            self.generate_model_type_definitions(models, components)
         } else {
             HashMap::new()
         };
@@ -333,11 +327,7 @@ impl LanguageCodeGenerator for TsLangGenerator {
         };
         let file = self
             .templating
-            .render_template(
-                TemplateName::Runtime,
-                "runtime.ts",
-                template_context,
-            )
+            .render_template(TemplateName::Runtime, "runtime.ts", template_context)
             .map_err(|e| GeneratorError::Generic {
                 message: format!("Failed to render runtime template: {}", e),
             })?;

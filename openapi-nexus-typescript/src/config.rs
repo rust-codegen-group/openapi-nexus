@@ -96,9 +96,10 @@ impl FromStr for IndentationStyle {
         }
 
         if let Some(count) = s.strip_prefix("Spaces(").and_then(|s| s.strip_suffix(')'))
-            && let Ok(n) = count.parse::<usize>() {
-                return Ok(Self::Spaces(n));
-            }
+            && let Ok(n) = count.parse::<usize>()
+        {
+            return Ok(Self::Spaces(n));
+        }
 
         // Try parsing just the number
         if let Ok(n) = s.parse::<usize>() {
