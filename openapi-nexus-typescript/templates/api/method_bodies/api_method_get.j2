@@ -1,33 +1,7 @@
 {% set data = method.body_data %}
-// Build path with path parameters
-let urlPath = `{{ data.path | replace('{', '${') }}`;
-
-// Build query parameters
-const queryParameters: any = {};
-{% for param in data.query_params %}
-if ({{ param.name }} !== undefined) {
-  queryParameters['{{ param.name }}'] = {{ param.name }};
-}
-{% endfor %}
-
-// Build headers
-const headerParameters: Record<string, string> = {
-  ...this.configuration?.headers,
-};
-
-// Add header parameters
-{% for param in data.header_params %}
-if ({{ param.name }} !== undefined) {
-  headerParameters['{{ param.name }}'] = String({{ param.name }});
-}
-{% endfor %}
-
-// Make request
-const response = await this.request({
-    path: urlPath,
-    method: 'GET',
-    headers: headerParameters,
-    query: queryParameters,
-}, initOverrides);
+{% include "api/method_bodies/partials/_build_url_path.j2" with context %}
+{% include "api/method_bodies/partials/_build_query_params.j2" with context %}
+{% include "api/method_bodies/partials/_build_headers.j2" with context %}
+{% include "api/method_bodies/partials/_make_request.j2" with context %}
 
 return new JSONApiResponse(response{%- if data.transformer %}, {{ data.transformer }}{%- endif %});

@@ -5,7 +5,7 @@ use super::ts_enum_definition::TsEnumDefinition;
 use super::ts_interface_definition::TsInterfaceDefinition;
 use super::ts_type_alias_definition::TsTypeAliasDefinition;
 use crate::emission::error::EmitError;
-use crate::templating::TemplatingEmitter;
+use crate::templating::Templates;
 use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
 
 /// Unified TypeScript type definition
@@ -29,7 +29,7 @@ impl ToRcDocWithContext for TsTypeDefinition {
                 let iface_doc = interface.to_rcdoc_with_context(context)?;
 
                 // Emit helper functions using template-based generation
-                let helpers_doc = emit_model_helpers_with_template(interface, context)?;
+                let helpers_doc = emit_model_helpers_with_template(interface)?;
 
                 Ok(RcDoc::intersperse(
                     vec![iface_doc, helpers_doc],
@@ -45,7 +45,6 @@ impl ToRcDocWithContext for TsTypeDefinition {
 /// Emit model helper functions using the template engine
 fn emit_model_helpers_with_template(
     interface: &TsInterfaceDefinition,
-    context: &EmissionContext,
 ) -> Result<RcDoc<'static, ()>, EmitError> {
     // Prepare data for the template
     let required_props: Vec<&str> = interface
@@ -74,7 +73,7 @@ fn emit_model_helpers_with_template(
         "properties": properties,
     });
 
-    let templating = TemplatingEmitter::new(context.max_line_width);
+    let templating = Templates::new();
     let rendered = templating.emit_model_helpers(&data)?;
     Ok(RcDoc::text(rendered))
 }

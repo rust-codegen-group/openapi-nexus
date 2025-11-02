@@ -1,0 +1,3 @@
+{% set data = method.body_data %}
+// Build path with path parameters
+let urlPath = `{{ data.path | replace('{', '${') }}`;

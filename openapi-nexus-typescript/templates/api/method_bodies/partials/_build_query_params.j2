@@ -1,0 +1,9 @@
+{% set data = method.body_data %}
+// Build query parameters
+const queryParameters: any = {};
+{%- for param in data.query_params -%}
+if ({{ param.name }} !== undefined) {
+  queryParameters['{{ param.name }}'] = {{ param.name }};
+}
+{%- endfor %}
+

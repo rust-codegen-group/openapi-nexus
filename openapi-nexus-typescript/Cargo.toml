@@ -6,13 +6,13 @@ publish = false
 
 [dependencies]
 chrono.workspace = true
+clap.workspace = true
 heck.workspace = true
 http.workspace = true
 indexmap.workspace = true
 minijinja.workspace = true
 minijinja-embed.workspace = true
 pretty.workspace = true
-rust-embed.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 snafu.workspace = true

@@ -1,0 +1,16 @@
+{% set data = method.body_data %}
+// Build headers
+const headerParameters: Record<string, string> = {
+  {% if data.body_param %}
+  'Content-Type': 'application/json',
+  {% endif %}
+  ...this.configuration?.headers,
+};
+
+// Add header parameters
+{%- for param in data.header_params -%}
+if ({{ param.name }} !== undefined) {
+  headerParameters['{{ param.name }}'] = String({{ param.name }});
+}
+{%- endfor %}
+

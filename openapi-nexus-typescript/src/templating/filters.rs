@@ -8,6 +8,7 @@ pub mod format_interface_signature;
 pub mod format_method_signature;
 pub mod format_ts_class_property;
 pub mod format_ts_property;
+pub mod format_type_definition;
 pub mod format_type_expr;
 pub mod model_helpers;
 
@@ -28,5 +29,8 @@ pub use format_ts_class_property::{
     create_format_ts_class_property_filter, format_ts_class_property_filter,
 };
 pub use format_ts_property::{create_format_ts_property_filter, format_ts_property_filter};
+pub use format_type_definition::{
+    create_format_type_definition_filter, format_type_definition_filter,
+};
 pub use format_type_expr::{create_format_type_expr_filter, format_type_expr_filter};
 pub use model_helpers::{from_json_line_filter, instance_guard_filter, to_json_line_filter};

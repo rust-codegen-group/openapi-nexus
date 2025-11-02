@@ -5,15 +5,20 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-openapi-nexus-common.workspace = true
+chrono.workspace = true
+heck.workspace = true
+http.workspace = true
+minijinja.workspace = true
 pretty.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 snafu.workspace = true
 tracing.workspace = true
+utoipa.workspace = true
 
+openapi-nexus-common.workspace = true
 openapi-nexus-ir.workspace = true
 openapi-nexus-parser.workspace = true
 openapi-nexus-plugin.workspace = true
-openapi-nexus-transforms.workspace = true
 openapi-nexus-rust.workspace = true
-utoipa.workspace = true
+openapi-nexus-transforms.workspace = true

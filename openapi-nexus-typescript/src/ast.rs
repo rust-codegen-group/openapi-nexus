@@ -11,7 +11,7 @@ pub use class_definition::{
     TsImportStatement,
 };
 pub use common::{TsDocComment, TsEnumVariant, TsGeneric, TsParameter, TsProperty, TsVisibility};
-pub use file::{TsFile, TsFileCategory, TsFileContent};
+pub use file::TsFileContent;
 pub use import::{TsImport, TsImportSpecifier};
 pub use ts_expression::TsExpression;
 pub use ts_node::TsNode;

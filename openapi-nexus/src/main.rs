@@ -74,10 +74,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut generator = OpenApiCodeGenerator::new();
 
             // Register TypeScript generator with default configuration
-            let ts_config = openapi_nexus_typescript::config::GeneratorConfig::default();
-            let ts_generator = TsLangGenerator::new(ts_config.clone());
-            generator.register_language_generator("typescript", ts_generator.clone())?;
-            generator.register_language_generator("ts", ts_generator)?;
+            let ts_config = openapi_nexus_typescript::config::TsConfig::default();
+            let ts_generator_typescript = TsLangGenerator::new(ts_config.clone());
+            let ts_generator_ts = TsLangGenerator::new(ts_config);
+            generator.register_language_generator("typescript", ts_generator_typescript)?;
+            generator.register_language_generator("ts", ts_generator_ts)?;
 
             generator.generate_from_file(&input, &output, &languages)?;
 

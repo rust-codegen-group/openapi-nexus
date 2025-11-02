@@ -2,41 +2,46 @@
 
 use std::collections::BTreeSet;
 
-use heck::{ToLowerCamelCase as _, ToPascalCase as _};
+use heck::ToPascalCase as _;
 use http::Method;
 use utoipa::openapi::RefOr;
 use utoipa::openapi::path::Operation;
 use utoipa::openapi::schema::{ArrayItems, Schema};
 
 use crate::ast::{
-    TsClassDefinition, TsClassMethod, TsDocComment, TsExpression, TsImportStatement, TsNode,
-    TsParameter,
+    TsClassDefinition, TsClassMethod, TsDocComment, TsExpression, TsImportStatement, TsParameter,
 };
 use crate::core::GeneratorError;
-use crate::generator::parameter_extractor::{ParameterExtractor, ParameterInfo};
-use crate::generator::template_generator::{
-    ApiMethodData, ParameterData as TemplateParameterData, Template, TemplateGenerator,
-};
+use crate::generator::parameter_extractor::ParameterExtractor;
+use crate::templating::data::ApiMethodBodyData;
+use crate::templating::{TemplateName, Templates};
 use crate::utils::schema_mapper::SchemaMapper;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::data::{
+    ApiMethodData as CoreApiMethodData, OperationInfo, ParameterInfo as CoreParameterInfo,
+};
+use openapi_nexus_core::traits::FileCategory;
+use openapi_nexus_core::traits::OperationInfoExt as _;
+use openapi_nexus_core::traits::file_writer::FileInfo;
 
 /// Individual API class generator
 #[derive(Debug, Clone)]
 pub struct ApiClassGenerator {
     parameter_extractor: ParameterExtractor,
     schema_mapper: SchemaMapper,
-    template_generator: TemplateGenerator,
-    max_line_width: usize,
+}
+
+impl Default for ApiClassGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ApiClassGenerator {
     /// Create a new API class generator
-    pub fn new(max_line_width: usize) -> Self {
+    pub fn new() -> Self {
         Self {
             parameter_extractor: ParameterExtractor::new(),
             schema_mapper: SchemaMapper::new(),
-            template_generator: TemplateGenerator::new(),
-            max_line_width,
         }
     }
 
@@ -44,8 +49,12 @@ impl ApiClassGenerator {
     pub fn generate_api_class(
         &self,
         tag: &str,
-        operations: &[(String, String, Operation)],
-    ) -> Result<TsNode, GeneratorError> {
+        operations: &[OperationInfo],
+        templating: &Templates,
+        title: Option<&str>,
+        description: Option<&str>,
+        version: Option<&str>,
+    ) -> Result<FileInfo, GeneratorError> {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let interface_name = format!("{}Interface", class_name);
 
@@ -57,39 +66,32 @@ impl ApiClassGenerator {
                     Some(TsExpression::Reference("Configuration".to_string())),
                 )])
                 .with_docs(TsDocComment::new("Initialize the API client".to_string()))
-                .with_body_template("constructor_base_api".to_string(), None),
+                .with_body_template(
+                    std::path::Path::new(TemplateName::ConstructorBaseApi.file_path())
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("constructor_base_api")
+                        .to_string(),
+                    None,
+                ),
         ];
 
         // Generate methods for each operation
-        for (path, method_name, operation) in operations {
-            let http_method =
-                method_name
-                    .parse::<Method>()
-                    .map_err(|e| GeneratorError::Generic {
-                        message: format!("Invalid HTTP method '{}': {}", method_name, e),
-                    })?;
-
+        for op_info in operations {
             // Generate Raw method (returns ApiResponse wrapper)
-            let raw_method = self.generate_operation_method_raw(path, &http_method, operation)?;
+            let raw_method = self.generate_operation_method_raw(op_info)?;
             methods.push(raw_method.clone());
 
             // Generate convenience method (unwraps value from Raw)
-            let convenience_method =
-                self.generate_operation_method_convenience(path, &http_method, operation)?;
+            let convenience_method = self.generate_operation_method_convenience(op_info)?;
             methods.push(convenience_method);
         }
 
         // Collect model imports for FromJSON transformers
         let mut model_imports: BTreeSet<String> = BTreeSet::new();
-        for (_path, method_name, operation) in operations {
-            let http_method =
-                method_name
-                    .parse::<Method>()
-                    .map_err(|e| GeneratorError::Generic {
-                        message: format!("Invalid HTTP method '{}': {}", method_name, e),
-                    })?;
+        for op_info in operations {
             if let Some((_, model_name)) =
-                self.compute_transformer_and_model(&http_method, operation)
+                self.compute_transformer_and_model(&op_info.method, &op_info.operation)
             {
                 model_imports.insert(model_name);
             }
@@ -124,47 +126,58 @@ impl ApiClassGenerator {
             )))
             .with_imports(imports);
 
-        Ok(TsNode::Class(api_class))
+        // Render the class to code
+        let content = templating
+            .emit_class(&api_class, title, description, version)
+            .map_err(|e| GeneratorError::Generic {
+                message: format!("Failed to emit API class {}: {}", class_name, e),
+            })?;
+
+        // Generate filename based on tag
+        let filename = format!("{}Api.ts", tag.to_pascal_case());
+
+        Ok(FileInfo::new(filename, content, FileCategory::Apis))
     }
 
     /// Generate a Raw method for a specific operation (returns ApiResponse wrapper)
     fn generate_operation_method_raw(
         &self,
-        path: &str,
-        http_method: &Method,
-        operation: &Operation,
+        op_info: &OperationInfo,
     ) -> Result<TsClassMethod, GeneratorError> {
-        let method_name = format!(
-            "{}Raw",
-            self.generate_method_name(path, operation, http_method)
-        );
-        let parameters = self.generate_method_parameters(path, operation)?;
-        let return_type = self.generate_raw_return_type(http_method, operation)?;
+        let method_name = format!("{}Raw", op_info.method_name());
+        let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
+        let return_type = self.generate_raw_return_type(&op_info.method, &op_info.operation)?;
 
         // Determine template based on HTTP method
-        let template_name = match http_method {
-            &Method::GET => "api_method_get",
-            &Method::POST | &Method::PUT | &Method::PATCH => "api_method_post_put_patch",
-            &Method::DELETE => "api_method_delete",
-            _ => "default_method",
+        let template_name = match op_info.method {
+            Method::GET => TemplateName::ApiMethodGet,
+            Method::POST | Method::PUT | Method::PATCH => TemplateName::ApiMethodPostPutPatch,
+            Method::DELETE => TemplateName::ApiMethodDelete,
+            _ => TemplateName::DefaultMethod,
         };
 
         // Create template data
-        let template_data = self.create_method_template_data(path, http_method, operation)?;
+        let template_data = self.create_method_template_data(op_info)?;
 
+        let template_path = template_name.file_path();
+        let template_filename = std::path::Path::new(template_path)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("default");
         let mut method = TsClassMethod::new(method_name)
             .with_parameters(parameters)
             .with_async()
-            .with_body_template(template_name.to_string(), Some(template_data));
+            .with_body_template(template_filename.to_string(), Some(template_data));
 
         if let Some(return_type) = return_type {
             method = method.with_return_type(return_type);
         }
 
-        if let Some(docs) = operation
+        if let Some(docs) = op_info
+            .operation
             .summary
             .clone()
-            .or_else(|| operation.description.clone())
+            .or_else(|| op_info.operation.description.clone())
         {
             method = method.with_docs(TsDocComment::new(docs));
         }
@@ -175,27 +188,31 @@ impl ApiClassGenerator {
     /// Generate a convenience method that calls the Raw method and unwraps the value
     fn generate_operation_method_convenience(
         &self,
-        path: &str,
-        http_method: &Method,
-        operation: &Operation,
+        op_info: &OperationInfo,
     ) -> Result<TsClassMethod, GeneratorError> {
-        let base_name = self.generate_method_name(path, operation, http_method);
-        let parameters = self.generate_method_parameters(path, operation)?;
+        let base_name = self.generate_method_name_from_op_info(op_info);
+        let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
 
+        let template_filename =
+            std::path::Path::new(TemplateName::ApiMethodConvenience.file_path())
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("api_method_convenience");
         let mut method = TsClassMethod::new(base_name)
             .with_parameters(parameters)
             .with_async()
-            .with_body_template("api_method_convenience".to_string(), None);
+            .with_body_template(template_filename.to_string(), None);
 
         let convenience_return = self
-            .generate_convenience_return_type(http_method, operation)?
+            .generate_convenience_return_type(&op_info.method, &op_info.operation)?
             .unwrap_or_else(|| TsExpression::Reference("Promise<any>".to_string()));
         method = method.with_return_type(convenience_return);
 
-        if let Some(docs) = operation
+        if let Some(docs) = op_info
+            .operation
             .summary
             .clone()
-            .or_else(|| operation.description.clone())
+            .or_else(|| op_info.operation.description.clone())
         {
             method = method.with_docs(TsDocComment::new(docs));
         }
@@ -206,137 +223,61 @@ impl ApiClassGenerator {
     /// Create template data for method body generation
     fn create_method_template_data(
         &self,
-        path: &str,
-        http_method: &Method,
-        operation: &Operation,
-    ) -> Result<serde_json::Value, GeneratorError> {
-        let parameters = self.generate_method_parameters(path, operation)?;
-        let return_type = self.generate_raw_return_type(http_method, operation)?;
+        op_info: &OperationInfo,
+    ) -> Result<ApiMethodBodyData, GeneratorError> {
+        // Extract parameters from operation to build core ApiMethodData
+        let mut path_params_core = Vec::new();
+        let mut query_params_core = Vec::new();
+        let mut header_params_core = Vec::new();
 
-        // Extract different parameter types
-        let mut path_params = Vec::new();
-        let mut query_params = Vec::new();
-        let mut header_params = Vec::new();
-        let mut body_param = None;
+        if let Some(params) = &op_info.operation.parameters {
+            for param in params {
+                let param_info = CoreParameterInfo {
+                    name: param.name.clone(),
+                    schema: param.schema.clone(),
+                    required: matches!(param.required, utoipa::openapi::Required::True),
+                    deprecated: matches!(param.deprecated, Some(utoipa::openapi::Deprecated::True)),
+                    location: param.parameter_in.clone(),
+                };
 
-        let ctx = EmissionContext {
-            indent: 0,
-            max_line_width: self.max_line_width,
-        };
-
-        for param in &parameters {
-            if param.name.contains("path") {
-                path_params.push(TemplateParameterData {
-                    name: param.name.clone(),
-                    type_expr: param
-                        .type_expr
-                        .as_ref()
-                        .and_then(|t| t.to_rcdoc_with_context(&ctx).ok())
-                        .map(|doc| format!("{}", doc.pretty(self.max_line_width))),
-                    optional: param.optional,
-                });
-            } else if param.name.contains("query") {
-                query_params.push(TemplateParameterData {
-                    name: param.name.clone(),
-                    type_expr: param
-                        .type_expr
-                        .as_ref()
-                        .and_then(|t| t.to_rcdoc_with_context(&ctx).ok())
-                        .map(|doc| format!("{}", doc.pretty(self.max_line_width))),
-                    optional: param.optional,
-                });
-            } else if param.name.contains("header") {
-                header_params.push(TemplateParameterData {
-                    name: param.name.clone(),
-                    type_expr: param
-                        .type_expr
-                        .as_ref()
-                        .and_then(|t| t.to_rcdoc_with_context(&ctx).ok())
-                        .map(|doc| format!("{}", doc.pretty(self.max_line_width))),
-                    optional: param.optional,
-                });
-            } else if param.name == "body" {
-                body_param = Some(TemplateParameterData {
-                    name: param.name.clone(),
-                    type_expr: param
-                        .type_expr
-                        .as_ref()
-                        .and_then(|t| t.to_rcdoc_with_context(&ctx).ok())
-                        .map(|doc| format!("{}", doc.pretty(self.max_line_width))),
-                    optional: param.optional,
-                });
+                match param.parameter_in {
+                    utoipa::openapi::path::ParameterIn::Path => path_params_core.push(param_info),
+                    utoipa::openapi::path::ParameterIn::Query => query_params_core.push(param_info),
+                    utoipa::openapi::path::ParameterIn::Header => {
+                        header_params_core.push(param_info)
+                    }
+                    utoipa::openapi::path::ParameterIn::Cookie => {
+                        header_params_core.push(param_info)
+                    }
+                }
             }
         }
 
-        let transformer = self
-            .compute_transformer_and_model(http_method, operation)
-            .map(|(expr, _)| expr);
-
-        let method_data = ApiMethodData {
-            method_name: self.generate_method_name(path, operation, http_method),
-            http_method: http_method.to_string(),
-            path: path.to_string(),
-            path_params,
-            query_params,
-            header_params,
-            body_param,
-            return_type: return_type
-                .and_then(|t| t.to_rcdoc_with_context(&ctx).ok())
-                .map(|doc| doc.pretty(self.max_line_width).to_string())
-                .unwrap_or_else(|| "Promise<any>".to_string()),
-            has_auth: true, // Assume auth is needed
+        let core_method_data = CoreApiMethodData {
+            method_name: self.generate_method_name_from_op_info(op_info),
+            http_method: op_info.method.clone(),
+            path: op_info.path.clone(),
+            path_params: path_params_core,
+            query_params: query_params_core,
+            header_params: header_params_core,
+            request_body: op_info.operation.request_body.clone(),
+            return_type: None,
+            has_auth: op_info.operation.security.is_some(),
             has_error_handling: true,
         };
 
-        let mut v = serde_json::to_value(method_data).unwrap_or_default();
-        if let Some(transformer_expr) = transformer
-            && let serde_json::Value::Object(ref mut map) = v
-        {
-            map.insert(
-                "transformer".to_string(),
-                serde_json::Value::String(transformer_expr),
-            );
-        }
+        let transformer = self
+            .compute_transformer_and_model(&op_info.method, &op_info.operation)
+            .map(|(expr, _)| expr);
 
-        Ok(v)
+        // Convert to ApiMethodBodyData
+        Ok(ApiMethodBodyData::from_core(&core_method_data, transformer))
     }
 
-    /// Convert a single ParameterInfo into TemplateParameterData using raw `Display` formatting
-    fn parameter_info_to_template_raw(&self, p: &ParameterInfo) -> TemplateParameterData {
-        TemplateParameterData {
-            name: p.name.clone(),
-            type_expr: Some(format!("{}", p.type_expr)),
-            optional: !p.required,
-        }
-    }
-
-    /// Generate method name from operation
-    fn generate_method_name(
-        &self,
-        path: &str,
-        operation: &Operation,
-        http_method: &Method,
-    ) -> String {
-        // Use operationId if available, otherwise generate from path and method
-        if let Some(operation_id) = &operation.operation_id {
-            operation_id.to_lower_camel_case()
-        } else {
-            // Generate from path and HTTP method
-            let path_parts: Vec<&str> = path.split('/').collect();
-            let mut method_name = String::new();
-
-            // Add HTTP method prefix
-            method_name.push_str(&http_method.as_str().to_lowercase());
-
-            // Add path parts
-            for part in path_parts {
-                if !part.is_empty() && !part.starts_with('{') {
-                    method_name.push_str(&part.to_pascal_case());
-                }
-            }
-
-            method_name.to_lower_camel_case()
-        }
+    /// Generate method name from operation info
+    fn generate_method_name_from_op_info(&self, op_info: &OperationInfo) -> String {
+        // Use the OperationInfoExt trait method which handles this logic
+        op_info.method_name()
     }
 
     /// Generate method parameters from operation
@@ -393,7 +334,6 @@ impl ApiClassGenerator {
         }
 
         // Add initOverrides parameter at the end
-        use std::collections::BTreeSet;
         let mut union: BTreeSet<TsExpression> = BTreeSet::new();
         union.insert(TsExpression::Reference("RequestInit".to_string()));
         union.insert(TsExpression::Reference("InitOverrideFunction".to_string()));
@@ -525,76 +465,5 @@ impl ApiClassGenerator {
             }
         }
         None
-    }
-
-    /// Generate implementation body for an API method using templates
-    pub fn generate_method_implementation(
-        &self,
-        method_name: &str,
-        http_method: &Method,
-        path: &str,
-        operation: &Operation,
-    ) -> Result<String, GeneratorError> {
-        // Use ParameterExtractor to get all parameters properly categorized
-        let extracted_params = self
-            .parameter_extractor
-            .extract_parameters(operation, path)?;
-
-        // Convert parameters to template format using the raw formatter helper
-        let template_path_params: Vec<TemplateParameterData> = extracted_params
-            .path_params
-            .iter()
-            .map(|p| self.parameter_info_to_template_raw(p))
-            .collect();
-
-        let template_query_params: Vec<TemplateParameterData> = extracted_params
-            .query_params
-            .iter()
-            .map(|p| self.parameter_info_to_template_raw(p))
-            .collect();
-
-        let template_header_params: Vec<TemplateParameterData> = extracted_params
-            .header_params
-            .iter()
-            .map(|p| self.parameter_info_to_template_raw(p))
-            .collect();
-
-        let template_body_param = extracted_params
-            .body_param
-            .as_ref()
-            .map(|p| self.parameter_info_to_template_raw(p));
-
-        // Create API method data for template
-        let api_method_data = ApiMethodData {
-            method_name: method_name.to_string(),
-            http_method: http_method.as_str().to_string(),
-            path: path.to_string(),
-            path_params: template_path_params,
-            query_params: template_query_params,
-            header_params: template_header_params,
-            body_param: template_body_param,
-            return_type: "Promise<ApiResponse>".to_string(),
-            has_auth: true,
-            has_error_handling: true,
-        };
-
-        // Generate method body using appropriate template
-        let template = match *http_method {
-            Method::GET => Template::ApiMethodGet(api_method_data),
-            Method::POST | Method::PUT | Method::PATCH => {
-                Template::ApiMethodPostPutPatch(api_method_data)
-            }
-            Method::DELETE => Template::ApiMethodDelete(api_method_data),
-            _ => Template::DefaultMethod,
-        };
-
-        let lines = self
-            .template_generator
-            .generate_lines(&template)
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("Template generation failed: {}", e),
-            })?;
-
-        Ok(lines.join("\n"))
     }
 }

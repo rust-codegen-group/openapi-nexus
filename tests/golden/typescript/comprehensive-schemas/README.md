@@ -1,12 +1,12 @@
-# open-api-client
+# comprehensive-schema-types-example
 
-OpenAPI TypeScript client
+Comprehensive test for all OpenAPI v3.1.2 schema types
 
 **Version:** 1.0.0
 
 ## Overview
 
-This package provides a TypeScript/JavaScript client for the OpenAPI Client API. It uses the native [Fetch API](https://fetch.spec.whatwg.org/) for HTTP requests and works in both Node.js and browser environments.
+This package provides a TypeScript/JavaScript client for the Comprehensive Schema Types Example API. It uses the native [Fetch API](https://fetch.spec.whatwg.org/) for HTTP requests and works in both Node.js and browser environments.
 
 ## Features
 
@@ -22,19 +22,19 @@ This package provides a TypeScript/JavaScript client for the OpenAPI Client API.
 ### From npm (published package)
 
 ```bash
-npm install open-api-client
+npm install comprehensive-schema-types-example
 ```
 
 ### From local path (development)
 
 ```bash
-npm install file:path/to/open-api-client
+npm install file:path/to/comprehensive-schema-types-example
 ```
 
 ## Quick Start
 
 ```typescript
-import { Configuration, DefaultApi } from 'open-api-client';
+import { Configuration, DefaultApi } from 'comprehensive-schema-types-example';
 
 // Create a configuration
 const config = new Configuration({
@@ -100,7 +100,7 @@ const config = new Configuration({
 Add custom middleware to intercept requests and responses:
 
 ```typescript
-import { Configuration, Middleware } from 'open-api-client';
+import { Configuration, Middleware } from 'comprehensive-schema-types-example';
 
 const loggingMiddleware: Middleware = {
   pre: async (context) => {
@@ -128,7 +128,7 @@ const config = new Configuration({
 The client throws typed errors for different failure scenarios:
 
 ```typescript
-import { ResponseError, FetchError, RequiredError } from 'open-api-client';
+import { ResponseError, FetchError, RequiredError } from 'comprehensive-schema-types-example';
 
 try {
   const result = await api.someMethod();
@@ -183,7 +183,7 @@ npm run build:esm
 This package includes TypeScript type definitions. No additional `@types` package is needed.
 
 ```typescript
-import type { User, CreateUserRequest } from 'open-api-client';
+import type { User, CreateUserRequest } from 'comprehensive-schema-types-example';
 
 const user: User = {
   id: 1,

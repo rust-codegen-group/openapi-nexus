@@ -1,11 +1,23 @@
 {
-  "description": "OpenAPI TypeScript client",
+  "description": "Comprehensive test for all OpenAPI v3.1.2 schema types",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
-  "main": "./src/index.ts",
-  "name": "openapi-client",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "comprehensive-schema-types-example",
   "type": "module",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "version": "1.0.0"
 }

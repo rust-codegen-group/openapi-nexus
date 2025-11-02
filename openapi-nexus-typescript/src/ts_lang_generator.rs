@@ -1,19 +1,23 @@
 //! Main TypeScript code generator
 
 use std::collections::{HashMap, HashSet};
-use std::fs;
+use std::error::Error;
+use std::{fs, path};
 
+use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 use tracing::warn;
+use utoipa::openapi;
 use utoipa::openapi::OpenApi;
-use utoipa::openapi::path::Operation;
 
-use crate::config::GeneratorConfig;
+use crate::config::TsConfig;
 use crate::core::GeneratorError;
-use crate::generator::api_class_generator::ApiClassGenerator;
-use crate::generator::file_generator::TypeScriptFileGenerator;
-use crate::generator::runtime_generator::RuntimeGenerator;
-use crate::generator::schema_context::SchemaContext;
-use crate::generator::schema_generator::SchemaGenerator;
+use crate::generator::{
+    api_class_generator::ApiClassGenerator, package_files_generator::PackageFilesGenerator,
+    schema_context::SchemaContext, schema_generator::SchemaGenerator,
+};
+use crate::templating::{TemplateName, Templates};
+use openapi_nexus_core::NamingConvention;
+use openapi_nexus_core::data::{ApiMethodData, ModelData, RuntimeData};
 use openapi_nexus_core::generator_registry::LanguageGenerator;
 use openapi_nexus_core::traits::code_generator::LanguageCodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileCategory, FileInfo, FileWriter};
@@ -23,173 +27,349 @@ use openapi_nexus_core::traits::file_writer::{FileCategory, FileInfo, FileWriter
 pub struct TsLangGenerator {
     schema_generator: SchemaGenerator,
     api_class_generator: ApiClassGenerator,
-    runtime_generator: RuntimeGenerator,
-    file_generator: TypeScriptFileGenerator,
+    config: TsConfig,
+    templating: Templates,
 }
 
 impl TsLangGenerator {
     /// Create a new TypeScript generator
-    pub fn new(config: GeneratorConfig) -> Self {
-        let max_line_width = config.file_config.max_line_width;
-
+    pub fn new(config: TsConfig) -> Self {
         Self {
             schema_generator: SchemaGenerator,
-            api_class_generator: ApiClassGenerator::new(max_line_width),
-            runtime_generator: RuntimeGenerator::new(max_line_width),
-            file_generator: TypeScriptFileGenerator::new(
-                config.file_config.clone(),
-                config.package_config.clone(),
-            ),
+            api_class_generator: ApiClassGenerator::new(),
+            config,
+            templating: Templates::new(),
         }
     }
 
-    /// Generate multiple TypeScript files from OpenAPI specification
-    pub fn generate_files(&self, openapi: &OpenApi) -> Result<Vec<FileInfo>, GeneratorError> {
-        let mut file_infos = Vec::new();
-        let mut schemas = HashMap::new();
+    // Helper methods
 
-        // Create a file generator with OpenAPI metadata for enhanced headers
-        let file_generator_with_metadata = TypeScriptFileGenerator::with_openapi(
-            self.file_generator.file_config.clone(),
-            self.file_generator.package_config.clone(),
-            openapi,
-        );
-
-        // Generate interfaces and types from schemas
-        if let Some(components) = &openapi.components {
-            // Create schema context for reference resolution
-            let mut visited = HashSet::new();
-            let mut context = SchemaContext::new(&components.schemas, &mut visited);
-
-            for (name, schema_ref) in &components.schemas {
-                match self
-                    .schema_generator
-                    .schema_to_ts_node(name, schema_ref, &mut context)
-                {
-                    Ok(node) => {
-                        schemas.insert(name.clone(), node);
-                    }
-                    Err(e) => {
-                        warn!("Failed to convert schema {}: {}", name, e);
-                    }
-                }
-            }
-        }
-
-        // Generate API classes per tag
-        let tag_operations = self.collect_operations_by_tag(openapi);
-
-        // Generate API class for each tag
-        for (tag, operations) in tag_operations {
-            let api_class = self
-                .api_class_generator
-                .generate_api_class(&tag, &operations)?;
-            let class_name = format!("{}Api", self.to_pascal_case(&tag));
-            schemas.insert(class_name, api_class);
-        }
-
-        // Generate files using file generator with metadata
-        let generated_files = file_generator_with_metadata
-            .generate_files(&schemas, openapi)
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("File generation error: {}", e),
-            })?;
-
-        // Convert GeneratedFile to FileInfo with proper categories
-        for file in generated_files {
-            let file_info = FileInfo::new(
-                file.filename,
-                file.content,
-                FileCategory::from(file.file_category),
-            );
-            file_infos.push(file_info);
-        }
-
-        // Generate runtime files
-        let runtime_files = self.runtime_generator.generate_runtime_files(openapi)?; // Re-enabled with OpenAPI context
-        for file in runtime_files {
-            // Convert GeneratedFile to FileInfo
-            let file_info = FileInfo::new(
-                file.filename,
-                file.content,
-                FileCategory::from(file.file_category),
-            );
-            file_infos.push(file_info);
-        }
-
-        Ok(file_infos)
-    }
-
-    /// Collect all operations grouped by their tags
-    fn collect_operations_by_tag(
+    /// Extract OpenAPI metadata for file headers
+    fn get_openapi_metadata(
         &self,
         openapi: &OpenApi,
-    ) -> HashMap<String, Vec<(String, String, Operation)>> {
-        let mut tag_operations = HashMap::new();
-        let default_tags = vec!["default".to_string()];
+    ) -> (Option<String>, Option<String>, Option<String>) {
+        (
+            Some(openapi.info.title.clone()),
+            openapi.info.description.clone(),
+            Some(openapi.info.version.clone()),
+        )
+    }
 
-        for (path, path_item) in &openapi.paths.paths {
-            // Define HTTP methods and their corresponding operations
-            let methods = [
-                ("GET", path_item.get.as_ref()),
-                ("POST", path_item.post.as_ref()),
-                ("PUT", path_item.put.as_ref()),
-                ("DELETE", path_item.delete.as_ref()),
-                ("PATCH", path_item.patch.as_ref()),
-                ("OPTIONS", path_item.options.as_ref()),
-                ("HEAD", path_item.head.as_ref()),
-            ];
+    /// Generate TypeScript nodes from model data
+    fn generate_model_nodes(
+        &self,
+        models: Vec<ModelData>,
+        components: &openapi::Components,
+    ) -> HashMap<String, crate::ast::TsNode> {
+        let mut schemas = HashMap::new();
+        let mut visited = HashSet::new();
+        let mut context = SchemaContext::new(&components.schemas, &mut visited);
 
-            for (method, operation_opt) in methods {
-                if let Some(operation) = operation_opt {
-                    let tags = operation.tags.as_ref().unwrap_or(&default_tags);
-                    for tag in tags {
-                        tag_operations
-                            .entry(tag.clone())
-                            .or_insert_with(Vec::new)
-                            .push((path.clone(), method.to_string(), operation.clone()));
-                    }
+        for model in models {
+            match self
+                .schema_generator
+                .schema_to_ts_node(&model.name, &model.schema, &mut context)
+            {
+                Ok(node) => {
+                    schemas.insert(model.name, node);
+                }
+                Err(e) => {
+                    warn!("Failed to convert schema {}: {}", model.name, e);
                 }
             }
         }
 
-        tag_operations
+        schemas
     }
 
-    /// Convert to PascalCase efficiently
-    fn to_pascal_case(&self, s: &str) -> String {
-        if s.is_empty() {
-            return String::new();
+    /// Generate filename based on naming convention
+    fn generate_filename(&self, name: &str) -> String {
+        let base_name = match self.config.naming_convention {
+            NamingConvention::CamelCase => name.to_lower_camel_case(),
+            NamingConvention::KebabCase => name.to_kebab_case(),
+            NamingConvention::SnakeCase => name.to_snake_case(),
+            NamingConvention::PascalCase => name.to_pascal_case(),
+        };
+
+        format!("{}.ts", base_name)
+    }
+
+    /// Generate files for all schemas with proper directory structure
+    fn generate_files(
+        &self,
+        api_classes: &HashMap<String, FileInfo>,
+        schemas: &HashMap<String, crate::ast::TsNode>,
+        openapi: &OpenApi,
+    ) -> Result<Vec<FileInfo>, GeneratorError> {
+        let mut files = Vec::new();
+
+        // Generate models files
+        let (title, description, version) = self.get_openapi_metadata(openapi);
+        for (name, node) in schemas {
+            let filename = self.generate_filename(name);
+
+            // Emit model content using template
+            let content = match node {
+                crate::ast::TsNode::TypeDefinition(type_def) => self
+                    .templating
+                    .emit_model(
+                        type_def,
+                        title.as_deref(),
+                        description.as_deref(),
+                        version.as_deref(),
+                    )
+                    .map_err(|e| GeneratorError::Generic {
+                        message: format!("Failed to emit model {}: {}", name, e),
+                    })?,
+                _ => {
+                    return Err(GeneratorError::Generic {
+                        message: format!("Unsupported node type for model: {:?}", node),
+                    });
+                }
+            };
+
+            files.push(FileInfo::model(filename, content));
         }
 
-        let mut result = String::with_capacity(s.len());
-        let mut chars = s.chars();
+        // Add API class files (already rendered)
+        files.extend(api_classes.values().cloned());
 
-        // Handle first character
-        if let Some(first) = chars.next() {
-            result.push(first.to_uppercase().next().unwrap());
+        // Generate subdirectory index files
+        files.push(self.generate_apis_index_file(api_classes)?);
+        files.push(self.generate_models_index_file(schemas)?);
+
+        // Generate main index.ts
+        files.push(self.generate_main_index_file());
+
+        // Generate package files if configured
+        if self.config.generate_package {
+            let package_files = self.generate_package_files(openapi)?;
+            files.extend(package_files);
         }
 
-        // Handle remaining characters
-        for c in chars {
-            if c.is_alphanumeric() {
-                result.push(c.to_lowercase().next().unwrap());
-            }
+        Ok(files)
+    }
+
+    /// Generate apis/index.ts file
+    fn generate_apis_index_file(
+        &self,
+        api_classes: &HashMap<String, FileInfo>,
+    ) -> Result<FileInfo, GeneratorError> {
+        let mut exports = Vec::new();
+
+        let mut sorted_api_vec: Vec<(&String, &FileInfo)> = api_classes.iter().collect();
+        sorted_api_vec.sort_by(|a, b| a.0.cmp(b.0));
+        for (_, file_info) in sorted_api_vec {
+            let import_name = file_info.filename.trim_end_matches(".ts");
+            exports.push(format!("export * from './{}';", import_name));
         }
 
-        result
+        Ok(FileInfo::new(
+            "apis/index.ts".to_string(),
+            exports.join("\n"),
+            FileCategory::ProjectFiles,
+        ))
+    }
+
+    /// Generate models/index.ts file
+    fn generate_models_index_file(
+        &self,
+        schemas: &HashMap<String, crate::ast::TsNode>,
+    ) -> Result<FileInfo, GeneratorError> {
+        let mut exports = Vec::new();
+
+        let mut sorted_names: Vec<&String> = schemas.keys().collect();
+        sorted_names.sort();
+        for name in sorted_names {
+            let filename = self.generate_filename(name);
+            let import_name = filename.trim_end_matches(".ts");
+            exports.push(format!("export * from './{}';", import_name));
+        }
+
+        Ok(FileInfo::new(
+            "models/index.ts".to_string(),
+            exports.join("\n"),
+            FileCategory::ProjectFiles,
+        ))
+    }
+
+    /// Generate main index.ts file
+    fn generate_main_index_file(&self) -> FileInfo {
+        let exports = [
+            // Export runtime files from runtime directory
+            "export * from './runtime/api';".to_string(),
+            "export * from './runtime/config';".to_string(),
+            "export * from './runtime/core';".to_string(),
+            // Export all from apis and models
+            "export * from './apis';".to_string(),
+            "export * from './models';".to_string(),
+        ];
+
+        FileInfo::new(
+            "index.ts".to_string(),
+            exports.join("\n"),
+            FileCategory::ProjectFiles,
+        )
+    }
+
+    /// Generate package files (package.json, tsconfig.json, etc.)
+    fn generate_package_files(
+        &self,
+        openapi: &OpenApi,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        if !self.config.generate_package {
+            return Ok(Vec::new());
+        }
+
+        let package_generator = PackageFilesGenerator::new(&self.config);
+
+        let mut files = vec![
+            package_generator.generate_package_json(openapi),
+            package_generator.generate_tsconfig(openapi),
+        ];
+        if self.config.generate_esm_config {
+            files.push(package_generator.generate_tsconfig_esm(openapi));
+        }
+
+        Ok(files)
     }
 }
 
 impl LanguageGenerator for TsLangGenerator {}
 
 impl LanguageCodeGenerator for TsLangGenerator {
-    fn generate(
+    fn language(&self) -> String {
+        "typescript".to_string()
+    }
+
+    fn framework(&self) -> String {
+        "fetch".to_string()
+    }
+
+    fn generate_apis(
         &self,
         openapi: &OpenApi,
-    ) -> Result<Vec<FileInfo>, Box<dyn std::error::Error + Send + Sync>> {
-        self.generate_files(openapi)
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
+        _apis: Vec<ApiMethodData>,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let operations_by_tag = self.collect_operations_by_tag(openapi);
+        let (title, description, version) = self.get_openapi_metadata(openapi);
+
+        let mut api_classes_map = HashMap::new();
+        for (tag, operations) in operations_by_tag {
+            if !operations.is_empty() {
+                let file_info = self
+                    .api_class_generator
+                    .generate_api_class(
+                        &tag,
+                        &operations,
+                        &self.templating,
+                        title.as_deref(),
+                        description.as_deref(),
+                        version.as_deref(),
+                    )
+                    .map_err(|e| GeneratorError::Generic {
+                        message: format!("Failed to generate API class for tag {}: {}", tag, e),
+                    })?;
+                api_classes_map.insert(tag, file_info);
+            }
+        }
+
+        let generated_files = self
+            .generate_files(&api_classes_map, &HashMap::new(), openapi)
+            .map_err(|e| GeneratorError::Generic {
+                message: format!("File generation error: {}", e),
+            })?;
+
+        // Filter to only get API files (index files are in ProjectFiles category)
+        let file_infos: Vec<FileInfo> = generated_files
+            .into_iter()
+            .filter(|file| file.category == FileCategory::Apis)
+            .collect();
+
+        Ok(file_infos)
+    }
+
+    fn generate_models(
+        &self,
+        openapi: &OpenApi,
+        models: Vec<ModelData>,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let schemas = if let Some(components) = &openapi.components {
+            self.generate_model_nodes(models, components)
+        } else {
+            HashMap::new()
+        };
+
+        let generated_files = self
+            .generate_files(&HashMap::new(), &schemas, openapi)
+            .map_err(|e| GeneratorError::Generic {
+                message: format!("File generation error: {}", e),
+            })?;
+
+        // Filter to only get model files (index files are in ProjectFiles category)
+        let file_infos: Vec<FileInfo> = generated_files
+            .into_iter()
+            .filter(|file| file.category == FileCategory::Models)
+            .collect();
+
+        Ok(file_infos)
+    }
+
+    fn generate_runtime(
+        &self,
+        openapi: &OpenApi,
+        runtime_data: RuntimeData,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let (title, description, version) = self.get_openapi_metadata(openapi);
+        let header_obj = minijinja::context! {
+            title => title,
+            description => description,
+            version => version,
+        };
+        let template_context = minijinja::context! {
+            base_path => runtime_data.base_path,
+            header => header_obj,
+        };
+        let file = self
+            .templating
+            .render_template(
+                TemplateName::Runtime,
+                "runtime.ts",
+                template_context,
+            )
+            .map_err(|e| GeneratorError::Generic {
+                message: format!("Failed to render runtime template: {}", e),
+            })?;
+
+        Ok(vec![file])
+    }
+
+    fn generate_project_files(
+        &self,
+        openapi: &OpenApi,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let mut files = Vec::new();
+
+        // Generate package files (package.json, tsconfig.json, etc.)
+        files.extend(self.generate_package_files(openapi)?);
+        // Generate main index.ts (empty HashMaps since we don't need the data for exports)
+        files.push(self.generate_main_index_file());
+
+        Ok(files)
+    }
+
+    fn generate_readme(
+        &self,
+        #[allow(unused)] openapi: &OpenApi,
+        #[allow(unused)] data: openapi_nexus_core::data::ReadmeData,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let file = self.templating.render_template(
+            TemplateName::Readme,
+            "README.md",
+            minijinja::Value::from_serialize(data),
+        )?;
+        Ok(vec![file])
     }
 }
 
@@ -198,16 +378,16 @@ impl FileWriter for TsLangGenerator {
         &self,
         output_dir: &std::path::Path,
         files: &[FileInfo],
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         // Use custom implementation that handles subdirectories properly
         self.write_files_by_category(output_dir, files)
     }
 
     fn write_files_by_category(
         &self,
-        output_dir: &std::path::Path,
+        output_dir: &path::Path,
         files: &[FileInfo],
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         // Group files by category
         let mut files_by_category: HashMap<FileCategory, Vec<&FileInfo>> = HashMap::new();
         for file in files {
@@ -220,6 +400,8 @@ impl FileWriter for TsLangGenerator {
         // Write files for each category
         for (category, category_files) in files_by_category {
             let category_dir = match category {
+                FileCategory::None => continue,
+                FileCategory::Readme => output_dir.to_path_buf(),
                 FileCategory::Apis => output_dir.join("apis"),
                 FileCategory::Models => output_dir.join("models"),
                 FileCategory::ProjectFiles => output_dir.to_path_buf(),

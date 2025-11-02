@@ -1,11 +1,23 @@
 {
-  "description": "OpenAPI TypeScript client",
+  "description": "This is a sample Pet Store Server based on the OpenAPI 3.1 specification",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
-  "main": "./src/index.ts",
-  "name": "openapi-client",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "petstore-api",
   "type": "module",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "version": "1.0.0"
 }

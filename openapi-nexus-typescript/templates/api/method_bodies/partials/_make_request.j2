@@ -1,0 +1,9 @@
+{% set data = method.body_data %}
+// Make request
+const response = await this.request({
+    path: urlPath,
+    method: '{{ data.http_method }}',
+    headers: headerParameters,
+    query: queryParameters,
+    body,
+}, initOverrides);

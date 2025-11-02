@@ -1,0 +1,3 @@
+{% set data = method.body_data %}
+// Prepare request body
+const body = {% if data.body_param %}{{ data.body_param.name }}{% else %}undefined{% endif %};

@@ -1,12 +1,12 @@
-# open-api-client
+# minimal-api
 
-OpenAPI TypeScript client
+Generated API client
 
 **Version:** 1.0.0
 
 ## Overview
 
-This package provides a TypeScript/JavaScript client for the OpenAPI Client API. It uses the native [Fetch API](https://fetch.spec.whatwg.org/) for HTTP requests and works in both Node.js and browser environments.
+This package provides a TypeScript/JavaScript client for the Minimal API API. It uses the native [Fetch API](https://fetch.spec.whatwg.org/) for HTTP requests and works in both Node.js and browser environments.
 
 ## Features
 
@@ -22,19 +22,19 @@ This package provides a TypeScript/JavaScript client for the OpenAPI Client API.
 ### From npm (published package)
 
 ```bash
-npm install open-api-client
+npm install minimal-api
 ```
 
 ### From local path (development)
 
 ```bash
-npm install file:path/to/open-api-client
+npm install file:path/to/minimal-api
 ```
 
 ## Quick Start
 
 ```typescript
-import { Configuration, DefaultApi } from 'open-api-client';
+import { Configuration, DefaultApi } from 'minimal-api';
 
 // Create a configuration
 const config = new Configuration({
@@ -100,7 +100,7 @@ const config = new Configuration({
 Add custom middleware to intercept requests and responses:
 
 ```typescript
-import { Configuration, Middleware } from 'open-api-client';
+import { Configuration, Middleware } from 'minimal-api';
 
 const loggingMiddleware: Middleware = {
   pre: async (context) => {
@@ -128,7 +128,7 @@ const config = new Configuration({
 The client throws typed errors for different failure scenarios:
 
 ```typescript
-import { ResponseError, FetchError, RequiredError } from 'open-api-client';
+import { ResponseError, FetchError, RequiredError } from 'minimal-api';
 
 try {
   const result = await api.someMethod();
@@ -183,7 +183,7 @@ npm run build:esm
 This package includes TypeScript type definitions. No additional `@types` package is needed.
 
 ```typescript
-import type { User, CreateUserRequest } from 'open-api-client';
+import type { User, CreateUserRequest } from 'minimal-api';
 
 const user: User = {
   id: 1,

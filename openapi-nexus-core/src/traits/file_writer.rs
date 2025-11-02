@@ -6,6 +6,11 @@ use std::fs;
 /// File category for organizing generated files
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FileCategory {
+    /// Represents files without a category. Used internally.
+    /// These files are not written to the output directory.
+    None,
+    /// README or documentation files (e.g., README.md)
+    Readme,
     /// API client classes
     Apis,
     /// Data models and schemas
@@ -32,6 +37,16 @@ impl FileInfo {
             content,
             category,
         }
+    }
+
+    /// Create a new FileInfo without a category
+    pub fn none(filename: String, content: String) -> Self {
+        Self::new(filename, content, FileCategory::None)
+    }
+
+    /// Create a new FileInfo for README files
+    pub fn readme(filename: String, content: String) -> Self {
+        Self::new(filename, content, FileCategory::Readme)
     }
 
     /// Create a new FileInfo for API files
@@ -82,6 +97,8 @@ pub trait FileWriter {
         // Write files for each category
         for (category, category_files) in files_by_category {
             let category_dir = match category {
+                FileCategory::None => continue,
+                FileCategory::Readme => output_dir.to_path_buf(),
                 FileCategory::Apis => output_dir.join("apis"),
                 FileCategory::Models => output_dir.join("models"),
                 FileCategory::ProjectFiles => output_dir.to_path_buf(),

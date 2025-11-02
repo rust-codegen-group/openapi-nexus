@@ -1,8 +1,9 @@
 //! Template-based code generation for TypeScript
 
 pub mod data;
+pub mod environment;
 pub mod filters;
 pub mod functions;
-pub mod templating_emitter;
+pub mod templates;
 
-pub use templating_emitter::TemplatingEmitter;
+pub use templates::{TemplateName, Templates};

@@ -141,7 +141,7 @@ impl TsTypeEmitter {
                     .map(|p| {
                         p.to_rcdoc_with_context(&EmissionContext {
                             indent: indent_level,
-                            max_line_width: 80,
+                            max_line_width: crate::config::MAX_LINE_WIDTH,
                         })
                     })
                     .collect();
