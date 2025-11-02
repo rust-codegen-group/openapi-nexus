@@ -12,3 +12,4 @@
  */
 /** 32-bit integer */
 export type Integer32 = number
+

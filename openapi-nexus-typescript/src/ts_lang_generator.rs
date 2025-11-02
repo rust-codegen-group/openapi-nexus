@@ -44,8 +44,6 @@ impl TsLangGenerator {
 
     // Helper methods
 
-    /// Extract OpenAPI metadata for file headers
-
     /// Generate TypeScript type definitions from model data
     fn generate_model_type_definitions(
         &self,

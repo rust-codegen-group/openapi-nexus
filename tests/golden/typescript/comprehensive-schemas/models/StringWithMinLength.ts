@@ -12,3 +12,4 @@
  */
 /** String with minimum length */
 export type StringWithMinLength = string
+

@@ -12,3 +12,4 @@
  */
 /** Basic number type */
 export type NumberType = number
+

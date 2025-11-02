@@ -12,3 +12,4 @@
  */
 /** Nullable string type (OpenAPI 3.1.2 style) */
 export type NullableString = string | null
+

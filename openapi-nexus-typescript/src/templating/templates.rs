@@ -309,10 +309,53 @@ impl Templates {
     ) -> Result<String, EmitError> {
         let type_def = type_def.clone();
 
-        let template_data = context! {
-            type_definition => type_def,
-            header,
+        // Prepare helper data for Interface types
+        let helper_data = match &type_def {
+            TsTypeDefinition::Interface(interface) => {
+                // Prepare required properties
+                let required_props: Vec<String> = interface
+                    .properties
+                    .iter()
+                    .filter(|p| !p.optional)
+                    .map(|p| p.name.clone())
+                    .filter(|name| !name.starts_with('['))
+                    .collect();
+
+                // Prepare properties with metadata
+                let properties: Vec<serde_json::Value> = interface
+                    .properties
+                    .iter()
+                    .map(|p| {
+                        serde_json::json!({
+                            "name": p.name,
+                            "optional": p.optional,
+                            "is_index_signature": p.name.starts_with('['),
+                        })
+                    })
+                    .collect();
+
+                Some(serde_json::json!({
+                    "name": interface.signature.name,
+                    "required_props": required_props,
+                    "properties": properties,
+                }))
+            }
+            _ => None,
         };
+
+        let mut template_data = context! {
+            header,
+            type_definition => type_def,
+        };
+
+        // Add helper data to context if available
+        if let Some(helpers) = helper_data {
+            template_data = context! {
+                header,
+                type_definition => type_def,
+                helper_data => helpers,
+            };
+        }
 
         // Get the model template and render directly
         let template = self

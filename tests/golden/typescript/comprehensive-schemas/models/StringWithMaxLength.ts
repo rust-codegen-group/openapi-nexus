@@ -12,3 +12,4 @@
  */
 /** String with maximum length */
 export type StringWithMaxLength = string
+

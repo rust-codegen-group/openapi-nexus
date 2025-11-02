@@ -12,3 +12,4 @@
  */
 /** Double precision floating point */
 export type DoubleType = number
+

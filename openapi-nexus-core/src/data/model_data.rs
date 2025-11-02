@@ -3,7 +3,7 @@
 use utoipa::openapi::RefOr;
 use utoipa::openapi::schema::Schema;
 
-/// Model data (placeholder - to be defined based on language needs)
+/// Model data
 #[derive(Clone)]
 pub struct ModelData {
     pub name: String,
