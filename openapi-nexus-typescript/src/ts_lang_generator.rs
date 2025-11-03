@@ -13,7 +13,7 @@ use crate::ast::TsTypeDefinition;
 use crate::config::TsConfig;
 use crate::core::GeneratorError;
 use crate::generator::{
-    api_class_generator::ApiClassGenerator, package_files_generator::PackageFilesGenerator,
+    api_operation_generator::ApiOperationGenerator, package_files_generator::PackageFilesGenerator,
     schema_context::SchemaContext, schema_generator::SchemaGenerator,
 };
 use crate::templating::data::{
@@ -31,7 +31,7 @@ use openapi_nexus_core::traits::file_writer::{FileCategory, FileInfo, FileWriter
 #[derive(Debug, Clone)]
 pub struct TsLangGenerator {
     schema_generator: SchemaGenerator,
-    api_class_generator: ApiClassGenerator,
+    api_operation_generator: ApiOperationGenerator,
     config: TsConfig,
     templating: Templates,
 }
@@ -41,7 +41,7 @@ impl TsLangGenerator {
     pub fn new(config: TsConfig) -> Self {
         Self {
             schema_generator: SchemaGenerator,
-            api_class_generator: ApiClassGenerator::new(),
+            api_operation_generator: ApiOperationGenerator::new(),
             config,
             templating: Templates::new(),
         }
@@ -221,6 +221,7 @@ impl LanguageCodeGenerator for TsLangGenerator {
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let operations_by_tag = self.collect_operations_by_tag(openapi);
         let header_data = HeaderData::from_openapi(openapi);
+        let common_file_header = CommonFileHeaderData::from(header_data);
 
         let mut api_classes_map = HashMap::new();
         let mut files = Vec::new();
@@ -229,15 +230,8 @@ impl LanguageCodeGenerator for TsLangGenerator {
         for (tag, operations) in operations_by_tag {
             if !operations.is_empty() {
                 let file_info = self
-                    .api_class_generator
-                    .generate_api_class(
-                        &tag,
-                        &operations,
-                        &self.templating,
-                        Some(&header_data.title),
-                        header_data.description.as_deref(),
-                        Some(&header_data.version),
-                    )
+                    .api_operation_generator
+                    .generate_api_class(&tag, &operations, &self.templating, &common_file_header)
                     .map_err(|e| GeneratorError::Generic {
                         message: format!("Failed to generate API class for tag {}: {}", tag, e),
                     })?;

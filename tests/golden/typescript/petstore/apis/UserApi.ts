@@ -18,32 +18,32 @@ import { UserFromJSON } from '../models/User';
 export interface UserApiInterface {
   /** Create user */
   createUserRaw: (body: User, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<User>>;
+  /** Creates list of users with given input array */
+  createUsersWithListInputRaw: (body: Array<string>, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<User>>;
+  /** Logs user into the system */
+  loginUserRaw: (username?: string, password?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
+  /** Logs out current logged in user session */
+  logoutUserRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
+  /** Get user by user name */
+  getUserByNameRaw: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<User>>;
+  /** Update user */
+  updateUserRaw: (username: string, body: User, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
+  /** Delete user */
+  deleteUserRaw: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
   /** Create user */
   createUser: (body: User, initOverrides?: InitOverrideFunction | RequestInit) => Promise<User>;
   /** Creates list of users with given input array */
-  createUsersWithListInputRaw: (body: Array<string>, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<User>>;
-  /** Creates list of users with given input array */
   createUsersWithListInput: (body: Array<string>, initOverrides?: InitOverrideFunction | RequestInit) => Promise<User>;
-  /** Logs user into the system */
-  loginUserRaw: (username?: string, password?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
+  /** Delete user */
+  deleteUser: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
+  /** Get user by user name */
+  getUserByName: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<User>;
   /** Logs user into the system */
   loginUser: (username?: string, password?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
   /** Logs out current logged in user session */
-  logoutUserRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
-  /** Logs out current logged in user session */
   logoutUser: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
-  /** Get user by user name */
-  getUserByNameRaw: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<User>>;
-  /** Get user by user name */
-  getUserByName: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<User>;
-  /** Update user */
-  updateUserRaw: (username: string, body: User, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
   /** Update user */
   updateUser: (username: string, body: User, initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
-  /** Delete user */
-  deleteUserRaw: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
-  /** Delete user */
-  deleteUser: (username: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
 }
 
 export class UserApi extends BaseAPI implements UserApiInterface {
@@ -75,13 +75,11 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => UserFromJSON(jsonValue));
   }
-
   /** Create user */
-  async createUser(body: User, initOverrides?: InitOverrideFunction | RequestInit): Promise<User> {
-      const response = await this.createUserRaw(body, initOverrides);
-      return await response.value();
+  async createUser(body: {"Reference": "User"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<User> {
+    const response = await this.createUserRaw(body, initOverrides);
+    return await response.value();
   }
-
   /** Creates list of users with given input array */
   async createUsersWithListInputRaw(body: Array<string>, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<User>> {
     // Build path with path parameters
@@ -103,13 +101,11 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => UserFromJSON(jsonValue));
   }
-
   /** Creates list of users with given input array */
-  async createUsersWithListInput(body: Array<string>, initOverrides?: InitOverrideFunction | RequestInit): Promise<User> {
-      const response = await this.createUsersWithListInputRaw(body, initOverrides);
-      return await response.value();
+  async createUsersWithListInput(body: {"Array": {"Primitive": "String"}}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<User> {
+    const response = await this.createUsersWithListInputRaw(body, initOverrides);
+    return await response.value();
   }
-
   /** Logs user into the system */
   async loginUserRaw(username?: string, password?: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
     // Build path with path parameters
@@ -133,13 +129,11 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-
   /** Logs user into the system */
-  async loginUser(username?: string, password?: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<void> {
-      const response = await this.loginUserRaw(username, password, initOverrides);
-      return await response.value();
+  async loginUser(username: {"Primitive": "String"}?, password: {"Primitive": "String"}?, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+    const response = await this.loginUserRaw(username, password, initOverrides);
+    return await response.value();
   }
-
   /** Logs out current logged in user session */
   async logoutUserRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
     // Build path with path parameters
@@ -159,13 +153,11 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-
   /** Logs out current logged in user session */
-  async logoutUser(initOverrides?: InitOverrideFunction | RequestInit): Promise<void> {
-      const response = await this.logoutUserRaw(initOverrides);
-      return await response.value();
+  async logoutUser(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+    const response = await this.logoutUserRaw(initOverrides);
+    return await response.value();
   }
-
   /** Get user by user name */
   async getUserByNameRaw(username: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<User>> {
     // Build path with path parameters
@@ -185,13 +177,11 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => UserFromJSON(jsonValue));
   }
-
   /** Get user by user name */
-  async getUserByName(username: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<User> {
-      const response = await this.getUserByNameRaw(username, initOverrides);
-      return await response.value();
+  async getUserByName(username: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<User> {
+    const response = await this.getUserByNameRaw(username, initOverrides);
+    return await response.value();
   }
-
   /** Update user */
   async updateUserRaw(username: string, body: User, initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
     // Build path with path parameters
@@ -213,13 +203,11 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-
   /** Update user */
-  async updateUser(username: string, body: User, initOverrides?: InitOverrideFunction | RequestInit): Promise<void> {
-      const response = await this.updateUserRaw(username, body, initOverrides);
-      return await response.value();
+  async updateUser(username: {"Primitive": "String"}, body: {"Reference": "User"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+    const response = await this.updateUserRaw(username, body, initOverrides);
+    return await response.value();
   }
-
   /** Delete user */
   async deleteUserRaw(username: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
     // Build path with path parameters
@@ -239,10 +227,8 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     }, initOverrides);
     return new VoidApiResponse(response);
   }
-
   /** Delete user */
-  async deleteUser(username: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<void> {
-      const response = await this.deleteUserRaw(username, initOverrides);
-      return await response.value();
-  }
-}
+  async deleteUser(username: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+    const response = await this.deleteUserRaw(username, initOverrides);
+    return await response.value();
+  }}

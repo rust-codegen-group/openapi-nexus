@@ -19,34 +19,34 @@ import { PetFromJSON } from '../models/Pet';
 export interface PetApiInterface {
   /** Add a new pet to the store */
   addPetRaw: (body: Pet, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Pet>>;
-  /** Add a new pet to the store */
-  addPet: (body: Pet, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Pet>;
   /** Update an existing pet */
   updatePetRaw: (body: Pet, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Pet>>;
-  /** Update an existing pet */
-  updatePet: (body: Pet, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Pet>;
   /** Find pets by status */
   findPetsByStatusRaw: (status: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
+  /** Find pets by tags */
+  findPetsByTagsRaw: (tags: Array<string>, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
+  /** Find pet by ID */
+  getPetByIdRaw: (petId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Pet>>;
+  /** Update a pet in the store with form data */
+  updatePetWithFormRaw: (petId: string, name?: string, status?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Pet>>;
+  /** Delete a pet */
+  deletePetRaw: (petId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
+  /** Upload an image */
+  uploadFileRaw: (petId: string, additionalMetadata?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<ApiResponse>>;
+  /** Add a new pet to the store */
+  addPet: (body: Pet, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Pet>;
+  /** Delete a pet */
+  deletePet: (petId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
   /** Find pets by status */
   findPetsByStatus: (status: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<string>>;
   /** Find pets by tags */
-  findPetsByTagsRaw: (tags: Array<string>, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
-  /** Find pets by tags */
   findPetsByTags: (tags: Array<string>, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<string>>;
   /** Find pet by ID */
-  getPetByIdRaw: (petId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Pet>>;
-  /** Find pet by ID */
   getPetById: (petId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Pet>;
-  /** Update a pet in the store with form data */
-  updatePetWithFormRaw: (petId: string, name?: string, status?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Pet>>;
+  /** Update an existing pet */
+  updatePet: (body: Pet, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Pet>;
   /** Update a pet in the store with form data */
   updatePetWithForm: (petId: string, name?: string, status?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Pet>;
-  /** Delete a pet */
-  deletePetRaw: (petId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
-  /** Delete a pet */
-  deletePet: (petId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
-  /** Upload an image */
-  uploadFileRaw: (petId: string, additionalMetadata?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<ApiResponse>>;
   /** Upload an image */
   uploadFile: (petId: string, additionalMetadata?: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<ApiResponse>;
 }
@@ -80,13 +80,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
-
   /** Add a new pet to the store */
-  async addPet(body: Pet, initOverrides?: InitOverrideFunction | RequestInit): Promise<Pet> {
-      const response = await this.addPetRaw(body, initOverrides);
-      return await response.value();
+  async addPet(body: {"Reference": "Pet"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+    const response = await this.addPetRaw(body, initOverrides);
+    return await response.value();
   }
-
   /** Update an existing pet */
   async updatePetRaw(body: Pet, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Pet>> {
     // Build path with path parameters
@@ -108,13 +106,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
-
   /** Update an existing pet */
-  async updatePet(body: Pet, initOverrides?: InitOverrideFunction | RequestInit): Promise<Pet> {
-      const response = await this.updatePetRaw(body, initOverrides);
-      return await response.value();
+  async updatePet(body: {"Reference": "Pet"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+    const response = await this.updatePetRaw(body, initOverrides);
+    return await response.value();
   }
-
   /** Find pets by status */
   async findPetsByStatusRaw(status: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
     // Build path with path parameters
@@ -136,13 +132,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => (jsonValue as Array<any>).map(PetFromJSON));
   }
-
   /** Find pets by status */
-  async findPetsByStatus(status: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<string>> {
-      const response = await this.findPetsByStatusRaw(status, initOverrides);
-      return await response.value();
+  async findPetsByStatus(status: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Array<string>> {
+    const response = await this.findPetsByStatusRaw(status, initOverrides);
+    return await response.value();
   }
-
   /** Find pets by tags */
   async findPetsByTagsRaw(tags: Array<string>, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
     // Build path with path parameters
@@ -164,13 +158,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => (jsonValue as Array<any>).map(PetFromJSON));
   }
-
   /** Find pets by tags */
-  async findPetsByTags(tags: Array<string>, initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<string>> {
-      const response = await this.findPetsByTagsRaw(tags, initOverrides);
-      return await response.value();
+  async findPetsByTags(tags: {"Array": {"Primitive": "String"}}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Array<string>> {
+    const response = await this.findPetsByTagsRaw(tags, initOverrides);
+    return await response.value();
   }
-
   /** Find pet by ID */
   async getPetByIdRaw(petId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Pet>> {
     // Build path with path parameters
@@ -190,13 +182,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
-
   /** Find pet by ID */
-  async getPetById(petId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<Pet> {
-      const response = await this.getPetByIdRaw(petId, initOverrides);
-      return await response.value();
+  async getPetById(petId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+    const response = await this.getPetByIdRaw(petId, initOverrides);
+    return await response.value();
   }
-
   /** Update a pet in the store with form data */
   async updatePetWithFormRaw(petId: string, name?: string, status?: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Pet>> {
     // Build path with path parameters
@@ -221,13 +211,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
-
   /** Update a pet in the store with form data */
-  async updatePetWithForm(petId: string, name?: string, status?: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<Pet> {
-      const response = await this.updatePetWithFormRaw(petId, name, status, initOverrides);
-      return await response.value();
+  async updatePetWithForm(petId: {"Primitive": "String"}, name: {"Primitive": "String"}?, status: {"Primitive": "String"}?, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+    const response = await this.updatePetWithFormRaw(petId, name, status, initOverrides);
+    return await response.value();
   }
-
   /** Delete a pet */
   async deletePetRaw(petId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
     // Build path with path parameters
@@ -247,13 +235,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new VoidApiResponse(response);
   }
-
   /** Delete a pet */
-  async deletePet(petId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<void> {
-      const response = await this.deletePetRaw(petId, initOverrides);
-      return await response.value();
+  async deletePet(petId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+    const response = await this.deletePetRaw(petId, initOverrides);
+    return await response.value();
   }
-
   /** Upload an image */
   async uploadFileRaw(petId: string, additionalMetadata?: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<ApiResponse>> {
     // Build path with path parameters
@@ -276,10 +262,8 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => ApiResponseFromJSON(jsonValue));
   }
-
   /** Upload an image */
-  async uploadFile(petId: string, additionalMetadata?: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<ApiResponse> {
-      const response = await this.uploadFileRaw(petId, additionalMetadata, initOverrides);
-      return await response.value();
-  }
-}
+  async uploadFile(petId: {"Primitive": "String"}, additionalMetadata: {"Primitive": "String"}?, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<ApiResponse> {
+    const response = await this.uploadFileRaw(petId, additionalMetadata, initOverrides);
+    return await response.value();
+  }}

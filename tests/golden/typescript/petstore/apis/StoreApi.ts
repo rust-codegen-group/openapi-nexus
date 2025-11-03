@@ -18,20 +18,20 @@ import { OrderFromJSON } from '../models/Order';
 export interface StoreApiInterface {
   /** Returns pet inventories by status */
   getInventoryRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<string>>;
-  /** Returns pet inventories by status */
-  getInventory: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<string>;
   /** Place an order for a pet */
   placeOrderRaw: (body: Order, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Order>>;
-  /** Place an order for a pet */
-  placeOrder: (body: Order, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Order>;
   /** Find purchase order by ID */
   getOrderByIdRaw: (orderId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Order>>;
-  /** Find purchase order by ID */
-  getOrderById: (orderId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Order>;
   /** Delete purchase order by ID */
   deleteOrderRaw: (orderId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
   /** Delete purchase order by ID */
   deleteOrder: (orderId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
+  /** Returns pet inventories by status */
+  getInventory: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<string>;
+  /** Find purchase order by ID */
+  getOrderById: (orderId: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Order>;
+  /** Place an order for a pet */
+  placeOrder: (body: Order, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Order>;
 }
 
 export class StoreApi extends BaseAPI implements StoreApiInterface {
@@ -61,13 +61,11 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-
   /** Returns pet inventories by status */
-  async getInventory(initOverrides?: InitOverrideFunction | RequestInit): Promise<string> {
-      const response = await this.getInventoryRaw(initOverrides);
-      return await response.value();
+  async getInventory(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<string> {
+    const response = await this.getInventoryRaw(initOverrides);
+    return await response.value();
   }
-
   /** Place an order for a pet */
   async placeOrderRaw(body: Order, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Order>> {
     // Build path with path parameters
@@ -89,13 +87,11 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => OrderFromJSON(jsonValue));
   }
-
   /** Place an order for a pet */
-  async placeOrder(body: Order, initOverrides?: InitOverrideFunction | RequestInit): Promise<Order> {
-      const response = await this.placeOrderRaw(body, initOverrides);
-      return await response.value();
+  async placeOrder(body: {"Reference": "Order"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Order> {
+    const response = await this.placeOrderRaw(body, initOverrides);
+    return await response.value();
   }
-
   /** Find purchase order by ID */
   async getOrderByIdRaw(orderId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Order>> {
     // Build path with path parameters
@@ -115,13 +111,11 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response, (jsonValue) => OrderFromJSON(jsonValue));
   }
-
   /** Find purchase order by ID */
-  async getOrderById(orderId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<Order> {
-      const response = await this.getOrderByIdRaw(orderId, initOverrides);
-      return await response.value();
+  async getOrderById(orderId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Order> {
+    const response = await this.getOrderByIdRaw(orderId, initOverrides);
+    return await response.value();
   }
-
   /** Delete purchase order by ID */
   async deleteOrderRaw(orderId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
     // Build path with path parameters
@@ -141,10 +135,8 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     }, initOverrides);
     return new VoidApiResponse(response);
   }
-
   /** Delete purchase order by ID */
-  async deleteOrder(orderId: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<void> {
-      const response = await this.deleteOrderRaw(orderId, initOverrides);
-      return await response.value();
-  }
-}
+  async deleteOrder(orderId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+    const response = await this.deleteOrderRaw(orderId, initOverrides);
+    return await response.value();
+  }}

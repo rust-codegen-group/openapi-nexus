@@ -6,7 +6,7 @@ use utoipa::openapi::RefOr;
 use utoipa::openapi::schema::Schema;
 
 /// Parameter information with raw OpenAPI schema
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParameterInfo {
     pub name: String,
     pub schema: Option<RefOr<Schema>>,

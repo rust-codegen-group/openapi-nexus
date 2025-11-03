@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::ast::{TsDocComment, TsExpression, TsParameter, TsVisibility};
 use crate::emission::error::EmitError;
-use crate::templating::data::ApiMethodBodyData;
 use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
 
 /// TypeScript class method for template rendering
@@ -17,8 +16,6 @@ pub struct TsClassMethod {
     pub is_async: bool,
     pub is_abstract: bool,
     pub documentation: Option<TsDocComment>,
-    pub body_template: Option<String>,
-    pub body_data: Option<ApiMethodBodyData>,
 }
 
 impl TsClassMethod {
@@ -33,8 +30,6 @@ impl TsClassMethod {
             is_async: false,
             is_abstract: false,
             documentation: None,
-            body_template: None,
-            body_data: None,
         }
     }
 
@@ -77,13 +72,6 @@ impl TsClassMethod {
     /// Add documentation
     pub fn with_docs(mut self, documentation: TsDocComment) -> Self {
         self.documentation = Some(documentation);
-        self
-    }
-
-    /// Set body template
-    pub fn with_body_template(mut self, template: String, data: Option<ApiMethodBodyData>) -> Self {
-        self.body_template = Some(template);
-        self.body_data = data;
         self
     }
 }

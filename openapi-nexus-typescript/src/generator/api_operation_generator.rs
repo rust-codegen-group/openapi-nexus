@@ -1,43 +1,45 @@
-//! Individual API class generator for TypeScript
+//! Individual API operation generator for TypeScript
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use heck::ToPascalCase as _;
 use http::Method;
-use utoipa::openapi::RefOr;
-use utoipa::openapi::path::Operation;
+use minijinja::context;
+use utoipa::openapi;
 use utoipa::openapi::schema::{ArrayItems, Schema};
 
 use crate::ast::{
-    TsClassDefinition, TsClassMethod, TsDocComment, TsExpression, TsImportStatement, TsParameter,
+    TsClassDefinition, TsClassMethod, TsDocComment, TsExpression, TsImportStatement,
+    TsInterfaceDefinition, TsInterfaceSignature, TsParameter, TsProperty,
 };
 use crate::core::GeneratorError;
+use crate::emission::error::EmitError;
 use crate::generator::parameter_extractor::ParameterExtractor;
-use crate::templating::data::ApiMethodBodyData;
+use crate::templating::data::{
+    ApiOperationData, CommonFileHeaderData, HttpParamData, MethodTemplateData,
+};
 use crate::templating::{TemplateName, Templates};
 use crate::utils::schema_mapper::SchemaMapper;
-use openapi_nexus_core::data::{
-    ApiMethodData as CoreApiMethodData, OperationInfo, ParameterInfo as CoreParameterInfo,
-};
+use openapi_nexus_core::data::{OperationInfo, ParameterInfo as CoreParameterInfo};
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::OperationInfoExt as _;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 
-/// Individual API class generator
+/// Individual API operation generator
 #[derive(Debug, Clone)]
-pub struct ApiClassGenerator {
+pub struct ApiOperationGenerator {
     parameter_extractor: ParameterExtractor,
     schema_mapper: SchemaMapper,
 }
 
-impl Default for ApiClassGenerator {
+impl Default for ApiOperationGenerator {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ApiClassGenerator {
-    /// Create a new API class generator
+impl ApiOperationGenerator {
+    /// Create a new API operation generator
     pub fn new() -> Self {
         Self {
             parameter_extractor: ParameterExtractor::new(),
@@ -51,9 +53,7 @@ impl ApiClassGenerator {
         tag: &str,
         operations: &[OperationInfo],
         templating: &Templates,
-        title: Option<&str>,
-        description: Option<&str>,
-        version: Option<&str>,
+        common_file_header: &CommonFileHeaderData,
     ) -> Result<FileInfo, GeneratorError> {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let interface_name = format!("{}Interface", class_name);
@@ -65,26 +65,29 @@ impl ApiClassGenerator {
                     "configuration".to_string(),
                     Some(TsExpression::Reference("Configuration".to_string())),
                 )])
-                .with_docs(TsDocComment::new("Initialize the API client".to_string()))
-                .with_body_template(
-                    std::path::Path::new(&TemplateName::ApiConstructorBaseApi.file_path())
-                        .file_stem()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("constructor_base_api")
-                        .to_string(),
-                    None,
-                ),
+                .with_docs(TsDocComment::new("Initialize the API client".to_string())),
         ];
+
+        let mut method_template_data: BTreeMap<String, MethodTemplateData> = BTreeMap::new();
+
+        // Add constructor template data
+        method_template_data.insert(
+            "constructor".to_string(),
+            MethodTemplateData {
+                method_name: "constructor".to_string(),
+                body_template: TemplateName::ApiConstructorBaseApi,
+                http_params: None,
+                convenience_method_name: None,
+                convenience_return_type: None,
+            },
+        );
 
         // Generate methods for each operation
         for op_info in operations {
             // Generate Raw method (returns ApiResponse wrapper)
-            let raw_method = self.generate_operation_method_raw(op_info)?;
-            methods.push(raw_method.clone());
-
-            // Generate convenience method (unwraps value from Raw)
-            let convenience_method = self.generate_operation_method_convenience(op_info)?;
-            methods.push(convenience_method);
+            let (raw_method, raw_template_data) = self.generate_operation_method_raw(op_info)?;
+            method_template_data.insert(raw_method.name.clone(), raw_template_data);
+            methods.push(raw_method);
         }
 
         // Collect model imports for FromJSON transformers
@@ -127,8 +130,13 @@ impl ApiClassGenerator {
             .with_imports(imports);
 
         // Render the class to code
-        let content = templating
-            .emit_class(&api_class, title, description, version)
+        let content = self
+            .emit_class(
+                templating,
+                &api_class,
+                method_template_data,
+                common_file_header,
+            )
             .map_err(|e| GeneratorError::Generic {
                 message: format!("Failed to emit API class {}: {}", class_name, e),
             })?;
@@ -143,7 +151,7 @@ impl ApiClassGenerator {
     fn generate_operation_method_raw(
         &self,
         op_info: &OperationInfo,
-    ) -> Result<TsClassMethod, GeneratorError> {
+    ) -> Result<(TsClassMethod, MethodTemplateData), GeneratorError> {
         let method_name = format!("{}Raw", op_info.method_name());
         let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
         let return_type = self.generate_raw_return_type(&op_info.method, &op_info.operation)?;
@@ -157,17 +165,12 @@ impl ApiClassGenerator {
         };
 
         // Create template data
-        let template_data = self.create_method_template_data(op_info)?;
+        let template_data =
+            self.create_method_template_data(op_info, template_name, method_name.clone())?;
 
-        let template_path = template_name.file_path();
-        let template_filename = std::path::Path::new(&template_path)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("default");
-        let mut method = TsClassMethod::new(method_name)
+        let mut method = TsClassMethod::new(method_name.clone())
             .with_parameters(parameters)
-            .with_async()
-            .with_body_template(template_filename.to_string(), Some(template_data));
+            .with_async();
 
         if let Some(return_type) = return_type {
             method = method.with_return_type(return_type);
@@ -182,50 +185,17 @@ impl ApiClassGenerator {
             method = method.with_docs(TsDocComment::new(docs));
         }
 
-        Ok(method)
-    }
-
-    /// Generate a convenience method that calls the Raw method and unwraps the value
-    fn generate_operation_method_convenience(
-        &self,
-        op_info: &OperationInfo,
-    ) -> Result<TsClassMethod, GeneratorError> {
-        let base_name = self.generate_method_name_from_op_info(op_info);
-        let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
-
-        let template_path = TemplateName::ApiMethodConvenience.file_path();
-        let template_filename = std::path::Path::new(&template_path)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("api_method_convenience");
-        let mut method = TsClassMethod::new(base_name)
-            .with_parameters(parameters)
-            .with_async()
-            .with_body_template(template_filename.to_string(), None);
-
-        let convenience_return = self
-            .generate_convenience_return_type(&op_info.method, &op_info.operation)?
-            .unwrap_or_else(|| TsExpression::Reference("Promise<any>".to_string()));
-        method = method.with_return_type(convenience_return);
-
-        if let Some(docs) = op_info
-            .operation
-            .summary
-            .clone()
-            .or_else(|| op_info.operation.description.clone())
-        {
-            method = method.with_docs(TsDocComment::new(docs));
-        }
-
-        Ok(method)
+        Ok((method, template_data))
     }
 
     /// Create template data for method body generation
     fn create_method_template_data(
         &self,
         op_info: &OperationInfo,
-    ) -> Result<ApiMethodBodyData, GeneratorError> {
-        // Extract parameters from operation to build core ApiMethodData
+        template_name: TemplateName,
+        method_name: String,
+    ) -> Result<MethodTemplateData, GeneratorError> {
+        // Extract parameters from operation
         let mut path_params_core = Vec::new();
         let mut query_params_core = Vec::new();
         let mut header_params_core = Vec::new();
@@ -235,56 +205,72 @@ impl ApiClassGenerator {
                 let param_info = CoreParameterInfo {
                     name: param.name.clone(),
                     schema: param.schema.clone(),
-                    required: matches!(param.required, utoipa::openapi::Required::True),
-                    deprecated: matches!(param.deprecated, Some(utoipa::openapi::Deprecated::True)),
+                    required: matches!(param.required, openapi::Required::True),
+                    deprecated: matches!(param.deprecated, Some(openapi::Deprecated::True)),
                     location: param.parameter_in.clone(),
                 };
 
                 match param.parameter_in {
-                    utoipa::openapi::path::ParameterIn::Path => path_params_core.push(param_info),
-                    utoipa::openapi::path::ParameterIn::Query => query_params_core.push(param_info),
-                    utoipa::openapi::path::ParameterIn::Header => {
-                        header_params_core.push(param_info)
-                    }
-                    utoipa::openapi::path::ParameterIn::Cookie => {
-                        header_params_core.push(param_info)
-                    }
+                    openapi::path::ParameterIn::Path => path_params_core.push(param_info),
+                    openapi::path::ParameterIn::Query => query_params_core.push(param_info),
+                    openapi::path::ParameterIn::Header => header_params_core.push(param_info),
+                    openapi::path::ParameterIn::Cookie => header_params_core.push(param_info),
                 }
             }
         }
 
-        let core_method_data = CoreApiMethodData {
-            method_name: self.generate_method_name_from_op_info(op_info),
-            http_method: op_info.method.clone(),
-            path: op_info.path.clone(),
-            path_params: path_params_core,
-            query_params: query_params_core,
-            header_params: header_params_core,
-            request_body: op_info.operation.request_body.clone(),
-            return_type: None,
-            has_auth: op_info.operation.security.is_some(),
-            has_error_handling: true,
-        };
+        // Construct body_param from request_body
+        // Note: body is not a ParameterIn location, so we use Path as a placeholder
+        let body_param = op_info.operation.request_body.as_ref().map(|rb| {
+            CoreParameterInfo {
+                name: "body".to_string(),
+                schema: None, // Could extract from RequestBody.content if needed
+                required: matches!(rb.required, Some(openapi::Required::True)),
+                deprecated: false,
+                location: openapi::path::ParameterIn::Path, // Placeholder, not used for body
+            }
+        });
 
         let transformer = self
             .compute_transformer_and_model(&op_info.method, &op_info.operation)
             .map(|(expr, _)| expr);
 
-        // Convert to ApiMethodBodyData
-        Ok(ApiMethodBodyData::from_core(&core_method_data, transformer))
-    }
+        let http_params = HttpParamData {
+            http_path: op_info.path.clone(),
+            http_method: op_info.method.clone(),
+            path_params: path_params_core,
+            query_params: query_params_core,
+            header_params: header_params_core,
+            body_param,
+            transformer,
+        };
 
-    /// Generate method name from operation info
-    fn generate_method_name_from_op_info(&self, op_info: &OperationInfo) -> String {
-        // Use the OperationInfoExt trait method which handles this logic
-        op_info.method_name()
+        // Compute convenience method name and return type
+        let convenience_method_name = Some(
+            method_name
+                .strip_suffix("Raw")
+                .unwrap_or(&method_name)
+                .to_string(),
+        );
+        let convenience_return_type = self
+            .generate_convenience_return_type(&op_info.method, &op_info.operation)
+            .ok()
+            .flatten();
+
+        Ok(MethodTemplateData {
+            method_name,
+            body_template: template_name,
+            http_params: Some(http_params),
+            convenience_method_name,
+            convenience_return_type,
+        })
     }
 
     /// Generate method parameters from operation
     fn generate_method_parameters(
         &self,
         path: &str,
-        operation: &Operation,
+        operation: &openapi::path::Operation,
     ) -> Result<Vec<TsParameter>, GeneratorError> {
         let mut parameters = Vec::new();
 
@@ -349,13 +335,13 @@ impl ApiClassGenerator {
     fn generate_raw_return_type(
         &self,
         http_method: &Method,
-        operation: &Operation,
+        operation: &openapi::path::Operation,
     ) -> Result<Option<TsExpression>, GeneratorError> {
         // Look for successful response (200, 201, etc.)
         for (status_code, response_ref) in operation.responses.responses.iter() {
             if status_code.starts_with('2') {
                 match response_ref {
-                    RefOr::T(response) => {
+                    openapi::RefOr::T(response) => {
                         if let Some(json_content) = response.content.get("application/json")
                             && let Some(schema_ref) = &json_content.schema
                         {
@@ -371,7 +357,7 @@ impl ApiClassGenerator {
                             "Promise<VoidApiResponse>".to_string(),
                         )));
                     }
-                    RefOr::Ref(_) => {
+                    openapi::RefOr::Ref(_) => {
                         // TODO: Handle response references
                     }
                 }
@@ -393,13 +379,13 @@ impl ApiClassGenerator {
     fn generate_convenience_return_type(
         &self,
         http_method: &Method,
-        operation: &Operation,
+        operation: &openapi::path::Operation,
     ) -> Result<Option<TsExpression>, GeneratorError> {
         // Look for JSON success schema
         for (status_code, response_ref) in operation.responses.responses.iter() {
             if status_code.starts_with('2') {
                 match response_ref {
-                    RefOr::T(response) => {
+                    openapi::RefOr::T(response) => {
                         if let Some(json_content) = response.content.get("application/json")
                             && let Some(schema_ref) = &json_content.schema
                         {
@@ -408,7 +394,7 @@ impl ApiClassGenerator {
                         }
                         return Ok(Some(TsExpression::Reference("Promise<void>".to_string())));
                     }
-                    RefOr::Ref(_) => {}
+                    openapi::RefOr::Ref(_) => {}
                 }
             }
         }
@@ -422,18 +408,18 @@ impl ApiClassGenerator {
     fn compute_transformer_and_model(
         &self,
         _http_method: &Method,
-        operation: &Operation,
+        operation: &openapi::path::Operation,
     ) -> Option<(String, String)> {
         for (status_code, response_ref) in operation.responses.responses.iter() {
             if !status_code.starts_with('2') {
                 continue;
             }
-            if let RefOr::T(response) = response_ref
+            if let openapi::RefOr::T(response) = response_ref
                 && let Some(json_content) = response.content.get("application/json")
                 && let Some(schema_ref) = &json_content.schema
             {
                 match schema_ref {
-                    RefOr::Ref(reference) => {
+                    openapi::RefOr::Ref(reference) => {
                         if let Some(name) =
                             reference.ref_location.strip_prefix("#/components/schemas/")
                         {
@@ -441,11 +427,11 @@ impl ApiClassGenerator {
                             return Some((expr, name.to_string()));
                         }
                     }
-                    RefOr::T(schema) => {
+                    openapi::RefOr::T(schema) => {
                         if let Schema::Array(arr) = schema {
                             match &arr.items {
                                 ArrayItems::RefOrSchema(item_ref) => {
-                                    if let RefOr::Ref(reference) = &**item_ref
+                                    if let openapi::RefOr::Ref(reference) = &**item_ref
                                         && let Some(name) = reference
                                             .ref_location
                                             .strip_prefix("#/components/schemas/")
@@ -465,5 +451,77 @@ impl ApiClassGenerator {
             }
         }
         None
+    }
+
+    /// Emit TypeScript code from a class definition
+    fn emit_class(
+        &self,
+        templating: &Templates,
+        class: &TsClassDefinition,
+        method_template_data: BTreeMap<String, MethodTemplateData>,
+        common_file_header: &CommonFileHeaderData,
+    ) -> Result<String, EmitError> {
+        let class = class.clone();
+
+        // Build interface signature (export interface FooInterface ...)
+        let interface_signature =
+            TsInterfaceSignature::new(format!("{}Interface", class.signature.name))
+                .with_generics(class.signature.generics.clone());
+        // Convert methods into function-typed properties for the interface
+        let mut interface_properties: Vec<TsProperty> = class
+            .methods
+            .clone()
+            .into_iter()
+            .filter(|m| m.name != "constructor")
+            .map(|m| {
+                let func_type = TsExpression::Function {
+                    parameters: m.parameters.clone(),
+                    return_type: m.return_type.map(Box::new),
+                };
+                TsProperty {
+                    name: m.name.clone(),
+                    type_expr: func_type,
+                    optional: false,
+                    documentation: m.documentation.clone(),
+                }
+            })
+            .collect();
+
+        // Add convenience methods to the interface
+        for (raw_method_name, template_data) in &method_template_data {
+            if let (Some(conv_name), Some(conv_return_type)) = (
+                &template_data.convenience_method_name,
+                &template_data.convenience_return_type,
+            ) {
+                // Find the corresponding Raw method to get its parameters
+                if let Some(raw_method) = class.methods.iter().find(|m| m.name == *raw_method_name)
+                {
+                    let func_type = TsExpression::Function {
+                        parameters: raw_method.parameters.clone(),
+                        return_type: Some(Box::new(conv_return_type.clone())),
+                    };
+                    interface_properties.push(TsProperty {
+                        name: conv_name.clone(),
+                        type_expr: func_type,
+                        optional: false,
+                        documentation: raw_method.documentation.clone(),
+                    });
+                }
+            }
+        }
+        let api_interface =
+            TsInterfaceDefinition::new(interface_signature).with_properties(interface_properties);
+
+        let imports = class.imports.clone();
+        let api_operation =
+            ApiOperationData::new(class.clone(), imports, api_interface, method_template_data);
+
+        let template_data = context! {
+            common_file_header,
+            api_operation,
+        };
+
+        // Get the API class template and render directly
+        templating.render_template_string(TemplateName::ApiOperation, template_data)
     }
 }

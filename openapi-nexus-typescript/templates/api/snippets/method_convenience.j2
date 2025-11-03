@@ -1,0 +1,9 @@
+{% if method_data.convenience_method_name and method_data.convenience_return_type %}
+{% if method.documentation %}
+{{ method.documentation | format_doc_comment | indent(2) }}
+{% endif %}
+async {{ method_data.convenience_method_name }}({% for p in method.parameters %}{{ p.name }}{% if p.type_expr %}: {{ p.type_expr }}{% endif %}{% if p.optional %}?{% endif %}{% if not loop.last %}, {% endif %}{%- endfor %}): {{ method_data.convenience_return_type | format_ts_expression }} {
+  const response = await this.{{ method.name }}({% for p in method.parameters -%}{{ p.name }}{% if not loop.last %}, {% endif %}{%- endfor %});
+  return await response.value();
+}
+{% endif %}

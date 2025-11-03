@@ -1,2 +1,0 @@
-  const response = await this.{{ method.name }}Raw({% for p in method.parameters -%}{{ p.name }}{% if not loop.last %}, {% endif %}{%- endfor %});
-  return await response.value();

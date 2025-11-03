@@ -4,12 +4,12 @@
 {{ import | format_import }}
 {% endfor %}
 
-{% if api_operation.class.documentation %}
-{{ api_operation.class.documentation | format_doc_comment }}
+{% if api_operation.ts_class.documentation %}
+{{ api_operation.ts_class.documentation | format_doc_comment }}
 {% endif %}
 
-{{ api_operation.api_interface.signature | format_interface_signature }} {
-  {% for prop in api_operation.api_interface.properties %}
+{{ api_operation.ts_interface.signature | format_interface_signature }} {
+  {% for prop in api_operation.ts_interface.properties %}
   {% if prop.documentation %}
   {{ prop.documentation | format_doc_comment | indent(2) }}
   {% endif %}
@@ -17,26 +17,32 @@
   {% endfor %}
 }
 
-{{ api_operation.class.signature | format_class_signature }} {
-  {% for property in api_operation.class.properties %}
+{{ api_operation.ts_class.signature | format_class_signature }} {
+  {% for property in api_operation.ts_class.properties %}
   {% if property.documentation %}
   {{ property.documentation | format_doc_comment | indent(2) }}
   {% endif %}
   {{ property | format_ts_class_property | indent(2) }};
   {% endfor %}
 
-  {% for method in api_operation.class.methods %}
+  {% for method in api_operation.ts_class.methods %}
+  {% set method_data = api_operation.method_templates[method.name] %}
   {% if method.documentation %}
   {{ method.documentation | format_doc_comment | indent(2) }}
   {% endif %}
   {{ method | format_method_signature | indent(2) }} {
-    {% if method.body_template %}
+    {% if method_data %}
     {% filter indent(4) %}
-    {%+ include "api/snippets/" + method.body_template + ".j2" with context %}
+    {%+ include method_data.body_template with context %}
     {{- "\n" }}
     {% endfilter %}
     {% endif %}
   }
+  {% if method_data and method_data.convenience_method_name %}
+  {% filter indent(2) %}
+  {%+ include "api/snippets/method_convenience.j2" with context %}
+  {% endfilter %}
+  {% endif %}
   {% if not loop.last %}
 
   {% endif %}

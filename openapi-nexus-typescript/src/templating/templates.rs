@@ -1,16 +1,11 @@
 //! Template name definitions and template emitter
 //! Templates are loaded via minijinja_embed from build.rs
 
-use minijinja::{Environment, context};
+use minijinja::Environment;
 use serde::{Deserialize, Serialize};
-use serde_plain::to_string as serde_to_string;
 
 use super::environment::create_template_environment;
-use crate::ast::{
-    TsClassDefinition, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsProperty,
-};
 use crate::emission::error::EmitError;
-use crate::templating::data::{ApiOperationData, CommonFileHeaderData};
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 
@@ -59,16 +54,16 @@ pub enum TemplateName {
     #[serde(rename = "api/snippets/constructor_base_api.j2")]
     ApiConstructorBaseApi,
     /// API method body: GET request handler
-    #[serde(rename = "api/snippets/api_method_get.j2")]
+    #[serde(rename = "api/snippets/method_get.j2")]
     ApiMethodGet,
     /// API method body: POST/PUT/PATCH request handler
-    #[serde(rename = "api/snippets/api_method_post_put_patch.j2")]
+    #[serde(rename = "api/snippets/method_post_put_patch.j2")]
     ApiMethodPostPutPatch,
     /// API method body: DELETE request handler
-    #[serde(rename = "api/snippets/api_method_delete.j2")]
+    #[serde(rename = "api/snippets/method_delete.j2")]
     ApiMethodDelete,
     /// API method body: Convenience wrapper method
-    #[serde(rename = "api/snippets/api_method_convenience.j2")]
+    #[serde(rename = "api/snippets/method_convenience.j2")]
     ApiMethodConvenience,
     /// API method body: Default/fallback method handler
     #[serde(rename = "api/snippets/default.j2")]
@@ -96,7 +91,8 @@ pub enum TemplateName {
 impl TemplateName {
     /// Get the file path for this template (used for Minijinja template lookup)
     pub fn file_path(&self) -> String {
-        serde_to_string(self).expect("TemplateName should always serialize to a valid string")
+        serde_plain::to_string(self)
+            .expect("TemplateName should always serialize to a valid string")
     }
 
     /// Get the file category for this template
@@ -217,69 +213,23 @@ impl Templates {
         ))
     }
 
-    /// Emit TypeScript code from a class definition
-    pub fn emit_class(
+    /// Render a template and return the content as a string
+    pub fn render_template_string(
         &self,
-        class: &TsClassDefinition,
-        title: Option<&str>,
-        description: Option<&str>,
-        version: Option<&str>,
+        template_name: TemplateName,
+        context: minijinja::Value,
     ) -> Result<String, EmitError> {
-        let class = class.clone();
-
-        // Build interface signature (export interface FooInterface ...)
-        let interface_signature =
-            TsInterfaceSignature::new(format!("{}Interface", class.signature.name))
-                .with_generics(class.signature.generics.clone());
-        // Convert methods into function-typed properties for the interface
-        let interface_properties: Vec<TsProperty> = class
-            .methods
-            .clone()
-            .into_iter()
-            .filter(|m| m.name != "constructor")
-            .map(|m| {
-                let func_type = TsExpression::Function {
-                    parameters: m.parameters,
-                    return_type: m.return_type.map(Box::new),
-                };
-                TsProperty {
-                    name: m.name,
-                    type_expr: func_type,
-                    optional: false,
-                    documentation: m.documentation,
-                }
-            })
-            .collect();
-        let api_interface =
-            TsInterfaceDefinition::new(interface_signature).with_properties(interface_properties);
-
-        let common_file_header = CommonFileHeaderData::new(
-            title.map(|s| s.to_string()).unwrap_or_default(),
-            description.map(|s| s.to_string()),
-            version.map(|s| s.to_string()).unwrap_or_default(),
-        );
-
-        let imports = class.imports.clone();
-        let api_operation = ApiOperationData::new(class, imports, api_interface);
-
-        let template_data = context! {
-            common_file_header,
-            api_operation,
-        };
-
-        // Get the API class template and render directly
-        let template_path = TemplateName::ApiOperation.file_path();
+        let template_path = template_name.file_path();
         let template =
             self.env
                 .get_template(&template_path)
                 .map_err(|e| EmitError::TemplateError {
                     message: format!("Failed to get {} template: {}", template_path, e),
                 })?;
-
         template
-            .render(template_data)
+            .render(context)
             .map_err(|e| EmitError::TemplateError {
-                message: format!("Failed to render template: {}", e),
+                message: format!("Failed to render {} template: {}", template_path, e),
             })
     }
 }

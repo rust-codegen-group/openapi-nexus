@@ -1,4 +1,4 @@
-{% set data = method.body_data %}
+{% set data = method_data.http_params %}
 // Build headers
 const headerParameters: Record<string, string> = {
   {% if data.body_param %}

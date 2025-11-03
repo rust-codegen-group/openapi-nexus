@@ -1,4 +1,4 @@
-{% set data = method.body_data %}
+{% set data = method_data.http_params %}
 {% include "api/snippets/build_url_path.j2" with context %}
 {% include "api/snippets/build_query_params.j2" with context %}
 {% include "api/snippets/build_headers.j2" with context %}

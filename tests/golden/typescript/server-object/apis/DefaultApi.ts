@@ -17,12 +17,10 @@ import { BaseAPI, JSONApiResponse, VoidApiResponse, ResponseError, type Configur
 export interface DefaultApiInterface {
   /** Get all users */
   getUsersRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
-  /** Get all users */
-  getUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<string>>;
   /** Get user by ID */
   getUsersRaw: (id: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<object>>;
-  /** Get user by ID */
-  getUsers: (id: string, initOverrides?: InitOverrideFunction | RequestInit) => Promise<object>;
+  /** Get all users */
+  getUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<object>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -36,7 +34,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   /** Get all users */
   async getUsersRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
     // Build path with path parameters
-    let urlPath = `/users`;// Build query parameters
+    let urlPath = `/users/${id}`;// Build query parameters
     const queryParameters: any = {};// Build headers
     const headerParameters: Record<string, string> = {
       ...this.configuration?.headers,
@@ -52,13 +50,11 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-
   /** Get all users */
-  async getUsers(initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<string>> {
-      const response = await this.getUsersRaw(initOverrides);
-      return await response.value();
+  async getUsers(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<object> {
+    const response = await this.getUsersRaw(initOverrides);
+    return await response.value();
   }
-
   /** Get user by ID */
   async getUsersRaw(id: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<object>> {
     // Build path with path parameters
@@ -78,10 +74,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-
   /** Get user by ID */
-  async getUsers(id: string, initOverrides?: InitOverrideFunction | RequestInit): Promise<object> {
-      const response = await this.getUsersRaw(id, initOverrides);
-      return await response.value();
-  }
-}
+  async getUsers(id: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<object> {
+    const response = await this.getUsersRaw(id, initOverrides);
+    return await response.value();
+  }}

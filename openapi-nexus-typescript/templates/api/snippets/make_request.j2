@@ -1,4 +1,4 @@
-{% set data = method.body_data %}
+{% set data = method_data.http_params %}
 // Make request
 const response = await this.request({
     path: urlPath,

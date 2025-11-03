@@ -43,9 +43,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-
-  async getTest(initOverrides?: InitOverrideFunction | RequestInit): Promise<void> {
-      const response = await this.getTestRaw(initOverrides);
-      return await response.value();
-  }
-}
+  async getTest(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+    const response = await this.getTestRaw(initOverrides);
+    return await response.value();
+  }}
