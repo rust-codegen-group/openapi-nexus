@@ -2,6 +2,8 @@
 //! Templates are loaded via minijinja_embed from build.rs
 
 use minijinja::{Environment, context};
+use serde::{Deserialize, Serialize};
+use serde_plain::to_string as serde_to_string;
 
 use super::environment::create_template_environment;
 use crate::ast::{
@@ -15,98 +17,86 @@ use openapi_nexus_core::traits::file_writer::FileInfo;
 /// Template name enum for type-safe template references
 /// All templates used in the TypeScript generator must be declared here
 /// Organized by FileCategory
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TemplateName {
     // FileCategory::Readme
     /// README documentation template
+    #[serde(rename = "README.md.j2")]
     Readme,
 
     // FileCategory::Apis
     /// Main API class template (generates complete API class files)
+    #[serde(rename = "api/operation.j2")]
     ApiOperation,
 
     // FileCategory::Models
     /// Interface model template
+    #[serde(rename = "model/interface.j2")]
     ModelInterface,
     /// Type alias model template
+    #[serde(rename = "model/type_alias.j2")]
     ModelTypeAlias,
     /// Enum model template
+    #[serde(rename = "model/enum.j2")]
     ModelEnum,
 
     // FileCategory::Runtime
     /// Runtime utilities template
+    #[serde(rename = "runtime/runtime.j2")]
     Runtime,
 
     // FileCategory::ProjectFiles
     /// Project index file template
+    #[serde(rename = "project/index.j2")]
     ProjectIndex,
 
     // FileCategory::None (Snippets/Partials)
     // These are included by other templates and not rendered directly
     /// File header template (used across all file types, included by other templates)
+    #[serde(rename = "common/file_header.j2")]
     CommonFileHeader,
     /// API method body: Constructor for base API class
+    #[serde(rename = "api/snippets/constructor_base_api.j2")]
     ApiConstructorBaseApi,
     /// API method body: GET request handler
+    #[serde(rename = "api/snippets/api_method_get.j2")]
     ApiMethodGet,
     /// API method body: POST/PUT/PATCH request handler
+    #[serde(rename = "api/snippets/api_method_post_put_patch.j2")]
     ApiMethodPostPutPatch,
     /// API method body: DELETE request handler
+    #[serde(rename = "api/snippets/api_method_delete.j2")]
     ApiMethodDelete,
     /// API method body: Convenience wrapper method
+    #[serde(rename = "api/snippets/api_method_convenience.j2")]
     ApiMethodConvenience,
     /// API method body: Default/fallback method handler
+    #[serde(rename = "api/snippets/default.j2")]
     ApiDefaultMethod,
     /// Partial: Build URL path snippet
+    #[serde(rename = "api/snippets/build_url_path.j2")]
     ApiBuildUrlPath,
     /// Partial: Build query parameters snippet
+    #[serde(rename = "api/snippets/build_query_params.j2")]
     ApiBuildQueryParams,
     /// Partial: Build request headers snippet
+    #[serde(rename = "api/snippets/build_headers.j2")]
     ApiBuildHeaders,
     /// Partial: Build request body snippet
+    #[serde(rename = "api/snippets/build_request_body.j2")]
     ApiBuildRequestBody,
     /// Partial: Make HTTP request snippet
+    #[serde(rename = "api/snippets/make_request.j2")]
     ApiMakeRequest,
     /// Model helper functions template (instanceOf/FromJSON/ToJSON/validation)
+    #[serde(rename = "model/snippets/interface_helpers.j2")]
     ModelInferenceHelpers,
 }
 
 impl TemplateName {
     /// Get the file path for this template (used for Minijinja template lookup)
-    pub fn file_path(&self) -> &'static str {
-        match self {
-            // FileCategory::Readme
-            Self::Readme => "README.md.j2",
-
-            // FileCategory::Apis
-            Self::ApiOperation => "api/operation.j2",
-
-            // FileCategory::Models
-            Self::ModelInterface => "model/interface.j2",
-            Self::ModelTypeAlias => "model/type_alias.j2",
-            Self::ModelEnum => "model/enum.j2",
-
-            // FileCategory::Runtime
-            Self::Runtime => "runtime/runtime.j2",
-
-            // FileCategory::ProjectFiles
-            Self::ProjectIndex => "project/index.j2",
-
-            // FileCategory::None (Snippets/Partials)
-            Self::CommonFileHeader => "common/file_header.j2",
-            Self::ApiConstructorBaseApi => "api/snippets/constructor_base_api.j2",
-            Self::ApiMethodGet => "api/snippets/api_method_get.j2",
-            Self::ApiMethodPostPutPatch => "api/snippets/api_method_post_put_patch.j2",
-            Self::ApiMethodDelete => "api/snippets/api_method_delete.j2",
-            Self::ApiMethodConvenience => "api/snippets/api_method_convenience.j2",
-            Self::ApiDefaultMethod => "api/snippets/default.j2",
-            Self::ApiBuildUrlPath => "api/snippets/build_url_path.j2",
-            Self::ApiBuildQueryParams => "api/snippets/build_query_params.j2",
-            Self::ApiBuildHeaders => "api/snippets/build_headers.j2",
-            Self::ApiBuildRequestBody => "api/snippets/build_request_body.j2",
-            Self::ApiMakeRequest => "api/snippets/make_request.j2",
-            Self::ModelInferenceHelpers => "model/snippets/interface_helpers.j2",
-        }
+    pub fn file_path(&self) -> String {
+        serde_to_string(self).expect("TemplateName should always serialize to a valid string")
     }
 
     /// Get the file category for this template
@@ -207,24 +197,17 @@ impl Templates {
         output_filename: &str,
         context: minijinja::Value,
     ) -> Result<FileInfo, EmitError> {
-        let template = self
-            .env
-            .get_template(template_name.file_path())
-            .map_err(|e| EmitError::TemplateError {
-                message: format!(
-                    "Failed to get {} template: {}",
-                    template_name.file_path(),
-                    e
-                ),
-            })?;
+        let template_path = template_name.file_path();
+        let template =
+            self.env
+                .get_template(&template_path)
+                .map_err(|e| EmitError::TemplateError {
+                    message: format!("Failed to get {} template: {}", template_path, e),
+                })?;
         let content = template
             .render(context)
             .map_err(|e| EmitError::TemplateError {
-                message: format!(
-                    "Failed to render {} template: {}",
-                    template_name.file_path(),
-                    e
-                ),
+                message: format!("Failed to render {} template: {}", template_path, e),
             })?;
 
         Ok(FileInfo::new(
@@ -285,16 +268,13 @@ impl Templates {
         };
 
         // Get the API class template and render directly
-        let template = self
-            .env
-            .get_template(TemplateName::ApiOperation.file_path())
-            .map_err(|e| EmitError::TemplateError {
-                message: format!(
-                    "Failed to get {} template: {}",
-                    TemplateName::ApiOperation.file_path(),
-                    e
-                ),
-            })?;
+        let template_path = TemplateName::ApiOperation.file_path();
+        let template =
+            self.env
+                .get_template(&template_path)
+                .map_err(|e| EmitError::TemplateError {
+                    message: format!("Failed to get {} template: {}", template_path, e),
+                })?;
 
         template
             .render(template_data)

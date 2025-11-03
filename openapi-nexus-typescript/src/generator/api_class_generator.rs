@@ -67,7 +67,7 @@ impl ApiClassGenerator {
                 )])
                 .with_docs(TsDocComment::new("Initialize the API client".to_string()))
                 .with_body_template(
-                    std::path::Path::new(TemplateName::ApiConstructorBaseApi.file_path())
+                    std::path::Path::new(&TemplateName::ApiConstructorBaseApi.file_path())
                         .file_stem()
                         .and_then(|s| s.to_str())
                         .unwrap_or("constructor_base_api")
@@ -160,7 +160,7 @@ impl ApiClassGenerator {
         let template_data = self.create_method_template_data(op_info)?;
 
         let template_path = template_name.file_path();
-        let template_filename = std::path::Path::new(template_path)
+        let template_filename = std::path::Path::new(&template_path)
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("default");
@@ -193,11 +193,11 @@ impl ApiClassGenerator {
         let base_name = self.generate_method_name_from_op_info(op_info);
         let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
 
-        let template_filename =
-            std::path::Path::new(TemplateName::ApiMethodConvenience.file_path())
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("api_method_convenience");
+        let template_path = TemplateName::ApiMethodConvenience.file_path();
+        let template_filename = std::path::Path::new(&template_path)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("api_method_convenience");
         let mut method = TsClassMethod::new(base_name)
             .with_parameters(parameters)
             .with_async()
