@@ -13,8 +13,8 @@ import { BaseAPI, JSONApiResponse, VoidApiResponse, ResponseError, type Configur
 /** API client for default operations */
 
 export interface DefaultApiInterface {
-  getTestRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
-  getTest: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
+  getTestRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<any>>;
+  getTest: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<any>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -25,7 +25,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getTestRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
+  async getTestRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<any>> {
     // Build path with path parameters
     let urlPath = `/test`;// Build query parameters
     const queryParameters: any = {};// Build headers
@@ -43,7 +43,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-  async getTest(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+  async getTest(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<any> {
     const response = await this.getTestRaw(initOverrides);
     return await response.value();
   }}

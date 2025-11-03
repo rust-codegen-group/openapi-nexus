@@ -16,9 +16,9 @@ import { BaseAPI, JSONApiResponse, VoidApiResponse, ResponseError, type Configur
 
 export interface DefaultApiInterface {
   /** Test endpoint */
-  testRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse>;
+  testRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<any>>;
   /** Test endpoint */
-  test: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<void>;
+  test: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<any>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -30,7 +30,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   /** Test endpoint */
-  async testRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<VoidApiResponse> {
+  async testRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<any>> {
     // Build path with path parameters
     let urlPath = `/test`;// Build query parameters
     const queryParameters: any = {};// Build headers
@@ -49,7 +49,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     return new JSONApiResponse(response);
   }
   /** Test endpoint */
-  async test(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+  async test(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<any> {
     const response = await this.testRaw(initOverrides);
     return await response.value();
   }}

@@ -6,20 +6,20 @@ use heck::ToPascalCase as _;
 use http::Method;
 use minijinja::context;
 use utoipa::openapi;
-use utoipa::openapi::schema::{ArrayItems, Schema};
 
 use crate::ast::{
-    TsClassDefinition, TsClassMethod, TsDocComment, TsExpression, TsImportStatement,
-    TsInterfaceDefinition, TsInterfaceSignature, TsParameter, TsProperty,
+    TsClassDefinition, TsClassMethod, TsDocComment, TsExpression, TsImportStatement, TsParameter,
 };
 use crate::core::GeneratorError;
 use crate::emission::error::EmitError;
-use crate::generator::parameter_extractor::ParameterExtractor;
+use crate::generator::{
+    api_interface_builder::ApiInterfaceBuilder, parameter_extractor::ParameterExtractor,
+    response_transformer::ResponseTransformer, return_type_generator::ReturnTypeGenerator,
+};
 use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, HttpParamData, MethodTemplateData,
 };
 use crate::templating::{TemplateName, Templates};
-use crate::utils::schema_mapper::SchemaMapper;
 use openapi_nexus_core::data::{OperationInfo, ParameterInfo as CoreParameterInfo};
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::OperationInfoExt as _;
@@ -29,7 +29,9 @@ use openapi_nexus_core::traits::file_writer::FileInfo;
 #[derive(Debug, Clone)]
 pub struct ApiOperationGenerator {
     parameter_extractor: ParameterExtractor,
-    schema_mapper: SchemaMapper,
+    return_type_generator: ReturnTypeGenerator,
+    response_transformer: ResponseTransformer,
+    interface_builder: ApiInterfaceBuilder,
 }
 
 impl Default for ApiOperationGenerator {
@@ -43,7 +45,9 @@ impl ApiOperationGenerator {
     pub fn new() -> Self {
         Self {
             parameter_extractor: ParameterExtractor::new(),
-            schema_mapper: SchemaMapper::new(),
+            return_type_generator: ReturnTypeGenerator::new(),
+            response_transformer: ResponseTransformer::new(),
+            interface_builder: ApiInterfaceBuilder::new(),
         }
     }
 
@@ -68,10 +72,7 @@ impl ApiOperationGenerator {
                 .with_docs(TsDocComment::new("Initialize the API client".to_string())),
         ];
 
-        let mut method_template_data: BTreeMap<String, MethodTemplateData> = BTreeMap::new();
-
-        // Add constructor template data
-        method_template_data.insert(
+        let mut method_template_data: BTreeMap<String, MethodTemplateData> = BTreeMap::from([(
             "constructor".to_string(),
             MethodTemplateData {
                 method_name: "constructor".to_string(),
@@ -80,7 +81,7 @@ impl ApiOperationGenerator {
                 convenience_method_name: None,
                 convenience_return_type: None,
             },
-        );
+        )]);
 
         // Generate methods for each operation
         for op_info in operations {
@@ -93,8 +94,9 @@ impl ApiOperationGenerator {
         // Collect model imports for FromJSON transformers
         let mut model_imports: BTreeSet<String> = BTreeSet::new();
         for op_info in operations {
-            if let Some((_, model_name)) =
-                self.compute_transformer_and_model(&op_info.method, &op_info.operation)
+            if let Some((_, model_name)) = self
+                .response_transformer
+                .compute_transformer_and_model(&op_info.method, &op_info.operation)
             {
                 model_imports.insert(model_name);
             }
@@ -154,7 +156,10 @@ impl ApiOperationGenerator {
     ) -> Result<(TsClassMethod, MethodTemplateData), GeneratorError> {
         let method_name = format!("{}Raw", op_info.method_name());
         let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
-        let return_type = self.generate_raw_return_type(&op_info.method, &op_info.operation)?;
+
+        let (raw_return_type, convenience_return_type) = self
+            .return_type_generator
+            .generate_return_types(&op_info.method, &op_info.operation)?;
 
         // Determine template based on HTTP method
         let template_name = match op_info.method {
@@ -165,14 +170,18 @@ impl ApiOperationGenerator {
         };
 
         // Create template data
-        let template_data =
-            self.create_method_template_data(op_info, template_name, method_name.clone())?;
+        let template_data = self.create_method_template_data(
+            op_info,
+            template_name,
+            method_name.clone(),
+            convenience_return_type,
+        )?;
 
         let mut method = TsClassMethod::new(method_name.clone())
             .with_parameters(parameters)
             .with_async();
 
-        if let Some(return_type) = return_type {
+        if let Some(return_type) = raw_return_type {
             method = method.with_return_type(return_type);
         }
 
@@ -194,8 +203,9 @@ impl ApiOperationGenerator {
         op_info: &OperationInfo,
         template_name: TemplateName,
         method_name: String,
+        convenience_return_type: Option<TsExpression>,
     ) -> Result<MethodTemplateData, GeneratorError> {
-        // Extract parameters from operation
+        // Extract parameters from operation for template data
         let mut path_params_core = Vec::new();
         let mut query_params_core = Vec::new();
         let mut header_params_core = Vec::new();
@@ -232,6 +242,7 @@ impl ApiOperationGenerator {
         });
 
         let transformer = self
+            .response_transformer
             .compute_transformer_and_model(&op_info.method, &op_info.operation)
             .map(|(expr, _)| expr);
 
@@ -245,17 +256,13 @@ impl ApiOperationGenerator {
             transformer,
         };
 
-        // Compute convenience method name and return type
+        // Compute convenience method name
         let convenience_method_name = Some(
             method_name
                 .strip_suffix("Raw")
                 .unwrap_or(&method_name)
                 .to_string(),
         );
-        let convenience_return_type = self
-            .generate_convenience_return_type(&op_info.method, &op_info.operation)
-            .ok()
-            .flatten();
 
         Ok(MethodTemplateData {
             method_name,
@@ -331,128 +338,6 @@ impl ApiOperationGenerator {
         Ok(parameters)
     }
 
-    /// Determine Raw return type (ApiResponse wrappers) based on operation responses
-    fn generate_raw_return_type(
-        &self,
-        http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Result<Option<TsExpression>, GeneratorError> {
-        // Look for successful response (200, 201, etc.)
-        for (status_code, response_ref) in operation.responses.responses.iter() {
-            if status_code.starts_with('2') {
-                match response_ref {
-                    openapi::RefOr::T(response) => {
-                        if let Some(json_content) = response.content.get("application/json")
-                            && let Some(schema_ref) = &json_content.schema
-                        {
-                            let return_type =
-                                self.schema_mapper.map_ref_or_schema_to_type(schema_ref);
-                            return Ok(Some(TsExpression::Reference(format!(
-                                "Promise<JSONApiResponse<{}>>",
-                                return_type
-                            ))));
-                        }
-                        // No JSON content: treat as void
-                        return Ok(Some(TsExpression::Reference(
-                            "Promise<VoidApiResponse>".to_string(),
-                        )));
-                    }
-                    openapi::RefOr::Ref(_) => {
-                        // TODO: Handle response references
-                    }
-                }
-            }
-        }
-
-        // Fallbacks: DELETE with no content -> VoidApiResponse; otherwise JSON any
-        if *http_method == Method::DELETE {
-            return Ok(Some(TsExpression::Reference(
-                "Promise<VoidApiResponse>".to_string(),
-            )));
-        }
-        Ok(Some(TsExpression::Reference(
-            "Promise<JSONApiResponse<any>>".to_string(),
-        )))
-    }
-
-    /// Determine convenience return type (unwrapped)
-    fn generate_convenience_return_type(
-        &self,
-        http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Result<Option<TsExpression>, GeneratorError> {
-        // Look for JSON success schema
-        for (status_code, response_ref) in operation.responses.responses.iter() {
-            if status_code.starts_with('2') {
-                match response_ref {
-                    openapi::RefOr::T(response) => {
-                        if let Some(json_content) = response.content.get("application/json")
-                            && let Some(schema_ref) = &json_content.schema
-                        {
-                            let t = self.schema_mapper.map_ref_or_schema_to_type(schema_ref);
-                            return Ok(Some(TsExpression::Reference(format!("Promise<{}>", t))));
-                        }
-                        return Ok(Some(TsExpression::Reference("Promise<void>".to_string())));
-                    }
-                    openapi::RefOr::Ref(_) => {}
-                }
-            }
-        }
-        if *http_method == Method::DELETE {
-            return Ok(Some(TsExpression::Reference("Promise<void>".to_string())));
-        }
-        Ok(Some(TsExpression::Reference("Promise<any>".to_string())))
-    }
-
-    /// Compute JSON transformer expression and model name if applicable
-    fn compute_transformer_and_model(
-        &self,
-        _http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Option<(String, String)> {
-        for (status_code, response_ref) in operation.responses.responses.iter() {
-            if !status_code.starts_with('2') {
-                continue;
-            }
-            if let openapi::RefOr::T(response) = response_ref
-                && let Some(json_content) = response.content.get("application/json")
-                && let Some(schema_ref) = &json_content.schema
-            {
-                match schema_ref {
-                    openapi::RefOr::Ref(reference) => {
-                        if let Some(name) =
-                            reference.ref_location.strip_prefix("#/components/schemas/")
-                        {
-                            let expr = format!("(jsonValue) => {}FromJSON(jsonValue)", name);
-                            return Some((expr, name.to_string()));
-                        }
-                    }
-                    openapi::RefOr::T(schema) => {
-                        if let Schema::Array(arr) = schema {
-                            match &arr.items {
-                                ArrayItems::RefOrSchema(item_ref) => {
-                                    if let openapi::RefOr::Ref(reference) = &**item_ref
-                                        && let Some(name) = reference
-                                            .ref_location
-                                            .strip_prefix("#/components/schemas/")
-                                    {
-                                        let expr = format!(
-                                            "(jsonValue) => (jsonValue as Array<any>).map({}FromJSON)",
-                                            name
-                                        );
-                                        return Some((expr, name.to_string()));
-                                    }
-                                }
-                                ArrayItems::False => {}
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        None
-    }
-
     /// Emit TypeScript code from a class definition
     fn emit_class(
         &self,
@@ -463,54 +348,10 @@ impl ApiOperationGenerator {
     ) -> Result<String, EmitError> {
         let class = class.clone();
 
-        // Build interface signature (export interface FooInterface ...)
-        let interface_signature =
-            TsInterfaceSignature::new(format!("{}Interface", class.signature.name))
-                .with_generics(class.signature.generics.clone());
-        // Convert methods into function-typed properties for the interface
-        let mut interface_properties: Vec<TsProperty> = class
-            .methods
-            .clone()
-            .into_iter()
-            .filter(|m| m.name != "constructor")
-            .map(|m| {
-                let func_type = TsExpression::Function {
-                    parameters: m.parameters.clone(),
-                    return_type: m.return_type.map(Box::new),
-                };
-                TsProperty {
-                    name: m.name.clone(),
-                    type_expr: func_type,
-                    optional: false,
-                    documentation: m.documentation.clone(),
-                }
-            })
-            .collect();
-
-        // Add convenience methods to the interface
-        for (raw_method_name, template_data) in &method_template_data {
-            if let (Some(conv_name), Some(conv_return_type)) = (
-                &template_data.convenience_method_name,
-                &template_data.convenience_return_type,
-            ) {
-                // Find the corresponding Raw method to get its parameters
-                if let Some(raw_method) = class.methods.iter().find(|m| m.name == *raw_method_name)
-                {
-                    let func_type = TsExpression::Function {
-                        parameters: raw_method.parameters.clone(),
-                        return_type: Some(Box::new(conv_return_type.clone())),
-                    };
-                    interface_properties.push(TsProperty {
-                        name: conv_name.clone(),
-                        type_expr: func_type,
-                        optional: false,
-                        documentation: raw_method.documentation.clone(),
-                    });
-                }
-            }
-        }
-        let api_interface =
-            TsInterfaceDefinition::new(interface_signature).with_properties(interface_properties);
+        // Build interface using the interface builder
+        let api_interface = self
+            .interface_builder
+            .build_interface(&class, &method_template_data);
 
         let imports = class.imports.clone();
         let api_operation =
