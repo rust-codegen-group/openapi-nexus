@@ -1,7 +1,0 @@
-{% set data = method.body_data %}
-{% include "api/method_bodies/partials/_build_url_path.j2" with context %}
-{% include "api/method_bodies/partials/_build_query_params.j2" with context %}
-{% include "api/method_bodies/partials/_build_headers.j2" with context %}
-{% include "api/method_bodies/partials/_make_request.j2" with context %}
-
-return new JSONApiResponse(response{%- if data.transformer %}, {{ data.transformer }}{%- endif %});

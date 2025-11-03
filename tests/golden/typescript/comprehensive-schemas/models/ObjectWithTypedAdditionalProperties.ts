@@ -22,7 +22,7 @@ export function instanceOfObjectWithTypedAdditionalProperties(value: object): va
 }
 
 export function ObjectWithTypedAdditionalPropertiesFromJSON(json: any): ObjectWithTypedAdditionalProperties {
-    return ObjectWithTypedAdditionalPropertiesFromJSONTyped(json, false);
+  return ObjectWithTypedAdditionalPropertiesFromJSONTyped(json, false);
 }
 
 export function ObjectWithTypedAdditionalPropertiesFromJSONTyped(json: any, ignoreDiscriminator: boolean): ObjectWithTypedAdditionalProperties {
@@ -35,7 +35,7 @@ export function ObjectWithTypedAdditionalPropertiesFromJSONTyped(json: any, igno
 }
 
 export function ObjectWithTypedAdditionalPropertiesToJSON(value?: ObjectWithTypedAdditionalProperties | null): any {
-    return ObjectWithTypedAdditionalPropertiesToJSONTyped(value, false);
+  return ObjectWithTypedAdditionalPropertiesToJSONTyped(value, false);
 }
 
 export function ObjectWithTypedAdditionalPropertiesToJSONTyped(value?: ObjectWithTypedAdditionalProperties | null, ignoreDiscriminator: boolean = false): any {
@@ -48,18 +48,18 @@ export function ObjectWithTypedAdditionalPropertiesToJSONTyped(value?: ObjectWit
 }
 
 export const ObjectWithTypedAdditionalPropertiesPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

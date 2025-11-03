@@ -22,7 +22,7 @@ export function instanceOfApiResponse(value: object): value is ApiResponse {
 }
 
 export function ApiResponseFromJSON(json: any): ApiResponse {
-    return ApiResponseFromJSONTyped(json, false);
+  return ApiResponseFromJSONTyped(json, false);
 }
 
 export function ApiResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiResponse {
@@ -37,7 +37,7 @@ export function ApiResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean
 }
 
 export function ApiResponseToJSON(value?: ApiResponse | null): any {
-    return ApiResponseToJSONTyped(value, false);
+  return ApiResponseToJSONTyped(value, false);
 }
 
 export function ApiResponseToJSONTyped(value?: ApiResponse | null, ignoreDiscriminator: boolean = false): any {
@@ -52,18 +52,18 @@ export function ApiResponseToJSONTyped(value?: ApiResponse | null, ignoreDiscrim
 }
 
 export const ApiResponsePropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

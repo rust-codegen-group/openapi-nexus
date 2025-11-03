@@ -98,7 +98,7 @@ pub trait LanguageCodeGenerator {
     /// Generate README file from OpenAPI spec and README data
     fn generate_readme(
         &self,
-        #[allow(unused)] openapi: &OpenApi,
+        openapi: &OpenApi,
         data: ReadmeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
 

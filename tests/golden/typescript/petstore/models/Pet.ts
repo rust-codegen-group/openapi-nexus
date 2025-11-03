@@ -27,7 +27,7 @@ export function instanceOfPet(value: object): value is Pet {
 }
 
 export function PetFromJSON(json: any): Pet {
-    return PetFromJSONTyped(json, false);
+  return PetFromJSONTyped(json, false);
 }
 
 export function PetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Pet {
@@ -45,7 +45,7 @@ export function PetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Pet {
 }
 
 export function PetToJSON(value?: Pet | null): any {
-    return PetToJSONTyped(value, false);
+  return PetToJSONTyped(value, false);
 }
 
 export function PetToJSONTyped(value?: Pet | null, ignoreDiscriminator: boolean = false): any {
@@ -63,18 +63,18 @@ export function PetToJSONTyped(value?: Pet | null, ignoreDiscriminator: boolean 
 }
 
 export const PetPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

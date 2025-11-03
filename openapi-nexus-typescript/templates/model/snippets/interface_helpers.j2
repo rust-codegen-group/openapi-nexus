@@ -1,0 +1,53 @@
+export function instanceOf{{ model_interface.signature.name }}(value: object): value is {{ model_interface.signature.name }} {
+{% for prop in model_interface.required_prop_names %}
+  if (!('{{ prop }}' in value) || (value as any)['{{ prop }}'] === undefined) return false;
+{% endfor %}
+  return true;
+}
+
+export function {{ model_interface.signature.name }}FromJSON(json: any): {{ model_interface.signature.name }} {
+  return {{ model_interface.signature.name }}FromJSONTyped(json, false);
+}
+
+export function {{ model_interface.signature.name }}FromJSONTyped(json: any, ignoreDiscriminator: boolean): {{ model_interface.signature.name }} {
+  if (json == null) {
+    return json;
+  }
+  return {
+{% for prop in model_interface.property_metadata if not prop.is_index_signature %}
+   '{{ prop.name }}': json['{{ prop.name }}']{% if prop.optional %} ?? undefined{% endif %},
+{% endfor %}
+  };
+}
+
+export function {{ model_interface.signature.name }}ToJSON(value?: {{ model_interface.signature.name }} | null): any {
+  return {{ model_interface.signature.name }}ToJSONTyped(value, false);
+}
+
+export function {{ model_interface.signature.name }}ToJSONTyped(value?: {{ model_interface.signature.name }} | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return {
+{% for prop in model_interface.property_metadata if not prop.is_index_signature %}
+   '{{ prop.name }}': value['{{ prop.name }}'],
+{% endfor %}
+  };
+}
+
+export const {{ model_interface.signature.name }}PropertyValidationAttributesMap: {
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
+} = {
+};

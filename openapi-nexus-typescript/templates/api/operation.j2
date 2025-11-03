@@ -1,15 +1,15 @@
 {% include "common/file_header.j2" with context %}
 
-{% for import in imports %}
+{% for import in api_operation.imports %}
 {{ import | format_import }}
 {% endfor %}
 
-{% if class.documentation %}
-{{ class.documentation | format_doc_comment }}
+{% if api_operation.class.documentation %}
+{{ api_operation.class.documentation | format_doc_comment }}
 {% endif %}
 
-{{ api_interface.signature | format_interface_signature }} {
-  {% for prop in api_interface.properties %}
+{{ api_operation.api_interface.signature | format_interface_signature }} {
+  {% for prop in api_operation.api_interface.properties %}
   {% if prop.documentation %}
   {{ prop.documentation | format_doc_comment | indent(2) }}
   {% endif %}
@@ -17,22 +17,22 @@
   {% endfor %}
 }
 
-{{ class.signature | format_class_signature }} {
-  {% for property in class.properties %}
+{{ api_operation.class.signature | format_class_signature }} {
+  {% for property in api_operation.class.properties %}
   {% if property.documentation %}
   {{ property.documentation | format_doc_comment | indent(2) }}
   {% endif %}
   {{ property | format_ts_class_property | indent(2) }};
   {% endfor %}
 
-  {% for method in class.methods %}
+  {% for method in api_operation.class.methods %}
   {% if method.documentation %}
   {{ method.documentation | format_doc_comment | indent(2) }}
   {% endif %}
   {{ method | format_method_signature | indent(2) }} {
     {% if method.body_template %}
     {% filter indent(4) %}
-    {%+ include "api/method_bodies/" + method.body_template + ".j2" with context %}
+    {%+ include "api/snippets/" + method.body_template + ".j2" with context %}
     {{- "\n" }}
     {% endfilter %}
     {% endif %}

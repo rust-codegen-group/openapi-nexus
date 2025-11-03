@@ -8,6 +8,7 @@ use crate::ast::{
     TsClassDefinition, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsProperty,
 };
 use crate::emission::error::EmitError;
+use crate::templating::data::{ApiOperationData, CommonFileHeaderData};
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 
@@ -22,7 +23,7 @@ pub enum TemplateName {
 
     // FileCategory::Apis
     /// Main API class template (generates complete API class files)
-    ApiClass,
+    ApiOperation,
 
     // FileCategory::Models
     /// Interface model template
@@ -36,12 +37,16 @@ pub enum TemplateName {
     /// Runtime utilities template
     Runtime,
 
+    // FileCategory::ProjectFiles
+    /// Project index file template
+    ProjectIndex,
+
     // FileCategory::None (Snippets/Partials)
     // These are included by other templates and not rendered directly
     /// File header template (used across all file types, included by other templates)
-    FileHeader,
+    CommonFileHeader,
     /// API method body: Constructor for base API class
-    ConstructorBaseApi,
+    ApiConstructorBaseApi,
     /// API method body: GET request handler
     ApiMethodGet,
     /// API method body: POST/PUT/PATCH request handler
@@ -51,19 +56,19 @@ pub enum TemplateName {
     /// API method body: Convenience wrapper method
     ApiMethodConvenience,
     /// API method body: Default/fallback method handler
-    DefaultMethod,
+    ApiDefaultMethod,
     /// Partial: Build URL path snippet
-    BuildUrlPath,
+    ApiBuildUrlPath,
     /// Partial: Build query parameters snippet
-    BuildQueryParams,
+    ApiBuildQueryParams,
     /// Partial: Build request headers snippet
-    BuildHeaders,
+    ApiBuildHeaders,
     /// Partial: Build request body snippet
-    BuildRequestBody,
+    ApiBuildRequestBody,
     /// Partial: Make HTTP request snippet
-    MakeRequest,
+    ApiMakeRequest,
     /// Model helper functions template (instanceOf/FromJSON/ToJSON/validation)
-    ModelHelpers,
+    ModelInferenceHelpers,
 }
 
 impl TemplateName {
@@ -74,30 +79,33 @@ impl TemplateName {
             Self::Readme => "README.md.j2",
 
             // FileCategory::Apis
-            Self::ApiClass => "api/api_class.j2",
+            Self::ApiOperation => "api/operation.j2",
 
             // FileCategory::Models
-            Self::ModelInterface => "models/interface.j2",
-            Self::ModelTypeAlias => "models/type_alias.j2",
-            Self::ModelEnum => "models/enum.j2",
+            Self::ModelInterface => "model/interface.j2",
+            Self::ModelTypeAlias => "model/type_alias.j2",
+            Self::ModelEnum => "model/enum.j2",
 
             // FileCategory::Runtime
             Self::Runtime => "runtime/runtime.j2",
 
+            // FileCategory::ProjectFiles
+            Self::ProjectIndex => "project/index.j2",
+
             // FileCategory::None (Snippets/Partials)
-            Self::FileHeader => "common/file_header.j2",
-            Self::ConstructorBaseApi => "api/method_bodies/constructor_base_api.j2",
-            Self::ApiMethodGet => "api/method_bodies/api_method_get.j2",
-            Self::ApiMethodPostPutPatch => "api/method_bodies/api_method_post_put_patch.j2",
-            Self::ApiMethodDelete => "api/method_bodies/api_method_delete.j2",
-            Self::ApiMethodConvenience => "api/method_bodies/api_method_convenience.j2",
-            Self::DefaultMethod => "api/method_bodies/default.j2",
-            Self::BuildUrlPath => "api/method_bodies/partials/_build_url_path.j2",
-            Self::BuildQueryParams => "api/method_bodies/partials/_build_query_params.j2",
-            Self::BuildHeaders => "api/method_bodies/partials/_build_headers.j2",
-            Self::BuildRequestBody => "api/method_bodies/partials/_build_request_body.j2",
-            Self::MakeRequest => "api/method_bodies/partials/_make_request.j2",
-            Self::ModelHelpers => "models/model_helpers.j2",
+            Self::CommonFileHeader => "common/file_header.j2",
+            Self::ApiConstructorBaseApi => "api/snippets/constructor_base_api.j2",
+            Self::ApiMethodGet => "api/snippets/api_method_get.j2",
+            Self::ApiMethodPostPutPatch => "api/snippets/api_method_post_put_patch.j2",
+            Self::ApiMethodDelete => "api/snippets/api_method_delete.j2",
+            Self::ApiMethodConvenience => "api/snippets/api_method_convenience.j2",
+            Self::ApiDefaultMethod => "api/snippets/default.j2",
+            Self::ApiBuildUrlPath => "api/snippets/build_url_path.j2",
+            Self::ApiBuildQueryParams => "api/snippets/build_query_params.j2",
+            Self::ApiBuildHeaders => "api/snippets/build_headers.j2",
+            Self::ApiBuildRequestBody => "api/snippets/build_request_body.j2",
+            Self::ApiMakeRequest => "api/snippets/make_request.j2",
+            Self::ModelInferenceHelpers => "model/snippets/interface_helpers.j2",
         }
     }
 
@@ -108,7 +116,7 @@ impl TemplateName {
             Self::Readme => FileCategory::Readme,
 
             // FileCategory::Apis
-            Self::ApiClass => FileCategory::Apis,
+            Self::ApiOperation => FileCategory::Apis,
 
             // FileCategory::Models
             Self::ModelInterface => FileCategory::Models,
@@ -118,21 +126,24 @@ impl TemplateName {
             // FileCategory::Runtime
             Self::Runtime => FileCategory::Runtime,
 
+            // FileCategory::ProjectFiles
+            Self::ProjectIndex => FileCategory::ProjectFiles,
+
             // FileCategory::None (Snippets/Partials)
             // These are included by other templates and not rendered directly
-            Self::FileHeader
-            | Self::ConstructorBaseApi
+            Self::CommonFileHeader
+            | Self::ApiConstructorBaseApi
             | Self::ApiMethodGet
             | Self::ApiMethodPostPutPatch
             | Self::ApiMethodDelete
             | Self::ApiMethodConvenience
-            | Self::DefaultMethod
-            | Self::BuildUrlPath
-            | Self::BuildQueryParams
-            | Self::BuildHeaders
-            | Self::BuildRequestBody
-            | Self::MakeRequest
-            | Self::ModelHelpers => FileCategory::None,
+            | Self::ApiDefaultMethod
+            | Self::ApiBuildUrlPath
+            | Self::ApiBuildQueryParams
+            | Self::ApiBuildHeaders
+            | Self::ApiBuildRequestBody
+            | Self::ApiMakeRequest
+            | Self::ModelInferenceHelpers => FileCategory::None,
         }
     }
 }
@@ -142,28 +153,30 @@ impl TemplateName {
 pub const TEMPLATE_PATHS: &[TemplateName] = &[
     // FileCategory::Readme
     TemplateName::Readme,
-    TemplateName::FileHeader,
     // FileCategory::Apis
-    TemplateName::ApiClass,
+    TemplateName::ApiOperation,
     // FileCategory::Models
+    TemplateName::ModelEnum,
     TemplateName::ModelInterface,
     TemplateName::ModelTypeAlias,
-    TemplateName::ModelEnum,
-    TemplateName::ModelHelpers,
     // FileCategory::Runtime
     TemplateName::Runtime,
+    // FileCategory::ProjectFiles
+    TemplateName::ProjectIndex,
     // FileCategory::None (Snippets/Partials)
-    TemplateName::ConstructorBaseApi,
+    TemplateName::ApiBuildHeaders,
+    TemplateName::ApiBuildQueryParams,
+    TemplateName::ApiBuildRequestBody,
+    TemplateName::ApiBuildUrlPath,
+    TemplateName::ApiConstructorBaseApi,
+    TemplateName::ApiDefaultMethod,
+    TemplateName::ApiMakeRequest,
+    TemplateName::ApiMethodConvenience,
+    TemplateName::ApiMethodDelete,
     TemplateName::ApiMethodGet,
     TemplateName::ApiMethodPostPutPatch,
-    TemplateName::ApiMethodDelete,
-    TemplateName::ApiMethodConvenience,
-    TemplateName::DefaultMethod,
-    TemplateName::BuildUrlPath,
-    TemplateName::BuildQueryParams,
-    TemplateName::BuildHeaders,
-    TemplateName::BuildRequestBody,
-    TemplateName::MakeRequest,
+    TemplateName::CommonFileHeader,
+    TemplateName::ModelInferenceHelpers,
 ];
 
 /// Template-based TypeScript code emitter and template handler
@@ -257,29 +270,28 @@ impl Templates {
         let api_interface =
             TsInterfaceDefinition::new(interface_signature).with_properties(interface_properties);
 
-        let header_obj = context! {
-            title => title.map(|s| s.to_string()),
-            description => description.map(|s| s.to_string()),
-            version => version.map(|s| s.to_string()),
-        };
+        let common_file_header = CommonFileHeaderData::new(
+            title.map(|s| s.to_string()).unwrap_or_default(),
+            description.map(|s| s.to_string()),
+            version.map(|s| s.to_string()).unwrap_or_default(),
+        );
+
+        let imports = class.imports.clone();
+        let api_operation = ApiOperationData::new(class, imports, api_interface);
+
         let template_data = context! {
-            class => class,
-            imports => class.imports.clone(),
-            api_interface => api_interface,
-            header => header_obj,
-            title => title.map(|s| s.to_string()),
-            description => description.map(|s| s.to_string()),
-            version => version.map(|s| s.to_string()),
+            common_file_header,
+            api_operation,
         };
 
         // Get the API class template and render directly
         let template = self
             .env
-            .get_template(TemplateName::ApiClass.file_path())
+            .get_template(TemplateName::ApiOperation.file_path())
             .map_err(|e| EmitError::TemplateError {
                 message: format!(
                     "Failed to get {} template: {}",
-                    TemplateName::ApiClass.file_path(),
+                    TemplateName::ApiOperation.file_path(),
                     e
                 ),
             })?;

@@ -21,7 +21,7 @@ export function instanceOfTag(value: object): value is Tag {
 }
 
 export function TagFromJSON(json: any): Tag {
-    return TagFromJSONTyped(json, false);
+  return TagFromJSONTyped(json, false);
 }
 
 export function TagFromJSONTyped(json: any, ignoreDiscriminator: boolean): Tag {
@@ -35,7 +35,7 @@ export function TagFromJSONTyped(json: any, ignoreDiscriminator: boolean): Tag {
 }
 
 export function TagToJSON(value?: Tag | null): any {
-    return TagToJSONTyped(value, false);
+  return TagToJSONTyped(value, false);
 }
 
 export function TagToJSONTyped(value?: Tag | null, ignoreDiscriminator: boolean = false): any {
@@ -49,18 +49,18 @@ export function TagToJSONTyped(value?: Tag | null, ignoreDiscriminator: boolean 
 }
 
 export const TagPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

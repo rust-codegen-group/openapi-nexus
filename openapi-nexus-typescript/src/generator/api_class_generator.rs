@@ -67,7 +67,7 @@ impl ApiClassGenerator {
                 )])
                 .with_docs(TsDocComment::new("Initialize the API client".to_string()))
                 .with_body_template(
-                    std::path::Path::new(TemplateName::ConstructorBaseApi.file_path())
+                    std::path::Path::new(TemplateName::ApiConstructorBaseApi.file_path())
                         .file_stem()
                         .and_then(|s| s.to_str())
                         .unwrap_or("constructor_base_api")
@@ -153,7 +153,7 @@ impl ApiClassGenerator {
             Method::GET => TemplateName::ApiMethodGet,
             Method::POST | Method::PUT | Method::PATCH => TemplateName::ApiMethodPostPutPatch,
             Method::DELETE => TemplateName::ApiMethodDelete,
-            _ => TemplateName::DefaultMethod,
+            _ => TemplateName::ApiDefaultMethod,
         };
 
         // Create template data

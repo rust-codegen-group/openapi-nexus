@@ -16,7 +16,10 @@ use crate::generator::{
     api_class_generator::ApiClassGenerator, package_files_generator::PackageFilesGenerator,
     schema_context::SchemaContext, schema_generator::SchemaGenerator,
 };
-use crate::templating::data::InterfaceData;
+use crate::templating::data::{
+    CommonFileHeaderData, ModelEnumData, ModelInterfaceData, ModelTypeAliasData, ProjectIndexData,
+    RuntimeRuntimeData,
+};
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, RuntimeData};
@@ -89,6 +92,7 @@ impl TsLangGenerator {
     /// Generate apis/index.ts file
     fn generate_apis_index_file(
         &self,
+        openapi: &OpenApi,
         api_classes: &HashMap<String, FileInfo>,
     ) -> Result<FileInfo, GeneratorError> {
         let mut exports = Vec::new();
@@ -100,16 +104,28 @@ impl TsLangGenerator {
             exports.push(format!("export * from './{}';", import_name));
         }
 
-        Ok(FileInfo::new(
-            "apis/index.ts".to_string(),
-            exports.join("\n"),
-            FileCategory::ProjectFiles,
-        ))
+        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
+        let project_index = ProjectIndexData { exports };
+        let template_context = minijinja::context! {
+            common_file_header,
+            project_index,
+        };
+
+        self.templating
+            .render_template(
+                TemplateName::ProjectIndex,
+                "apis/index.ts",
+                template_context,
+            )
+            .map_err(|e| GeneratorError::Generic {
+                message: format!("Failed to render apis/index.ts template: {}", e),
+            })
     }
 
     /// Generate models/index.ts file
     fn generate_models_index_file(
         &self,
+        openapi: &OpenApi,
         schemas: &HashMap<String, TsTypeDefinition>,
     ) -> Result<FileInfo, GeneratorError> {
         let mut exports = Vec::new();
@@ -121,28 +137,47 @@ impl TsLangGenerator {
             let import_name = filename.trim_end_matches(".ts");
             exports.push(format!("export * from './{}';", import_name));
         }
-        let content = exports.join("\n");
 
-        Ok(FileInfo::new(
-            "models/index.ts".to_string(),
-            content,
-            FileCategory::ProjectFiles,
-        ))
+        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
+        let project_index = ProjectIndexData { exports };
+        let template_context = minijinja::context! {
+            common_file_header,
+            project_index,
+        };
+
+        self.templating
+            .render_template(
+                TemplateName::ProjectIndex,
+                "models/index.ts",
+                template_context,
+            )
+            .map_err(|e| GeneratorError::Generic {
+                message: format!("Failed to render models/index.ts template: {}", e),
+            })
     }
 
     /// Generate main index.ts file
-    fn generate_main_index_file(&self) -> FileInfo {
-        let exports = [
-            // Export runtime files from runtime directory
+    fn generate_main_index_file(&self, openapi: &OpenApi) -> Result<FileInfo, GeneratorError> {
+        let exports = vec![
             "export * from './runtime/api';".to_string(),
             "export * from './runtime/config';".to_string(),
             "export * from './runtime/core';".to_string(),
-            // Export all from apis and models
             "export * from './apis';".to_string(),
             "export * from './models';".to_string(),
         ];
-        let content = exports.join("\n");
-        FileInfo::new("index.ts".to_string(), content, FileCategory::ProjectFiles)
+
+        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
+        let project_index = ProjectIndexData { exports };
+        let template_context = minijinja::context! {
+            common_file_header,
+            project_index,
+        };
+
+        self.templating
+            .render_template(TemplateName::ProjectIndex, "index.ts", template_context)
+            .map_err(|e| GeneratorError::Generic {
+                message: format!("Failed to render index.ts template: {}", e),
+            })
     }
 
     /// Generate package files (package.json, tsconfig.json, etc.)
@@ -215,7 +250,7 @@ impl LanguageCodeGenerator for TsLangGenerator {
 
         // Generate apis/index.ts file
         if !api_classes_map.is_empty() {
-            files.push(self.generate_apis_index_file(&api_classes_map)?);
+            files.push(self.generate_apis_index_file(openapi, &api_classes_map)?);
         }
 
         Ok(files)
@@ -232,22 +267,23 @@ impl LanguageCodeGenerator for TsLangGenerator {
             HashMap::new()
         };
 
-        let header_data = HeaderData::from_openapi(openapi);
+        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
         let mut files = Vec::new();
 
         // Generate model files
         for (name, type_def) in &schemas {
+            let common_file_header = common_file_header.clone();
             let filename = self.generate_filename(name);
 
             // Emit model content using template
             let file = match type_def {
                 TsTypeDefinition::Interface(interface) => {
-                    // Create InterfaceData from interface definition
-                    let interface_data = InterfaceData::from_interface(interface);
+                    // Create ModelInterfaceData from interface definition
+                    let model_interface_data = ModelInterfaceData::from_interface(interface);
 
                     let template_context = minijinja::context! {
-                        header => header_data,
-                        interface => interface_data,
+                        common_file_header,
+                        model_interface => model_interface_data,
                     };
                     self.templating
                         .render_template(TemplateName::ModelInterface, &filename, template_context)
@@ -256,9 +292,12 @@ impl LanguageCodeGenerator for TsLangGenerator {
                         })?
                 }
                 TsTypeDefinition::TypeAlias(type_alias) => {
+                    let model_type_alias = ModelTypeAliasData {
+                        type_alias_definition: type_alias.clone(),
+                    };
                     let template_context = minijinja::context! {
-                        header => header_data,
-                        type_alias => type_alias,
+                        common_file_header,
+                        model_type_alias,
                     };
                     self.templating
                         .render_template(TemplateName::ModelTypeAlias, &filename, template_context)
@@ -267,9 +306,12 @@ impl LanguageCodeGenerator for TsLangGenerator {
                         })?
                 }
                 TsTypeDefinition::Enum(enum_def) => {
+                    let model_enum = ModelEnumData {
+                        enum_definition: enum_def.clone(),
+                    };
                     let template_context = minijinja::context! {
-                        header => header_data,
-                        enum => enum_def,
+                        common_file_header,
+                        model_enum,
                     };
                     self.templating
                         .render_template(TemplateName::ModelEnum, &filename, template_context)
@@ -284,7 +326,7 @@ impl LanguageCodeGenerator for TsLangGenerator {
 
         // Generate models/index.ts file
         if !schemas.is_empty() {
-            files.push(self.generate_models_index_file(&schemas)?);
+            files.push(self.generate_models_index_file(openapi, &schemas)?);
         }
 
         Ok(files)
@@ -296,14 +338,11 @@ impl LanguageCodeGenerator for TsLangGenerator {
         runtime_data: RuntimeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let header_data = HeaderData::from_openapi(openapi);
-        let header_obj = minijinja::context! {
-            title => Some(header_data.title.clone()),
-            description => header_data.description.clone(),
-            version => Some(header_data.version.clone()),
-        };
+        let common_file_header = CommonFileHeaderData::from(header_data);
+        let runtime_runtime = RuntimeRuntimeData::from(runtime_data);
         let template_context = minijinja::context! {
-            base_path => runtime_data.base_path,
-            header => header_obj,
+            common_file_header,
+            runtime_runtime,
         };
         let file = self
             .templating
@@ -319,20 +358,15 @@ impl LanguageCodeGenerator for TsLangGenerator {
         &self,
         openapi: &OpenApi,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let mut files = Vec::new();
-
-        // Generate package files (package.json, tsconfig.json, etc.)
-        files.extend(self.generate_package_files(openapi)?);
-        // Generate main index.ts (empty HashMaps since we don't need the data for exports)
-        files.push(self.generate_main_index_file());
-
+        let mut files = self.generate_package_files(openapi)?;
+        files.push(self.generate_main_index_file(openapi)?);
         Ok(files)
     }
 
     fn generate_readme(
         &self,
-        #[allow(unused)] openapi: &OpenApi,
-        #[allow(unused)] data: openapi_nexus_core::data::ReadmeData,
+        _: &OpenApi,
+        data: openapi_nexus_core::data::ReadmeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let file = self.templating.render_template(
             TemplateName::Readme,

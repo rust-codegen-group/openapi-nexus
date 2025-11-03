@@ -1,4 +1,4 @@
-//! Interface data for template generation
+//! Model interface data for template generation
 
 use serde::{Deserialize, Serialize};
 
@@ -15,9 +15,9 @@ pub struct PropertyMetadata {
     pub is_index_signature: bool,
 }
 
-/// Interface data for template context
+/// Model interface data for template context
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InterfaceData {
+pub struct ModelInterfaceData {
     pub signature: TsInterfaceSignature,
     pub properties: Vec<TsProperty>,
     pub documentation: Option<TsDocComment>,
@@ -25,8 +25,8 @@ pub struct InterfaceData {
     pub property_metadata: Vec<PropertyMetadata>,
 }
 
-impl InterfaceData {
-    /// Create new interface data from a TsInterfaceDefinition
+impl ModelInterfaceData {
+    /// Create new model interface data from a TsInterfaceDefinition
     pub fn from_interface(interface: &TsInterfaceDefinition) -> Self {
         // Extract required property names
         let required_prop_names: Vec<String> = interface

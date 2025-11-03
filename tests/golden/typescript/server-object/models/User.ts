@@ -26,7 +26,7 @@ export function instanceOfUser(value: object): value is User {
 }
 
 export function UserFromJSON(json: any): User {
-    return UserFromJSONTyped(json, false);
+  return UserFromJSONTyped(json, false);
 }
 
 export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User {
@@ -43,7 +43,7 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
 }
 
 export function UserToJSON(value?: User | null): any {
-    return UserToJSONTyped(value, false);
+  return UserToJSONTyped(value, false);
 }
 
 export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolean = false): any {
@@ -60,18 +60,18 @@ export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolea
 }
 
 export const UserPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

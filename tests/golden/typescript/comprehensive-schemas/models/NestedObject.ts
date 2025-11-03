@@ -21,7 +21,7 @@ export function instanceOfNestedObject(value: object): value is NestedObject {
 }
 
 export function NestedObjectFromJSON(json: any): NestedObject {
-    return NestedObjectFromJSONTyped(json, false);
+  return NestedObjectFromJSONTyped(json, false);
 }
 
 export function NestedObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean): NestedObject {
@@ -35,7 +35,7 @@ export function NestedObjectFromJSONTyped(json: any, ignoreDiscriminator: boolea
 }
 
 export function NestedObjectToJSON(value?: NestedObject | null): any {
-    return NestedObjectToJSONTyped(value, false);
+  return NestedObjectToJSONTyped(value, false);
 }
 
 export function NestedObjectToJSONTyped(value?: NestedObject | null, ignoreDiscriminator: boolean = false): any {
@@ -49,18 +49,18 @@ export function NestedObjectToJSONTyped(value?: NestedObject | null, ignoreDiscr
 }
 
 export const NestedObjectPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

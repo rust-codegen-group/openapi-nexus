@@ -25,7 +25,7 @@ export function instanceOfOrder(value: object): value is Order {
 }
 
 export function OrderFromJSON(json: any): Order {
-    return OrderFromJSONTyped(json, false);
+  return OrderFromJSONTyped(json, false);
 }
 
 export function OrderFromJSONTyped(json: any, ignoreDiscriminator: boolean): Order {
@@ -43,7 +43,7 @@ export function OrderFromJSONTyped(json: any, ignoreDiscriminator: boolean): Ord
 }
 
 export function OrderToJSON(value?: Order | null): any {
-    return OrderToJSONTyped(value, false);
+  return OrderToJSONTyped(value, false);
 }
 
 export function OrderToJSONTyped(value?: Order | null, ignoreDiscriminator: boolean = false): any {
@@ -61,18 +61,18 @@ export function OrderToJSONTyped(value?: Order | null, ignoreDiscriminator: bool
 }
 
 export const OrderPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

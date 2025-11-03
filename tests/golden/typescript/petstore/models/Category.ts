@@ -21,7 +21,7 @@ export function instanceOfCategory(value: object): value is Category {
 }
 
 export function CategoryFromJSON(json: any): Category {
-    return CategoryFromJSONTyped(json, false);
+  return CategoryFromJSONTyped(json, false);
 }
 
 export function CategoryFromJSONTyped(json: any, ignoreDiscriminator: boolean): Category {
@@ -35,7 +35,7 @@ export function CategoryFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
 }
 
 export function CategoryToJSON(value?: Category | null): any {
-    return CategoryToJSONTyped(value, false);
+  return CategoryToJSONTyped(value, false);
 }
 
 export function CategoryToJSONTyped(value?: Category | null, ignoreDiscriminator: boolean = false): any {
@@ -49,18 +49,18 @@ export function CategoryToJSONTyped(value?: Category | null, ignoreDiscriminator
 }
 
 export const CategoryPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

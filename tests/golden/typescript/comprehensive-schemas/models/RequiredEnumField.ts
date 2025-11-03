@@ -21,7 +21,7 @@ export function instanceOfRequiredEnumField(value: object): value is RequiredEnu
 }
 
 export function RequiredEnumFieldFromJSON(json: any): RequiredEnumField {
-    return RequiredEnumFieldFromJSONTyped(json, false);
+  return RequiredEnumFieldFromJSONTyped(json, false);
 }
 
 export function RequiredEnumFieldFromJSONTyped(json: any, ignoreDiscriminator: boolean): RequiredEnumField {
@@ -34,7 +34,7 @@ export function RequiredEnumFieldFromJSONTyped(json: any, ignoreDiscriminator: b
 }
 
 export function RequiredEnumFieldToJSON(value?: RequiredEnumField | null): any {
-    return RequiredEnumFieldToJSONTyped(value, false);
+  return RequiredEnumFieldToJSONTyped(value, false);
 }
 
 export function RequiredEnumFieldToJSONTyped(value?: RequiredEnumField | null, ignoreDiscriminator: boolean = false): any {
@@ -47,18 +47,18 @@ export function RequiredEnumFieldToJSONTyped(value?: RequiredEnumField | null, i
 }
 
 export const RequiredEnumFieldPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

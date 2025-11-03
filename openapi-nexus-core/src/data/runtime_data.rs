@@ -7,7 +7,6 @@ use utoipa::openapi;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RuntimeData {
     pub base_path: String,
-    pub openapi_info: openapi::Info,
 }
 
 impl RuntimeData {
@@ -18,9 +17,6 @@ impl RuntimeData {
             .and_then(|servers| servers.first())
             .map(|server| server.url.clone())
             .unwrap_or_else(|| "http://localhost".to_string());
-        Self {
-            base_path,
-            openapi_info: openapi.info.clone(),
-        }
+        Self { base_path }
     }
 }

@@ -22,7 +22,7 @@ export function instanceOfComplexNestedObject(value: object): value is ComplexNe
 }
 
 export function ComplexNestedObjectFromJSON(json: any): ComplexNestedObject {
-    return ComplexNestedObjectFromJSONTyped(json, false);
+  return ComplexNestedObjectFromJSONTyped(json, false);
 }
 
 export function ComplexNestedObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean): ComplexNestedObject {
@@ -36,7 +36,7 @@ export function ComplexNestedObjectFromJSONTyped(json: any, ignoreDiscriminator:
 }
 
 export function ComplexNestedObjectToJSON(value?: ComplexNestedObject | null): any {
-    return ComplexNestedObjectToJSONTyped(value, false);
+  return ComplexNestedObjectToJSONTyped(value, false);
 }
 
 export function ComplexNestedObjectToJSONTyped(value?: ComplexNestedObject | null, ignoreDiscriminator: boolean = false): any {
@@ -50,18 +50,18 @@ export function ComplexNestedObjectToJSONTyped(value?: ComplexNestedObject | nul
 }
 
 export const ComplexNestedObjectPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

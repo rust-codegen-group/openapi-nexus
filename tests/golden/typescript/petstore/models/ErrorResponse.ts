@@ -23,7 +23,7 @@ export function instanceOfErrorResponse(value: object): value is ErrorResponse {
 }
 
 export function ErrorResponseFromJSON(json: any): ErrorResponse {
-    return ErrorResponseFromJSONTyped(json, false);
+  return ErrorResponseFromJSONTyped(json, false);
 }
 
 export function ErrorResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): ErrorResponse {
@@ -37,7 +37,7 @@ export function ErrorResponseFromJSONTyped(json: any, ignoreDiscriminator: boole
 }
 
 export function ErrorResponseToJSON(value?: ErrorResponse | null): any {
-    return ErrorResponseToJSONTyped(value, false);
+  return ErrorResponseToJSONTyped(value, false);
 }
 
 export function ErrorResponseToJSONTyped(value?: ErrorResponse | null, ignoreDiscriminator: boolean = false): any {
@@ -51,18 +51,18 @@ export function ErrorResponseToJSONTyped(value?: ErrorResponse | null, ignoreDis
 }
 
 export const ErrorResponsePropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

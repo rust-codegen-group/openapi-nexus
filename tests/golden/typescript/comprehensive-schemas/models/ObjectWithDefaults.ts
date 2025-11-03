@@ -22,7 +22,7 @@ export function instanceOfObjectWithDefaults(value: object): value is ObjectWith
 }
 
 export function ObjectWithDefaultsFromJSON(json: any): ObjectWithDefaults {
-    return ObjectWithDefaultsFromJSONTyped(json, false);
+  return ObjectWithDefaultsFromJSONTyped(json, false);
 }
 
 export function ObjectWithDefaultsFromJSONTyped(json: any, ignoreDiscriminator: boolean): ObjectWithDefaults {
@@ -37,7 +37,7 @@ export function ObjectWithDefaultsFromJSONTyped(json: any, ignoreDiscriminator: 
 }
 
 export function ObjectWithDefaultsToJSON(value?: ObjectWithDefaults | null): any {
-    return ObjectWithDefaultsToJSONTyped(value, false);
+  return ObjectWithDefaultsToJSONTyped(value, false);
 }
 
 export function ObjectWithDefaultsToJSONTyped(value?: ObjectWithDefaults | null, ignoreDiscriminator: boolean = false): any {
@@ -52,18 +52,18 @@ export function ObjectWithDefaultsToJSONTyped(value?: ObjectWithDefaults | null,
 }
 
 export const ObjectWithDefaultsPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };

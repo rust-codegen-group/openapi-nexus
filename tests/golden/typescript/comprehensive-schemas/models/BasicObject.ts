@@ -24,7 +24,7 @@ export function instanceOfBasicObject(value: object): value is BasicObject {
 }
 
 export function BasicObjectFromJSON(json: any): BasicObject {
-    return BasicObjectFromJSONTyped(json, false);
+  return BasicObjectFromJSONTyped(json, false);
 }
 
 export function BasicObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean): BasicObject {
@@ -39,7 +39,7 @@ export function BasicObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean
 }
 
 export function BasicObjectToJSON(value?: BasicObject | null): any {
-    return BasicObjectToJSONTyped(value, false);
+  return BasicObjectToJSONTyped(value, false);
 }
 
 export function BasicObjectToJSONTyped(value?: BasicObject | null, ignoreDiscriminator: boolean = false): any {
@@ -54,18 +54,18 @@ export function BasicObjectToJSONTyped(value?: BasicObject | null, ignoreDiscrim
 }
 
 export const BasicObjectPropertyValidationAttributesMap: {
-    [property: string]: {
-        maxLength?: number,
-        minLength?: number,
-        pattern?: string,
-        maximum?: number,
-        exclusiveMaximum?: boolean,
-        minimum?: number,
-        exclusiveMinimum?: boolean,
-        multipleOf?: number,
-        maxItems?: number,
-        minItems?: number,
-        uniqueItems?: boolean
-    }
+  [property: string]: {
+    maxLength?: number,
+    minLength?: number,
+    pattern?: string,
+    maximum?: number,
+    exclusiveMaximum?: boolean,
+    minimum?: number,
+    exclusiveMinimum?: boolean,
+    multipleOf?: number,
+    maxItems?: number,
+    minItems?: number,
+    uniqueItems?: boolean
+  }
 } = {
 };
