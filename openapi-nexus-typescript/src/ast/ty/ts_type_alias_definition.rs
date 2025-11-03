@@ -5,7 +5,7 @@ use crate::ast::TsDocComment;
 use crate::ast::{TsExpression, TsGeneric};
 use crate::emission::error::EmitError;
 use crate::emission::ts_type_emitter::TsTypeEmitter;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript type alias definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,13 +40,10 @@ impl TsTypeAliasDefinition {
     }
 }
 
-impl ToRcDocWithContext for TsTypeAliasDefinition {
+impl ToRcDoc for TsTypeAliasDefinition {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         let type_emitter = TsTypeEmitter;
 
         let mut doc = RcDoc::text("export ")
@@ -56,11 +53,8 @@ impl ToRcDocWithContext for TsTypeAliasDefinition {
 
         // Add generics
         if !self.generics.is_empty() {
-            let generic_docs: Result<Vec<_>, _> = self
-                .generics
-                .iter()
-                .map(|g| g.to_rcdoc_with_context(context))
-                .collect();
+            let generic_docs: Result<Vec<_>, _> =
+                self.generics.iter().map(|g| g.to_rcdoc()).collect();
             let generic_strings: Vec<String> = generic_docs?
                 .iter()
                 .map(|doc| format!("{}", doc.pretty(80)))
@@ -74,10 +68,7 @@ impl ToRcDocWithContext for TsTypeAliasDefinition {
 
         // Add documentation if present
         if let Some(docs) = &self.documentation {
-            doc = docs
-                .to_rcdoc_with_context(context)?
-                .append(RcDoc::line())
-                .append(doc);
+            doc = docs.to_rcdoc()?.append(RcDoc::line()).append(doc);
         }
 
         Ok(doc)

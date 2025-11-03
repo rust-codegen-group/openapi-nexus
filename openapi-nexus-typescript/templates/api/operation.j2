@@ -1,36 +1,29 @@
 {% include "common/file_header.j2" with context %}
 
 {% for import in api_operation.imports %}
-{{ import | format_import }}
+{{ import | fmt }}
 {% endfor %}
 
 {% if api_operation.ts_class.documentation %}
-{{ api_operation.ts_class.documentation | format_doc_comment }}
+{{ api_operation.ts_class.documentation | fmt }}
 {% endif %}
 
-{{ api_operation.ts_interface.signature | format_interface_signature }} {
+{{ api_operation.ts_interface.signature | fmt }} {
   {% for prop in api_operation.ts_interface.properties %}
   {% if prop.documentation %}
-  {{ prop.documentation | format_doc_comment | indent(2) }}
+  {{ prop.documentation | fmt | indent(2) }}
   {% endif %}
-  {{ prop | format_ts_property | indent(2) }};
+  {{ prop | fmt | indent(2) }};
   {% endfor %}
 }
 
-{{ api_operation.ts_class.signature | format_class_signature }} {
-  {% for property in api_operation.ts_class.properties %}
-  {% if property.documentation %}
-  {{ property.documentation | format_doc_comment | indent(2) }}
-  {% endif %}
-  {{ property | format_ts_class_property | indent(2) }};
-  {% endfor %}
-
+{{ api_operation.ts_class.signature | fmt }} {
   {% for method in api_operation.ts_class.methods %}
   {% set method_data = api_operation.method_templates[method.name] %}
   {% if method.documentation %}
-  {{ method.documentation | format_doc_comment | indent(2) }}
+  {{ method.documentation | fmt | indent(2) }}
   {% endif %}
-  {{ method | format_method_signature | indent(2) }} {
+  {{ method | fmt | indent(2) }} {
     {% if method_data %}
     {% filter indent(4) %}
     {%+ include method_data.body_template with context %}

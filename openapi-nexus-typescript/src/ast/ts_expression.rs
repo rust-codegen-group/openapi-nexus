@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::ast::{TsParameter, TsPrimitive};
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript type expression
 #[derive(Debug, Clone, Ord, PartialOrd, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -91,15 +91,10 @@ impl fmt::Display for TsExpression {
     }
 }
 
-impl TsExpression {}
-
-impl ToRcDocWithContext for TsExpression {
+impl ToRcDoc for TsExpression {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        _context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         let doc = match self {
             TsExpression::Primitive(primitive) => {
                 let s = match primitive {
@@ -120,13 +115,10 @@ impl ToRcDocWithContext for TsExpression {
             }
             TsExpression::Array(item_type) => RcDoc::text("Array")
                 .append(RcDoc::text("<"))
-                .append(item_type.to_rcdoc_with_context(_context)?)
+                .append(item_type.to_rcdoc()?)
                 .append(RcDoc::text(">")),
             TsExpression::Union(types) => {
-                let docs: Result<Vec<_>, _> = types
-                    .iter()
-                    .map(|t| t.to_rcdoc_with_context(_context))
-                    .collect();
+                let docs: Result<Vec<_>, _> = types.iter().map(|t| t.to_rcdoc()).collect();
                 RcDoc::intersperse(
                     docs?,
                     RcDoc::space()
@@ -135,10 +127,7 @@ impl ToRcDocWithContext for TsExpression {
                 )
             }
             TsExpression::Intersection(types) => {
-                let docs: Result<Vec<_>, _> = types
-                    .iter()
-                    .map(|t| t.to_rcdoc_with_context(_context))
-                    .collect();
+                let docs: Result<Vec<_>, _> = types.iter().map(|t| t.to_rcdoc()).collect();
                 RcDoc::intersperse(
                     docs?,
                     RcDoc::space()
@@ -150,10 +139,8 @@ impl ToRcDocWithContext for TsExpression {
                 parameters,
                 return_type,
             } => {
-                let param_docs: Result<Vec<_>, _> = parameters
-                    .iter()
-                    .map(|p| p.to_rcdoc_with_context(_context))
-                    .collect();
+                let param_docs: Result<Vec<_>, _> =
+                    parameters.iter().map(|p| p.to_rcdoc()).collect();
                 let params = RcDoc::text("(")
                     .append(RcDoc::intersperse(
                         param_docs?,
@@ -161,7 +148,7 @@ impl ToRcDocWithContext for TsExpression {
                     ))
                     .append(RcDoc::text(")"));
                 let ret = if let Some(ret_type) = return_type {
-                    ret_type.to_rcdoc_with_context(_context)?
+                    ret_type.to_rcdoc()?
                 } else {
                     RcDoc::text("void")
                 };
@@ -181,7 +168,7 @@ impl ToRcDocWithContext for TsExpression {
                             Ok(RcDoc::text(name.clone())
                                 .append(RcDoc::text(":"))
                                 .append(RcDoc::space())
-                                .append(type_expr.to_rcdoc_with_context(_context)?))
+                                .append(type_expr.to_rcdoc()?))
                         })
                         .collect();
                     RcDoc::text("{")
@@ -195,10 +182,7 @@ impl ToRcDocWithContext for TsExpression {
                 }
             }
             TsExpression::Tuple(types) => {
-                let docs: Result<Vec<_>, _> = types
-                    .iter()
-                    .map(|t| t.to_rcdoc_with_context(_context))
-                    .collect();
+                let docs: Result<Vec<_>, _> = types.iter().map(|t| t.to_rcdoc()).collect();
                 RcDoc::text("[")
                     .append(RcDoc::intersperse(
                         docs?,
@@ -211,7 +195,7 @@ impl ToRcDocWithContext for TsExpression {
                 .append(RcDoc::text(key.clone()))
                 .append(RcDoc::text(":"))
                 .append(RcDoc::space())
-                .append(value_type.to_rcdoc_with_context(_context)?)
+                .append(value_type.to_rcdoc()?)
                 .append(RcDoc::text("]")),
         };
         Ok(doc)

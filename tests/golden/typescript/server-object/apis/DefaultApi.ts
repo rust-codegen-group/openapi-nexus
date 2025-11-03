@@ -24,7 +24,6 @@ export interface DefaultApiInterface {
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
-
   /** Initialize the API client */
   constructor(configuration?: Configuration) {
     // Call BaseAPI constructor with provided configuration or default
@@ -51,7 +50,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     return new JSONApiResponse(response);
   }
   /** Get all users */
-  async getUsers(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<object> {
+  async getUsers(initOverrides: InitOverrideFunction | RequestInit?): Promise<object> {
     const response = await this.getUsersRaw(initOverrides);
     return await response.value();
   }
@@ -75,7 +74,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     return new JSONApiResponse(response);
   }
   /** Get user by ID */
-  async getUsers(id: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<object> {
+  async getUsers(id: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<object> {
     const response = await this.getUsersRaw(id, initOverrides);
     return await response.value();
   }}

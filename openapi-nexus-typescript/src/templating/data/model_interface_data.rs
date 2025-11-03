@@ -1,6 +1,6 @@
 //! Model interface data for template generation
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::ast::common::TsDocComment;
 use crate::ast::common::TsProperty;
@@ -8,7 +8,7 @@ use crate::ast::ty::TsInterfaceDefinition;
 use crate::ast::ty::TsInterfaceSignature;
 
 /// Simplified property metadata for template helpers
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PropertyMetadata {
     pub name: String,
     pub optional: bool,
@@ -16,7 +16,7 @@ pub struct PropertyMetadata {
 }
 
 /// Model interface data for template context
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ModelInterfaceData {
     pub signature: TsInterfaceSignature,
     pub properties: Vec<TsProperty>,

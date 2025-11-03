@@ -35,7 +35,6 @@ export interface StoreApiInterface {
 }
 
 export class StoreApi extends BaseAPI implements StoreApiInterface {
-
   /** Initialize the API client */
   constructor(configuration?: Configuration) {
     // Call BaseAPI constructor with provided configuration or default
@@ -62,7 +61,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     return new JSONApiResponse(response);
   }
   /** Returns pet inventories by status */
-  async getInventory(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<string> {
+  async getInventory(initOverrides: InitOverrideFunction | RequestInit?): Promise<string> {
     const response = await this.getInventoryRaw(initOverrides);
     return await response.value();
   }
@@ -88,7 +87,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     return new JSONApiResponse(response, (jsonValue) => OrderFromJSON(jsonValue));
   }
   /** Place an order for a pet */
-  async placeOrder(body: {"Reference": "Order"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Order> {
+  async placeOrder(body: Order, initOverrides: InitOverrideFunction | RequestInit?): Promise<Order> {
     const response = await this.placeOrderRaw(body, initOverrides);
     return await response.value();
   }
@@ -112,7 +111,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     return new JSONApiResponse(response, (jsonValue) => OrderFromJSON(jsonValue));
   }
   /** Find purchase order by ID */
-  async getOrderById(orderId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Order> {
+  async getOrderById(orderId: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<Order> {
     const response = await this.getOrderByIdRaw(orderId, initOverrides);
     return await response.value();
   }
@@ -136,7 +135,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     return new VoidApiResponse(response);
   }
   /** Delete purchase order by ID */
-  async deleteOrder(orderId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+  async deleteOrder(orderId: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<void> {
     const response = await this.deleteOrderRaw(orderId, initOverrides);
     return await response.value();
   }}

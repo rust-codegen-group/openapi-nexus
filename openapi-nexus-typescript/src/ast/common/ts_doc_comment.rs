@@ -1,8 +1,9 @@
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
+use crate::config::MAX_LINE_WIDTH;
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript documentation comment
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,22 +79,20 @@ pub fn create_type_doc(description: &str, additional_info: Option<&str>) -> TsDo
     }
 }
 
-// ToRcDocWithContext implementations
-impl ToRcDocWithContext for TsDocComment {
+// ToRcDoc implementations
+impl ToRcDoc for TsDocComment {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
-        let indent_str = " ".repeat(context.indent);
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+        const INDENT: usize = 0;
+        let indent_str = " ".repeat(INDENT);
 
         // Determine if we need multiline format based on:
         // 1. Content contains newlines (explicit multiline)
         // 2. Single-line format (including indentation) would exceed max_line_width
         let has_newlines = self.0.contains('\n');
         let single_line_length = indent_str.len() + 7 + self.0.len(); // indent + "/** " + content + " */"
-        let needs_multiline = has_newlines || single_line_length > context.max_line_width;
+        let needs_multiline = has_newlines || single_line_length > MAX_LINE_WIDTH;
 
         let doc = if needs_multiline {
             let lines: Vec<&str> = self.0.lines().collect();

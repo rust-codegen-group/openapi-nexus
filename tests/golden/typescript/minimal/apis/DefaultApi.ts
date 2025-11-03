@@ -18,7 +18,6 @@ export interface DefaultApiInterface {
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
-
   /** Initialize the API client */
   constructor(configuration?: Configuration) {
     // Call BaseAPI constructor with provided configuration or default
@@ -43,7 +42,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     }, initOverrides);
     return new JSONApiResponse(response);
   }
-  async getTest(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<any> {
+  async getTest(initOverrides: InitOverrideFunction | RequestInit?): Promise<any> {
     const response = await this.getTestRaw(initOverrides);
     return await response.value();
   }}

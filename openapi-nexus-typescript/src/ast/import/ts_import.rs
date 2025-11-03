@@ -2,7 +2,7 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 use super::ts_import_specifier::TsImportSpecifier;
 
@@ -116,13 +116,10 @@ impl TsImport {
     }
 }
 
-impl ToRcDocWithContext for TsImport {
+impl ToRcDoc for TsImport {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        _context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         Ok(RcDoc::text(self.to_typescript_string()))
     }
 }

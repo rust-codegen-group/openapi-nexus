@@ -1,28 +1,29 @@
 //! Parameter extraction utilities for OpenAPI operations
 
-use heck::ToPascalCase as _;
+use utoipa::openapi;
 use utoipa::openapi::path::Operation;
 
 use crate::ast::TsExpression;
 use crate::core::GeneratorError;
 use crate::utils::schema_mapper::SchemaMapper;
+use openapi_nexus_core::data::ParameterInfo;
 
 /// Extracted parameters from an OpenAPI operation
 #[derive(Debug, Clone)]
 pub struct ExtractedParameters {
     /// Path parameters (e.g., {id} in /users/{id})
-    pub path_params: Vec<ParameterInfo>,
+    pub path_params: Vec<TsParameterInfo>,
     /// Query parameters (e.g., ?page=1&limit=10)
-    pub query_params: Vec<ParameterInfo>,
+    pub query_params: Vec<TsParameterInfo>,
     /// Header parameters
-    pub header_params: Vec<ParameterInfo>,
+    pub header_params: Vec<TsParameterInfo>,
     /// Request body parameter
-    pub body_param: Option<ParameterInfo>,
+    pub body_param: Option<TsParameterInfo>,
 }
 
 /// Information about a parameter
 #[derive(Debug, Clone)]
-pub struct ParameterInfo {
+pub struct TsParameterInfo {
     /// Parameter name
     pub name: String,
     /// Parameter type
@@ -72,20 +73,20 @@ impl ParameterExtractor {
         // Extract parameters from the operation
         if let Some(parameters) = &operation.parameters {
             for param in parameters {
-                let param_info = ParameterInfo {
+                let param_info = TsParameterInfo {
                     name: param.name.clone(),
                     type_expr: if let Some(schema) = &param.schema {
                         self.map_parameter_schema_to_type(schema)
                     } else {
                         TsExpression::Primitive(crate::ast::TsPrimitive::String)
                     },
-                    required: matches!(param.required, utoipa::openapi::Required::True),
+                    required: matches!(param.required, openapi::Required::True),
                     description: param.description.clone(),
                     default_value: None, // TODO: Extract default value from schema
                 };
 
                 match param.parameter_in {
-                    utoipa::openapi::path::ParameterIn::Path => {
+                    openapi::path::ParameterIn::Path => {
                         // Validate that this parameter actually exists in the path
                         if path_param_names.contains(&param.name) {
                             path_params.push(param_info);
@@ -94,10 +95,10 @@ impl ParameterExtractor {
                             query_params.push(param_info);
                         }
                     }
-                    utoipa::openapi::path::ParameterIn::Query => {
+                    openapi::path::ParameterIn::Query => {
                         query_params.push(param_info);
                     }
-                    utoipa::openapi::path::ParameterIn::Header => {
+                    openapi::path::ParameterIn::Header => {
                         header_params.push(param_info);
                     }
                     _ => {
@@ -112,10 +113,10 @@ impl ParameterExtractor {
             && let Some(json_content) = request_body.content.get("application/json")
             && let Some(schema_ref) = &json_content.schema
         {
-            body_param = Some(ParameterInfo {
+            body_param = Some(TsParameterInfo {
                 name: "body".to_string(),
                 type_expr: self.map_schema_ref_to_type(schema_ref),
-                required: matches!(request_body.required, Some(utoipa::openapi::Required::True)),
+                required: matches!(request_body.required, Some(openapi::Required::True)),
                 description: request_body.description.clone(),
                 default_value: None,
             });
@@ -155,43 +156,91 @@ impl ParameterExtractor {
     /// Map parameter schema to TypeScript type
     fn map_parameter_schema_to_type(
         &self,
-        schema_ref: &utoipa::openapi::RefOr<utoipa::openapi::Schema>,
+        schema_ref: &openapi::RefOr<openapi::Schema>,
     ) -> TsExpression {
         self.schema_mapper.map_ref_or_schema_to_type(schema_ref)
     }
 
     /// Map schema reference to TypeScript type
-    fn map_schema_ref_to_type(
-        &self,
-        schema_ref: &utoipa::openapi::RefOr<utoipa::openapi::Schema>,
-    ) -> TsExpression {
+    fn map_schema_ref_to_type(&self, schema_ref: &openapi::RefOr<openapi::Schema>) -> TsExpression {
         self.schema_mapper.map_ref_or_schema_to_type(schema_ref)
     }
 
-    /// Generate a request interface name from operation details
-    pub fn generate_request_interface_name(
+    /// Extract ParameterInfo for template rendering
+    pub fn extract_core_parameters(
         &self,
-        operation_id: Option<&str>,
-        method: &str,
+        operation: &Operation,
         path: &str,
-    ) -> String {
-        let base_name = if let Some(id) = operation_id {
-            // Use operation ID if available
-            id.to_string()
-        } else {
-            // Generate name from method and path
-            let method_upper = method.to_uppercase();
-            let path_clean = path
-                .chars()
-                .map(|c| if c.is_alphanumeric() { c } else { '_' })
-                .collect::<String>()
-                .trim_matches('_')
-                .to_string();
+    ) -> Result<ExtractedCoreParameters, GeneratorError> {
+        let mut path_params = Vec::new();
+        let mut query_params = Vec::new();
+        let mut header_params = Vec::new();
+        let mut body_param = None;
 
-            format!("{}{}Request", method_upper, path_clean)
-        };
+        let path_param_names = self.extract_path_parameter_names(path);
 
-        // Convert to PascalCase
-        base_name.to_pascal_case()
+        // Extract parameters from the operation
+        if let Some(parameters) = &operation.parameters {
+            for param in parameters {
+                let param_info = ParameterInfo {
+                    name: param.name.clone(),
+                    schema: param.schema.clone(),
+                    required: matches!(param.required, openapi::Required::True),
+                    deprecated: matches!(param.deprecated, Some(openapi::Deprecated::True)),
+                    location: param.parameter_in.clone(),
+                };
+
+                match param.parameter_in {
+                    openapi::path::ParameterIn::Path => {
+                        if path_param_names.contains(&param.name) {
+                            path_params.push(param_info);
+                        } else {
+                            // If parameter is marked as Path but not in path, treat as query parameter
+                            query_params.push(param_info);
+                        }
+                    }
+                    openapi::path::ParameterIn::Query => {
+                        query_params.push(param_info);
+                    }
+                    openapi::path::ParameterIn::Header => {
+                        header_params.push(param_info);
+                    }
+                    openapi::path::ParameterIn::Cookie => {
+                        header_params.push(param_info);
+                    }
+                    #[allow(unreachable_patterns)]
+                    _ => {
+                        // Skip any other parameter locations (should not occur in OpenAPI spec)
+                    }
+                }
+            }
+        }
+
+        // Extract request body parameter
+        if let Some(request_body) = &operation.request_body {
+            body_param = Some(ParameterInfo {
+                name: "body".to_string(),
+                schema: None, // Could extract from RequestBody.content if needed
+                required: matches!(request_body.required, Some(openapi::Required::True)),
+                deprecated: false,
+                location: openapi::path::ParameterIn::Path, // Placeholder
+            });
+        }
+
+        Ok(ExtractedCoreParameters {
+            path_params,
+            query_params,
+            header_params,
+            body_param,
+        })
     }
+}
+
+/// Extracted ParameterInfo for template rendering
+#[derive(Debug, Clone)]
+pub struct ExtractedCoreParameters {
+    pub path_params: Vec<ParameterInfo>,
+    pub query_params: Vec<ParameterInfo>,
+    pub header_params: Vec<ParameterInfo>,
+    pub body_param: Option<ParameterInfo>,
 }

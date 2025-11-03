@@ -1,20 +1,21 @@
+//! API import statement data for template rendering
+
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
-
-use super::ts_class_import_specifier::TsClassImportSpecifier;
+use crate::templating::data::ApiImportSpecifier;
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// Import statement for template rendering
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TsImportStatement {
+pub struct ApiImportStatement {
     pub module_path: String,
-    pub imports: Vec<TsClassImportSpecifier>,
+    pub imports: Vec<ApiImportSpecifier>,
     pub is_type_only: bool,
 }
 
-impl TsImportStatement {
+impl ApiImportStatement {
     /// Create a new import statement
     pub fn new(module_path: String) -> Self {
         Self {
@@ -26,7 +27,7 @@ impl TsImportStatement {
 
     /// Add import specifier
     pub fn with_import(mut self, name: String, alias: Option<String>) -> Self {
-        self.imports.push(TsClassImportSpecifier {
+        self.imports.push(ApiImportSpecifier {
             name,
             alias,
             is_type: false,
@@ -36,7 +37,7 @@ impl TsImportStatement {
 
     /// Add type import specifier
     pub fn with_type_import(mut self, name: String, alias: Option<String>) -> Self {
-        self.imports.push(TsClassImportSpecifier {
+        self.imports.push(ApiImportSpecifier {
             name,
             alias,
             is_type: true,
@@ -49,58 +50,12 @@ impl TsImportStatement {
         self.is_type_only = true;
         self
     }
-
-    /// Format import statement for template rendering
-    pub fn to_typescript_string(&self) -> String {
-        if self.imports.is_empty() {
-            return format!("import '{}';", self.module_path);
-        }
-
-        let mut import_parts = Vec::new();
-
-        // Type-only imports
-        if self.is_type_only {
-            import_parts.push("type".to_string());
-        }
-
-        // Import specifiers
-        let specifiers: Vec<String> = self
-            .imports
-            .iter()
-            .map(|spec| {
-                let mut s = String::new();
-                if spec.is_type && !self.is_type_only {
-                    s.push_str("type ");
-                }
-                s.push_str(&spec.name);
-                if let Some(alias) = &spec.alias {
-                    s.push_str(" as ");
-                    s.push_str(alias);
-                }
-                s
-            })
-            .collect();
-
-        if specifiers.len() == 1 {
-            import_parts.push(format!("{{ {} }}", specifiers[0]));
-        } else {
-            import_parts.push(format!("{{ {} }}", specifiers.join(", ")));
-        }
-
-        import_parts.push("from".to_string());
-        import_parts.push(format!("'{}'", self.module_path));
-
-        format!("import {};", import_parts.join(" "))
-    }
 }
 
-impl ToRcDocWithContext for TsImportStatement {
+impl ToRcDoc for ApiImportStatement {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        _context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         // Side-effect only import
         if self.imports.is_empty() {
             return Ok(RcDoc::text(format!("import '{}';", self.module_path)));

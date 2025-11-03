@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::ast::TsExpression;
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript parameter definition
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -52,13 +52,10 @@ impl TsParameter {
     }
 }
 
-impl ToRcDocWithContext for TsParameter {
+impl ToRcDoc for TsParameter {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         let mut doc = RcDoc::text(self.name.clone());
 
         if self.optional {
@@ -69,7 +66,7 @@ impl ToRcDocWithContext for TsParameter {
             doc = doc
                 .append(RcDoc::text(":"))
                 .append(RcDoc::space())
-                .append(type_expr.to_rcdoc_with_context(context)?);
+                .append(type_expr.to_rcdoc()?);
         }
 
         if let Some(default_value) = &self.default_value {

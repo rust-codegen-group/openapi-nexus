@@ -41,26 +41,6 @@ impl ReturnTypeGenerator {
         Ok((raw_return_type, convenience_return_type))
     }
 
-    /// Generate raw return type (wrapped in ApiResponse)
-    pub fn generate_raw_return_type(
-        &self,
-        http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Result<Option<TsExpression>, GeneratorError> {
-        let response_type = self.find_response_schema(operation);
-        Ok(self.generate_raw_return_type_from_schema(http_method, response_type))
-    }
-
-    /// Generate convenience return type (unwrapped)
-    pub fn generate_convenience_return_type(
-        &self,
-        http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Result<Option<TsExpression>, GeneratorError> {
-        let response_type = self.find_response_schema(operation);
-        Ok(self.generate_convenience_return_type_from_schema(http_method, response_type))
-    }
-
     /// Find the response schema from operation responses
     fn find_response_schema(
         &self,

@@ -5,7 +5,7 @@ use crate::ast::TsDocComment;
 use crate::ast::{TsInterfaceSignature, TsProperty};
 use crate::emission::error::EmitError;
 use crate::emission::ts_type_emitter::TsTypeEmitter;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript interface definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,26 +57,20 @@ impl TsInterfaceDefinition {
     }
 }
 
-impl ToRcDocWithContext for TsInterfaceDefinition {
+impl ToRcDoc for TsInterfaceDefinition {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         // Start with the signature header (export interface Name<...> extends ...)
-        let mut doc = self.signature.to_rcdoc_with_context(context)?;
+        let mut doc = self.signature.to_rcdoc()?;
 
         // Add body with properties
         if self.properties.is_empty() {
             doc = doc.append(RcDoc::space()).append(RcDoc::text("{}"));
         } else {
             // Render each property using its ToRcDoc
-            let prop_docs: Result<Vec<_>, _> = self
-                .properties
-                .iter()
-                .map(|p| p.to_rcdoc_with_context(context))
-                .collect();
+            let prop_docs: Result<Vec<_>, _> =
+                self.properties.iter().map(|p| p.to_rcdoc()).collect();
             let properties = prop_docs?;
 
             let force_multiline = self.properties.len() > 2
@@ -102,10 +96,7 @@ impl ToRcDocWithContext for TsInterfaceDefinition {
 
         // Add documentation if present
         if let Some(docs) = &self.documentation {
-            doc = docs
-                .to_rcdoc_with_context(context)?
-                .append(RcDoc::line())
-                .append(doc);
+            doc = docs.to_rcdoc()?.append(RcDoc::line()).append(doc);
         }
 
         Ok(doc)

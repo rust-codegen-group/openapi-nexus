@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::ast::TsGeneric;
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript interface signature (single-line declaration header)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,13 +40,10 @@ impl TsInterfaceSignature {
     }
 }
 
-impl ToRcDocWithContext for TsInterfaceSignature {
+impl ToRcDoc for TsInterfaceSignature {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         let mut doc = RcDoc::nil();
 
         if self.is_export {
@@ -62,7 +59,7 @@ impl ToRcDocWithContext for TsInterfaceSignature {
             let generics_docs = self
                 .generics
                 .iter()
-                .map(|g| g.to_rcdoc_with_context(context))
+                .map(|g| g.to_rcdoc())
                 .collect::<Result<Vec<_>, _>>()?;
             doc = doc
                 .append(RcDoc::text("<"))

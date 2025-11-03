@@ -1,13 +1,16 @@
+//! API class signature data for template rendering
+
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
-use crate::ast::{TsClassDefinition, TsGeneric};
+use crate::ast::TsGeneric;
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use crate::templating::data::api_class_data::ApiClassData;
+use openapi_nexus_core::traits::ToRcDoc;
 
-/// TypeScript class signature (single-line declaration header)
+/// API class signature for template rendering
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TsClassSignature {
+pub struct ApiClassSignature {
     pub is_export: bool,
     pub name: String,
     pub generics: Vec<TsGeneric>,
@@ -15,20 +18,23 @@ pub struct TsClassSignature {
     pub implements: Vec<String>,
 }
 
-impl TsClassSignature {
-    /// Create a signature from a class definition
-    pub fn from_class(class: &TsClassDefinition) -> Self {
-        class.signature.clone()
+impl ApiClassSignature {
+    /// Create a signature from a class data
+    pub fn from_class(class: &ApiClassData) -> Self {
+        Self {
+            is_export: class.is_export,
+            name: class.name.clone(),
+            generics: class.generics.clone(),
+            extends: class.extends.clone(),
+            implements: class.implements.clone(),
+        }
     }
 }
 
-impl ToRcDocWithContext for TsClassSignature {
+impl ToRcDoc for ApiClassSignature {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         let mut doc = RcDoc::nil();
 
         if self.is_export {
@@ -44,7 +50,7 @@ impl ToRcDocWithContext for TsClassSignature {
             let generics_docs = self
                 .generics
                 .iter()
-                .map(|g| g.to_rcdoc_with_context(context))
+                .map(|g| g.to_rcdoc())
                 .collect::<Result<Vec<_>, _>>()?;
             doc = doc
                 .append(RcDoc::text("<"))
@@ -68,7 +74,7 @@ impl ToRcDocWithContext for TsClassSignature {
                 .append(RcDoc::space())
                 .append(RcDoc::text("implements"))
                 .append(RcDoc::space())
-                .append(RcDoc::text(self.implements.join(",")))
+                .append(RcDoc::text(self.implements.join(",")));
         }
 
         Ok(doc)

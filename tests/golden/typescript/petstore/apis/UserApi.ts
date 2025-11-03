@@ -47,7 +47,6 @@ export interface UserApiInterface {
 }
 
 export class UserApi extends BaseAPI implements UserApiInterface {
-
   /** Initialize the API client */
   constructor(configuration?: Configuration) {
     // Call BaseAPI constructor with provided configuration or default
@@ -76,7 +75,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return new JSONApiResponse(response, (jsonValue) => UserFromJSON(jsonValue));
   }
   /** Create user */
-  async createUser(body: {"Reference": "User"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<User> {
+  async createUser(body: User, initOverrides: InitOverrideFunction | RequestInit?): Promise<User> {
     const response = await this.createUserRaw(body, initOverrides);
     return await response.value();
   }
@@ -102,7 +101,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return new JSONApiResponse(response, (jsonValue) => UserFromJSON(jsonValue));
   }
   /** Creates list of users with given input array */
-  async createUsersWithListInput(body: {"Array": {"Primitive": "String"}}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<User> {
+  async createUsersWithListInput(body: Array<string>, initOverrides: InitOverrideFunction | RequestInit?): Promise<User> {
     const response = await this.createUsersWithListInputRaw(body, initOverrides);
     return await response.value();
   }
@@ -130,7 +129,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return new JSONApiResponse(response);
   }
   /** Logs user into the system */
-  async loginUser(username: {"Primitive": "String"}?, password: {"Primitive": "String"}?, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<any> {
+  async loginUser(username: string?, password: string?, initOverrides: InitOverrideFunction | RequestInit?): Promise<any> {
     const response = await this.loginUserRaw(username, password, initOverrides);
     return await response.value();
   }
@@ -154,7 +153,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return new JSONApiResponse(response);
   }
   /** Logs out current logged in user session */
-  async logoutUser(initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<any> {
+  async logoutUser(initOverrides: InitOverrideFunction | RequestInit?): Promise<any> {
     const response = await this.logoutUserRaw(initOverrides);
     return await response.value();
   }
@@ -178,7 +177,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return new JSONApiResponse(response, (jsonValue) => UserFromJSON(jsonValue));
   }
   /** Get user by user name */
-  async getUserByName(username: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<User> {
+  async getUserByName(username: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<User> {
     const response = await this.getUserByNameRaw(username, initOverrides);
     return await response.value();
   }
@@ -204,7 +203,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return new JSONApiResponse(response);
   }
   /** Update user */
-  async updateUser(username: {"Primitive": "String"}, body: {"Reference": "User"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<any> {
+  async updateUser(username: string, body: User, initOverrides: InitOverrideFunction | RequestInit?): Promise<any> {
     const response = await this.updateUserRaw(username, body, initOverrides);
     return await response.value();
   }
@@ -228,7 +227,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return new VoidApiResponse(response);
   }
   /** Delete user */
-  async deleteUser(username: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+  async deleteUser(username: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<void> {
     const response = await this.deleteUserRaw(username, initOverrides);
     return await response.value();
   }}

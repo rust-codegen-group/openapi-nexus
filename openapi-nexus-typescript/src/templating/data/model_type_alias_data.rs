@@ -1,11 +1,11 @@
 //! Model type alias data for template generation
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::ast::ty::TsTypeAliasDefinition;
 
 /// Model type alias data for template context
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ModelTypeAliasData {
     pub type_alias_definition: TsTypeAliasDefinition,
 }

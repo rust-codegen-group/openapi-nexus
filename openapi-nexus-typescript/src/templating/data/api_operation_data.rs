@@ -2,17 +2,16 @@
 
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-use crate::ast::class_definition::TsClassDefinition;
-use crate::ast::class_definition::TsImportStatement;
 use crate::ast::{TsExpression, TsInterfaceDefinition};
 use crate::templating::TemplateName;
+use crate::templating::data::{ApiClassData, ApiImportStatement};
 use crate::utils::http_method;
 use openapi_nexus_core::data::ParameterInfo;
 
 /// HTTP parameter data for template rendering
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HttpParamData {
     pub http_path: String,
     #[serde(with = "http_method")]
@@ -25,7 +24,7 @@ pub struct HttpParamData {
 }
 
 /// Method template data for template rendering
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MethodTemplateData {
     pub method_name: String,
     pub body_template: TemplateName,
@@ -35,10 +34,10 @@ pub struct MethodTemplateData {
 }
 
 /// API operation data for template context
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ApiOperationData {
-    pub ts_class: TsClassDefinition,
-    pub imports: Vec<TsImportStatement>,
+    pub ts_class: ApiClassData,
+    pub imports: Vec<ApiImportStatement>,
     pub ts_interface: TsInterfaceDefinition,
     pub method_templates: BTreeMap<String, MethodTemplateData>,
 }
@@ -46,8 +45,8 @@ pub struct ApiOperationData {
 impl ApiOperationData {
     /// Create new API operation data
     pub fn new(
-        ts_class: TsClassDefinition,
-        imports: Vec<TsImportStatement>,
+        ts_class: ApiClassData,
+        imports: Vec<ApiImportStatement>,
         ts_interface: TsInterfaceDefinition,
         method_templates: BTreeMap<String, MethodTemplateData>,
     ) -> Self {

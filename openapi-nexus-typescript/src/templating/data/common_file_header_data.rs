@@ -1,11 +1,11 @@
 //! Common file header data for template generation
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use openapi_nexus_core::data::HeaderData;
 
 /// Common file header data for template context
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CommonFileHeaderData {
     pub title: String,
     pub description: Option<String>,

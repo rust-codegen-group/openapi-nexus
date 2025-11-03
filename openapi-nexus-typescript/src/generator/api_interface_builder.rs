@@ -2,10 +2,8 @@
 
 use std::collections::BTreeMap;
 
-use crate::ast::{
-    TsClassDefinition, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsProperty,
-};
-use crate::templating::data::MethodTemplateData;
+use crate::ast::{TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsProperty};
+use crate::templating::data::{ApiClassData, MethodTemplateData};
 
 /// Builder for API interface definitions
 #[derive(Debug, Clone)]
@@ -20,13 +18,12 @@ impl ApiInterfaceBuilder {
     /// Build an interface definition from a class and method template data
     pub fn build_interface(
         &self,
-        class: &TsClassDefinition,
+        class: &ApiClassData,
         method_template_data: &BTreeMap<String, MethodTemplateData>,
     ) -> TsInterfaceDefinition {
         // Build interface signature (export interface FooInterface ...)
-        let interface_signature =
-            TsInterfaceSignature::new(format!("{}Interface", class.signature.name))
-                .with_generics(class.signature.generics.clone());
+        let interface_signature = TsInterfaceSignature::new(format!("{}Interface", class.name))
+            .with_generics(class.generics.clone());
 
         // Convert methods into function-typed properties for the interface
         let mut interface_properties: Vec<TsProperty> = class

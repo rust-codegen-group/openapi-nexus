@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::ast::TsDocComment;
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript enum variant definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,13 +39,10 @@ impl TsEnumVariant {
     }
 }
 
-impl ToRcDocWithContext for TsEnumVariant {
+impl ToRcDoc for TsEnumVariant {
     type Error = EmitError;
 
-    fn to_rcdoc_with_context(
-        &self,
-        _context: &EmissionContext,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
         let mut doc = RcDoc::text(self.name.clone());
 
         if let Some(value) = &self.value {

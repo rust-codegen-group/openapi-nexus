@@ -52,7 +52,6 @@ export interface PetApiInterface {
 }
 
 export class PetApi extends BaseAPI implements PetApiInterface {
-
   /** Initialize the API client */
   constructor(configuration?: Configuration) {
     // Call BaseAPI constructor with provided configuration or default
@@ -81,7 +80,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
   /** Add a new pet to the store */
-  async addPet(body: {"Reference": "Pet"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+  async addPet(body: Pet, initOverrides: InitOverrideFunction | RequestInit?): Promise<Pet> {
     const response = await this.addPetRaw(body, initOverrides);
     return await response.value();
   }
@@ -107,7 +106,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
   /** Update an existing pet */
-  async updatePet(body: {"Reference": "Pet"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+  async updatePet(body: Pet, initOverrides: InitOverrideFunction | RequestInit?): Promise<Pet> {
     const response = await this.updatePetRaw(body, initOverrides);
     return await response.value();
   }
@@ -133,7 +132,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new JSONApiResponse(response, (jsonValue) => (jsonValue as Array<any>).map(PetFromJSON));
   }
   /** Find pets by status */
-  async findPetsByStatus(status: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Array<string>> {
+  async findPetsByStatus(status: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<Array<string>> {
     const response = await this.findPetsByStatusRaw(status, initOverrides);
     return await response.value();
   }
@@ -159,7 +158,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new JSONApiResponse(response, (jsonValue) => (jsonValue as Array<any>).map(PetFromJSON));
   }
   /** Find pets by tags */
-  async findPetsByTags(tags: {"Array": {"Primitive": "String"}}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Array<string>> {
+  async findPetsByTags(tags: Array<string>, initOverrides: InitOverrideFunction | RequestInit?): Promise<Array<string>> {
     const response = await this.findPetsByTagsRaw(tags, initOverrides);
     return await response.value();
   }
@@ -183,7 +182,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
   /** Find pet by ID */
-  async getPetById(petId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+  async getPetById(petId: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<Pet> {
     const response = await this.getPetByIdRaw(petId, initOverrides);
     return await response.value();
   }
@@ -212,7 +211,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new JSONApiResponse(response, (jsonValue) => PetFromJSON(jsonValue));
   }
   /** Update a pet in the store with form data */
-  async updatePetWithForm(petId: {"Primitive": "String"}, name: {"Primitive": "String"}?, status: {"Primitive": "String"}?, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<Pet> {
+  async updatePetWithForm(petId: string, name: string?, status: string?, initOverrides: InitOverrideFunction | RequestInit?): Promise<Pet> {
     const response = await this.updatePetWithFormRaw(petId, name, status, initOverrides);
     return await response.value();
   }
@@ -236,7 +235,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new VoidApiResponse(response);
   }
   /** Delete a pet */
-  async deletePet(petId: {"Primitive": "String"}, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<void> {
+  async deletePet(petId: string, initOverrides: InitOverrideFunction | RequestInit?): Promise<void> {
     const response = await this.deletePetRaw(petId, initOverrides);
     return await response.value();
   }
@@ -263,7 +262,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     return new JSONApiResponse(response, (jsonValue) => ApiResponseFromJSON(jsonValue));
   }
   /** Upload an image */
-  async uploadFile(petId: {"Primitive": "String"}, additionalMetadata: {"Primitive": "String"}?, initOverrides: {"Union": [{"Reference": "InitOverrideFunction"}, {"Reference": "RequestInit"}]}?): Promise<ApiResponse> {
+  async uploadFile(petId: string, additionalMetadata: string?, initOverrides: InitOverrideFunction | RequestInit?): Promise<ApiResponse> {
     const response = await this.uploadFileRaw(petId, additionalMetadata, initOverrides);
     return await response.value();
   }}

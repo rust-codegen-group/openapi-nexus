@@ -1,11 +1,11 @@
 //! Runtime runtime data for template generation
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use openapi_nexus_core::data::RuntimeData;
 
 /// Runtime runtime data for template context
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RuntimeRuntimeData {
     pub base_path: String,
 }

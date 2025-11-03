@@ -7,20 +7,19 @@ use http::Method;
 use minijinja::context;
 use utoipa::openapi;
 
-use crate::ast::{
-    TsClassDefinition, TsClassMethod, TsDocComment, TsExpression, TsImportStatement, TsParameter,
-};
+use crate::ast::{TsDocComment, TsExpression, TsParameter};
 use crate::core::GeneratorError;
 use crate::emission::error::EmitError;
 use crate::generator::{
     api_interface_builder::ApiInterfaceBuilder, parameter_extractor::ParameterExtractor,
     response_transformer::ResponseTransformer, return_type_generator::ReturnTypeGenerator,
 };
+use crate::templating::data::{ApiClassData, ApiClassSignature, ApiImportStatement, ApiMethodData};
 use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, HttpParamData, MethodTemplateData,
 };
 use crate::templating::{TemplateName, Templates};
-use openapi_nexus_core::data::{OperationInfo, ParameterInfo as CoreParameterInfo};
+use openapi_nexus_core::data::OperationInfo;
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::OperationInfoExt as _;
 use openapi_nexus_core::traits::file_writer::FileInfo;
@@ -64,12 +63,16 @@ impl ApiOperationGenerator {
 
         let mut methods = vec![
             // Constructor method
-            TsClassMethod::new("constructor".to_string())
-                .with_parameters(vec![TsParameter::optional(
+            ApiMethodData {
+                name: "constructor".to_string(),
+                parameters: vec![TsParameter::optional(
                     "configuration".to_string(),
                     Some(TsExpression::Reference("Configuration".to_string())),
-                )])
-                .with_docs(TsDocComment::new("Initialize the API client".to_string())),
+                )],
+                return_type: None,
+                is_async: false,
+                documentation: Some(TsDocComment::new("Initialize the API client".to_string())),
+            },
         ];
 
         let mut method_template_data: BTreeMap<String, MethodTemplateData> = BTreeMap::from([(
@@ -94,9 +97,9 @@ impl ApiOperationGenerator {
         // Collect model imports for FromJSON transformers
         let mut model_imports: BTreeSet<String> = BTreeSet::new();
         for op_info in operations {
-            if let Some((_, model_name)) = self
+            if let Some(model_name) = self
                 .response_transformer
-                .compute_transformer_and_model(&op_info.method, &op_info.operation)
+                .compute_model_name(&op_info.method, &op_info.operation)
             {
                 model_imports.insert(model_name);
             }
@@ -104,7 +107,7 @@ impl ApiOperationGenerator {
 
         // Create imports
         let mut imports = vec![
-            TsImportStatement::new("../runtime/runtime".to_string())
+            ApiImportStatement::new("../runtime/runtime".to_string())
                 .with_import("BaseAPI".to_string(), None)
                 .with_import("JSONApiResponse".to_string(), None)
                 .with_import("VoidApiResponse".to_string(), None)
@@ -116,26 +119,37 @@ impl ApiOperationGenerator {
         // Add model helper imports
         for name in model_imports {
             imports.push(
-                TsImportStatement::new(format!("../models/{}", name))
+                ApiImportStatement::new(format!("../models/{}", name))
                     .with_import(format!("{}FromJSON", name), None),
             );
         }
 
-        let api_class = TsClassDefinition::new(class_name.clone())
-            .with_methods(methods)
-            .with_extends("BaseAPI".to_string())
-            .with_implements(vec![interface_name.clone()])
-            .with_docs(TsDocComment::new(format!(
+        let api_class = ApiClassData {
+            is_export: true,
+            name: class_name.clone(),
+            generics: Vec::new(),
+            extends: Some("BaseAPI".to_string()),
+            implements: vec![interface_name.clone()],
+            signature: ApiClassSignature {
+                is_export: true,
+                name: class_name.clone(),
+                generics: Vec::new(),
+                extends: Some("BaseAPI".to_string()),
+                implements: vec![interface_name.clone()],
+            },
+            methods,
+            documentation: Some(TsDocComment::new(format!(
                 "API client for {} operations",
                 tag
-            )))
-            .with_imports(imports);
+            ))),
+        };
 
         // Render the class to code
         let content = self
             .emit_class(
                 templating,
                 &api_class,
+                imports,
                 method_template_data,
                 common_file_header,
             )
@@ -153,7 +167,7 @@ impl ApiOperationGenerator {
     fn generate_operation_method_raw(
         &self,
         op_info: &OperationInfo,
-    ) -> Result<(TsClassMethod, MethodTemplateData), GeneratorError> {
+    ) -> Result<(ApiMethodData, MethodTemplateData), GeneratorError> {
         let method_name = format!("{}Raw", op_info.method_name());
         let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
 
@@ -177,22 +191,18 @@ impl ApiOperationGenerator {
             convenience_return_type,
         )?;
 
-        let mut method = TsClassMethod::new(method_name.clone())
-            .with_parameters(parameters)
-            .with_async();
-
-        if let Some(return_type) = raw_return_type {
-            method = method.with_return_type(return_type);
-        }
-
-        if let Some(docs) = op_info
-            .operation
-            .summary
-            .clone()
-            .or_else(|| op_info.operation.description.clone())
-        {
-            method = method.with_docs(TsDocComment::new(docs));
-        }
+        let method = ApiMethodData {
+            name: method_name.clone(),
+            parameters,
+            return_type: raw_return_type,
+            is_async: true,
+            documentation: op_info
+                .operation
+                .summary
+                .clone()
+                .or_else(|| op_info.operation.description.clone())
+                .map(TsDocComment::new),
+        };
 
         Ok((method, template_data))
     }
@@ -205,64 +215,27 @@ impl ApiOperationGenerator {
         method_name: String,
         convenience_return_type: Option<TsExpression>,
     ) -> Result<MethodTemplateData, GeneratorError> {
-        // Extract parameters from operation for template data
-        let mut path_params_core = Vec::new();
-        let mut query_params_core = Vec::new();
-        let mut header_params_core = Vec::new();
-
-        if let Some(params) = &op_info.operation.parameters {
-            for param in params {
-                let param_info = CoreParameterInfo {
-                    name: param.name.clone(),
-                    schema: param.schema.clone(),
-                    required: matches!(param.required, openapi::Required::True),
-                    deprecated: matches!(param.deprecated, Some(openapi::Deprecated::True)),
-                    location: param.parameter_in.clone(),
-                };
-
-                match param.parameter_in {
-                    openapi::path::ParameterIn::Path => path_params_core.push(param_info),
-                    openapi::path::ParameterIn::Query => query_params_core.push(param_info),
-                    openapi::path::ParameterIn::Header => header_params_core.push(param_info),
-                    openapi::path::ParameterIn::Cookie => header_params_core.push(param_info),
-                }
-            }
-        }
-
-        // Construct body_param from request_body
-        // Note: body is not a ParameterIn location, so we use Path as a placeholder
-        let body_param = op_info.operation.request_body.as_ref().map(|rb| {
-            CoreParameterInfo {
-                name: "body".to_string(),
-                schema: None, // Could extract from RequestBody.content if needed
-                required: matches!(rb.required, Some(openapi::Required::True)),
-                deprecated: false,
-                location: openapi::path::ParameterIn::Path, // Placeholder, not used for body
-            }
-        });
+        // Extract parameters using the parameter extractor
+        let extracted = self
+            .parameter_extractor
+            .extract_core_parameters(&op_info.operation, &op_info.path)?;
 
         let transformer = self
             .response_transformer
-            .compute_transformer_and_model(&op_info.method, &op_info.operation)
-            .map(|(expr, _)| expr);
+            .compute_transformer(&op_info.method, &op_info.operation);
 
         let http_params = HttpParamData {
             http_path: op_info.path.clone(),
             http_method: op_info.method.clone(),
-            path_params: path_params_core,
-            query_params: query_params_core,
-            header_params: header_params_core,
-            body_param,
+            path_params: extracted.path_params,
+            query_params: extracted.query_params,
+            header_params: extracted.header_params,
+            body_param: extracted.body_param,
             transformer,
         };
 
         // Compute convenience method name
-        let convenience_method_name = Some(
-            method_name
-                .strip_suffix("Raw")
-                .unwrap_or(&method_name)
-                .to_string(),
-        );
+        let convenience_method_name = Some(op_info.method_name());
 
         Ok(MethodTemplateData {
             method_name,
@@ -342,18 +315,16 @@ impl ApiOperationGenerator {
     fn emit_class(
         &self,
         templating: &Templates,
-        class: &TsClassDefinition,
+        class: &ApiClassData,
+        imports: Vec<ApiImportStatement>,
         method_template_data: BTreeMap<String, MethodTemplateData>,
         common_file_header: &CommonFileHeaderData,
     ) -> Result<String, EmitError> {
-        let class = class.clone();
-
         // Build interface using the interface builder
         let api_interface = self
             .interface_builder
-            .build_interface(&class, &method_template_data);
+            .build_interface(class, &method_template_data);
 
-        let imports = class.imports.clone();
         let api_operation =
             ApiOperationData::new(class.clone(), imports, api_interface, method_template_data);
 

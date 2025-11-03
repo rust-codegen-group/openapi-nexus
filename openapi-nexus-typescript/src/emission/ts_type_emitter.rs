@@ -4,7 +4,7 @@ use pretty::RcDoc;
 
 use crate::ast::{TsExpression, TsPrimitive};
 use crate::emission::error::EmitError;
-use openapi_nexus_core::traits::{EmissionContext, ToRcDocWithContext};
+use openapi_nexus_core::traits::ToRcDoc;
 
 /// Helper struct for emitting TypeScript type expressions
 pub struct TsTypeEmitter;
@@ -136,15 +136,8 @@ impl TsTypeEmitter {
                 parameters,
                 return_type,
             } => {
-                let param_docs: Result<Vec<RcDoc<'_, ()>>, _> = parameters
-                    .iter()
-                    .map(|p| {
-                        p.to_rcdoc_with_context(&EmissionContext {
-                            indent: indent_level,
-                            max_line_width: crate::config::MAX_LINE_WIDTH,
-                        })
-                    })
-                    .collect();
+                let param_docs: Result<Vec<RcDoc<'_, ()>>, _> =
+                    parameters.iter().map(|p| p.to_rcdoc()).collect();
 
                 let params = if param_docs.as_ref().map(|v| v.is_empty()).unwrap_or(false) {
                     RcDoc::text("()")
