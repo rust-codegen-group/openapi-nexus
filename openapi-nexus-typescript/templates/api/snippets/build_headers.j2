@@ -8,8 +8,8 @@ const headerParameters: Record<string, string> = {
 };
 
 // Add header parameters
-{%- for param in data.header_params -%}
-if ({{ param.name }} !== undefined) {
-  headerParameters['{{ param.name }}'] = String({{ param.name }});
+{% for param in data.header_params %}
+if (requestParameters['{{ param.name }}'] !== undefined) {
+  headerParameters['{{ param.name }}'] = String(requestParameters['{{ param.name }}']);
 }
-{%- endfor %}
+{% endfor %}

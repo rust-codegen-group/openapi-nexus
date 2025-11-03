@@ -54,9 +54,13 @@ impl ApiInterfaceBuilder {
                 // Find the corresponding Raw method to get its parameters
                 if let Some(raw_method) = class.methods.iter().find(|m| m.name == *raw_method_name)
                 {
+                    // Wrap convenience return type in Promise
+                    let type_str = conv_return_type.to_string_formatted();
+                    let promise_return_type =
+                        TsExpression::Reference(format!("Promise<{}>", type_str));
                     let func_type = TsExpression::Function {
                         parameters: raw_method.parameters.clone(),
-                        return_type: Some(Box::new(conv_return_type.clone())),
+                        return_type: Some(Box::new(promise_return_type)),
                     };
                     interface_properties.push(TsProperty {
                         name: conv_name.clone(),

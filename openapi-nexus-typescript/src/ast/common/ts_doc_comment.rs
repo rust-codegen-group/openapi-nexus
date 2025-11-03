@@ -2,7 +2,6 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::config::MAX_LINE_WIDTH;
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript documentation comment
@@ -81,9 +80,7 @@ pub fn create_type_doc(description: &str, additional_info: Option<&str>) -> TsDo
 
 // ToRcDoc implementations
 impl ToRcDoc for TsDocComment {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         const INDENT: usize = 0;
         let indent_str = " ".repeat(INDENT);
 
@@ -99,7 +96,11 @@ impl ToRcDoc for TsDocComment {
             let mut parts = vec![RcDoc::text(format!("{}/**", indent_str))];
             for line in lines {
                 parts.push(RcDoc::hardline());
-                parts.push(RcDoc::text(format!("{} * {}", indent_str, line)));
+                if line.is_empty() {
+                    parts.push(RcDoc::text(format!("{} *", indent_str)));
+                } else {
+                    parts.push(RcDoc::text(format!("{} * {}", indent_str, line)));
+                }
             }
             parts.push(RcDoc::hardline());
             parts.push(RcDoc::text(format!("{} */", indent_str)));
@@ -108,6 +109,6 @@ impl ToRcDoc for TsDocComment {
             RcDoc::text(format!("{}/** {} */", indent_str, self.0))
         };
 
-        Ok(doc)
+        doc
     }
 }

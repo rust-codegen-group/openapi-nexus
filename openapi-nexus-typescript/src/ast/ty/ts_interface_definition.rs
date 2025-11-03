@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::ast::TsDocComment;
 use crate::ast::{TsInterfaceSignature, TsProperty};
-use crate::emission::error::EmitError;
 use crate::emission::ts_type_emitter::TsTypeEmitter;
 use openapi_nexus_core::traits::ToRcDoc;
 
@@ -58,20 +57,16 @@ impl TsInterfaceDefinition {
 }
 
 impl ToRcDoc for TsInterfaceDefinition {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         // Start with the signature header (export interface Name<...> extends ...)
-        let mut doc = self.signature.to_rcdoc()?;
+        let mut doc = self.signature.to_rcdoc();
 
         // Add body with properties
         if self.properties.is_empty() {
             doc = doc.append(RcDoc::space()).append(RcDoc::text("{}"));
         } else {
             // Render each property using its ToRcDoc
-            let prop_docs: Result<Vec<_>, _> =
-                self.properties.iter().map(|p| p.to_rcdoc()).collect();
-            let properties = prop_docs?;
+            let properties: Vec<_> = self.properties.iter().map(|p| p.to_rcdoc()).collect();
 
             let force_multiline = self.properties.len() > 2
                 || self
@@ -96,9 +91,9 @@ impl ToRcDoc for TsInterfaceDefinition {
 
         // Add documentation if present
         if let Some(docs) = &self.documentation {
-            doc = docs.to_rcdoc()?.append(RcDoc::line()).append(doc);
+            doc = docs.to_rcdoc().append(RcDoc::line()).append(doc);
         }
 
-        Ok(doc)
+        doc
     }
 }

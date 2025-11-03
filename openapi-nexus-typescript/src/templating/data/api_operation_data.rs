@@ -21,6 +21,7 @@ pub struct HttpParamData {
     pub header_params: Vec<ParameterInfo>,
     pub body_param: Option<ParameterInfo>,
     pub transformer: Option<String>,
+    pub uses_request_object: bool,
 }
 
 /// Method template data for template rendering
@@ -40,21 +41,5 @@ pub struct ApiOperationData {
     pub imports: Vec<ApiImportStatement>,
     pub ts_interface: TsInterfaceDefinition,
     pub method_templates: BTreeMap<String, MethodTemplateData>,
-}
-
-impl ApiOperationData {
-    /// Create new API operation data
-    pub fn new(
-        ts_class: ApiClassData,
-        imports: Vec<ApiImportStatement>,
-        ts_interface: TsInterfaceDefinition,
-        method_templates: BTreeMap<String, MethodTemplateData>,
-    ) -> Self {
-        Self {
-            ts_class,
-            imports,
-            ts_interface,
-            method_templates,
-        }
-    }
+    pub request_interfaces: Vec<TsInterfaceDefinition>,
 }

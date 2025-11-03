@@ -1,3 +1,7 @@
 {% set data = method_data.http_params %}
 // Prepare request body
-const body = {% if data.body_param %}{{ data.body_param.name }}{% else %}undefined{% endif %};
+{% if data.body_param %}
+const requestBody = requestParameters['{{ data.body_param.name }}'];
+{% else %}
+const requestBody = undefined;
+{% endif %}

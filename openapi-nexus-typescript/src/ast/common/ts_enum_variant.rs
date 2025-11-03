@@ -2,7 +2,6 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::TsDocComment;
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript enum variant definition
@@ -40,9 +39,7 @@ impl TsEnumVariant {
 }
 
 impl ToRcDoc for TsEnumVariant {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let mut doc = RcDoc::text(self.name.clone());
 
         if let Some(value) = &self.value {
@@ -53,6 +50,6 @@ impl ToRcDoc for TsEnumVariant {
                 .append(RcDoc::text(value.clone()));
         }
 
-        Ok(doc)
+        doc
     }
 }

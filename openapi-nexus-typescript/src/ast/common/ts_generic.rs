@@ -1,7 +1,6 @@
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript generic parameter definition
@@ -36,9 +35,7 @@ impl TsGeneric {
 }
 
 impl ToRcDoc for TsGeneric {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let mut doc = RcDoc::text(self.name.clone());
 
         if let Some(constraint) = &self.constraint {
@@ -57,6 +54,6 @@ impl ToRcDoc for TsGeneric {
                 .append(RcDoc::text(default.clone()));
         }
 
-        Ok(doc)
+        doc
     }
 }

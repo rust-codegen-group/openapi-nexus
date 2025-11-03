@@ -1,8 +1,8 @@
 {% set data = method_data.http_params %}
 // Build query parameters
 const queryParameters: any = {};
-{%- for param in data.query_params -%}
-if ({{ param.name }} !== undefined) {
-  queryParameters['{{ param.name }}'] = {{ param.name }};
+{% for param in data.query_params %}
+if (requestParameters['{{ param.name }}'] !== undefined) {
+  queryParameters['{{ param.name }}'] = requestParameters['{{ param.name }}'];
 }
-{%- endfor %}
+{% endfor %}

@@ -1,7 +1,6 @@
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 use super::ts_import_specifier::TsImportSpecifier;
@@ -71,55 +70,72 @@ impl TsImport {
         self.is_type_only = true;
         self
     }
-
-    /// Format import as TypeScript string
-    pub fn to_typescript_string(&self) -> String {
-        if self.specifiers.is_empty() {
-            return format!("import '{}';", self.module_path);
-        }
-
-        let mut parts = Vec::new();
-        parts.push("import".to_string());
-
-        if self.is_type_only {
-            parts.push("type".to_string());
-        }
-
-        // Format specifiers
-        let specifier_strings: Vec<String> = self
-            .specifiers
-            .iter()
-            .map(|spec| {
-                let mut s = String::new();
-                if spec.is_type && !self.is_type_only {
-                    s.push_str("type ");
-                }
-                s.push_str(&spec.name);
-                if let Some(alias) = &spec.alias {
-                    s.push_str(" as ");
-                    s.push_str(alias);
-                }
-                s
-            })
-            .collect();
-
-        if specifier_strings.len() == 1 {
-            parts.push(format!("{{ {} }}", specifier_strings[0]));
-        } else {
-            parts.push(format!("{{ {} }}", specifier_strings.join(", ")));
-        }
-
-        parts.push("from".to_string());
-        parts.push(format!("'{}'", self.module_path));
-
-        format!("{};", parts.join(" "))
-    }
 }
 
 impl ToRcDoc for TsImport {
-    type Error = EmitError;
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
+        // Handle side-effect import (no specifiers)
+        if self.specifiers.is_empty() {
+            return RcDoc::text("import")
+                .append(RcDoc::space())
+                .append(RcDoc::text(format!("'{}'", self.module_path)))
+                .append(RcDoc::text(";"));
+        }
 
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
-        Ok(RcDoc::text(self.to_typescript_string()))
+        // Start building import statement with "import" keyword
+        let mut doc = RcDoc::text("import");
+
+        // Add "type" keyword if this is a type-only import
+        if self.is_type_only {
+            doc = doc.append(RcDoc::space()).append(RcDoc::text("type"));
+        }
+
+        // Build specifiers
+        let specifier_docs: Vec<RcDoc<'static, ()>> = self
+            .specifiers
+            .iter()
+            .map(|spec| {
+                let mut spec_doc = RcDoc::nil();
+
+                // Add "type" keyword for individual specifiers if needed
+                if spec.is_type && !self.is_type_only {
+                    spec_doc = spec_doc.append(RcDoc::text("type")).append(RcDoc::space());
+                }
+
+                spec_doc = spec_doc.append(RcDoc::text(spec.name.clone()));
+
+                // Add alias if present
+                if let Some(alias) = &spec.alias {
+                    spec_doc = spec_doc
+                        .append(RcDoc::space())
+                        .append(RcDoc::text("as"))
+                        .append(RcDoc::space())
+                        .append(RcDoc::text(alias.clone()));
+                }
+
+                spec_doc
+            })
+            .collect();
+
+        // Join specifiers with ", "
+        let specifiers_content = RcDoc::intersperse(specifier_docs, RcDoc::text(", "));
+
+        // Build complete import statement
+        doc = doc
+            .append(RcDoc::space())
+            .append(
+                RcDoc::text("{")
+                    .append(RcDoc::space())
+                    .append(specifiers_content)
+                    .append(RcDoc::space())
+                    .append(RcDoc::text("}")),
+            )
+            .append(RcDoc::space())
+            .append(RcDoc::text("from"))
+            .append(RcDoc::space())
+            .append(RcDoc::text(format!("'{}'", self.module_path)))
+            .append(RcDoc::text(";"));
+
+        doc
     }
 }

@@ -3,7 +3,6 @@
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
-use crate::emission::error::EmitError;
 use crate::templating::data::ApiImportSpecifier;
 use openapi_nexus_core::traits::ToRcDoc;
 
@@ -53,12 +52,10 @@ impl ApiImportStatement {
 }
 
 impl ToRcDoc for ApiImportStatement {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         // Side-effect only import
         if self.imports.is_empty() {
-            return Ok(RcDoc::text(format!("import '{}';", self.module_path)));
+            return RcDoc::text(format!("import '{}';", self.module_path));
         }
 
         let mut parts = vec![RcDoc::text("import")];
@@ -105,6 +102,6 @@ impl ToRcDoc for ApiImportStatement {
         parts.push(RcDoc::text(format!("'{}'", self.module_path)));
         parts.push(RcDoc::text(";"));
 
-        Ok(RcDoc::concat(parts))
+        RcDoc::concat(parts)
     }
 }

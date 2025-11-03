@@ -1,0 +1,39 @@
+{% set data = method_data.http_params %}
+{% for param in data.path_params %}
+{% if param.required %}
+if (requestParameters['{{ param.name }}'] == null) {
+  throw new RequiredError(
+    '{{ param.name }}',
+    'Required parameter "{{ param.name }}" was null or undefined when calling {{ method_data.method_name }}().'
+  );
+}
+{% endif %}
+{% endfor %}
+{% for param in data.query_params %}
+{% if param.required %}
+if (requestParameters['{{ param.name }}'] == null) {
+  throw new RequiredError(
+    '{{ param.name }}',
+    'Required parameter "{{ param.name }}" was null or undefined when calling {{ method_data.method_name }}().'
+  );
+}
+{% endif %}
+{% endfor %}
+{% for param in data.header_params %}
+{% if param.required %}
+if (requestParameters['{{ param.name }}'] == null) {
+  throw new RequiredError(
+    '{{ param.name }}',
+    'Required parameter "{{ param.name }}" was null or undefined when calling {{ method_data.method_name }}().'
+  );
+}
+{% endif %}
+{% endfor %}
+{% if data.body_param and data.body_param.required %}
+if (requestParameters['{{ data.body_param.name }}'] == null) {
+  throw new RequiredError(
+    '{{ data.body_param.name }}',
+    'Required parameter "{{ data.body_param.name }}" was null or undefined when calling {{ method_data.method_name }}().'
+  );
+}
+{% endif %}

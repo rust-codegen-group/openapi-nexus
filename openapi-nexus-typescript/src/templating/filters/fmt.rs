@@ -14,15 +14,7 @@ use openapi_nexus_core::traits::ToRcDoc;
 /// Converts a value implementing ToRcDoc to a formatted string
 macro_rules! fmt_input {
     ($value:expr, $type_name:literal) => {
-        $value
-            .to_rcdoc()
-            .map(|doc| doc.pretty(MAX_LINE_WIDTH).to_string())
-            .map_err(|e| {
-                minijinja::Error::new(
-                    minijinja::ErrorKind::InvalidOperation,
-                    format!("Failed to render {}: {:?}", $type_name, e),
-                )
-            })
+        $value.to_rcdoc().pretty(MAX_LINE_WIDTH).to_string()
     };
 }
 
@@ -57,10 +49,7 @@ pub enum RcDocInput {
 
 /// Generic template filter for formatting any value as TypeScript string
 /// Works with any type implementing ToRcDoc trait
-pub fn fmt_filter(
-    value: ViaDeserialize<RcDocInput>,
-    _indent_level: Option<usize>,
-) -> Result<String, minijinja::Error> {
+pub fn fmt_filter(value: ViaDeserialize<RcDocInput>) -> String {
     match value.0 {
         RcDocInput::DocComment(doc_comment) => fmt_input!(doc_comment, "doc comment"),
         RcDocInput::Expression(expr) => fmt_input!(expr, "expression"),

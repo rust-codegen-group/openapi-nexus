@@ -5,5 +5,5 @@ const response = await this.request({
     method: '{{ data.http_method }}',
     headers: headerParameters,
     query: queryParameters,
-    body,
+    body: requestBody,
 }, initOverrides);

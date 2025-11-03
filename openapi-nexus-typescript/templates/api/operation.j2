@@ -4,6 +4,14 @@
 {{ import | fmt }}
 {% endfor %}
 
+{% for interface in api_operation.request_interfaces %}
+{{ interface.signature | fmt }} {
+{% for prop in interface.properties %}
+    {{ prop | fmt }};
+{% endfor %}
+}
+
+{% endfor %}
 {% if api_operation.ts_class.documentation %}
 {{ api_operation.ts_class.documentation | fmt }}
 {% endif %}
@@ -32,6 +40,7 @@
     {% endif %}
   }
   {% if method_data and method_data.convenience_method_name %}
+
   {% filter indent(2) %}
   {%+ include "api/snippets/method_convenience.j2" with context %}
   {% endfilter %}

@@ -31,12 +31,13 @@ impl ResponseTransformer {
                     && let Some(schema_ref) = &json_content.schema
                 {
                     if let openapi::RefOr::T(schema) = schema_ref
-                        && let Schema::Array(_) = schema {
-                            return Some(format!(
-                                "(jsonValue) => (jsonValue as Array<any>).map({}FromJSON)",
-                                model_name
-                            ));
-                        }
+                        && let Schema::Array(_) = schema
+                    {
+                        return Some(format!(
+                            "(jsonValue) => (jsonValue as Array<any>).map({}FromJSON)",
+                            model_name
+                        ));
+                    }
                     // Not an array, use direct transformer
                     return Some(format!("(jsonValue) => {}FromJSON(jsonValue)", model_name));
                 }
@@ -99,9 +100,10 @@ impl ResponseTransformer {
         operation: &openapi::path::Operation,
     ) -> Option<(String, String)> {
         if let Some(model_name) = self.compute_model_name(http_method, operation)
-            && let Some(transformer) = self.compute_transformer(http_method, operation) {
-                return Some((transformer, model_name));
-            }
+            && let Some(transformer) = self.compute_transformer(http_method, operation)
+        {
+            return Some((transformer, model_name));
+        }
         None
     }
 }

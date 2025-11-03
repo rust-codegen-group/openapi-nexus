@@ -7,9 +7,11 @@ use http::Method;
 use minijinja::context;
 use utoipa::openapi;
 
-use crate::ast::{TsDocComment, TsExpression, TsParameter};
+use crate::ast::{
+    TsDocComment, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsParameter,
+    TsProperty,
+};
 use crate::core::GeneratorError;
-use crate::emission::error::EmitError;
 use crate::generator::{
     api_interface_builder::ApiInterfaceBuilder, parameter_extractor::ParameterExtractor,
     response_transformer::ResponseTransformer, return_type_generator::ReturnTypeGenerator,
@@ -86,22 +88,52 @@ impl ApiOperationGenerator {
             },
         )]);
 
-        // Generate methods for each operation
+        // Generate methods for each operation and collect request interfaces
+        let mut request_interfaces: BTreeMap<String, TsInterfaceDefinition> = BTreeMap::new();
         for op_info in operations {
             // Generate Raw method (returns ApiResponse wrapper)
-            let (raw_method, raw_template_data) = self.generate_operation_method_raw(op_info)?;
+            let (raw_method, raw_template_data, request_interface) =
+                self.generate_operation_method_raw(op_info)?;
             method_template_data.insert(raw_method.name.clone(), raw_template_data);
             methods.push(raw_method);
+
+            // Store request interface if present
+            if let Some(req_iface) = request_interface {
+                let method_base_name = op_info.method_name();
+                let interface_name = format!("Api{}Request", method_base_name.to_pascal_case());
+                request_interfaces.insert(interface_name, req_iface);
+            }
         }
 
-        // Collect model imports for FromJSON transformers
-        let mut model_imports: BTreeSet<String> = BTreeSet::new();
+        // Collect model imports - separate types and functions
+        let mut model_type_names: BTreeSet<String> = BTreeSet::new();
+        let mut model_function_names: BTreeSet<String> = BTreeSet::new();
+
+        // Collect from response models
         for op_info in operations {
             if let Some(model_name) = self
                 .response_transformer
                 .compute_model_name(&op_info.method, &op_info.operation)
             {
-                model_imports.insert(model_name);
+                model_type_names.insert(model_name.clone());
+                model_function_names.insert(format!("{}FromJSON", model_name));
+            }
+        }
+
+        // Collect from request body models
+        for op_info in operations {
+            if let Some(request_body) = &op_info.operation.request_body
+                && let Some(json_content) = request_body.content.get("application/json")
+                && let Some(schema_ref) = &json_content.schema
+            {
+                if let openapi::RefOr::Ref(reference) = schema_ref {
+                    if let Some(model_name) =
+                        reference.ref_location.strip_prefix("#/components/schemas/")
+                    {
+                        model_type_names.insert(model_name.to_string());
+                        model_function_names.insert(format!("{}ToJSON", model_name));
+                    }
+                }
             }
         }
 
@@ -112,16 +144,68 @@ impl ApiOperationGenerator {
                 .with_import("JSONApiResponse".to_string(), None)
                 .with_import("VoidApiResponse".to_string(), None)
                 .with_import("ResponseError".to_string(), None)
+                .with_import("RequiredError".to_string(), None)
                 .with_type_import("Configuration".to_string(), None)
                 .with_type_import("InitOverrideFunction".to_string(), None),
         ];
 
-        // Add model helper imports
-        for name in model_imports {
-            imports.push(
-                ApiImportStatement::new(format!("../models/{}", name))
-                    .with_import(format!("{}FromJSON", name), None),
-            );
+        // Group model imports by file and separate types from functions
+        let mut models_by_file: BTreeMap<String, (Vec<String>, Vec<String>)> = BTreeMap::new();
+        for model_name in &model_type_names {
+            let filename = format!("../models/{}", model_name);
+            let entry = models_by_file
+                .entry(filename)
+                .or_insert_with(|| (Vec::new(), Vec::new()));
+            entry.0.push(model_name.clone());
+        }
+        for func_name in &model_function_names {
+            // Extract model name from function name (e.g., "PetFromJSON" -> "Pet")
+            if let Some(model_name) = func_name
+                .strip_suffix("FromJSON")
+                .or_else(|| func_name.strip_suffix("ToJSON"))
+            {
+                let filename = format!("../models/{}", model_name);
+                if let Some(entry) = models_by_file.get_mut(&filename) {
+                    entry.1.push(func_name.clone());
+                } else {
+                    // Function without a type import (shouldn't happen, but handle gracefully)
+                    imports.push(
+                        ApiImportStatement::new(filename).with_import(func_name.clone(), None),
+                    );
+                }
+            }
+        }
+
+        // Add organized model imports - type imports first, then function imports from same file
+        for (file_path, (type_names, func_names)) in models_by_file {
+            if !type_names.is_empty() && !func_names.is_empty() {
+                // Separate type and value imports
+                let mut type_import = ApiImportStatement::new(file_path.clone()).with_type_only();
+                for type_name in type_names {
+                    type_import = type_import.with_type_import(type_name, None);
+                }
+                imports.push(type_import);
+
+                let mut func_import = ApiImportStatement::new(file_path);
+                for func_name in func_names {
+                    func_import = func_import.with_import(func_name, None);
+                }
+                imports.push(func_import);
+            } else if !type_names.is_empty() {
+                // Only types
+                let mut type_import = ApiImportStatement::new(file_path).with_type_only();
+                for type_name in type_names {
+                    type_import = type_import.with_type_import(type_name, None);
+                }
+                imports.push(type_import);
+            } else if !func_names.is_empty() {
+                // Only functions
+                let mut func_import = ApiImportStatement::new(file_path);
+                for func_name in func_names {
+                    func_import = func_import.with_import(func_name, None);
+                }
+                imports.push(func_import);
+            }
         }
 
         let api_class = ApiClassData {
@@ -144,15 +228,29 @@ impl ApiOperationGenerator {
             ))),
         };
 
-        // Render the class to code
-        let content = self
-            .emit_class(
-                templating,
-                &api_class,
-                imports,
-                method_template_data,
-                common_file_header,
-            )
+        // Build interface using the interface builder
+        let api_interface = self
+            .interface_builder
+            .build_interface(&api_class, &method_template_data);
+
+        // Convert request_interfaces BTreeMap to Vec for template iteration
+        let request_interfaces_vec: Vec<_> = request_interfaces.into_values().collect();
+
+        let api_operation = ApiOperationData {
+            ts_class: api_class.clone(),
+            imports,
+            ts_interface: api_interface,
+            method_templates: method_template_data,
+            request_interfaces: request_interfaces_vec,
+        };
+
+        let template_data = context! {
+            common_file_header,
+            api_operation,
+        };
+
+        let content = templating
+            .render_template_string(TemplateName::ApiOperation, template_data)
             .map_err(|e| GeneratorError::Generic {
                 message: format!("Failed to emit API class {}: {}", class_name, e),
             })?;
@@ -167,9 +265,42 @@ impl ApiOperationGenerator {
     fn generate_operation_method_raw(
         &self,
         op_info: &OperationInfo,
-    ) -> Result<(ApiMethodData, MethodTemplateData), GeneratorError> {
+    ) -> Result<
+        (
+            ApiMethodData,
+            MethodTemplateData,
+            Option<TsInterfaceDefinition>,
+        ),
+        GeneratorError,
+    > {
         let method_name = format!("{}Raw", op_info.method_name());
-        let parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
+        let all_parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
+
+        // Generate request interface if there are parameters (excluding initOverrides)
+        let request_interface = self.generate_request_interface(op_info, &all_parameters);
+
+        // Use request object if interface exists, otherwise use individual parameters
+        let parameters = if request_interface.is_some() {
+            let method_base_name = op_info.method_name();
+            let interface_name = format!("Api{}Request", method_base_name.to_pascal_case());
+            vec![
+                TsParameter::with_type(
+                    "requestParameters".to_string(),
+                    TsExpression::Reference(interface_name),
+                ),
+                TsParameter::optional(
+                    "initOverrides".to_string(),
+                    Some(TsExpression::Union({
+                        let mut union = BTreeSet::new();
+                        union.insert(TsExpression::Reference("RequestInit".to_string()));
+                        union.insert(TsExpression::Reference("InitOverrideFunction".to_string()));
+                        union
+                    })),
+                ),
+            ]
+        } else {
+            all_parameters.clone()
+        };
 
         let (raw_return_type, convenience_return_type) = self
             .return_type_generator
@@ -180,7 +311,14 @@ impl ApiOperationGenerator {
             Method::GET => TemplateName::ApiMethodGet,
             Method::POST | Method::PUT | Method::PATCH => TemplateName::ApiMethodPostPutPatch,
             Method::DELETE => TemplateName::ApiMethodDelete,
-            _ => TemplateName::ApiDefaultMethod,
+            _ => {
+                return Err(GeneratorError::Generic {
+                    message: format!(
+                        "Unsupported HTTP method: {:?}. Only GET, POST, PUT, PATCH, and DELETE are supported.",
+                        op_info.method
+                    ),
+                });
+            }
         };
 
         // Create template data
@@ -188,23 +326,23 @@ impl ApiOperationGenerator {
             op_info,
             template_name,
             method_name.clone(),
-            convenience_return_type,
+            Some(convenience_return_type),
+            request_interface.is_some(),
         )?;
+
+        // Build enhanced documentation with JSDoc annotations
+        // Use original parameters for documentation, not the request object wrapper
+        let documentation = self.build_method_documentation(op_info, &all_parameters);
 
         let method = ApiMethodData {
             name: method_name.clone(),
             parameters,
-            return_type: raw_return_type,
+            return_type: Some(raw_return_type),
             is_async: true,
-            documentation: op_info
-                .operation
-                .summary
-                .clone()
-                .or_else(|| op_info.operation.description.clone())
-                .map(TsDocComment::new),
+            documentation,
         };
 
-        Ok((method, template_data))
+        Ok((method, template_data, request_interface))
     }
 
     /// Create template data for method body generation
@@ -214,6 +352,7 @@ impl ApiOperationGenerator {
         template_name: TemplateName,
         method_name: String,
         convenience_return_type: Option<TsExpression>,
+        uses_request_object: bool,
     ) -> Result<MethodTemplateData, GeneratorError> {
         // Extract parameters using the parameter extractor
         let extracted = self
@@ -232,6 +371,7 @@ impl ApiOperationGenerator {
             header_params: extracted.header_params,
             body_param: extracted.body_param,
             transformer,
+            uses_request_object,
         };
 
         // Compute convenience method name
@@ -244,6 +384,43 @@ impl ApiOperationGenerator {
             convenience_method_name,
             convenience_return_type,
         })
+    }
+
+    /// Generate request parameter interface for a method
+    fn generate_request_interface(
+        &self,
+        op_info: &OperationInfo,
+        parameters: &[TsParameter],
+    ) -> Option<TsInterfaceDefinition> {
+        // Filter out initOverrides parameter
+        let actual_params: Vec<&TsParameter> = parameters
+            .iter()
+            .filter(|p| p.name != "initOverrides")
+            .collect();
+
+        // Only create request interface if there are parameters
+        if actual_params.is_empty() {
+            return None;
+        }
+
+        // Create interface name: Api{MethodName}Request
+        let method_base_name = op_info.method_name();
+        let interface_name = format!("Api{}Request", method_base_name.to_pascal_case());
+
+        // Convert parameters to properties
+        let properties: Vec<TsProperty> = actual_params
+            .iter()
+            .map(|param| {
+                let type_expr = param
+                    .type_expr
+                    .clone()
+                    .unwrap_or_else(|| TsExpression::Primitive(crate::ast::TsPrimitive::Any));
+                TsProperty::new(param.name.clone(), type_expr).with_optional(param.optional)
+            })
+            .collect();
+
+        let signature = TsInterfaceSignature::new(interface_name);
+        Some(TsInterfaceDefinition::new(signature).with_properties(properties))
     }
 
     /// Generate method parameters from operation
@@ -311,29 +488,98 @@ impl ApiOperationGenerator {
         Ok(parameters)
     }
 
-    /// Emit TypeScript code from a class definition
-    fn emit_class(
+    /// Build enhanced method documentation with JSDoc annotations
+    fn build_method_documentation(
         &self,
-        templating: &Templates,
-        class: &ApiClassData,
-        imports: Vec<ApiImportStatement>,
-        method_template_data: BTreeMap<String, MethodTemplateData>,
-        common_file_header: &CommonFileHeaderData,
-    ) -> Result<String, EmitError> {
-        // Build interface using the interface builder
-        let api_interface = self
-            .interface_builder
-            .build_interface(class, &method_template_data);
+        op_info: &OperationInfo,
+        parameters: &[TsParameter],
+    ) -> Option<TsDocComment> {
+        use std::collections::HashMap;
 
-        let api_operation =
-            ApiOperationData::new(class.clone(), imports, api_interface, method_template_data);
+        let mut doc_lines = Vec::new();
 
-        let template_data = context! {
-            common_file_header,
-            api_operation,
-        };
+        // Start with summary or description
+        if let Some(summary) = &op_info.operation.summary {
+            doc_lines.push(summary.clone());
+        } else if let Some(description) = &op_info.operation.description {
+            doc_lines.push(description.clone());
+        }
 
-        // Get the API class template and render directly
-        templating.render_template_string(TemplateName::ApiOperation, template_data)
+        // Collect parameter information from operation
+        let mut param_descriptions: HashMap<String, String> = HashMap::new();
+
+        // Extract from operation parameters
+        if let Some(op_params) = &op_info.operation.parameters {
+            for param in op_params {
+                let desc = param.description.clone().unwrap_or_else(|| String::new());
+                param_descriptions.insert(param.name.clone(), desc);
+            }
+        }
+
+        // Extract from request body
+        if let Some(request_body) = &op_info.operation.request_body {
+            if let Some(desc) = &request_body.description {
+                param_descriptions.insert("body".to_string(), desc.clone());
+            }
+        }
+
+        // Build @param annotations
+        let mut jsdoc_params = Vec::new();
+        for param in parameters {
+            if param.name == "initOverrides" {
+                continue; // Skip initOverrides in JSDoc
+            }
+            let type_str = param
+                .type_expr
+                .as_ref()
+                .map(|t| t.to_string_formatted())
+                .unwrap_or_else(|| "any".to_string());
+            let desc = param_descriptions
+                .get(&param.name)
+                .cloned()
+                .unwrap_or_else(|| String::new());
+            let param_doc = format!("@param {{{}}} {} {}", type_str, param.name, desc)
+                .trim_end()
+                .to_string();
+            if !param_doc.ends_with(&param.name) {
+                jsdoc_params.push((param.name.clone(), param_doc));
+            } else {
+                jsdoc_params.push((
+                    param.name.clone(),
+                    format!("@param {{{}}} {}", type_str, param.name),
+                ));
+            }
+        }
+
+        // Check for required parameters to add @throws
+        let mut throws = Vec::new();
+        let has_required_params = parameters
+            .iter()
+            .any(|p| !p.optional && p.name != "initOverrides");
+        if has_required_params {
+            throws.push(("RequiredError".to_string(), String::new()));
+        }
+
+        // Build complete documentation
+        if doc_lines.is_empty() && jsdoc_params.is_empty() && throws.is_empty() {
+            return None;
+        }
+
+        let mut full_doc = doc_lines.join("\n");
+        if !jsdoc_params.is_empty() {
+            full_doc.push_str("\n");
+            for (_, param_doc) in &jsdoc_params {
+                full_doc.push_str("\n");
+                full_doc.push_str(param_doc);
+            }
+        }
+        if !throws.is_empty() {
+            full_doc.push_str("\n");
+            for (error_type, _) in &throws {
+                full_doc.push_str(&format!("\n@throws {{{}}}", error_type));
+            }
+        }
+
+        Some(TsDocComment::new(full_doc.trim().to_string()))
     }
 }

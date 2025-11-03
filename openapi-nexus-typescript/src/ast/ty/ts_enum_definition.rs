@@ -2,7 +2,6 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::{TsDocComment, TsEnumVariant};
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript enum definition
@@ -55,9 +54,7 @@ impl TsEnumDefinition {
 }
 
 impl ToRcDoc for TsEnumDefinition {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let mut doc = RcDoc::text("export ")
             .append(RcDoc::text(if self.is_const {
                 "const enum"
@@ -104,9 +101,9 @@ impl ToRcDoc for TsEnumDefinition {
 
         // Add documentation if present
         if let Some(docs) = &self.documentation {
-            doc = docs.to_rcdoc()?.append(RcDoc::line()).append(doc);
+            doc = docs.to_rcdoc().append(RcDoc::line()).append(doc);
         }
 
-        Ok(doc)
+        doc
     }
 }

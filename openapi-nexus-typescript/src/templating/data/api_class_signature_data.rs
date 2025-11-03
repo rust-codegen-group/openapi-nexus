@@ -4,7 +4,6 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::TsGeneric;
-use crate::emission::error::EmitError;
 use crate::templating::data::api_class_data::ApiClassData;
 use openapi_nexus_core::traits::ToRcDoc;
 
@@ -32,9 +31,7 @@ impl ApiClassSignature {
 }
 
 impl ToRcDoc for ApiClassSignature {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let mut doc = RcDoc::nil();
 
         if self.is_export {
@@ -47,11 +44,7 @@ impl ToRcDoc for ApiClassSignature {
             .append(RcDoc::text(self.name.clone()));
 
         if !self.generics.is_empty() {
-            let generics_docs = self
-                .generics
-                .iter()
-                .map(|g| g.to_rcdoc())
-                .collect::<Result<Vec<_>, _>>()?;
+            let generics_docs: Vec<_> = self.generics.iter().map(|g| g.to_rcdoc()).collect();
             doc = doc
                 .append(RcDoc::text("<"))
                 .append(RcDoc::intersperse(
@@ -77,6 +70,6 @@ impl ToRcDoc for ApiClassSignature {
                 .append(RcDoc::text(self.implements.join(",")));
         }
 
-        Ok(doc)
+        doc
     }
 }

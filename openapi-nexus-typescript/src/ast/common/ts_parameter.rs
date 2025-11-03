@@ -2,7 +2,6 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::TsExpression;
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript parameter definition
@@ -53,9 +52,7 @@ impl TsParameter {
 }
 
 impl ToRcDoc for TsParameter {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let mut doc = RcDoc::text(self.name.clone());
 
         if self.optional {
@@ -66,7 +63,7 @@ impl ToRcDoc for TsParameter {
             doc = doc
                 .append(RcDoc::text(":"))
                 .append(RcDoc::space())
-                .append(type_expr.to_rcdoc()?);
+                .append(type_expr.to_rcdoc());
         }
 
         if let Some(default_value) = &self.default_value {
@@ -77,6 +74,6 @@ impl ToRcDoc for TsParameter {
                 .append(RcDoc::text(default_value.clone()));
         }
 
-        Ok(doc)
+        doc
     }
 }

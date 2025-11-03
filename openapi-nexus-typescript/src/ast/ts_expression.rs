@@ -1,13 +1,12 @@
 //! TypeScript type expression definitions
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::fmt;
 
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::{TsParameter, TsPrimitive};
-use crate::emission::error::EmitError;
+use crate::config::MAX_LINE_WIDTH;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript type expression
@@ -29,72 +28,19 @@ pub enum TsExpression {
     Tuple(Vec<TsExpression>),
 }
 
-impl fmt::Display for TsExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TsExpression::Primitive(primitive) => match primitive {
-                TsPrimitive::String => write!(f, "string"),
-                TsPrimitive::Number => write!(f, "number"),
-                TsPrimitive::Boolean => write!(f, "boolean"),
-                TsPrimitive::Any => write!(f, "any"),
-                TsPrimitive::Unknown => write!(f, "unknown"),
-                TsPrimitive::Void => write!(f, "void"),
-                TsPrimitive::Never => write!(f, "never"),
-                TsPrimitive::Null => write!(f, "null"),
-                TsPrimitive::Undefined => write!(f, "undefined"),
-            },
-            TsExpression::Reference(name) => write!(f, "{}", name),
-            TsExpression::Array(item_type) => write!(f, "Array<{}>", item_type),
-            TsExpression::Union(types) => {
-                let type_strings: Vec<String> = types.iter().map(|t| t.to_string()).collect();
-                write!(f, "{}", type_strings.join(" | "))
-            }
-            TsExpression::Intersection(types) => {
-                let type_strings: Vec<String> = types.iter().map(|t| t.to_string()).collect();
-                write!(f, "{}", type_strings.join(" & "))
-            }
-            TsExpression::Function {
-                parameters,
-                return_type,
-            } => {
-                let params: Vec<String> = parameters
-                    .iter()
-                    .map(|p| match &p.type_expr {
-                        Some(t) => format!("{}: {}", p.name, t),
-                        None => p.name.clone(),
-                    })
-                    .collect();
-                let return_type_str = if let Some(ret_type) = return_type {
-                    ret_type.to_string()
-                } else {
-                    "void".to_string()
-                };
-                write!(f, "({}) => {}", params.join(", "), return_type_str)
-            }
-            TsExpression::Object(properties) => {
-                let prop_strings: Vec<String> = properties
-                    .iter()
-                    .map(|(name, type_expr)| format!("{}: {}", name, type_expr))
-                    .collect();
-                write!(f, "{{ {} }}", prop_strings.join("; "))
-            }
-            TsExpression::Tuple(types) => {
-                let type_strings: Vec<String> = types.iter().map(|t| t.to_string()).collect();
-                write!(f, "[{}]", type_strings.join(", "))
-            }
-            TsExpression::Literal(value) => write!(f, "{}", value),
-            TsExpression::Generic(name) => write!(f, "{}", name),
-            TsExpression::IndexSignature(key, value_type) => {
-                write!(f, "[{}: {}]", key, value_type)
-            }
-        }
+impl TsExpression {
+    /// Convert this expression to a formatted string
+    pub fn to_string_formatted(&self) -> String {
+        self.to_rcdoc()
+            .pretty(MAX_LINE_WIDTH)
+            .to_string()
+            .trim()
+            .to_string()
     }
 }
 
 impl ToRcDoc for TsExpression {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let doc = match self {
             TsExpression::Primitive(primitive) => {
                 let s = match primitive {
@@ -115,21 +61,21 @@ impl ToRcDoc for TsExpression {
             }
             TsExpression::Array(item_type) => RcDoc::text("Array")
                 .append(RcDoc::text("<"))
-                .append(item_type.to_rcdoc()?)
+                .append(item_type.to_rcdoc())
                 .append(RcDoc::text(">")),
             TsExpression::Union(types) => {
-                let docs: Result<Vec<_>, _> = types.iter().map(|t| t.to_rcdoc()).collect();
+                let docs: Vec<_> = types.iter().map(|t| t.to_rcdoc()).collect();
                 RcDoc::intersperse(
-                    docs?,
+                    docs,
                     RcDoc::space()
                         .append(RcDoc::text("|"))
                         .append(RcDoc::space()),
                 )
             }
             TsExpression::Intersection(types) => {
-                let docs: Result<Vec<_>, _> = types.iter().map(|t| t.to_rcdoc()).collect();
+                let docs: Vec<_> = types.iter().map(|t| t.to_rcdoc()).collect();
                 RcDoc::intersperse(
-                    docs?,
+                    docs,
                     RcDoc::space()
                         .append(RcDoc::text("&"))
                         .append(RcDoc::space()),
@@ -139,16 +85,15 @@ impl ToRcDoc for TsExpression {
                 parameters,
                 return_type,
             } => {
-                let param_docs: Result<Vec<_>, _> =
-                    parameters.iter().map(|p| p.to_rcdoc()).collect();
+                let param_docs: Vec<_> = parameters.iter().map(|p| p.to_rcdoc()).collect();
                 let params = RcDoc::text("(")
                     .append(RcDoc::intersperse(
-                        param_docs?,
+                        param_docs,
                         RcDoc::text(",").append(RcDoc::space()),
                     ))
                     .append(RcDoc::text(")"));
                 let ret = if let Some(ret_type) = return_type {
-                    ret_type.to_rcdoc()?
+                    ret_type.to_rcdoc()
                 } else {
                     RcDoc::text("void")
                 };
@@ -162,19 +107,19 @@ impl ToRcDoc for TsExpression {
                 if properties.is_empty() {
                     RcDoc::text("{}")
                 } else {
-                    let prop_docs: Result<Vec<_>, _> = properties
+                    let prop_docs: Vec<_> = properties
                         .iter()
                         .map(|(name, type_expr)| {
-                            Ok(RcDoc::text(name.clone())
+                            RcDoc::text(name.clone())
                                 .append(RcDoc::text(":"))
                                 .append(RcDoc::space())
-                                .append(type_expr.to_rcdoc()?))
+                                .append(type_expr.to_rcdoc())
                         })
                         .collect();
                     RcDoc::text("{")
                         .append(RcDoc::space())
                         .append(RcDoc::intersperse(
-                            prop_docs?,
+                            prop_docs,
                             RcDoc::text(";").append(RcDoc::space()),
                         ))
                         .append(RcDoc::space())
@@ -182,10 +127,10 @@ impl ToRcDoc for TsExpression {
                 }
             }
             TsExpression::Tuple(types) => {
-                let docs: Result<Vec<_>, _> = types.iter().map(|t| t.to_rcdoc()).collect();
+                let docs: Vec<_> = types.iter().map(|t| t.to_rcdoc()).collect();
                 RcDoc::text("[")
                     .append(RcDoc::intersperse(
-                        docs?,
+                        docs,
                         RcDoc::text(",").append(RcDoc::space()),
                     ))
                     .append(RcDoc::text("]"))
@@ -195,9 +140,9 @@ impl ToRcDoc for TsExpression {
                 .append(RcDoc::text(key.clone()))
                 .append(RcDoc::text(":"))
                 .append(RcDoc::space())
-                .append(value_type.to_rcdoc()?)
+                .append(value_type.to_rcdoc())
                 .append(RcDoc::text("]")),
         };
-        Ok(doc)
+        doc
     }
 }

@@ -3,7 +3,7 @@
 use http::Method;
 use utoipa::openapi;
 
-use crate::ast::TsExpression;
+use crate::ast::{TsExpression, TsPrimitive};
 use crate::core::GeneratorError;
 use crate::utils::schema_mapper::SchemaMapper;
 
@@ -26,7 +26,7 @@ impl ReturnTypeGenerator {
         &self,
         http_method: &Method,
         operation: &openapi::path::Operation,
-    ) -> Result<(Option<TsExpression>, Option<TsExpression>), GeneratorError> {
+    ) -> Result<(TsExpression, TsExpression), GeneratorError> {
         // Analyze response schema once
         let response_type = self.find_response_schema(operation);
 
@@ -68,25 +68,19 @@ impl ReturnTypeGenerator {
         &self,
         http_method: &Method,
         schema_ref: Option<openapi::RefOr<openapi::Schema>>,
-    ) -> Option<TsExpression> {
+    ) -> TsExpression {
         match schema_ref {
             Some(schema_ref) => {
                 let return_type = self.schema_mapper.map_ref_or_schema_to_type(&schema_ref);
-                Some(TsExpression::Reference(format!(
-                    "Promise<JSONApiResponse<{}>>",
-                    return_type
-                )))
+                let type_str = return_type.to_string_formatted();
+                TsExpression::Reference(format!("Promise<JSONApiResponse<{}>>", type_str))
             }
             None => {
                 // Fallbacks: DELETE with no content -> VoidApiResponse; otherwise JSON any
                 if *http_method == Method::DELETE {
-                    Some(TsExpression::Reference(
-                        "Promise<VoidApiResponse>".to_string(),
-                    ))
+                    TsExpression::Reference("Promise<VoidApiResponse>".to_string())
                 } else {
-                    Some(TsExpression::Reference(
-                        "Promise<JSONApiResponse<any>>".to_string(),
-                    ))
+                    TsExpression::Reference("Promise<JSONApiResponse<any>>".to_string())
                 }
             }
         }
@@ -97,17 +91,14 @@ impl ReturnTypeGenerator {
         &self,
         http_method: &Method,
         schema_ref: Option<openapi::RefOr<openapi::Schema>>,
-    ) -> Option<TsExpression> {
+    ) -> TsExpression {
         match schema_ref {
-            Some(schema_ref) => {
-                let t = self.schema_mapper.map_ref_or_schema_to_type(&schema_ref);
-                Some(TsExpression::Reference(format!("Promise<{}>", t)))
-            }
+            Some(schema_ref) => self.schema_mapper.map_ref_or_schema_to_type(&schema_ref),
             None => {
                 if *http_method == Method::DELETE {
-                    Some(TsExpression::Reference("Promise<void>".to_string()))
+                    TsExpression::Primitive(TsPrimitive::Void)
                 } else {
-                    Some(TsExpression::Reference("Promise<any>".to_string()))
+                    TsExpression::Primitive(TsPrimitive::Any)
                 }
             }
         }

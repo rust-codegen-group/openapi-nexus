@@ -4,9 +4,6 @@ use pretty::RcDoc;
 
 /// Trait for converting AST nodes to RcDoc
 pub trait ToRcDoc {
-    /// Error type for emission failures
-    type Error: std::error::Error;
-
     /// Convert to RcDoc
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, Self::Error>;
+    fn to_rcdoc(&self) -> RcDoc<'static, ()>;
 }

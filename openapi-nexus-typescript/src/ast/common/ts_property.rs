@@ -2,7 +2,6 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::{TsDocComment, TsExpression};
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// TypeScript property definition
@@ -39,20 +38,15 @@ impl TsProperty {
 }
 
 impl ToRcDoc for TsProperty {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let mut doc = RcDoc::text(self.name.clone());
 
         if self.optional {
             doc = doc.append(RcDoc::text("?"));
         }
 
-        doc = doc
-            .append(RcDoc::text(":"))
+        doc.append(RcDoc::text(":"))
             .append(RcDoc::space())
-            .append(self.type_expr.to_rcdoc()?);
-
-        Ok(doc)
+            .append(self.type_expr.to_rcdoc())
     }
 }

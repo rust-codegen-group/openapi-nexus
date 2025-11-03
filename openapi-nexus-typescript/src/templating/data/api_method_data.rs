@@ -4,7 +4,6 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::{TsDocComment, TsExpression, TsParameter};
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// API method data for template rendering
@@ -18,9 +17,7 @@ pub struct ApiMethodData {
 }
 
 impl ToRcDoc for ApiMethodData {
-    type Error = EmitError;
-
-    fn to_rcdoc(&self) -> Result<RcDoc<'static, ()>, EmitError> {
+    fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         let mut parts = Vec::new();
 
         // Async
@@ -29,10 +26,10 @@ impl ToRcDoc for ApiMethodData {
         }
 
         // Method name and parameters
-        let params_docs: Result<Vec<_>, _> = self.parameters.iter().map(|p| p.to_rcdoc()).collect();
+        let params_docs: Vec<_> = self.parameters.iter().map(|p| p.to_rcdoc()).collect();
         let params_doc = RcDoc::text("(")
             .append(RcDoc::intersperse(
-                params_docs?,
+                params_docs,
                 RcDoc::text(",").append(RcDoc::space()),
             ))
             .append(RcDoc::text(")"));
@@ -44,11 +41,11 @@ impl ToRcDoc for ApiMethodData {
             signature_doc = signature_doc
                 .append(RcDoc::text(":"))
                 .append(RcDoc::space())
-                .append(return_type.to_rcdoc()?);
+                .append(return_type.to_rcdoc());
         }
 
         parts.push(signature_doc);
 
-        Ok(RcDoc::intersperse(parts, RcDoc::space()))
+        RcDoc::intersperse(parts, RcDoc::space())
     }
 }

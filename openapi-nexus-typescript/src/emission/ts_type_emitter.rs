@@ -3,7 +3,6 @@
 use pretty::RcDoc;
 
 use crate::ast::{TsExpression, TsPrimitive};
-use crate::emission::error::EmitError;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// Helper struct for emitting TypeScript type expressions
@@ -11,10 +10,7 @@ pub struct TsTypeEmitter;
 
 impl TsTypeEmitter {
     /// Emit a TypeExpression as a pretty-printed RcDoc
-    pub fn emit_type_expression_doc(
-        &self,
-        type_expr: &TsExpression,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    pub fn emit_type_expression_doc(&self, type_expr: &TsExpression) -> RcDoc<'static, ()> {
         self.emit_type_expression_doc_with_indent(type_expr, 0)
     }
 
@@ -23,7 +19,7 @@ impl TsTypeEmitter {
         &self,
         type_expr: &TsExpression,
         indent_level: usize,
-    ) -> Result<RcDoc<'static, ()>, EmitError> {
+    ) -> RcDoc<'static, ()> {
         match type_expr {
             TsExpression::Primitive(primitive) => {
                 let type_name = match primitive {
@@ -37,46 +33,44 @@ impl TsTypeEmitter {
                     TsPrimitive::Void => "void",
                     TsPrimitive::Never => "never",
                 };
-                Ok(RcDoc::text(type_name.to_string()))
+                RcDoc::text(type_name.to_string())
             }
             TsExpression::Array(item_type) => {
                 let item_doc =
-                    self.emit_type_expression_doc_with_indent(item_type, indent_level + 1)?;
-                Ok(RcDoc::text("Array<".to_string())
+                    self.emit_type_expression_doc_with_indent(item_type, indent_level + 1);
+                RcDoc::text("Array<".to_string())
                     .append(item_doc)
-                    .append(RcDoc::text(">".to_string())))
+                    .append(RcDoc::text(">".to_string()))
             }
             TsExpression::Union(types) => {
-                let type_docs: Result<Vec<RcDoc<'static, ()>>, _> = types
+                let docs: Vec<RcDoc<'static, ()>> = types
                     .iter()
                     .map(|t| self.emit_type_expression_doc_with_indent(t, indent_level + 1))
                     .collect();
-                let docs = type_docs?;
                 if docs.len() == 1 {
-                    Ok(docs[0].clone())
+                    docs[0].clone()
                 } else {
                     let separator = RcDoc::text(" | ");
-                    Ok(RcDoc::intersperse(docs, separator))
+                    RcDoc::intersperse(docs, separator)
                 }
             }
             TsExpression::Intersection(types) => {
-                let type_docs: Result<Vec<RcDoc<'static, ()>>, _> = types
+                let docs: Vec<RcDoc<'static, ()>> = types
                     .iter()
                     .map(|t| self.emit_type_expression_doc_with_indent(t, indent_level))
                     .collect();
-                let docs = type_docs?;
                 if docs.len() == 1 {
-                    Ok(docs[0].clone())
+                    docs[0].clone()
                 } else {
                     let separator = RcDoc::text(" & ");
-                    Ok(RcDoc::intersperse(docs, separator))
+                    RcDoc::intersperse(docs, separator)
                 }
             }
-            TsExpression::Reference(name) => Ok(RcDoc::text(name.clone())),
-            TsExpression::Literal(value) => Ok(RcDoc::text(value.clone())),
+            TsExpression::Reference(name) => RcDoc::text(name.clone()),
+            TsExpression::Literal(value) => RcDoc::text(value.clone()),
             TsExpression::Object(properties) => {
                 if properties.is_empty() {
-                    Ok(RcDoc::text("{}"))
+                    RcDoc::text("{}")
                 } else {
                     // Check if this object should be formatted inline or multiline
                     let should_multiline = self.should_format_object_multiline(properties);
@@ -87,10 +81,8 @@ impl TsTypeEmitter {
 
                         let current_indent = "  ".repeat(indent_level + 1);
                         for (i, (name, type_expr)) in properties.iter().enumerate() {
-                            let type_doc = self.emit_type_expression_doc_with_indent(
-                                type_expr,
-                                indent_level + 1,
-                            )?;
+                            let type_doc = self
+                                .emit_type_expression_doc_with_indent(type_expr, indent_level + 1);
                             let prop_doc = RcDoc::text(current_indent.clone())
                                 .append(RcDoc::text(name.clone()))
                                 .append(RcDoc::text(": "))
@@ -107,28 +99,25 @@ impl TsTypeEmitter {
                         let closing_indent = "  ".repeat(indent_level);
                         result = result.append(RcDoc::text(closing_indent));
                         result = result.append(RcDoc::text("}"));
-                        Ok(result)
+                        result
                     } else {
                         // Inline format for simple objects
-                        let prop_docs: Result<Vec<RcDoc<'_, ()>>, _> = properties
+                        let props: Vec<RcDoc<'_, ()>> = properties
                             .iter()
                             .map(|(name, type_expr)| {
-                                let type_doc = self.emit_type_expression_doc_with_indent(
-                                    type_expr,
-                                    indent_level,
-                                )?;
-                                Ok(RcDoc::text(name.clone())
+                                let type_doc = self
+                                    .emit_type_expression_doc_with_indent(type_expr, indent_level);
+                                RcDoc::text(name.clone())
                                     .append(RcDoc::text(": "))
-                                    .append(type_doc))
+                                    .append(type_doc)
                             })
                             .collect();
 
-                        let props = prop_docs?;
                         let separator = RcDoc::text("; ");
-                        Ok(RcDoc::text("{ ")
+                        RcDoc::text("{ ")
                             .append(RcDoc::intersperse(props, separator))
                             .append(RcDoc::text(" }"))
-                            .group())
+                            .group()
                     }
                 }
             }
@@ -136,44 +125,42 @@ impl TsTypeEmitter {
                 parameters,
                 return_type,
             } => {
-                let param_docs: Result<Vec<RcDoc<'_, ()>>, _> =
+                let param_docs: Vec<RcDoc<'_, ()>> =
                     parameters.iter().map(|p| p.to_rcdoc()).collect();
 
-                let params = if param_docs.as_ref().map(|v| v.is_empty()).unwrap_or(false) {
+                let params = if param_docs.is_empty() {
                     RcDoc::text("()")
                 } else {
                     RcDoc::text("(")
-                        .append(RcDoc::intersperse(param_docs?, RcDoc::text(", ")))
+                        .append(RcDoc::intersperse(param_docs, RcDoc::text(", ")))
                         .append(RcDoc::text(")"))
                 };
 
                 let mut func_doc = params;
                 if let Some(return_type) = return_type {
                     let return_doc =
-                        self.emit_type_expression_doc_with_indent(return_type, indent_level)?;
+                        self.emit_type_expression_doc_with_indent(return_type, indent_level);
                     func_doc = func_doc.append(RcDoc::text(" => ")).append(return_doc);
                 }
 
-                Ok(func_doc)
+                func_doc
             }
             TsExpression::Tuple(types) => {
-                let type_docs: Result<Vec<RcDoc<'static, ()>>, _> = types
+                let docs: Vec<RcDoc<'static, ()>> = types
                     .iter()
                     .map(|t| self.emit_type_expression_doc_with_indent(t, indent_level))
                     .collect();
-                let docs = type_docs?;
-                Ok(RcDoc::text("[")
+                RcDoc::text("[")
                     .append(RcDoc::intersperse(docs, RcDoc::text(", ")))
-                    .append(RcDoc::text("]")))
+                    .append(RcDoc::text("]"))
             }
-            TsExpression::Generic(name) => Ok(RcDoc::text(name.clone())),
+            TsExpression::Generic(name) => RcDoc::text(name.clone()),
             TsExpression::IndexSignature(key_type, value_type) => {
-                let value_doc =
-                    self.emit_type_expression_doc_with_indent(value_type, indent_level)?;
-                Ok(RcDoc::text("[key: ")
+                let value_doc = self.emit_type_expression_doc_with_indent(value_type, indent_level);
+                RcDoc::text("[key: ")
                     .append(RcDoc::text(key_type.clone()))
                     .append(RcDoc::text("]: "))
-                    .append(value_doc))
+                    .append(value_doc)
             }
         }
     }
@@ -222,14 +209,5 @@ impl TsTypeEmitter {
             TsExpression::Tuple(types) => types.len() > 1,
             _ => false,
         }
-    }
-
-    /// Emit a TypeExpression as a string
-    pub fn emit_type_expression_string(
-        &self,
-        type_expr: &TsExpression,
-    ) -> Result<String, EmitError> {
-        let doc = self.emit_type_expression_doc(type_expr)?;
-        Ok(doc.pretty(80).to_string())
     }
 }

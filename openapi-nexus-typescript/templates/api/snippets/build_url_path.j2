@@ -1,3 +1,10 @@
 {% set data = method_data.http_params %}
 // Build path with path parameters
-let urlPath = `{{ data.http_path | replace('{', '${') }}`;
+{% if data.path_params %}
+let urlPath = `{{ data.http_path }}`;
+{% for param in data.path_params %}
+urlPath = urlPath.replace(`{${ '{{ param.name }}' }}`, encodeURIComponent(String(requestParameters['{{ param.name }}'])));
+{% endfor %}
+{% else %}
+let urlPath = `{{ data.http_path }}`;
+{% endif %}

@@ -65,9 +65,6 @@ pub enum TemplateName {
     /// API method body: Convenience wrapper method
     #[serde(rename = "api/snippets/method_convenience.j2")]
     ApiMethodConvenience,
-    /// API method body: Default/fallback method handler
-    #[serde(rename = "api/snippets/default.j2")]
-    ApiDefaultMethod,
     /// Partial: Build URL path snippet
     #[serde(rename = "api/snippets/build_url_path.j2")]
     ApiBuildUrlPath,
@@ -123,7 +120,6 @@ impl TemplateName {
             | Self::ApiMethodPostPutPatch
             | Self::ApiMethodDelete
             | Self::ApiMethodConvenience
-            | Self::ApiDefaultMethod
             | Self::ApiBuildUrlPath
             | Self::ApiBuildQueryParams
             | Self::ApiBuildHeaders
@@ -155,7 +151,6 @@ pub const TEMPLATE_PATHS: &[TemplateName] = &[
     TemplateName::ApiBuildRequestBody,
     TemplateName::ApiBuildUrlPath,
     TemplateName::ApiConstructorBaseApi,
-    TemplateName::ApiDefaultMethod,
     TemplateName::ApiMakeRequest,
     TemplateName::ApiMethodConvenience,
     TemplateName::ApiMethodDelete,
