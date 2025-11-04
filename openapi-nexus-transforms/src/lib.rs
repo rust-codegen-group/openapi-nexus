@@ -11,6 +11,6 @@ pub use ir_context::{CustomTypes, IrContext, SchemaAnalysis, TypeMappings};
 pub use passes::{
     CircularReferenceDetectionPass, DependencyAnalysisPass, NamingConvention, NamingConventionPass,
     PathNormalizationPass, ReferenceResolutionPass, SchemaNormalizationPass, TransformError,
-    TransformPass, TypeInferencePass, ValidationPass,
+    TransformPass, TypeInferencePass,
 };
 pub use pipeline::TransformPipeline;

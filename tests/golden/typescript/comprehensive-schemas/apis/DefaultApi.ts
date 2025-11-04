@@ -40,7 +40,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({

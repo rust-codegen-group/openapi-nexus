@@ -23,6 +23,7 @@ tracing.workspace = true
 utoipa.workspace = true
 
 openapi-nexus-core.workspace = true
+openapi-nexus-config.workspace = true
 openapi-nexus-ir.workspace = true
 openapi-nexus-plugin.workspace = true
 

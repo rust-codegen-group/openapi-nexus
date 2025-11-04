@@ -125,15 +125,12 @@ impl ApiOperationGenerator {
             if let Some(request_body) = &op_info.operation.request_body
                 && let Some(json_content) = request_body.content.get("application/json")
                 && let Some(schema_ref) = &json_content.schema
+                && let openapi::RefOr::Ref(reference) = schema_ref
+                && let Some(model_name) =
+                    reference.ref_location.strip_prefix("#/components/schemas/")
             {
-                if let openapi::RefOr::Ref(reference) = schema_ref {
-                    if let Some(model_name) =
-                        reference.ref_location.strip_prefix("#/components/schemas/")
-                    {
-                        model_type_names.insert(model_name.to_string());
-                        model_function_names.insert(format!("{}ToJSON", model_name));
-                    }
-                }
+                model_type_names.insert(model_name.to_string());
+                model_function_names.insert(format!("{}ToJSON", model_name));
             }
         }
 
@@ -415,7 +412,7 @@ impl ApiOperationGenerator {
                 let type_expr = param
                     .type_expr
                     .clone()
-                    .unwrap_or_else(|| TsExpression::Primitive(crate::ast::TsPrimitive::Any));
+                    .unwrap_or(TsExpression::Primitive(crate::ast::TsPrimitive::Any));
                 TsProperty::new(param.name.clone(), type_expr).with_optional(param.optional)
             })
             .collect();
@@ -512,16 +509,16 @@ impl ApiOperationGenerator {
         // Extract from operation parameters
         if let Some(op_params) = &op_info.operation.parameters {
             for param in op_params {
-                let desc = param.description.clone().unwrap_or_else(|| String::new());
+                let desc = param.description.clone().unwrap_or_else(String::new);
                 param_descriptions.insert(param.name.clone(), desc);
             }
         }
 
         // Extract from request body
-        if let Some(request_body) = &op_info.operation.request_body {
-            if let Some(desc) = &request_body.description {
-                param_descriptions.insert("body".to_string(), desc.clone());
-            }
+        if let Some(request_body) = &op_info.operation.request_body
+            && let Some(desc) = &request_body.description
+        {
+            param_descriptions.insert("body".to_string(), desc.clone());
         }
 
         // Build @param annotations
@@ -538,7 +535,7 @@ impl ApiOperationGenerator {
             let desc = param_descriptions
                 .get(&param.name)
                 .cloned()
-                .unwrap_or_else(|| String::new());
+                .unwrap_or_else(String::new);
             let param_doc = format!("@param {{{}}} {} {}", type_str, param.name, desc)
                 .trim_end()
                 .to_string();
@@ -568,14 +565,14 @@ impl ApiOperationGenerator {
 
         let mut full_doc = doc_lines.join("\n");
         if !jsdoc_params.is_empty() {
-            full_doc.push_str("\n");
+            full_doc.push('\n');
             for (_, param_doc) in &jsdoc_params {
-                full_doc.push_str("\n");
+                full_doc.push('\n');
                 full_doc.push_str(param_doc);
             }
         }
         if !throws.is_empty() {
-            full_doc.push_str("\n");
+            full_doc.push('\n');
             for (error_type, _) in &throws {
                 full_doc.push_str(&format!("\n@throws {{{}}}", error_type));
             }

@@ -41,7 +41,7 @@ impl TsExpression {
 
 impl ToRcDoc for TsExpression {
     fn to_rcdoc(&self) -> RcDoc<'static, ()> {
-        let doc = match self {
+        match self {
             TsExpression::Primitive(primitive) => {
                 let s = match primitive {
                     TsPrimitive::String => "string",
@@ -142,7 +142,6 @@ impl ToRcDoc for TsExpression {
                 .append(RcDoc::space())
                 .append(value_type.to_rcdoc())
                 .append(RcDoc::text("]")),
-        };
-        doc
+        }
     }
 }

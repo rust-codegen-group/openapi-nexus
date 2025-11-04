@@ -15,10 +15,10 @@ use similar::TextDiff;
 use tracing_test::traced_test;
 use utoipa::openapi::OpenApi;
 
+use openapi_nexus_config::TypeScriptConfig;
 use openapi_nexus_core::traits::code_generator::LanguageCodeGenerator as _;
 use openapi_nexus_core::traits::file_writer::FileWriter;
 use openapi_nexus_typescript::TsLangGenerator;
-use openapi_nexus_typescript::config::TsConfig;
 
 /// Read a fixture file from various possible locations
 fn read_fixture(fixture_path: &str) -> String {
@@ -46,7 +46,7 @@ fn generate_typescript_files(
     spec_content: &str,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
     let openapi: OpenApi = serde_norway::from_str(spec_content)?;
-    let config = TsConfig::default();
+    let config = TypeScriptConfig::default();
     let generator = TsLangGenerator::new(config);
     let generated_files = match generator.generate(&openapi) {
         Ok(files) => {
@@ -295,7 +295,7 @@ fn test_runtime_generation() {
     let spec_content = read_fixture("valid/minimal.yaml");
     let openapi: OpenApi = serde_norway::from_str(&spec_content).unwrap();
 
-    let config = openapi_nexus_typescript::config::TsConfig::default();
+    let config = TypeScriptConfig::default();
     let generator = TsLangGenerator::new(config);
     let generated_files = generator.generate(&openapi).unwrap();
 

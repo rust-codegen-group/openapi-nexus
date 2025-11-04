@@ -1,0 +1,13 @@
+[global]
+output = "generated"
+verbose = false
+
+[typescript]
+file_naming_convention = "PascalCase"
+typescript_target = "es6"
+typescript_module = "commonjs"
+generate_package = true
+generate_esm_config = true
+include_build_scripts = false
+# package_scope = "@myorg"
+# package_name = "my-api-client"

@@ -10,7 +10,6 @@ use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
 use crate::ast::TsTypeDefinition;
-use crate::config::TsConfig;
 use crate::core::GeneratorError;
 use crate::generator::{
     api_operation_generator::ApiOperationGenerator, package_files_generator::PackageFilesGenerator,
@@ -21,6 +20,7 @@ use crate::templating::data::{
     RuntimeRuntimeData,
 };
 use crate::templating::{TemplateName, Templates};
+use openapi_nexus_config::TypeScriptConfig;
 use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, RuntimeData};
 use openapi_nexus_core::generator_registry::LanguageGenerator;
@@ -32,13 +32,13 @@ use openapi_nexus_core::traits::file_writer::{FileCategory, FileInfo, FileWriter
 pub struct TsLangGenerator {
     schema_generator: SchemaGenerator,
     api_operation_generator: ApiOperationGenerator,
-    config: TsConfig,
+    config: TypeScriptConfig,
     templating: Templates,
 }
 
 impl TsLangGenerator {
     /// Create a new TypeScript generator
-    pub fn new(config: TsConfig) -> Self {
+    pub fn new(config: TypeScriptConfig) -> Self {
         Self {
             schema_generator: SchemaGenerator,
             api_operation_generator: ApiOperationGenerator::new(),
@@ -79,7 +79,7 @@ impl TsLangGenerator {
 
     /// Generate filename based on naming convention
     fn generate_filename(&self, name: &str) -> String {
-        let base_name = match self.config.naming_convention {
+        let base_name = match self.config.file_naming_convention {
             NamingConvention::CamelCase => name.to_lower_camel_case(),
             NamingConvention::KebabCase => name.to_kebab_case(),
             NamingConvention::SnakeCase => name.to_snake_case(),

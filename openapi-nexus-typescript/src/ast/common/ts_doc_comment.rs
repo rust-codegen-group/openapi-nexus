@@ -91,7 +91,7 @@ impl ToRcDoc for TsDocComment {
         let single_line_length = indent_str.len() + 7 + self.0.len(); // indent + "/** " + content + " */"
         let needs_multiline = has_newlines || single_line_length > MAX_LINE_WIDTH;
 
-        let doc = if needs_multiline {
+        if needs_multiline {
             let lines: Vec<&str> = self.0.lines().collect();
             let mut parts = vec![RcDoc::text(format!("{}/**", indent_str))];
             for line in lines {
@@ -107,8 +107,6 @@ impl ToRcDoc for TsDocComment {
             RcDoc::concat(parts)
         } else {
             RcDoc::text(format!("{}/** {} */", indent_str, self.0))
-        };
-
-        doc
+        }
     }
 }

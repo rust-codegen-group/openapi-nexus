@@ -12,9 +12,9 @@
   "keywords": [
     "openapi",
     "api-client",
-    "typescript"
+    "typescript",
+    "generated"
   ],
-  "license": "MIT",
   "main": "./dist/index.js",
   "name": "comprehensive-schema-types-example",
   "type": "module",

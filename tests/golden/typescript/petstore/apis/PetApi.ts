@@ -324,7 +324,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({
@@ -376,7 +375,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({
@@ -426,7 +424,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({

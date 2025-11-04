@@ -12,9 +12,10 @@
   "keywords": [
     "openapi",
     "api-client",
-    "typescript"
+    "typescript",
+    "generated"
   ],
-  "license": "MIT",
+  "license": "Apache 2.0",
   "main": "./dist/index.js",
   "name": "petstore-api",
   "type": "module",

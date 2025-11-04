@@ -2,13 +2,13 @@
 
 use snafu::Snafu;
 
+use crate::parse_error::ParseError;
+
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum Error {
     #[snafu(display("Failed to parse OpenAPI specification: {}", source))]
-    Parse {
-        source: openapi_nexus_parser::error::Error,
-    },
+    Parse { source: ParseError },
 
     #[snafu(display("Failed to transform OpenAPI specification: {}", source))]
     Transform {

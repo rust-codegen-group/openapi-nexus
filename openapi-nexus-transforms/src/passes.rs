@@ -78,7 +78,6 @@ pub mod path_normalization;
 pub mod reference_resolution;
 pub mod schema_normalization;
 pub mod type_inference;
-pub mod validation;
 
 pub use circular_reference_detection::CircularReferenceDetectionPass;
 pub use dependency_analysis::DependencyAnalysisPass;
@@ -87,7 +86,6 @@ pub use path_normalization::PathNormalizationPass;
 pub use reference_resolution::ReferenceResolutionPass;
 pub use schema_normalization::SchemaNormalizationPass;
 pub use type_inference::TypeInferencePass;
-pub use validation::ValidationPass;
 
 // Re-export naming convention enum
 pub use naming_convention::NamingConvention;

@@ -102,7 +102,6 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({
@@ -196,7 +195,6 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({

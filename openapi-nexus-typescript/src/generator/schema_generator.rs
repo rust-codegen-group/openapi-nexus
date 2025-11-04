@@ -294,12 +294,11 @@ impl SchemaGenerator {
         // Try to access extensions field - in utoipa, extensions are typically stored
         // in a field called `extensions` or accessed via a method
         // Check if there's an extensions field or method
-        if let Some(extensions) = &obj_schema.extensions {
-            if let Some(enum_descriptions_value) = extensions.get("x-enumDescriptions") {
-                if let serde_json::Value::Array(descriptions) = enum_descriptions_value {
-                    return descriptions.clone();
-                }
-            }
+        if let Some(extensions) = &obj_schema.extensions
+            && let Some(enum_descriptions_value) = extensions.get("x-enumDescriptions")
+            && let serde_json::Value::Array(descriptions) = enum_descriptions_value
+        {
+            return descriptions.clone();
         }
         Vec::new()
     }

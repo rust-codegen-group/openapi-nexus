@@ -1,109 +1,75 @@
 //! OpenAPI Code Generator CLI
 
-use clap::{Parser, Subcommand};
-use tracing::{Level, info};
+use clap::Parser;
+use tracing::info;
 
+mod language;
+
+use openapi_nexus_config::{CliArgs, Commands, ConfigLoader, ConfigMerger};
 use openapi_nexus_core::OpenApiCodeGenerator;
 use openapi_nexus_typescript::TsLangGenerator;
 
-#[derive(Parser)]
-#[command(name = "openapi-nexus")]
-#[command(about = "Generate code from OpenAPI 3.1 specifications")]
-#[command(version)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Generate code from an OpenAPI specification
-    Generate {
-        /// Path to the OpenAPI specification file
-        #[arg(short, long)]
-        input: String,
-
-        /// Output directory for generated code
-        #[arg(short, long, default_value = "generated")]
-        output: String,
-
-        /// Languages to generate code for
-        #[arg(short, long, default_values = ["typescript"])]
-        languages: Vec<String>,
-
-        /// Verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
-    /// Validate an OpenAPI specification
-    Validate {
-        /// Path to the OpenAPI specification file
-        #[arg(short, long)]
-        input: String,
-
-        /// Verbose output
-        #[arg(short, long)]
-        verbose: bool,
-    },
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = Cli::parse();
+    let cli_args = CliArgs::parse();
+
+    // Load config file (if exists)
+    let config_file = match &cli_args.command {
+        Commands::Generate {
+            config: Some(path), ..
+        } => Some(ConfigLoader::load_from_file(path)?),
+        Commands::Generate { .. } => ConfigLoader::discover_config_file()
+            .and_then(|path| ConfigLoader::load_from_file(&path).ok()),
+    };
+
+    // Merge configurations with precedence: CLI > Env > Config File > Defaults
+    let resolved_config = ConfigMerger::merge(config_file.as_ref(), &cli_args)?;
 
     // Initialize logging
-    let log_level = if cli.command.is_verbose() {
-        Level::DEBUG
+    let log_level = if resolved_config.global.verbose() {
+        tracing::Level::DEBUG
     } else {
-        Level::INFO
+        tracing::Level::INFO
     };
 
     tracing_subscriber::fmt().with_max_level(log_level).init();
 
-    match cli.command {
-        Commands::Generate {
-            input,
-            output,
-            languages,
-            ..
-        } => {
+    match cli_args.command {
+        Commands::Generate { .. } => {
             info!("Starting code generation");
-            info!("Input: {}", input);
-            info!("Output: {}", output);
-            info!("Languages: {:?}", languages);
+            info!("Input: {}", resolved_config.global.input());
+            info!("Output: {}", resolved_config.global.output());
+            info!("Language: {}", resolved_config.global.language());
 
             let mut generator = OpenApiCodeGenerator::new();
 
-            // Register TypeScript generator with default configuration
-            let ts_config = openapi_nexus_typescript::config::TsConfig::default();
-            let ts_generator_typescript = TsLangGenerator::new(ts_config.clone());
-            let ts_generator_ts = TsLangGenerator::new(ts_config);
-            generator.register_language_generator("typescript", ts_generator_typescript)?;
-            generator.register_language_generator("ts", ts_generator_ts)?;
+            // Register generators based on selected language
+            match resolved_config.global.language() {
+                "typescript" | "ts" => {
+                    for alias in ["typescript", "ts"] {
+                        let ts_generator = TsLangGenerator::new(resolved_config.typescript.clone());
+                        generator.register_language_generator(alias, ts_generator)?;
+                    }
+                }
+                _ => {
+                    return Err(format!(
+                        "Unsupported language: {}",
+                        resolved_config.global.language()
+                    )
+                    .into());
+                }
+            }
 
-            generator.generate_from_file(&input, &output, &languages)?;
+            // Convert to Vec<String> for the generate_from_file method
+            let languages = vec![resolved_config.global.language().to_string()];
+            generator.generate_from_file(
+                resolved_config.global.input(),
+                resolved_config.global.output(),
+                &languages,
+            )?;
 
             info!("Code generation completed successfully");
-        }
-        Commands::Validate { input, .. } => {
-            info!("Validating OpenAPI specification: {}", input);
-
-            // TODO: Implement validation command
-            println!("Validation not yet implemented");
         }
     }
 
     Ok(())
-}
-
-trait Verbose {
-    fn is_verbose(&self) -> bool;
-}
-
-impl Verbose for Commands {
-    fn is_verbose(&self) -> bool {
-        match self {
-            Commands::Generate { verbose, .. } => *verbose,
-            Commands::Validate { verbose, .. } => *verbose,
-        }
-    }
 }

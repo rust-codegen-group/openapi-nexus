@@ -1,0 +1,13 @@
+[package]
+name = "openapi-nexus-config"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+serde.workspace = true
+toml.workspace = true
+dirs.workspace = true
+clap.workspace = true
+
+openapi-nexus-core.workspace = true

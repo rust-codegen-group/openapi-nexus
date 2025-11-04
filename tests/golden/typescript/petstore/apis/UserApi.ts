@@ -275,7 +275,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({
@@ -311,7 +310,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({
@@ -355,7 +353,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     };
 
     // Add header parameters
-    // Prepare request body
     const requestBody = undefined;
     // Make request
     const response = await this.request({

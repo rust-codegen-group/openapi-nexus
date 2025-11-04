@@ -6,6 +6,7 @@ use utoipa::openapi::path::Operation;
 use crate::ast::TsExpression;
 use crate::core::GeneratorError;
 use crate::utils::schema_mapper::SchemaMapper;
+
 use openapi_nexus_core::data::ParameterInfo;
 
 /// Extracted parameters from an OpenAPI operation

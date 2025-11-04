@@ -1,17 +1,18 @@
 //! Main code generation orchestrator
 
 use std::collections::HashMap;
+use std::path::Path;
 
 use snafu::ResultExt as _;
-
-use openapi_nexus_parser::OpenApiParser;
-use openapi_nexus_transforms::{
-    TransformPipeline,
-    passes::{NamingConvention, NamingConventionPass, ReferenceResolutionPass, ValidationPass},
-};
+use utoipa::openapi::OpenApi;
 
 use crate::error;
 use crate::generator_registry::{GeneratorRegistry, LanguageGenerator};
+use crate::parse_error::ParseError;
+use openapi_nexus_transforms::{
+    TransformPipeline,
+    passes::{NamingConvention, NamingConventionPass, ReferenceResolutionPass},
+};
 
 /// Main code generation orchestrator
 pub struct OpenApiCodeGenerator {
@@ -24,7 +25,6 @@ impl OpenApiCodeGenerator {
     /// Create a new code generator with default configuration
     pub fn new() -> Self {
         let pipeline = TransformPipeline::new()
-            .add_pass(ValidationPass::new())
             .add_pass(ReferenceResolutionPass::new())
             .add_pass(NamingConventionPass {
                 target_case: NamingConvention::CamelCase,
@@ -60,7 +60,7 @@ impl OpenApiCodeGenerator {
     }
 
     /// Generate code from an OpenAPI specification file
-    pub fn generate_from_file<P: AsRef<std::path::Path>>(
+    pub fn generate_from_file<P: AsRef<Path>>(
         &self,
         input_path: P,
         output_dir: P,
@@ -70,9 +70,7 @@ impl OpenApiCodeGenerator {
             "Parsing OpenAPI specification from: {:?}",
             input_path.as_ref()
         );
-        let parser = OpenApiParser::new();
-        let parse_result = parser.parse_file(input_path).context(error::ParseSnafu)?;
-        let openapi = parse_result.openapi;
+        let openapi = parse_openapi_file(input_path.as_ref()).context(error::ParseSnafu)?;
 
         for language in languages {
             tracing::info!("Generating {} code", language);
@@ -129,5 +127,35 @@ impl OpenApiCodeGenerator {
 impl Default for OpenApiCodeGenerator {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Parse an OpenAPI specification from a file
+fn parse_openapi_file(path: &Path) -> Result<OpenApi, ParseError> {
+    let content = std::fs::read_to_string(path).map_err(|e| ParseError::FileRead {
+        path: path.to_string_lossy().to_string(),
+        source: e,
+    })?;
+
+    let file_extension = path.extension().and_then(|ext| ext.to_str());
+
+    match file_extension {
+        Some("json") => {
+            serde_json::from_str(&content).map_err(|e| ParseError::JsonParse { source: e })
+        }
+        Some("yaml") | Some("yml") => {
+            serde_norway::from_str(&content).map_err(|e| ParseError::YamlParse { source: e })
+        }
+        Some(ext) => Err(ParseError::UnsupportedFormat {
+            format: ext.to_string(),
+        }),
+        None => {
+            // Try JSON first, then YAML
+            serde_json::from_str(&content)
+                .or_else(|_| serde_norway::from_str(&content))
+                .map_err(|_| ParseError::UnsupportedFormat {
+                    format: "unknown".to_string(),
+                })
+        }
     }
 }
