@@ -16,7 +16,10 @@ pub enum ParseError {
     JsonParse { source: serde_json::Error },
 
     #[snafu(display("Failed to parse YAML: {}", source))]
-    YamlParse { source: serde_norway::Error },
+    YamlParse {
+        source: serde_norway::Error,
+        context: Vec<String>,
+    },
 
     #[snafu(display("Unsupported file format: {}", format))]
     UnsupportedFormat { format: String },

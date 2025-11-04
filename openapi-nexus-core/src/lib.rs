@@ -6,7 +6,6 @@ pub mod generator;
 pub mod generator_registry;
 pub mod naming_convention;
 pub mod openapi_code_generator;
-pub mod parse_error;
 pub mod serde;
 pub mod traits;
 
@@ -14,4 +13,3 @@ pub mod traits;
 pub use generator_registry::GeneratorRegistry;
 pub use naming_convention::NamingConvention;
 pub use openapi_code_generator::OpenApiCodeGenerator;
-pub use parse_error::ParseError;

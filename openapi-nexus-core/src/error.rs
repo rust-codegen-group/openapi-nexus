@@ -2,7 +2,7 @@
 
 use snafu::Snafu;
 
-use crate::parse_error::ParseError;
+use openapi_nexus_parser::ParseError;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]

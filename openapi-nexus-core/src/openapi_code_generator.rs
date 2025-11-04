@@ -5,11 +5,10 @@ use std::path::Path;
 
 use snafu::ResultExt as _;
 use tracing::error;
-use utoipa::openapi::OpenApi;
 
 use crate::error;
 use crate::generator_registry::{GeneratorRegistry, LanguageGenerator};
-use crate::parse_error::ParseError;
+use openapi_nexus_parser::parse_file;
 use openapi_nexus_transforms::{
     TransformPipeline,
     passes::{NamingConvention, NamingConventionPass, ReferenceResolutionPass},
@@ -78,7 +77,7 @@ impl OpenApiCodeGenerator {
             "Parsing OpenAPI specification from: {:?}",
             input_path.as_ref()
         );
-        let openapi = parse_openapi_file(input_path.as_ref())
+        let openapi = parse_file(input_path.as_ref())
             .map_err(|e| {
                 error!(
                     "Failed to parse OpenAPI file {:?}: {}",
@@ -158,35 +157,5 @@ impl OpenApiCodeGenerator {
 impl Default for OpenApiCodeGenerator {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// Parse an OpenAPI specification from a file
-fn parse_openapi_file(path: &Path) -> Result<OpenApi, ParseError> {
-    let content = std::fs::read_to_string(path).map_err(|e| ParseError::FileRead {
-        path: path.to_string_lossy().to_string(),
-        source: e,
-    })?;
-
-    let file_extension = path.extension().and_then(|ext| ext.to_str());
-
-    match file_extension {
-        Some("json") => {
-            serde_json::from_str(&content).map_err(|e| ParseError::JsonParse { source: e })
-        }
-        Some("yaml") | Some("yml") => {
-            serde_norway::from_str(&content).map_err(|e| ParseError::YamlParse { source: e })
-        }
-        Some(ext) => Err(ParseError::UnsupportedFormat {
-            format: ext.to_string(),
-        }),
-        None => {
-            // Try JSON first, then YAML
-            serde_json::from_str(&content)
-                .or_else(|_| serde_norway::from_str(&content))
-                .map_err(|_| ParseError::UnsupportedFormat {
-                    format: "unknown".to_string(),
-                })
-        }
     }
 }

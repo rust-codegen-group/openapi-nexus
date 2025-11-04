@@ -6,6 +6,7 @@ members = [
     "openapi-nexus-config",
     "openapi-nexus-core",
     "openapi-nexus-ir",
+    "openapi-nexus-parser",
     "openapi-nexus-transforms",
     "openapi-nexus-typescript",
     "openapi-nexus-rust",
@@ -59,6 +60,7 @@ openapi-nexus-common = { path = "openapi-nexus-common" }
 openapi-nexus-config = { path = "openapi-nexus-config" }
 openapi-nexus-core = { path = "openapi-nexus-core" }
 openapi-nexus-ir = { path = "openapi-nexus-ir" }
+openapi-nexus-parser = { path = "openapi-nexus-parser" }
 openapi-nexus-plugin = { path = "openapi-nexus-plugin" }
 openapi-nexus-rust = { path = "openapi-nexus-rust" }
 openapi-nexus-transforms = { path = "openapi-nexus-transforms" }

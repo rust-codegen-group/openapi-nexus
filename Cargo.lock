@@ -1001,6 +1001,7 @@ dependencies = [
  "minijinja",
  "openapi-nexus-common",
  "openapi-nexus-ir",
+ "openapi-nexus-parser",
  "openapi-nexus-plugin",
  "openapi-nexus-rust",
  "openapi-nexus-transforms",
@@ -1022,6 +1023,18 @@ dependencies = [
  "serde",
  "snafu",
  "tempfile",
+ "tracing",
+ "utoipa",
+]
+
+[[package]]
+name = "openapi-nexus-parser"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "snafu",
  "tracing",
  "utoipa",
 ]
