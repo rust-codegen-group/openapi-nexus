@@ -3,6 +3,8 @@
 use clap::Args;
 use serde::{Deserialize, Serialize};
 
+use openapi_nexus_common::Language;
+
 /// Global configuration settings (supports CLI args, env vars, and config files)
 #[derive(Debug, Clone, Args, Serialize, Deserialize)]
 pub struct GlobalConfig {
@@ -16,10 +18,9 @@ pub struct GlobalConfig {
     #[serde(default = "default_output_string")]
     pub output: String,
 
-    /// Language to generate code for (as string: "typescript", etc.)
+    /// Language to generate code for
     #[arg(short, long, env = "OPENAPI_NEXUS_LANGUAGE")]
-    #[serde(default)]
-    pub language: String,
+    pub language: Option<Language>,
 }
 
 fn default_output() -> &'static str {
@@ -35,7 +36,7 @@ impl Default for GlobalConfig {
         Self {
             input: String::new(),
             output: default_output_string(),
-            language: String::new(),
+            language: None,
         }
     }
 }
@@ -45,18 +46,15 @@ impl GlobalConfig {
     ///
     /// Takes required values that must come from CLI (input, language)
     /// and merges with optional values from config/env, applying defaults.
-    pub fn resolve(self, input: String, language: String) -> Result<Self, String> {
+    pub fn resolve(self, input: String, language: Language) -> Result<Self, String> {
         if input.is_empty() {
             return Err("Input is required and cannot be empty".to_string());
-        }
-        if language.is_empty() {
-            return Err("Language is required and cannot be empty".to_string());
         }
 
         Ok(Self {
             input,
             output: self.output,
-            language,
+            language: Some(language),
         })
     }
 
@@ -71,7 +69,7 @@ impl GlobalConfig {
     }
 
     /// Get language
-    pub fn language(&self) -> &str {
-        &self.language
+    pub fn language(&self) -> Language {
+        self.language.unwrap_or(Language::TypeScript)
     }
 }

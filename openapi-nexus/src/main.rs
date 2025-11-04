@@ -4,10 +4,9 @@ use clap::Parser;
 use std::process;
 use tracing::{error, info};
 
-mod language;
-
+use openapi_nexus_common::Language;
 use openapi_nexus_config::{CliArgs, Commands, ConfigLoader, ConfigMerger};
-use openapi_nexus_core::{OpenApiCodeGenerator, error::Error};
+use openapi_nexus_core::OpenApiCodeGenerator;
 use openapi_nexus_typescript::TsLangGenerator;
 
 fn init_logging(verbose: bool) {
@@ -53,39 +52,29 @@ fn main() {
 
     match cli_args.command {
         Commands::Generate { .. } => {
+            let language = resolved_config.global.language();
             info!("Starting code generation");
             info!("Input: {}", resolved_config.global.input());
             info!("Output: {}", resolved_config.global.output());
-            info!("Language: {}", resolved_config.global.language());
+            info!("Language: {}", language);
 
             let mut generator = OpenApiCodeGenerator::new();
 
             // Register generators based on selected language
-            match resolved_config.global.language() {
-                "typescript" | "ts" => {
-                    for alias in ["typescript", "ts"] {
-                        let ts_generator = TsLangGenerator::new(resolved_config.typescript.clone());
-                        if let Err(e) = generator.register_language_generator(alias, ts_generator) {
-                            error!("Failed to register {} generator: {}", alias, e);
-                            process::exit(1);
-                        }
+            match language {
+                Language::TypeScript => {
+                    let ts_generator = TsLangGenerator::new(resolved_config.typescript.clone());
+                    if let Err(e) = generator.register_language_generator(language, ts_generator) {
+                        error!("Failed to register {} generator: {}", language, e);
+                        process::exit(1);
                     }
-                }
-                language => {
-                    let err = Error::UnsupportedLanguage {
-                        language: language.to_string(),
-                    };
-                    error!("{}", err);
-                    process::exit(1);
                 }
             }
 
-            // Convert to Vec<String> for the generate_from_file method
-            let languages = vec![resolved_config.global.language().to_string()];
             if let Err(e) = generator.generate_from_file(
                 resolved_config.global.input(),
                 resolved_config.global.output(),
-                &languages,
+                language,
             ) {
                 error!("Code generation failed: {}", e);
                 process::exit(1);

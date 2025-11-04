@@ -472,6 +472,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
         body: requestBody,
     }, initOverrides);
     return new VoidApiResponse(response);
+
   }
 
   /**

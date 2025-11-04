@@ -61,8 +61,8 @@ openapi-nexus-config = { path = "openapi-nexus-config" }
 openapi-nexus-core = { path = "openapi-nexus-core" }
 openapi-nexus-ir = { path = "openapi-nexus-ir" }
 openapi-nexus-parser = { path = "openapi-nexus-parser" }
+openapi-nexus-petstore-example = { path = "openapi-nexus-petstore-example" }
 openapi-nexus-plugin = { path = "openapi-nexus-plugin" }
 openapi-nexus-rust = { path = "openapi-nexus-rust" }
 openapi-nexus-transforms = { path = "openapi-nexus-transforms" }
 openapi-nexus-typescript = { path = "openapi-nexus-typescript" }
-openapi-nexus-petstore-example = { path = "openapi-nexus-petstore-example" }

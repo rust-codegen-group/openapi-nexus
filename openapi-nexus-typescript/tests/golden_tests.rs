@@ -256,109 +256,48 @@ fn show_diff(spec_name: &str, filename: &str, golden: &str, generated: &str) {
     println!("   UPDATE_GOLDEN=1 cargo test --test golden_tests");
 }
 
-#[test]
-#[traced_test]
-fn test_petstore_golden() {
-    test_golden_files("petstore", "valid/petstore.yaml").unwrap();
+/// Map of test case names to their fixture paths
+fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
+    [
+        ("petstore", "valid/petstore.yaml"),
+        ("minimal", "valid/minimal.yaml"),
+        ("comprehensive-schemas", "valid/comprehensive-schemas.yaml"),
+        ("server-object", "valid/server-object.yaml"),
+        (
+            "delete-with-response-schema",
+            "valid/delete-with-response-schema.yaml",
+        ),
+    ]
+    .into_iter()
+    .collect()
 }
 
-#[test]
-#[traced_test]
-fn test_minimal_golden() {
-    if let Err(e) = test_golden_files("minimal", "valid/minimal.yaml") {
-        println!("Minimal golden test failed: {}", e);
+/// Generate and run golden file tests from the test cases HashMap
+fn run_golden_test(spec_name: &str, fixture_path: &str) {
+    if let Err(e) = test_golden_files(spec_name, fixture_path) {
+        println!("Golden test failed for {}: {}", spec_name, e);
         process::exit(1);
     }
 }
 
-#[test]
-#[traced_test]
-fn test_comprehensive_schemas_golden() {
-    if let Err(e) = test_golden_files("comprehensive-schemas", "valid/comprehensive-schemas.yaml") {
-        println!("Comprehensive schemas golden test failed: {}", e);
-        process::exit(1);
-    }
+// Generate test functions from the HashMap
+macro_rules! generate_golden_tests {
+    ($($test_name:ident: $spec_name:expr),* $(,)?) => {
+        $(
+            #[test]
+            #[traced_test]
+            fn $test_name() {
+                let test_cases = get_golden_test_cases();
+                run_golden_test($spec_name, test_cases.get($spec_name).unwrap());
+            }
+        )*
+    };
 }
 
-#[test]
-#[traced_test]
-fn test_server_object_golden() {
-    if let Err(e) = test_golden_files("server-object", "valid/server-object.yaml") {
-        println!("Server object golden test failed: {}", e);
-        process::exit(1);
-    }
-}
-
-#[test]
-#[traced_test]
-fn test_runtime_generation() {
-    let spec_content = read_fixture("valid/minimal.yaml");
-    let openapi: OpenApi = serde_norway::from_str(&spec_content).unwrap();
-
-    let config = TypeScriptConfig::default();
-    let generator = TsLangGenerator::new(config);
-    let generated_files = generator.generate(&openapi).unwrap();
-
-    // Find the runtime file
-    let runtime_file = generated_files
-        .iter()
-        .find(|file| file.filename == "runtime.ts")
-        .expect("Runtime file should be generated");
-
-    // Verify the runtime file contains expected content
-    assert!(runtime_file.content.contains("export const BASE_PATH"));
-    assert!(runtime_file.content.contains("export class Configuration"));
-    assert!(runtime_file.content.contains("export class BaseAPI"));
-    assert!(runtime_file.content.contains("export class ResponseError"));
-    assert!(runtime_file.content.contains("export class FetchError"));
-    assert!(runtime_file.content.contains("export class RequiredError"));
-    assert!(
-        runtime_file
-            .content
-            .contains("export const COLLECTION_FORMATS")
-    );
-    assert!(runtime_file.content.contains("export type FetchAPI"));
-    assert!(
-        runtime_file
-            .content
-            .contains("export interface ConfigurationParameters")
-    );
-    assert!(runtime_file.content.contains("export interface Middleware"));
-    assert!(runtime_file.content.contains("export function querystring"));
-    assert!(
-        runtime_file
-            .content
-            .contains("export class JSONApiResponse")
-    );
-    assert!(
-        runtime_file
-            .content
-            .contains("export class VoidApiResponse")
-    );
-    assert!(
-        runtime_file
-            .content
-            .contains("export class BlobApiResponse")
-    );
-    assert!(
-        runtime_file
-            .content
-            .contains("export class TextApiResponse")
-    );
-
-    // Verify it has the do_not_edit header
-    assert!(
-        runtime_file
-            .content
-            .contains("Do not edit the file manually")
-    );
-
-    // Verify it uses the correct base path from the OpenAPI spec (default since no servers specified)
-    assert!(runtime_file.content.contains("http://localhost"));
-
-    println!(
-        "Runtime file content length: {}",
-        runtime_file.content.len()
-    );
-    println!("Runtime file generated successfully!");
+generate_golden_tests! {
+    test_petstore_golden: "petstore",
+    test_minimal_golden: "minimal",
+    test_comprehensive_schemas_golden: "comprehensive-schemas",
+    test_server_object_golden: "server-object",
+    test_delete_with_response_schema_golden: "delete-with-response-schema",
 }

@@ -9,6 +9,7 @@ clap.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
+openapi-nexus-common.workspace = true
 openapi-nexus-config.workspace = true
 openapi-nexus-core.workspace = true
 openapi-nexus-typescript.workspace = true

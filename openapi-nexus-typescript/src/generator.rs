@@ -2,6 +2,7 @@
 
 pub mod api_interface_builder;
 pub mod api_operation_generator;
+pub mod model_import_collector;
 pub mod package_files_generator;
 pub mod parameter_extractor;
 pub mod response_transformer;

@@ -1,0 +1,89 @@
+openapi: 3.1.0
+info:
+  title: Test API with DELETE Response Schema
+  version: 1.0.0
+  description: Test fixture for DELETE operations with JSON response schemas and type alias request bodies
+paths:
+  /v1/api/test-resource/{resource_id}:
+    delete:
+      tags:
+        - test-resource
+      operationId: delete_test_resource
+      parameters:
+        - name: resource_id
+          in: path
+          description: Unique identifier of the test resource
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test resource deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteTestResourceResponse'
+        4XX:
+          description: HTTP 4XX errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorResponse'
+        5XX:
+          description: HTTP 5XX errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpErrorResponse'
+  /v1/api/test-resource:
+    post:
+      tags:
+        - test-resource
+      operationId: create_test_resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestResourceRequest'
+        required: true
+      responses:
+        '200':
+          description: Test resource created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTestResourceResponse'
+components:
+  schemas:
+    CreateTestResourceRequest:
+      type: object
+      description: Request to create a new test resource (type alias - no properties)
+    CreateTestResourceResponse:
+      type: object
+      description: Response after creating a test resource
+      required:
+        - resource_id
+      properties:
+        resource_id:
+          type: string
+    DeleteTestResourceResponse:
+      type: object
+      description: Response after deleting a test resource
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+    HttpErrorResponse:
+      type: object
+      description: HTTP error response
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+

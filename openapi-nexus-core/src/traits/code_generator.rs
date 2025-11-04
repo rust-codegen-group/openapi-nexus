@@ -5,6 +5,7 @@ use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _};
 use http::Method;
+use openapi_nexus_common::Language;
 use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
@@ -15,8 +16,8 @@ use crate::traits::file_writer::FileInfo;
 
 /// Trait for language-specific code generators
 pub trait LanguageCodeGenerator {
-    /// Returns the language name (e.g., "typescript", "rust")
-    fn language(&self) -> String;
+    /// Returns the language
+    fn language(&self) -> Language;
 
     /// Returns the framework name (e.g., "fetch", "reqwest", "axios")
     fn framework(&self) -> String;

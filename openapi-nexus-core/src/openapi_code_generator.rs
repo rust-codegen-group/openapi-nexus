@@ -8,6 +8,7 @@ use tracing::error;
 
 use crate::error;
 use crate::generator_registry::{GeneratorRegistry, LanguageGenerator};
+use openapi_nexus_common::Language;
 use openapi_nexus_parser::parse_file;
 use openapi_nexus_transforms::TransformPipeline;
 
@@ -15,7 +16,7 @@ use openapi_nexus_transforms::TransformPipeline;
 pub struct OpenApiCodeGenerator {
     transform_pipeline: TransformPipeline,
     generator_registry: GeneratorRegistry,
-    language_pipelines: HashMap<String, TransformPipeline>,
+    language_pipelines: HashMap<Language, TransformPipeline>,
 }
 
 impl OpenApiCodeGenerator {
@@ -33,19 +34,18 @@ impl OpenApiCodeGenerator {
     /// Register a language generator
     pub fn register_language_generator<G>(
         &mut self,
-        language: impl Into<String>,
+        language: Language,
         generator: G,
     ) -> Result<(), error::Error>
     where
         G: LanguageGenerator + Send + Sync + 'static,
     {
-        let lang = language.into();
         self.generator_registry
-            .register_generator(lang.clone(), generator)
+            .register_generator(language, generator)
             .map_err(|msg| {
                 error!(
                     "Failed to register language generator for {}: {}",
-                    lang, msg
+                    language, msg
                 );
                 error::Error::Generate {
                     source: Box::new(std::io::Error::other(msg)),
@@ -54,7 +54,11 @@ impl OpenApiCodeGenerator {
     }
 
     /// Set a custom transformation pipeline for a specific language
-    pub fn with_language_pipeline(mut self, language: String, pipeline: TransformPipeline) -> Self {
+    pub fn with_language_pipeline(
+        mut self,
+        language: Language,
+        pipeline: TransformPipeline,
+    ) -> Self {
         self.language_pipelines.insert(language, pipeline);
         self
     }
@@ -64,7 +68,7 @@ impl OpenApiCodeGenerator {
         &self,
         input_path: P,
         output_dir: P,
-        languages: &[String],
+        language: Language,
     ) -> Result<(), error::Error> {
         tracing::info!(
             "Parsing OpenAPI specification from: {:?}",
@@ -81,67 +85,65 @@ impl OpenApiCodeGenerator {
             })
             .context(error::ParseSnafu)?;
 
-        for language in languages {
-            tracing::info!("Generating {} code", language);
+        tracing::info!("Generating {} code", language);
 
-            // Check if generator is registered
-            if !self.generator_registry.has_generator(language) {
+        // Check if generator is registered
+        if !self.generator_registry.has_generator(language) {
+            let err = error::Error::GeneratorNotFound {
+                language: language.to_string(),
+            };
+            error!("{}", err);
+            return Err(err);
+        }
+
+        // Clone the OpenAPI spec for this language
+        let mut language_openapi = openapi.clone();
+
+        // Apply transformations - use language-specific pipeline if available, otherwise default
+        let pipeline = self
+            .language_pipelines
+            .get(&language)
+            .unwrap_or(&self.transform_pipeline);
+
+        tracing::info!("Applying transformations for {}", language);
+        pipeline
+            .transform(&mut language_openapi)
+            .map_err(|e| {
+                error!("Transform error for {}: {}", language, e);
+                e
+            })
+            .context(error::TransformSnafu)?;
+
+        // Get the generator and generate files
+        let generator = self
+            .generator_registry
+            .get_generator(language)
+            .ok_or_else(|| {
                 let err = error::Error::GeneratorNotFound {
-                    language: language.clone(),
+                    language: language.to_string(),
                 };
                 error!("{}", err);
-                return Err(err);
-            }
+                err
+            })?;
 
-            // Clone the OpenAPI spec for this language
-            let mut language_openapi = openapi.clone();
+        let files = generator.generate(&language_openapi).map_err(|e| {
+            error!("Failed to generate code for {}: {}", language, e);
+            error::Error::Generate { source: e }
+        })?;
 
-            // Apply transformations - use language-specific pipeline if available, otherwise default
-            let pipeline = self
-                .language_pipelines
-                .get(language)
-                .unwrap_or(&self.transform_pipeline);
-
-            tracing::info!("Applying transformations for {}", language);
-            pipeline
-                .transform(&mut language_openapi)
-                .map_err(|e| {
-                    error!("Transform error for {}: {}", language, e);
-                    e
-                })
-                .context(error::TransformSnafu)?;
-
-            // Get the generator and generate files
-            let generator = self
-                .generator_registry
-                .get_generator(language)
-                .ok_or_else(|| {
-                    let err = error::Error::GeneratorNotFound {
-                        language: language.clone(),
-                    };
-                    error!("{}", err);
-                    err
-                })?;
-
-            let files = generator.generate(&language_openapi).map_err(|e| {
-                error!("Failed to generate code for {}: {}", language, e);
+        // Write files using the FileWriter trait
+        generator
+            .write_files(output_dir.as_ref(), &files)
+            .map_err(|e| {
+                error!("Failed to write files for {}: {}", language, e);
                 error::Error::Generate { source: e }
             })?;
 
-            // Write files using the FileWriter trait
-            generator
-                .write_files(output_dir.as_ref(), &files)
-                .map_err(|e| {
-                    error!("Failed to write files for {}: {}", language, e);
-                    error::Error::Generate { source: e }
-                })?;
-
-            tracing::info!(
-                "Successfully generated {} files for {}",
-                files.len(),
-                language
-            );
-        }
+        tracing::info!(
+            "Successfully generated {} files for {}",
+            files.len(),
+            language
+        );
 
         Ok(())
     }

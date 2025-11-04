@@ -20,6 +20,7 @@ use crate::templating::data::{
     RuntimeRuntimeData,
 };
 use crate::templating::{TemplateName, Templates};
+use openapi_nexus_common::Language;
 use openapi_nexus_config::TypeScriptConfig;
 use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, RuntimeData};
@@ -204,8 +205,8 @@ impl TsLangGenerator {
 impl LanguageGenerator for TsLangGenerator {}
 
 impl LanguageCodeGenerator for TsLangGenerator {
-    fn language(&self) -> String {
-        "typescript".to_string()
+    fn language(&self) -> Language {
+        Language::TypeScript
     }
 
     fn framework(&self) -> String {
@@ -225,11 +226,18 @@ impl LanguageCodeGenerator for TsLangGenerator {
         let mut files = Vec::new();
 
         // Generate API class files
+        let components = openapi.components.as_ref();
         for (tag, operations) in operations_by_tag {
             if !operations.is_empty() {
                 let file_info = self
                     .api_operation_generator
-                    .generate_api_class(&tag, &operations, &self.templating, &common_file_header)
+                    .generate_api_class(
+                        &tag,
+                        &operations,
+                        &self.templating,
+                        &common_file_header,
+                        components,
+                    )
                     .map_err(|e| GeneratorError::Generic {
                         message: format!("Failed to generate API class for tag {}: {}", tag, e),
                     })?;

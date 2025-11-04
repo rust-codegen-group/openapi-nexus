@@ -965,6 +965,7 @@ name = "openapi-nexus"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
  "openapi-nexus-typescript",
@@ -976,6 +977,9 @@ dependencies = [
 name = "openapi-nexus-common"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "serde",
+ "serde_plain",
  "snafu",
 ]
 
@@ -985,6 +989,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "dirs",
+ "openapi-nexus-common",
  "openapi-nexus-core",
  "serde",
  "toml",
@@ -1109,6 +1114,7 @@ dependencies = [
  "indexmap",
  "minijinja",
  "minijinja-embed",
+ "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
  "openapi-nexus-ir",

@@ -13,8 +13,9 @@ use crate::ast::{
 };
 use crate::core::GeneratorError;
 use crate::generator::{
-    api_interface_builder::ApiInterfaceBuilder, parameter_extractor::ParameterExtractor,
-    response_transformer::ResponseTransformer, return_type_generator::ReturnTypeGenerator,
+    api_interface_builder::ApiInterfaceBuilder, model_import_collector::ModelImportCollector,
+    parameter_extractor::ParameterExtractor, response_transformer::ResponseTransformer,
+    return_type_generator::ReturnTypeGenerator,
 };
 use crate::templating::data::{ApiClassData, ApiClassSignature, ApiImportStatement, ApiMethodData};
 use crate::templating::data::{
@@ -33,6 +34,7 @@ pub struct ApiOperationGenerator {
     return_type_generator: ReturnTypeGenerator,
     response_transformer: ResponseTransformer,
     interface_builder: ApiInterfaceBuilder,
+    model_import_collector: ModelImportCollector,
 }
 
 impl Default for ApiOperationGenerator {
@@ -49,6 +51,7 @@ impl ApiOperationGenerator {
             return_type_generator: ReturnTypeGenerator::new(),
             response_transformer: ResponseTransformer::new(),
             interface_builder: ApiInterfaceBuilder::new(),
+            model_import_collector: ModelImportCollector,
         }
     }
 
@@ -59,6 +62,7 @@ impl ApiOperationGenerator {
         operations: &[OperationInfo],
         templating: &Templates,
         common_file_header: &CommonFileHeaderData,
+        components: Option<&openapi::Components>,
     ) -> Result<FileInfo, GeneratorError> {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let interface_name = format!("{}Interface", class_name);
@@ -105,34 +109,15 @@ impl ApiOperationGenerator {
             }
         }
 
-        // Collect model imports - separate types and functions
-        let mut model_type_names: BTreeSet<String> = BTreeSet::new();
-        let mut model_function_names: BTreeSet<String> = BTreeSet::new();
-
-        // Collect from response models
-        for op_info in operations {
-            if let Some(model_name) = self
-                .response_transformer
-                .compute_model_name(&op_info.method, &op_info.operation)
-            {
-                model_type_names.insert(model_name.clone());
-                model_function_names.insert(format!("{}FromJSON", model_name));
-            }
-        }
-
-        // Collect from request body models
-        for op_info in operations {
-            if let Some(request_body) = &op_info.operation.request_body
-                && let Some(json_content) = request_body.content.get("application/json")
-                && let Some(schema_ref) = &json_content.schema
-                && let openapi::RefOr::Ref(reference) = schema_ref
-                && let Some(model_name) =
-                    reference.ref_location.strip_prefix("#/components/schemas/")
-            {
-                model_type_names.insert(model_name.to_string());
-                model_function_names.insert(format!("{}ToJSON", model_name));
-            }
-        }
+        // Collect model dependencies and build imports
+        let dependencies = self.model_import_collector.collect_model_dependencies(
+            operations,
+            components,
+            &self.response_transformer,
+        );
+        let model_imports = self
+            .model_import_collector
+            .build_model_imports(&dependencies);
 
         // Create imports
         let mut imports = vec![
@@ -147,64 +132,8 @@ impl ApiOperationGenerator {
                 .with_type_import("InitOverrideFunction".to_string(), None),
         ];
 
-        // Group model imports by file and separate types from functions
-        let mut models_by_file: BTreeMap<String, (Vec<String>, Vec<String>)> = BTreeMap::new();
-        for model_name in &model_type_names {
-            let filename = format!("../models/{}", model_name);
-            let entry = models_by_file
-                .entry(filename)
-                .or_insert_with(|| (Vec::new(), Vec::new()));
-            entry.0.push(model_name.clone());
-        }
-        for func_name in &model_function_names {
-            // Extract model name from function name (e.g., "PetFromJSON" -> "Pet")
-            if let Some(model_name) = func_name
-                .strip_suffix("FromJSON")
-                .or_else(|| func_name.strip_suffix("ToJSON"))
-            {
-                let filename = format!("../models/{}", model_name);
-                if let Some(entry) = models_by_file.get_mut(&filename) {
-                    entry.1.push(func_name.clone());
-                } else {
-                    // Function without a type import (shouldn't happen, but handle gracefully)
-                    imports.push(
-                        ApiImportStatement::new(filename).with_import(func_name.clone(), None),
-                    );
-                }
-            }
-        }
-
-        // Add organized model imports - type imports first, then function imports from same file
-        for (file_path, (type_names, func_names)) in models_by_file {
-            if !type_names.is_empty() && !func_names.is_empty() {
-                // Separate type and value imports
-                let mut type_import = ApiImportStatement::new(file_path.clone()).with_type_only();
-                for type_name in type_names {
-                    type_import = type_import.with_type_import(type_name, None);
-                }
-                imports.push(type_import);
-
-                let mut func_import = ApiImportStatement::new(file_path);
-                for func_name in func_names {
-                    func_import = func_import.with_import(func_name, None);
-                }
-                imports.push(func_import);
-            } else if !type_names.is_empty() {
-                // Only types
-                let mut type_import = ApiImportStatement::new(file_path).with_type_only();
-                for type_name in type_names {
-                    type_import = type_import.with_type_import(type_name, None);
-                }
-                imports.push(type_import);
-            } else if !func_names.is_empty() {
-                // Only functions
-                let mut func_import = ApiImportStatement::new(file_path);
-                for func_name in func_names {
-                    func_import = func_import.with_import(func_name, None);
-                }
-                imports.push(func_import);
-            }
-        }
+        // Add model imports
+        imports.extend(model_imports);
 
         let api_class = ApiClassData {
             is_export: true,

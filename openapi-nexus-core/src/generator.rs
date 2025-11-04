@@ -1,16 +1,15 @@
 //! Generator configuration and management
 
 use crate::error::Error;
+use openapi_nexus_common::Language;
 
 /// Configuration for code generation
 #[derive(Debug, Clone)]
 pub struct GeneratorConfig {
     /// Output directory for generated code
     pub output_dir: std::path::PathBuf,
-    /// Languages to generate code for
-    pub languages: Vec<String>,
-    /// Whether to create subdirectories for each language
-    pub create_subdirs: bool,
+    /// Language to generate code for
+    pub language: Language,
     /// Whether to overwrite existing files
     pub overwrite: bool,
 }
@@ -19,8 +18,7 @@ impl Default for GeneratorConfig {
     fn default() -> Self {
         Self {
             output_dir: std::path::PathBuf::from("generated"),
-            languages: vec!["typescript".to_string()],
-            create_subdirs: true,
+            language: Language::TypeScript,
             overwrite: false,
         }
     }
@@ -38,23 +36,9 @@ impl GeneratorConfig {
         self
     }
 
-    /// Set the languages to generate
-    pub fn languages(mut self, languages: Vec<String>) -> Self {
-        self.languages = languages;
-        self
-    }
-
-    /// Add a language to generate
-    pub fn add_language(mut self, language: String) -> Self {
-        if !self.languages.contains(&language) {
-            self.languages.push(language);
-        }
-        self
-    }
-
-    /// Set whether to create subdirectories
-    pub fn create_subdirs(mut self, create: bool) -> Self {
-        self.create_subdirs = create;
+    /// Set the language to generate
+    pub fn language(mut self, language: Language) -> Self {
+        self.language = language;
         self
     }
 
@@ -66,27 +50,7 @@ impl GeneratorConfig {
 
     /// Validate the configuration
     pub fn validate(&self) -> Result<(), Error> {
-        if self.languages.is_empty() {
-            let err = Error::UnsupportedLanguage {
-                language: "none".to_string(),
-            };
-            tracing::error!("{}", err);
-            return Err(err);
-        }
-
-        for language in &self.languages {
-            match language.as_str() {
-                "typescript" | "ts" | "rust" => {}
-                _ => {
-                    let err = Error::UnsupportedLanguage {
-                        language: language.clone(),
-                    };
-                    tracing::error!("{}", err);
-                    return Err(err);
-                }
-            }
-        }
-
+        // All languages in the enum are supported
         Ok(())
     }
 }

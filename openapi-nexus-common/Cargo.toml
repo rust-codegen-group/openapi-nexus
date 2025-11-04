@@ -5,4 +5,7 @@ edition.workspace = true
 publish = false
 
 [dependencies]
+clap.workspace = true
+serde.workspace = true
+serde_plain.workspace = true
 snafu.workspace = true

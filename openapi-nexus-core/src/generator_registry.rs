@@ -4,13 +4,14 @@ use std::collections::HashMap;
 
 use crate::traits::code_generator::LanguageCodeGenerator;
 use crate::traits::file_writer::FileWriter;
+use openapi_nexus_common::Language;
 
 /// Combined trait for generators that can both generate code and write files
 pub trait LanguageGenerator: LanguageCodeGenerator + FileWriter {}
 
 /// Registry for managing language-specific code generators
 pub struct GeneratorRegistry {
-    generators: HashMap<String, Box<dyn LanguageGenerator + Send + Sync>>,
+    generators: HashMap<Language, Box<dyn LanguageGenerator + Send + Sync>>,
 }
 
 impl GeneratorRegistry {
@@ -22,7 +23,7 @@ impl GeneratorRegistry {
     }
 
     /// Register a language generator
-    pub fn register_generator<G>(&mut self, language: String, generator: G) -> Result<(), String>
+    pub fn register_generator<G>(&mut self, language: Language, generator: G) -> Result<(), String>
     where
         G: LanguageGenerator + Send + Sync + 'static,
     {
@@ -38,17 +39,20 @@ impl GeneratorRegistry {
     }
 
     /// Get a generator for a specific language
-    pub fn get_generator(&self, language: &str) -> Option<&(dyn LanguageGenerator + Send + Sync)> {
-        self.generators.get(language).map(|g| g.as_ref())
+    pub fn get_generator(
+        &self,
+        language: Language,
+    ) -> Option<&(dyn LanguageGenerator + Send + Sync)> {
+        self.generators.get(&language).map(|g| g.as_ref())
     }
 
     /// Check if a generator is registered for a language
-    pub fn has_generator(&self, language: &str) -> bool {
-        self.generators.contains_key(language)
+    pub fn has_generator(&self, language: Language) -> bool {
+        self.generators.contains_key(&language)
     }
 
-    /// Get all registered language names
-    pub fn registered_languages(&self) -> Vec<String> {
+    /// Get all registered languages
+    pub fn registered_languages(&self) -> Vec<Language> {
         self.generators.keys().cloned().collect()
     }
 

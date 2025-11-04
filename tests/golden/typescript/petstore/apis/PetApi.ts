@@ -544,6 +544,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
         body: requestBody,
     }, initOverrides);
     return new VoidApiResponse(response);
+
   }
 
   /**

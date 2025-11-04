@@ -255,6 +255,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
         body: requestBody,
     }, initOverrides);
     return new VoidApiResponse(response);
+
   }
 
   /**
