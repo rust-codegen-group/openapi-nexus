@@ -1,6 +1,7 @@
 //! Intermediate representation context for transformation passes
 
 use std::collections::HashMap;
+
 use utoipa::openapi::OpenApi;
 
 /// Analysis results from the IR layer

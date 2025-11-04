@@ -10,11 +10,6 @@ pub enum Error {
     #[snafu(display("Failed to parse OpenAPI specification: {}", source))]
     Parse { source: ParseError },
 
-    #[snafu(display("Failed to transform OpenAPI specification: {}", source))]
-    Transform {
-        source: openapi_nexus_transforms::TransformError,
-    },
-
     #[snafu(display("Failed to generate code: {}", source))]
     Generate {
         source: Box<dyn std::error::Error + Send + Sync>,

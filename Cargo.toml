@@ -72,3 +72,13 @@ openapi-nexus-plugin = { version = "0.0.1", path = "openapi-nexus-plugin" }
 openapi-nexus-rust = { version = "0.0.1", path = "openapi-nexus-rust" }
 openapi-nexus-transforms = { version = "0.0.1", path = "openapi-nexus-transforms" }
 openapi-nexus-typescript = { version = "0.0.1", path = "openapi-nexus-typescript" }
+
+[workspace.metadata.publish]
+order = [
+    "openapi-nexus-common",
+    "openapi-nexus-parser",
+    "openapi-nexus-core",
+    "openapi-nexus-config",
+    "openapi-nexus",
+    "openapi-nexus-typescript",
+]

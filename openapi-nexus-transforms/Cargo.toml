@@ -7,14 +7,14 @@ authors.workspace = true
 repository.workspace = true
 readme.workspace = true
 license.workspace = true
-publish = true
+publish = false
 
 [dependencies]
-openapi-nexus-common.workspace = true
 heck.workspace = true
 indexmap.workspace = true
 snafu.workspace = true
 tracing.workspace = true
 utoipa.workspace = true
 
+openapi-nexus-common.workspace = true
 openapi-nexus-ir.workspace = true

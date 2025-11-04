@@ -1,6 +1,5 @@
 //! Main code generation orchestrator
 
-use std::collections::HashMap;
 use std::path::Path;
 
 use snafu::ResultExt as _;
@@ -10,24 +9,17 @@ use crate::error;
 use crate::generator_registry::{GeneratorRegistry, LanguageGenerator};
 use openapi_nexus_common::Language;
 use openapi_nexus_parser::parse_file;
-use openapi_nexus_transforms::TransformPipeline;
 
 /// Main code generation orchestrator
 pub struct OpenApiCodeGenerator {
-    transform_pipeline: TransformPipeline,
     generator_registry: GeneratorRegistry,
-    language_pipelines: HashMap<Language, TransformPipeline>,
 }
 
 impl OpenApiCodeGenerator {
     /// Create a new code generator with default configuration
     pub fn new() -> Self {
-        let pipeline = TransformPipeline::new();
-
         Self {
-            transform_pipeline: pipeline,
             generator_registry: GeneratorRegistry::new(),
-            language_pipelines: HashMap::new(),
         }
     }
 
@@ -51,16 +43,6 @@ impl OpenApiCodeGenerator {
                     source: Box::new(std::io::Error::other(msg)),
                 }
             })
-    }
-
-    /// Set a custom transformation pipeline for a specific language
-    pub fn with_language_pipeline(
-        mut self,
-        language: Language,
-        pipeline: TransformPipeline,
-    ) -> Self {
-        self.language_pipelines.insert(language, pipeline);
-        self
     }
 
     /// Generate code from an OpenAPI specification file
@@ -96,24 +78,6 @@ impl OpenApiCodeGenerator {
             return Err(err);
         }
 
-        // Clone the OpenAPI spec for this language
-        let mut language_openapi = openapi.clone();
-
-        // Apply transformations - use language-specific pipeline if available, otherwise default
-        let pipeline = self
-            .language_pipelines
-            .get(&language)
-            .unwrap_or(&self.transform_pipeline);
-
-        tracing::info!("Applying transformations for {}", language);
-        pipeline
-            .transform(&mut language_openapi)
-            .map_err(|e| {
-                error!("Transform error for {}: {}", language, e);
-                e
-            })
-            .context(error::TransformSnafu)?;
-
         // Get the generator and generate files
         let generator = self
             .generator_registry
@@ -126,7 +90,7 @@ impl OpenApiCodeGenerator {
                 err
             })?;
 
-        let files = generator.generate(&language_openapi).map_err(|e| {
+        let files = generator.generate(&openapi).map_err(|e| {
             error!("Failed to generate code for {}: {}", language, e);
             error::Error::Generate { source: e }
         })?;

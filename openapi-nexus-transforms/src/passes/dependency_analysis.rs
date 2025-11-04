@@ -1,8 +1,7 @@
 //! Dependency analysis transformation pass
 
-use crate::ir_context::IrContext;
-
 use super::{IrTransformPass, TransformError};
+use crate::ir_context::IrContext;
 
 /// Dependency analysis transformation pass
 pub struct DependencyAnalysisPass;

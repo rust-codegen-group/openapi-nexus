@@ -1006,7 +1006,6 @@ dependencies = [
  "minijinja",
  "openapi-nexus-common",
  "openapi-nexus-parser",
- "openapi-nexus-transforms",
  "pretty",
  "serde",
  "serde_json",
