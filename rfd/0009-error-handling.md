@@ -24,822 +24,239 @@ This RFD defines the comprehensive error handling and diagnostics system for the
 
 ## Error Type Hierarchy
 
+The error handling system uses a hierarchical error type structure that organizes errors by the layer or phase where they occur. This provides clear error categorization and enables proper error propagation.
+
 ### Core Error Types
 
-```rust
-#[derive(Debug, Snafu)]
-pub enum Error {
-    #[snafu(display("Parse error: {}", source))]
-    Parse { source: ParseError },
-    
-    #[snafu(display("Transform error: {}", source))]
-    Transform { source: TransformError },
-    
-    #[snafu(display("Generation error: {}", source))]
-    Generation { source: GenerationError },
-    
-    #[snafu(display("Emission error: {}", source))]
-    Emission { source: EmissionError },
-    
-    #[snafu(display("Configuration error: {}", source))]
-    Configuration { source: ConfigurationError },
-    
-    #[snafu(display("Plugin error: {}", source))]
-    Plugin { source: PluginError },
-    
-    #[snafu(display("IO error: {}", source))]
-    Io { source: std::io::Error },
-    
-    #[snafu(display("Serialization error: {}", source))]
-    Serialization { source: serde_json::Error },
-}
-```
+The top-level error type represents errors that occur during the main code generation orchestration:
+
+- **Parse Errors**: Errors encountered while reading or parsing OpenAPI specification files
+- **Transform Errors**: Errors that occur during the transformation phase
+- **Generation Errors**: Errors during code generation (generic errors from language generators)
+- **Unsupported Language**: Errors when a requested language is not supported
+- **Generator Not Found**: Errors when a language generator is not registered
 
 ### Parse Errors
 
-```rust
-#[derive(Debug, Snafu)]
-pub enum ParseError {
-    #[snafu(display("Invalid OpenAPI specification: {}", message))]
-    InvalidSpec { message: String, location: SourceLocation },
-    
-    #[snafu(display("Unsupported OpenAPI version: {}", version))]
-    UnsupportedVersion { version: String, location: SourceLocation },
-    
-    #[snafu(display("Circular reference detected: {}", reference))]
-    CircularReference { reference: String, location: SourceLocation },
-    
-    #[snafu(display("External reference not supported: {}", reference))]
-    ExternalReference { reference: String, location: SourceLocation },
-    
-    #[snafu(display("Schema validation failed: {}", details))]
-    SchemaValidation { details: String, location: SourceLocation },
-    
-    #[snafu(display("Missing required field '{}' in {}", field, context))]
-    MissingRequiredField { field: String, context: String, location: SourceLocation },
-    
-    #[snafu(display("Invalid field value '{}' for field '{}'", value, field))]
-    InvalidFieldValue { field: String, value: String, location: SourceLocation },
-}
-```
+Parse errors occur when reading or parsing OpenAPI specification files:
+
+- **File Read Errors**: Issues reading the specification file from disk
+- **JSON Parse Errors**: Invalid JSON syntax in JSON-formatted specifications
+- **YAML Parse Errors**: Invalid YAML syntax in YAML-formatted specifications
+- **Unsupported Format**: File format is not recognized or supported
 
 ### Transform Errors
 
-```rust
-#[derive(Debug, Snafu)]
-pub enum TransformError {
-    #[snafu(display("Transform pass '{}' failed: {}", pass, error))]
-    PassFailed { pass: String, error: String, location: SourceLocation },
-    
-    #[snafu(display("Circular dependency detected: {}", cycle))]
-    CircularDependency { cycle: String, location: SourceLocation },
-    
-    #[snafu(display("Invalid pass configuration: {}", message))]
-    InvalidConfiguration { message: String, location: SourceLocation },
-    
-    #[snafu(display("Pass '{}' not found", pass))]
-    PassNotFound { pass: String, location: SourceLocation },
-    
-    #[snafu(display("Transform timeout after {} seconds", duration))]
-    Timeout { duration: u64, location: SourceLocation },
-}
-```
+Transform errors occur during the transformation pipeline phase:
 
-### Generation Errors
+- **Generic Transform Errors**: General transformation failures
+- **Pass Failed**: A specific transformation pass encountered an error
+- **Circular Dependency**: Circular dependencies detected in transformation passes
+- **Invalid Configuration**: Invalid configuration for a transformation pass
+- **Pass Not Found**: A requested transformation pass does not exist
 
-```rust
-#[derive(Debug, Snafu)]
-pub enum GenerationError {
-    #[snafu(display("Type mapping failed: {}", source))]
-    TypeMapping { source: TypeMappingError },
-    
-    #[snafu(display("Code generation failed: {}", message))]
-    GenerationFailed { message: String, location: SourceLocation },
-    
-    #[snafu(display("Validation failed: {}", message))]
-    ValidationFailed { message: String, location: SourceLocation },
-    
-    #[snafu(display("Unsupported language: {}", language))]
-    UnsupportedLanguage { language: String, location: SourceLocation },
-    
-    #[snafu(display("AST generation failed: {}", message))]
-    AstGenerationFailed { message: String, location: SourceLocation },
-}
-```
+### IR (Intermediate Representation) Errors
+
+IR errors occur during reference resolution and schema analysis:
+
+- **Circular Reference**: Detected circular references in schema definitions
+- **Unresolved Reference**: A reference cannot be resolved to an actual definition
+- **Invalid Reference**: A reference has an invalid format or structure
+- **Analysis Error**: Errors during schema analysis operations
+- **External Reference**: External references (HTTP/HTTPS) are not supported
+
+### Emission Errors
+
+Emission errors occur during code emission/generation:
+
+- **Template Errors**: Errors in template rendering or processing
+
+### Configuration Errors
+
+Configuration errors occur during configuration merging and validation:
+
+- **Validation Errors**: Configuration validation failures
 
 ## Source Location Tracking
 
-### Source Location Structure
+Source location tracking provides context about where errors occur within OpenAPI specifications. This helps users quickly identify and fix issues in their specifications.
 
-```rust
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SourceLocation {
-    pub file_path: Option<PathBuf>,
-    pub line: Option<u32>,
-    pub column: Option<u32>,
-    pub openapi_path: Option<String>,
-    pub context: Option<String>,
-}
+### Location Information
 
-impl SourceLocation {
-    pub fn new() -> Self {
-        Self {
-            file_path: None,
-            line: None,
-            column: None,
-            openapi_path: None,
-            context: None,
-        }
-    }
-    
-    pub fn file(file_path: PathBuf) -> Self {
-        Self {
-            file_path: Some(file_path),
-            line: None,
-            column: None,
-            openapi_path: None,
-            context: None,
-        }
-    }
-    
-    pub fn openapi(openapi_path: String) -> Self {
-        Self {
-            file_path: None,
-            line: None,
-            column: None,
-            openapi_path: Some(openapi_path),
-            context: None,
-        }
-    }
-    
-    pub fn with_line(mut self, line: u32) -> Self {
-        self.line = Some(line);
-        self
-    }
-    
-    pub fn with_column(mut self, column: u32) -> Self {
-        self.column = Some(column);
-        self
-    }
-    
-    pub fn with_context(mut self, context: String) -> Self {
-        self.context = Some(context);
-        self
-    }
-}
-```
+Source locations can include:
 
-### Location Tracking in Parsing
+- File paths where errors occur
+- Line and column numbers (when available)
+- OpenAPI path references (e.g., `#/components/schemas/User`)
+- Additional context about the error location
 
-```rust
-pub struct LocationTracker {
-    current_file: Option<PathBuf>,
-    current_line: u32,
-    current_column: u32,
-    openapi_path: Vec<String>,
-}
+### Current Usage
 
-impl LocationTracker {
-    pub fn new() -> Self {
-        Self {
-            current_file: None,
-            current_line: 1,
-            current_column: 1,
-            openapi_path: Vec::new(),
-        }
-    }
-    
-    pub fn set_file(&mut self, file_path: PathBuf) {
-        self.current_file = Some(file_path);
-        self.current_line = 1;
-        self.current_column = 1;
-    }
-    
-    pub fn advance_line(&mut self) {
-        self.current_line += 1;
-        self.current_column = 1;
-    }
-    
-    pub fn advance_column(&mut self) {
-        self.current_column += 1;
-    }
-    
-    pub fn enter_openapi_path(&mut self, path: String) {
-        self.openapi_path.push(path);
-    }
-    
-    pub fn exit_openapi_path(&mut self) {
-        self.openapi_path.pop();
-    }
-    
-    pub fn current_location(&self) -> SourceLocation {
-        SourceLocation {
-            file_path: self.current_file.clone(),
-            line: Some(self.current_line),
-            column: Some(self.current_column),
-            openapi_path: if self.openapi_path.is_empty() {
-                None
-            } else {
-                Some(self.openapi_path.join("."))
-            },
-            context: None,
-        }
-    }
-}
-```
+Source location tracking is currently implemented in the IR layer, where it provides context for reference resolution and schema analysis errors. The system is designed to be extensible, allowing more detailed location tracking to be added in the future.
 
 ## User-Friendly Error Messages
 
-### Error Message Formatting
+Error messages are designed to be clear, actionable, and provide sufficient context for users to understand and fix issues.
 
-```rust
-pub struct ErrorFormatter {
-    colorize: bool,
-    include_context: bool,
-    include_suggestions: bool,
-}
+### Message Characteristics
 
-impl ErrorFormatter {
-    pub fn new() -> Self {
-        Self {
-            colorize: true,
-            include_context: true,
-            include_suggestions: true,
-        }
-    }
-    
-    pub fn format_error(&self, error: &Error) -> String {
-        let mut message = String::new();
-        
-        // Add error type and message
-        message.push_str(&self.format_error_header(error));
-        
-        // Add source location
-        if let Some(location) = self.extract_location(error) {
-            message.push_str(&self.format_location(&location));
-        }
-        
-        // Add context
-        if self.include_context {
-            if let Some(context) = self.extract_context(error) {
-                message.push_str(&self.format_context(&context));
-            }
-        }
-        
-        // Add suggestions
-        if self.include_suggestions {
-            if let Some(suggestions) = self.extract_suggestions(error) {
-                message.push_str(&self.format_suggestions(&suggestions));
-            }
-        }
-        
-        // Add help text
-        message.push_str(&self.format_help(error));
-        
-        message
-    }
-    
-    fn format_error_header(&self, error: &Error) -> String {
-        let color = if self.colorize { "\x1b[31m" } else { "" };
-        let reset = if self.colorize { "\x1b[0m" } else { "" };
-        
-        format!("{}{}Error:{} {}\n", color, "error", reset, error)
-    }
-    
-    fn format_location(&self, location: &SourceLocation) -> String {
-        let mut location_str = String::new();
-        
-        if let Some(file) = &location.file_path {
-            location_str.push_str(&format!("  --> {}\n", file.display()));
-        }
-        
-        if let Some(openapi_path) = &location.openapi_path {
-            location_str.push_str(&format!("  OpenAPI path: {}\n", openapi_path));
-        }
-        
-        if let (Some(line), Some(column)) = (location.line, location.column) {
-            location_str.push_str(&format!("  Line {}, Column {}\n", line, column));
-        }
-        
-        location_str
-    }
-}
-```
+Error messages include:
 
-### Error Context and Suggestions
+- **Clear Description**: What went wrong in plain language
+- **Relevant Context**: File paths, references, language names, etc.
+- **Source Location**: When available, information about where the error occurred
+- **Actionable Information**: Details that help users understand what to fix
 
-```rust
-pub struct ErrorContext {
-    pub source_code: Option<String>,
-    pub surrounding_lines: Option<Vec<String>>,
-    pub related_definitions: Vec<String>,
-    pub suggestions: Vec<String>,
-}
+### Future Enhancements
 
-impl ErrorContext {
-    pub fn new() -> Self {
-        Self {
-            source_code: None,
-            surrounding_lines: None,
-            related_definitions: Vec::new(),
-            suggestions: Vec::new(),
-        }
-    }
-    
-    pub fn with_source_code(mut self, source: String) -> Self {
-        self.source_code = Some(source);
-        self
-    }
-    
-    pub fn with_surrounding_lines(mut self, lines: Vec<String>) -> Self {
-        self.surrounding_lines = Some(lines);
-        self
-    }
-    
-    pub fn add_suggestion(mut self, suggestion: String) -> Self {
-        self.suggestions.push(suggestion);
-        self
-    }
-}
+Potential improvements to error messages:
 
-// Example error with context
-pub fn create_parse_error_with_context(
-    message: String,
-    location: SourceLocation,
-    context: ErrorContext,
-) -> ParseError {
-    ParseError::InvalidSpec {
-        message,
-        location,
-        context: Some(context),
-    }
-}
-```
+- Suggestions for fixing common errors
+- Related error information and context
+- Links to documentation or examples
+- Automatic error recovery hints
 
 ## Warning and Lint System
 
-### Warning Types
+The warning system provides non-fatal notifications about potential issues, deprecated features, or best practice violations. This allows users to be informed about issues without blocking code generation.
 
-```rust
-#[derive(Debug, Clone)]
-pub enum Warning {
-    #[snafu(display("Deprecated feature used: {}", feature))]
-    DeprecatedFeature { feature: String, location: SourceLocation },
-    
-    #[snafu(display("Non-standard OpenAPI extension: {}", extension))]
-    NonStandardExtension { extension: String, location: SourceLocation },
-    
-    #[snafu(display("Unused definition: {}", definition))]
-    UnusedDefinition { definition: String, location: SourceLocation },
-    
-    #[snafu(display("Potential performance issue: {}", issue))]
-    PerformanceIssue { issue: String, location: SourceLocation },
-    
-    #[snafu(display("Code style warning: {}", message))]
-    CodeStyle { message: String, location: SourceLocation },
-}
+### Warning Categories
 
-#[derive(Debug, Clone)]
-pub enum LintLevel {
-    Error,
-    Warning,
-    Info,
-    Hint,
-}
-```
+Potential warning types include:
 
-### Warning Collector
+- **Deprecated Features**: Use of deprecated OpenAPI features or patterns
+- **Non-Standard Extensions**: Use of non-standard OpenAPI extensions
+- **Unused Definitions**: Definitions that are not referenced
+- **Performance Issues**: Potential performance problems
+- **Code Style**: Style or formatting issues
 
-```rust
-pub struct WarningCollector {
-    warnings: Vec<Warning>,
-    max_warnings: Option<usize>,
-    lint_levels: HashMap<String, LintLevel>,
-}
+### Warning Levels
 
-impl WarningCollector {
-    pub fn new() -> Self {
-        Self {
-            warnings: Vec::new(),
-            max_warnings: None,
-            lint_levels: HashMap::new(),
-        }
-    }
-    
-    pub fn add_warning(&mut self, warning: Warning) -> Result<(), WarningError> {
-        if let Some(max) = self.max_warnings {
-            if self.warnings.len() >= max {
-                return Err(WarningError::TooManyWarnings { max });
-            }
-        }
-        
-        self.warnings.push(warning);
-        Ok(())
-    }
-    
-    pub fn get_warnings(&self) -> &[Warning] {
-        &self.warnings
-    }
-    
-    pub fn clear_warnings(&mut self) {
-        self.warnings.clear();
-    }
-    
-    pub fn set_lint_level(&mut self, rule: String, level: LintLevel) {
-        self.lint_levels.insert(rule, level);
-    }
-}
-```
+Warnings can be categorized by severity:
+
+- **Error**: Must be fixed (blocks generation)
+- **Warning**: Should be fixed (non-blocking)
+- **Info**: Informational messages
+- **Hint**: Suggestions for improvement
+
+### Current Implementation
+
+Currently, warnings are logged using standard logging mechanisms. A more comprehensive warning collection and reporting system is planned for future implementation.
 
 ## Diagnostic Reporting Format
 
-### Diagnostic Structure
+Diagnostic reporting provides structured error and warning information that can be consumed by various tools and IDEs.
 
-```rust
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Diagnostic {
-    pub severity: DiagnosticSeverity,
-    pub message: String,
-    pub location: SourceLocation,
-    pub code: Option<String>,
-    pub source: Option<String>,
-    pub suggestions: Vec<String>,
-    pub related_information: Vec<RelatedInformation>,
-}
+### Reporting Formats
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum DiagnosticSeverity {
-    Error = 1,
-    Warning = 2,
-    Information = 3,
-    Hint = 4,
-}
+Potential diagnostic formats include:
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RelatedInformation {
-    pub location: SourceLocation,
-    pub message: String,
-}
-```
+- **Human-Readable**: Formatted text output for terminal/console display
+- **JSON**: Structured JSON output for programmatic consumption
+- **XML**: XML format for integration with existing toolchains
+- **LSP**: Language Server Protocol format for IDE integration
 
-### Diagnostic Reporter
+### Current Implementation
 
-```rust
-pub struct DiagnosticReporter {
-    diagnostics: Vec<Diagnostic>,
-    format: DiagnosticFormat,
-}
-
-#[derive(Debug, Clone)]
-pub enum DiagnosticFormat {
-    Human,
-    Json,
-    Xml,
-    Lsp,
-}
-
-impl DiagnosticReporter {
-    pub fn new(format: DiagnosticFormat) -> Self {
-        Self {
-            diagnostics: Vec::new(),
-            format,
-        }
-    }
-    
-    pub fn add_diagnostic(&mut self, diagnostic: Diagnostic) {
-        self.diagnostics.push(diagnostic);
-    }
-    
-    pub fn report(&self) -> String {
-        match self.format {
-            DiagnosticFormat::Human => self.format_human(),
-            DiagnosticFormat::Json => self.format_json(),
-            DiagnosticFormat::Xml => self.format_xml(),
-            DiagnosticFormat::Lsp => self.format_lsp(),
-        }
-    }
-    
-    fn format_human(&self) -> String {
-        let mut output = String::new();
-        
-        for diagnostic in &self.diagnostics {
-            output.push_str(&format!("{:?}: {}\n", diagnostic.severity, diagnostic.message));
-            
-            if let Some(location) = &diagnostic.location {
-                output.push_str(&format!("  at {}\n", location));
-            }
-            
-            if !diagnostic.suggestions.is_empty() {
-                output.push_str("  Suggestions:\n");
-                for suggestion in &diagnostic.suggestions {
-                    output.push_str(&format!("    - {}\n", suggestion));
-                }
-            }
-            
-            output.push_str("\n");
-        }
-        
-        output
-    }
-    
-    fn format_json(&self) -> String {
-        serde_json::to_string_pretty(&self.diagnostics).unwrap_or_else(|_| "[]".to_string())
-    }
-}
-```
+Currently, errors are logged and displayed via standard error output. Structured diagnostic reporting formats are planned for future implementation to enable better tool integration.
 
 ## Recovery Strategies
 
-### Error Recovery Trait
+Error recovery strategies enable the system to automatically fix or work around certain types of errors, improving user experience by reducing manual intervention.
 
-```rust
-pub trait ErrorRecovery {
-    type Error;
-    type Recovered;
-    
-    fn can_recover(&self, error: &Self::Error) -> bool;
-    fn recover(&self, error: &Self::Error) -> Result<Self::Recovered, Self::Error>;
-    fn get_recovery_suggestions(&self, error: &Self::Error) -> Vec<String>;
-}
+### Recovery Concepts
 
-pub struct ParseErrorRecovery {
-    auto_fix: bool,
-    suggestions: HashMap<ParseError, Vec<String>>,
-}
+Recovery strategies can:
 
-impl ErrorRecovery for ParseErrorRecovery {
-    type Error = ParseError;
-    type Recovered = OpenApi;
-    
-    fn can_recover(&self, error: &ParseError) -> bool {
-        match error {
-            ParseError::MissingRequiredField { .. } => true,
-            ParseError::InvalidFieldValue { .. } => true,
-            ParseError::SchemaValidation { .. } => false,
-            ParseError::CircularReference { .. } => false,
-            _ => false,
-        }
-    }
-    
-    fn recover(&self, error: &ParseError) -> Result<OpenApi, ParseError> {
-        match error {
-            ParseError::MissingRequiredField { field, .. } => {
-                // Try to provide default value
-                self.provide_default_value(field)
-            }
-            ParseError::InvalidFieldValue { field, value, .. } => {
-                // Try to fix the value
-                self.fix_field_value(field, value)
-            }
-            _ => Err(error.clone()),
-        }
-    }
-    
-    fn get_recovery_suggestions(&self, error: &ParseError) -> Vec<String> {
-        self.suggestions.get(error).cloned().unwrap_or_default()
-    }
-}
-```
+- **Detect Recoverable Errors**: Identify errors that can be automatically fixed
+- **Attempt Recovery**: Try to fix the error automatically
+- **Provide Suggestions**: Offer manual recovery suggestions when automatic recovery is not possible
 
-### Automatic Recovery
+### Recovery Types
 
-```rust
-pub struct AutoRecovery {
-    recovery_strategies: Vec<Box<dyn ErrorRecovery>>,
-    max_recovery_attempts: usize,
-}
+Potential recovery strategies include:
 
-impl AutoRecovery {
-    pub fn new() -> Self {
-        Self {
-            recovery_strategies: Vec::new(),
-            max_recovery_attempts: 3,
-        }
-    }
-    
-    pub fn add_recovery_strategy<R: ErrorRecovery + 'static>(&mut self, strategy: R) {
-        self.recovery_strategies.push(Box::new(strategy));
-    }
-    
-    pub fn attempt_recovery<E>(&self, error: &E) -> Option<E::Recovered>
-    where
-        E: Clone,
-        Box<dyn ErrorRecovery<Error = E>>: ErrorRecovery<Recovered = E::Recovered>,
-    {
-        for strategy in &self.recovery_strategies {
-            if strategy.can_recover(error) {
-                if let Ok(recovered) = strategy.recover(error) {
-                    return Some(recovered);
-                }
-            }
-        }
-        None
-    }
-}
-```
+- **Missing Required Fields**: Provide default values for missing required fields
+- **Invalid Field Values**: Attempt to fix or normalize invalid field values
+- **Schema Validation**: Offer suggestions for schema validation failures
+- **Reference Resolution**: Attempt to resolve missing references
+
+### Current Implementation
+
+The system currently follows a fail-fast approach where errors are logged and the process exits. Automatic error recovery strategies are planned for future implementation.
 
 ## Error Context Propagation
 
-### Error Context Stack
+Error context propagation ensures that errors carry relevant context from each layer they pass through, making debugging easier by preserving the full error chain.
 
-```rust
-pub struct ErrorContextStack {
-    contexts: Vec<ErrorContext>,
-}
+### Propagation Mechanism
 
-impl ErrorContextStack {
-    pub fn new() -> Self {
-        Self {
-            contexts: Vec::new(),
-        }
-    }
-    
-    pub fn push_context(&mut self, context: ErrorContext) {
-        self.contexts.push(context);
-    }
-    
-    pub fn pop_context(&mut self) -> Option<ErrorContext> {
-        self.contexts.pop()
-    }
-    
-    pub fn current_context(&self) -> Option<&ErrorContext> {
-        self.contexts.last()
-    }
-    
-    pub fn add_to_current_context(&mut self, key: String, value: String) {
-        if let Some(context) = self.contexts.last_mut() {
-            context.add_metadata(key, value);
-        }
-    }
-}
-```
+Errors propagate through the system by:
 
-### Context-Aware Error Creation
+- **Wrapping Lower-Level Errors**: Higher-level errors wrap lower-level errors to add context
+- **Preserving Error Chain**: The full error chain is maintained, showing where errors originated
+- **Adding Layer Context**: Each layer adds its own context to help identify where processing failed
 
-```rust
-pub struct ContextAwareErrorBuilder {
-    context_stack: ErrorContextStack,
-    location_tracker: LocationTracker,
-}
+### Error Flow
 
-impl ContextAwareErrorBuilder {
-    pub fn new() -> Self {
-        Self {
-            context_stack: ErrorContextStack::new(),
-            location_tracker: LocationTracker::new(),
-        }
-    }
-    
-    pub fn create_parse_error(&self, message: String) -> ParseError {
-        ParseError::InvalidSpec {
-            message,
-            location: self.location_tracker.current_location(),
-            context: self.context_stack.current_context().cloned(),
-        }
-    }
-    
-    pub fn create_transform_error(&self, pass: String, error: String) -> TransformError {
-        TransformError::PassFailed {
-            pass,
-            error,
-            location: self.location_tracker.current_location(),
-        }
-    }
-}
-```
+Example error propagation:
+
+- Parse errors are wrapped in orchestration errors with additional context
+- Transform errors are wrapped with transformation pipeline context
+- IR errors are logged directly in the IR layer with schema analysis context
 
 ## Testing Strategy
 
-### Error Testing
+Error handling is tested to ensure errors are created correctly, formatted properly, and propagate through the system as expected.
 
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_error_creation() {
-        let location = SourceLocation::file(PathBuf::from("test.yaml"))
-            .with_line(10)
-            .with_column(5);
-        
-        let error = ParseError::InvalidSpec {
-            message: "Invalid OpenAPI spec".to_string(),
-            location: location.clone(),
-        };
-        
-        assert_eq!(error.location(), Some(location));
-    }
-    
-    #[test]
-    fn test_error_formatting() {
-        let formatter = ErrorFormatter::new();
-        let error = ParseError::InvalidSpec {
-            message: "Test error".to_string(),
-            location: SourceLocation::file(PathBuf::from("test.yaml")),
-        };
-        
-        let formatted = formatter.format_error(&Error::Parse { source: error });
-        assert!(formatted.contains("Test error"));
-        assert!(formatted.contains("test.yaml"));
-    }
-    
-    #[test]
-    fn test_warning_collection() {
-        let mut collector = WarningCollector::new();
-        let warning = Warning::DeprecatedFeature {
-            feature: "old-feature".to_string(),
-            location: SourceLocation::new(),
-        };
-        
-        collector.add_warning(warning).unwrap();
-        assert_eq!(collector.get_warnings().len(), 1);
-    }
-}
-```
+### Testing Approach
 
-### Integration Testing
+Error handling tests verify:
 
-```rust
-#[test]
-fn test_error_recovery() {
-    let mut recovery = AutoRecovery::new();
-    recovery.add_recovery_strategy(ParseErrorRecovery::new());
-    
-    let error = ParseError::MissingRequiredField {
-        field: "title".to_string(),
-        context: "info".to_string(),
-        location: SourceLocation::new(),
-    };
-    
-    let recovered = recovery.attempt_recovery(&error);
-    assert!(recovered.is_some());
-}
-```
+- **Error Creation**: Errors can be created with appropriate context
+- **Error Formatting**: Error messages are formatted correctly and contain expected information
+- **Error Propagation**: Errors propagate correctly through different layers
+- **Error Context**: Error context is preserved during propagation
+
+### Test Coverage
+
+Tests cover:
+
+- Unit tests for individual error types
+- Integration tests for error propagation through the system
+- Error message formatting and readability
 
 ## Performance Considerations
 
-### Error Caching
+Error handling is designed to be efficient and not impact the performance of successful code generation operations.
 
-```rust
-pub struct ErrorCache {
-    cache: HashMap<String, CachedError>,
-}
+### Performance Principles
 
-pub struct CachedError {
-    error: Error,
-    timestamp: Instant,
-    usage_count: u64,
-}
+- **Errors are Rare**: The system is optimized for the common case where errors don't occur
+- **Lazy Evaluation**: Error messages are formatted only when needed (when errors occur)
+- **Minimal Overhead**: Error creation and logging have minimal performance impact
+- **No Caching Required**: Error handling is lightweight enough that caching is unnecessary
 
-impl ErrorCache {
-    pub fn get_cached_error(&self, key: &str) -> Option<&Error> {
-        self.cache.get(key).map(|cached| &cached.error)
-    }
-    
-    pub fn cache_error(&mut self, key: String, error: Error) {
-        self.cache.insert(key, CachedError {
-            error,
-            timestamp: Instant::now(),
-            usage_count: 0,
-        });
-    }
-}
-```
+### Optimization Strategies
 
-### Lazy Error Evaluation
+The system avoids unnecessary overhead:
 
-```rust
-pub struct LazyError {
-    error_fn: Box<dyn Fn() -> Error>,
-    evaluated: Option<Error>,
-}
-
-impl LazyError {
-    pub fn new<F>(error_fn: F) -> Self
-    where
-        F: Fn() -> Error + 'static,
-    {
-        Self {
-            error_fn: Box::new(error_fn),
-            evaluated: None,
-        }
-    }
-    
-    pub fn get_error(&mut self) -> &Error {
-        if self.evaluated.is_none() {
-            self.evaluated = Some((self.error_fn)());
-        }
-        self.evaluated.as_ref().unwrap()
-    }
-}
-```
+- Error types are simple and efficient to create
+- Error messages use lazy formatting through standard display traits
+- Logging uses efficient tracing macros
+- No complex error structures or caching mechanisms are needed
 
 ## Conclusion
 
-The comprehensive error handling and diagnostics system provides a robust foundation for reliable OpenAPI code generation. The structured error types, source location tracking, and user-friendly error messages ensure a good developer experience, while the warning system and recovery strategies help users fix issues quickly.
+The error handling system provides a robust foundation for reliable OpenAPI code generation. Key features:
 
-The diagnostic reporting format enables integration with various tools and IDEs, while the performance optimizations ensure efficient error handling even for large specifications.
+1. **Structured Error Types**: Clear, hierarchical error types organized by layer and phase
+2. **Error Logging**: All errors are logged before being returned, ensuring comprehensive error visibility
+3. **User-Friendly Messages**: Clear, actionable error messages with relevant context
+4. **Source Location Tracking**: Location information available in IR layer errors for better debugging
+5. **Consistent Error Handling**: Uniform error handling patterns across all components
+
+The system is designed to be extensible - additional error types, recovery strategies, and diagnostic formats can be added as needed without breaking existing functionality.
 
 ## Related RFDs
 

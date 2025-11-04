@@ -63,9 +63,11 @@ impl ConfigMerger {
         // Resolve and validate
         let input = merged_global.input.clone();
         let language = merged_global.language.clone();
-        let resolved_global = merged_global
-            .resolve(input, language)
-            .map_err(MergeError::ValidationError)?;
+        let resolved_global = merged_global.resolve(input, language).map_err(|msg| {
+            let err = MergeError::ValidationError(msg.clone());
+            tracing::error!("{}", err);
+            err
+        })?;
 
         Ok(ResolvedConfig {
             global: resolved_global,

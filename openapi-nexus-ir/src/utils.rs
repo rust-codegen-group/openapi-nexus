@@ -61,20 +61,24 @@ impl<'a> ReferenceResolver<'a> {
     /// Resolve a schema reference to the actual schema
     pub fn resolve_schema_ref(&self, reference: &str) -> Result<&Schema, IrError> {
         if self.is_external_reference(reference) {
-            return Err(IrError::ExternalReference {
+            let err = IrError::ExternalReference {
                 reference: reference.to_string(),
                 location: SourceLocation::new(),
-            });
+            };
+            tracing::error!("{}", err);
+            return Err(err);
         }
 
         let (component_type, name) = self.parse_component_reference(reference)?;
 
         if component_type != "schemas" {
-            return Err(IrError::InvalidReference {
+            let err = IrError::InvalidReference {
                 reference: reference.to_string(),
                 reason: format!("Expected 'schemas' component, got '{}'", component_type),
                 location: SourceLocation::new(),
-            });
+            };
+            tracing::error!("{}", err);
+            return Err(err);
         }
 
         self.openapi
@@ -85,29 +89,37 @@ impl<'a> ReferenceResolver<'a> {
                 RefOr::T(schema) => Some(schema),
                 RefOr::Ref(_) => None,
             })
-            .ok_or_else(|| IrError::UnresolvedReference {
-                reference: reference.to_string(),
-                location: SourceLocation::new(),
+            .ok_or_else(|| {
+                let err = IrError::UnresolvedReference {
+                    reference: reference.to_string(),
+                    location: SourceLocation::new(),
+                };
+                tracing::error!("{}", err);
+                err
             })
     }
 
     /// Resolve a response reference to the actual response
     pub fn resolve_response_ref(&self, reference: &str) -> Result<&Response, IrError> {
         if self.is_external_reference(reference) {
-            return Err(IrError::ExternalReference {
+            let err = IrError::ExternalReference {
                 reference: reference.to_string(),
                 location: SourceLocation::new(),
-            });
+            };
+            tracing::error!("{}", err);
+            return Err(err);
         }
 
         let (component_type, name) = self.parse_component_reference(reference)?;
 
         if component_type != "responses" {
-            return Err(IrError::InvalidReference {
+            let err = IrError::InvalidReference {
                 reference: reference.to_string(),
                 reason: format!("Expected 'responses' component, got '{}'", component_type),
                 location: SourceLocation::new(),
-            });
+            };
+            tracing::error!("{}", err);
+            return Err(err);
         }
 
         self.openapi
@@ -118,29 +130,37 @@ impl<'a> ReferenceResolver<'a> {
                 RefOr::T(response) => Some(response),
                 RefOr::Ref(_) => None,
             })
-            .ok_or_else(|| IrError::UnresolvedReference {
-                reference: reference.to_string(),
-                location: SourceLocation::new(),
+            .ok_or_else(|| {
+                let err = IrError::UnresolvedReference {
+                    reference: reference.to_string(),
+                    location: SourceLocation::new(),
+                };
+                tracing::error!("{}", err);
+                err
             })
     }
 
     /// Resolve a parameter reference to the actual parameter
     pub fn resolve_parameter_ref(&self, reference: &str) -> Result<&Parameter, IrError> {
         if self.is_external_reference(reference) {
-            return Err(IrError::ExternalReference {
+            let err = IrError::ExternalReference {
                 reference: reference.to_string(),
                 location: SourceLocation::new(),
-            });
+            };
+            tracing::error!("{}", err);
+            return Err(err);
         }
 
         let (_component_type, _name) = self.parse_component_reference(reference)?;
 
         // Note: utoipa Components doesn't have a parameters field
         // Parameters are typically defined inline in operations
-        Err(IrError::UnresolvedReference {
+        let err = IrError::UnresolvedReference {
             reference: reference.to_string(),
             location: SourceLocation::new(),
-        })
+        };
+        tracing::error!("{}", err);
+        Err(err)
     }
 
     /// Check if a reference is external (starts with http:// or https://)
@@ -151,20 +171,24 @@ impl<'a> ReferenceResolver<'a> {
     /// Parse a component reference like "#/components/schemas/Name" into ("schemas", "Name")
     pub fn parse_component_reference(&self, reference: &str) -> Result<(String, String), IrError> {
         if !reference.starts_with("#/components/") {
-            return Err(IrError::InvalidReference {
+            let err = IrError::InvalidReference {
                 reference: reference.to_string(),
                 reason: "Reference must start with '#/components/'".to_string(),
                 location: SourceLocation::new(),
-            });
+            };
+            tracing::error!("{}", err);
+            return Err(err);
         }
 
         let parts: Vec<&str> = reference.split('/').collect();
         if parts.len() != 4 {
-            return Err(IrError::InvalidReference {
+            let err = IrError::InvalidReference {
                 reference: reference.to_string(),
                 reason: "Reference must be in format '#/components/type/name'".to_string(),
                 location: SourceLocation::new(),
-            });
+            };
+            tracing::error!("{}", err);
+            return Err(err);
         }
 
         Ok((parts[2].to_string(), parts[3].to_string()))

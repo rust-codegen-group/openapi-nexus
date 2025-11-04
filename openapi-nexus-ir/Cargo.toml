@@ -8,6 +8,7 @@ publish = false
 indexmap.workspace = true
 serde.workspace = true
 snafu.workspace = true
+tracing.workspace = true
 utoipa.workspace = true
 
 openapi-nexus-common.workspace = true

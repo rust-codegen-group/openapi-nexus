@@ -6,10 +6,6 @@ use snafu::Snafu;
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum EmitError {
-    #[snafu(display("Emit error: {}", message))]
-    Generic { message: String },
     #[snafu(display("Template error: {}", message))]
     TemplateError { message: String },
-    #[snafu(display("Import resolution error: {}", message))]
-    ImportResolution { message: String },
 }

@@ -23,12 +23,6 @@ pub enum Error {
     #[snafu(display("Unsupported language: {}", language))]
     UnsupportedLanguage { language: String },
 
-    #[snafu(display("Failed to write output to '{}': {}", path, source))]
-    WriteOutput {
-        path: String,
-        source: std::io::Error,
-    },
-
     #[snafu(display("Generator not found for language: {}", language))]
     GeneratorNotFound { language: String },
 }

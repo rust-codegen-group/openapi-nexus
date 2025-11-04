@@ -189,17 +189,20 @@ impl Templates {
         context: minijinja::Value,
     ) -> Result<FileInfo, EmitError> {
         let template_path = template_name.file_path();
-        let template =
-            self.env
-                .get_template(&template_path)
-                .map_err(|e| EmitError::TemplateError {
-                    message: format!("Failed to get {} template: {}", template_path, e),
-                })?;
-        let content = template
-            .render(context)
-            .map_err(|e| EmitError::TemplateError {
+        let template = self.env.get_template(&template_path).map_err(|e| {
+            let err = EmitError::TemplateError {
+                message: format!("Failed to get {} template: {}", template_path, e),
+            };
+            tracing::error!("{}", err);
+            err
+        })?;
+        let content = template.render(context).map_err(|e| {
+            let err = EmitError::TemplateError {
                 message: format!("Failed to render {} template: {}", template_path, e),
-            })?;
+            };
+            tracing::error!("{}", err);
+            err
+        })?;
 
         Ok(FileInfo::new(
             output_filename.to_string(),
@@ -215,16 +218,19 @@ impl Templates {
         context: minijinja::Value,
     ) -> Result<String, EmitError> {
         let template_path = template_name.file_path();
-        let template =
-            self.env
-                .get_template(&template_path)
-                .map_err(|e| EmitError::TemplateError {
-                    message: format!("Failed to get {} template: {}", template_path, e),
-                })?;
-        template
-            .render(context)
-            .map_err(|e| EmitError::TemplateError {
+        let template = self.env.get_template(&template_path).map_err(|e| {
+            let err = EmitError::TemplateError {
+                message: format!("Failed to get {} template: {}", template_path, e),
+            };
+            tracing::error!("{}", err);
+            err
+        })?;
+        template.render(context).map_err(|e| {
+            let err = EmitError::TemplateError {
                 message: format!("Failed to render {} template: {}", template_path, e),
-            })
+            };
+            tracing::error!("{}", err);
+            err
+        })
     }
 }

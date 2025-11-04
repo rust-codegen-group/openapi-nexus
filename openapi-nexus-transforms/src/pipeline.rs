@@ -24,7 +24,10 @@ impl TransformPipeline {
     /// Apply all transformation passes to the OpenAPI specification
     pub fn transform(&self, openapi: &mut OpenApi) -> Result<(), TransformError> {
         for pass in &self.passes {
-            pass.transform(openapi)?;
+            pass.transform(openapi).map_err(|e| {
+                tracing::error!("Transform pass failed: {}", e);
+                e
+            })?;
         }
         Ok(())
     }

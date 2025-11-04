@@ -322,22 +322,23 @@ impl<'a> SchemaAnalyzer<'a> {
 
     /// Get direct dependencies of a schema
     fn get_schema_dependencies(&self, schema_name: &str) -> Result<Vec<String>, IrError> {
-        let components =
-            self.openapi
-                .components
-                .as_ref()
-                .ok_or_else(|| IrError::AnalysisError {
-                    message: "No components found".to_string(),
-                    location: openapi_nexus_common::SourceLocation::new(),
-                })?;
+        let components = self.openapi.components.as_ref().ok_or_else(|| {
+            let err = IrError::AnalysisError {
+                message: "No components found".to_string(),
+                location: openapi_nexus_common::SourceLocation::new(),
+            };
+            tracing::error!("{}", err);
+            err
+        })?;
 
-        let schema = components
-            .schemas
-            .get(schema_name)
-            .ok_or_else(|| IrError::AnalysisError {
+        let schema = components.schemas.get(schema_name).ok_or_else(|| {
+            let err = IrError::AnalysisError {
                 message: format!("Schema '{}' not found", schema_name),
                 location: openapi_nexus_common::SourceLocation::new(),
-            })?;
+            };
+            tracing::error!("{}", err);
+            err
+        })?;
 
         let mut dependencies = Vec::new();
 

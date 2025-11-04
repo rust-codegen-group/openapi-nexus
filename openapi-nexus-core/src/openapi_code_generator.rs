@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use snafu::ResultExt as _;
+use tracing::error;
 use utoipa::openapi::OpenApi;
 
 use crate::error;
@@ -46,10 +47,17 @@ impl OpenApiCodeGenerator {
     where
         G: LanguageGenerator + Send + Sync + 'static,
     {
+        let lang = language.into();
         self.generator_registry
-            .register_generator(language.into(), generator)
-            .map_err(|msg| error::Error::Generate {
-                source: Box::new(std::io::Error::other(msg)),
+            .register_generator(lang.clone(), generator)
+            .map_err(|msg| {
+                error!(
+                    "Failed to register language generator for {}: {}",
+                    lang, msg
+                );
+                error::Error::Generate {
+                    source: Box::new(std::io::Error::other(msg)),
+                }
             })
     }
 
@@ -70,16 +78,27 @@ impl OpenApiCodeGenerator {
             "Parsing OpenAPI specification from: {:?}",
             input_path.as_ref()
         );
-        let openapi = parse_openapi_file(input_path.as_ref()).context(error::ParseSnafu)?;
+        let openapi = parse_openapi_file(input_path.as_ref())
+            .map_err(|e| {
+                error!(
+                    "Failed to parse OpenAPI file {:?}: {}",
+                    input_path.as_ref(),
+                    e
+                );
+                e
+            })
+            .context(error::ParseSnafu)?;
 
         for language in languages {
             tracing::info!("Generating {} code", language);
 
             // Check if generator is registered
             if !self.generator_registry.has_generator(language) {
-                return Err(error::Error::GeneratorNotFound {
+                let err = error::Error::GeneratorNotFound {
                     language: language.clone(),
-                });
+                };
+                error!("{}", err);
+                return Err(err);
             }
 
             // Clone the OpenAPI spec for this language
@@ -94,24 +113,36 @@ impl OpenApiCodeGenerator {
             tracing::info!("Applying transformations for {}", language);
             pipeline
                 .transform(&mut language_openapi)
+                .map_err(|e| {
+                    error!("Transform error for {}: {}", language, e);
+                    e
+                })
                 .context(error::TransformSnafu)?;
 
             // Get the generator and generate files
             let generator = self
                 .generator_registry
                 .get_generator(language)
-                .ok_or_else(|| error::Error::GeneratorNotFound {
-                    language: language.clone(),
+                .ok_or_else(|| {
+                    let err = error::Error::GeneratorNotFound {
+                        language: language.clone(),
+                    };
+                    error!("{}", err);
+                    err
                 })?;
 
-            let files = generator
-                .generate(&language_openapi)
-                .map_err(|e| error::Error::Generate { source: e })?;
+            let files = generator.generate(&language_openapi).map_err(|e| {
+                error!("Failed to generate code for {}: {}", language, e);
+                error::Error::Generate { source: e }
+            })?;
 
             // Write files using the FileWriter trait
             generator
                 .write_files(output_dir.as_ref(), &files)
-                .map_err(|e| error::Error::Generate { source: e })?;
+                .map_err(|e| {
+                    error!("Failed to write files for {}: {}", language, e);
+                    error::Error::Generate { source: e }
+                })?;
 
             tracing::info!(
                 "Successfully generated {} files for {}",

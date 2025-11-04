@@ -23,15 +23,16 @@ impl<'a> PackageFilesGenerator<'a> {
     /// If None is returned, default keywords should be used.
     fn extract_keywords(&self, openapi: &OpenApi) -> Option<Vec<String>> {
         if let Some(extensions) = &openapi.info.extensions
-            && let Some(serde_json::Value::Array(keywords_array)) = extensions.get("x-keywords") {
-                let keywords: Vec<String> = keywords_array
-                    .iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect();
-                if !keywords.is_empty() {
-                    return Some(keywords);
-                }
+            && let Some(serde_json::Value::Array(keywords_array)) = extensions.get("x-keywords")
+        {
+            let keywords: Vec<String> = keywords_array
+                .iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect();
+            if !keywords.is_empty() {
+                return Some(keywords);
             }
+        }
         None
     }
 
