@@ -72,7 +72,7 @@ pub fn parse_content_json(content: &str) -> Result<OpenApi, ParseError> {
 }
 
 pub fn parse_content_yaml(content: &str) -> Result<OpenApi, ParseError> {
-    let yaml_value: serde_norway::Value = serde_norway::from_str(content).map_err(|e| {
+    let value: serde_norway::Value = serde_norway::from_str(content).map_err(|e| {
         let error_msg = e.to_string();
         debug!("Serde error message: {}", error_msg);
         let context = extract_error_context(content, &error_msg);
@@ -84,8 +84,7 @@ pub fn parse_content_yaml(content: &str) -> Result<OpenApi, ParseError> {
         ParseError::YamlParse { source: e, context }
     })?;
 
-    serde_norway::from_value(yaml_value)
-        .map_err(|e| ParseError::OpenApiDeserializeYaml { source: e })
+    serde_norway::from_value(value).map_err(|e| ParseError::OpenApiDeserializeYaml { source: e })
 }
 
 /// Parse an OpenAPI specification from a file

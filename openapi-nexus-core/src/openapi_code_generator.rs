@@ -9,10 +9,7 @@ use tracing::error;
 use crate::error;
 use crate::generator_registry::{GeneratorRegistry, LanguageGenerator};
 use openapi_nexus_parser::parse_file;
-use openapi_nexus_transforms::{
-    TransformPipeline,
-    passes::{NamingConvention, NamingConventionPass, ReferenceResolutionPass},
-};
+use openapi_nexus_transforms::TransformPipeline;
 
 /// Main code generation orchestrator
 pub struct OpenApiCodeGenerator {
@@ -24,11 +21,7 @@ pub struct OpenApiCodeGenerator {
 impl OpenApiCodeGenerator {
     /// Create a new code generator with default configuration
     pub fn new() -> Self {
-        let pipeline = TransformPipeline::new()
-            .add_pass(ReferenceResolutionPass::new())
-            .add_pass(NamingConventionPass {
-                target_case: NamingConvention::CamelCase,
-            });
+        let pipeline = TransformPipeline::new();
 
         Self {
             transform_pipeline: pipeline,
