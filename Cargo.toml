@@ -79,6 +79,6 @@ order = [
     "openapi-nexus-parser",
     "openapi-nexus-core",
     "openapi-nexus-config",
-    "openapi-nexus",
     "openapi-nexus-typescript",
+    "openapi-nexus",
 ]
