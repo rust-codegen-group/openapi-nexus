@@ -145,6 +145,7 @@ impl ApiOperationGenerator {
                 .with_import("VoidApiResponse".to_string(), None)
                 .with_import("ResponseError".to_string(), None)
                 .with_import("RequiredError".to_string(), None)
+                .with_import("DefaultConfig".to_string(), None)
                 .with_type_import("Configuration".to_string(), None)
                 .with_type_import("InitOverrideFunction".to_string(), None),
         ];

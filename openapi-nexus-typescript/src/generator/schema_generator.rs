@@ -6,14 +6,16 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use heck::ToPascalCase as _;
+use tracing::warn;
 use utoipa::openapi::schema::{
     AdditionalProperties, KnownFormat, Object, SchemaFormat, SchemaType, Type,
 };
 use utoipa::openapi::{RefOr, Schema};
 
 use crate::ast::{
-    TsDocComment, TsEnumDefinition, TsEnumVariant, TsExpression, TsInterfaceDefinition,
-    TsInterfaceSignature, TsPrimitive, TsProperty, TsTypeAliasDefinition, TsTypeDefinition,
+    TsDocComment, TsEnumDefinition, TsEnumValue, TsEnumVariant, TsExpression,
+    TsInterfaceDefinition, TsInterfaceSignature, TsPrimitive, TsProperty, TsTypeAliasDefinition,
+    TsTypeDefinition,
 };
 use crate::core::GeneratorError;
 use crate::generator::schema_context::SchemaContext;
@@ -241,26 +243,30 @@ impl SchemaGenerator {
         match schema {
             Schema::Object(obj_schema) => {
                 let mut variants: Vec<TsEnumVariant> = Vec::new();
+                let enum_descriptions = Self::extract_enum_descriptions(obj_schema);
 
                 if let Some(enum_values) = &obj_schema.enum_values {
-                    for enum_value in enum_values {
-                        // Convert serde_json::Value to string
-                        let value_str = match enum_value {
-                            serde_json::Value::String(s) => s.clone(),
-                            serde_json::Value::Number(n) => n.to_string(),
-                            serde_json::Value::Bool(b) => b.to_string(),
-                            _ => enum_value.to_string().trim_matches('"').to_string(),
-                        };
+                    for (index, enum_value) in enum_values.iter().enumerate() {
+                        // Warn if boolean value is being converted
+                        if let serde_json::Value::Bool(_) = enum_value {
+                            warn!(
+                                "Boolean enum value found for schema '{}'. TypeScript enums don't support booleans, converting to number (0 for false, 1 for true).",
+                                name
+                            );
+                        }
 
-                        let variant_name = if value_str.chars().all(|c| c.is_ascii_digit()) {
-                            format!("_{}", value_str)
-                        } else {
-                            value_str.to_pascal_case()
-                        };
+                        let enum_value = TsEnumValue::from_json_value(enum_value);
+                        let name = enum_value.generate_enum_name();
+                        let value = Some(enum_value);
+                        let documentation = enum_descriptions
+                            .get(index)
+                            .and_then(|d| d.as_str())
+                            .map(|s| TsDocComment::new(s.to_string()));
+
                         let variant = TsEnumVariant {
-                            name: variant_name,
-                            value: Some(value_str),
-                            documentation: None,
+                            name,
+                            value,
+                            documentation,
                         };
                         variants.push(variant);
                     }
@@ -277,6 +283,25 @@ impl SchemaGenerator {
                 message: "Expected object schema for enum".to_string(),
             }),
         }
+    }
+
+    /// Extract x-enumDescriptions extension from schema
+    ///
+    /// This extension is a common convention to provide per-value documentation
+    /// for enum types, even though it's not part of the official OpenAPI
+    /// specification.
+    fn extract_enum_descriptions(obj_schema: &Object) -> Vec<serde_json::Value> {
+        // Try to access extensions field - in utoipa, extensions are typically stored
+        // in a field called `extensions` or accessed via a method
+        // Check if there's an extensions field or method
+        if let Some(extensions) = &obj_schema.extensions {
+            if let Some(enum_descriptions_value) = extensions.get("x-enumDescriptions") {
+                if let serde_json::Value::Array(descriptions) = enum_descriptions_value {
+                    return descriptions.clone();
+                }
+            }
+        }
+        Vec::new()
     }
 
     // ============================================================================

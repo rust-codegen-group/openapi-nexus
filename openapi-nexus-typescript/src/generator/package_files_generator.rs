@@ -83,7 +83,7 @@ impl<'a> PackageFilesGenerator<'a> {
             "compilerOptions": {
                 "target": self.config.typescript_target,
                 "module": module_str,
-                "lib": ["ES2020"],
+                "lib": ["ES2020", "DOM"],
                 "declaration": true,
                 "declarationMap": true,
                 "sourceMap": true,

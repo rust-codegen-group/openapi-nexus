@@ -12,7 +12,7 @@
  */
 /** Order status enum */
 export enum OrderStatus {
-Placed = placed,
-Approved = approved,
-Delivered = delivered
+Placed = "placed",
+Approved = "approved",
+Delivered = "delivered"
 }

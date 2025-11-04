@@ -12,7 +12,7 @@
  */
 /** Enum of string values */
 export enum StringEnum {
-Active = active,
-Inactive = inactive,
-Pending = pending
+Active = "active",
+Inactive = "inactive",
+Pending = "pending"
 }

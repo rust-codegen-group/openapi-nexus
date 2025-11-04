@@ -71,15 +71,7 @@ impl ToRcDoc for TsEnumDefinition {
             let variant_docs: Vec<RcDoc<'static, ()>> = self
                 .variants
                 .iter()
-                .map(|variant| {
-                    let mut variant_doc = RcDoc::text(variant.name.clone());
-                    if let Some(value) = &variant.value {
-                        variant_doc = variant_doc
-                            .append(RcDoc::text(" = "))
-                            .append(RcDoc::text(value.clone()));
-                    }
-                    variant_doc
-                })
+                .map(|variant| variant.to_rcdoc())
                 .collect();
 
             let force_multiline = self.variants.len() > 2;

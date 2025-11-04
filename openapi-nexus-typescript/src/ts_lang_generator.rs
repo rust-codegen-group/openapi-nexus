@@ -159,9 +159,7 @@ impl TsLangGenerator {
     /// Generate main index.ts file
     fn generate_main_index_file(&self, openapi: &OpenApi) -> Result<FileInfo, GeneratorError> {
         let exports = vec![
-            "export * from './runtime/api';".to_string(),
-            "export * from './runtime/config';".to_string(),
-            "export * from './runtime/core';".to_string(),
+            "export * from './runtime/runtime';".to_string(),
             "export * from './apis';".to_string(),
             "export * from './models';".to_string(),
         ];
