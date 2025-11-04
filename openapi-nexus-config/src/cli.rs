@@ -23,6 +23,10 @@ pub enum Commands {
         #[arg(long, env = "OPENAPI_NEXUS_CONFIG")]
         config: Option<String>,
 
+        /// Verbose output (command line only)
+        #[arg(short, long)]
+        verbose: bool,
+
         /// Global configuration options
         #[command(flatten)]
         global: GlobalConfig,

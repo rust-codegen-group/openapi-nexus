@@ -33,7 +33,6 @@ impl ConfigMerger {
             input: cli_global.input.clone(),
             output: cli_global.output.clone(),
             language: cli_global.language.clone(),
-            verbose: cli_global.verbose,
         };
 
         // Merge TypeScript config

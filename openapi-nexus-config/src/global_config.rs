@@ -20,11 +20,6 @@ pub struct GlobalConfig {
     #[arg(short, long, env = "OPENAPI_NEXUS_LANGUAGE")]
     #[serde(default)]
     pub language: String,
-
-    /// Verbose output
-    #[arg(short, long, env = "OPENAPI_NEXUS_VERBOSE", default_value_t = default_verbose())]
-    #[serde(default = "default_verbose")]
-    pub verbose: bool,
 }
 
 fn default_output() -> &'static str {
@@ -35,17 +30,12 @@ fn default_output_string() -> String {
     default_output().to_string()
 }
 
-fn default_verbose() -> bool {
-    false
-}
-
 impl Default for GlobalConfig {
     fn default() -> Self {
         Self {
             input: String::new(),
             output: default_output_string(),
             language: String::new(),
-            verbose: default_verbose(),
         }
     }
 }
@@ -67,7 +57,6 @@ impl GlobalConfig {
             input,
             output: self.output,
             language,
-            verbose: self.verbose,
         })
     }
 
@@ -84,10 +73,5 @@ impl GlobalConfig {
     /// Get language
     pub fn language(&self) -> &str {
         &self.language
-    }
-
-    /// Get verbose flag with default
-    pub fn verbose(&self) -> bool {
-        self.verbose
     }
 }

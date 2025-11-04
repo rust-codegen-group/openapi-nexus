@@ -10,13 +10,22 @@ use openapi_nexus_config::{CliArgs, Commands, ConfigLoader, ConfigMerger};
 use openapi_nexus_core::{OpenApiCodeGenerator, error::Error};
 use openapi_nexus_typescript::TsLangGenerator;
 
-fn main() {
-    // Initialize logging early with default level so errors can be logged
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+fn init_logging(verbose: bool) {
+    let default_level = if verbose { "debug" } else { "info" };
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(default_level));
+    tracing_subscriber::fmt().with_env_filter(env_filter).init();
+}
 
+fn main() {
     let cli_args = CliArgs::parse();
+
+    // Get verbose flag from CLI args only (before loading configs)
+    // This allows us to initialize logging early
+    let verbose = match &cli_args.command {
+        Commands::Generate { verbose, .. } => *verbose,
+    };
+    init_logging(verbose);
 
     // Load config file (if exists)
     let config_file = match &cli_args.command {
@@ -41,13 +50,6 @@ fn main() {
             process::exit(1);
         }
     };
-
-    // Reinitialize logging with verbose level if needed
-    if resolved_config.global.verbose() {
-        tracing_subscriber::fmt()
-            .with_max_level(tracing::Level::DEBUG)
-            .init();
-    }
 
     match cli_args.command {
         Commands::Generate { .. } => {

@@ -13,7 +13,10 @@ pub enum ParseError {
     },
 
     #[snafu(display("Failed to parse JSON: {}", source))]
-    JsonParse { source: serde_json::Error },
+    JsonParse {
+        source: serde_json::Error,
+        context: Vec<String>,
+    },
 
     #[snafu(display("Failed to parse YAML: {}", source))]
     YamlParse {
@@ -23,4 +26,10 @@ pub enum ParseError {
 
     #[snafu(display("Unsupported file format: {}", format))]
     UnsupportedFormat { format: String },
+
+    #[snafu(display("Failed to deserialize OpenAPI schema from JSON: {}", source))]
+    OpenApiDeserializeJson { source: serde_json::Error },
+
+    #[snafu(display("Failed to deserialize OpenAPI schema from YAML: {}", source))]
+    OpenApiDeserializeYaml { source: serde_norway::Error },
 }
