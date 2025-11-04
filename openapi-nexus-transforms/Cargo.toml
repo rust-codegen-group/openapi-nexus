@@ -2,7 +2,8 @@
 name = "openapi-nexus-transforms"
 version.workspace = true
 edition.workspace = true
-publish = false
+license.workspace = true
+publish = true
 
 [dependencies]
 openapi-nexus-common.workspace = true

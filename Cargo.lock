@@ -962,7 +962,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "openapi-nexus"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "clap",
  "openapi-nexus-common",
@@ -975,7 +975,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-common"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "clap",
  "serde",
@@ -985,7 +985,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-config"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "clap",
  "dirs",
@@ -998,17 +998,14 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-core"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "chrono",
  "heck",
  "http",
  "minijinja",
  "openapi-nexus-common",
- "openapi-nexus-ir",
  "openapi-nexus-parser",
- "openapi-nexus-plugin",
- "openapi-nexus-rust",
  "openapi-nexus-transforms",
  "pretty",
  "serde",
@@ -1021,7 +1018,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-ir"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "indexmap",
  "openapi-nexus-common",
@@ -1034,7 +1031,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-parser"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1046,7 +1043,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-petstore-example"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "axum",
  "axum-extra",
@@ -1067,7 +1064,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-plugin"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1077,7 +1074,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-rust"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "heck",
  "indexmap",
@@ -1092,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-transforms"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "heck",
  "indexmap",
@@ -1105,7 +1102,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-typescript"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "chrono",
  "clap",
@@ -1117,8 +1114,6 @@ dependencies = [
  "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-plugin",
  "pretty",
  "serde",
  "serde_json",

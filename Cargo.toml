@@ -15,8 +15,14 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.0.1"
 edition = "2024"
+rust-version = "1.90"
+description = "OpenAPI 3.1 to code generator"
+authors = ["Adam Basfop Cavendish <GetbetterABC@yeah.net>"]
+repository = "https://github.com/adamcavendish/openapi-nexus"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
 axum = { version = "0.8.6", features = ["macros"] }
@@ -55,14 +61,14 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "cache", "vendored"
 uuid = { version = "1.18.1", features = ["v4", "v7", "serde"] }
 
 # Workspace Projects
-openapi-nexus = { path = "openapi-nexus" }
-openapi-nexus-common = { path = "openapi-nexus-common" }
-openapi-nexus-config = { path = "openapi-nexus-config" }
-openapi-nexus-core = { path = "openapi-nexus-core" }
-openapi-nexus-ir = { path = "openapi-nexus-ir" }
-openapi-nexus-parser = { path = "openapi-nexus-parser" }
-openapi-nexus-petstore-example = { path = "openapi-nexus-petstore-example" }
-openapi-nexus-plugin = { path = "openapi-nexus-plugin" }
-openapi-nexus-rust = { path = "openapi-nexus-rust" }
-openapi-nexus-transforms = { path = "openapi-nexus-transforms" }
-openapi-nexus-typescript = { path = "openapi-nexus-typescript" }
+openapi-nexus = { version = "0.0.1", path = "openapi-nexus" }
+openapi-nexus-common = { version = "0.0.1", path = "openapi-nexus-common" }
+openapi-nexus-config = { version = "0.0.1", path = "openapi-nexus-config" }
+openapi-nexus-core = { version = "0.0.1", path = "openapi-nexus-core" }
+openapi-nexus-ir = { version = "0.0.1", path = "openapi-nexus-ir" }
+openapi-nexus-parser = { version = "0.0.1", path = "openapi-nexus-parser" }
+openapi-nexus-petstore-example = { version = "0.0.1", path = "openapi-nexus-petstore-example" }
+openapi-nexus-plugin = { version = "0.0.1", path = "openapi-nexus-plugin" }
+openapi-nexus-rust = { version = "0.0.1", path = "openapi-nexus-rust" }
+openapi-nexus-transforms = { version = "0.0.1", path = "openapi-nexus-transforms" }
+openapi-nexus-typescript = { version = "0.0.1", path = "openapi-nexus-typescript" }

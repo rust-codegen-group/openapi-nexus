@@ -2,7 +2,8 @@
 name = "openapi-nexus-core"
 version.workspace = true
 edition.workspace = true
-publish = false
+license.workspace = true
+publish = true
 
 [dependencies]
 chrono.workspace = true
@@ -18,8 +19,5 @@ tracing.workspace = true
 utoipa.workspace = true
 
 openapi-nexus-common.workspace = true
-openapi-nexus-ir.workspace = true
 openapi-nexus-parser.workspace = true
-openapi-nexus-plugin.workspace = true
-openapi-nexus-rust.workspace = true
 openapi-nexus-transforms.workspace = true

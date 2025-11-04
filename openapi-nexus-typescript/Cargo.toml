@@ -2,7 +2,8 @@
 name = "openapi-nexus-typescript"
 version.workspace = true
 edition.workspace = true
-publish = false
+license.workspace = true
+publish = true
 
 [dependencies]
 chrono.workspace = true
@@ -25,8 +26,6 @@ utoipa.workspace = true
 openapi-nexus-common.workspace = true
 openapi-nexus-config.workspace = true
 openapi-nexus-core.workspace = true
-openapi-nexus-ir.workspace = true
-openapi-nexus-plugin.workspace = true
 
 [build-dependencies]
 minijinja-embed.workspace = true

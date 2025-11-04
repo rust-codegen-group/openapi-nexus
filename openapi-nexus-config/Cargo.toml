@@ -2,7 +2,8 @@
 name = "openapi-nexus-config"
 version.workspace = true
 edition.workspace = true
-publish = false
+license.workspace = true
+publish = true
 
 [dependencies]
 clap.workspace = true
