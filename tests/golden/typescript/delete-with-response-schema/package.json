@@ -1,17 +1,26 @@
 {
   "description": "Test fixture for DELETE operations with JSON response schemas and type alias request bodies",
   "exports": {
-    ".": "index.ts"
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "openapi",
     "api-client",
     "typescript",
     "generated"
   ],
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "name": "test-api-with-delete-response-schema",
+  "scripts": {
+    "build": "tsc"
+  },
   "type": "module",
-  "types": "index.ts",
+  "types": "./dist/index.d.ts",
   "version": "1.0.0"
 }

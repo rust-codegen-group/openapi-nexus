@@ -27,8 +27,20 @@ npm install test-api-with-delete-response-schema
 
 ### From local path (development)
 
+Add the package to your `package.json` using the `file:` protocol:
+
+```json
+{
+  "dependencies": {
+    "test-api-with-delete-response-schema": "file:../../path/to/generated/package"
+  }
+}
+```
+
+Then run:
+
 ```bash
-npm install file:path/to/test-api-with-delete-response-schema
+npm install
 ```
 
 ## Quick Start
@@ -181,6 +193,20 @@ npm run build:esm
 ## TypeScript Support
 
 This package includes TypeScript type definitions. No additional `@types` package is needed.
+
+### TypeScript Configuration
+
+This package works with standard TypeScript configurations. If you're using a bundler-based setup, you may want to configure:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler"
+  }
+}
+```
+
+### Type Imports
 
 ```typescript
 import type { User, CreateUserRequest } from 'test-api-with-delete-response-schema';

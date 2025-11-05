@@ -77,11 +77,17 @@ impl<'a> PackageFilesGenerator<'a> {
             "version": version,
             "description": description,
             "type": "module",
-            "main": "index.ts",
-            "types": "index.ts",
+            "main": "./dist/index.js",
+            "types": "./dist/index.d.ts",
             "exports": {
-                ".": "index.ts"
+                ".": {
+                    "types": "./dist/index.d.ts",
+                    "default": "./dist/index.js"
+                }
             },
+            "files": [
+                "dist"
+            ],
             "keywords": keywords
         });
 
@@ -94,8 +100,6 @@ impl<'a> PackageFilesGenerator<'a> {
         if self.config.include_build_scripts {
             package_json["scripts"] = serde_json::json!({
                 "build": "tsc",
-                "build:esm": "tsc -p tsconfig.esm.json",
-                "prepublishOnly": "npm run build"
             });
         }
 
@@ -118,7 +122,7 @@ impl<'a> PackageFilesGenerator<'a> {
                 "sourceMap": true,
                 "outDir": "./dist",
                 "rootDir": "./",
-                "moduleResolution": "node",
+                "moduleResolution": "bundler",
                 "esModuleInterop": true,
                 "skipLibCheck": true,
                 "strict": true,
@@ -133,9 +137,7 @@ impl<'a> PackageFilesGenerator<'a> {
             ],
             "exclude": [
                 "dist",
-                "node_modules",
-                "**/*.test.ts",
-                "**/*.spec.ts"
+                "node_modules"
             ]
         });
 

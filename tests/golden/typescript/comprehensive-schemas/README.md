@@ -27,8 +27,20 @@ npm install comprehensive-schema-types-example
 
 ### From local path (development)
 
+Add the package to your `package.json` using the `file:` protocol:
+
+```json
+{
+  "dependencies": {
+    "comprehensive-schema-types-example": "file:../../path/to/generated/package"
+  }
+}
+```
+
+Then run:
+
 ```bash
-npm install file:path/to/comprehensive-schema-types-example
+npm install
 ```
 
 ## Quick Start
@@ -181,6 +193,20 @@ npm run build:esm
 ## TypeScript Support
 
 This package includes TypeScript type definitions. No additional `@types` package is needed.
+
+### TypeScript Configuration
+
+This package works with standard TypeScript configurations. If you're using a bundler-based setup, you may want to configure:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler"
+  }
+}
+```
+
+### Type Imports
 
 ```typescript
 import type { User, CreateUserRequest } from 'comprehensive-schema-types-example';

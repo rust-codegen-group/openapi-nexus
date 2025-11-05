@@ -116,7 +116,7 @@ fn default_generate_esm_config() -> bool {
 }
 
 fn default_include_build_scripts() -> bool {
-    false
+    true
 }
 
 /// Helper to deserialize string vec from TOML array or comma-separated string

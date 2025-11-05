@@ -9,7 +9,7 @@
       "DOM"
     ],
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "outDir": "./dist",
     "resolveJsonModule": true,
     "rootDir": "./",
@@ -23,9 +23,7 @@
   },
   "exclude": [
     "dist",
-    "node_modules",
-    "**/*.test.ts",
-    "**/*.spec.ts"
+    "node_modules"
   ],
   "include": [
     "**/*.ts"
