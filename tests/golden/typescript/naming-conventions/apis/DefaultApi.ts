@@ -39,14 +39,14 @@ export interface DefaultApiInterface {
   /**
    * Get with query parameters
    *
-   * @param {string} snake_case_param
-   * @param {string} snake_case_number
-   * @param {string} kebab-case-param
-   * @param {Array<string>} kebab-case-array
-   * @param {string} PascalCaseParam
-   * @param {string} PascalCaseNumber
-   * @param {string} SCREAMING_SNAKE_CASE
-   * @param {string} SCREAMING_NUMBER
+   * @param {string} snakeCaseParam
+   * @param {string} snakeCaseNumber
+   * @param {string} kebabCaseParam
+   * @param {Array<string>} kebabCaseArray
+   * @param {string} pascalCaseParam
+   * @param {string} pascalCaseNumber
+   * @param {string} screamingSnakeCase
+   * @param {string} screamingNumber
    * @param {string} camelCaseParam
    * @param {string} camelCaseNumber
    * @param {string} singleword
@@ -66,14 +66,14 @@ export interface DefaultApiInterface {
   /**
    * Get with query parameters
    *
-   * @param {string} snake_case_param
-   * @param {string} snake_case_number
-   * @param {string} kebab-case-param
-   * @param {Array<string>} kebab-case-array
-   * @param {string} PascalCaseParam
-   * @param {string} PascalCaseNumber
-   * @param {string} SCREAMING_SNAKE_CASE
-   * @param {string} SCREAMING_NUMBER
+   * @param {string} snakeCaseParam
+   * @param {string} snakeCaseNumber
+   * @param {string} kebabCaseParam
+   * @param {Array<string>} kebabCaseArray
+   * @param {string} pascalCaseParam
+   * @param {string} pascalCaseNumber
+   * @param {string} screamingSnakeCase
+   * @param {string} screamingNumber
    * @param {string} camelCaseParam
    * @param {string} camelCaseNumber
    * @param {string} singleword
@@ -102,14 +102,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   /**
    * Get with query parameters
    *
-   * @param {string} snake_case_param
-   * @param {string} snake_case_number
-   * @param {string} kebab-case-param
-   * @param {Array<string>} kebab-case-array
-   * @param {string} PascalCaseParam
-   * @param {string} PascalCaseNumber
-   * @param {string} SCREAMING_SNAKE_CASE
-   * @param {string} SCREAMING_NUMBER
+   * @param {string} snakeCaseParam
+   * @param {string} snakeCaseNumber
+   * @param {string} kebabCaseParam
+   * @param {Array<string>} kebabCaseArray
+   * @param {string} pascalCaseParam
+   * @param {string} pascalCaseNumber
+   * @param {string} screamingSnakeCase
+   * @param {string} screamingNumber
    * @param {string} camelCaseParam
    * @param {string} camelCaseNumber
    * @param {string} singleword
@@ -118,39 +118,39 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
    * @throws {RequiredError}
    */
   async getWithQueryParamsRaw(requestParameters: ApiGetWithQueryParamsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<any>> {
-    if (requestParameters['snake_case_param'] == null) {
+    if (requestParameters['snakeCaseParam'] == null) {
       throw new RequiredError(
-        'snake_case_param',
-        'Required parameter "snake_case_param" was null or undefined when calling getWithQueryParamsRaw().'
+        'snakeCaseParam',
+        'Required parameter "snakeCaseParam" was null or undefined when calling getWithQueryParamsRaw().'
       );
     }
     // Build path with path parameters
     let urlPath = `/test`;
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['snake_case_param'] !== undefined) {
-      queryParameters['snake_case_param'] = requestParameters['snake_case_param'];
+    if (requestParameters['snakeCaseParam'] !== undefined) {
+      queryParameters['snake_case_param'] = requestParameters['snakeCaseParam'];
     }
-    if (requestParameters['snake_case_number'] !== undefined) {
-      queryParameters['snake_case_number'] = requestParameters['snake_case_number'];
+    if (requestParameters['snakeCaseNumber'] !== undefined) {
+      queryParameters['snake_case_number'] = requestParameters['snakeCaseNumber'];
     }
-    if (requestParameters['kebab-case-param'] !== undefined) {
-      queryParameters['kebab-case-param'] = requestParameters['kebab-case-param'];
+    if (requestParameters['kebabCaseParam'] !== undefined) {
+      queryParameters['kebab-case-param'] = requestParameters['kebabCaseParam'];
     }
-    if (requestParameters['kebab-case-array'] !== undefined) {
-      queryParameters['kebab-case-array'] = requestParameters['kebab-case-array'];
+    if (requestParameters['kebabCaseArray'] !== undefined) {
+      queryParameters['kebab-case-array'] = requestParameters['kebabCaseArray'];
     }
-    if (requestParameters['PascalCaseParam'] !== undefined) {
-      queryParameters['PascalCaseParam'] = requestParameters['PascalCaseParam'];
+    if (requestParameters['pascalCaseParam'] !== undefined) {
+      queryParameters['PascalCaseParam'] = requestParameters['pascalCaseParam'];
     }
-    if (requestParameters['PascalCaseNumber'] !== undefined) {
-      queryParameters['PascalCaseNumber'] = requestParameters['PascalCaseNumber'];
+    if (requestParameters['pascalCaseNumber'] !== undefined) {
+      queryParameters['PascalCaseNumber'] = requestParameters['pascalCaseNumber'];
     }
-    if (requestParameters['SCREAMING_SNAKE_CASE'] !== undefined) {
-      queryParameters['SCREAMING_SNAKE_CASE'] = requestParameters['SCREAMING_SNAKE_CASE'];
+    if (requestParameters['screamingSnakeCase'] !== undefined) {
+      queryParameters['SCREAMING_SNAKE_CASE'] = requestParameters['screamingSnakeCase'];
     }
-    if (requestParameters['SCREAMING_NUMBER'] !== undefined) {
-      queryParameters['SCREAMING_NUMBER'] = requestParameters['SCREAMING_NUMBER'];
+    if (requestParameters['screamingNumber'] !== undefined) {
+      queryParameters['SCREAMING_NUMBER'] = requestParameters['screamingNumber'];
     }
     if (requestParameters['camelCaseParam'] !== undefined) {
       queryParameters['camelCaseParam'] = requestParameters['camelCaseParam'];
@@ -185,14 +185,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   /**
    * Get with query parameters
    *
-   * @param {string} snake_case_param
-   * @param {string} snake_case_number
-   * @param {string} kebab-case-param
-   * @param {Array<string>} kebab-case-array
-   * @param {string} PascalCaseParam
-   * @param {string} PascalCaseNumber
-   * @param {string} SCREAMING_SNAKE_CASE
-   * @param {string} SCREAMING_NUMBER
+   * @param {string} snakeCaseParam
+   * @param {string} snakeCaseNumber
+   * @param {string} kebabCaseParam
+   * @param {Array<string>} kebabCaseArray
+   * @param {string} pascalCaseParam
+   * @param {string} pascalCaseNumber
+   * @param {string} screamingSnakeCase
+   * @param {string} screamingNumber
    * @param {string} camelCaseParam
    * @param {string} camelCaseNumber
    * @param {string} singleword
@@ -231,7 +231,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = NamingConventionTestToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

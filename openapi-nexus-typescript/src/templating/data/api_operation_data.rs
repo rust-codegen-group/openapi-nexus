@@ -20,6 +20,7 @@ pub struct HttpParamData {
     pub query_params: Vec<ParameterInfo>,
     pub header_params: Vec<ParameterInfo>,
     pub body_param: Option<ParameterInfo>,
+    pub body_model_name: Option<String>,
     pub transformer: Option<String>,
     pub uses_request_object: bool,
 }

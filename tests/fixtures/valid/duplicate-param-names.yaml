@@ -1,0 +1,97 @@
+openapi: 3.1.0
+info:
+  title: Duplicate Parameter Names Test API
+  description: Test API with duplicate parameter names across different locations
+  version: 1.0.0
+paths:
+  /users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get user by ID with duplicate parameter names
+      operationId: get_user_by_id_duplicate
+      parameters:
+        - name: id
+          in: path
+          description: User ID in path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: id
+          in: query
+          description: User ID in query (filter)
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: id
+          in: header
+          description: User ID in header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: integer
+                    format: int64
+                  name:
+                    type: string
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: User not found
+  /items/{itemId}:
+    post:
+      tags:
+        - items
+      summary: Create item with body parameter conflict
+      operationId: create_item_with_body_conflict
+      parameters:
+        - name: itemId
+          in: path
+          description: Item ID in path
+          required: true
+          schema:
+            type: string
+        - name: body
+          in: query
+          description: Body parameter in query (conflicts with request body)
+          required: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+        '400':
+          description: Invalid input
+components:
+  schemas: {}
+

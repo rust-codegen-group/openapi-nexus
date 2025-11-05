@@ -8,34 +8,24 @@ use openapi_nexus_core::traits::ToRcDoc;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct TsParameter {
     pub name: String,
-    pub type_expr: Option<TsExpression>,
+    pub type_expr: TsExpression,
     pub optional: bool,
     pub default_value: Option<String>,
 }
 
 impl TsParameter {
     /// Create a new parameter
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, type_expr: TsExpression) -> Self {
         Self {
             name,
-            type_expr: None,
-            optional: false,
-            default_value: None,
-        }
-    }
-
-    /// Create a parameter with type
-    pub fn with_type(name: String, type_expr: TsExpression) -> Self {
-        Self {
-            name,
-            type_expr: Some(type_expr),
+            type_expr,
             optional: false,
             default_value: None,
         }
     }
 
     /// Create an optional parameter
-    pub fn optional(name: String, type_expr: Option<TsExpression>) -> Self {
+    pub fn optional(name: String, type_expr: TsExpression) -> Self {
         Self {
             name,
             type_expr,
@@ -59,12 +49,10 @@ impl ToRcDoc for TsParameter {
             doc = doc.append(RcDoc::text("?"));
         }
 
-        if let Some(type_expr) = &self.type_expr {
-            doc = doc
-                .append(RcDoc::text(":"))
-                .append(RcDoc::space())
-                .append(type_expr.to_rcdoc());
-        }
+        doc = doc
+            .append(RcDoc::text(":"))
+            .append(RcDoc::space())
+            .append(self.type_expr.to_rcdoc());
 
         if let Some(default_value) = &self.default_value {
             doc = doc

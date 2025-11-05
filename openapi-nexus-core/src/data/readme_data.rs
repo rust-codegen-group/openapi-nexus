@@ -9,7 +9,6 @@ pub struct ReadmeData {
     pub title: String,
     pub version: String,
     pub description: String,
-    pub install_path: String,
     pub example_api_class: String,
     pub generated_date: String,
 }

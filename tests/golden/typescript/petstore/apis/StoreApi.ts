@@ -146,7 +146,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = OrderToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

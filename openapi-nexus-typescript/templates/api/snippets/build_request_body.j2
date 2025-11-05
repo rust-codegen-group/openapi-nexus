@@ -1,7 +1,11 @@
 {% set data = method_data.http_params %}
 // Prepare request body
 {% if data.body_param %}
-const requestBody = requestParameters['{{ data.body_param.name }}'];
+{% if data.body_model_name %}
+const requestBody = {{ data.body_model_name }}ToJSON(requestParameters['{{ data.body_param.param_name }}']);
+{% else %}
+const requestBody = requestParameters['{{ data.body_param.param_name }}'];
+{% endif %}
 {% else %}
 const requestBody = undefined;
 {% endif %}

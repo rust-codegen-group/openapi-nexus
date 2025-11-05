@@ -3,15 +3,12 @@
 use std::collections::HashMap;
 use std::error::Error;
 
-use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _};
+use heck::ToKebabCase as _;
 use http::Method;
 use openapi_nexus_common::Language;
-use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
-use crate::data::{
-    ApiMethodData, ModelData, OperationInfo, ParameterInfo, ReadmeData, RuntimeData,
-};
+use crate::data::{ApiMethodData, ModelData, OperationInfo, ReadmeData, RuntimeData};
 use crate::traits::file_writer::FileInfo;
 
 /// Trait for language-specific code generators
@@ -29,21 +26,12 @@ pub trait LanguageCodeGenerator {
         let mut files = Vec::new();
 
         // Collect operations by tag and generate API method data
-        let operations_by_tag = self.collect_operations_by_tag(openapi);
-        let mut all_api_data = Vec::new();
-
-        for (_, operations) in operations_by_tag {
-            for op_info in operations {
-                if let Ok(api_data) = self.extract_api_method_data(
-                    op_info.path.as_str(),
-                    op_info.method,
-                    &op_info.operation,
-                ) {
-                    all_api_data.push(api_data);
-                }
-            }
-        }
-
+        let all_api_data = self
+            .collect_operations_by_tag(openapi)
+            .into_values()
+            .flatten()
+            .map(|op_info| op_info.to_api_method_data(openapi.components.as_ref()))
+            .collect::<Vec<_>>();
         files.extend(self.generate_apis(openapi, all_api_data)?);
 
         // Generate models from schemas
@@ -157,94 +145,8 @@ pub trait LanguageCodeGenerator {
             title,
             version,
             description,
-            install_path: format!("file:path/to/{}", package_name),
             example_api_class: "DefaultApi".to_string(),
             generated_date: chrono::Utc::now().format("%Y-%m-%d").to_string(),
         }
     }
-
-    /// Extract API method data from operation details
-    fn extract_api_method_data(
-        &self,
-        path: &str,
-        http_method: Method,
-        operation: &openapi::path::Operation,
-    ) -> Result<ApiMethodData, Box<dyn Error + Send + Sync>> {
-        let path = path.to_string();
-
-        // Generate method name from operationId or path + method
-        let method_name = if let Some(operation_id) = &operation.operation_id {
-            operation_id.to_lower_camel_case()
-        } else {
-            // Generate from path and HTTP method
-            let method_str = http_method.as_str();
-            let mut name = method_str.to_lowercase();
-            for part in path.split('/') {
-                if !part.is_empty() && !part.starts_with('{') {
-                    name.push_str(&part.to_pascal_case());
-                }
-            }
-            name.to_lower_camel_case()
-        };
-
-        // Extract parameters
-        let mut path_params = Vec::new();
-        let mut query_params = Vec::new();
-        let mut header_params = Vec::new();
-
-        if let Some(params) = &operation.parameters {
-            for param in params {
-                // Extract schema from parameter
-                let schema = param.schema.clone();
-
-                let required = matches!(param.required, openapi::Required::True);
-                let deprecated = matches!(param.deprecated, Some(openapi::Deprecated::True));
-
-                let param_info = ParameterInfo {
-                    name: param.name.clone(),
-                    schema,
-                    required,
-                    deprecated,
-                    location: param.parameter_in.clone(),
-                };
-                match param.parameter_in {
-                    openapi::path::ParameterIn::Path => path_params.push(param_info),
-                    openapi::path::ParameterIn::Query => query_params.push(param_info),
-                    openapi::path::ParameterIn::Header => header_params.push(param_info),
-                    openapi::path::ParameterIn::Cookie => header_params.push(param_info), // Treat cookie as header
-                }
-            }
-        }
-
-        // Extract return type from responses
-        let return_type = extract_return_type_from_responses(operation);
-
-        Ok(ApiMethodData {
-            method_name,
-            http_method,
-            path,
-            path_params,
-            query_params,
-            header_params,
-            request_body: operation.request_body.clone(),
-            return_type,
-            has_auth: operation.security.is_some(),
-            has_error_handling: true,
-        })
-    }
-}
-
-/// Extract return type from operation responses
-fn extract_return_type_from_responses(
-    operation: &openapi::path::Operation,
-) -> Option<openapi::RefOr<openapi::schema::Schema>> {
-    for (status_code, response_ref) in operation.responses.responses.iter() {
-        if status_code.starts_with('2')
-            && let openapi::RefOr::T(response) = response_ref
-            && let Some(json_content) = response.content.get("application/json")
-        {
-            return json_content.schema.clone();
-        }
-    }
-    None
 }

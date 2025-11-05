@@ -9,7 +9,7 @@ use utoipa::openapi;
 
 use crate::ast::{
     TsDocComment, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsParameter,
-    TsProperty,
+    TsPrimitive, TsProperty,
 };
 use crate::core::GeneratorError;
 use crate::generator::{
@@ -22,6 +22,7 @@ use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, HttpParamData, MethodTemplateData,
 };
 use crate::templating::{TemplateName, Templates};
+use crate::utils::schema_mapper::SchemaMapper;
 use openapi_nexus_core::data::OperationInfo;
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::OperationInfoExt as _;
@@ -31,7 +32,6 @@ use openapi_nexus_core::traits::file_writer::FileInfo;
 #[derive(Debug, Clone)]
 pub struct ApiOperationGenerator {
     parameter_extractor: ParameterExtractor,
-    return_type_generator: ReturnTypeGenerator,
     response_transformer: ResponseTransformer,
     interface_builder: ApiInterfaceBuilder,
     model_import_collector: ModelImportCollector,
@@ -47,8 +47,7 @@ impl ApiOperationGenerator {
     /// Create a new API operation generator
     pub fn new() -> Self {
         Self {
-            parameter_extractor: ParameterExtractor::new(),
-            return_type_generator: ReturnTypeGenerator::new(),
+            parameter_extractor: ParameterExtractor,
             response_transformer: ResponseTransformer::new(),
             interface_builder: ApiInterfaceBuilder::new(),
             model_import_collector: ModelImportCollector,
@@ -73,7 +72,7 @@ impl ApiOperationGenerator {
                 name: "constructor".to_string(),
                 parameters: vec![TsParameter::optional(
                     "configuration".to_string(),
-                    Some(TsExpression::Reference("Configuration".to_string())),
+                    TsExpression::Reference("Configuration".to_string()),
                 )],
                 return_type: None,
                 is_async: false,
@@ -97,7 +96,7 @@ impl ApiOperationGenerator {
         for op_info in operations {
             // Generate Raw method (returns ApiResponse wrapper)
             let (raw_method, raw_template_data, request_interface) =
-                self.generate_operation_method_raw(op_info)?;
+                self.generate_operation_method_raw(op_info, components)?;
             method_template_data.insert(raw_method.name.clone(), raw_template_data);
             methods.push(raw_method);
 
@@ -192,6 +191,7 @@ impl ApiOperationGenerator {
     fn generate_operation_method_raw(
         &self,
         op_info: &OperationInfo,
+        components: Option<&openapi::Components>,
     ) -> Result<
         (
             ApiMethodData,
@@ -211,27 +211,26 @@ impl ApiOperationGenerator {
             let method_base_name = op_info.method_name();
             let interface_name = format!("Api{}Request", method_base_name.to_pascal_case());
             vec![
-                TsParameter::with_type(
+                TsParameter::new(
                     "requestParameters".to_string(),
                     TsExpression::Reference(interface_name),
                 ),
                 TsParameter::optional(
                     "initOverrides".to_string(),
-                    Some(TsExpression::Union({
+                    TsExpression::Union({
                         let mut union = BTreeSet::new();
                         union.insert(TsExpression::Reference("RequestInit".to_string()));
                         union.insert(TsExpression::Reference("InitOverrideFunction".to_string()));
                         union
-                    })),
+                    }),
                 ),
             ]
         } else {
             all_parameters.clone()
         };
 
-        let (raw_return_type, convenience_return_type) = self
-            .return_type_generator
-            .generate_return_types(&op_info.method, &op_info.operation)?;
+        let (raw_return_type, convenience_return_type) =
+            ReturnTypeGenerator::generate_return_types(&op_info.method, &op_info.operation)?;
 
         // Determine template based on HTTP method
         let template_name = match op_info.method {
@@ -255,6 +254,7 @@ impl ApiOperationGenerator {
             method_name.clone(),
             Some(convenience_return_type),
             request_interface.is_some(),
+            components,
         )?;
 
         // Build enhanced documentation with JSDoc annotations
@@ -280,23 +280,42 @@ impl ApiOperationGenerator {
         method_name: String,
         convenience_return_type: Option<TsExpression>,
         uses_request_object: bool,
+        components: Option<&openapi::Components>,
     ) -> Result<MethodTemplateData, GeneratorError> {
-        // Extract parameters using the parameter extractor
-        let extracted = self
-            .parameter_extractor
-            .extract_core_parameters(&op_info.operation, &op_info.path)?;
+        // Extract parameters using the parameter extractor (names are already resolved)
+        let extracted = self.parameter_extractor.extract_parameters(
+            &op_info.operation,
+            &op_info.path,
+            components,
+        )?;
+
+        // Parameters are already ParameterInfo, no conversion needed
+        let path_params = extracted.path_params;
+        let query_params = extracted.query_params;
+        let header_params = extracted.header_params;
+        let body_param = extracted.body_param;
 
         let transformer = self
             .response_transformer
             .compute_transformer(&op_info.method, &op_info.operation);
 
+        // Extract body model name if body is an interface (has ToJSON function)
+        let body_model_name = self
+            .model_import_collector
+            .extract_request_body_model_name(&op_info.operation)
+            .filter(|model_name| {
+                self.model_import_collector
+                    .is_schema_interface(model_name, components)
+            });
+
         let http_params = HttpParamData {
             http_path: op_info.path.clone(),
             http_method: op_info.method.clone(),
-            path_params: extracted.path_params,
-            query_params: extracted.query_params,
-            header_params: extracted.header_params,
-            body_param: extracted.body_param,
+            path_params,
+            query_params,
+            header_params,
+            body_param,
+            body_model_name,
             transformer,
             uses_request_object,
         };
@@ -338,10 +357,7 @@ impl ApiOperationGenerator {
         let properties: Vec<TsProperty> = actual_params
             .iter()
             .map(|param| {
-                let type_expr = param
-                    .type_expr
-                    .clone()
-                    .unwrap_or(TsExpression::Primitive(crate::ast::TsPrimitive::Any));
+                let type_expr = param.type_expr.clone();
                 // Convert parameter name to camelCase for TypeScript interface
                 let camel_case_name = param.name.to_lower_camel_case();
                 TsProperty {
@@ -358,6 +374,27 @@ impl ApiOperationGenerator {
         Some(TsInterfaceDefinition::new(signature).with_properties(properties))
     }
 
+    /// Convert ParameterInfo to TsParameter
+    fn parameter_info_to_ts_parameter(
+        param_info: &openapi_nexus_core::data::ParameterInfo,
+    ) -> TsParameter {
+        let type_expr = param_info
+            .schema
+            .as_ref()
+            .map(SchemaMapper::map_ref_or_schema_to_type)
+            .unwrap_or(TsExpression::Primitive(TsPrimitive::String));
+
+        TsParameter {
+            name: param_info.param_name.clone(),
+            type_expr,
+            optional: !param_info.required,
+            default_value: param_info
+                .default_value
+                .as_ref()
+                .map(ParameterExtractor::value_to_string),
+        }
+    }
+
     /// Generate method parameters from operation
     fn generate_method_parameters(
         &self,
@@ -366,49 +403,24 @@ impl ApiOperationGenerator {
     ) -> Result<Vec<TsParameter>, GeneratorError> {
         let mut parameters = Vec::new();
 
-        // Extract parameters using the parameter extractor
+        // Extract parameters using the parameter extractor (conflicts are already resolved)
+        // Note: components is not available here, so default values from references won't be resolved
+        // This is acceptable since this is only used for method signature generation
         let extracted = self
             .parameter_extractor
-            .extract_parameters(operation, path)?;
+            .extract_parameters(operation, path, None)?;
 
-        // Add path parameters
         for param_info in extracted.path_params {
-            parameters.push(TsParameter {
-                name: param_info.name,
-                type_expr: Some(param_info.type_expr),
-                optional: !param_info.required,
-                default_value: param_info.default_value,
-            });
+            parameters.push(Self::parameter_info_to_ts_parameter(&param_info));
         }
-
-        // Add query parameters
         for param_info in extracted.query_params {
-            parameters.push(TsParameter {
-                name: param_info.name,
-                type_expr: Some(param_info.type_expr),
-                optional: !param_info.required,
-                default_value: param_info.default_value,
-            });
+            parameters.push(Self::parameter_info_to_ts_parameter(&param_info));
         }
-
-        // Add header parameters
         for param_info in extracted.header_params {
-            parameters.push(TsParameter {
-                name: param_info.name,
-                type_expr: Some(param_info.type_expr),
-                optional: !param_info.required,
-                default_value: param_info.default_value,
-            });
+            parameters.push(Self::parameter_info_to_ts_parameter(&param_info));
         }
-
-        // Add request body parameter
         if let Some(body_param) = extracted.body_param {
-            parameters.push(TsParameter {
-                name: body_param.name,
-                type_expr: Some(body_param.type_expr),
-                optional: !body_param.required,
-                default_value: body_param.default_value,
-            });
+            parameters.push(Self::parameter_info_to_ts_parameter(&body_param));
         }
 
         // Add initOverrides parameter at the end
@@ -417,7 +429,7 @@ impl ApiOperationGenerator {
         union.insert(TsExpression::Reference("InitOverrideFunction".to_string()));
         parameters.push(TsParameter::optional(
             "initOverrides".to_string(),
-            Some(TsExpression::Union(union)),
+            TsExpression::Union(union),
         ));
 
         Ok(parameters)
@@ -464,11 +476,7 @@ impl ApiOperationGenerator {
             if param.name == "initOverrides" {
                 continue; // Skip initOverrides in JSDoc
             }
-            let type_str = param
-                .type_expr
-                .as_ref()
-                .map(|t| t.to_string_formatted())
-                .unwrap_or_else(|| "any".to_string());
+            let type_str = param.type_expr.to_string_formatted();
             let desc = param_descriptions
                 .get(&param.name)
                 .cloned()

@@ -178,7 +178,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = UserToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -411,7 +411,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = UserToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

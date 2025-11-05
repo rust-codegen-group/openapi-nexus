@@ -13,7 +13,7 @@ pub use api_method_data::ApiMethodData;
 pub use header_data::HeaderData;
 pub use model_data::ModelData;
 pub use operation_info::OperationInfo;
-pub use parameter_info::ParameterInfo;
+pub use parameter_info::{ParameterInfo, ParameterLocation};
 pub use readme_data::ReadmeData;
 pub use runtime_data::RuntimeData;
 pub use template_path_info::TemplatePathInfo;

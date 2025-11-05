@@ -223,7 +223,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = PetToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -273,7 +273,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = PetToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

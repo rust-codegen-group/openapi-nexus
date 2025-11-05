@@ -3,7 +3,7 @@
 {% if data.path_params %}
 let urlPath = `{{ data.http_path }}`;
 {% for param in data.path_params %}
-urlPath = urlPath.replace(`{${ '{{ param.name }}' }}`, encodeURIComponent(String(requestParameters['{{ param.name }}'])));
+urlPath = urlPath.replace(`{${ '{{ param.original_name }}' }}`, encodeURIComponent(String(requestParameters['{{ param.param_name }}'])));
 {% endfor %}
 {% else %}
 let urlPath = `{{ data.http_path }}`;

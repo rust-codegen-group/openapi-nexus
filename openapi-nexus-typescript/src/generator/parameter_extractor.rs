@@ -1,67 +1,52 @@
 //! Parameter extraction utilities for OpenAPI operations
 
+use std::collections::HashMap;
+
+use heck::{ToLowerCamelCase as _, ToPascalCase as _};
+use tracing::warn;
 use utoipa::openapi;
 use utoipa::openapi::path::Operation;
 
-use crate::ast::TsExpression;
 use crate::core::GeneratorError;
-use crate::utils::schema_mapper::SchemaMapper;
-
-use openapi_nexus_core::data::ParameterInfo;
+use openapi_nexus_core::data::{ParameterInfo, ParameterLocation};
+use openapi_nexus_core::traits::OpenApiParameterExt as _;
 
 /// Extracted parameters from an OpenAPI operation
 #[derive(Debug, Clone)]
 pub struct ExtractedParameters {
     /// Path parameters (e.g., {id} in /users/{id})
-    pub path_params: Vec<TsParameterInfo>,
+    pub path_params: Vec<ParameterInfo>,
     /// Query parameters (e.g., ?page=1&limit=10)
-    pub query_params: Vec<TsParameterInfo>,
+    pub query_params: Vec<ParameterInfo>,
     /// Header parameters
-    pub header_params: Vec<TsParameterInfo>,
+    pub header_params: Vec<ParameterInfo>,
     /// Request body parameter
-    pub body_param: Option<TsParameterInfo>,
-}
-
-/// Information about a parameter
-#[derive(Debug, Clone)]
-pub struct TsParameterInfo {
-    /// Parameter name
-    pub name: String,
-    /// Parameter type
-    pub type_expr: TsExpression,
-    /// Whether the parameter is required
-    pub required: bool,
-    /// Parameter description
-    pub description: Option<String>,
-    /// Default value if any
-    pub default_value: Option<String>,
+    pub body_param: Option<ParameterInfo>,
 }
 
 /// Parameter extractor for OpenAPI operations
 #[derive(Debug, Clone)]
-pub struct ParameterExtractor {
-    schema_mapper: SchemaMapper,
-}
-
-impl Default for ParameterExtractor {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub struct ParameterExtractor;
 
 impl ParameterExtractor {
-    /// Create a new parameter extractor
-    pub fn new() -> Self {
-        Self {
-            schema_mapper: SchemaMapper::new(),
-        }
-    }
-
-    /// Extract all parameters from an OpenAPI operation
+    /// Extract all parameters from an OpenAPI operation and resolve name conflicts
     pub fn extract_parameters(
         &self,
         operation: &Operation,
         path: &str,
+        components: Option<&openapi::Components>,
+    ) -> Result<ExtractedParameters, GeneratorError> {
+        let mut extracted = self.extract_raw_parameters(operation, path, components)?;
+        self.resolve_and_apply_name_conflicts(&mut extracted);
+        Ok(extracted)
+    }
+
+    /// Extract raw parameters from an OpenAPI operation (before conflict resolution)
+    fn extract_raw_parameters(
+        &self,
+        operation: &Operation,
+        path: &str,
+        components: Option<&openapi::Components>,
     ) -> Result<ExtractedParameters, GeneratorError> {
         let mut path_params = Vec::new();
         let mut query_params = Vec::new();
@@ -69,41 +54,50 @@ impl ParameterExtractor {
         let mut body_param = None;
 
         // Extract path parameters from the path string
-        let path_param_names = self.extract_path_parameter_names(path);
+        let path_param_names = Self::extract_path_parameter_names(path);
 
         // Extract parameters from the operation
         if let Some(parameters) = &operation.parameters {
             for param in parameters {
-                let param_info = TsParameterInfo {
-                    name: param.name.clone(),
-                    type_expr: if let Some(schema) = &param.schema {
-                        self.map_parameter_schema_to_type(schema)
-                    } else {
-                        TsExpression::Primitive(crate::ast::TsPrimitive::String)
-                    },
-                    required: matches!(param.required, openapi::Required::True),
-                    description: param.description.clone(),
-                    default_value: None, // TODO: Extract default value from schema
-                };
-
-                match param.parameter_in {
+                let original_name = param.name.clone();
+                let schema = param.schema.clone();
+                let default_value = param.default_value(components);
+                let location = match param.parameter_in {
                     openapi::path::ParameterIn::Path => {
-                        // Validate that this parameter actually exists in the path
                         if path_param_names.contains(&param.name) {
-                            path_params.push(param_info);
+                            // Validate that this parameter actually exists in the path
+                            ParameterLocation::Path
                         } else {
                             // If parameter is marked as Path but not in path, treat as query parameter
-                            query_params.push(param_info);
+                            ParameterLocation::Query
                         }
                     }
-                    openapi::path::ParameterIn::Query => {
-                        query_params.push(param_info);
-                    }
-                    openapi::path::ParameterIn::Header => {
-                        header_params.push(param_info);
-                    }
+                    openapi::path::ParameterIn::Query => ParameterLocation::Query,
+                    openapi::path::ParameterIn::Header => ParameterLocation::Header,
                     _ => {
                         // Skip other parameter locations for now
+                        continue;
+                    }
+                };
+
+                let param_info = ParameterInfo {
+                    original_name: original_name.clone(),
+                    param_name: original_name.clone(), // Will be resolved later
+                    schema,
+                    required: matches!(param.required, openapi::Required::True),
+                    deprecated: matches!(param.deprecated, Some(openapi::Deprecated::True)),
+                    description: param.description.clone(),
+                    default_value,
+                    location,
+                };
+
+                match location {
+                    ParameterLocation::Path => path_params.push(param_info),
+                    ParameterLocation::Query => query_params.push(param_info),
+                    ParameterLocation::Header => header_params.push(param_info),
+                    ParameterLocation::Body => {
+                        // Body is handled separately
+                        unreachable!("Body parameters should not reach here")
                     }
                 }
             }
@@ -114,12 +108,15 @@ impl ParameterExtractor {
             && let Some(json_content) = request_body.content.get("application/json")
             && let Some(schema_ref) = &json_content.schema
         {
-            body_param = Some(TsParameterInfo {
-                name: "body".to_string(),
-                type_expr: self.map_schema_ref_to_type(schema_ref),
+            body_param = Some(ParameterInfo {
+                original_name: "body".to_string(),
+                param_name: "body".to_string(), // Will be resolved later
+                schema: Some(schema_ref.clone()),
                 required: matches!(request_body.required, Some(openapi::Required::True)),
+                deprecated: false, // Request body doesn't have deprecated field in OpenAPI
                 description: request_body.description.clone(),
                 default_value: None,
+                location: ParameterLocation::Body,
             });
         }
 
@@ -131,8 +128,115 @@ impl ParameterExtractor {
         })
     }
 
+    /// Resolve parameter name conflicts and apply resolved names directly to parameters
+    fn resolve_and_apply_name_conflicts(&self, extracted: &mut ExtractedParameters) {
+        // Collect all parameters with their original names and locations
+        let mut all_params: Vec<(&str, ParameterLocation)> = Vec::new();
+
+        for param in &extracted.path_params {
+            all_params.push((&param.original_name, param.location));
+        }
+        for param in &extracted.query_params {
+            all_params.push((&param.original_name, param.location));
+        }
+        for param in &extracted.header_params {
+            all_params.push((&param.original_name, param.location));
+        }
+        if let Some(body_param) = &extracted.body_param {
+            all_params.push((&body_param.original_name, body_param.location));
+        }
+
+        // Convert all names to camelCase and group by camelCase name
+        let mut camel_case_groups: HashMap<String, Vec<(String, ParameterLocation)>> =
+            HashMap::new();
+        for (original_name, location) in all_params {
+            let camel_case = original_name.to_lower_camel_case();
+            camel_case_groups
+                .entry(camel_case)
+                .or_default()
+                .push((original_name.to_string(), location));
+        }
+
+        // Detect conflicts and build resolution map
+        let mut name_map: HashMap<(String, ParameterLocation), String> = HashMap::new();
+
+        for (camel_case_name, params) in &camel_case_groups {
+            if params.len() > 1 {
+                // Conflict detected - rename ALL conflicting parameters
+
+                warn!(
+                    "Parameter name conflict detected for '{}': found {} parameters with the same camelCase name. Renaming all conflicting parameters with location prefixes.",
+                    camel_case_name,
+                    params.len()
+                );
+
+                for (original_name, location) in params {
+                    let prefix = match location {
+                        ParameterLocation::Body => "body",
+                        ParameterLocation::Path => "path",
+                        ParameterLocation::Query => "query",
+                        ParameterLocation::Header => "header",
+                    };
+                    let resolved_name = format!("{}{}", prefix, original_name.to_pascal_case())
+                        .to_lower_camel_case();
+
+                    name_map.insert((original_name.clone(), *location), resolved_name);
+                }
+            } else {
+                // No conflict - use camelCase name directly
+                let (original_name, location) = &params[0];
+                let resolved_name = original_name.to_lower_camel_case();
+                name_map.insert((original_name.clone(), *location), resolved_name);
+            }
+        }
+
+        // Apply resolved names to parameters
+        for param in &mut extracted.path_params {
+            if let Some(resolved) = name_map.get(&(param.original_name.clone(), param.location)) {
+                param.param_name = resolved.clone();
+            }
+        }
+        for param in &mut extracted.query_params {
+            if let Some(resolved) = name_map.get(&(param.original_name.clone(), param.location)) {
+                param.param_name = resolved.clone();
+            }
+        }
+        for param in &mut extracted.header_params {
+            if let Some(resolved) = name_map.get(&(param.original_name.clone(), param.location)) {
+                param.param_name = resolved.clone();
+            }
+        }
+        // Apply resolved name to body parameter
+        if let Some(param) = &mut extracted.body_param
+            && let Some(resolved) = name_map.get(&(param.original_name.clone(), param.location))
+        {
+            param.param_name = resolved.clone();
+        }
+    }
+
+    /// Convert a serde_json::Value to a TypeScript-compatible string representation
+    pub fn value_to_string(value: &serde_json::Value) -> String {
+        match value {
+            serde_json::Value::String(s) => format!("\"{}\"", s.replace('"', "\\\"")),
+            serde_json::Value::Number(n) => n.to_string(),
+            serde_json::Value::Bool(b) => b.to_string(),
+            serde_json::Value::Null => "null".to_string(),
+            serde_json::Value::Array(arr) => {
+                let items: Vec<String> = arr.iter().map(Self::value_to_string).collect();
+                format!("[{}]", items.join(", "))
+            }
+            serde_json::Value::Object(obj) => {
+                let pairs: Vec<String> = obj
+                    .iter()
+                    .map(|(k, v)| format!("{}: {}", k, Self::value_to_string(v)))
+                    .collect();
+                format!("{{ {} }}", pairs.join(", "))
+            }
+        }
+    }
+
     /// Extract path parameter names from a path string
-    fn extract_path_parameter_names(&self, path: &str) -> Vec<String> {
+    fn extract_path_parameter_names(path: &str) -> Vec<String> {
         let mut param_names = Vec::new();
         let mut chars = path.chars();
 
@@ -153,95 +257,4 @@ impl ParameterExtractor {
 
         param_names
     }
-
-    /// Map parameter schema to TypeScript type
-    fn map_parameter_schema_to_type(
-        &self,
-        schema_ref: &openapi::RefOr<openapi::Schema>,
-    ) -> TsExpression {
-        self.schema_mapper.map_ref_or_schema_to_type(schema_ref)
-    }
-
-    /// Map schema reference to TypeScript type
-    fn map_schema_ref_to_type(&self, schema_ref: &openapi::RefOr<openapi::Schema>) -> TsExpression {
-        self.schema_mapper.map_ref_or_schema_to_type(schema_ref)
-    }
-
-    /// Extract ParameterInfo for template rendering
-    pub fn extract_core_parameters(
-        &self,
-        operation: &Operation,
-        path: &str,
-    ) -> Result<ExtractedCoreParameters, GeneratorError> {
-        let mut path_params = Vec::new();
-        let mut query_params = Vec::new();
-        let mut header_params = Vec::new();
-        let mut body_param = None;
-
-        let path_param_names = self.extract_path_parameter_names(path);
-
-        // Extract parameters from the operation
-        if let Some(parameters) = &operation.parameters {
-            for param in parameters {
-                let param_info = ParameterInfo {
-                    name: param.name.clone(),
-                    schema: param.schema.clone(),
-                    required: matches!(param.required, openapi::Required::True),
-                    deprecated: matches!(param.deprecated, Some(openapi::Deprecated::True)),
-                    location: param.parameter_in.clone(),
-                };
-
-                match param.parameter_in {
-                    openapi::path::ParameterIn::Path => {
-                        if path_param_names.contains(&param.name) {
-                            path_params.push(param_info);
-                        } else {
-                            // If parameter is marked as Path but not in path, treat as query parameter
-                            query_params.push(param_info);
-                        }
-                    }
-                    openapi::path::ParameterIn::Query => {
-                        query_params.push(param_info);
-                    }
-                    openapi::path::ParameterIn::Header => {
-                        header_params.push(param_info);
-                    }
-                    openapi::path::ParameterIn::Cookie => {
-                        header_params.push(param_info);
-                    }
-                    #[allow(unreachable_patterns)]
-                    _ => {
-                        // Skip any other parameter locations (should not occur in OpenAPI spec)
-                    }
-                }
-            }
-        }
-
-        // Extract request body parameter
-        if let Some(request_body) = &operation.request_body {
-            body_param = Some(ParameterInfo {
-                name: "body".to_string(),
-                schema: None, // Could extract from RequestBody.content if needed
-                required: matches!(request_body.required, Some(openapi::Required::True)),
-                deprecated: false,
-                location: openapi::path::ParameterIn::Path, // Placeholder
-            });
-        }
-
-        Ok(ExtractedCoreParameters {
-            path_params,
-            query_params,
-            header_params,
-            body_param,
-        })
-    }
-}
-
-/// Extracted ParameterInfo for template rendering
-#[derive(Debug, Clone)]
-pub struct ExtractedCoreParameters {
-    pub path_params: Vec<ParameterInfo>,
-    pub query_params: Vec<ParameterInfo>,
-    pub header_params: Vec<ParameterInfo>,
-    pub body_param: Option<ParameterInfo>,
 }

@@ -35,7 +35,7 @@ export interface TestResourceApiInterface {
    */
   createTestResourceRaw: (requestParameters: ApiCreateTestResourceRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<CreateTestResourceResponse>>;
   /**
-   * @param {string} resource_id Unique identifier of the test resource
+   * @param {string} resourceId
    *
    * @throws {RequiredError}
    */
@@ -47,7 +47,7 @@ export interface TestResourceApiInterface {
    */
   createTestResource: (requestParameters: ApiCreateTestResourceRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<CreateTestResourceResponse>;
   /**
-   * @param {string} resource_id Unique identifier of the test resource
+   * @param {string} resourceId
    *
    * @throws {RequiredError}
    */
@@ -108,20 +108,20 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   }
 
   /**
-   * @param {string} resource_id Unique identifier of the test resource
+   * @param {string} resourceId
    *
    * @throws {RequiredError}
    */
   async deleteTestResourceRaw(requestParameters: ApiDeleteTestResourceRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<DeleteTestResourceResponse>> {
-    if (requestParameters['resource_id'] == null) {
+    if (requestParameters['resourceId'] == null) {
       throw new RequiredError(
-        'resource_id',
-        'Required parameter "resource_id" was null or undefined when calling deleteTestResourceRaw().'
+        'resourceId',
+        'Required parameter "resourceId" was null or undefined when calling deleteTestResourceRaw().'
       );
     }
     // Build path with path parameters
     let urlPath = `/v1/api/test-resource/{resource_id}`;
-    urlPath = urlPath.replace(`{${ 'resource_id' }}`, encodeURIComponent(String(requestParameters['resource_id'])));
+    urlPath = urlPath.replace(`{${ 'resource_id' }}`, encodeURIComponent(String(requestParameters['resourceId'])));
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -145,7 +145,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   }
 
   /**
-   * @param {string} resource_id Unique identifier of the test resource
+   * @param {string} resourceId
    *
    * @throws {RequiredError}
    */
