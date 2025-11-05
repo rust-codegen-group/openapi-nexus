@@ -77,17 +77,11 @@ impl<'a> PackageFilesGenerator<'a> {
             "version": version,
             "description": description,
             "type": "module",
-            "main": "./dist/index.js",
-            "types": "./dist/index.d.ts",
+            "main": "index.ts",
+            "types": "index.ts",
             "exports": {
-                ".": {
-                    "import": "./dist/index.js",
-                    "types": "./dist/index.d.ts"
-                }
+                ".": "index.ts"
             },
-            "files": [
-                "dist"
-            ],
             "keywords": keywords
         });
 

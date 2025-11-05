@@ -1,23 +1,17 @@
 {
   "description": "TypeScript client for Minimal API",
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    ".": "index.ts"
   },
-  "files": [
-    "dist"
-  ],
   "keywords": [
     "openapi",
     "api-client",
     "typescript",
     "generated"
   ],
-  "main": "./dist/index.js",
+  "main": "index.ts",
   "name": "minimal-api",
   "type": "module",
-  "types": "./dist/index.d.ts",
+  "types": "index.ts",
   "version": "1.0.0"
 }

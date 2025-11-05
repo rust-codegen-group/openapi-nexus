@@ -1,14 +1,8 @@
 {
   "description": "This is a sample Pet Store Server based on the OpenAPI 3.1 specification",
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    ".": "index.ts"
   },
-  "files": [
-    "dist"
-  ],
   "keywords": [
     "openapi",
     "api-client",
@@ -16,9 +10,9 @@
     "generated"
   ],
   "license": "Apache 2.0",
-  "main": "./dist/index.js",
+  "main": "index.ts",
   "name": "petstore-api",
   "type": "module",
-  "types": "./dist/index.d.ts",
+  "types": "index.ts",
   "version": "1.0.0"
 }

@@ -1,14 +1,8 @@
 {
   "description": "This is a test API specification that includes various server configurations",
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    ".": "index.ts"
   },
-  "files": [
-    "dist"
-  ],
   "keywords": [
     "openapi",
     "api-client",
@@ -16,9 +10,9 @@
     "generated"
   ],
   "license": "MIT",
-  "main": "./dist/index.js",
+  "main": "index.ts",
   "name": "test-api-with-server-objects",
   "type": "module",
-  "types": "./dist/index.d.ts",
+  "types": "index.ts",
   "version": "1.0.0"
 }

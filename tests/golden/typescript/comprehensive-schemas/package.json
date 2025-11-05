@@ -1,23 +1,17 @@
 {
   "description": "Comprehensive test for all OpenAPI v3.1.2 schema types",
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    ".": "index.ts"
   },
-  "files": [
-    "dist"
-  ],
   "keywords": [
     "openapi",
     "api-client",
     "typescript",
     "generated"
   ],
-  "main": "./dist/index.js",
+  "main": "index.ts",
   "name": "comprehensive-schema-types-example",
   "type": "module",
-  "types": "./dist/index.d.ts",
+  "types": "index.ts",
   "version": "1.0.0"
 }
