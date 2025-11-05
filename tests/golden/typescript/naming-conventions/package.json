@@ -1,0 +1,17 @@
+{
+  "description": "Test fixture to verify language property naming conventions",
+  "exports": {
+    ".": "index.ts"
+  },
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "index.ts",
+  "name": "naming-conventions-test",
+  "type": "module",
+  "types": "index.ts",
+  "version": "1.0.0"
+}

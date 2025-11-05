@@ -10,8 +10,13 @@ use crate::ast::ty::TsInterfaceSignature;
 /// Simplified property metadata for template helpers
 #[derive(Debug, Clone, Serialize)]
 pub struct PropertyMetadata {
+    /// The camelCase property name used in the TypeScript interface
     pub name: String,
+    /// The original property name from the OpenAPI spec (used for JSON serialization)
+    pub original_name: String,
+    /// Whether the property is optional in the TypeScript interface
     pub optional: bool,
+    /// Whether the property is an index signature (e.g., `[key: string]: ValueType`)
     pub is_index_signature: bool,
 }
 
@@ -43,6 +48,7 @@ impl ModelInterfaceData {
             .iter()
             .map(|p| PropertyMetadata {
                 name: p.name.clone(),
+                original_name: p.original_name.clone(),
                 optional: p.optional,
                 is_index_signature: p.name.starts_with('['),
             })

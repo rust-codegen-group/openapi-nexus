@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use heck::ToPascalCase as _;
+use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use http::Method;
 use minijinja::context;
 use utoipa::openapi;
@@ -342,7 +342,15 @@ impl ApiOperationGenerator {
                     .type_expr
                     .clone()
                     .unwrap_or(TsExpression::Primitive(crate::ast::TsPrimitive::Any));
-                TsProperty::new(param.name.clone(), type_expr).with_optional(param.optional)
+                // Convert parameter name to camelCase for TypeScript interface
+                let camel_case_name = param.name.to_lower_camel_case();
+                TsProperty {
+                    name: camel_case_name.clone(),
+                    original_name: camel_case_name,
+                    type_expr,
+                    optional: param.optional,
+                    documentation: None,
+                }
             })
             .collect();
 

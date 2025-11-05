@@ -226,10 +226,11 @@ impl Templates {
             err
         })?;
         template.render(context).map_err(|e| {
+            let error_msg = format!("{}", e);
             let err = EmitError::TemplateError {
-                message: format!("Failed to render {} template: {}", template_path, e),
+                message: format!("Failed to render {} template: {}", template_path, error_msg),
             };
-            tracing::error!("{}", err);
+            tracing::error!("Template rendering error details: {}", error_msg);
             err
         })
     }

@@ -4,7 +4,7 @@ use minijinja::value::ViaDeserialize;
 
 use crate::ast::{
     TsDocComment, TsEnumDefinition, TsExpression, TsInterfaceDefinition, TsInterfaceSignature,
-    TsProperty, TsTypeAliasDefinition, TsTypeDefinition,
+    TsParameter, TsProperty, TsTypeAliasDefinition, TsTypeDefinition,
 };
 use crate::config::MAX_LINE_WIDTH;
 use crate::templating::data::{ApiClassSignature, ApiImportStatement, ApiMethodData};
@@ -37,6 +37,8 @@ pub enum RcDocInput {
     Enum(TsEnumDefinition),
     /// TypeScript property
     Property(TsProperty),
+    /// TypeScript parameter
+    Parameter(TsParameter),
     /// TypeScript interface signature
     InterfaceSignature(TsInterfaceSignature),
     /// API import statement
@@ -58,6 +60,7 @@ pub fn fmt_filter(value: ViaDeserialize<RcDocInput>) -> String {
         RcDocInput::TypeAlias(type_alias) => fmt_input!(type_alias, "type alias"),
         RcDocInput::Enum(enum_def) => fmt_input!(enum_def, "enum"),
         RcDocInput::Property(property) => fmt_input!(property, "property"),
+        RcDocInput::Parameter(parameter) => fmt_input!(parameter, "parameter"),
         RcDocInput::InterfaceSignature(signature) => fmt_input!(signature, "interface signature"),
         RcDocInput::ImportStatement(import) => fmt_input!(import, "import statement"),
         RcDocInput::ClassSignature(signature) => fmt_input!(signature, "class signature"),

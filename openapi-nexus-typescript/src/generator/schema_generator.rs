@@ -5,7 +5,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use heck::ToPascalCase as _;
+use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use tracing::warn;
 use utoipa::openapi::schema::{
     AdditionalProperties, KnownFormat, Object, SchemaFormat, SchemaType, Type,
@@ -146,12 +146,18 @@ impl SchemaGenerator {
                     let is_required = obj_schema.required.contains(prop_name);
                     let description = self.extract_description_from_schema(prop_schema);
 
+                    // Convert property name to camelCase for TypeScript interface
+                    let camel_case_name = prop_name.to_lower_camel_case();
+                    let original_name = prop_name.clone();
+
                     let property = TsProperty {
-                        name: prop_name.clone(),
+                        name: camel_case_name,
+                        original_name,
                         type_expr,
                         optional: !is_required,
                         documentation: description.map(TsDocComment::new),
                     };
+
                     properties.push(property);
                 }
 
@@ -190,8 +196,10 @@ impl SchemaGenerator {
                                 }
                             }
 
+                            let index_name = "[key: string]".to_string();
                             let index_property = TsProperty {
-                                name: "[key: string]".to_string(),
+                                name: index_name.clone(),
+                                original_name: index_name,
                                 type_expr: value_type,
                                 optional: false,
                                 documentation: Some(TsDocComment::new(
@@ -201,8 +209,10 @@ impl SchemaGenerator {
                             properties.push(index_property);
                         }
                         AdditionalProperties::FreeForm(true) => {
+                            let index_name = "[key: string]".to_string();
                             let index_property = TsProperty {
-                                name: "[key: string]".to_string(),
+                                name: index_name.clone(),
+                                original_name: index_name,
                                 type_expr: TsExpression::Primitive(TsPrimitive::Any),
                                 optional: false,
                                 documentation: Some(TsDocComment::new(
@@ -495,9 +505,11 @@ impl SchemaGenerator {
         let mut properties = BTreeMap::new();
 
         // Map each property to its TypeScript type
+        // Convert property names to camelCase for consistency
         for (prop_name, prop_schema) in &obj_schema.properties {
             let type_expr = self.map_ref_or_schema_to_type(prop_schema, context);
-            properties.insert(prop_name.clone(), type_expr);
+            let camel_case_name = prop_name.to_lower_camel_case();
+            properties.insert(camel_case_name, type_expr);
         }
 
         TsExpression::Object(properties)

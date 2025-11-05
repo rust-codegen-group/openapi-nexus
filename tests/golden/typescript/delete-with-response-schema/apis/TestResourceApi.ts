@@ -22,7 +22,7 @@ export interface ApiCreateTestResourceRequest {
 }
 
 export interface ApiDeleteTestResourceRequest {
-    resource_id: string;
+    resourceId: string;
 }
 
 /** API client for test-resource operations */

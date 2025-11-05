@@ -12,11 +12,11 @@
  */
 /** Response after creating a test resource */
 export interface CreateTestResourceResponse {
-  resource_id: string,
+  resourceId: string,
 }
 
 export function instanceOfCreateTestResourceResponse(value: object): value is CreateTestResourceResponse {
-  if (!('resource_id' in value) || (value as any)['resource_id'] === undefined) return false;
+  if (!('resourceId' in value) || (value as any)['resourceId'] === undefined) return false;
   return true;
 }
 
@@ -29,7 +29,7 @@ export function CreateTestResourceResponseFromJSONTyped(json: any, ignoreDiscrim
     return json;
   }
   return {
-   'resource_id': json['resource_id'],
+   'resourceId': json['resource_id'],
   };
 }
 
@@ -42,7 +42,7 @@ export function CreateTestResourceResponseToJSONTyped(value?: CreateTestResource
     return value;
   }
   return {
-   'resource_id': value['resource_id'],
+   'resource_id': value['resourceId'],
   };
 }
 

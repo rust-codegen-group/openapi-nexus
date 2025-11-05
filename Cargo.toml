@@ -15,7 +15,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 edition = "2024"
 rust-version = "1.90"
 description = "OpenAPI 3.1 to code generator"
@@ -61,17 +61,17 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "cache", "vendored"
 uuid = { version = "1.18.1", features = ["v4", "v7", "serde"] }
 
 # Workspace Projects
-openapi-nexus = { version = "0.0.1-alpha.1", path = "openapi-nexus" }
-openapi-nexus-common = { version = "0.0.1-alpha.1", path = "openapi-nexus-common" }
-openapi-nexus-config = { version = "0.0.1-alpha.1", path = "openapi-nexus-config" }
-openapi-nexus-core = { version = "0.0.1-alpha.1", path = "openapi-nexus-core" }
-openapi-nexus-ir = { version = "0.0.1-alpha.1", path = "openapi-nexus-ir" }
-openapi-nexus-parser = { version = "0.0.1-alpha.1", path = "openapi-nexus-parser" }
-openapi-nexus-petstore-example = { version = "0.0.1-alpha.1", path = "openapi-nexus-petstore-example" }
-openapi-nexus-plugin = { version = "0.0.1-alpha.1", path = "openapi-nexus-plugin" }
-openapi-nexus-rust = { version = "0.0.1-alpha.1", path = "openapi-nexus-rust" }
-openapi-nexus-transforms = { version = "0.0.1-alpha.1", path = "openapi-nexus-transforms" }
-openapi-nexus-typescript = { version = "0.0.1-alpha.1", path = "openapi-nexus-typescript" }
+openapi-nexus = { version = "0.0.1-alpha.2", path = "openapi-nexus" }
+openapi-nexus-common = { version = "0.0.1-alpha.2", path = "openapi-nexus-common" }
+openapi-nexus-config = { version = "0.0.1-alpha.2", path = "openapi-nexus-config" }
+openapi-nexus-core = { version = "0.0.1-alpha.2", path = "openapi-nexus-core" }
+openapi-nexus-ir = { version = "0.0.1-alpha.2", path = "openapi-nexus-ir" }
+openapi-nexus-parser = { version = "0.0.1-alpha.2", path = "openapi-nexus-parser" }
+openapi-nexus-petstore-example = { version = "0.0.1-alpha.2", path = "openapi-nexus-petstore-example" }
+openapi-nexus-plugin = { version = "0.0.1-alpha.2", path = "openapi-nexus-plugin" }
+openapi-nexus-rust = { version = "0.0.1-alpha.2", path = "openapi-nexus-rust" }
+openapi-nexus-transforms = { version = "0.0.1-alpha.2", path = "openapi-nexus-transforms" }
+openapi-nexus-typescript = { version = "0.0.1-alpha.2", path = "openapi-nexus-typescript" }
 
 [workspace.metadata.publish]
 order = [

@@ -15,14 +15,14 @@ export interface Pet {
   category?: null | { id: number | null; name: string | null },
   id?: number | null,
   name: string,
-  photo_urls: Array<string>,
+  photoUrls: Array<string>,
   status?: null | "available" | "pending" | "sold",
   tags?: Array<{ id: number | null; name: string | null }>,
 }
 
 export function instanceOfPet(value: object): value is Pet {
   if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  if (!('photo_urls' in value) || (value as any)['photo_urls'] === undefined) return false;
+  if (!('photoUrls' in value) || (value as any)['photoUrls'] === undefined) return false;
   return true;
 }
 
@@ -38,7 +38,7 @@ export function PetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Pet {
    'category': json['category'] ?? undefined,
    'id': json['id'] ?? undefined,
    'name': json['name'],
-   'photo_urls': json['photo_urls'],
+   'photoUrls': json['photo_urls'],
    'status': json['status'] ?? undefined,
    'tags': json['tags'] ?? undefined,
   };
@@ -56,7 +56,7 @@ export function PetToJSONTyped(value?: Pet | null, ignoreDiscriminator: boolean 
    'category': value['category'],
    'id': value['id'],
    'name': value['name'],
-   'photo_urls': value['photo_urls'],
+   'photo_urls': value['photoUrls'],
    'status': value['status'],
    'tags': value['tags'],
   };

@@ -7,34 +7,16 @@ use openapi_nexus_core::traits::ToRcDoc;
 /// TypeScript property definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TsProperty {
+    /// The camelCase property name used in the TypeScript interface
     pub name: String,
+    /// The original property name from the OpenAPI spec (used for JSON serialization)
+    pub original_name: String,
+    /// The TypeScript type expression representing the property type
     pub type_expr: TsExpression,
+    /// Whether the property is optional in the TypeScript interface
     pub optional: bool,
+    /// Documentation/comment for the property (if any)
     pub documentation: Option<TsDocComment>,
-}
-
-impl TsProperty {
-    /// Create a new property
-    pub fn new(name: String, type_expr: TsExpression) -> Self {
-        Self {
-            name,
-            type_expr,
-            optional: false,
-            documentation: None,
-        }
-    }
-
-    /// Set whether the property is optional
-    pub fn with_optional(mut self, optional: bool) -> Self {
-        self.optional = optional;
-        self
-    }
-
-    /// Add documentation
-    pub fn with_docs(mut self, documentation: TsDocComment) -> Self {
-        self.documentation = Some(documentation);
-        self
-    }
 }
 
 impl ToRcDoc for TsProperty {

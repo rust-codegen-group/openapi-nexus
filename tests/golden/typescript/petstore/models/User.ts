@@ -13,12 +13,12 @@
 /** User model */
 export interface User {
   email?: string | null,
-  first_name?: string | null,
+  firstName?: string | null,
   id?: number | null,
-  last_name?: string | null,
+  lastName?: string | null,
   password?: string | null,
   phone?: string | null,
-  user_status?: number | null,
+  userStatus?: number | null,
   username?: string | null,
 }
 
@@ -36,12 +36,12 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
   }
   return {
    'email': json['email'] ?? undefined,
-   'first_name': json['first_name'] ?? undefined,
+   'firstName': json['first_name'] ?? undefined,
    'id': json['id'] ?? undefined,
-   'last_name': json['last_name'] ?? undefined,
+   'lastName': json['last_name'] ?? undefined,
    'password': json['password'] ?? undefined,
    'phone': json['phone'] ?? undefined,
-   'user_status': json['user_status'] ?? undefined,
+   'userStatus': json['user_status'] ?? undefined,
    'username': json['username'] ?? undefined,
   };
 }
@@ -56,12 +56,12 @@ export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolea
   }
   return {
    'email': value['email'],
-   'first_name': value['first_name'],
+   'first_name': value['firstName'],
    'id': value['id'],
-   'last_name': value['last_name'],
+   'last_name': value['lastName'],
    'password': value['password'],
    'phone': value['phone'],
-   'user_status': value['user_status'],
+   'user_status': value['userStatus'],
    'username': value['username'],
   };
 }

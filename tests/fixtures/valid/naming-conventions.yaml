@@ -1,0 +1,170 @@
+openapi: 3.1.0
+info:
+  title: Naming Conventions Test
+  description: Test fixture to verify language property naming conventions
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Test endpoint with various parameter naming conventions
+      operationId: test_naming_conventions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamingConventionTest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NamingConventionTest'
+    get:
+      summary: Get with query parameters
+      operationId: get_with_query_params
+      parameters:
+        - name: snake_case_param
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: snake_case_number
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: kebab-case-param
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: kebab-case-array
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: PascalCaseParam
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: PascalCaseNumber
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: SCREAMING_SNAKE_CASE
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: SCREAMING_NUMBER
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: camelCaseParam
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: camelCaseNumber
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: singleword
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: id
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    NamingConventionTest:
+      type: object
+      required:
+        - snake_case_field
+        - camelCaseField
+        - singleword
+      properties:
+        snake_case_field:
+          type: string
+          description: A field in snake_case
+        snake_case_number:
+          type: integer
+          description: A number field in snake_case
+        kebab-case-field:
+          type: string
+          description: A field in kebab-case
+        kebab-case-array:
+          type: array
+          items:
+            type: string
+          description: An array field in kebab-case
+        PascalCaseField:
+          type: string
+          description: A field in PascalCase
+        PascalCaseObject:
+          type: object
+          properties:
+            nested_property:
+              type: string
+        SCREAMING_SNAKE_CASE:
+          type: string
+          description: A field in SCREAMING_SNAKE_CASE
+        SCREAMING_NUMBER:
+          type: integer
+          description: A number in SCREAMING_SNAKE_CASE
+        camelCaseField:
+          type: string
+          description: A field in camelCase
+        camelCaseNumber:
+          type: integer
+          description: A number in camelCase
+        singleword:
+          type: string
+          description: A single word field
+        id:
+          type: integer
+          description: A single letter abbreviation
+        nested_object:
+          type: object
+          required:
+            - nested_snake_case
+          properties:
+            nested_snake_case:
+              type: string
+            nested-kebab-case:
+              type: string
+            NestedPascalCase:
+              type: string
+            nestedCamelCase:
+              type: string
+        items_array:
+          type: array
+          items:
+            type: object
+            properties:
+              item_snake_case:
+                type: string
+              item-kebab-case:
+                type: string
+              ItemPascalCase:
+                type: string
+              itemCamelCase:
+                type: string
+

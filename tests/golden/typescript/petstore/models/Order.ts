@@ -14,9 +14,9 @@
 export interface Order {
   complete?: boolean | null,
   id?: number | null,
-  pet_id?: number | null,
+  petId?: number | null,
   quantity?: number | null,
-  ship_date?: string | null,
+  shipDate?: string | null,
   status?: null | "approved" | "delivered" | "placed",
 }
 
@@ -35,9 +35,9 @@ export function OrderFromJSONTyped(json: any, ignoreDiscriminator: boolean): Ord
   return {
    'complete': json['complete'] ?? undefined,
    'id': json['id'] ?? undefined,
-   'pet_id': json['pet_id'] ?? undefined,
+   'petId': json['pet_id'] ?? undefined,
    'quantity': json['quantity'] ?? undefined,
-   'ship_date': json['ship_date'] ?? undefined,
+   'shipDate': json['ship_date'] ?? undefined,
    'status': json['status'] ?? undefined,
   };
 }
@@ -53,9 +53,9 @@ export function OrderToJSONTyped(value?: Order | null, ignoreDiscriminator: bool
   return {
    'complete': value['complete'],
    'id': value['id'],
-   'pet_id': value['pet_id'],
+   'pet_id': value['petId'],
    'quantity': value['quantity'],
-   'ship_date': value['ship_date'],
+   'ship_date': value['shipDate'],
    'status': value['status'],
   };
 }

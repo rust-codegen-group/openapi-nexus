@@ -38,6 +38,7 @@ impl ApiInterfaceBuilder {
                 };
                 TsProperty {
                     name: m.name.clone(),
+                    original_name: m.name.clone(),
                     type_expr: func_type,
                     optional: false,
                     documentation: m.documentation.clone(),
@@ -64,6 +65,7 @@ impl ApiInterfaceBuilder {
                     };
                     interface_properties.push(TsProperty {
                         name: conv_name.clone(),
+                        original_name: conv_name.clone(),
                         type_expr: func_type,
                         optional: false,
                         documentation: raw_method.documentation.clone(),

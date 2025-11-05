@@ -267,6 +267,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
             "delete-with-response-schema",
             "valid/delete-with-response-schema.yaml",
         ),
+        ("naming-conventions", "valid/naming-conventions.yaml"),
     ]
     .into_iter()
     .collect()
@@ -300,4 +301,5 @@ generate_golden_tests! {
     test_comprehensive_schemas_golden: "comprehensive-schemas",
     test_server_object_golden: "server-object",
     test_delete_with_response_schema_golden: "delete-with-response-schema",
+    test_naming_conventions_golden: "naming-conventions",
 }

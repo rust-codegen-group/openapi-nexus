@@ -15,7 +15,7 @@ export function {{ model_interface.signature.name }}FromJSONTyped(json: any, ign
   }
   return {
 {% for prop in model_interface.property_metadata if not prop.is_index_signature %}
-   '{{ prop.name }}': json['{{ prop.name }}']{% if prop.optional %} ?? undefined{% endif %},
+   '{{ prop.name }}': json['{{ prop.original_name }}']{% if prop.optional %} ?? undefined{% endif %},
 {% endfor %}
   };
 }
@@ -30,7 +30,7 @@ export function {{ model_interface.signature.name }}ToJSONTyped(value?: {{ model
   }
   return {
 {% for prop in model_interface.property_metadata if not prop.is_index_signature %}
-   '{{ prop.name }}': value['{{ prop.name }}'],
+   '{{ prop.original_name }}': value['{{ prop.name }}'],
 {% endfor %}
   };
 }
