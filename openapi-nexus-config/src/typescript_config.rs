@@ -12,9 +12,9 @@ use openapi_nexus_core::NamingConvention;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TypeScriptModule {
     CommonJS,
-    ESNext,
     ES2020,
     ES2022,
+    ESNext,
 }
 
 impl FromStr for TypeScriptModule {
@@ -37,10 +37,10 @@ impl FromStr for TypeScriptModule {
 impl fmt::Display for TypeScriptModule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TypeScriptModule::CommonJS => write!(f, "commonjs"),
-            TypeScriptModule::ESNext => write!(f, "esnext"),
-            TypeScriptModule::ES2020 => write!(f, "es2020"),
-            TypeScriptModule::ES2022 => write!(f, "es2022"),
+            TypeScriptModule::CommonJS => write!(f, "CommonJS"),
+            TypeScriptModule::ES2020 => write!(f, "ES2020"),
+            TypeScriptModule::ES2022 => write!(f, "ES2022"),
+            TypeScriptModule::ESNext => write!(f, "ESNext"),
         }
     }
 }
@@ -80,9 +80,12 @@ pub struct TypeScriptConfig {
     pub ts_module: TypeScriptModule,
 
     /// TypeScript compiler lib array (e.g., "ES2020,DOM" or ["ES2020", "DOM"] in TOML)
-    #[arg(long = "ts-lib", env = "OPENAPI_NEXUS_TS_LIB", value_delimiter = ',')]
-    #[serde(default, deserialize_with = "deserialize_string_vec")]
-    pub ts_lib: Option<Vec<String>>,
+    #[arg(long = "ts-lib", env = "OPENAPI_NEXUS_TS_LIB", value_delimiter = ',', default_values_t = default_typescript_lib())]
+    #[serde(
+        default = "default_typescript_lib",
+        deserialize_with = "deserialize_string_vec"
+    )]
+    pub ts_lib: Vec<String>,
 
     /// Whether to generate ESM configuration
     #[arg(long = "ts-generate-esm-config", env = "OPENAPI_NEXUS_TS_GENERATE_ESM_CONFIG", default_value_t = default_generate_esm_config())]
@@ -104,11 +107,11 @@ fn default_generate_package() -> bool {
 }
 
 fn default_typescript_target() -> String {
-    "es6".to_string()
+    "ES2020".to_string()
 }
 
 fn default_typescript_module() -> TypeScriptModule {
-    TypeScriptModule::CommonJS
+    TypeScriptModule::ES2020
 }
 
 fn default_generate_esm_config() -> bool {
@@ -119,13 +122,15 @@ fn default_include_build_scripts() -> bool {
     true
 }
 
+fn default_typescript_lib() -> Vec<String> {
+    vec!["ES2020".to_string(), "DOM".to_string()]
+}
+
 /// Helper to deserialize string vec from TOML array or comma-separated string
-fn deserialize_string_vec<'de, D>(deserializer: D) -> Result<Option<Vec<String>>, D::Error>
+fn deserialize_string_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    use serde::Deserialize;
-
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum StringVec {
@@ -134,12 +139,12 @@ where
     }
 
     match StringVec::deserialize(deserializer)? {
-        StringVec::Array(vec) => Ok(Some(vec)),
+        StringVec::Array(vec) => Ok(vec),
         StringVec::String(s) => {
             if s.is_empty() {
-                Ok(None)
+                Ok(default_typescript_lib())
             } else {
-                Ok(Some(s.split(',').map(|s| s.trim().to_string()).collect()))
+                Ok(s.split(',').map(|s| s.trim().to_string()).collect())
             }
         }
     }
@@ -154,7 +159,7 @@ impl Default for TypeScriptConfig {
             generate_package: default_generate_package(),
             ts_target: default_typescript_target(),
             ts_module: default_typescript_module(),
-            ts_lib: None,
+            ts_lib: default_typescript_lib(),
             generate_esm_config: default_generate_esm_config(),
             include_build_scripts: default_include_build_scripts(),
         }

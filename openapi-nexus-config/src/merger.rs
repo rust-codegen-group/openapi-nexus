@@ -52,10 +52,7 @@ impl ConfigMerger {
             generate_package: cli_typescript.generate_package,
             ts_target: cli_typescript.ts_target.clone(),
             ts_module: cli_typescript.ts_module.clone(),
-            ts_lib: cli_typescript
-                .ts_lib
-                .clone()
-                .or_else(|| file_typescript.and_then(|c| c.ts_lib.clone())),
+            ts_lib: cli_typescript.ts_lib.clone(),
             generate_esm_config: cli_typescript.generate_esm_config,
             include_build_scripts: cli_typescript.include_build_scripts,
         };

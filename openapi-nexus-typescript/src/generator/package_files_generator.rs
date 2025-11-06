@@ -140,18 +140,8 @@ impl<'a> PackageFilesGenerator<'a> {
                 "node_modules"
             ]
         });
-
-        // Add lib field if configured
-        if let Some(lib) = &self.config.ts_lib {
-            tsconfig["compilerOptions"]["lib"] = serde_json::Value::Array(
-                lib.iter()
-                    .map(|s| serde_json::Value::String(s.clone()))
-                    .collect(),
-            );
-        } else {
-            // Default lib
-            tsconfig["compilerOptions"]["lib"] = serde_json::json!(["ES2020", "DOM"]);
-        }
+        // Add lib field
+        tsconfig["compilerOptions"]["lib"] = serde_json::json!(self.config.ts_lib);
 
         let content = serde_json::to_string_pretty(&tsconfig).unwrap_or_else(|_| "{}".to_string());
 
@@ -160,10 +150,11 @@ impl<'a> PackageFilesGenerator<'a> {
 
     /// Generate tsconfig.esm.json file for ES modules
     pub fn generate_tsconfig_esm(&self, _openapi: &OpenApi) -> FileInfo {
+        let module_str = self.config.ts_module.to_string();
         let tsconfig_esm = serde_json::json!({
             "extends": "./tsconfig.json",
             "compilerOptions": {
-                "module": "esnext",
+                "module": module_str,
                 "outDir": "dist/esm"
             }
         });
