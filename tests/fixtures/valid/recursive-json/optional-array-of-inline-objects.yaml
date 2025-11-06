@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: Optional Array of Inline Objects Test
+  description: Test case for optional array of inline objects with snake_case to camelCase conversion
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    OptionalArrayOfInlineObjects:
+      type: object
+      description: Object with optional array of inline objects
+      properties:
+        optional_items:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+              item_name:
+                type: string
+              item_count:
+                type: integer
+

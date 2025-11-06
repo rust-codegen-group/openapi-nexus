@@ -30,8 +30,8 @@ export function DeleteTestResourceResponseFromJSONTyped(json: any, ignoreDiscrim
     return json;
   }
   return {
-   'message': json['message'] ?? undefined,
-   'success': json['success'],
+    'message': json['message'] ?? undefined,
+    'success': json['success'],
   };
 }
 
@@ -44,8 +44,8 @@ export function DeleteTestResourceResponseToJSONTyped(value?: DeleteTestResource
     return value;
   }
   return {
-   'message': value['message'],
-   'success': value['success'],
+    'message': value['message'],
+    'success': value['success'],
   };
 }
 

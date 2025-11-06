@@ -30,7 +30,7 @@ export function ObjectWithAdditionalPropertiesTrueFromJSONTyped(json: any, ignor
     return json;
   }
   return {
-   'name': json['name'],
+    'name': json['name'],
   };
 }
 
@@ -43,7 +43,7 @@ export function ObjectWithAdditionalPropertiesTrueToJSONTyped(value?: ObjectWith
     return value;
   }
   return {
-   'name': value['name'],
+    'name': value['name'],
   };
 }
 

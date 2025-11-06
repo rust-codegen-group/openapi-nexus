@@ -1,0 +1,52 @@
+openapi: 3.1.0
+info:
+  title: All Optional Properties Test
+  description: Test case for object with all optional properties including arrays, references, and inline objects
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    User:
+      type: object
+      description: User model with snake_case properties
+      properties:
+        user_id:
+          type: string
+        user_name:
+          type: string
+        email_address:
+          type: string
+      required:
+        - user_id
+        - user_name
+
+    AllOptionalProperties:
+      type: object
+      description: Object with all optional properties
+      properties:
+        optional_string:
+          type: string
+        optional_array:
+          type: array
+          items:
+            type: object
+            properties:
+              optional_item_field:
+                type: string
+        optional_reference:
+          $ref: '#/components/schemas/User'
+        optional_inline:
+          type: object
+          properties:
+            optional_inline_field:
+              type: string
+

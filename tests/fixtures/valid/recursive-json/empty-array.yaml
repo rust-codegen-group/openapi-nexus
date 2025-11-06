@@ -1,0 +1,31 @@
+openapi: 3.1.0
+info:
+  title: Empty Array Test
+  description: Test case for empty array handling
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    EmptyArrayTest:
+      type: object
+      description: Object with array that can be empty
+      properties:
+        empty_items:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+      required:
+        - empty_items
+

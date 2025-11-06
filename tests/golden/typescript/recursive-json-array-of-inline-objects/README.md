@@ -1,0 +1,248 @@
+# array-of-inline-objects-test
+
+Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)
+
+**Version:** 1.0.0
+
+## Overview
+
+This package provides a TypeScript/JavaScript client for the Array of Inline Objects Test API. It uses the native [Fetch API](https://fetch.spec.whatwg.org/) for HTTP requests and works in both Node.js and browser environments.
+
+## Features
+
+- ✨ **Type-safe** - Full TypeScript support with generated types
+- 🚀 **Modern** - Uses native Fetch API, no external HTTP dependencies
+- 🔧 **Configurable** - Flexible configuration options
+- 🎯 **Middleware** - Support for request/response interceptors
+- 📦 **Tree-shakeable** - Import only what you need
+- 🌐 **Universal** - Works in Node.js and browsers
+
+## Installation
+
+### From npm (published package)
+
+```bash
+npm install array-of-inline-objects-test
+```
+
+### From local path (development)
+
+Add the package to your `package.json` using the `file:` protocol:
+
+```json
+{
+  "dependencies": {
+    "array-of-inline-objects-test": "file:../../path/to/generated/package"
+  }
+}
+```
+
+Then run:
+
+```bash
+npm install
+```
+
+## Quick Start
+
+```typescript
+import { Configuration, DefaultApi } from 'array-of-inline-objects-test';
+
+// Create a configuration
+const config = new Configuration({
+  basePath: 'https://api.example.com',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+
+// Initialize the API client
+const api = new DefaultApi(config);
+
+// Make API calls
+try {
+  const result = await api.someMethod();
+  console.log(result);
+} catch (error) {
+  console.error('API Error:', error);
+}
+```
+
+## Configuration
+
+The `Configuration` class accepts the following options:
+
+```typescript
+interface ConfigurationParameters {
+  /** Base URL for API requests */
+  basePath?: string;
+  
+  /** Custom fetch implementation */
+  fetchApi?: typeof fetch;
+  
+  /** Request/response middleware */
+  middleware?: Middleware[];
+  
+  /** Custom query string serializer */
+  queryParamsStringify?: (params: HTTPQuery) => string;
+  
+  /** Default headers for all requests */
+  headers?: Record<string, string>;
+  
+  /** Credentials mode for requests */
+  credentials?: RequestCredentials;
+}
+```
+
+### Example with custom configuration
+
+```typescript
+const config = new Configuration({
+  basePath: 'https://api.example.com',
+  headers: {
+    'X-API-Key': 'your-api-key',
+    'Content-Type': 'application/json'
+  },
+  credentials: 'include'
+});
+```
+
+## Middleware
+
+Add custom middleware to intercept requests and responses:
+
+```typescript
+import { Configuration, Middleware } from 'array-of-inline-objects-test';
+
+const loggingMiddleware: Middleware = {
+  pre: async (context) => {
+    console.log('Request:', context.url);
+    return context;
+  },
+  post: async (context) => {
+    console.log('Response:', context.response.status);
+    return context.response;
+  },
+  onError: async (context) => {
+    console.error('Error:', context.error);
+    return undefined;
+  }
+};
+
+const config = new Configuration({
+  basePath: 'https://api.example.com',
+  middleware: [loggingMiddleware]
+});
+```
+
+## Error Handling
+
+The client throws typed errors for different failure scenarios:
+
+```typescript
+import { ResponseError, FetchError, RequiredError } from 'array-of-inline-objects-test';
+
+try {
+  const result = await api.someMethod();
+} catch (error) {
+  if (error instanceof ResponseError) {
+    // HTTP error response (4xx, 5xx)
+    console.error('HTTP Error:', error.response.status);
+  } else if (error instanceof FetchError) {
+    // Network or fetch error
+    console.error('Network Error:', error.cause);
+  } else if (error instanceof RequiredError) {
+    // Missing required parameter
+    console.error('Missing field:', error.field);
+  }
+}
+```
+
+## API Reference
+
+This package exports the following:
+
+- **Configuration** - Client configuration class
+- **BaseAPI** - Base class for all API clients
+- **API Classes** - Generated API client classes (e.g., `UserApi`, `PostApi`)
+- **Models** - Generated TypeScript interfaces for request/response types
+- **Errors** - `ResponseError`, `FetchError`, `RequiredError`
+- **Types** - TypeScript type definitions
+
+## Development
+
+### Building
+
+To build the package:
+
+```bash
+npm install
+npm run build
+```
+
+This will compile TypeScript to JavaScript in the `dist/` directory.
+
+### Building for ESM
+
+To build ES modules:
+
+```bash
+npm run build:esm
+```
+
+## TypeScript Support
+
+This package includes TypeScript type definitions. No additional `@types` package is needed.
+
+### TypeScript Configuration
+
+This package works with standard TypeScript configurations. If you're using a bundler-based setup, you may want to configure:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler"
+  }
+}
+```
+
+### Type Imports
+
+```typescript
+import type { User, CreateUserRequest } from 'array-of-inline-objects-test';
+
+const user: User = {
+  id: 1,
+  name: 'John Doe',
+  email: 'john@example.com'
+};
+```
+
+## Browser Support
+
+This package uses the native Fetch API, which is supported in:
+
+- Chrome 42+
+- Firefox 39+
+- Safari 10.1+
+- Edge 14+
+- Node.js 18+ (native fetch)
+- Node.js <18 (with `node-fetch` polyfill)
+
+For older browsers, you may need to include a fetch polyfill.
+
+## License
+
+This is an auto-generated API client. Please refer to your API documentation for license information.
+
+## Support
+
+For issues related to the API itself, please contact the API provider.
+
+For issues with this generated client, please check the OpenAPI specification used to generate it.
+
+---
+
+**Generated by OpenAPI Generator**
+
+API Version: 1.0.0

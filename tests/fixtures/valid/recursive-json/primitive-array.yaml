@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: Primitive Array Test
+  description: Test case for arrays with primitive items (should not be affected by recursive parsing)
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    PrimitiveArray:
+      type: object
+      description: Arrays with primitive items should remain unchanged
+      properties:
+        string_items:
+          type: array
+          items:
+            type: string
+        number_items:
+          type: array
+          items:
+            type: integer
+      required:
+        - string_items
+        - number_items
+

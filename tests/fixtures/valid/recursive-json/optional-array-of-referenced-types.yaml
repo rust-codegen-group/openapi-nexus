@@ -1,0 +1,40 @@
+openapi: 3.1.0
+info:
+  title: Optional Array of Referenced Types Test
+  description: Test case for optional array of referenced model types
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    User:
+      type: object
+      description: User model with snake_case properties
+      properties:
+        user_id:
+          type: string
+        user_name:
+          type: string
+        email_address:
+          type: string
+      required:
+        - user_id
+        - user_name
+
+    OptionalUserList:
+      type: object
+      description: Object with optional array of User references
+      properties:
+        optional_users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+

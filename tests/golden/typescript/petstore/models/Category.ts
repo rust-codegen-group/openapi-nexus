@@ -29,8 +29,8 @@ export function CategoryFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
     return json;
   }
   return {
-   'id': json['id'] ?? undefined,
-   'name': json['name'] ?? undefined,
+    'id': json['id'] ?? undefined,
+    'name': json['name'] ?? undefined,
   };
 }
 
@@ -43,8 +43,8 @@ export function CategoryToJSONTyped(value?: Category | null, ignoreDiscriminator
     return value;
   }
   return {
-   'id': value['id'],
-   'name': value['name'],
+    'id': value['id'],
+    'name': value['name'],
   };
 }
 

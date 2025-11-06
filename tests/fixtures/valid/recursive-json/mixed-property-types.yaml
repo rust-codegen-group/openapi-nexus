@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info:
+  title: Mixed Property Types Test
+  description: Test case for object with mix of simple types, arrays, references, and inline objects
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    User:
+      type: object
+      description: User model with snake_case properties
+      properties:
+        user_id:
+          type: string
+        user_name:
+          type: string
+        email_address:
+          type: string
+      required:
+        - user_id
+        - user_name
+
+    MixedPropertyTypes:
+      type: object
+      description: Object with mixed property types
+      properties:
+        simple_string:
+          type: string
+        simple_number:
+          type: integer
+        array_of_inline:
+          type: array
+          items:
+            type: object
+            properties:
+              inline_field:
+                type: string
+        nested_reference:
+          $ref: '#/components/schemas/User'
+        inline_object:
+          type: object
+          properties:
+            inline_field:
+              type: string
+      required:
+        - simple_string
+        - array_of_inline
+

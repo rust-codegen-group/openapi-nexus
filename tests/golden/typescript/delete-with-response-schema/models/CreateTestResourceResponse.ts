@@ -29,7 +29,7 @@ export function CreateTestResourceResponseFromJSONTyped(json: any, ignoreDiscrim
     return json;
   }
   return {
-   'resourceId': json['resource_id'],
+    'resourceId': json['resource_id'],
   };
 }
 
@@ -42,7 +42,7 @@ export function CreateTestResourceResponseToJSONTyped(value?: CreateTestResource
     return value;
   }
   return {
-   'resource_id': value['resourceId'],
+    'resource_id': value['resourceId'],
   };
 }
 

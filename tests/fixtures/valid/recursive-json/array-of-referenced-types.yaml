@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Array of Referenced Types Test
+  description: Test case for array of referenced model types with recursive FromJSON calls
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    User:
+      type: object
+      description: User model with snake_case properties
+      properties:
+        user_id:
+          type: string
+        user_name:
+          type: string
+        email_address:
+          type: string
+      required:
+        - user_id
+        - user_name
+
+    ResponseListUsers:
+      type: object
+      description: Response containing array of User references
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+      required:
+        - users
+

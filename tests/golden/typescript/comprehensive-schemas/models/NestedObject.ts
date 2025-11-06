@@ -29,8 +29,13 @@ export function NestedObjectFromJSONTyped(json: any, ignoreDiscriminator: boolea
     return json;
   }
   return {
-   'metadata': json['metadata'] ?? undefined,
-   'user': json['user'] ?? undefined,
+    'metadata': json['metadata'] ? {
+      created: json['metadata']['created'],
+    } : undefined,
+    'user': json['user'] ? {
+      id: json['user']['id'],
+      name: json['user']['name'],
+    } : undefined,
   };
 }
 
@@ -43,8 +48,13 @@ export function NestedObjectToJSONTyped(value?: NestedObject | null, ignoreDiscr
     return value;
   }
   return {
-   'metadata': value['metadata'],
-   'user': value['user'],
+    'metadata': value['metadata'] ? {
+      'created': value['metadata']['created'],
+    } : undefined,
+    'user': value['user'] ? {
+      'id': value['user']['id'],
+      'name': value['user']['name'],
+    } : undefined,
   };
 }
 

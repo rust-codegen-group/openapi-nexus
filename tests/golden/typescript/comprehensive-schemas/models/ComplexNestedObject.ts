@@ -30,8 +30,11 @@ export function ComplexNestedObjectFromJSONTyped(json: any, ignoreDiscriminator:
     return json;
   }
   return {
-   'id': json['id'],
-   'user': json['user'],
+    'id': json['id'],
+    'user': json['user'] ? {
+      id: json['user']['id'],
+      profile: json['user']['profile'],
+    } : {},
   };
 }
 
@@ -44,8 +47,11 @@ export function ComplexNestedObjectToJSONTyped(value?: ComplexNestedObject | nul
     return value;
   }
   return {
-   'id': value['id'],
-   'user': value['user'],
+    'id': value['id'],
+    'user': value['user'] ? {
+      'id': value['user']['id'],
+      'profile': value['user']['profile'],
+    } : undefined,
   };
 }
 

@@ -15,7 +15,55 @@ export function {{ model_interface.signature.name }}FromJSONTyped(json: any, ign
   }
   return {
 {% for prop in model_interface.property_metadata if not prop.is_index_signature %}
-   '{{ prop.name }}': json['{{ prop.original_name }}']{% if prop.optional %} ?? undefined{% endif %},
+  {% if prop.is_array_of_objects %}
+    {% if prop.reference_name %}
+      {% if prop.optional %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}']?.map((item: any) => {{ prop.reference_name }}FromJSON(item)) ?? undefined,
+      {% else %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}'].map((item: any) => {{ prop.reference_name }}FromJSON(item)),
+      {% endif %}
+    {% else %}
+      {% if prop.optional %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}']?.map((item: any) => ({
+        {% for mapping in prop.inline_object_properties %}
+      {{ mapping.prop_name }}: item['{{ mapping.original_name }}'],
+        {% endfor %}
+    })) ?? undefined,
+      {% else %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}'].map((item: any) => ({
+        {% for mapping in prop.inline_object_properties %}
+      {{ mapping.prop_name }}: item['{{ mapping.original_name }}'],
+        {% endfor %}
+    })),
+      {% endif %}
+    {% endif %}
+  {% elif prop.is_object_reference %}
+    {% if prop.optional %}
+    '{{ prop.prop_name }}': {{ prop.reference_name }}FromJSON(json['{{ prop.original_name }}']) ?? undefined,
+    {% else %}
+    '{{ prop.prop_name }}': {{ prop.reference_name }}FromJSON(json['{{ prop.original_name }}']),
+    {% endif %}
+  {% elif prop.is_inline_object %}
+    {% if prop.optional %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}'] ? {
+      {% for mapping in prop.inline_object_properties %}
+      {{ mapping.prop_name }}: json['{{ prop.original_name }}']['{{ mapping.original_name }}'],
+      {% endfor %}
+    } : undefined,
+    {% else %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}'] ? {
+      {% for mapping in prop.inline_object_properties %}
+      {{ mapping.prop_name }}: json['{{ prop.original_name }}']['{{ mapping.original_name }}'],
+      {% endfor %}
+    } : {},
+    {% endif %}
+  {% else %}
+    {% if prop.optional %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}'] ?? undefined,
+    {% else %}
+    '{{ prop.prop_name }}': json['{{ prop.original_name }}'],
+    {% endif %}
+  {% endif %}
 {% endfor %}
   };
 }
@@ -30,7 +78,27 @@ export function {{ model_interface.signature.name }}ToJSONTyped(value?: {{ model
   }
   return {
 {% for prop in model_interface.property_metadata if not prop.is_index_signature %}
-   '{{ prop.original_name }}': value['{{ prop.name }}'],
+  {% if prop.is_array_of_objects %}
+    {% if prop.reference_name %}
+    '{{ prop.original_name }}': value['{{ prop.prop_name }}']?.map((item: any) => {{ prop.reference_name }}ToJSON(item)),
+    {% else %}
+    '{{ prop.original_name }}': value['{{ prop.prop_name }}']?.map((item: any) => ({
+      {% for mapping in prop.inline_object_properties %}
+      '{{ mapping.original_name }}': item['{{ mapping.prop_name }}'],
+      {% endfor %}
+    })),
+    {% endif %}
+  {% elif prop.is_object_reference %}
+    '{{ prop.original_name }}': {{ prop.reference_name }}ToJSON(value['{{ prop.prop_name }}']),
+  {% elif prop.is_inline_object %}
+    '{{ prop.original_name }}': value['{{ prop.prop_name }}'] ? {
+    {% for mapping in prop.inline_object_properties %}
+      '{{ mapping.original_name }}': value['{{ prop.prop_name }}']['{{ mapping.prop_name }}'],
+    {% endfor %}
+    } : undefined,
+  {% else %}
+    '{{ prop.original_name }}': value['{{ prop.prop_name }}'],
+  {% endif %}
 {% endfor %}
   };
 }

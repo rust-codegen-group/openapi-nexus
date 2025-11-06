@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Inline Object Test
+  description: Test case for inline objects (not arrays) with snake_case to camelCase conversion
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    InlineObjectTest:
+      type: object
+      description: Object with inline object properties
+      properties:
+        metadata:
+          type: object
+          properties:
+            created_at:
+              type: string
+            updated_at:
+              type: string
+            version_number:
+              type: integer
+          required:
+            - created_at
+        config:
+          type: object
+          properties:
+            max_retry_count:
+              type: integer
+            timeout_seconds:
+              type: number
+      required:
+        - metadata
+

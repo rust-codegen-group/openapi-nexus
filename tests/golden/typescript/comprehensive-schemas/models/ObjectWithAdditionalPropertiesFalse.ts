@@ -29,7 +29,7 @@ export function ObjectWithAdditionalPropertiesFalseFromJSONTyped(json: any, igno
     return json;
   }
   return {
-   'name': json['name'],
+    'name': json['name'],
   };
 }
 
@@ -42,7 +42,7 @@ export function ObjectWithAdditionalPropertiesFalseToJSONTyped(value?: ObjectWit
     return value;
   }
   return {
-   'name': value['name'],
+    'name': value['name'],
   };
 }
 

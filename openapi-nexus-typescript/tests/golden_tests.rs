@@ -257,6 +257,7 @@ fn show_diff(spec_name: &str, filename: &str, golden: &str, generated: &str) {
 }
 
 /// Map of test case names to their fixture paths
+#[rustfmt::skip]
 fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
     [
         ("petstore", "valid/petstore.yaml"),
@@ -264,11 +265,28 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("comprehensive-schemas", "valid/comprehensive-schemas.yaml"),
         ("server-object", "valid/server-object.yaml"),
         ("duplicate-param-names", "valid/duplicate-param-names.yaml"),
-        (
-            "delete-with-response-schema",
-            "valid/delete-with-response-schema.yaml",
-        ),
+        ("delete-with-response-schema", "valid/delete-with-response-schema.yaml"),
         ("naming-conventions", "valid/naming-conventions.yaml"),
+        ("recursive-json-array-of-inline-objects", "valid/recursive-json/array-of-inline-objects.yaml"),
+        ("recursive-json-optional-array-of-inline-objects", "valid/recursive-json/optional-array-of-inline-objects.yaml"),
+        ("recursive-json-array-of-referenced-types", "valid/recursive-json/array-of-referenced-types.yaml"),
+        ("recursive-json-optional-array-of-referenced-types", "valid/recursive-json/optional-array-of-referenced-types.yaml"),
+        ("recursive-json-nested-object-reference", "valid/recursive-json/nested-object-reference.yaml"),
+        ("recursive-json-optional-nested-object-reference", "valid/recursive-json/optional-nested-object-reference.yaml"),
+        ("recursive-json-inline-object", "valid/recursive-json/inline-object.yaml"),
+        ("recursive-json-optional-inline-object", "valid/recursive-json/optional-inline-object.yaml"),
+        ("recursive-json-complex-array-structure", "valid/recursive-json/complex-array-structure.yaml"),
+        ("recursive-json-array-with-reference-property", "valid/recursive-json/array-with-reference-property.yaml"),
+        ("recursive-json-inline-object-with-array", "valid/recursive-json/inline-object-with-array.yaml"),
+        ("recursive-json-deeply-nested-inline", "valid/recursive-json/deeply-nested-inline.yaml"),
+        ("recursive-json-empty-array", "valid/recursive-json/empty-array.yaml"),
+        ("recursive-json-primitive-array", "valid/recursive-json/primitive-array.yaml"),
+        ("recursive-json-mixed-property-types", "valid/recursive-json/mixed-property-types.yaml"),
+        ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
+        ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
+        ("recursive-json-primitive-array", "valid/recursive-json/primitive-array.yaml"),
+        ("recursive-json-mixed-property-types", "valid/recursive-json/mixed-property-types.yaml"),
+        ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
     ]
     .into_iter()
     .collect()
@@ -304,4 +322,20 @@ generate_golden_tests! {
     test_delete_with_response_schema_golden: "delete-with-response-schema",
     test_naming_conventions_golden: "naming-conventions",
     test_duplicate_param_names_golden: "duplicate-param-names",
+    test_recursive_json_array_of_inline_objects_golden: "recursive-json-array-of-inline-objects",
+    test_recursive_json_optional_array_of_inline_objects_golden: "recursive-json-optional-array-of-inline-objects",
+    test_recursive_json_array_of_referenced_types_golden: "recursive-json-array-of-referenced-types",
+    test_recursive_json_optional_array_of_referenced_types_golden: "recursive-json-optional-array-of-referenced-types",
+    test_recursive_json_nested_object_reference_golden: "recursive-json-nested-object-reference",
+    test_recursive_json_optional_nested_object_reference_golden: "recursive-json-optional-nested-object-reference",
+    test_recursive_json_inline_object_golden: "recursive-json-inline-object",
+    test_recursive_json_optional_inline_object_golden: "recursive-json-optional-inline-object",
+    test_recursive_json_complex_array_structure_golden: "recursive-json-complex-array-structure",
+    test_recursive_json_array_with_reference_property_golden: "recursive-json-array-with-reference-property",
+    test_recursive_json_inline_object_with_array_golden: "recursive-json-inline-object-with-array",
+    test_recursive_json_deeply_nested_inline_golden: "recursive-json-deeply-nested-inline",
+    test_recursive_json_empty_array_golden: "recursive-json-empty-array",
+    test_recursive_json_primitive_array_golden: "recursive-json-primitive-array",
+    test_recursive_json_mixed_property_types_golden: "recursive-json-mixed-property-types",
+    test_recursive_json_all_optional_properties_golden: "recursive-json-all-optional-properties",
 }

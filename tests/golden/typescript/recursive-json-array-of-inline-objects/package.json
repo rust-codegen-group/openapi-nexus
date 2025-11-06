@@ -1,0 +1,26 @@
+{
+  "description": "Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.js",
+  "name": "array-of-inline-objects-test",
+  "scripts": {
+    "build": "tsc"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}

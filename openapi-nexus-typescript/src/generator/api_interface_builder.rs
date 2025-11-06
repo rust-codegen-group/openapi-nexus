@@ -10,11 +10,6 @@ use crate::templating::data::{ApiClassData, MethodTemplateData};
 pub struct ApiInterfaceBuilder;
 
 impl ApiInterfaceBuilder {
-    /// Create a new API interface builder
-    pub fn new() -> Self {
-        Self
-    }
-
     /// Build an interface definition from a class and method template data
     pub fn build_interface(
         &self,
@@ -37,7 +32,7 @@ impl ApiInterfaceBuilder {
                     return_type: m.return_type.map(Box::new),
                 };
                 TsProperty {
-                    name: m.name.clone(),
+                    prop_name: m.name.clone(),
                     original_name: m.name.clone(),
                     type_expr: func_type,
                     optional: false,
@@ -64,7 +59,7 @@ impl ApiInterfaceBuilder {
                         return_type: Some(Box::new(promise_return_type)),
                     };
                     interface_properties.push(TsProperty {
-                        name: conv_name.clone(),
+                        prop_name: conv_name.clone(),
                         original_name: conv_name.clone(),
                         type_expr: func_type,
                         optional: false,
@@ -75,11 +70,5 @@ impl ApiInterfaceBuilder {
         }
 
         TsInterfaceDefinition::new(interface_signature).with_properties(interface_properties)
-    }
-}
-
-impl Default for ApiInterfaceBuilder {
-    fn default() -> Self {
-        Self::new()
     }
 }

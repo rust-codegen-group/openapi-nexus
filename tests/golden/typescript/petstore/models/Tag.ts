@@ -29,8 +29,8 @@ export function TagFromJSONTyped(json: any, ignoreDiscriminator: boolean): Tag {
     return json;
   }
   return {
-   'id': json['id'] ?? undefined,
-   'name': json['name'] ?? undefined,
+    'id': json['id'] ?? undefined,
+    'name': json['name'] ?? undefined,
   };
 }
 
@@ -43,8 +43,8 @@ export function TagToJSONTyped(value?: Tag | null, ignoreDiscriminator: boolean 
     return value;
   }
   return {
-   'id': value['id'],
-   'name': value['name'],
+    'id': value['id'],
+    'name': value['name'],
   };
 }
 

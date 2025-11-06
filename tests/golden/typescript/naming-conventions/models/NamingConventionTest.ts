@@ -43,20 +43,32 @@ export function NamingConventionTestFromJSONTyped(json: any, ignoreDiscriminator
     return json;
   }
   return {
-   'pascalCaseField': json['PascalCaseField'] ?? undefined,
-   'pascalCaseObject': json['PascalCaseObject'] ?? undefined,
-   'screamingNumber': json['SCREAMING_NUMBER'] ?? undefined,
-   'screamingSnakeCase': json['SCREAMING_SNAKE_CASE'] ?? undefined,
-   'camelCaseField': json['camelCaseField'],
-   'camelCaseNumber': json['camelCaseNumber'] ?? undefined,
-   'id': json['id'] ?? undefined,
-   'itemsArray': json['items_array'] ?? undefined,
-   'kebabCaseArray': json['kebab-case-array'] ?? undefined,
-   'kebabCaseField': json['kebab-case-field'] ?? undefined,
-   'nestedObject': json['nested_object'] ?? undefined,
-   'singleword': json['singleword'],
-   'snakeCaseField': json['snake_case_field'],
-   'snakeCaseNumber': json['snake_case_number'] ?? undefined,
+    'pascalCaseField': json['PascalCaseField'] ?? undefined,
+    'pascalCaseObject': json['PascalCaseObject'] ? {
+      nestedProperty: json['PascalCaseObject']['nested_property'],
+    } : undefined,
+    'screamingNumber': json['SCREAMING_NUMBER'] ?? undefined,
+    'screamingSnakeCase': json['SCREAMING_SNAKE_CASE'] ?? undefined,
+    'camelCaseField': json['camelCaseField'],
+    'camelCaseNumber': json['camelCaseNumber'] ?? undefined,
+    'id': json['id'] ?? undefined,
+    'itemsArray': json['items_array']?.map((item: any) => ({
+      itemCamelCase: item['itemCamelCase'],
+      itemKebabCase: item['item-kebab-case'],
+      itemPascalCase: item['ItemPascalCase'],
+      itemSnakeCase: item['item_snake_case'],
+    })) ?? undefined,
+    'kebabCaseArray': json['kebab-case-array'] ?? undefined,
+    'kebabCaseField': json['kebab-case-field'] ?? undefined,
+    'nestedObject': json['nested_object'] ? {
+      nestedCamelCase: json['nested_object']['nestedCamelCase'],
+      nestedKebabCase: json['nested_object']['nested-kebab-case'],
+      nestedPascalCase: json['nested_object']['NestedPascalCase'],
+      nestedSnakeCase: json['nested_object']['nested_snake_case'],
+    } : undefined,
+    'singleword': json['singleword'],
+    'snakeCaseField': json['snake_case_field'],
+    'snakeCaseNumber': json['snake_case_number'] ?? undefined,
   };
 }
 
@@ -69,20 +81,32 @@ export function NamingConventionTestToJSONTyped(value?: NamingConventionTest | n
     return value;
   }
   return {
-   'PascalCaseField': value['pascalCaseField'],
-   'PascalCaseObject': value['pascalCaseObject'],
-   'SCREAMING_NUMBER': value['screamingNumber'],
-   'SCREAMING_SNAKE_CASE': value['screamingSnakeCase'],
-   'camelCaseField': value['camelCaseField'],
-   'camelCaseNumber': value['camelCaseNumber'],
-   'id': value['id'],
-   'items_array': value['itemsArray'],
-   'kebab-case-array': value['kebabCaseArray'],
-   'kebab-case-field': value['kebabCaseField'],
-   'nested_object': value['nestedObject'],
-   'singleword': value['singleword'],
-   'snake_case_field': value['snakeCaseField'],
-   'snake_case_number': value['snakeCaseNumber'],
+    'PascalCaseField': value['pascalCaseField'],
+    'PascalCaseObject': value['pascalCaseObject'] ? {
+      'nested_property': value['pascalCaseObject']['nestedProperty'],
+    } : undefined,
+    'SCREAMING_NUMBER': value['screamingNumber'],
+    'SCREAMING_SNAKE_CASE': value['screamingSnakeCase'],
+    'camelCaseField': value['camelCaseField'],
+    'camelCaseNumber': value['camelCaseNumber'],
+    'id': value['id'],
+    'items_array': value['itemsArray']?.map((item: any) => ({
+      'itemCamelCase': item['itemCamelCase'],
+      'item-kebab-case': item['itemKebabCase'],
+      'ItemPascalCase': item['itemPascalCase'],
+      'item_snake_case': item['itemSnakeCase'],
+    })),
+    'kebab-case-array': value['kebabCaseArray'],
+    'kebab-case-field': value['kebabCaseField'],
+    'nested_object': value['nestedObject'] ? {
+      'nestedCamelCase': value['nestedObject']['nestedCamelCase'],
+      'nested-kebab-case': value['nestedObject']['nestedKebabCase'],
+      'NestedPascalCase': value['nestedObject']['nestedPascalCase'],
+      'nested_snake_case': value['nestedObject']['nestedSnakeCase'],
+    } : undefined,
+    'singleword': value['singleword'],
+    'snake_case_field': value['snakeCaseField'],
+    'snake_case_number': value['snakeCaseNumber'],
   };
 }
 

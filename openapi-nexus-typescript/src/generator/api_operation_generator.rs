@@ -49,7 +49,7 @@ impl ApiOperationGenerator {
         Self {
             parameter_extractor: ParameterExtractor,
             response_transformer: ResponseTransformer::new(),
-            interface_builder: ApiInterfaceBuilder::new(),
+            interface_builder: ApiInterfaceBuilder,
             model_import_collector: ModelImportCollector,
         }
     }
@@ -361,7 +361,7 @@ impl ApiOperationGenerator {
                 // Convert parameter name to camelCase for TypeScript interface
                 let camel_case_name = param.name.to_lower_camel_case();
                 TsProperty {
-                    name: camel_case_name.clone(),
+                    prop_name: camel_case_name.clone(),
                     original_name: camel_case_name,
                     type_expr,
                     optional: param.optional,

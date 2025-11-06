@@ -1,8 +1,10 @@
 //! TypeScript type expression emitter
 
+use std::collections::BTreeMap;
+
 use pretty::RcDoc;
 
-use crate::ast::{TsExpression, TsPrimitive};
+use crate::ast::{ObjectProperty, TsExpression, TsPrimitive};
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// Helper struct for emitting TypeScript type expressions
@@ -80,9 +82,11 @@ impl TsTypeEmitter {
                         result = result.append(RcDoc::line());
 
                         let current_indent = "  ".repeat(indent_level + 1);
-                        for (i, (name, type_expr)) in properties.iter().enumerate() {
-                            let type_doc = self
-                                .emit_type_expression_doc_with_indent(type_expr, indent_level + 1);
+                        for (i, (name, prop)) in properties.iter().enumerate() {
+                            let type_doc = self.emit_type_expression_doc_with_indent(
+                                &prop.type_expr,
+                                indent_level + 1,
+                            );
                             let prop_doc = RcDoc::text(current_indent.clone())
                                 .append(RcDoc::text(name.clone()))
                                 .append(RcDoc::text(": "))
@@ -104,9 +108,11 @@ impl TsTypeEmitter {
                         // Inline format for simple objects
                         let props: Vec<RcDoc<'_, ()>> = properties
                             .iter()
-                            .map(|(name, type_expr)| {
-                                let type_doc = self
-                                    .emit_type_expression_doc_with_indent(type_expr, indent_level);
+                            .map(|(name, prop)| {
+                                let type_doc = self.emit_type_expression_doc_with_indent(
+                                    &prop.type_expr,
+                                    indent_level,
+                                );
                                 RcDoc::text(name.clone())
                                     .append(RcDoc::text(": "))
                                     .append(type_doc)
@@ -168,7 +174,7 @@ impl TsTypeEmitter {
     /// Determine if an object should be formatted multiline based on complexity
     pub fn should_format_object_multiline(
         &self,
-        properties: &std::collections::BTreeMap<String, TsExpression>,
+        properties: &BTreeMap<String, ObjectProperty>,
     ) -> bool {
         // Format multiline if:
         // 1. More than 2 properties
@@ -177,8 +183,8 @@ impl TsTypeEmitter {
             return true;
         }
 
-        for type_expr in properties.values() {
-            if Self::is_complex_type(type_expr) {
+        for prop in properties.values() {
+            if Self::is_complex_type(&prop.type_expr) {
                 return true;
             }
         }
@@ -195,8 +201,8 @@ impl TsTypeEmitter {
                 if properties.len() > 2 {
                     return true;
                 }
-                for prop_type in properties.values() {
-                    if Self::is_complex_type(prop_type) {
+                for prop in properties.values() {
+                    if Self::is_complex_type(&prop.type_expr) {
                         return true;
                     }
                 }

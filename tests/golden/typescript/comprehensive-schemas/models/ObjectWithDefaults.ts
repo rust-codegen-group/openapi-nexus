@@ -30,9 +30,9 @@ export function ObjectWithDefaultsFromJSONTyped(json: any, ignoreDiscriminator: 
     return json;
   }
   return {
-   'active': json['active'] ?? undefined,
-   'age': json['age'] ?? undefined,
-   'name': json['name'] ?? undefined,
+    'active': json['active'] ?? undefined,
+    'age': json['age'] ?? undefined,
+    'name': json['name'] ?? undefined,
   };
 }
 
@@ -45,9 +45,9 @@ export function ObjectWithDefaultsToJSONTyped(value?: ObjectWithDefaults | null,
     return value;
   }
   return {
-   'active': value['active'],
-   'age': value['age'],
-   'name': value['name'],
+    'active': value['active'],
+    'age': value['age'],
+    'name': value['name'],
   };
 }
 

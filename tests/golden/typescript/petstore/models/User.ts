@@ -35,14 +35,14 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
     return json;
   }
   return {
-   'email': json['email'] ?? undefined,
-   'firstName': json['first_name'] ?? undefined,
-   'id': json['id'] ?? undefined,
-   'lastName': json['last_name'] ?? undefined,
-   'password': json['password'] ?? undefined,
-   'phone': json['phone'] ?? undefined,
-   'userStatus': json['user_status'] ?? undefined,
-   'username': json['username'] ?? undefined,
+    'email': json['email'] ?? undefined,
+    'firstName': json['first_name'] ?? undefined,
+    'id': json['id'] ?? undefined,
+    'lastName': json['last_name'] ?? undefined,
+    'password': json['password'] ?? undefined,
+    'phone': json['phone'] ?? undefined,
+    'userStatus': json['user_status'] ?? undefined,
+    'username': json['username'] ?? undefined,
   };
 }
 
@@ -55,14 +55,14 @@ export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolea
     return value;
   }
   return {
-   'email': value['email'],
-   'first_name': value['firstName'],
-   'id': value['id'],
-   'last_name': value['lastName'],
-   'password': value['password'],
-   'phone': value['phone'],
-   'user_status': value['userStatus'],
-   'username': value['username'],
+    'email': value['email'],
+    'first_name': value['firstName'],
+    'id': value['id'],
+    'last_name': value['lastName'],
+    'password': value['password'],
+    'phone': value['phone'],
+    'user_status': value['userStatus'],
+    'username': value['username'],
   };
 }
 

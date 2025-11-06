@@ -1,0 +1,49 @@
+openapi: 3.1.0
+info:
+  title: Array with Reference Property Test
+  description: Test case for array of inline objects that contain a reference property
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    User:
+      type: object
+      description: User model with snake_case properties
+      properties:
+        user_id:
+          type: string
+        user_name:
+          type: string
+        email_address:
+          type: string
+      required:
+        - user_id
+        - user_name
+
+    ArrayWithReferenceProperty:
+      type: object
+      description: Array of inline objects with reference property
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              item_id:
+                type: string
+              owner:
+                $ref: '#/components/schemas/User'
+            required:
+              - item_id
+      required:
+        - items
+

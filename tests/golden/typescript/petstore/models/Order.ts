@@ -17,7 +17,7 @@ export interface Order {
   petId?: number | null,
   quantity?: number | null,
   shipDate?: string | null,
-  status?: null | "approved" | "delivered" | "placed",
+  status?: null | OrderStatus,
 }
 
 export function instanceOfOrder(value: object): value is Order {
@@ -33,12 +33,12 @@ export function OrderFromJSONTyped(json: any, ignoreDiscriminator: boolean): Ord
     return json;
   }
   return {
-   'complete': json['complete'] ?? undefined,
-   'id': json['id'] ?? undefined,
-   'petId': json['pet_id'] ?? undefined,
-   'quantity': json['quantity'] ?? undefined,
-   'shipDate': json['ship_date'] ?? undefined,
-   'status': json['status'] ?? undefined,
+    'complete': json['complete'] ?? undefined,
+    'id': json['id'] ?? undefined,
+    'petId': json['pet_id'] ?? undefined,
+    'quantity': json['quantity'] ?? undefined,
+    'shipDate': json['ship_date'] ?? undefined,
+    'status': json['status'] ?? undefined,
   };
 }
 
@@ -51,12 +51,12 @@ export function OrderToJSONTyped(value?: Order | null, ignoreDiscriminator: bool
     return value;
   }
   return {
-   'complete': value['complete'],
-   'id': value['id'],
-   'pet_id': value['petId'],
-   'quantity': value['quantity'],
-   'ship_date': value['shipDate'],
-   'status': value['status'],
+    'complete': value['complete'],
+    'id': value['id'],
+    'pet_id': value['petId'],
+    'quantity': value['quantity'],
+    'ship_date': value['shipDate'],
+    'status': value['status'],
   };
 }
 

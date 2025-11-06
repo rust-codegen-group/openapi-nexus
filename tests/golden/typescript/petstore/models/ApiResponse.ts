@@ -30,9 +30,9 @@ export function ApiResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean
     return json;
   }
   return {
-   'code': json['code'] ?? undefined,
-   'message': json['message'] ?? undefined,
-   'type': json['type'] ?? undefined,
+    'code': json['code'] ?? undefined,
+    'message': json['message'] ?? undefined,
+    'type': json['type'] ?? undefined,
   };
 }
 
@@ -45,9 +45,9 @@ export function ApiResponseToJSONTyped(value?: ApiResponse | null, ignoreDiscrim
     return value;
   }
   return {
-   'code': value['code'],
-   'message': value['message'],
-   'type': value['type'],
+    'code': value['code'],
+    'message': value['message'],
+    'type': value['type'],
   };
 }
 

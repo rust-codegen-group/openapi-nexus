@@ -34,11 +34,11 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
     return json;
   }
   return {
-   'createdAt': json['createdAt'] ?? undefined,
-   'email': json['email'],
-   'id': json['id'],
-   'name': json['name'],
-   'updatedAt': json['updatedAt'] ?? undefined,
+    'createdAt': json['createdAt'] ?? undefined,
+    'email': json['email'],
+    'id': json['id'],
+    'name': json['name'],
+    'updatedAt': json['updatedAt'] ?? undefined,
   };
 }
 
@@ -51,11 +51,11 @@ export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolea
     return value;
   }
   return {
-   'createdAt': value['createdAt'],
-   'email': value['email'],
-   'id': value['id'],
-   'name': value['name'],
-   'updatedAt': value['updatedAt'],
+    'createdAt': value['createdAt'],
+    'email': value['email'],
+    'id': value['id'],
+    'name': value['name'],
+    'updatedAt': value['updatedAt'],
   };
 }
 

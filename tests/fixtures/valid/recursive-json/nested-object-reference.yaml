@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Nested Object Reference Test
+  description: Test case for nested object reference with recursive FromJSON calls
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    UserProfile:
+      type: object
+      description: User profile model with snake_case properties
+      properties:
+        profile_id:
+          type: string
+        display_name:
+          type: string
+        bio_text:
+          type: string
+      required:
+        - profile_id
+
+    UserWithProfile:
+      type: object
+      description: User with required nested profile reference
+      properties:
+        user_id:
+          type: string
+        profile:
+          $ref: '#/components/schemas/UserProfile'
+      required:
+        - user_id
+        - profile
+

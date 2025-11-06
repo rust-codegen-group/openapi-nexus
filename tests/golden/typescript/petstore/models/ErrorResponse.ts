@@ -31,8 +31,8 @@ export function ErrorResponseFromJSONTyped(json: any, ignoreDiscriminator: boole
     return json;
   }
   return {
-   'code': json['code'],
-   'message': json['message'],
+    'code': json['code'],
+    'message': json['message'],
   };
 }
 
@@ -45,8 +45,8 @@ export function ErrorResponseToJSONTyped(value?: ErrorResponse | null, ignoreDis
     return value;
   }
   return {
-   'code': value['code'],
-   'message': value['message'],
+    'code': value['code'],
+    'message': value['message'],
   };
 }
 

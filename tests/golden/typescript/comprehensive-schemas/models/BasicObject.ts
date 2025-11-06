@@ -32,9 +32,9 @@ export function BasicObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean
     return json;
   }
   return {
-   'active': json['active'] ?? undefined,
-   'id': json['id'],
-   'name': json['name'],
+    'active': json['active'] ?? undefined,
+    'id': json['id'],
+    'name': json['name'],
   };
 }
 
@@ -47,9 +47,9 @@ export function BasicObjectToJSONTyped(value?: BasicObject | null, ignoreDiscrim
     return value;
   }
   return {
-   'active': value['active'],
-   'id': value['id'],
-   'name': value['name'],
+    'active': value['active'],
+    'id': value['id'],
+    'name': value['name'],
   };
 }
 

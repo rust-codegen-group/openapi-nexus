@@ -29,7 +29,7 @@ export function RequiredEnumFieldFromJSONTyped(json: any, ignoreDiscriminator: b
     return json;
   }
   return {
-   'status': json['status'],
+    'status': json['status'],
   };
 }
 
@@ -42,7 +42,7 @@ export function RequiredEnumFieldToJSONTyped(value?: RequiredEnumField | null, i
     return value;
   }
   return {
-   'status': value['status'],
+    'status': value['status'],
   };
 }
 

@@ -51,7 +51,7 @@ impl TsInterfaceDefinition {
         self.properties
             .iter()
             .filter(|p| !p.optional)
-            .map(|p| p.name.clone())
+            .map(|p| p.prop_name.clone())
             .collect()
     }
 }

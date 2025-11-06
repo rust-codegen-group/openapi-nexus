@@ -30,8 +30,8 @@ export function HttpErrorResponseFromJSONTyped(json: any, ignoreDiscriminator: b
     return json;
   }
   return {
-   'error': json['error'],
-   'message': json['message'] ?? undefined,
+    'error': json['error'],
+    'message': json['message'] ?? undefined,
   };
 }
 
@@ -44,8 +44,8 @@ export function HttpErrorResponseToJSONTyped(value?: HttpErrorResponse | null, i
     return value;
   }
   return {
-   'error': value['error'],
-   'message': value['message'],
+    'error': value['error'],
+    'message': value['message'],
   };
 }
 

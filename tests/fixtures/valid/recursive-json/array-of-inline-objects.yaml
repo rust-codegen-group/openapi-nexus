@@ -1,0 +1,46 @@
+openapi: 3.1.0
+info:
+  title: Array of Inline Objects Test
+  description: Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)
+  version: 1.0.0
+
+paths:
+  /test:
+    get:
+      summary: Test endpoint
+      operationId: test
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    ResponseListInfrSvcs:
+      type: object
+      description: Response containing a list of inference services - main test case for recursive JSON parsing
+      properties:
+        inference_services:
+          type: array
+          items:
+            type: object
+            properties:
+              created_at:
+                type: string
+              num_ready_replicas:
+                type: integer
+              num_total_replicas:
+                type: integer
+              status:
+                type: string
+                enum: [decommissioned, degraded, running]
+              uid:
+                type: string
+            required:
+              - created_at
+              - num_ready_replicas
+              - num_total_replicas
+              - status
+              - uid
+      required:
+        - inference_services
+

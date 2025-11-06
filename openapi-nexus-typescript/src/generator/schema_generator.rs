@@ -13,7 +13,7 @@ use utoipa::openapi::schema::{
 use utoipa::openapi::{RefOr, Schema};
 
 use crate::ast::{
-    TsDocComment, TsEnumDefinition, TsEnumValue, TsEnumVariant, TsExpression,
+    ObjectProperty, TsDocComment, TsEnumDefinition, TsEnumValue, TsEnumVariant, TsExpression,
     TsInterfaceDefinition, TsInterfaceSignature, TsPrimitive, TsProperty, TsTypeAliasDefinition,
     TsTypeDefinition,
 };
@@ -151,7 +151,7 @@ impl SchemaGenerator {
                     let original_name = prop_name.clone();
 
                     let property = TsProperty {
-                        name: camel_case_name,
+                        prop_name: camel_case_name,
                         original_name,
                         type_expr,
                         optional: !is_required,
@@ -198,7 +198,7 @@ impl SchemaGenerator {
 
                             let index_name = "[key: string]".to_string();
                             let index_property = TsProperty {
-                                name: index_name.clone(),
+                                prop_name: index_name.clone(),
                                 original_name: index_name,
                                 type_expr: value_type,
                                 optional: false,
@@ -211,7 +211,7 @@ impl SchemaGenerator {
                         AdditionalProperties::FreeForm(true) => {
                             let index_name = "[key: string]".to_string();
                             let index_property = TsProperty {
-                                name: index_name.clone(),
+                                prop_name: index_name.clone(),
                                 original_name: index_name,
                                 type_expr: TsExpression::Primitive(TsPrimitive::Any),
                                 optional: false,
@@ -326,11 +326,18 @@ impl SchemaGenerator {
         match schema_ref {
             RefOr::T(schema) => self.map_schema_to_type(schema, context),
             RefOr::Ref(reference) => {
-                // Use reference resolution for proper type mapping
-                match self.resolve_reference_to_type(reference, context) {
-                    Ok(type_expr) => type_expr,
+                // For type expressions, we keep references as references
+                // The actual type definition will be generated separately
+                // This allows us to use Array<User> instead of expanding to Array<{...}>
+                match self.extract_schema_name(&reference.ref_location) {
+                    Ok(schema_name) => {
+                        if !context.schemas.contains_key(&schema_name) {
+                            warn!("Unresolved schema reference: {}", schema_name);
+                        }
+                        TsExpression::Reference(schema_name)
+                    }
                     Err(_) => {
-                        // Fallback to simple reference if resolution fails
+                        // Fallback to simple reference if extraction fails
                         let schema_name = reference
                             .ref_location
                             .strip_prefix("#/components/schemas/")
@@ -505,11 +512,18 @@ impl SchemaGenerator {
         let mut properties = BTreeMap::new();
 
         // Map each property to its TypeScript type
-        // Convert property names to camelCase for consistency
-        for (prop_name, prop_schema) in &obj_schema.properties {
+        // Convert property names to camelCase for consistency, but preserve original name
+        for (original_name, prop_schema) in &obj_schema.properties {
             let type_expr = self.map_ref_or_schema_to_type(prop_schema, context);
-            let camel_case_name = prop_name.to_lower_camel_case();
-            properties.insert(camel_case_name, type_expr);
+            let camel_case_name = original_name.to_lower_camel_case();
+            properties.insert(
+                camel_case_name.clone(),
+                ObjectProperty {
+                    prop_name: camel_case_name,
+                    type_expr,
+                    original_name: original_name.clone(),
+                },
+            );
         }
 
         TsExpression::Object(properties)
@@ -688,41 +702,6 @@ impl SchemaGenerator {
             Err(GeneratorError::Generic {
                 message: format!("Invalid schema reference path: {}", ref_path),
             })
-        }
-    }
-
-    /// Resolve a reference to a TypeExpression
-    fn resolve_reference_to_type(
-        &self,
-        reference: &utoipa::openapi::Ref,
-        context: &mut SchemaContext,
-    ) -> Result<TsExpression, GeneratorError> {
-        let schema_name = self.extract_schema_name(&reference.ref_location)?;
-
-        // Check for circular dependency
-        if context.is_visited(&schema_name) {
-            return Ok(TsExpression::Reference(schema_name.clone()));
-        }
-
-        // Look up the actual schema
-        if let Some(target_schema) = context.schemas.get(&schema_name) {
-            // Mark as visited to prevent cycles
-            let schema_name_clone = schema_name.clone();
-            context.mark_visited(schema_name_clone);
-            context.increment_depth();
-
-            // Recursively resolve the target schema to a type
-            let result = self.map_ref_or_schema_to_type(target_schema, context);
-
-            // Cleanup
-            context.decrement_depth();
-            context.unmark_visited(&schema_name);
-
-            Ok(result)
-        } else {
-            // Unresolved reference - generate warning and fallback
-            tracing::warn!("Unresolved schema reference: {}", schema_name);
-            Ok(TsExpression::Reference(schema_name.clone()))
         }
     }
 }
