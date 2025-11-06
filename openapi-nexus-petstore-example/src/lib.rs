@@ -12,6 +12,6 @@ pub use handlers::{
     update_user, upload_file,
 };
 pub use models::{
-    ApiResponse, Category, ErrorResponse, Order, OrderStatus, Pet, PetStatus, Tag, User,
+    Category, ErrorResponse, Order, OrderStatus, Pet, PetStatus, Tag, UploadResponse, User,
 };
 pub use openapi::ApiDoc;

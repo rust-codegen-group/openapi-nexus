@@ -213,7 +213,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: '#/components/schemas/UploadResponse'
   /store/inventory:
     get:
       tags:
@@ -441,26 +441,6 @@ paths:
           description: User not found
 components:
   schemas:
-    ApiResponse:
-      type: object
-      description: API response model
-      properties:
-        code:
-          type:
-          - integer
-          - 'null'
-          format: int32
-          description: Response code
-        message:
-          type:
-          - string
-          - 'null'
-          description: Response message
-        type:
-          type:
-          - string
-          - 'null'
-          description: Response type
     Category:
       type: object
       description: Category model
@@ -595,6 +575,26 @@ components:
           - string
           - 'null'
           description: Tag name
+    UploadResponse:
+      type: object
+      description: Upload response model
+      properties:
+        code:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Response code
+        message:
+          type:
+          - string
+          - 'null'
+          description: Response message
+        type:
+          type:
+          - string
+          - 'null'
+          description: Response type
     User:
       type: object
       description: User model

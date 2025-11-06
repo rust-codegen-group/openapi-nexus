@@ -10,7 +10,7 @@ use axum::{
 use serde::Deserialize;
 
 use crate::models::{
-    ApiResponse, Category, ErrorResponse, Order, OrderStatus, Pet, PetStatus, Tag, User,
+    Category, ErrorResponse, Order, OrderStatus, Pet, PetStatus, Tag, UploadResponse, User,
 };
 
 /// Query parameters for finding pets by status
@@ -245,16 +245,16 @@ pub async fn delete_pet(
         ("additionalMetadata" = Option<String>, Query, description = "Additional Metadata")
     ),
     responses(
-        (status = 200, description = "successful operation", body = ApiResponse)
+        (status = 200, description = "successful operation", body = UploadResponse)
     ),
     tag = "pet"
 )]
 pub async fn upload_file(
     Path(_pet_id): Path<i64>,
     Query(_additional_metadata): Query<Option<String>>,
-) -> Result<Json<ApiResponse>, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<Json<UploadResponse>, (StatusCode, Json<ErrorResponse>)> {
     // In a real implementation, this would upload the file
-    let response = ApiResponse {
+    let response = UploadResponse {
         code: Some(200),
         r#type: Some("success".to_string()),
         message: Some("File uploaded successfully".to_string()),

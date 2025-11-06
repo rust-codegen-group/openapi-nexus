@@ -95,9 +95,9 @@ pub struct User {
     pub user_status: Option<i32>,
 }
 
-/// API response model
+/// Upload response model
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ApiResponse {
+pub struct UploadResponse {
     /// Response code
     pub code: Option<i32>,
     /// Response type

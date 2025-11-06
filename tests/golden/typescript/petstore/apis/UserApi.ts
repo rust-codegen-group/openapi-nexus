@@ -19,7 +19,7 @@ export interface ApiCreateUserRequest {
 }
 
 export interface ApiCreateUsersWithListInputRequest {
-    body: Array<string>;
+    body: Array<User>;
 }
 
 export interface ApiDeleteUserRequest {
@@ -54,7 +54,7 @@ export interface UserApiInterface {
   /**
    * Creates list of users with given input array
    *
-   * @param {Array<string>} body
+   * @param {Array<User>} body
    *
    * @throws {RequiredError}
    */
@@ -104,7 +104,7 @@ export interface UserApiInterface {
   /**
    * Creates list of users with given input array
    *
-   * @param {Array<string>} body
+   * @param {Array<User>} body
    *
    * @throws {RequiredError}
    */
@@ -205,7 +205,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   /**
    * Creates list of users with given input array
    *
-   * @param {Array<string>} body
+   * @param {Array<User>} body
    *
    * @throws {RequiredError}
    */
@@ -243,7 +243,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   /**
    * Creates list of users with given input array
    *
-   * @param {Array<string>} body
+   * @param {Array<User>} body
    *
    * @throws {RequiredError}
    */

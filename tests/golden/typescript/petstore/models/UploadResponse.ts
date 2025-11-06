@@ -11,22 +11,22 @@
  * Do not edit the file manually.
  */
 
-/** API response model */
-export interface ApiResponse {
+/** Upload response model */
+export interface UploadResponse {
   code?: number | null,
   message?: string | null,
   type?: string | null,
 }
 
-export function instanceOfApiResponse(value: object): value is ApiResponse {
+export function instanceOfUploadResponse(value: object): value is UploadResponse {
   return true;
 }
 
-export function ApiResponseFromJSON(json: any): ApiResponse {
-  return ApiResponseFromJSONTyped(json, false);
+export function UploadResponseFromJSON(json: any): UploadResponse {
+  return UploadResponseFromJSONTyped(json, false);
 }
 
-export function ApiResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApiResponse {
+export function UploadResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): UploadResponse {
   if (json == null) {
     return json;
   }
@@ -37,11 +37,11 @@ export function ApiResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean
   };
 }
 
-export function ApiResponseToJSON(value?: ApiResponse | null): any {
-  return ApiResponseToJSONTyped(value, false);
+export function UploadResponseToJSON(value?: UploadResponse | null): any {
+  return UploadResponseToJSONTyped(value, false);
 }
 
-export function ApiResponseToJSONTyped(value?: ApiResponse | null, ignoreDiscriminator: boolean = false): any {
+export function UploadResponseToJSONTyped(value?: UploadResponse | null, ignoreDiscriminator: boolean = false): any {
   if (value == null) {
     return value;
   }
@@ -52,7 +52,7 @@ export function ApiResponseToJSONTyped(value?: ApiResponse | null, ignoreDiscrim
   };
 }
 
-export const ApiResponsePropertyValidationAttributesMap: {
+export const UploadResponsePropertyValidationAttributesMap: {
   [property: string]: {
     maxLength?: number,
     minLength?: number,

@@ -20,7 +20,7 @@ export interface ApiGetUserByIdRequest {
 
 export interface DefaultApiInterface {
   /** Get all users */
-  getAllUsersRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
+  getAllUsersRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<object>>>;
   /**
    * Get user by ID
    *
@@ -30,7 +30,7 @@ export interface DefaultApiInterface {
    */
   getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<object>>;
   /** Get all users */
-  getAllUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<string>>;
+  getAllUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<object>>;
   /**
    * Get user by ID
    *
@@ -49,7 +49,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   /** Get all users */
-  async getAllUsersRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
+  async getAllUsersRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<object>>> {
     // Build path with path parameters
     let urlPath = `/users`;
     // Build query parameters
@@ -73,7 +73,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   /** Get all users */
-  async getAllUsers(initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<string>> {
+  async getAllUsers(initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<object>> {
     const response = await this.getAllUsersRaw(initOverrides);
     return await response.value();
   }

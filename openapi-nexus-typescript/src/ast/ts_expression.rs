@@ -171,9 +171,7 @@ impl TsExpression {
             TsExpression::IndexSignature(_key, value_type) => {
                 value_type.collect_references(references);
             }
-            TsExpression::Primitive(_)
-            | TsExpression::Generic(_)
-            | TsExpression::Literal(_) => {
+            TsExpression::Primitive(_) | TsExpression::Generic(_) | TsExpression::Literal(_) => {
                 // These don't contain type references
             }
         }
@@ -248,7 +246,9 @@ impl ToRcDoc for TsExpression {
                 if properties.is_empty() {
                     RcDoc::text("{}")
                 } else {
-                    let prop_docs: Vec<_> = properties.values().map(|prop| {
+                    let prop_docs: Vec<_> = properties
+                        .values()
+                        .map(|prop| {
                             RcDoc::text(prop.prop_name.clone())
                                 .append(RcDoc::text(":"))
                                 .append(RcDoc::space())

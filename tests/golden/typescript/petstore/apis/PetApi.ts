@@ -11,10 +11,10 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, JSONApiResponse, VoidApiResponse, ResponseError, RequiredError, DefaultConfig, type Configuration, type InitOverrideFunction } from '../runtime/runtime';
-import type { ApiResponse } from '../models/ApiResponse';
-import { ApiResponseFromJSON } from '../models/ApiResponse';
 import type { Pet } from '../models/Pet';
 import { PetFromJSON, PetToJSON } from '../models/Pet';
+import type { UploadResponse } from '../models/UploadResponse';
+import { UploadResponseFromJSON } from '../models/UploadResponse';
 
 export interface ApiAddPetRequest {
     body: Pet;
@@ -77,7 +77,7 @@ export interface PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  findPetsByStatusRaw: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
+  findPetsByStatusRaw: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<Pet>>>;
   /**
    * Find pets by tags
    *
@@ -85,7 +85,7 @@ export interface PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  findPetsByTagsRaw: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
+  findPetsByTagsRaw: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<Pet>>>;
   /**
    * Find pet by ID
    *
@@ -120,7 +120,7 @@ export interface PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  uploadFileRaw: (requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<ApiResponse>>;
+  uploadFileRaw: (requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<UploadResponse>>;
   /**
    * Add a new pet to the store
    *
@@ -144,7 +144,7 @@ export interface PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  findPetsByStatus: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<string>>;
+  findPetsByStatus: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<Pet>>;
   /**
    * Find pets by tags
    *
@@ -152,7 +152,7 @@ export interface PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  findPetsByTags: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<string>>;
+  findPetsByTags: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<Pet>>;
   /**
    * Find pet by ID
    *
@@ -187,7 +187,7 @@ export interface PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  uploadFile: (requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<ApiResponse>;
+  uploadFile: (requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<UploadResponse>;
 }
 
 export class PetApi extends BaseAPI implements PetApiInterface {
@@ -304,7 +304,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  async findPetsByStatusRaw(requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
+  async findPetsByStatusRaw(requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<Pet>>> {
     if (requestParameters['status'] == null) {
       throw new RequiredError(
         'status',
@@ -343,7 +343,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  async findPetsByStatus(requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<string>> {
+  async findPetsByStatus(requestParameters: ApiFindPetsByStatusRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<Pet>> {
     const response = await this.findPetsByStatusRaw(requestParameters, initOverrides);
     return await response.value();
   }
@@ -355,7 +355,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  async findPetsByTagsRaw(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
+  async findPetsByTagsRaw(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<Pet>>> {
     if (requestParameters['tags'] == null) {
       throw new RequiredError(
         'tags',
@@ -394,7 +394,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  async findPetsByTags(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<string>> {
+  async findPetsByTags(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<Pet>> {
     const response = await this.findPetsByTagsRaw(requestParameters, initOverrides);
     return await response.value();
   }
@@ -567,7 +567,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  async uploadFileRaw(requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<ApiResponse>> {
+  async uploadFileRaw(requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<UploadResponse>> {
     if (requestParameters['petId'] == null) {
       throw new RequiredError(
         'petId',
@@ -598,7 +598,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
         query: queryParameters,
         body: requestBody,
     }, initOverrides);
-    return new JSONApiResponse(response, (jsonValue) => ApiResponseFromJSON(jsonValue));
+    return new JSONApiResponse(response, (jsonValue) => UploadResponseFromJSON(jsonValue));
   }
 
   /**
@@ -609,7 +609,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
    *
    * @throws {RequiredError}
    */
-  async uploadFile(requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<ApiResponse> {
+  async uploadFile(requestParameters: ApiUploadFileRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<UploadResponse> {
     const response = await this.uploadFileRaw(requestParameters, initOverrides);
     return await response.value();
   }

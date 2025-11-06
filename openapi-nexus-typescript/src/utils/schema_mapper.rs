@@ -1,5 +1,6 @@
 //! Unified schema mapping utilities for OpenAPI to TypeScript conversion
 
+use utoipa::openapi;
 use utoipa::openapi::{RefOr, Schema};
 
 use crate::ast::{TsExpression, TsPrimitive};
@@ -24,7 +25,6 @@ impl SchemaMapper {
         }
     }
 
-    /// TODO: review this
     /// Map a Schema to a TypeScript type expression
     pub fn map_schema_to_type(schema: &Schema) -> TsExpression {
         match schema {
@@ -36,10 +36,25 @@ impl SchemaMapper {
                     TsExpression::Reference("object".to_string())
                 }
             }
-            Schema::Array(_) => {
-                TsExpression::Array(Box::new(TsExpression::Primitive(TsPrimitive::String)))
+            Schema::Array(arr_schema) => {
+                // Map array schema to TypeScript array type using the items field
+                let item_type = Self::map_array_items_to_type(&arr_schema.items);
+                TsExpression::Array(Box::new(item_type))
             }
             _ => TsExpression::Primitive(TsPrimitive::String),
+        }
+    }
+
+    /// Map ArrayItems to TypeScript type
+    fn map_array_items_to_type(array_items: &openapi::schema::ArrayItems) -> TsExpression {
+        match array_items {
+            openapi::schema::ArrayItems::RefOrSchema(schema_ref) => {
+                Self::map_ref_or_schema_to_type(schema_ref)
+            }
+            openapi::schema::ArrayItems::False => {
+                // No additional items allowed - use any as fallback
+                TsExpression::Primitive(TsPrimitive::Any)
+            }
         }
     }
 }

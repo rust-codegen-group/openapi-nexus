@@ -23,7 +23,7 @@ use crate::handlers::{
     __path_upload_file,
 };
 use crate::models::{
-    ApiResponse, Category, ErrorResponse, Order, OrderStatus, Pet, PetStatus, Tag, User,
+    Category, ErrorResponse, Order, OrderStatus, Pet, PetStatus, Tag, UploadResponse, User,
 };
 
 /// OpenAPI documentation
@@ -59,7 +59,7 @@ use crate::models::{
             Order,
             OrderStatus,
             User,
-            ApiResponse,
+            UploadResponse,
             ErrorResponse
         )
     ),
