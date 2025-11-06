@@ -18,6 +18,7 @@ servers:
 paths:
   /users:
     get:
+      operationId: getAllUsers
       summary: Get all users
       description: Retrieve a list of all users
       responses:
@@ -40,6 +41,7 @@ paths:
                       format: email
   /users/{id}:
     get:
+      operationId: getUserById
       summary: Get user by ID
       description: Retrieve a specific user by their ID
       parameters:

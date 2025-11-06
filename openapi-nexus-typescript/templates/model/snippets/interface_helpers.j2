@@ -51,11 +51,11 @@ export function {{ model_interface.signature.name }}FromJSONTyped(json: any, ign
       {% endfor %}
     } : undefined,
     {% else %}
-    '{{ prop.prop_name }}': json['{{ prop.original_name }}'] ? {
+    '{{ prop.prop_name }}': {
       {% for mapping in prop.inline_object_properties %}
       {{ mapping.prop_name }}: json['{{ prop.original_name }}']['{{ mapping.original_name }}'],
       {% endfor %}
-    } : {},
+    },
     {% endif %}
   {% else %}
     {% if prop.optional %}

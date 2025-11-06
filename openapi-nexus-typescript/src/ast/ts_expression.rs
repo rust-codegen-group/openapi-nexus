@@ -120,6 +120,64 @@ impl TsExpression {
             _ => Vec::new(),
         }
     }
+
+    /// Collect all referenced type names from this expression
+    ///
+    /// Recursively traverses the expression to find all type references
+    /// that need to be imported. Returns a set of type names.
+    pub fn referenced_types(&self) -> BTreeSet<String> {
+        let mut references = BTreeSet::new();
+        self.collect_references(&mut references);
+        references
+    }
+
+    /// Recursively collect type references into the provided set
+    fn collect_references(&self, references: &mut BTreeSet<String>) {
+        match self {
+            TsExpression::Reference(name) => {
+                references.insert(name.clone());
+            }
+            TsExpression::Array(item_type) => {
+                item_type.collect_references(references);
+            }
+            TsExpression::Union(types) => {
+                for type_expr in types {
+                    type_expr.collect_references(references);
+                }
+            }
+            TsExpression::Intersection(types) => {
+                for type_expr in types {
+                    type_expr.collect_references(references);
+                }
+            }
+            TsExpression::Object(properties) => {
+                for property in properties.values() {
+                    property.type_expr.collect_references(references);
+                }
+            }
+            TsExpression::Tuple(types) => {
+                for type_expr in types {
+                    type_expr.collect_references(references);
+                }
+            }
+            TsExpression::Function {
+                parameters: _,
+                return_type,
+            } => {
+                if let Some(ret_type) = return_type {
+                    ret_type.collect_references(references);
+                }
+            }
+            TsExpression::IndexSignature(_key, value_type) => {
+                value_type.collect_references(references);
+            }
+            TsExpression::Primitive(_)
+            | TsExpression::Generic(_)
+            | TsExpression::Literal(_) => {
+                // These don't contain type references
+            }
+        }
+    }
 }
 
 impl ToRcDoc for TsExpression {

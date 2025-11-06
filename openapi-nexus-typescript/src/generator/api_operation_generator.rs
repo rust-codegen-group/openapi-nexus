@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use http::Method;
 use minijinja::context;
+use tracing::error;
 use utoipa::openapi;
 
 use crate::ast::{
@@ -65,6 +66,9 @@ impl ApiOperationGenerator {
     ) -> Result<FileInfo, GeneratorError> {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let interface_name = format!("{}Interface", class_name);
+
+        // Check for duplicate method names and emit errors but continue
+        self.check_duplicate_method_names(operations, &class_name);
 
         let mut methods = vec![
             // Constructor method
@@ -524,5 +528,38 @@ impl ApiOperationGenerator {
         }
 
         Some(TsDocComment::new(full_doc.trim().to_string()))
+    }
+
+    /// Check for duplicate method names in operations and emit errors
+    ///
+    /// This method checks for duplicate Raw method names and convenience method names.
+    /// If duplicates are found, error messages are logged but generation continues,
+    /// allowing TypeScript compilation to fail with the duplicate method errors.
+    fn check_duplicate_method_names(&self, operations: &[OperationInfo], class_name: &str) {
+        let mut used_raw_names: BTreeSet<String> = BTreeSet::new();
+        let mut used_convenience_names: BTreeSet<String> = BTreeSet::new();
+
+        for op_info in operations {
+            let base_method_name = op_info.method_name();
+            let raw_method_name = format!("{}Raw", base_method_name);
+
+            // Check for duplicate Raw method names
+            if used_raw_names.contains(&raw_method_name) {
+                error!(
+                    "Duplicate method name detected: '{}' for operation {} {} in API class '{}'. This will cause TypeScript compilation errors.",
+                    raw_method_name, op_info.method, op_info.path, class_name
+                );
+            }
+            used_raw_names.insert(raw_method_name);
+
+            // Check for duplicate convenience method names
+            if used_convenience_names.contains(&base_method_name) {
+                error!(
+                    "Duplicate convenience method name detected: '{}' for operation {} {} in API class '{}'. This will cause TypeScript compilation errors.",
+                    base_method_name, op_info.method, op_info.path, class_name
+                );
+            }
+            used_convenience_names.insert(base_method_name);
+        }
     }
 }

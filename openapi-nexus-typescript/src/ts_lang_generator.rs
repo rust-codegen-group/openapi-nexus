@@ -16,8 +16,8 @@ use crate::generator::{
     schema_context::SchemaContext, schema_generator::SchemaGenerator,
 };
 use crate::templating::data::{
-    CommonFileHeaderData, ModelEnumData, ModelInterfaceData, ModelTypeAliasData, ProjectIndexData,
-    RuntimeRuntimeData,
+    ApiImportStatement, CommonFileHeaderData, ModelEnumData, ModelInterfaceData,
+    ModelTypeAliasData, ProjectIndexData, RuntimeRuntimeData,
 };
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_common::Language;
@@ -275,11 +275,78 @@ impl LanguageCodeGenerator for TsLangGenerator {
             let common_file_header = common_file_header.clone();
             let filename = self.generate_filename(name);
 
+            // Collect referenced types for this model
+            let referenced_types = type_def.referenced_types();
+
+            // Build import statements for referenced types
+            let mut imports = Vec::new();
+            let mut imports_by_file: HashMap<String, (Vec<String>, Vec<String>)> = HashMap::new();
+
+            for ref_type_name in &referenced_types {
+                // Skip self-reference
+                if ref_type_name == name {
+                    continue;
+                }
+
+                // Check if the referenced type exists in schemas
+                if let Some(ref_type_def) = schemas.get(ref_type_name) {
+                    let ref_filename = self.generate_filename(ref_type_name);
+                    let import_path = format!("./{}", ref_filename.trim_end_matches(".ts"));
+
+                    let entry = imports_by_file
+                        .entry(import_path.clone())
+                        .or_insert_with(|| (Vec::new(), Vec::new()));
+                    entry.0.push(ref_type_name.clone());
+
+                    // Determine if we need FromJSON/ToJSON functions
+                    // Only interfaces have FromJSON/ToJSON functions
+                    // Type aliases and enums don't have these helper functions
+                    if let TsTypeDefinition::Interface(_) = ref_type_def {
+                        entry.1.push(format!("{}FromJSON", ref_type_name));
+                        entry.1.push(format!("{}ToJSON", ref_type_name));
+                    }
+                }
+            }
+
+            // Build import statements from grouped imports
+            for (import_path, (type_names, func_names)) in imports_by_file {
+                if !type_names.is_empty() && !func_names.is_empty() {
+                    // Separate type and value imports
+                    let mut type_import =
+                        ApiImportStatement::new(import_path.clone()).with_type_only();
+                    for type_name in type_names {
+                        type_import = type_import.with_type_import(type_name, None);
+                    }
+                    imports.push(type_import);
+
+                    let mut func_import = ApiImportStatement::new(import_path);
+                    for func_name in func_names {
+                        func_import = func_import.with_import(func_name, None);
+                    }
+                    imports.push(func_import);
+                } else if !type_names.is_empty() {
+                    // Only types
+                    let mut type_import = ApiImportStatement::new(import_path).with_type_only();
+                    for type_name in type_names {
+                        type_import = type_import.with_type_import(type_name, None);
+                    }
+                    imports.push(type_import);
+                } else if !func_names.is_empty() {
+                    // Only functions
+                    let mut func_import = ApiImportStatement::new(import_path);
+                    for func_name in func_names {
+                        func_import = func_import.with_import(func_name, None);
+                    }
+                    imports.push(func_import);
+                }
+            }
+
             // Emit model content using template
             let file = match type_def {
                 TsTypeDefinition::Interface(interface) => {
                     // Create ModelInterfaceData from interface definition
-                    let model_interface_data = ModelInterfaceData::from_interface(interface);
+                    let mut model_interface_data = ModelInterfaceData::from_interface(interface);
+                    model_interface_data.imports = imports;
 
                     let template_context = minijinja::context! {
                         common_file_header,
@@ -292,9 +359,11 @@ impl LanguageCodeGenerator for TsLangGenerator {
                         })?
                 }
                 TsTypeDefinition::TypeAlias(type_alias) => {
-                    let model_type_alias = ModelTypeAliasData {
+                    let mut model_type_alias = ModelTypeAliasData {
                         type_alias_definition: type_alias.clone(),
+                        imports: Vec::new(),
                     };
+                    model_type_alias.imports = imports;
                     let template_context = minijinja::context! {
                         common_file_header,
                         model_type_alias,
@@ -308,6 +377,7 @@ impl LanguageCodeGenerator for TsLangGenerator {
                 TsTypeDefinition::Enum(enum_def) => {
                     let model_enum = ModelEnumData {
                         enum_definition: enum_def.clone(),
+                        imports: Vec::new(),
                     };
                     let template_context = minijinja::context! {
                         common_file_header,
@@ -324,10 +394,8 @@ impl LanguageCodeGenerator for TsLangGenerator {
             files.push(file);
         }
 
-        // Generate models/index.ts file
-        if !schemas.is_empty() {
-            files.push(self.generate_models_index_file(openapi, &schemas)?);
-        }
+        // Generate models/index.ts file (always generate, even if empty, since index.ts exports from './models')
+        files.push(self.generate_models_index_file(openapi, &schemas)?);
 
         Ok(files)
     }

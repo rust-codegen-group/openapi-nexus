@@ -3,3 +3,7 @@
 {% for export in project_index.exports %}
 {{ export }}
 {% endfor %}
+{% if project_index.exports | length == 0 %}
+// No models to export
+export {};
+{% endif %}

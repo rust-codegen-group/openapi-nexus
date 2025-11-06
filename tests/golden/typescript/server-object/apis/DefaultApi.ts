@@ -12,7 +12,7 @@
  */
 import { BaseAPI, JSONApiResponse, VoidApiResponse, ResponseError, RequiredError, DefaultConfig, type Configuration, type InitOverrideFunction } from '../runtime/runtime';
 
-export interface ApiGetUsersRequest {
+export interface ApiGetUserByIdRequest {
     id: string;
 }
 
@@ -20,7 +20,7 @@ export interface ApiGetUsersRequest {
 
 export interface DefaultApiInterface {
   /** Get all users */
-  getUsersRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
+  getAllUsersRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<string>>>;
   /**
    * Get user by ID
    *
@@ -28,9 +28,17 @@ export interface DefaultApiInterface {
    *
    * @throws {RequiredError}
    */
-  getUsersRaw: (requestParameters: ApiGetUsersRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<object>>;
+  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<object>>;
   /** Get all users */
-  getUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<object>;
+  getAllUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<string>>;
+  /**
+   * Get user by ID
+   *
+   * @param {string} id User ID
+   *
+   * @throws {RequiredError}
+   */
+  getUserById: (requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<object>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -41,16 +49,9 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   /** Get all users */
-  async getUsersRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
-    if (requestParameters['id'] == null) {
-      throw new RequiredError(
-        'id',
-        'Required parameter "id" was null or undefined when calling getUsersRaw().'
-      );
-    }
+  async getAllUsersRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<string>>> {
     // Build path with path parameters
-    let urlPath = `/users/{id}`;
-    urlPath = urlPath.replace(`{${ 'id' }}`, encodeURIComponent(String(requestParameters['id'])));
+    let urlPath = `/users`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -72,8 +73,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   /** Get all users */
-  async getUsers(initOverrides?: InitOverrideFunction | RequestInit): Promise<object> {
-    const response = await this.getUsersRaw(initOverrides);
+  async getAllUsers(initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<string>> {
+    const response = await this.getAllUsersRaw(initOverrides);
     return await response.value();
   }
 
@@ -84,11 +85,11 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
    *
    * @throws {RequiredError}
    */
-  async getUsersRaw(requestParameters: ApiGetUsersRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<object>> {
+  async getUserByIdRaw(requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<object>> {
     if (requestParameters['id'] == null) {
       throw new RequiredError(
         'id',
-        'Required parameter "id" was null or undefined when calling getUsersRaw().'
+        'Required parameter "id" was null or undefined when calling getUserByIdRaw().'
       );
     }
     // Build path with path parameters
@@ -121,8 +122,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
    *
    * @throws {RequiredError}
    */
-  async getUsers(requestParameters: ApiGetUsersRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<object> {
-    const response = await this.getUsersRaw(requestParameters, initOverrides);
+  async getUserById(requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<object> {
+    const response = await this.getUserByIdRaw(requestParameters, initOverrides);
     return await response.value();
   }
 }
