@@ -287,6 +287,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("recursive-json-primitive-array", "valid/recursive-json/primitive-array.yaml"),
         ("recursive-json-mixed-property-types", "valid/recursive-json/mixed-property-types.yaml"),
         ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
+        ("interface-with-enum-reference", "valid/interface-with-enum-reference.yaml"),
     ]
     .into_iter()
     .collect()
@@ -338,4 +339,5 @@ generate_golden_tests! {
     test_recursive_json_primitive_array_golden: "recursive-json-primitive-array",
     test_recursive_json_mixed_property_types_golden: "recursive-json-mixed-property-types",
     test_recursive_json_all_optional_properties_golden: "recursive-json-all-optional-properties",
+    test_interface_with_enum_reference_golden: "interface-with-enum-reference",
 }

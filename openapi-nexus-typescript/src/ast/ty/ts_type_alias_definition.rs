@@ -9,7 +9,8 @@ use openapi_nexus_core::traits::ToRcDoc;
 /// TypeScript type alias definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TsTypeAliasDefinition {
-    pub name: String,
+    pub ts_name: String,
+    pub original_name: String,
     pub type_expr: TsExpression,
     pub generics: Vec<TsGeneric>,
     pub documentation: Option<TsDocComment>,
@@ -17,9 +18,10 @@ pub struct TsTypeAliasDefinition {
 
 impl TsTypeAliasDefinition {
     /// Create a new type alias
-    pub fn new(name: String, type_expr: TsExpression) -> Self {
+    pub fn new(ts_name: String, original_name: String, type_expr: TsExpression) -> Self {
         Self {
-            name,
+            ts_name,
+            original_name,
             type_expr,
             generics: Vec::new(),
             documentation: None,
@@ -46,7 +48,7 @@ impl ToRcDoc for TsTypeAliasDefinition {
         let mut doc = RcDoc::text("export ")
             .append(RcDoc::text("type"))
             .append(RcDoc::space())
-            .append(RcDoc::text(self.name.clone()));
+            .append(RcDoc::text(self.ts_name.clone()));
 
         // Add generics
         if !self.generics.is_empty() {

@@ -5,7 +5,6 @@ use std::error::Error;
 use std::{fs, path};
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
-use tracing::warn;
 use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
@@ -61,18 +60,12 @@ impl TsLangGenerator {
         let mut context = SchemaContext::new(&components.schemas, &mut visited);
 
         for model in models {
-            match self.schema_generator.schema_to_ts_type_definition(
+            let type_def = self.schema_generator.schema_to_ts_type_definition(
                 &model.name,
                 &model.schema,
                 &mut context,
-            ) {
-                Ok(type_def) => {
-                    schemas.insert(model.name, type_def);
-                }
-                Err(e) => {
-                    warn!("Failed to convert schema {}: {}", model.name, e);
-                }
-            }
+            );
+            schemas.insert(model.name, type_def);
         }
 
         schemas
@@ -131,10 +124,14 @@ impl TsLangGenerator {
     ) -> Result<FileInfo, GeneratorError> {
         let mut exports = Vec::new();
 
-        let mut sorted_names: Vec<&String> = schemas.keys().collect();
-        sorted_names.sort();
-        for name in sorted_names {
-            let filename = self.generate_filename(name);
+        // Collect and sort by actual type names
+        let mut type_names: Vec<String> = schemas
+            .values()
+            .map(|def| def.ts_name().to_string())
+            .collect();
+        type_names.sort();
+        for type_name in type_names {
+            let filename = self.generate_filename(&type_name);
             let import_name = filename.trim_end_matches(".ts");
             exports.push(format!("export * from './{}';", import_name));
         }
@@ -159,11 +156,19 @@ impl TsLangGenerator {
 
     /// Generate main index.ts file
     fn generate_main_index_file(&self, openapi: &OpenApi) -> Result<FileInfo, GeneratorError> {
-        let exports = vec![
-            "export * from './runtime/runtime';".to_string(),
-            "export * from './apis';".to_string(),
-            "export * from './models';".to_string(),
-        ];
+        let mut exports = vec!["export * from './runtime/runtime';".to_string()];
+
+        // Only export from './apis' if there are paths in the OpenAPI spec
+        if !openapi.paths.paths.is_empty() {
+            exports.push("export * from './apis';".to_string());
+        }
+
+        // Only export from './models' if there are schemas in the OpenAPI spec
+        if let Some(components) = &openapi.components
+            && !components.schemas.is_empty()
+        {
+            exports.push("export * from './models';".to_string());
+        }
 
         let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
         let project_index = ProjectIndexData { exports };
@@ -273,7 +278,7 @@ impl LanguageCodeGenerator for TsLangGenerator {
         // Generate model files
         for (name, type_def) in &schemas {
             let common_file_header = common_file_header.clone();
-            let filename = self.generate_filename(name);
+            let filename = self.generate_filename(type_def.ts_name());
 
             // Collect referenced types for this model
             let referenced_types = type_def.referenced_types();
@@ -288,22 +293,31 @@ impl LanguageCodeGenerator for TsLangGenerator {
                     continue;
                 }
 
-                // Check if the referenced type exists in schemas
-                if let Some(ref_type_def) = schemas.get(ref_type_name) {
-                    let ref_filename = self.generate_filename(ref_type_name);
+                // Find the schema where ts_name() matches the referenced type name
+                // Note: schemas HashMap is keyed by original OpenAPI names (e.g., "AZ"),
+                // but ref_type_name is PascalCase (e.g., "Az"), so we need to search by ts_name()
+                let ref_type_def = schemas
+                    .values()
+                    .find(|type_def| type_def.ts_name() == ref_type_name);
+
+                if let Some(ref_type_def) = ref_type_def {
+                    // Use the actual name from the type definition
+                    let actual_type_name = ref_type_def.ts_name();
+                    let ref_filename = self.generate_filename(actual_type_name);
                     let import_path = format!("./{}", ref_filename.trim_end_matches(".ts"));
 
                     let entry = imports_by_file
                         .entry(import_path.clone())
                         .or_insert_with(|| (Vec::new(), Vec::new()));
-                    entry.0.push(ref_type_name.clone());
+                    entry.0.push(actual_type_name.to_string());
 
                     // Determine if we need FromJSON/ToJSON functions
-                    // Only interfaces have FromJSON/ToJSON functions
-                    // Type aliases and enums don't have these helper functions
-                    if let TsTypeDefinition::Interface(_) = ref_type_def {
-                        entry.1.push(format!("{}FromJSON", ref_type_name));
-                        entry.1.push(format!("{}ToJSON", ref_type_name));
+                    // Interfaces and enums have FromJSON/ToJSON functions
+                    // Type aliases don't have these helper functions
+                    if let TsTypeDefinition::Interface(_) | TsTypeDefinition::Enum(_) = ref_type_def
+                    {
+                        entry.1.push(format!("{}FromJSON", actual_type_name));
+                        entry.1.push(format!("{}ToJSON", actual_type_name));
                     }
                 }
             }
@@ -394,8 +408,10 @@ impl LanguageCodeGenerator for TsLangGenerator {
             files.push(file);
         }
 
-        // Generate models/index.ts file (always generate, even if empty, since index.ts exports from './models')
-        files.push(self.generate_models_index_file(openapi, &schemas)?);
+        // Generate models/index.ts file only if there are schemas
+        if !schemas.is_empty() {
+            files.push(self.generate_models_index_file(openapi, &schemas)?);
+        }
 
         Ok(files)
     }

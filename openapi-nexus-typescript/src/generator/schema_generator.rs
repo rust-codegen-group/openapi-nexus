@@ -4,9 +4,10 @@
 //! into a single, well-architected generator that fully implements OpenAPI v3.1.2 features.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Mutex, OnceLock};
 
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
-use tracing::warn;
+use tracing::{error, warn};
 use utoipa::openapi::schema::{
     AdditionalProperties, KnownFormat, Object, SchemaFormat, SchemaType, Type,
 };
@@ -17,8 +18,10 @@ use crate::ast::{
     TsInterfaceDefinition, TsInterfaceSignature, TsPrimitive, TsProperty, TsTypeAliasDefinition,
     TsTypeDefinition,
 };
-use crate::core::GeneratorError;
 use crate::generator::schema_context::SchemaContext;
+
+/// Thread-safe counter for unknown schema references
+static UNKNOWN_SCHEMA_COUNTER: OnceLock<Mutex<usize>> = OnceLock::new();
 
 /// Schema generator for converting OpenAPI schemas to TypeScript AST nodes
 ///
@@ -35,21 +38,18 @@ impl SchemaGenerator {
     /// It determines whether to generate an Interface, Enum, or TypeAlias based on the schema.
     pub fn schema_to_ts_type_definition(
         &self,
-        name: &str,
+        original_name: &str,
         schema_ref: &RefOr<Schema>,
         context: &mut SchemaContext,
-    ) -> Result<TsTypeDefinition, GeneratorError> {
-        // Ensure the name is PascalCase for TypeScript interfaces
-        let pascal_name = name.to_pascal_case();
-
+    ) -> TsTypeDefinition {
         match schema_ref {
             RefOr::T(schema) => {
                 // Determine the appropriate node type based on schema content
-                self.determine_node_type(&pascal_name, schema, context)
+                self.determine_node_type(original_name, schema, context)
             }
             RefOr::Ref(reference) => {
                 // Handle reference - resolve to actual schema or create type alias
-                self.handle_schema_reference(&pascal_name, reference, context)
+                self.handle_schema_reference(original_name, reference, context)
             }
         }
     }
@@ -61,81 +61,98 @@ impl SchemaGenerator {
     /// Determine the appropriate TypeScript node type based on schema content
     fn determine_node_type(
         &self,
-        name: &str,
+        original_name: &str,
         schema: &Schema,
         context: &mut SchemaContext,
-    ) -> Result<TsTypeDefinition, GeneratorError> {
+    ) -> TsTypeDefinition {
+        let ts_name = original_name.to_pascal_case();
+        let original_name = original_name.to_string();
+
         match schema {
             Schema::Object(obj_schema) => {
                 // Check if this is an enum schema
                 if let Some(enum_values) = &obj_schema.enum_values
                     && !enum_values.is_empty()
                 {
-                    return Ok(TsTypeDefinition::Enum(self.schema_to_enum(name, schema)?));
+                    return TsTypeDefinition::Enum(
+                        self.schema_to_enum(original_name.as_str(), schema),
+                    );
                 }
 
                 // Check if this is an object with properties
                 if !obj_schema.properties.is_empty() {
-                    return Ok(TsTypeDefinition::Interface(
-                        self.schema_to_interface(name, schema, context)?,
+                    return TsTypeDefinition::Interface(self.schema_to_interface(
+                        original_name.as_str(),
+                        schema,
+                        context,
                     ));
                 }
 
                 // Check if this has additionalProperties (typed map)
                 if obj_schema.additional_properties.is_some() {
-                    return Ok(TsTypeDefinition::Interface(
-                        self.schema_to_interface(name, schema, context)?,
+                    return TsTypeDefinition::Interface(self.schema_to_interface(
+                        original_name.as_str(),
+                        schema,
+                        context,
                     ));
                 }
 
                 // Otherwise, create a type alias
                 let type_expr = self.map_schema_to_type(schema, context);
-                Ok(TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    name: name.to_string(),
+                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                    ts_name,
+                    original_name: original_name.to_string(),
                     type_expr,
                     generics: vec![],
                     documentation: obj_schema.description.clone().map(TsDocComment::new),
-                }))
+                })
             }
             Schema::Array(_) => {
                 // Array schemas become type aliases
                 let type_expr = self.map_schema_to_type(schema, context);
-                Ok(TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    name: name.to_string(),
+                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                    ts_name,
+                    original_name,
                     type_expr,
                     generics: vec![],
                     documentation: None,
-                }))
+                })
             }
             Schema::OneOf(_) | Schema::AllOf(_) | Schema::AnyOf(_) => {
                 // Composition schemas become type aliases with union/intersection types
                 let type_expr = self.map_schema_to_type(schema, context);
-                Ok(TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    name: name.to_string(),
+                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                    ts_name,
+                    original_name,
                     type_expr,
                     generics: vec![],
                     documentation: None,
-                }))
+                })
             }
             _ => {
                 // Fallback for unknown schema types
-                Ok(TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    name: name.to_string(),
+                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                    ts_name,
+                    original_name,
                     type_expr: TsExpression::Primitive(TsPrimitive::Any),
                     generics: vec![],
                     documentation: None,
-                }))
+                })
             }
         }
     }
 
     /// Convert a schema to a TypeScript interface
+    ///
+    /// Only object schemas are supported;
+    /// any non-object schemas will cause this function to panic.
     fn schema_to_interface(
         &self,
-        name: &str,
+        original_name: &str,
         schema: &Schema,
         context: &mut SchemaContext,
-    ) -> Result<TsInterfaceDefinition, GeneratorError> {
+    ) -> TsInterfaceDefinition {
+        let interface_name = original_name.to_pascal_case();
         match schema {
             Schema::Object(obj_schema) => {
                 let mut properties = Vec::new();
@@ -151,7 +168,7 @@ impl SchemaGenerator {
                     let original_name = prop_name.clone();
 
                     let property = TsProperty {
-                        prop_name: camel_case_name,
+                        ts_name: camel_case_name,
                         original_name,
                         type_expr,
                         optional: !is_required,
@@ -198,7 +215,7 @@ impl SchemaGenerator {
 
                             let index_name = "[key: string]".to_string();
                             let index_property = TsProperty {
-                                prop_name: index_name.clone(),
+                                ts_name: index_name.clone(),
                                 original_name: index_name,
                                 type_expr: value_type,
                                 optional: false,
@@ -211,7 +228,7 @@ impl SchemaGenerator {
                         AdditionalProperties::FreeForm(true) => {
                             let index_name = "[key: string]".to_string();
                             let index_property = TsProperty {
-                                prop_name: index_name.clone(),
+                                ts_name: index_name.clone(),
                                 original_name: index_name,
                                 type_expr: TsExpression::Primitive(TsPrimitive::Any),
                                 optional: false,
@@ -227,71 +244,73 @@ impl SchemaGenerator {
                     }
                 }
 
-                Ok(TsInterfaceDefinition {
-                    signature: TsInterfaceSignature::new(name.to_string()),
+                TsInterfaceDefinition {
+                    signature: TsInterfaceSignature::new(
+                        interface_name.clone(),
+                        original_name.to_string(),
+                    ),
                     properties,
                     documentation: obj_schema.description.clone().map(TsDocComment::new),
-                })
+                }
             }
             _ => {
                 // For non-object schemas, create an empty interface
-                Ok(TsInterfaceDefinition {
-                    signature: TsInterfaceSignature::new(name.to_string()),
+                TsInterfaceDefinition {
+                    signature: TsInterfaceSignature::new(
+                        interface_name.clone(),
+                        original_name.to_string(),
+                    ),
                     properties: vec![],
                     documentation: None,
-                })
+                }
             }
         }
     }
 
-    /// Convert a schema to a TypeScript enum
-    fn schema_to_enum(
-        &self,
-        name: &str,
-        schema: &Schema,
-    ) -> Result<TsEnumDefinition, GeneratorError> {
-        match schema {
-            Schema::Object(obj_schema) => {
-                let mut variants: Vec<TsEnumVariant> = Vec::new();
-                let enum_descriptions = Self::extract_enum_descriptions(obj_schema);
+    /// Convert a schema to a TypeScript enum.
+    ///
+    /// Only object schemas with `enum_values` are supported;
+    /// any non-object schemas will cause this function to panic.
+    fn schema_to_enum(&self, original_name: &str, schema: &Schema) -> TsEnumDefinition {
+        let Schema::Object(obj_schema) = schema else {
+            panic!("schema_to_enum called with non-object schema");
+        };
 
-                if let Some(enum_values) = &obj_schema.enum_values {
-                    for (index, enum_value) in enum_values.iter().enumerate() {
-                        // Warn if boolean value is being converted
+        let ts_name = original_name.to_pascal_case();
+        let enum_descriptions = Self::extract_enum_descriptions(&obj_schema);
+
+        let variants: Vec<TsEnumVariant> = obj_schema.enum_values.as_ref().unwrap_or(&Vec::new())
+                    .iter()
+                    .enumerate()
+                    .map(|(index, enum_value)| {
                         if let serde_json::Value::Bool(_) = enum_value {
                             warn!(
-                                "Boolean enum value found for schema '{}'. TypeScript enums don't support booleans, converting to number (0 for false, 1 for true).",
-                                name
+                                "Boolean enum value found for schema '{original_name}'. TypeScript enums don't support booleans, converting to number (0 for false, 1 for true).",
                             );
                         }
 
-                        let enum_value = TsEnumValue::from_json_value(enum_value);
-                        let name = enum_value.generate_enum_name();
-                        let value = Some(enum_value);
+                        let enum_val = TsEnumValue::from_json_value(enum_value);
+                        let name = enum_val.generate_enum_name();
+                        let value = Some(enum_val);
                         let documentation = enum_descriptions
                             .get(index)
                             .and_then(|d| d.as_str())
                             .map(|s| TsDocComment::new(s.to_string()));
 
-                        let variant = TsEnumVariant {
+                        TsEnumVariant {
                             name,
                             value,
                             documentation,
-                        };
-                        variants.push(variant);
-                    }
-                }
+                        }
+                    })
+                    .collect();
 
-                Ok(TsEnumDefinition {
-                    name: name.to_string(),
-                    variants,
-                    documentation: obj_schema.description.clone().map(TsDocComment::new),
-                    is_const: false, // Regular enum, not const enum
-                })
-            }
-            _ => Err(GeneratorError::Generic {
-                message: "Expected object schema for enum".to_string(),
-            }),
+        TsEnumDefinition {
+            ts_name,
+            original_name: original_name.to_string(),
+            variants,
+            documentation: obj_schema.description.clone().map(TsDocComment::new),
+            is_const: false,
         }
     }
 
@@ -318,33 +337,40 @@ impl SchemaGenerator {
     // ============================================================================
 
     /// Map a RefOr<Schema> to a TypeScript type expression
+    ///
+    /// This function creates type expressions for use in properties, array items, unions, etc.
+    /// For schema references, it converts the original schema name to its TypeScript name
+    /// (PascalCase) immediately, since the TypeScript name is always `original_name.to_pascal_case()`.
+    ///
+    /// Example:
+    /// - OpenAPI schema name: "AZ" → `TsExpression::Reference("Az")` (PascalCase)
+    /// - OpenAPI schema name: "User" → `TsExpression::Reference("User")` (already PascalCase)
     fn map_ref_or_schema_to_type(
         &self,
         schema_ref: &RefOr<Schema>,
         context: &mut SchemaContext,
     ) -> TsExpression {
         match schema_ref {
-            RefOr::T(schema) => self.map_schema_to_type(schema, context),
+            RefOr::T(schema) => {
+                // For inline schemas, map directly to TypeScript types
+                self.map_schema_to_type(schema, context)
+            }
             RefOr::Ref(reference) => {
-                // For type expressions, we keep references as references
-                // The actual type definition will be generated separately
-                // This allows us to use Array<User> instead of expanding to Array<{...}>
-                match self.extract_schema_name(&reference.ref_location) {
-                    Ok(schema_name) => {
-                        if !context.schemas.contains_key(&schema_name) {
-                            warn!("Unresolved schema reference: {}", schema_name);
-                        }
-                        TsExpression::Reference(schema_name)
-                    }
-                    Err(_) => {
-                        // Fallback to simple reference if extraction fails
-                        let schema_name = reference
-                            .ref_location
-                            .strip_prefix("#/components/schemas/")
-                            .unwrap_or("any");
-                        TsExpression::Reference(schema_name.to_string())
-                    }
+                // Extract the original schema name from the reference path
+                let original_name = self.extract_schema_name(&reference.ref_location);
+
+                // Validate that the schema exists in the context
+                if !context.schemas.contains_key(&original_name) {
+                    warn!(
+                        "Unresolved schema reference: {} (from {})",
+                        original_name, reference.ref_location
+                    );
                 }
+
+                // Convert to TypeScript name immediately (PascalCase conversion)
+                // since TypeScript names are always original_name.to_pascal_case().
+                let ts_name = original_name.to_pascal_case();
+                TsExpression::Reference(ts_name)
             }
         }
     }
@@ -519,7 +545,7 @@ impl SchemaGenerator {
             properties.insert(
                 camel_case_name.clone(),
                 ObjectProperty {
-                    prop_name: camel_case_name,
+                    ts_name: camel_case_name,
                     type_expr,
                     original_name: original_name.clone(),
                 },
@@ -639,69 +665,127 @@ impl SchemaGenerator {
     // ============================================================================
 
     /// Handle schema reference resolution
+    ///
+    /// This function processes schema references (`$ref`) from the OpenAPI specification.
+    /// It resolves references to their target schemas and generates appropriate TypeScript
+    /// type definitions, handling circular dependencies and unresolved references.
+    ///
+    /// # Parameters
+    ///
+    /// * `original_name` - The original name of the schema that contains this reference.
+    ///   This is used as the name for the resulting TypeScript type definition.
+    /// * `reference` - The OpenAPI reference object containing the reference path
+    ///   (e.g., `#/components/schemas/User`).
+    /// * `context` - Schema context providing access to all schemas and cycle detection.
+    ///
+    /// # Behavior
+    ///
+    /// The function handles three cases:
+    ///
+    /// 1. **Circular Reference**: If the referenced schema is already being processed
+    ///    (detected via `context.is_visited()`), creates a type alias to break the cycle.
+    ///    The type alias references the TypeScript name (PascalCase) of the target schema.
+    /// 2. **Resolved Reference**: If the referenced schema exists in the context,
+    ///    recursively resolves it by calling `schema_to_ts_type_definition()` on the
+    ///    target schema. Uses context tracking to prevent infinite recursion.
+    /// 3. **Unresolved Reference**: If the referenced schema doesn't exist in the context,
+    ///    creates a type alias with a warning. The type alias references the TypeScript
+    ///    name (PascalCase) of the target schema, allowing the code to compile even if
+    ///    the reference is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Reference: "#/components/schemas/User"
+    /// // original_name: "UserProfile"
+    /// // Result: TypeScript type definition for User (resolved recursively)
+    ///
+    /// // Circular reference (User -> Profile -> User)
+    /// // Result: TypeAlias { ts_name: "User", type_expr: Reference("Profile") }
+    /// ```
+    ///
+    /// # Cycle Detection
+    ///
+    /// The function uses `SchemaContext` to track visited schemas and prevent infinite
+    /// recursion when resolving circular references. Before recursively resolving a schema,
+    /// it marks it as visited and increments the depth counter. After resolution, it cleans
+    /// up by unmarking the schema and decrementing the depth.
     fn handle_schema_reference(
         &self,
-        name: &str,
+        original_name: &str,
         reference: &utoipa::openapi::Ref,
         context: &mut SchemaContext,
-    ) -> Result<TsTypeDefinition, GeneratorError> {
-        // Extract schema name from reference path
-        let schema_name = self.extract_schema_name(&reference.ref_location)?;
+    ) -> TsTypeDefinition {
+        let ts_name = original_name.to_pascal_case();
+        // Extract schema name from reference path (this is the original name of the referenced schema)
+        let ref_original_name = self.extract_schema_name(&reference.ref_location);
+        let ref_ts_name = ref_original_name.to_pascal_case();
 
         // Check for circular dependency
-        if context.is_visited(&schema_name) {
+        if context.is_visited(&ref_original_name) {
             // Circular reference detected - create a type alias to break the cycle
-            return Ok(TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                name: name.to_string(),
-                type_expr: TsExpression::Reference(schema_name.clone()),
+            // Convert to TypeScript name (PascalCase) for the reference
+            return TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                ts_name,
+                original_name: ref_original_name.clone(),
+                type_expr: TsExpression::Reference(ref_ts_name),
                 generics: vec![],
                 documentation: Some(TsDocComment::new(format!(
                     "Circular reference to {}",
-                    schema_name
+                    ref_original_name
                 ))),
-            }));
+            });
         }
 
-        // Look up the actual schema
-        if let Some(target_schema) = context.schemas.get(&schema_name) {
+        // Look up the actual schema using the original name
+        if let Some(target_schema) = context.schemas.get(&ref_original_name) {
             // Mark as visited to prevent cycles
-            let schema_name_clone = schema_name.clone();
-            context.mark_visited(schema_name_clone);
+            context.mark_visited(ref_original_name.clone());
             context.increment_depth();
 
-            // Recursively resolve the target schema
-            let result = self.schema_to_ts_type_definition(&schema_name, target_schema, context);
+            // Recursively resolve the target schema using the original schema name
+            let type_def =
+                self.schema_to_ts_type_definition(&ref_original_name, target_schema, context);
 
             // Cleanup
             context.decrement_depth();
-            context.unmark_visited(&schema_name);
+            context.unmark_visited(&ref_original_name);
 
-            result
+            type_def
         } else {
             // Unresolved reference - generate warning and fallback
-            tracing::warn!("Unresolved schema reference: {}", schema_name);
-            Ok(TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                name: name.to_string(),
-                type_expr: TsExpression::Reference(schema_name.clone()),
+            warn!("Unresolved schema reference: {}", ref_original_name);
+            TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                ts_name,
+                original_name: ref_original_name.clone(),
+                type_expr: TsExpression::Reference(ref_ts_name),
                 generics: vec![],
                 documentation: Some(TsDocComment::new(format!(
                     "Unresolved reference to {}",
-                    schema_name
+                    ref_original_name
                 ))),
-            }))
+            })
         }
     }
 
     /// Extract schema name from reference path
     ///
     /// Converts `#/components/schemas/User` -> `User`
-    fn extract_schema_name(&self, ref_path: &str) -> Result<String, GeneratorError> {
+    fn extract_schema_name(&self, ref_path: &str) -> String {
         if let Some(schema_name) = ref_path.strip_prefix("#/components/schemas/") {
-            Ok(schema_name.to_string())
+            schema_name.to_string()
         } else {
-            Err(GeneratorError::Generic {
-                message: format!("Invalid schema reference path: {}", ref_path),
-            })
+            // Get or initialize the counter
+            let count = UNKNOWN_SCHEMA_COUNTER.get_or_init(|| Mutex::new(0));
+            let count = {
+                let mut count = count.lock().expect("Unknown schema counter mutex poisoned");
+                *count += 1;
+                *count
+            };
+            error!(
+                "Invalid schema reference path: {ref_path} - using fallback name Unknown{count}"
+            );
+            format!("Unknown{}", count)
         }
     }
 }

@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 import type { OrderStatus } from './OrderStatus';
+import { OrderStatusFromJSON, OrderStatusToJSON } from './OrderStatus';
 
 /** Order model */
 export interface Order {

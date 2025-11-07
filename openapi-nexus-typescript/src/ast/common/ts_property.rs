@@ -8,7 +8,7 @@ use openapi_nexus_core::traits::ToRcDoc;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TsProperty {
     /// The camelCase property name used in the TypeScript interface
-    pub prop_name: String,
+    pub ts_name: String,
     /// The original property name from the OpenAPI spec (used in JSON)
     pub original_name: String,
     /// The TypeScript type expression representing the property type
@@ -21,7 +21,7 @@ pub struct TsProperty {
 
 impl ToRcDoc for TsProperty {
     fn to_rcdoc(&self) -> RcDoc<'static, ()> {
-        let mut doc = RcDoc::text(self.prop_name.clone());
+        let mut doc = RcDoc::text(self.ts_name.clone());
 
         if self.optional {
             doc = doc.append(RcDoc::text("?"));

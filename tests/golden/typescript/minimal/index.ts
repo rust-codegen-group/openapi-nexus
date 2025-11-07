@@ -10,4 +10,3 @@
  */
 export * from './runtime/runtime';
 export * from './apis';
-export * from './models';

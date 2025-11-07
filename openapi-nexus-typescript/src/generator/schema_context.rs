@@ -12,7 +12,7 @@ use utoipa::openapi::{RefOr, Schema};
 /// This context provides access to all available schemas and tracks visited schemas
 /// to prevent circular dependency issues during reference resolution.
 pub struct SchemaContext<'a> {
-    /// All available schemas from components
+    /// All available schemas from components. Key is the original name of the schema.
     pub schemas: &'a BTreeMap<String, RefOr<Schema>>,
     /// Track visited schemas to prevent circular dependencies
     pub visited: &'a mut HashSet<String>,

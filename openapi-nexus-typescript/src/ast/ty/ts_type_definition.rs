@@ -17,6 +17,28 @@ pub enum TsTypeDefinition {
 }
 
 impl TsTypeDefinition {
+    /// Get the TypeScript name of this type definition
+    ///
+    /// Returns the name that will be used in the generated TypeScript code.
+    pub fn ts_name(&self) -> &str {
+        match self {
+            TsTypeDefinition::Interface(interface) => &interface.signature.ts_name,
+            TsTypeDefinition::TypeAlias(type_alias) => &type_alias.ts_name,
+            TsTypeDefinition::Enum(enum_def) => &enum_def.ts_name,
+        }
+    }
+
+    /// Get the original schema name from the OpenAPI spec
+    ///
+    /// Returns the original name from the OpenAPI specification.
+    pub fn original_name(&self) -> &str {
+        match self {
+            TsTypeDefinition::Interface(interface) => &interface.signature.original_name,
+            TsTypeDefinition::TypeAlias(type_alias) => &type_alias.original_name,
+            TsTypeDefinition::Enum(enum_def) => &enum_def.original_name,
+        }
+    }
+
     /// Collect all referenced type names from this type definition
     ///
     /// Recursively traverses the type definition to find all type references

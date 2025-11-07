@@ -13,7 +13,29 @@
 
 /** Enum of string values */
 export enum StringEnum {
-Active = "active",
-Inactive = "inactive",
-Pending = "pending"
+  Active = "active",
+  Inactive = "inactive",
+  Pending = "pending"
+}
+
+export function StringEnumFromJSON(json: any): StringEnum {
+  return StringEnumFromJSONTyped(json, false);
+}
+
+export function StringEnumFromJSONTyped(json: any, ignoreDiscriminator: boolean): StringEnum {
+  if (json == null) {
+    return json;
+  }
+  return json as StringEnum;
+}
+
+export function StringEnumToJSON(value?: StringEnum | null): any {
+  return StringEnumToJSONTyped(value, false);
+}
+
+export function StringEnumToJSONTyped(value?: StringEnum | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
 }

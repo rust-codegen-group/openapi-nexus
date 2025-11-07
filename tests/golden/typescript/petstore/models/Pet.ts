@@ -13,6 +13,7 @@
 import type { Category } from './Category';
 import { CategoryFromJSON, CategoryToJSON } from './Category';
 import type { PetStatus } from './PetStatus';
+import { PetStatusFromJSON, PetStatusToJSON } from './PetStatus';
 import type { Tag } from './Tag';
 import { TagFromJSON, TagToJSON } from './Tag';
 

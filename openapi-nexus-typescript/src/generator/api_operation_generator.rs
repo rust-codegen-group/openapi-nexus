@@ -365,7 +365,7 @@ impl ApiOperationGenerator {
                 // Convert parameter name to camelCase for TypeScript interface
                 let camel_case_name = param.name.to_lower_camel_case();
                 TsProperty {
-                    prop_name: camel_case_name.clone(),
+                    ts_name: camel_case_name.clone(),
                     original_name: camel_case_name,
                     type_expr,
                     optional: param.optional,
@@ -374,7 +374,7 @@ impl ApiOperationGenerator {
             })
             .collect();
 
-        let signature = TsInterfaceSignature::new(interface_name);
+        let signature = TsInterfaceSignature::new(interface_name.clone(), interface_name);
         Some(TsInterfaceDefinition::new(signature).with_properties(properties))
     }
 

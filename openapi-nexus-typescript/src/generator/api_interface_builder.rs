@@ -17,7 +17,8 @@ impl ApiInterfaceBuilder {
         method_template_data: &BTreeMap<String, MethodTemplateData>,
     ) -> TsInterfaceDefinition {
         // Build interface signature (export interface FooInterface ...)
-        let interface_signature = TsInterfaceSignature::new(format!("{}Interface", class.name))
+        let interface_name = format!("{}Interface", class.name);
+        let interface_signature = TsInterfaceSignature::new(interface_name.clone(), interface_name)
             .with_generics(class.generics.clone());
 
         // Convert methods into function-typed properties for the interface
@@ -32,7 +33,7 @@ impl ApiInterfaceBuilder {
                     return_type: m.return_type.map(Box::new),
                 };
                 TsProperty {
-                    prop_name: m.name.clone(),
+                    ts_name: m.name.clone(),
                     original_name: m.name.clone(),
                     type_expr: func_type,
                     optional: false,
@@ -59,7 +60,7 @@ impl ApiInterfaceBuilder {
                         return_type: Some(Box::new(promise_return_type)),
                     };
                     interface_properties.push(TsProperty {
-                        prop_name: conv_name.clone(),
+                        ts_name: conv_name.clone(),
                         original_name: conv_name.clone(),
                         type_expr: func_type,
                         optional: false,

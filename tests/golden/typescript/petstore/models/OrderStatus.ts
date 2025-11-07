@@ -13,7 +13,29 @@
 
 /** Order status enum */
 export enum OrderStatus {
-Placed = "placed",
-Approved = "approved",
-Delivered = "delivered"
+  Placed = "placed",
+  Approved = "approved",
+  Delivered = "delivered"
+}
+
+export function OrderStatusFromJSON(json: any): OrderStatus {
+  return OrderStatusFromJSONTyped(json, false);
+}
+
+export function OrderStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): OrderStatus {
+  if (json == null) {
+    return json;
+  }
+  return json as OrderStatus;
+}
+
+export function OrderStatusToJSON(value?: OrderStatus | null): any {
+  return OrderStatusToJSONTyped(value, false);
+}
+
+export function OrderStatusToJSONTyped(value?: OrderStatus | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
 }

@@ -13,7 +13,29 @@
 
 /** Enum of number values */
 export enum NumberEnum {
-_1 = 1,
-_2 = 2,
-_3 = 3
+  _1 = 1,
+  _2 = 2,
+  _3 = 3
+}
+
+export function NumberEnumFromJSON(json: any): NumberEnum {
+  return NumberEnumFromJSONTyped(json, false);
+}
+
+export function NumberEnumFromJSONTyped(json: any, ignoreDiscriminator: boolean): NumberEnum {
+  if (json == null) {
+    return json;
+  }
+  return json as NumberEnum;
+}
+
+export function NumberEnumToJSON(value?: NumberEnum | null): any {
+  return NumberEnumToJSONTyped(value, false);
+}
+
+export function NumberEnumToJSONTyped(value?: NumberEnum | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
 }

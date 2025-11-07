@@ -13,7 +13,7 @@ use crate::templating::data::ApiImportStatement;
 #[derive(Debug, Clone, Serialize)]
 pub struct PropertyMetadata {
     /// The camelCase property name used in the TypeScript interface
-    pub prop_name: String,
+    pub ts_name: String,
     /// The original property name from the OpenAPI spec (used in JSON)
     pub original_name: String,
     /// Whether the property is optional in the TypeScript interface
@@ -57,7 +57,7 @@ impl ModelInterfaceData {
             .properties
             .iter()
             .filter(|p| !p.optional)
-            .map(|p| p.prop_name.clone())
+            .map(|p| p.ts_name.clone())
             .filter(|name| !name.starts_with('['))
             .collect();
 
@@ -66,10 +66,10 @@ impl ModelInterfaceData {
             .properties
             .iter()
             .map(|p| PropertyMetadata {
-                prop_name: p.prop_name.clone(),
+                ts_name: p.ts_name.clone(),
                 original_name: p.original_name.clone(),
                 optional: p.optional,
-                is_index_signature: p.prop_name.starts_with('['),
+                is_index_signature: p.ts_name.starts_with('['),
                 type_expr: p.type_expr.clone(),
                 is_array: p.type_expr.is_array(),
                 is_array_of_objects: p.type_expr.is_array_of_objects(),

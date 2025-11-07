@@ -13,11 +13,11 @@ use openapi_nexus_core::traits::ToRcDoc;
 #[derive(Debug, Clone, Ord, PartialOrd, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ObjectProperty {
     /// The camelCase property name used in the TypeScript interface
-    pub prop_name: String,
-    /// The TypeScript type expression for this property
-    pub type_expr: TsExpression,
+    pub ts_name: String,
     /// The original property name from the OpenAPI spec (used in JSON)
     pub original_name: String,
+    /// The TypeScript type expression for this property
+    pub type_expr: TsExpression,
 }
 
 /// TypeScript type expression
@@ -249,7 +249,7 @@ impl ToRcDoc for TsExpression {
                     let prop_docs: Vec<_> = properties
                         .values()
                         .map(|prop| {
-                            RcDoc::text(prop.prop_name.clone())
+                            RcDoc::text(prop.ts_name.clone())
                                 .append(RcDoc::text(":"))
                                 .append(RcDoc::space())
                                 .append(prop.type_expr.to_rcdoc())

@@ -1,0 +1,65 @@
+openapi: 3.1.0
+info:
+  title: Interface with Enum Reference Test
+  version: 1.0.0
+  description: Test case for interfaces that reference enum types
+
+paths: {}
+
+components:
+  schemas:
+    FooType:
+      type: string
+      enum:
+        - foo
+        - bar
+        - baz
+      description: Foo type enum
+    
+    FooSpecs:
+      type: object
+      required:
+        - foo_type
+      properties:
+        foo_type:
+          $ref: '#/components/schemas/FooType'
+          description: The foo type
+    
+    BarStatus:
+      type: string
+      enum:
+        - foo
+        - bar
+        - baz
+      description: Bar status enum
+    
+    BarService:
+      type: object
+      required:
+        - status
+        - name
+      properties:
+        status:
+          $ref: '#/components/schemas/BarStatus'
+          description: Bar Service status
+        DIYnameASAP:
+          type: string
+          description: DIY name ASAP
+    
+    AZ:
+      type: string
+      enum:
+        - foo
+        - bar
+        - baz
+      description: AZ enum
+    
+    MyJSONData:
+      type: object
+      required:
+        - az
+      properties:
+        az:
+          $ref: '#/components/schemas/AZ'
+          description: My JSON data
+

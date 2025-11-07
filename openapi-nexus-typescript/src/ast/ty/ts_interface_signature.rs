@@ -8,16 +8,18 @@ use openapi_nexus_core::traits::ToRcDoc;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TsInterfaceSignature {
     pub is_export: bool,
-    pub name: String,
+    pub ts_name: String,
+    pub original_name: String,
     pub generics: Vec<TsGeneric>,
     pub extends: Vec<String>,
 }
 
 impl TsInterfaceSignature {
-    pub fn new(name: String) -> Self {
+    pub fn new(ts_name: String, original_name: String) -> Self {
         Self {
             is_export: true,
-            name,
+            ts_name,
+            original_name,
             generics: Vec::new(),
             extends: Vec::new(),
         }
@@ -50,7 +52,7 @@ impl ToRcDoc for TsInterfaceSignature {
         doc = doc
             .append(RcDoc::text("interface"))
             .append(RcDoc::space())
-            .append(RcDoc::text(self.name.clone()));
+            .append(RcDoc::text(self.ts_name.clone()));
 
         if !self.generics.is_empty() {
             let generics_docs: Vec<_> = self.generics.iter().map(|g| g.to_rcdoc()).collect();
