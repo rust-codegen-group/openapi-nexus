@@ -12,3 +12,25 @@
  */
 
 export type BooleanArray = Array<boolean>
+
+export function BooleanArrayFromJSON(json: any): BooleanArray {
+  return BooleanArrayFromJSONTyped(json, false);
+}
+
+export function BooleanArrayFromJSONTyped(json: any, ignoreDiscriminator: boolean): BooleanArray {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function BooleanArrayToJSON(value?: BooleanArray | null): any {
+  return BooleanArrayToJSONTyped(value, false);
+}
+
+export function BooleanArrayToJSONTyped(value?: BooleanArray | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

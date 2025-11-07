@@ -13,3 +13,25 @@
 
 /** String with email format */
 export type EmailString = string
+
+export function EmailStringFromJSON(json: any): EmailString {
+  return EmailStringFromJSONTyped(json, false);
+}
+
+export function EmailStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): EmailString {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function EmailStringToJSON(value?: EmailString | null): any {
+  return EmailStringToJSONTyped(value, false);
+}
+
+export function EmailStringToJSONTyped(value?: EmailString | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

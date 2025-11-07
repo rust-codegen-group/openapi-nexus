@@ -13,3 +13,25 @@
 
 /** 32-bit integer */
 export type Integer32 = number
+
+export function Integer32FromJSON(json: any): Integer32 {
+  return Integer32FromJSONTyped(json, false);
+}
+
+export function Integer32FromJSONTyped(json: any, ignoreDiscriminator: boolean): Integer32 {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function Integer32ToJSON(value?: Integer32 | null): any {
+  return Integer32ToJSONTyped(value, false);
+}
+
+export function Integer32ToJSONTyped(value?: Integer32 | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

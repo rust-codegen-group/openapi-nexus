@@ -12,3 +12,25 @@
  */
 
 export type ObjectArray = Array<{ name: string }>
+
+export function ObjectArrayFromJSON(json: any): ObjectArray {
+  return ObjectArrayFromJSONTyped(json, false);
+}
+
+export function ObjectArrayFromJSONTyped(json: any, ignoreDiscriminator: boolean): ObjectArray {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function ObjectArrayToJSON(value?: ObjectArray | null): any {
+  return ObjectArrayToJSONTyped(value, false);
+}
+
+export function ObjectArrayToJSONTyped(value?: ObjectArray | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

@@ -6,14 +6,40 @@ use crate::ast::{TsExpression, TsGeneric};
 use crate::emission::ts_type_emitter::TsTypeEmitter;
 use openapi_nexus_core::traits::ToRcDoc;
 
-/// TypeScript type alias definition
+/// Information about a union member type
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnionMemberInfo {
+    /// The TypeScript name of the member type
+    pub ts_name: String,
+    /// The TypeScript expression for this member
+    pub type_expr: TsExpression,
+    /// Whether this member is a primitive type (string, number, etc.)
+    pub is_primitive: bool,
+    /// Whether this member is an interface (has instanceOf function)
+    pub is_interface: bool,
+}
+
+/// Represents a TypeScript type alias definition, which may be a plain alias,
+/// a union (`oneOf`/`anyOf`), or an intersection (`allOf`). This struct
+/// contains all the metadata and type structure required to emit the TypeScript
+/// alias as source code, and supports additional schema-based features such as
+/// generics and documentation comments.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TsTypeAliasDefinition {
+    /// The TypeScript name of the type alias (e.g., `UserOrPet`)
     pub ts_name: String,
+    /// The original name from the OpenAPI/JSON Schema, if different
     pub original_name: String,
+    /// The TypeScript type expression this alias refers to. This could be
+    /// a union, intersection, primitive, or interface reference.
     pub type_expr: TsExpression,
+    /// List of generic type parameters used by this type alias (if any)
     pub generics: Vec<TsGeneric>,
+    /// Optional documentation comments to be emitted in the TypeScript file
     pub documentation: Option<TsDocComment>,
+    /// For union types (`oneOf`/`anyOf`): describes the constituent members.
+    /// `None` if not a union.
+    pub union_members: Option<Vec<UnionMemberInfo>>,
 }
 
 impl TsTypeAliasDefinition {
@@ -25,6 +51,7 @@ impl TsTypeAliasDefinition {
             type_expr,
             generics: Vec::new(),
             documentation: None,
+            union_members: None,
         }
     }
 

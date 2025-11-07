@@ -13,3 +13,25 @@
 
 /** Boolean type */
 export type BooleanType = boolean
+
+export function BooleanTypeFromJSON(json: any): BooleanType {
+  return BooleanTypeFromJSONTyped(json, false);
+}
+
+export function BooleanTypeFromJSONTyped(json: any, ignoreDiscriminator: boolean): BooleanType {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function BooleanTypeToJSON(value?: BooleanType | null): any {
+  return BooleanTypeToJSONTyped(value, false);
+}
+
+export function BooleanTypeToJSONTyped(value?: BooleanType | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

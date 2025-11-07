@@ -1,0 +1,41 @@
+openapi: 3.1.0
+info:
+  title: Simple Type Alias Test
+  description: Test fixture for simple type aliases (not unions or intersections)
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Test endpoint with simple type alias
+      operationId: test_simple_alias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Foo'
+
+components:
+  schemas:
+    Foo:
+      type: string
+      description: A simple string type alias
+
+    Bar:
+      type: number
+      description: A simple number type alias
+
+    Baz:
+      type: array
+      items:
+        type: string
+      description: A simple array type alias
+

@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: Nested Union Type Test
+  description: Test fixture for union types that reference other union types
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Test endpoint with nested union type
+      operationId: test_nested_union
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Foo'
+
+components:
+  schemas:
+    Bar:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [bar]
+        endpoint:
+          type: string
+      required:
+        - type
+        - endpoint
+
+    Baz:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [baz]
+        path:
+          type: string
+      required:
+        - type
+        - path
+
+    Qux:
+      oneOf:
+        - $ref: '#/components/schemas/Bar'
+        - $ref: '#/components/schemas/Baz'
+
+    Foo:
+      oneOf:
+        - $ref: '#/components/schemas/Qux'
+        - type: string
+        - type: number
+

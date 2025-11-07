@@ -181,20 +181,7 @@ impl TsExpression {
 impl ToRcDoc for TsExpression {
     fn to_rcdoc(&self) -> RcDoc<'static, ()> {
         match self {
-            TsExpression::Primitive(primitive) => {
-                let s = match primitive {
-                    TsPrimitive::String => "string",
-                    TsPrimitive::Number => "number",
-                    TsPrimitive::Boolean => "boolean",
-                    TsPrimitive::Any => "any",
-                    TsPrimitive::Unknown => "unknown",
-                    TsPrimitive::Void => "void",
-                    TsPrimitive::Never => "never",
-                    TsPrimitive::Null => "null",
-                    TsPrimitive::Undefined => "undefined",
-                };
-                RcDoc::text(s)
-            }
+            TsExpression::Primitive(primitive) => primitive.to_rcdoc(),
             TsExpression::Reference(name) | TsExpression::Generic(name) => {
                 RcDoc::text(name.clone())
             }

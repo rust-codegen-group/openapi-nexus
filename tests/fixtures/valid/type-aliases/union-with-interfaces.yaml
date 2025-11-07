@@ -1,0 +1,75 @@
+openapi: 3.1.0
+info:
+  title: Union Type with Interfaces Test
+  description: Test fixture for oneOf/anyOf union types with interface members
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Test endpoint with union type
+      operationId: test_union
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Foo'
+
+components:
+  schemas:
+    Bar:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [bar]
+        endpoint:
+          type: string
+        bucket:
+          type: string
+      required:
+        - type
+        - endpoint
+        - bucket
+
+    Baz:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [baz]
+        path:
+          type: string
+      required:
+        - type
+        - path
+
+    Qux:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [qux]
+        url:
+          type: string
+        namespace:
+          type: string
+      required:
+        - type
+        - url
+        - namespace
+
+    Foo:
+      oneOf:
+        - $ref: '#/components/schemas/Bar'
+        - $ref: '#/components/schemas/Baz'
+        - $ref: '#/components/schemas/Qux'
+

@@ -13,3 +13,25 @@
 
 /** String with date-time format */
 export type DateTimeString = string
+
+export function DateTimeStringFromJSON(json: any): DateTimeString {
+  return DateTimeStringFromJSONTyped(json, false);
+}
+
+export function DateTimeStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): DateTimeString {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function DateTimeStringToJSON(value?: DateTimeString | null): any {
+  return DateTimeStringToJSONTyped(value, false);
+}
+
+export function DateTimeStringToJSONTyped(value?: DateTimeString | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

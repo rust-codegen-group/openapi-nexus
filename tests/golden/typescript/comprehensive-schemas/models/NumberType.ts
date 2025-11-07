@@ -13,3 +13,25 @@
 
 /** Basic number type */
 export type NumberType = number
+
+export function NumberTypeFromJSON(json: any): NumberType {
+  return NumberTypeFromJSONTyped(json, false);
+}
+
+export function NumberTypeFromJSONTyped(json: any, ignoreDiscriminator: boolean): NumberType {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function NumberTypeToJSON(value?: NumberType | null): any {
+  return NumberTypeToJSONTyped(value, false);
+}
+
+export function NumberTypeToJSONTyped(value?: NumberType | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

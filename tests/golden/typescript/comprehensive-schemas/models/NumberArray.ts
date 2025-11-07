@@ -12,3 +12,25 @@
  */
 
 export type NumberArray = Array<number>
+
+export function NumberArrayFromJSON(json: any): NumberArray {
+  return NumberArrayFromJSONTyped(json, false);
+}
+
+export function NumberArrayFromJSONTyped(json: any, ignoreDiscriminator: boolean): NumberArray {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function NumberArrayToJSON(value?: NumberArray | null): any {
+  return NumberArrayToJSONTyped(value, false);
+}
+
+export function NumberArrayToJSONTyped(value?: NumberArray | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

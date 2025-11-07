@@ -13,3 +13,25 @@
 
 /** Basic integer type */
 export type IntegerType = number
+
+export function IntegerTypeFromJSON(json: any): IntegerType {
+  return IntegerTypeFromJSONTyped(json, false);
+}
+
+export function IntegerTypeFromJSONTyped(json: any, ignoreDiscriminator: boolean): IntegerType {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function IntegerTypeToJSON(value?: IntegerType | null): any {
+  return IntegerTypeToJSONTyped(value, false);
+}
+
+export function IntegerTypeToJSONTyped(value?: IntegerType | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

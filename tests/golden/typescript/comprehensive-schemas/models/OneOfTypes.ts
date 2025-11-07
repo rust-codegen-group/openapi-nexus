@@ -12,3 +12,49 @@
  */
 
 export type OneOfTypes = string | number | boolean
+
+export function OneOfTypesFromJSON(json: any): OneOfTypes {
+  return OneOfTypesFromJSONTyped(json, false);
+}
+
+export function OneOfTypesFromJSONTyped(json: any, ignoreDiscriminator: boolean): OneOfTypes {
+  if (json == null) {
+    return json;
+  }
+  if (typeof json !== 'object') {
+    return json;
+  }
+  if (typeof json === 'string') {
+    return json;
+  }
+  if (typeof json === 'number') {
+    return json;
+  }
+  if (typeof json === 'boolean') {
+    return json;
+  }
+  return {} as any;
+}
+
+export function OneOfTypesToJSON(value?: OneOfTypes | null): any {
+  return OneOfTypesToJSONTyped(value, false);
+}
+
+export function OneOfTypesToJSONTyped(value?: OneOfTypes | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  if (typeof value !== 'object') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  return {};
+}

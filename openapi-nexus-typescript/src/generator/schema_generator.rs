@@ -13,6 +13,7 @@ use utoipa::openapi::schema::{
 };
 use utoipa::openapi::{RefOr, Schema};
 
+use crate::ast::ty::ts_type_alias_definition::UnionMemberInfo;
 use crate::ast::{
     ObjectProperty, TsDocComment, TsEnumDefinition, TsEnumValue, TsEnumVariant, TsExpression,
     TsInterfaceDefinition, TsInterfaceSignature, TsPrimitive, TsProperty, TsTypeAliasDefinition,
@@ -107,6 +108,7 @@ impl SchemaGenerator {
                     type_expr,
                     generics: vec![],
                     documentation: obj_schema.description.clone().map(TsDocComment::new),
+                    union_members: None,
                 })
             }
             Schema::Array(_) => {
@@ -118,17 +120,48 @@ impl SchemaGenerator {
                     type_expr,
                     generics: vec![],
                     documentation: None,
+                    union_members: None,
                 })
             }
-            Schema::OneOf(_) | Schema::AllOf(_) | Schema::AnyOf(_) => {
+            Schema::OneOf(one_of) => {
                 // Composition schemas become type aliases with union/intersection types
                 let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
+                let union_members =
+                    self.extract_union_members(&one_of.items, context, ts_name.as_str());
                 TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
                     ts_name,
                     original_name,
                     type_expr,
                     generics: vec![],
                     documentation: None,
+                    union_members: Some(union_members),
+                })
+            }
+            Schema::AnyOf(any_of) => {
+                // Composition schemas become type aliases with union/intersection types
+                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
+                let union_members =
+                    self.extract_union_members(&any_of.items, context, ts_name.as_str());
+                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                    ts_name,
+                    original_name,
+                    type_expr,
+                    generics: vec![],
+                    documentation: None,
+                    union_members: Some(union_members),
+                })
+            }
+            Schema::AllOf(_) => {
+                // Composition schemas become type aliases with union/intersection types
+                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
+                // For allOf, we don't extract union members since it's an intersection
+                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                    ts_name,
+                    original_name,
+                    type_expr,
+                    generics: vec![],
+                    documentation: None,
+                    union_members: None,
                 })
             }
             _ => {
@@ -139,6 +172,7 @@ impl SchemaGenerator {
                     type_expr: TsExpression::Primitive(TsPrimitive::Any),
                     generics: vec![],
                     documentation: None,
+                    union_members: None,
                 })
             }
         }
@@ -295,7 +329,7 @@ impl SchemaGenerator {
         };
 
         let ts_name = original_name.to_pascal_case();
-        let enum_descriptions = Self::extract_enum_descriptions(&obj_schema);
+        let enum_descriptions = Self::extract_enum_descriptions(obj_schema);
 
         let variants: Vec<TsEnumVariant> = obj_schema.enum_values.as_ref().unwrap_or(&Vec::new())
                     .iter()
@@ -824,6 +858,7 @@ impl SchemaGenerator {
                     "Circular reference to {}",
                     ref_original_name
                 ))),
+                union_members: None,
             });
         }
 
@@ -854,8 +889,63 @@ impl SchemaGenerator {
                     "Unresolved reference to {}",
                     ref_original_name
                 ))),
+                union_members: None,
             })
         }
+    }
+
+    /// Check if a schema reference represents an interface
+    fn is_schema_ref_interface(&self, schema_ref: &RefOr<Schema>, context: &SchemaContext) -> bool {
+        match schema_ref {
+            RefOr::T(Schema::Object(obj_schema)) => {
+                !obj_schema.properties.is_empty() || obj_schema.additional_properties.is_some()
+            }
+            RefOr::Ref(reference) => {
+                let original_name = self.extract_schema_name(&reference.ref_location);
+                context
+                    .schemas
+                    .get(&original_name)
+                    .map(|s| {
+                        matches!(s, RefOr::T(Schema::Object(obj_schema)) if !obj_schema.properties.is_empty() || obj_schema.additional_properties.is_some())
+                    })
+                    .unwrap_or(false)
+            }
+            _ => false,
+        }
+    }
+
+    /// Extract union member information from composition schema items
+    ///
+    /// This extracts metadata about each member of a union (oneOf/anyOf) for generating
+    /// FromJSON/ToJSON functions that can discriminate between union members.
+    fn extract_union_members(
+        &self,
+        items: &[RefOr<Schema>],
+        context: &mut SchemaContext,
+        parent_name: &str,
+    ) -> Vec<UnionMemberInfo> {
+        items
+            .iter()
+            .map(|schema_ref| {
+                let type_expr =
+                    self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None);
+                let is_interface = self.is_schema_ref_interface(schema_ref, context);
+
+                let (ts_name, is_primitive) = match &type_expr {
+                    TsExpression::Reference(name) => (name.clone(), false),
+                    TsExpression::Primitive(prim) => (prim.to_string(), true),
+                    TsExpression::Array(_) => ("Array".to_string(), false),
+                    _ => ("any".to_string(), false),
+                };
+
+                UnionMemberInfo {
+                    ts_name,
+                    type_expr,
+                    is_primitive,
+                    is_interface,
+                }
+            })
+            .collect()
     }
 
     /// Extract schema name from reference path

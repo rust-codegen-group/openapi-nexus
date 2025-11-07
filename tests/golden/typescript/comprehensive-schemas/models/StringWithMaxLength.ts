@@ -13,3 +13,25 @@
 
 /** String with maximum length */
 export type StringWithMaxLength = string
+
+export function StringWithMaxLengthFromJSON(json: any): StringWithMaxLength {
+  return StringWithMaxLengthFromJSONTyped(json, false);
+}
+
+export function StringWithMaxLengthFromJSONTyped(json: any, ignoreDiscriminator: boolean): StringWithMaxLength {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function StringWithMaxLengthToJSON(value?: StringWithMaxLength | null): any {
+  return StringWithMaxLengthToJSONTyped(value, false);
+}
+
+export function StringWithMaxLengthToJSONTyped(value?: StringWithMaxLength | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

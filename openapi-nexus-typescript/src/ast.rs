@@ -10,5 +10,5 @@ pub use import::{TsImport, TsImportSpecifier};
 pub use ts_expression::{ObjectProperty, TsExpression};
 pub use ty::{
     TsEnumDefinition, TsInterfaceDefinition, TsInterfaceSignature, TsPrimitive,
-    TsTypeAliasDefinition, TsTypeDefinition,
+    TsTypeAliasDefinition, TsTypeDefinition, UnionMemberInfo,
 };

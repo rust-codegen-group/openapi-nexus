@@ -13,3 +13,25 @@
 
 /** Number with maximum value */
 export type NumberWithMaximum = number
+
+export function NumberWithMaximumFromJSON(json: any): NumberWithMaximum {
+  return NumberWithMaximumFromJSONTyped(json, false);
+}
+
+export function NumberWithMaximumFromJSONTyped(json: any, ignoreDiscriminator: boolean): NumberWithMaximum {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function NumberWithMaximumToJSON(value?: NumberWithMaximum | null): any {
+  return NumberWithMaximumToJSONTyped(value, false);
+}
+
+export function NumberWithMaximumToJSONTyped(value?: NumberWithMaximum | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

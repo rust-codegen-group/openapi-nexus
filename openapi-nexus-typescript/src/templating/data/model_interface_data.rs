@@ -7,7 +7,7 @@ use crate::ast::common::TsProperty;
 use crate::ast::ty::TsInterfaceDefinition;
 use crate::ast::ty::TsInterfaceSignature;
 use crate::ast::{ObjectProperty, TsExpression};
-use crate::templating::data::ApiImportStatement;
+use crate::templating::data::ApiImportStatements;
 
 /// Simplified property metadata for template helpers
 #[derive(Debug, Clone, Serialize)]
@@ -46,7 +46,10 @@ pub struct ModelInterfaceData {
     pub documentation: Option<TsDocComment>,
     pub required_prop_names: Vec<String>,
     pub property_metadata: Vec<PropertyMetadata>,
-    pub imports: Vec<ApiImportStatement>,
+    /// Map of imports needed by the generated model template (types and functions).
+    /// Keyed by module_path for easy lookup and modification.
+    /// Each import statement can contain both types (with inline `type` keyword) and values.
+    pub imports: ApiImportStatements,
 }
 
 impl ModelInterfaceData {
@@ -87,7 +90,7 @@ impl ModelInterfaceData {
             documentation: interface.documentation.clone(),
             required_prop_names,
             property_metadata,
-            imports: Vec::new(),
+            imports: ApiImportStatements::new(),
         }
     }
 }

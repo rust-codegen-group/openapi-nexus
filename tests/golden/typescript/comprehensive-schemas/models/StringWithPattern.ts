@@ -13,3 +13,25 @@
 
 /** String with regex pattern */
 export type StringWithPattern = string
+
+export function StringWithPatternFromJSON(json: any): StringWithPattern {
+  return StringWithPatternFromJSONTyped(json, false);
+}
+
+export function StringWithPatternFromJSONTyped(json: any, ignoreDiscriminator: boolean): StringWithPattern {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function StringWithPatternToJSON(value?: StringWithPattern | null): any {
+  return StringWithPatternToJSONTyped(value, false);
+}
+
+export function StringWithPatternToJSONTyped(value?: StringWithPattern | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

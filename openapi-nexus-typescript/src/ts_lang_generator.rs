@@ -8,15 +8,15 @@ use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCa
 use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
-use crate::ast::TsTypeDefinition;
+use crate::ast::{TsTypeAliasDefinition, TsTypeDefinition};
 use crate::core::GeneratorError;
 use crate::generator::{
     api_operation_generator::ApiOperationGenerator, package_files_generator::PackageFilesGenerator,
     schema_context::SchemaContext, schema_generator::SchemaGenerator,
 };
 use crate::templating::data::{
-    ApiImportStatement, CommonFileHeaderData, ModelEnumData, ModelInterfaceData,
-    ModelTypeAliasData, ProjectIndexData, RuntimeRuntimeData,
+    ApiImportSpecifier, ApiImportStatement, ApiImportStatements, CommonFileHeaderData,
+    ModelEnumData, ModelInterfaceData, ModelTypeAliasData, ProjectIndexData, RuntimeRuntimeData,
 };
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_common::Language;
@@ -58,11 +58,8 @@ impl TsLangGenerator {
         let mut schemas = HashMap::new();
         let mut visited = HashSet::new();
         let mut inline_interfaces = HashMap::new();
-        let mut context = SchemaContext::new(
-            &components.schemas,
-            &mut visited,
-            &mut inline_interfaces,
-        );
+        let mut context =
+            SchemaContext::new(&components.schemas, &mut visited, &mut inline_interfaces);
 
         for model in models {
             let type_def = self.schema_generator.schema_to_ts_type_definition(
@@ -75,7 +72,7 @@ impl TsLangGenerator {
 
         // Collect all generated inline interfaces and add them to schemas
         // Use the original_name from the type definition as the key for consistency
-        for (_, type_def) in context.get_inline_interfaces() {
+        for type_def in context.get_inline_interfaces().values() {
             let original_name = type_def.original_name().to_string();
             schemas.insert(original_name, type_def.clone());
         }
@@ -93,6 +90,60 @@ impl TsLangGenerator {
         };
 
         format!("{}.ts", base_name)
+    }
+
+    /// Create ModelTypeAliasData with imports and instanceOf function imports for union members
+    fn create_model_type_alias_data(
+        &self,
+        type_alias: &TsTypeAliasDefinition,
+        imports: ApiImportStatements,
+        schemas: &HashMap<String, TsTypeDefinition>,
+    ) -> ModelTypeAliasData {
+        let mut model_type_alias =
+            ModelTypeAliasData::new(type_alias.clone()).with_imports(imports);
+
+        // Add imports for instanceOf and FromJSONTyped functions for union members that are interfaces
+        if let Some(union_members) = &model_type_alias.union_members {
+            for member in union_members {
+                if member.is_interface {
+                    // Find the file for this member type
+                    let member_type_def = schemas
+                        .values()
+                        .find(|type_def| type_def.ts_name() == member.ts_name);
+
+                    if let Some(member_type_def) = member_type_def {
+                        let member_filename = self.generate_filename(member_type_def.ts_name());
+                        let import_path = format!("./{}", member_filename.trim_end_matches(".ts"));
+
+                        // Find or create the import statement for this file
+                        if let Some(existing_import) =
+                            model_type_alias.imports.get_mut(&import_path)
+                        {
+                            // Add instanceOf and FromJSONTyped functions to existing import
+                            // ApiImportStatements automatically handles deduplication and sorting
+                            existing_import.imports.insert(ApiImportSpecifier {
+                                name: format!("instanceOf{}", member.ts_name),
+                                alias: None,
+                                is_type: false,
+                            });
+                            existing_import.imports.insert(ApiImportSpecifier {
+                                name: format!("{}FromJSONTyped", member.ts_name),
+                                alias: None,
+                                is_type: false,
+                            });
+                        } else {
+                            // Create new import for instanceOf and FromJSONTyped functions
+                            let func_import = ApiImportStatement::new(import_path.clone())
+                                .with_import(format!("instanceOf{}", member.ts_name), None)
+                                .with_import(format!("{}FromJSONTyped", member.ts_name), None);
+                            model_type_alias.imports.insert(import_path, func_import);
+                        }
+                    }
+                }
+            }
+        }
+
+        model_type_alias
     }
 
     /// Generate apis/index.ts file
@@ -296,8 +347,8 @@ impl LanguageCodeGenerator for TsLangGenerator {
             let referenced_types = type_def.referenced_types();
 
             // Build import statements for referenced types
-            let mut imports = Vec::new();
-            let mut imports_by_file: HashMap<String, (Vec<String>, Vec<String>)> = HashMap::new();
+            // BTreeMap ensures stable ordering, BTreeSet in ApiImportStatement ensures sorted/deduplicated specifiers
+            let mut imports = ApiImportStatements::new();
 
             for ref_type_name in &referenced_types {
                 // Skip self-reference
@@ -318,52 +369,38 @@ impl LanguageCodeGenerator for TsLangGenerator {
                     let ref_filename = self.generate_filename(actual_type_name);
                     let import_path = format!("./{}", ref_filename.trim_end_matches(".ts"));
 
-                    let entry = imports_by_file
+                    // Get or create the import statement for this file
+                    let import_stmt = imports
                         .entry(import_path.clone())
-                        .or_insert_with(|| (Vec::new(), Vec::new()));
-                    entry.0.push(actual_type_name.to_string());
+                        .or_insert_with(|| ApiImportStatement::new(import_path.clone()));
 
-                    // Determine if we need FromJSON/ToJSON functions
-                    // Interfaces and enums have FromJSON/ToJSON functions
-                    // Type aliases don't have these helper functions
-                    if let TsTypeDefinition::Interface(_) | TsTypeDefinition::Enum(_) = ref_type_def
-                    {
-                        entry.1.push(format!("{}FromJSON", actual_type_name));
-                        entry.1.push(format!("{}ToJSON", actual_type_name));
-                    }
-                }
-            }
+                    import_stmt.imports.insert(ApiImportSpecifier {
+                        name: actual_type_name.to_string(),
+                        alias: None,
+                        is_type: true,
+                    });
 
-            // Build import statements from grouped imports
-            for (import_path, (type_names, func_names)) in imports_by_file {
-                if !type_names.is_empty() && !func_names.is_empty() {
-                    // Separate type and value imports
-                    let mut type_import =
-                        ApiImportStatement::new(import_path.clone()).with_type_only();
-                    for type_name in type_names {
-                        type_import = type_import.with_type_import(type_name, None);
+                    // All type definitions (Interface, Enum, TypeAlias) have FromJSON/ToJSON/FromJSONTyped functions
+                    for func_name in &[
+                        format!("{}FromJSON", actual_type_name),
+                        format!("{}FromJSONTyped", actual_type_name),
+                        format!("{}ToJSON", actual_type_name),
+                    ] {
+                        import_stmt.imports.insert(ApiImportSpecifier {
+                            name: func_name.clone(),
+                            alias: None,
+                            is_type: false,
+                        });
                     }
-                    imports.push(type_import);
 
-                    let mut func_import = ApiImportStatement::new(import_path);
-                    for func_name in func_names {
-                        func_import = func_import.with_import(func_name, None);
+                    // Interfaces also have instanceOf functions (as values, not types)
+                    if let TsTypeDefinition::Interface(_) = ref_type_def {
+                        import_stmt.imports.insert(ApiImportSpecifier {
+                            name: format!("instanceOf{}", actual_type_name),
+                            alias: None,
+                            is_type: false,
+                        });
                     }
-                    imports.push(func_import);
-                } else if !type_names.is_empty() {
-                    // Only types
-                    let mut type_import = ApiImportStatement::new(import_path).with_type_only();
-                    for type_name in type_names {
-                        type_import = type_import.with_type_import(type_name, None);
-                    }
-                    imports.push(type_import);
-                } else if !func_names.is_empty() {
-                    // Only functions
-                    let mut func_import = ApiImportStatement::new(import_path);
-                    for func_name in func_names {
-                        func_import = func_import.with_import(func_name, None);
-                    }
-                    imports.push(func_import);
                 }
             }
 
@@ -385,11 +422,8 @@ impl LanguageCodeGenerator for TsLangGenerator {
                         })?
                 }
                 TsTypeDefinition::TypeAlias(type_alias) => {
-                    let mut model_type_alias = ModelTypeAliasData {
-                        type_alias_definition: type_alias.clone(),
-                        imports: Vec::new(),
-                    };
-                    model_type_alias.imports = imports;
+                    let model_type_alias =
+                        self.create_model_type_alias_data(type_alias, imports, &schemas);
                     let template_context = minijinja::context! {
                         common_file_header,
                         model_type_alias,

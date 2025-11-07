@@ -180,31 +180,20 @@ impl ModelImportCollector {
         for (file_path, (type_names, func_names)) in models_by_file {
             processed_files.insert(file_path.clone());
             if !type_names.is_empty() && !func_names.is_empty() {
-                // Separate type and value imports
-                let mut type_import = ApiImportStatement::new(file_path.clone()).with_type_only();
-                for type_name in type_names {
-                    type_import = type_import.with_type_import(type_name, None);
-                }
-                imports.push(type_import);
-
-                let mut func_import = ApiImportStatement::new(file_path);
-                for func_name in func_names {
-                    func_import = func_import.with_import(func_name, None);
-                }
-                imports.push(func_import);
+                // Mixed imports: create single import with both types and functions
+                let import_stmt = ApiImportStatement::new(file_path.clone())
+                    .with_type_imports(type_names)
+                    .with_imports(func_names);
+                imports.push(import_stmt);
             } else if !type_names.is_empty() {
-                // Only types
-                let mut type_import = ApiImportStatement::new(file_path.clone()).with_type_only();
-                for type_name in type_names {
-                    type_import = type_import.with_type_import(type_name, None);
-                }
+                // Only types (will auto-detect and use `import type { ... }`)
+                let type_import =
+                    ApiImportStatement::new(file_path.clone()).with_type_imports(type_names);
                 imports.push(type_import);
             } else if !func_names.is_empty() {
                 // Only functions
-                let mut func_import = ApiImportStatement::new(file_path.clone());
-                for func_name in func_names {
-                    func_import = func_import.with_import(func_name, None);
-                }
+                let func_import =
+                    ApiImportStatement::new(file_path.clone()).with_imports(func_names);
                 imports.push(func_import);
             }
         }

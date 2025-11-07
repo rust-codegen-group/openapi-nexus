@@ -1,5 +1,7 @@
 //! API import statement data for template rendering
 
+use std::collections::BTreeSet;
+
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
@@ -7,11 +9,10 @@ use crate::templating::data::ApiImportSpecifier;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// Import statement for template rendering
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ApiImportStatement {
     pub module_path: String,
-    pub imports: Vec<ApiImportSpecifier>,
-    pub is_type_only: bool,
+    pub imports: BTreeSet<ApiImportSpecifier>,
 }
 
 impl ApiImportStatement {
@@ -19,14 +20,13 @@ impl ApiImportStatement {
     pub fn new(module_path: String) -> Self {
         Self {
             module_path,
-            imports: Vec::new(),
-            is_type_only: false,
+            imports: BTreeSet::new(),
         }
     }
 
     /// Add import specifier
     pub fn with_import(mut self, name: String, alias: Option<String>) -> Self {
-        self.imports.push(ApiImportSpecifier {
+        self.imports.insert(ApiImportSpecifier {
             name,
             alias,
             is_type: false,
@@ -36,7 +36,7 @@ impl ApiImportStatement {
 
     /// Add type import specifier
     pub fn with_type_import(mut self, name: String, alias: Option<String>) -> Self {
-        self.imports.push(ApiImportSpecifier {
+        self.imports.insert(ApiImportSpecifier {
             name,
             alias,
             is_type: true,
@@ -44,9 +44,33 @@ impl ApiImportStatement {
         self
     }
 
-    /// Make type-only import
-    pub fn with_type_only(mut self) -> Self {
-        self.is_type_only = true;
+    /// Add multiple type imports at once
+    pub fn with_type_imports<I>(mut self, names: I) -> Self
+    where
+        I: IntoIterator<Item = String>,
+    {
+        for name in names {
+            self.imports.insert(ApiImportSpecifier {
+                name,
+                alias: None,
+                is_type: true,
+            });
+        }
+        self
+    }
+
+    /// Add multiple value imports at once
+    pub fn with_imports<I>(mut self, names: I) -> Self
+    where
+        I: IntoIterator<Item = String>,
+    {
+        for name in names {
+            self.imports.insert(ApiImportSpecifier {
+                name,
+                alias: None,
+                is_type: false,
+            });
+        }
         self
     }
 }
@@ -58,10 +82,15 @@ impl ToRcDoc for ApiImportStatement {
             return RcDoc::text(format!("import '{}';", self.module_path));
         }
 
+        // Check if all imports are types (for cleaner output: `import type { ... }`)
+        // Auto-detect: if all specifiers are types, use `import type { ... }` instead of inline `type` keywords
+        let all_types = self.imports.iter().all(|spec| spec.is_type);
+        let use_type_only_import = all_types;
+
         let mut parts = vec![RcDoc::text("import")];
 
-        // Type-only import
-        if self.is_type_only {
+        // Type-only import (when explicitly set or when all imports are types)
+        if use_type_only_import {
             parts.push(RcDoc::space());
             parts.push(RcDoc::text("type"));
         }
@@ -72,7 +101,10 @@ impl ToRcDoc for ApiImportStatement {
             .iter()
             .map(|spec| {
                 let mut spec_parts = Vec::new();
-                if spec.is_type && !self.is_type_only {
+                // Add inline `type` keyword only if:
+                // - This specifier is a type AND
+                // - We're not using `import type { ... }` (which already marks all as types)
+                if spec.is_type && !use_type_only_import {
                     spec_parts.push(RcDoc::text("type"));
                     spec_parts.push(RcDoc::space());
                 }

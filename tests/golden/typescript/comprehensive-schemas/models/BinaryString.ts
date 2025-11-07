@@ -13,3 +13,25 @@
 
 /** String with binary format */
 export type BinaryString = string
+
+export function BinaryStringFromJSON(json: any): BinaryString {
+  return BinaryStringFromJSONTyped(json, false);
+}
+
+export function BinaryStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): BinaryString {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function BinaryStringToJSON(value?: BinaryString | null): any {
+  return BinaryStringToJSONTyped(value, false);
+}
+
+export function BinaryStringToJSONTyped(value?: BinaryString | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

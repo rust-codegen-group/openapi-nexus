@@ -12,3 +12,25 @@
  */
 
 export type UniqueItemsArray = Array<string>
+
+export function UniqueItemsArrayFromJSON(json: any): UniqueItemsArray {
+  return UniqueItemsArrayFromJSONTyped(json, false);
+}
+
+export function UniqueItemsArrayFromJSONTyped(json: any, ignoreDiscriminator: boolean): UniqueItemsArray {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function UniqueItemsArrayToJSON(value?: UniqueItemsArray | null): any {
+  return UniqueItemsArrayToJSONTyped(value, false);
+}
+
+export function UniqueItemsArrayToJSONTyped(value?: UniqueItemsArray | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

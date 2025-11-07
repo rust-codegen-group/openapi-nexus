@@ -13,3 +13,25 @@
 
 /** String with UUID format */
 export type UuidString = string
+
+export function UuidStringFromJSON(json: any): UuidString {
+  return UuidStringFromJSONTyped(json, false);
+}
+
+export function UuidStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): UuidString {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function UuidStringToJSON(value?: UuidString | null): any {
+  return UuidStringToJSONTyped(value, false);
+}
+
+export function UuidStringToJSONTyped(value?: UuidString | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

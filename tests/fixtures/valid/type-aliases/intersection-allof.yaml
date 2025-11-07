@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: Intersection Type (allOf) Test
+  description: Test fixture for allOf intersection types
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Test endpoint with intersection type
+      operationId: test_intersection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Foo'
+
+components:
+  schemas:
+    Bar:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    Baz:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - email
+
+    Foo:
+      allOf:
+        - $ref: '#/components/schemas/Bar'
+        - $ref: '#/components/schemas/Baz'
+

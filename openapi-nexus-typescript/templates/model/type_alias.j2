@@ -5,3 +5,5 @@
 {% endfor %}
 
 {{ model_type_alias.type_alias_definition | fmt }}
+
+{% include "model/snippets/type_alias_helpers.j2" with context %}

@@ -1,0 +1,22 @@
+{# Simple type alias or intersection type (allOf) - generate pass-through functions #}
+export function {{ model_type_alias.type_alias_definition.ts_name }}FromJSON(json: any): {{ model_type_alias.type_alias_definition.ts_name }} {
+  return {{ model_type_alias.type_alias_definition.ts_name }}FromJSONTyped(json, false);
+}
+
+export function {{ model_type_alias.type_alias_definition.ts_name }}FromJSONTyped(json: any, ignoreDiscriminator: boolean): {{ model_type_alias.type_alias_definition.ts_name }} {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function {{ model_type_alias.type_alias_definition.ts_name }}ToJSON(value?: {{ model_type_alias.type_alias_definition.ts_name }} | null): any {
+  return {{ model_type_alias.type_alias_definition.ts_name }}ToJSONTyped(value, false);
+}
+
+export function {{ model_type_alias.type_alias_definition.ts_name }}ToJSONTyped(value?: {{ model_type_alias.type_alias_definition.ts_name }} | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

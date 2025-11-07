@@ -12,3 +12,25 @@
  */
 
 export type ArrayWithMaxItems = Array<string>
+
+export function ArrayWithMaxItemsFromJSON(json: any): ArrayWithMaxItems {
+  return ArrayWithMaxItemsFromJSONTyped(json, false);
+}
+
+export function ArrayWithMaxItemsFromJSONTyped(json: any, ignoreDiscriminator: boolean): ArrayWithMaxItems {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function ArrayWithMaxItemsToJSON(value?: ArrayWithMaxItems | null): any {
+  return ArrayWithMaxItemsToJSONTyped(value, false);
+}
+
+export function ArrayWithMaxItemsToJSONTyped(value?: ArrayWithMaxItems | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

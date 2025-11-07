@@ -13,3 +13,25 @@
 
 /** String with password format */
 export type PasswordString = string
+
+export function PasswordStringFromJSON(json: any): PasswordString {
+  return PasswordStringFromJSONTyped(json, false);
+}
+
+export function PasswordStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): PasswordString {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function PasswordStringToJSON(value?: PasswordString | null): any {
+  return PasswordStringToJSONTyped(value, false);
+}
+
+export function PasswordStringToJSONTyped(value?: PasswordString | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

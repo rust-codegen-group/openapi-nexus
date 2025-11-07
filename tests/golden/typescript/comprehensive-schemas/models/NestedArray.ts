@@ -12,3 +12,25 @@
  */
 
 export type NestedArray = Array<Array<string>>
+
+export function NestedArrayFromJSON(json: any): NestedArray {
+  return NestedArrayFromJSONTyped(json, false);
+}
+
+export function NestedArrayFromJSONTyped(json: any, ignoreDiscriminator: boolean): NestedArray {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function NestedArrayToJSON(value?: NestedArray | null): any {
+  return NestedArrayToJSONTyped(value, false);
+}
+
+export function NestedArrayToJSONTyped(value?: NestedArray | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

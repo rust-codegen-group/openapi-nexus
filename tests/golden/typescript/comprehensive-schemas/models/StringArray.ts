@@ -12,3 +12,25 @@
  */
 
 export type StringArray = Array<string>
+
+export function StringArrayFromJSON(json: any): StringArray {
+  return StringArrayFromJSONTyped(json, false);
+}
+
+export function StringArrayFromJSONTyped(json: any, ignoreDiscriminator: boolean): StringArray {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function StringArrayToJSON(value?: StringArray | null): any {
+  return StringArrayToJSONTyped(value, false);
+}
+
+export function StringArrayToJSONTyped(value?: StringArray | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}

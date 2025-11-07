@@ -13,3 +13,25 @@
 
 /** Double precision floating point */
 export type DoubleType = number
+
+export function DoubleTypeFromJSON(json: any): DoubleType {
+  return DoubleTypeFromJSONTyped(json, false);
+}
+
+export function DoubleTypeFromJSONTyped(json: any, ignoreDiscriminator: boolean): DoubleType {
+  if (json == null) {
+    return json;
+  }
+  return json;
+}
+
+export function DoubleTypeToJSON(value?: DoubleType | null): any {
+  return DoubleTypeToJSONTyped(value, false);
+}
+
+export function DoubleTypeToJSONTyped(value?: DoubleType | null, ignoreDiscriminator: boolean = false): any {
+  if (value == null) {
+    return value;
+  }
+  return value;
+}
