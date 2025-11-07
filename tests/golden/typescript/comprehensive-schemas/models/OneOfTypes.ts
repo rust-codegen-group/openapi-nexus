@@ -21,9 +21,6 @@ export function OneOfTypesFromJSONTyped(json: any, ignoreDiscriminator: boolean)
   if (json == null) {
     return json;
   }
-  if (typeof json !== 'object') {
-    return json;
-  }
   if (typeof json === 'string') {
     return json;
   }
@@ -31,6 +28,9 @@ export function OneOfTypesFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     return json;
   }
   if (typeof json === 'boolean') {
+    return json;
+  }
+  if (typeof json !== 'object') {
     return json;
   }
   return {} as any;
@@ -44,9 +44,6 @@ export function OneOfTypesToJSONTyped(value?: OneOfTypes | null, ignoreDiscrimin
   if (value == null) {
     return value;
   }
-  if (typeof value !== 'object') {
-    return value;
-  }
   if (typeof value === 'string') {
     return value;
   }
@@ -54,6 +51,9 @@ export function OneOfTypesToJSONTyped(value?: OneOfTypes | null, ignoreDiscrimin
     return value;
   }
   if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value !== 'object') {
     return value;
   }
   return {};

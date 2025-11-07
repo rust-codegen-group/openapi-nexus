@@ -22,13 +22,13 @@ export function OneOfWithNullFromJSONTyped(json: any, ignoreDiscriminator: boole
   if (json == null) {
     return json;
   }
-  if (typeof json !== 'object') {
-    return json;
-  }
   if (typeof json === 'string') {
     return json;
   }
   if (json === null) {
+    return json;
+  }
+  if (typeof json !== 'object') {
     return json;
   }
   if (instanceOfBasicObject(json)) {
@@ -45,13 +45,13 @@ export function OneOfWithNullToJSONTyped(value?: OneOfWithNull | null, ignoreDis
   if (value == null) {
     return value;
   }
-  if (typeof value !== 'object') {
-    return value;
-  }
   if (typeof value === 'string') {
     return value;
   }
   if (value === null) {
+    return value;
+  }
+  if (typeof value !== 'object') {
     return value;
   }
   if (instanceOfBasicObject(value)) {

@@ -7,15 +7,11 @@ export function {{ model_type_alias.type_alias_definition.ts_name }}FromJSONType
   if (json == null) {
     return json;
   }
-  if (typeof json !== 'object') {
-    return json;
-  }
+{% if model_type_alias.has_any_in_union %}
+  return json;
+{% else %}
 {% for member in model_type_alias.union_members %}
-  {% if member.is_interface %}
-  if (instanceOf{{ member.ts_name }}(json)) {
-    return {{ member.ts_name }}FromJSONTyped(json, true);
-  }
-  {% elif member.is_primitive %}
+  {% if member.is_primitive %}
   {% if member.ts_name == "string" %}
   if (typeof json === 'string') {
     return json;
@@ -35,7 +31,18 @@ export function {{ model_type_alias.type_alias_definition.ts_name }}FromJSONType
   {% endif %}
   {% endif %}
 {% endfor %}
+  if (typeof json !== 'object') {
+    return json;
+  }
+{% for member in model_type_alias.union_members %}
+  {% if member.is_interface %}
+  if (instanceOf{{ member.ts_name }}(json)) {
+    return {{ member.ts_name }}FromJSONTyped(json, true);
+  }
+  {% endif %}
+{% endfor %}
   return {} as any;
+{% endif %}
 }
 
 export function {{ model_type_alias.type_alias_definition.ts_name }}ToJSON(value?: {{ model_type_alias.type_alias_definition.ts_name }} | null): any {
@@ -46,15 +53,11 @@ export function {{ model_type_alias.type_alias_definition.ts_name }}ToJSONTyped(
   if (value == null) {
     return value;
   }
-  if (typeof value !== 'object') {
-    return value;
-  }
+{% if model_type_alias.has_any_in_union %}
+  return value;
+{% else %}
 {% for member in model_type_alias.union_members %}
-  {% if member.is_interface %}
-  if (instanceOf{{ member.ts_name }}(value)) {
-    return {{ member.ts_name }}ToJSON(value as {{ member.ts_name }});
-  }
-  {% elif member.is_primitive %}
+  {% if member.is_primitive %}
   {% if member.ts_name == "string" %}
   if (typeof value === 'string') {
     return value;
@@ -74,5 +77,16 @@ export function {{ model_type_alias.type_alias_definition.ts_name }}ToJSONTyped(
   {% endif %}
   {% endif %}
 {% endfor %}
+  if (typeof value !== 'object') {
+    return value;
+  }
+{% for member in model_type_alias.union_members %}
+  {% if member.is_interface %}
+  if (instanceOf{{ member.ts_name }}(value)) {
+    return {{ member.ts_name }}ToJSON(value as {{ member.ts_name }});
+  }
+  {% endif %}
+{% endfor %}
   return {};
+{% endif %}
 }

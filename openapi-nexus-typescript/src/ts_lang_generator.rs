@@ -103,41 +103,55 @@ impl TsLangGenerator {
             ModelTypeAliasData::new(type_alias.clone()).with_imports(imports);
 
         // Add imports for instanceOf and FromJSONTyped functions for union members that are interfaces
-        if let Some(union_members) = &model_type_alias.union_members {
-            for member in union_members {
-                if member.is_interface {
-                    // Find the file for this member type
-                    let member_type_def = schemas
-                        .values()
-                        .find(|type_def| type_def.ts_name() == member.ts_name);
+        let union_members: Vec<_> = model_type_alias
+            .union_members()
+            .map(|members| members.to_vec())
+            .unwrap_or_default();
 
-                    if let Some(member_type_def) = member_type_def {
-                        let member_filename = self.generate_filename(member_type_def.ts_name());
-                        let import_path = format!("./{}", member_filename.trim_end_matches(".ts"));
+        for member in &union_members {
+            if member.is_interface {
+                // Find the file for this member type
+                let member_type_def = schemas
+                    .values()
+                    .find(|type_def| type_def.ts_name() == member.ts_name);
 
-                        // Find or create the import statement for this file
-                        if let Some(existing_import) =
-                            model_type_alias.imports.get_mut(&import_path)
-                        {
-                            // Add instanceOf and FromJSONTyped functions to existing import
-                            // ApiImportStatements automatically handles deduplication and sorting
-                            existing_import.imports.insert(ApiImportSpecifier {
-                                name: format!("instanceOf{}", member.ts_name),
-                                alias: None,
-                                is_type: false,
-                            });
-                            existing_import.imports.insert(ApiImportSpecifier {
-                                name: format!("{}FromJSONTyped", member.ts_name),
-                                alias: None,
-                                is_type: false,
-                            });
-                        } else {
-                            // Create new import for instanceOf and FromJSONTyped functions
-                            let func_import = ApiImportStatement::new(import_path.clone())
-                                .with_import(format!("instanceOf{}", member.ts_name), None)
-                                .with_import(format!("{}FromJSONTyped", member.ts_name), None);
-                            model_type_alias.imports.insert(import_path, func_import);
-                        }
+                if let Some(member_type_def) = member_type_def {
+                    let member_filename = self.generate_filename(member_type_def.ts_name());
+                    let import_path = format!("./{}", member_filename.trim_end_matches(".ts"));
+
+                    // Find or create the import statement for this file
+                    if let Some(existing_import) = model_type_alias.imports.get_mut(&import_path) {
+                        // Add type import for the interface
+                        existing_import.imports.insert(ApiImportSpecifier {
+                            name: member.ts_name.clone(),
+                            alias: None,
+                            is_type: true,
+                        });
+                        // Add instanceOf, FromJSONTyped, and ToJSON functions to existing import
+                        // ApiImportStatements automatically handles deduplication and sorting
+                        existing_import.imports.insert(ApiImportSpecifier {
+                            name: format!("instanceOf{}", member.ts_name),
+                            alias: None,
+                            is_type: false,
+                        });
+                        existing_import.imports.insert(ApiImportSpecifier {
+                            name: format!("{}FromJSONTyped", member.ts_name),
+                            alias: None,
+                            is_type: false,
+                        });
+                        existing_import.imports.insert(ApiImportSpecifier {
+                            name: format!("{}ToJSON", member.ts_name),
+                            alias: None,
+                            is_type: false,
+                        });
+                    } else {
+                        // Create new import for type, instanceOf, FromJSONTyped, and ToJSON functions
+                        let func_import = ApiImportStatement::new(import_path.clone())
+                            .with_type_import(member.ts_name.clone(), None)
+                            .with_import(format!("instanceOf{}", member.ts_name), None)
+                            .with_import(format!("{}FromJSONTyped", member.ts_name), None)
+                            .with_import(format!("{}ToJSON", member.ts_name), None);
+                        model_type_alias.imports.insert(import_path, func_import);
                     }
                 }
             }

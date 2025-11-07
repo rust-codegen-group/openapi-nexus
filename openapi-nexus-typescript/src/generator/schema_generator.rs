@@ -926,15 +926,43 @@ impl SchemaGenerator {
     ) -> Vec<UnionMemberInfo> {
         items
             .iter()
-            .map(|schema_ref| {
-                let type_expr =
-                    self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None);
-                let is_interface = self.is_schema_ref_interface(schema_ref, context);
+            .enumerate()
+            .map(|(index, schema_ref)| {
+                // For inline object schemas in unions, create a named interface
+                let (type_expr, is_interface) = if let RefOr::T(Schema::Object(obj_schema)) =
+                    schema_ref
+                    && !obj_schema.properties.is_empty()
+                {
+                    // Create a named interface for this inline object
+                    let inline_interface_name = format!("{parent_name}Member{}", index + 1);
+
+                    if !context.has_inline_interface(&inline_interface_name) {
+                        let interface = self.schema_to_interface(
+                            &inline_interface_name,
+                            &Schema::Object(obj_schema.clone()),
+                            context,
+                            &inline_interface_name,
+                        );
+                        let type_def = TsTypeDefinition::Interface(interface);
+                        context.register_inline_interface(inline_interface_name.clone(), type_def);
+                    }
+
+                    (TsExpression::Reference(inline_interface_name.clone()), true)
+                } else {
+                    let expr =
+                        self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None);
+                    let is_intf = self.is_schema_ref_interface(schema_ref, context);
+                    (expr, is_intf)
+                };
 
                 let (ts_name, is_primitive) = match &type_expr {
                     TsExpression::Reference(name) => (name.clone(), false),
                     TsExpression::Primitive(prim) => (prim.to_string(), true),
                     TsExpression::Array(_) => ("Array".to_string(), false),
+                    TsExpression::Object(_) => {
+                        // This shouldn't happen after the fix above, but handle it as fallback
+                        ("any".to_string(), false)
+                    }
                     _ => ("any".to_string(), false),
                 };
 

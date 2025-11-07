@@ -22,13 +22,13 @@ export function FooFromJSONTyped(json: any, ignoreDiscriminator: boolean): Foo {
   if (json == null) {
     return json;
   }
-  if (typeof json !== 'object') {
-    return json;
-  }
   if (typeof json === 'string') {
     return json;
   }
   if (typeof json === 'number') {
+    return json;
+  }
+  if (typeof json !== 'object') {
     return json;
   }
   return {} as any;
@@ -42,13 +42,13 @@ export function FooToJSONTyped(value?: Foo | null, ignoreDiscriminator: boolean 
   if (value == null) {
     return value;
   }
-  if (typeof value !== 'object') {
-    return value;
-  }
   if (typeof value === 'string') {
     return value;
   }
   if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value !== 'object') {
     return value;
   }
   return {};

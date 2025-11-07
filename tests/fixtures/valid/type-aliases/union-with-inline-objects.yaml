@@ -1,0 +1,76 @@
+openapi: 3.1.0
+info:
+  title: Union Type with Inline Objects Test
+  description: Test fixture for union types (oneOf) with inline object schemas that should generate named interfaces
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Test endpoint with union type including inline objects
+      operationId: test_union_with_inline_objects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Foo'
+
+components:
+  schemas:
+    Foo:
+      oneOf:
+        - type: object
+          description: First inline object type
+          required:
+            - bar
+          properties:
+            bar:
+              type: object
+              description: Nested object in first type
+              required:
+                - baz
+                - qux
+              properties:
+                baz:
+                  type: string
+                  description: First property
+                qux:
+                  type: string
+                  description: Second property
+        - type: object
+          description: Second inline object type
+          required:
+            - quux
+          properties:
+            quux:
+              type: object
+              description: Nested object in second type
+              required:
+                - corge
+              properties:
+                corge:
+                  type: string
+                  description: Property in second type
+        - type: object
+          description: Third inline object type
+          required:
+            - grault
+          properties:
+            grault:
+              type: object
+              description: Nested object in third type
+              required:
+                - garply
+              properties:
+                garply:
+                  type: string
+                  description: Property in third type
+      description: Union type with inline object schemas

@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: Union Type with Any Test
+  description: Test fixture for union types that include the any type
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Test endpoint with union type including any
+      operationId: test_union_with_any
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+
+components:
+  schemas:
+    Config:
+      anyOf:
+        - type: string
+        - type: number
+        - type: object  # Object type without properties maps to 'any' in TypeScript
+

@@ -296,6 +296,8 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("type-aliases-nested-union", "valid/type-aliases/nested-union.yaml"),
         ("type-aliases-simple-type-alias", "valid/type-aliases/simple-type-alias.yaml"),
         ("type-aliases-union-mixed", "valid/type-aliases/union-mixed.yaml"),
+        ("type-aliases-union-with-any", "valid/type-aliases/union-with-any.yaml"),
+        ("type-aliases-union-with-inline-objects", "valid/type-aliases/union-with-inline-objects.yaml"),
         ("type-aliases-union-with-interfaces", "valid/type-aliases/union-with-interfaces.yaml"),
         ("type-aliases-union-with-primitives", "valid/type-aliases/union-with-primitives.yaml"),
     ]
@@ -358,6 +360,8 @@ generate_golden_tests! {
     test_type_aliases_nested_union_golden: "type-aliases-nested-union",
     test_type_aliases_simple_type_alias_golden: "type-aliases-simple-type-alias",
     test_type_aliases_union_mixed_golden: "type-aliases-union-mixed",
+    test_type_aliases_union_with_any_golden: "type-aliases-union-with-any",
+    test_type_aliases_union_with_inline_objects_golden: "type-aliases-union-with-inline-objects",
     test_type_aliases_union_with_interfaces_golden: "type-aliases-union-with-interfaces",
     test_type_aliases_union_with_primitives_golden: "type-aliases-union-with-primitives",
 }

@@ -22,17 +22,17 @@ export function FooFromJSONTyped(json: any, ignoreDiscriminator: boolean): Foo {
   if (json == null) {
     return json;
   }
-  if (typeof json !== 'object') {
-    return json;
-  }
-  if (instanceOfBar(json)) {
-    return BarFromJSONTyped(json, true);
-  }
   if (typeof json === 'string') {
     return json;
   }
   if (typeof json === 'number') {
     return json;
+  }
+  if (typeof json !== 'object') {
+    return json;
+  }
+  if (instanceOfBar(json)) {
+    return BarFromJSONTyped(json, true);
   }
   return {} as any;
 }
@@ -45,17 +45,17 @@ export function FooToJSONTyped(value?: Foo | null, ignoreDiscriminator: boolean 
   if (value == null) {
     return value;
   }
-  if (typeof value !== 'object') {
-    return value;
-  }
-  if (instanceOfBar(value)) {
-    return BarToJSON(value as Bar);
-  }
   if (typeof value === 'string') {
     return value;
   }
   if (typeof value === 'number') {
     return value;
+  }
+  if (typeof value !== 'object') {
+    return value;
+  }
+  if (instanceOfBar(value)) {
+    return BarToJSON(value as Bar);
   }
   return {};
 }

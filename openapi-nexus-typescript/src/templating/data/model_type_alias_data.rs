@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use crate::ast::ty::TsTypeAliasDefinition;
 use crate::ast::ty::ts_type_alias_definition::UnionMemberInfo;
+use crate::ast::{TsExpression, TsPrimitive};
 use crate::templating::data::ApiImportStatements;
 
 /// Holds all information required by templates to render a TypeScript type alias model.
@@ -19,23 +20,46 @@ pub struct ModelTypeAliasData {
     /// Members of the union if this type alias is a union (e.g., oneOf/anyOf).
     /// - Each entry represents a single union member (e.g., interface or primitive type).
     /// - `None` if this is not a union type.
-    pub union_members: Option<Vec<UnionMemberInfo>>,
+    union_members: Option<Vec<UnionMemberInfo>>,
+    /// Whether the union contains the `any` type.
+    /// This is computed and exposed to templates for efficient checking.
+    has_any_in_union: bool,
 }
 
 impl ModelTypeAliasData {
     /// Create new model type alias data
     pub fn new(type_alias_definition: TsTypeAliasDefinition) -> Self {
         let union_members = type_alias_definition.union_members.clone();
+        let has_any_in_union = union_members
+            .as_ref()
+            .map(|members| {
+                members
+                    .iter()
+                    .any(|m| matches!(m.type_expr, TsExpression::Primitive(TsPrimitive::Any)))
+            })
+            .unwrap_or(false);
 
         Self {
             union_members,
             type_alias_definition,
             imports: ApiImportStatements::new(),
+            has_any_in_union,
         }
     }
 
     pub fn with_imports(mut self, imports: ApiImportStatements) -> Self {
         self.imports = imports;
         self
+    }
+
+    /// Get union members if this is a union type.
+    /// Returns `None` if this is not a union type.
+    pub fn union_members(&self) -> Option<&[UnionMemberInfo]> {
+        self.union_members.as_deref()
+    }
+
+    /// Check if the union contains the `any` type.
+    pub fn has_any_in_union(&self) -> bool {
+        self.has_any_in_union
     }
 }
