@@ -11,3 +11,5 @@
  * Do not edit the file manually.
  */
 export * from './NamingConventionTest';
+export * from './NamingConventionTestNestedObject';
+export * from './NamingConventionTestPascalCaseObject';

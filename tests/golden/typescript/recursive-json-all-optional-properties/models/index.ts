@@ -11,4 +11,5 @@
  * Do not edit the file manually.
  */
 export * from './AllOptionalProperties';
+export * from './AllOptionalPropertiesOptionalInline';
 export * from './User';

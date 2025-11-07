@@ -44,18 +44,26 @@ export function {{ model_interface.signature.ts_name }}FromJSONTyped(json: any, 
     '{{ prop.ts_name }}': {{ prop.reference_name }}FromJSON(json['{{ prop.original_name }}']),
     {% endif %}
   {% elif prop.is_inline_object %}
-    {% if prop.optional %}
+    {% if prop.reference_name %}
+      {% if prop.optional %}
+    '{{ prop.ts_name }}': {{ prop.reference_name }}FromJSON(json['{{ prop.original_name }}']) ?? undefined,
+      {% else %}
+    '{{ prop.ts_name }}': {{ prop.reference_name }}FromJSON(json['{{ prop.original_name }}']),
+      {% endif %}
+    {% else %}
+      {% if prop.optional %}
     '{{ prop.ts_name }}': json['{{ prop.original_name }}'] ? {
       {% for mapping in prop.inline_object_properties %}
       {{ mapping.ts_name }}: json['{{ prop.original_name }}']['{{ mapping.original_name }}'],
       {% endfor %}
     } : undefined,
-    {% else %}
+      {% else %}
     '{{ prop.ts_name }}': {
       {% for mapping in prop.inline_object_properties %}
       {{ mapping.ts_name }}: json['{{ prop.original_name }}']['{{ mapping.original_name }}'],
       {% endfor %}
     },
+      {% endif %}
     {% endif %}
   {% else %}
     {% if prop.optional %}
@@ -91,11 +99,15 @@ export function {{ model_interface.signature.ts_name }}ToJSONTyped(value?: {{ mo
   {% elif prop.is_object_reference %}
     '{{ prop.original_name }}': {{ prop.reference_name }}ToJSON(value['{{ prop.ts_name }}']),
   {% elif prop.is_inline_object %}
+    {% if prop.reference_name %}
+    '{{ prop.original_name }}': {{ prop.reference_name }}ToJSON(value['{{ prop.ts_name }}']),
+    {% else %}
     '{{ prop.original_name }}': value['{{ prop.ts_name }}'] ? {
     {% for mapping in prop.inline_object_properties %}
       '{{ mapping.original_name }}': value['{{ prop.ts_name }}']['{{ mapping.ts_name }}'],
     {% endfor %}
     } : undefined,
+    {% endif %}
   {% else %}
     '{{ prop.original_name }}': value['{{ prop.ts_name }}'],
   {% endif %}

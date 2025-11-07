@@ -11,3 +11,6 @@
  * Do not edit the file manually.
  */
 export * from './DeeplyNestedInline';
+export * from './DeeplyNestedInlineLevelOne';
+export * from './DeeplyNestedInlineLevelOneLevelTwo';
+export * from './DeeplyNestedInlineLevelOneLevelTwoLevelThree';

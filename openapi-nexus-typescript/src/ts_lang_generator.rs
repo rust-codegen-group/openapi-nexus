@@ -57,7 +57,12 @@ impl TsLangGenerator {
     ) -> HashMap<String, TsTypeDefinition> {
         let mut schemas = HashMap::new();
         let mut visited = HashSet::new();
-        let mut context = SchemaContext::new(&components.schemas, &mut visited);
+        let mut inline_interfaces = HashMap::new();
+        let mut context = SchemaContext::new(
+            &components.schemas,
+            &mut visited,
+            &mut inline_interfaces,
+        );
 
         for model in models {
             let type_def = self.schema_generator.schema_to_ts_type_definition(
@@ -66,6 +71,13 @@ impl TsLangGenerator {
                 &mut context,
             );
             schemas.insert(model.name, type_def);
+        }
+
+        // Collect all generated inline interfaces and add them to schemas
+        // Use the original_name from the type definition as the key for consistency
+        for (_, type_def) in context.get_inline_interfaces() {
+            let original_name = type_def.original_name().to_string();
+            schemas.insert(original_name, type_def.clone());
         }
 
         schemas

@@ -3,8 +3,9 @@
 //! This module provides the `SchemaContext` struct that enables proper schema reference
 //! resolution with circular dependency detection during TypeScript code generation.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
+use crate::ast::TsTypeDefinition;
 use utoipa::openapi::{RefOr, Schema};
 
 /// Context for schema resolution with reference tracking
@@ -18,6 +19,8 @@ pub struct SchemaContext<'a> {
     pub visited: &'a mut HashSet<String>,
     /// Current resolution depth (for debugging)
     pub depth: usize,
+    /// Inline interfaces generated from nested inline objects. Key is the TypeScript name (PascalCase).
+    pub inline_interfaces: &'a mut HashMap<String, TsTypeDefinition>,
 }
 
 impl<'a> SchemaContext<'a> {
@@ -25,12 +28,29 @@ impl<'a> SchemaContext<'a> {
     pub fn new(
         schemas: &'a BTreeMap<String, RefOr<Schema>>,
         visited: &'a mut HashSet<String>,
+        inline_interfaces: &'a mut HashMap<String, TsTypeDefinition>,
     ) -> Self {
         Self {
             schemas,
             visited,
             depth: 0,
+            inline_interfaces,
         }
+    }
+
+    /// Register a generated inline interface
+    pub fn register_inline_interface(&mut self, ts_name: String, type_def: TsTypeDefinition) {
+        self.inline_interfaces.insert(ts_name, type_def);
+    }
+
+    /// Check if an inline interface with the given name already exists
+    pub fn has_inline_interface(&self, ts_name: &str) -> bool {
+        self.inline_interfaces.contains_key(ts_name)
+    }
+
+    /// Get all generated inline interfaces
+    pub fn get_inline_interfaces(&self) -> &HashMap<String, TsTypeDefinition> {
+        self.inline_interfaces
     }
 
     /// Check if a schema has been visited (circular dependency detection)

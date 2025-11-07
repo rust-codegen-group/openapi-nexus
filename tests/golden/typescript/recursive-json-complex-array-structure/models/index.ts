@@ -11,3 +11,5 @@
  * Do not edit the file manually.
  */
 export * from './ComplexArrayStructure';
+export * from './ComplexArrayStructureMetadata';
+export * from './ComplexArrayStructureNestedData';

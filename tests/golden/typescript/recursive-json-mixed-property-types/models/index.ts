@@ -11,4 +11,5 @@
  * Do not edit the file manually.
  */
 export * from './MixedPropertyTypes';
+export * from './MixedPropertyTypesInlineObject';
 export * from './User';

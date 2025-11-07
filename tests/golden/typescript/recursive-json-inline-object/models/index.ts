@@ -11,3 +11,5 @@
  * Do not edit the file manually.
  */
 export * from './InlineObjectTest';
+export * from './InlineObjectTestConfig';
+export * from './InlineObjectTestMetadata';

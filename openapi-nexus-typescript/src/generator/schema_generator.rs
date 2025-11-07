@@ -85,6 +85,7 @@ impl SchemaGenerator {
                         original_name.as_str(),
                         schema,
                         context,
+                        ts_name.as_str(),
                     ));
                 }
 
@@ -94,11 +95,12 @@ impl SchemaGenerator {
                         original_name.as_str(),
                         schema,
                         context,
+                        ts_name.as_str(),
                     ));
                 }
 
                 // Otherwise, create a type alias
-                let type_expr = self.map_schema_to_type(schema, context);
+                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
                 TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
                     ts_name,
                     original_name: original_name.to_string(),
@@ -109,7 +111,7 @@ impl SchemaGenerator {
             }
             Schema::Array(_) => {
                 // Array schemas become type aliases
-                let type_expr = self.map_schema_to_type(schema, context);
+                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
                 TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
                     ts_name,
                     original_name,
@@ -120,7 +122,7 @@ impl SchemaGenerator {
             }
             Schema::OneOf(_) | Schema::AllOf(_) | Schema::AnyOf(_) => {
                 // Composition schemas become type aliases with union/intersection types
-                let type_expr = self.map_schema_to_type(schema, context);
+                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
                 TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
                     ts_name,
                     original_name,
@@ -151,6 +153,7 @@ impl SchemaGenerator {
         original_name: &str,
         schema: &Schema,
         context: &mut SchemaContext,
+        current_interface_name: &str,
     ) -> TsInterfaceDefinition {
         let interface_name = original_name.to_pascal_case();
         match schema {
@@ -159,7 +162,13 @@ impl SchemaGenerator {
 
                 // Extract properties from the object schema
                 for (prop_name, prop_schema) in &obj_schema.properties {
-                    let type_expr = self.map_ref_or_schema_to_type(prop_schema, context);
+                    // Pass the current interface name as parent for nested inline objects
+                    let type_expr = self.map_ref_or_schema_to_type(
+                        prop_schema,
+                        context,
+                        current_interface_name,
+                        Some(prop_name),
+                    );
                     let is_required = obj_schema.required.contains(prop_name);
                     let description = self.extract_description_from_schema(prop_schema);
 
@@ -182,8 +191,12 @@ impl SchemaGenerator {
                 if let Some(additional_props) = &obj_schema.additional_properties {
                     match additional_props.as_ref() {
                         AdditionalProperties::RefOr(schema_ref) => {
-                            let mut value_type =
-                                self.map_ref_or_schema_to_type(schema_ref, context);
+                            let mut value_type = self.map_ref_or_schema_to_type(
+                                schema_ref,
+                                context,
+                                current_interface_name,
+                                None,
+                            );
 
                             // If there are explicit properties, we need to union their types with additionalProperties type
                             // to satisfy TypeScript's index signature compatibility requirements.
@@ -201,9 +214,14 @@ impl SchemaGenerator {
                             if !obj_schema.properties.is_empty() {
                                 let mut unique_types: BTreeSet<TsExpression> = obj_schema
                                     .properties
-                                    .values()
-                                    .map(|prop_schema| {
-                                        self.map_ref_or_schema_to_type(prop_schema, context)
+                                    .iter()
+                                    .map(|(prop_name, prop_schema)| {
+                                        self.map_ref_or_schema_to_type(
+                                            prop_schema,
+                                            context,
+                                            current_interface_name,
+                                            Some(prop_name),
+                                        )
                                     })
                                     .collect();
 
@@ -339,21 +357,76 @@ impl SchemaGenerator {
     /// Map a RefOr<Schema> to a TypeScript type expression
     ///
     /// This function creates type expressions for use in properties, array items, unions, etc.
-    /// For schema references, it converts the original schema name to its TypeScript name
+    ///
+    /// For schema references (`$ref`), it converts the original schema name to its TypeScript name
     /// (PascalCase) immediately, since the TypeScript name is always `original_name.to_pascal_case()`.
     ///
-    /// Example:
-    /// - OpenAPI schema name: "AZ" → `TsExpression::Reference("Az")` (PascalCase)
-    /// - OpenAPI schema name: "User" → `TsExpression::Reference("User")` (already PascalCase)
+    /// For inline schemas, it handles two cases:
+    /// 1. **Nested inline objects**: When both `parent_name` and `field_name` are provided and the
+    ///    schema is an object with properties, it creates a named interface using the naming
+    ///    convention `{parent_name}{field_name}` (both in PascalCase). The interface is registered
+    ///    in the context and a reference to it is returned.
+    /// 2. **Other inline schemas**: Maps directly to TypeScript types (primitives, arrays, etc.)
+    ///
+    /// # Parameters
+    ///
+    /// * `schema_ref` - The schema reference or inline schema to map
+    /// * `context` - Schema context for reference resolution and interface registration
+    /// * `parent_name` - Optional parent interface name (in PascalCase) for nested inline objects
+    /// * `field_name` - Optional field name for nested inline objects
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Schema reference: "#/components/schemas/User"
+    /// // Result: TsExpression::Reference("User")
+    ///
+    /// // Nested inline object with parent "DeeplyNestedInline" and field "level_one"
+    /// // Result: Creates interface "DeeplyNestedInlineLevelOne" and returns Reference("DeeplyNestedInlineLevelOne")
+    ///
+    /// // Inline primitive schema
+    /// // Result: TsExpression::Primitive(TsPrimitive::String)
+    /// ```
     fn map_ref_or_schema_to_type(
         &self,
         schema_ref: &RefOr<Schema>,
         context: &mut SchemaContext,
+        parent_name: &str,
+        field_name: Option<&str>,
     ) -> TsExpression {
         match schema_ref {
             RefOr::T(schema) => {
-                // For inline schemas, map directly to TypeScript types
-                self.map_schema_to_type(schema, context)
+                // For inline schemas, check if we should create a named interface
+                // Only create named interfaces for nested inline objects
+                if let Some(field) = field_name
+                    && let Schema::Object(obj_schema) = schema
+                    && !obj_schema.properties.is_empty()
+                {
+                    // Generate name using {parent_name}{field_name} convention
+                    let field_pascal = field.to_pascal_case();
+                    let inline_interface_name = format!("{parent_name}{field_pascal}");
+
+                    // Check if this interface already exists
+                    if !context.has_inline_interface(&inline_interface_name) {
+                        // Create the interface definition
+                        let interface = self.schema_to_interface(
+                            &inline_interface_name,
+                            schema,
+                            context,
+                            &inline_interface_name,
+                        );
+
+                        // Register it in the context
+                        let type_def = TsTypeDefinition::Interface(interface);
+                        context.register_inline_interface(inline_interface_name.clone(), type_def);
+                    }
+
+                    // Return a reference to the named interface
+                    return TsExpression::Reference(inline_interface_name);
+                }
+
+                // For other cases, map directly to TypeScript types
+                self.map_schema_to_type(schema, context, parent_name)
             }
             RefOr::Ref(reference) => {
                 // Extract the original schema name from the reference path
@@ -376,7 +449,12 @@ impl SchemaGenerator {
     }
 
     /// Map a Schema to a TypeScript type expression
-    fn map_schema_to_type(&self, schema: &Schema, context: &mut SchemaContext) -> TsExpression {
+    fn map_schema_to_type(
+        &self,
+        schema: &Schema,
+        context: &mut SchemaContext,
+        parent_name: &str,
+    ) -> TsExpression {
         match schema {
             Schema::Object(obj_schema) => {
                 // Handle enum schemas
@@ -388,7 +466,7 @@ impl SchemaGenerator {
 
                 // Handle inline object schemas with properties
                 if !obj_schema.properties.is_empty() {
-                    return self.map_inline_object_to_type(obj_schema, context);
+                    return self.map_inline_object_to_type(obj_schema, context, parent_name);
                 }
 
                 // Handle primitive types
@@ -396,25 +474,28 @@ impl SchemaGenerator {
             }
             Schema::Array(arr_schema) => {
                 // Map array schema to TypeScript array type using the items field
-                let item_type = self.map_array_items_to_type(&arr_schema.items, context);
+                let item_type =
+                    self.map_array_items_to_type(&arr_schema.items, context, parent_name);
                 TsExpression::Array(Box::new(item_type))
             }
             Schema::OneOf(one_of) => {
                 // Map oneOf to union type with discriminator support
-                self.map_composition_to_type(&one_of.items, &one_of.discriminator, context)
+                self.map_composition_to_type(&one_of.items, context, parent_name)
             }
             Schema::AllOf(all_of) => {
                 // Map allOf to intersection type with deduplication
                 let types: BTreeSet<TsExpression> = all_of
                     .items
                     .iter()
-                    .map(|schema_ref| self.map_ref_or_schema_to_type(schema_ref, context))
+                    .map(|schema_ref| {
+                        self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None)
+                    })
                     .collect();
                 TsExpression::Intersection(types)
             }
             Schema::AnyOf(any_of) => {
                 // Map anyOf to union type with discriminator support
-                self.map_composition_to_type(&any_of.items, &any_of.discriminator, context)
+                self.map_composition_to_type(&any_of.items, context, parent_name)
             }
             _ => {
                 // Fallback for unknown schema types
@@ -483,10 +564,11 @@ impl SchemaGenerator {
         &self,
         array_items: &utoipa::openapi::schema::ArrayItems,
         context: &mut SchemaContext,
+        parent_name: &str,
     ) -> TsExpression {
         match array_items {
             utoipa::openapi::schema::ArrayItems::RefOrSchema(schema_ref) => {
-                self.map_ref_or_schema_to_type(schema_ref, context)
+                self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None)
             }
             utoipa::openapi::schema::ArrayItems::False => {
                 // No additional items allowed - use any as fallback
@@ -534,13 +616,19 @@ impl SchemaGenerator {
         &self,
         obj_schema: &Object,
         context: &mut SchemaContext,
+        parent_name: &str,
     ) -> TsExpression {
         let mut properties = BTreeMap::new();
 
         // Map each property to its TypeScript type
         // Convert property names to camelCase for consistency, but preserve original name
         for (original_name, prop_schema) in &obj_schema.properties {
-            let type_expr = self.map_ref_or_schema_to_type(prop_schema, context);
+            let type_expr = self.map_ref_or_schema_to_type(
+                prop_schema,
+                context,
+                parent_name,
+                Some(original_name),
+            );
             let camel_case_name = original_name.to_lower_camel_case();
             properties.insert(
                 camel_case_name.clone(),
@@ -559,12 +647,14 @@ impl SchemaGenerator {
     fn map_composition_to_type(
         &self,
         items: &[RefOr<Schema>],
-        _discriminator: &Option<utoipa::openapi::schema::Discriminator>,
         context: &mut SchemaContext,
+        parent_name: &str,
     ) -> TsExpression {
         let types: BTreeSet<TsExpression> = items
             .iter()
-            .map(|schema_ref| self.map_ref_or_schema_to_type(schema_ref, context))
+            .map(|schema_ref| {
+                self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None)
+            })
             .collect();
 
         // TODO: Implement proper discriminator handling for discriminated unions

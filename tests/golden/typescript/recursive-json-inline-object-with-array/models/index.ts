@@ -11,3 +11,4 @@
  * Do not edit the file manually.
  */
 export * from './InlineObjectWithArray';
+export * from './InlineObjectWithArrayContainerData';
