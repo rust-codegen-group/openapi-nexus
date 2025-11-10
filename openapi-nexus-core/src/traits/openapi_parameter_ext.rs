@@ -1,5 +1,7 @@
 use utoipa::openapi;
 
+use super::openapi_ref_ext::OpenApiRefExt as _;
+
 /// Extension trait for OpenAPI `Parameter` to provide convenience methods.
 pub trait OpenApiParameterExt {
     /// Returns `true` if the parameter is required.
@@ -38,8 +40,7 @@ fn extract_default_value_from_schema(
     match (schema_ref, components) {
         (openapi::RefOr::T(openapi::Schema::Object(obj)), _) => obj.default.clone(),
         (openapi::RefOr::Ref(reference), Some(components)) => reference
-            .ref_location
-            .strip_prefix("#/components/schemas/")
+            .schema_name()
             .and_then(|schema_name| components.schemas.get(schema_name))
             .and_then(|resolved_schema| {
                 extract_default_value_from_schema(resolved_schema, Some(components))

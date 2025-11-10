@@ -300,6 +300,11 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("type-aliases-union-with-inline-objects", "valid/type-aliases/union-with-inline-objects.yaml"),
         ("type-aliases-union-with-interfaces", "valid/type-aliases/union-with-interfaces.yaml"),
         ("type-aliases-union-with-primitives", "valid/type-aliases/union-with-primitives.yaml"),
+
+        ("response-body-default-and-exact", "valid/response-body/default-and-exact.yaml"),
+        ("response-body-fallback", "valid/response-body/fallback.yaml"),
+        ("response-body-multi-status-responses", "valid/response-body/multi-status-responses.yaml"),
+        ("response-body-no-response-body", "valid/response-body/no-response-body.yaml"),
     ]
     .into_iter()
     .collect()
@@ -364,4 +369,9 @@ generate_golden_tests! {
     test_type_aliases_union_with_inline_objects_golden: "type-aliases-union-with-inline-objects",
     test_type_aliases_union_with_interfaces_golden: "type-aliases-union-with-interfaces",
     test_type_aliases_union_with_primitives_golden: "type-aliases-union-with-primitives",
+
+    test_response_body_default_and_exact_golden: "response-body-default-and-exact",
+    test_response_body_fallback_golden: "response-body-fallback",
+    test_response_body_multi_status_responses_golden: "response-body-multi-status-responses",
+    test_response_body_no_response_body_golden: "response-body-no-response-body",
 }

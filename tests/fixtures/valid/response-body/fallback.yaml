@@ -1,0 +1,28 @@
+openapi: 3.1.0
+info:
+  title: Response Fallback Test API
+  version: 1.0.0
+paths:
+  /fallback/no-body:
+    get:
+      operationId: get_fallback_no_body
+      responses:
+        '200':
+          description: Successful operation with no body
+        '400':
+          description: Bad request
+  /fallback/with-body:
+    get:
+      operationId: get_fallback_with_body
+      responses:
+        '200':
+          description: Successful response with typed body
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Not found response with no body

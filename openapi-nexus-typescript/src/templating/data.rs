@@ -20,7 +20,9 @@ pub use api_import_specifier_data::ApiImportSpecifier;
 pub use api_import_statement_data::ApiImportStatement;
 pub use api_import_statements::ApiImportStatements;
 pub use api_method_data::ApiMethodData;
-pub use api_operation_data::{ApiOperationData, HttpParamData, MethodTemplateData};
+pub use api_operation_data::{
+    ApiOperationData, HttpParamData, MethodTemplateData, ResponseTemplateData,
+};
 pub use common_file_header_data::CommonFileHeaderData;
 pub use model_enum_data::ModelEnumData;
 pub use model_interface_data::{ModelInterfaceData, PropertyMetadata};

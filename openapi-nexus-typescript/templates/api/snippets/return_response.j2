@@ -1,0 +1,49 @@
+// Handle responses
+{% set success_entries = method_data.http_params.success_responses | dictsort %}
+{% set error_entries = method_data.http_params.error_responses | dictsort %}
+{% set success_responses = success_entries | map(attribute=1) | selectattr("status_condition") | list %}
+{% set error_responses = error_entries | map(attribute=1) | selectattr("status_condition") | list %}
+{% set conditional_responses = success_responses + error_responses %}
+{% set default_response = method_data.http_params.default_response %}
+{% set fallback_response = method_data.http_params.fallback_response %}
+{% macro render_response(resp) %}
+{%- if resp.wrapper_class == 'VoidApiResponse' -%}
+return new VoidApiResponse(response) as {{ resp.response_type | fmt }};
+{%- elif resp.transformer -%}
+return new {{ resp.wrapper_class }}(response, {{ resp.transformer }}) as {{ resp.response_type | fmt }};
+{%- else -%}
+return new {{ resp.wrapper_class }}(response) as {{ resp.response_type | fmt }};
+{%- endif -%}
+{% endmacro %}
+{% if conditional_responses | length == 0 %}
+  {% if default_response %}
+{{ render_response(default_response) }}
+  {% else %}
+  {% if fallback_response %}
+  {{ render_response(fallback_response) }}
+  {% else %}
+  return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+  {% endif %}
+  {% endif %}
+{% else %}
+  {% for resp in conditional_responses %}
+{% if loop.first %}if{% else %}else if{% endif %} ({{ resp.status_condition }}) {
+  {{ render_response(resp) }}
+}
+  {% endfor %}
+  {% if default_response %}
+else {
+  {{ render_response(default_response) }}
+}
+  {% else %}
+  {% if fallback_response %}
+else {
+  {{ render_response(fallback_response) }}
+}
+  {% else %}
+else {
+  return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+}
+  {% endif %}
+  {% endif %}
+{% endif %}

@@ -5,9 +5,4 @@
 {% include "api/snippets/build_headers.j2" with context %}
 {% include "api/snippets/build_request_body.j2" with context %}
 {% include "api/snippets/make_request.j2" with context %}
-
-{% if data.transformer %}
-return new JSONApiResponse(response, {{ data.transformer }});
-{% else %}
-return new VoidApiResponse(response);
-{% endif %}
+{% include "api/snippets/return_response.j2" with context %}

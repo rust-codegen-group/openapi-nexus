@@ -1,0 +1,51 @@
+openapi: 3.1.0
+info:
+  title: No Response Body API
+  version: 1.0.0
+paths:
+  /foo/bar:
+    patch:
+      tags:
+        - Foo
+      operationId: updateFooBar
+      parameters:
+        - name: foo_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FooRequest'
+      responses:
+        '204':
+          description: Foo updated successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    FooRequest:
+      type: object
+      properties:
+        bar:
+          type: string
+      required:
+        - bar
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string

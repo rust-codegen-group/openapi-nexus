@@ -14,20 +14,33 @@ use crate::ast::{
 };
 use crate::core::GeneratorError;
 use crate::generator::{
-    api_interface_builder::ApiInterfaceBuilder, model_import_collector::ModelImportCollector,
-    parameter_extractor::ParameterExtractor, response_transformer::ResponseTransformer,
-    return_type_generator::ReturnTypeGenerator,
+    api_interface_builder::ApiInterfaceBuilder,
+    model_import_collector::ModelImportCollector,
+    parameter_extractor::{ExtractedParameters, ParameterExtractor},
+    response_transformer::ResponseTransformer,
+    return_type_generator::{ReturnTypeGenerator, ReturnTypeInfo},
 };
 use crate::templating::data::{ApiClassData, ApiClassSignature, ApiImportStatement, ApiMethodData};
 use crate::templating::data::{
-    ApiOperationData, CommonFileHeaderData, HttpParamData, MethodTemplateData,
+    ApiOperationData, CommonFileHeaderData, HttpParamData, MethodTemplateData, ResponseTemplateData,
 };
 use crate::templating::{TemplateName, Templates};
 use crate::utils::schema_mapper::SchemaMapper;
+use openapi_nexus_core::data::ContentType;
+use openapi_nexus_core::data::HttpResponse;
 use openapi_nexus_core::data::OperationInfo;
+use openapi_nexus_core::data::StatusCode;
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::OperationInfoExt as _;
 use openapi_nexus_core::traits::file_writer::FileInfo;
+
+/// Helper struct to hold all response template data
+struct ResponseTemplates {
+    success_responses: BTreeMap<String, ResponseTemplateData>,
+    error_responses: BTreeMap<String, ResponseTemplateData>,
+    default_response: Option<ResponseTemplateData>,
+    fallback_response: Option<ResponseTemplateData>,
+}
 
 /// Individual API operation generator
 #[derive(Debug, Clone)]
@@ -128,6 +141,8 @@ impl ApiOperationGenerator {
                 .with_import("BaseAPI".to_string(), None)
                 .with_import("JSONApiResponse".to_string(), None)
                 .with_import("VoidApiResponse".to_string(), None)
+                .with_import("BlobApiResponse".to_string(), None)
+                .with_import("TextApiResponse".to_string(), None)
                 .with_import("ResponseError".to_string(), None)
                 .with_import("RequiredError".to_string(), None)
                 .with_import("DefaultConfig".to_string(), None)
@@ -205,7 +220,7 @@ impl ApiOperationGenerator {
         GeneratorError,
     > {
         let method_name = format!("{}Raw", op_info.method_name());
-        let all_parameters = self.generate_method_parameters(&op_info.path, &op_info.operation)?;
+        let all_parameters = self.generate_method_parameters(op_info)?;
 
         // Generate request interface if there are parameters (excluding initOverrides)
         let request_interface = self.generate_request_interface(op_info, &all_parameters);
@@ -233,33 +248,11 @@ impl ApiOperationGenerator {
             all_parameters.clone()
         };
 
-        let (raw_return_type, convenience_return_type) =
-            ReturnTypeGenerator::generate_return_types(&op_info.method, &op_info.operation)?;
-
-        // Determine template based on HTTP method
-        let template_name = match op_info.method {
-            Method::GET => TemplateName::ApiMethodGet,
-            Method::POST | Method::PUT | Method::PATCH => TemplateName::ApiMethodPostPutPatch,
-            Method::DELETE => TemplateName::ApiMethodDelete,
-            _ => {
-                return Err(GeneratorError::Generic {
-                    message: format!(
-                        "Unsupported HTTP method: {:?}. Only GET, POST, PUT, PATCH, and DELETE are supported.",
-                        op_info.method
-                    ),
-                });
-            }
-        };
+        let return_type_info = ReturnTypeGenerator::generate_return_types(op_info, components)?;
 
         // Create template data
-        let template_data = self.create_method_template_data(
-            op_info,
-            template_name,
-            method_name.clone(),
-            Some(convenience_return_type),
-            request_interface.is_some(),
-            components,
-        )?;
+        let template_data =
+            self.create_method_template_data(op_info, &return_type_info, components)?;
 
         // Build enhanced documentation with JSDoc annotations
         // Use original parameters for documentation, not the request object wrapper
@@ -268,7 +261,7 @@ impl ApiOperationGenerator {
         let method = ApiMethodData {
             name: method_name.clone(),
             parameters,
-            return_type: Some(raw_return_type),
+            return_type: Some(return_type_info.raw_return_type),
             is_async: true,
             documentation,
         };
@@ -280,29 +273,71 @@ impl ApiOperationGenerator {
     fn create_method_template_data(
         &self,
         op_info: &OperationInfo,
-        template_name: TemplateName,
-        method_name: String,
-        convenience_return_type: Option<TsExpression>,
-        uses_request_object: bool,
+        return_type_info: &ReturnTypeInfo,
         components: Option<&openapi::Components>,
     ) -> Result<MethodTemplateData, GeneratorError> {
+        // Derive method name and template name from operation info
+        let method_name = format!("{}Raw", op_info.method_name());
+        let template_name = Self::determine_template_name(&op_info.method)?;
+
         // Extract parameters using the parameter extractor (names are already resolved)
-        let extracted = self.parameter_extractor.extract_parameters(
-            &op_info.operation,
-            &op_info.path,
+        let extracted = self
+            .parameter_extractor
+            .extract_parameters(op_info, components)?;
+
+        // Determine if we should use a request object (when there are any parameters)
+        let uses_request_object = self.should_use_request_object(&extracted);
+
+        // Build HTTP parameters
+        let http_params = self.build_http_params(
+            op_info,
+            &extracted,
+            return_type_info,
+            uses_request_object,
             components,
         )?;
 
-        // Parameters are already ParameterInfo, no conversion needed
-        let path_params = extracted.path_params;
-        let query_params = extracted.query_params;
-        let header_params = extracted.header_params;
-        let body_param = extracted.body_param;
+        Ok(MethodTemplateData {
+            method_name,
+            body_template: template_name,
+            http_params: Some(http_params),
+            convenience_method_name: Some(op_info.method_name()),
+            convenience_return_type: Some(return_type_info.convenience_return_type.clone()),
+        })
+    }
 
-        let transformer = self
-            .response_transformer
-            .compute_transformer(&op_info.method, &op_info.operation);
+    /// Determine if a request object should be used based on extracted parameters
+    fn should_use_request_object(&self, extracted: &ExtractedParameters) -> bool {
+        !extracted.path_params.is_empty()
+            || !extracted.query_params.is_empty()
+            || !extracted.header_params.is_empty()
+            || extracted.body_param.is_some()
+    }
 
+    /// Determine template name based on HTTP method
+    fn determine_template_name(method: &Method) -> Result<TemplateName, GeneratorError> {
+        match *method {
+            Method::GET => Ok(TemplateName::ApiMethodGet),
+            Method::POST | Method::PUT | Method::PATCH => Ok(TemplateName::ApiMethodPostPutPatch),
+            Method::DELETE => Ok(TemplateName::ApiMethodDelete),
+            _ => Err(GeneratorError::Generic {
+                message: format!(
+                    "Unsupported HTTP method: {:?}. Only GET, POST, PUT, PATCH, and DELETE are supported.",
+                    method
+                ),
+            }),
+        }
+    }
+
+    /// Build HTTP parameters for template data
+    fn build_http_params(
+        &self,
+        op_info: &OperationInfo,
+        extracted: &ExtractedParameters,
+        return_type_info: &ReturnTypeInfo,
+        uses_request_object: bool,
+        components: Option<&openapi::Components>,
+    ) -> Result<HttpParamData, GeneratorError> {
         // Extract body model name if body is an interface (has ToJSON function)
         let body_model_name = self
             .model_import_collector
@@ -312,28 +347,166 @@ impl ApiOperationGenerator {
                     .is_schema_interface(model_name, components)
             });
 
-        let http_params = HttpParamData {
+        // Build all response templates
+        let response_templates = self.build_response_templates(
+            &return_type_info.success_responses,
+            &return_type_info.error_responses,
+            &return_type_info.default_response,
+        );
+
+        Ok(HttpParamData {
             http_path: op_info.path.clone(),
             http_method: op_info.method.clone(),
-            path_params,
-            query_params,
-            header_params,
-            body_param,
+            path_params: extracted.path_params.clone(),
+            query_params: extracted.query_params.clone(),
+            header_params: extracted.header_params.clone(),
+            body_param: extracted.body_param.clone(),
             body_model_name,
-            transformer,
+            transformer: None,
             uses_request_object,
+            success_responses: response_templates.success_responses,
+            error_responses: response_templates.error_responses,
+            default_response: response_templates.default_response,
+            fallback_response: response_templates.fallback_response,
+        })
+    }
+
+    /// Build all response templates (success, error, default, and fallback)
+    fn build_response_templates(
+        &self,
+        success_responses: &BTreeMap<StatusCode, HttpResponse>,
+        error_responses: &BTreeMap<StatusCode, HttpResponse>,
+        default_response: &Option<HttpResponse>,
+    ) -> ResponseTemplates {
+        let mut success_response_templates: BTreeMap<String, ResponseTemplateData> =
+            BTreeMap::new();
+        for (status_code_key, response) in success_responses {
+            let template = self.build_response_template_data(response, true);
+            if template.status_condition.is_some() {
+                success_response_templates.insert(status_code_key.raw().to_uppercase(), template);
+            }
+        }
+
+        let default_success_response = default_response
+            .as_ref()
+            .map(|response| self.build_response_template_data(response, response.is_success()));
+
+        let mut error_response_templates: BTreeMap<String, ResponseTemplateData> = BTreeMap::new();
+        for (status_code_key, response) in error_responses {
+            let template = self.build_response_template_data(response, false);
+            error_response_templates.insert(status_code_key.raw().to_uppercase(), template);
+        }
+
+        let any_response_has_body =
+            self.check_any_response_has_body(success_responses, error_responses, default_response);
+
+        let fallback_response = if default_response.is_none() {
+            Some(self.build_fallback_response(any_response_has_body))
+        } else {
+            None
         };
 
-        // Compute convenience method name
-        let convenience_method_name = Some(op_info.method_name());
+        ResponseTemplates {
+            success_responses: success_response_templates,
+            error_responses: error_response_templates,
+            default_response: default_success_response,
+            fallback_response,
+        }
+    }
 
-        Ok(MethodTemplateData {
-            method_name,
-            body_template: template_name,
-            http_params: Some(http_params),
-            convenience_method_name,
-            convenience_return_type,
-        })
+    /// Check if any response (success, error, or default) has a body
+    fn check_any_response_has_body(
+        &self,
+        success_responses: &BTreeMap<StatusCode, HttpResponse>,
+        error_responses: &BTreeMap<StatusCode, HttpResponse>,
+        default_response: &Option<HttpResponse>,
+    ) -> bool {
+        let any_success_response_has_body = success_responses
+            .values()
+            .any(|response| response.has_body());
+        let any_default_response_has_body = default_response
+            .as_ref()
+            .is_some_and(|response| response.has_body());
+        let any_error_response_has_body =
+            error_responses.values().any(|response| response.has_body());
+
+        any_success_response_has_body
+            || any_default_response_has_body
+            || any_error_response_has_body
+    }
+
+    /// Build fallback response template for when no default response is defined
+    fn build_fallback_response(&self, any_response_has_body: bool) -> ResponseTemplateData {
+        let (wrapper_class, response_expression) =
+            ReturnTypeGenerator::fallback_response(any_response_has_body);
+
+        ResponseTemplateData {
+            status_code: "FALLBACK".to_string(),
+            is_success: true,
+            has_body: any_response_has_body,
+            body_type: if any_response_has_body {
+                Some(TsExpression::Primitive(TsPrimitive::Any))
+            } else {
+                None
+            },
+            status_condition: None,
+            wrapper_class,
+            response_type: response_expression,
+            transformer: None,
+        }
+    }
+
+    fn build_response_template_data(
+        &self,
+        response: &HttpResponse,
+        is_success: bool,
+    ) -> ResponseTemplateData {
+        let wrapper_class = Self::determine_wrapper_class(response);
+        let transformer = if wrapper_class == "JSONApiResponse" {
+            response
+                .json_schema()
+                .and_then(|schema| self.response_transformer.compute_schema_transformer(schema))
+        } else {
+            None
+        };
+
+        ResponseTemplateData {
+            status_code: response.status.raw().to_string(),
+            is_success,
+            has_body: response.has_body(),
+            body_type: response
+                .json_schema()
+                .map(SchemaMapper::map_ref_or_schema_to_type),
+            status_condition: response.status.condition_expression(),
+            wrapper_class,
+            response_type: ReturnTypeGenerator::response_expression(response),
+            transformer,
+        }
+    }
+
+    fn determine_wrapper_class(response: &HttpResponse) -> String {
+        if response.has_json_body() {
+            return "JSONApiResponse".to_string();
+        }
+
+        if response.content_types().any(|content_type| {
+            matches!(
+                content_type,
+                ContentType::Text
+                    | ContentType::Html
+                    | ContentType::Xml
+                    | ContentType::FormUrlEncoded
+                    | ContentType::TextEventStream
+            )
+        }) {
+            return "TextApiResponse".to_string();
+        }
+
+        if response.has_body() {
+            "BlobApiResponse".to_string()
+        } else {
+            "VoidApiResponse".to_string()
+        }
     }
 
     /// Generate request parameter interface for a method
@@ -402,17 +575,14 @@ impl ApiOperationGenerator {
     /// Generate method parameters from operation
     fn generate_method_parameters(
         &self,
-        path: &str,
-        operation: &openapi::path::Operation,
+        op_info: &OperationInfo,
     ) -> Result<Vec<TsParameter>, GeneratorError> {
         let mut parameters = Vec::new();
 
         // Extract parameters using the parameter extractor (conflicts are already resolved)
         // Note: components is not available here, so default values from references won't be resolved
         // This is acceptable since this is only used for method signature generation
-        let extracted = self
-            .parameter_extractor
-            .extract_parameters(operation, path, None)?;
+        let extracted = self.parameter_extractor.extract_parameters(op_info, None)?;
 
         for param_info in extracted.path_params {
             parameters.push(Self::parameter_info_to_ts_parameter(&param_info));

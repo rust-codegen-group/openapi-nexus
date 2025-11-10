@@ -396,32 +396,54 @@ export interface ResponseTransformer<T> {
     (json: any): T;
 }
 
-export class JSONApiResponse<T> {
-    constructor(public raw: Response, private transformer: ResponseTransformer<T> = (jsonValue: any) => jsonValue) {}
+class ApiResponseBase {
+    public readonly status: number;
+    public readonly ok: boolean;
+    public readonly statusText: string;
+    public readonly headers: Headers;
+
+    constructor(public readonly raw: Response) {
+        this.status = raw.status;
+        this.ok = raw.ok;
+        this.statusText = raw.statusText;
+        this.headers = raw.headers;
+    }
+}
+
+export class JSONApiResponse<T> extends ApiResponseBase {
+    constructor(raw: Response, private transformer: ResponseTransformer<T> = (jsonValue: any) => jsonValue) {
+        super(raw);
+    }
 
     async value(): Promise<T> {
         return this.transformer(await this.raw.json());
     }
 }
 
-export class VoidApiResponse {
-    constructor(public raw: Response) {}
+export class VoidApiResponse extends ApiResponseBase {
+    constructor(raw: Response) {
+        super(raw);
+    }
 
     async value(): Promise<void> {
         return undefined;
     }
 }
 
-export class BlobApiResponse {
-    constructor(public raw: Response) {}
+export class BlobApiResponse extends ApiResponseBase {
+    constructor(raw: Response) {
+        super(raw);
+    }
 
     async value(): Promise<Blob> {
         return await this.raw.blob();
     };
 }
 
-export class TextApiResponse {
-    constructor(public raw: Response) {}
+export class TextApiResponse extends ApiResponseBase {
+    constructor(raw: Response) {
+        super(raw);
+    }
 
     async value(): Promise<string> {
         return await this.raw.text();

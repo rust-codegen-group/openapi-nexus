@@ -5,10 +5,9 @@ use std::collections::HashMap;
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use tracing::warn;
 use utoipa::openapi;
-use utoipa::openapi::path::Operation;
 
 use crate::core::GeneratorError;
-use openapi_nexus_core::data::{ParameterInfo, ParameterLocation};
+use openapi_nexus_core::data::{OperationInfo, ParameterInfo, ParameterLocation};
 use openapi_nexus_core::traits::OpenApiParameterExt as _;
 
 /// Extracted parameters from an OpenAPI operation
@@ -32,11 +31,10 @@ impl ParameterExtractor {
     /// Extract all parameters from an OpenAPI operation and resolve name conflicts
     pub fn extract_parameters(
         &self,
-        operation: &Operation,
-        path: &str,
+        op_info: &OperationInfo,
         components: Option<&openapi::Components>,
     ) -> Result<ExtractedParameters, GeneratorError> {
-        let mut extracted = self.extract_raw_parameters(operation, path, components)?;
+        let mut extracted = self.extract_raw_parameters(op_info, components)?;
         self.resolve_and_apply_name_conflicts(&mut extracted);
         Ok(extracted)
     }
@@ -44,8 +42,7 @@ impl ParameterExtractor {
     /// Extract raw parameters from an OpenAPI operation (before conflict resolution)
     fn extract_raw_parameters(
         &self,
-        operation: &Operation,
-        path: &str,
+        op_info: &OperationInfo,
         components: Option<&openapi::Components>,
     ) -> Result<ExtractedParameters, GeneratorError> {
         let mut path_params = Vec::new();
@@ -54,10 +51,10 @@ impl ParameterExtractor {
         let mut body_param = None;
 
         // Extract path parameters from the path string
-        let path_param_names = Self::extract_path_parameter_names(path);
+        let path_param_names = Self::extract_path_parameter_names(&op_info.path);
 
         // Extract parameters from the operation
-        if let Some(parameters) = &operation.parameters {
+        if let Some(parameters) = &op_info.operation.parameters {
             for param in parameters {
                 let original_name = param.name.clone();
                 let schema = param.schema.clone();
@@ -104,7 +101,7 @@ impl ParameterExtractor {
         }
 
         // Extract request body parameter
-        if let Some(request_body) = &operation.request_body
+        if let Some(request_body) = &op_info.operation.request_body
             && let Some(json_content) = request_body.content.get("application/json")
             && let Some(schema_ref) = &json_content.schema
         {

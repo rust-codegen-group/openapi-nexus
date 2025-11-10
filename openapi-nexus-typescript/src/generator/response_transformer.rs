@@ -1,8 +1,9 @@
 //! Response transformer computation for API operations
 
-use http::Method;
 use utoipa::openapi;
-use utoipa::openapi::schema::{ArrayItems, Schema};
+
+use openapi_nexus_core::data::OperationInfo;
+use openapi_nexus_core::traits::OpenApiRefExt as _;
 
 /// Response transformer generator for JSON deserialization
 #[derive(Debug, Clone)]
@@ -14,45 +15,9 @@ impl ResponseTransformer {
         Self
     }
 
-    /// Compute JSON transformer expression if applicable
-    pub fn compute_transformer(
-        &self,
-        _http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Option<String> {
-        if let Some(model_name) = self.compute_model_name(_http_method, operation) {
-            // Check if it's an array by looking at the schema
-            for (status_code, response_ref) in operation.responses.responses.iter() {
-                if !status_code.starts_with('2') {
-                    continue;
-                }
-                if let openapi::RefOr::T(response) = response_ref
-                    && let Some(json_content) = response.content.get("application/json")
-                    && let Some(schema_ref) = &json_content.schema
-                {
-                    if let openapi::RefOr::T(schema) = schema_ref
-                        && let Schema::Array(_) = schema
-                    {
-                        return Some(format!(
-                            "(jsonValue) => (jsonValue as Array<any>).map({}FromJSON)",
-                            model_name
-                        ));
-                    }
-                    // Not an array, use direct transformer
-                    return Some(format!("(jsonValue) => {}FromJSON(jsonValue)", model_name));
-                }
-            }
-        }
-        None
-    }
-
     /// Compute model name from response schema if applicable
-    pub fn compute_model_name(
-        &self,
-        _http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Option<String> {
-        for (status_code, response_ref) in operation.responses.responses.iter() {
+    pub fn compute_model_name(&self, op_info: &OperationInfo) -> Option<String> {
+        for (status_code, response_ref) in op_info.operation.responses.responses.iter() {
             if !status_code.starts_with('2') {
                 continue;
             }
@@ -62,25 +27,21 @@ impl ResponseTransformer {
             {
                 match schema_ref {
                     openapi::RefOr::Ref(reference) => {
-                        if let Some(name) =
-                            reference.ref_location.strip_prefix("#/components/schemas/")
-                        {
+                        if let Some(name) = reference.schema_name() {
                             return Some(name.to_string());
                         }
                     }
                     openapi::RefOr::T(schema) => {
-                        if let Schema::Array(arr) = schema {
+                        if let openapi::Schema::Array(arr) = schema {
                             match &arr.items {
-                                ArrayItems::RefOrSchema(item_ref) => {
+                                openapi::schema::ArrayItems::RefOrSchema(item_ref) => {
                                     if let openapi::RefOr::Ref(reference) = &**item_ref
-                                        && let Some(name) = reference
-                                            .ref_location
-                                            .strip_prefix("#/components/schemas/")
+                                        && let Some(name) = reference.schema_name()
                                     {
                                         return Some(name.to_string());
                                     }
                                 }
-                                ArrayItems::False => {}
+                                openapi::schema::ArrayItems::False => {}
                             }
                         }
                     }
@@ -90,21 +51,33 @@ impl ResponseTransformer {
         None
     }
 
-    /// Compute JSON transformer expression and model name if applicable
-    ///
-    /// This is kept for backwards compatibility but prefer using
-    /// `compute_transformer` and `compute_model_name` separately.
-    pub fn compute_transformer_and_model(
+    pub fn compute_schema_transformer(
         &self,
-        http_method: &Method,
-        operation: &openapi::path::Operation,
-    ) -> Option<(String, String)> {
-        if let Some(model_name) = self.compute_model_name(http_method, operation)
-            && let Some(transformer) = self.compute_transformer(http_method, operation)
-        {
-            return Some((transformer, model_name));
+        schema_ref: &openapi::RefOr<openapi::schema::Schema>,
+    ) -> Option<String> {
+        match schema_ref {
+            openapi::RefOr::Ref(reference) => reference
+                .schema_name()
+                .map(|name| format!("(jsonValue) => {}FromJSON(jsonValue)", name)),
+            openapi::RefOr::T(schema) => {
+                if let openapi::Schema::Array(array_schema) = schema {
+                    match &array_schema.items {
+                        openapi::schema::ArrayItems::RefOrSchema(item_ref) => match &**item_ref {
+                            openapi::RefOr::Ref(reference) => reference.schema_name().map(|name| {
+                                format!(
+                                    "(jsonValue) => (jsonValue as Array<any>).map({}FromJSON)",
+                                    name
+                                )
+                            }),
+                            openapi::RefOr::T(_) => None,
+                        },
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            }
         }
-        None
     }
 }
 

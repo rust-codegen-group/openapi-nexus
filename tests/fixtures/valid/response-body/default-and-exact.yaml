@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Default And Exact Response API
+  version: 1.0.0
+paths:
+  /widgets:
+    get:
+      tags:
+        - Widget
+      operationId: getWidget
+      responses:
+        '200':
+          description: Widget found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Widget'
+        default:
+          description: Generic error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Widget:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string

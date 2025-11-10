@@ -1,13 +1,18 @@
 //! Operation information for grouping by tag
 
+use std::collections::BTreeMap;
+
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use serde::{Deserialize, Serialize};
+use tracing::error;
 use utoipa::openapi;
 
 use crate::data::api_method_data::ApiMethodData;
 use crate::data::parameter_info::ParameterInfo;
+use crate::data::{HttpResponse, StatusCode};
 use crate::serde::http_method;
 use crate::traits::OpenApiParameterExt as _;
+use crate::traits::OpenApiRefExt as _;
 use crate::traits::OperationInfoExt;
 
 /// Operation information for grouping by tag
@@ -99,6 +104,44 @@ impl OperationInfo {
             has_auth: self.operation.security.is_some(),
             has_error_handling: true,
         }
+    }
+
+    pub fn collect_responses(
+        &self,
+        components: Option<&openapi::Components>,
+    ) -> (
+        BTreeMap<StatusCode, HttpResponse>,
+        BTreeMap<StatusCode, HttpResponse>,
+        Option<HttpResponse>,
+    ) {
+        let mut success = BTreeMap::new();
+        let mut error = BTreeMap::new();
+        let mut default_response = None;
+
+        for (status_code, response_ref) in &self.operation.responses.responses {
+            let status = StatusCode::new(status_code);
+            let response = match response_ref {
+                openapi::RefOr::T(response) => HttpResponse::from_openapi(status.clone(), response),
+                openapi::RefOr::Ref(reference) => {
+                    if let Some(resolved) = reference.resolve_response(components) {
+                        HttpResponse::from_openapi(status.clone(), resolved)
+                    } else {
+                        error!(%status, ?reference, "Failed to resolve response reference.");
+                        continue;
+                    }
+                }
+            };
+
+            if status.is_default() {
+                default_response = Some(response);
+            } else if response.is_success() {
+                success.insert(status, response);
+            } else {
+                error.insert(status, response);
+            }
+        }
+
+        (success, error, default_response)
     }
 }
 

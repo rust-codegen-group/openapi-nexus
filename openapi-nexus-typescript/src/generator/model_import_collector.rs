@@ -6,7 +6,9 @@ use utoipa::openapi;
 
 use crate::generator::response_transformer::ResponseTransformer;
 use crate::templating::data::ApiImportStatement;
+use crate::utils::schema_mapper::SchemaMapper;
 use openapi_nexus_core::data::OperationInfo;
+use openapi_nexus_core::traits::OpenApiRefExt as _;
 
 /// Collected model dependencies for an API class
 #[derive(Debug, Clone)]
@@ -35,6 +37,10 @@ impl Default for ModelDependencies {
 pub struct ModelImportCollector;
 
 impl ModelImportCollector {
+    fn is_builtin_type(type_name: &str) -> bool {
+        matches!(type_name, "object")
+    }
+
     /// Extract model name from request body schema reference
     ///
     /// Returns the model name if the operation has an `application/json` request body
@@ -48,10 +54,7 @@ impl ModelImportCollector {
         let schema_ref = json_content.schema.as_ref()?;
 
         if let openapi::RefOr::Ref(reference) = schema_ref {
-            reference
-                .ref_location
-                .strip_prefix("#/components/schemas/")
-                .map(|name| name.to_string())
+            reference.schema_name().map(|name| name.to_string())
         } else {
             None
         }
@@ -111,13 +114,39 @@ impl ModelImportCollector {
 
         // Collect from response models
         for op_info in operations {
-            if let Some(model_name) =
-                response_transformer.compute_model_name(&op_info.method, &op_info.operation)
-            {
+            if let Some(model_name) = response_transformer.compute_model_name(op_info) {
                 dependencies.type_names.insert(model_name.clone());
                 dependencies
                     .function_names
                     .insert(format!("{}FromJSON", model_name));
+            }
+
+            for response_ref in op_info.operation.responses.responses.values() {
+                match response_ref {
+                    openapi::RefOr::T(response) => {
+                        if let Some(json_content) = response.content.get("application/json")
+                            && let Some(schema_ref) = &json_content.schema {
+                                let ts_type = SchemaMapper::map_ref_or_schema_to_type(schema_ref);
+                                for type_name in ts_type.referenced_types() {
+                                    if Self::is_builtin_type(&type_name) {
+                                        continue;
+                                    }
+                                    dependencies.type_names.insert(type_name.clone());
+                                    dependencies
+                                        .function_names
+                                        .insert(format!("{}FromJSON", type_name));
+                                }
+                            }
+                    }
+                    openapi::RefOr::Ref(reference) => {
+                        if let Some(name) = reference.schema_name() {
+                            dependencies.type_names.insert(name.to_string());
+                            dependencies
+                                .function_names
+                                .insert(format!("{}FromJSON", name));
+                        }
+                    }
+                }
             }
         }
 

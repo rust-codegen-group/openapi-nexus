@@ -1,0 +1,65 @@
+openapi: 3.1.0
+info:
+  title: Multi Status API
+  version: 1.0.0
+paths:
+  /widgets:
+    get:
+      tags:
+        - Widget
+      operationId: listWidgets
+      responses:
+        '200':
+          description: Successful response with full list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Widget'
+        '206':
+          description: Partial content response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetListPartial'
+        '404':
+          description: Widgets not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Widget:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+    WidgetListPartial:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Widget'
+        hasMore:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
