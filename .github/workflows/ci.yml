@@ -15,10 +15,10 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: openapi-nexus-linux-x86_64
+            artifact_name: openapi-nexus-linux-x86_64-gnu
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            artifact_name: openapi-nexus-linux-aarch64
+            artifact_name: openapi-nexus-linux-aarch64-gnu
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             artifact_name: openapi-nexus-linux-x86_64-musl
@@ -33,50 +33,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.90
-          components: rustfmt, clippy
-          targets: ${{ matrix.target }}
-
-      - name: Install system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          if [[ "${{ matrix.target }}" == *"musl"* ]]; then
-            sudo apt-get install -y musl-tools
-          elif [[ "${{ matrix.target }}" == *"aarch64"* ]]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-          fi
-
-      - name: Cache Cargo dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.target }}-
-
       - name: Run clippy
-        env:
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-        run: cargo clippy --all-targets --target ${{ matrix.target }} -- -D warnings
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: clippy
+          target: ${{ matrix.target }}
+          toolchain: 1.90
+          args: "--all-targets -- -D warnings"
 
       - name: Run tests
-        env:
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-        run: cargo test --workspace --target ${{ matrix.target }}
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: test
+          target: ${{ matrix.target }}
+          toolchain: 1.90
+          args: "--workspace"
 
       - name: Build release binary
-        env:
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-        run: cargo build --release --bin openapi-nexus --target ${{ matrix.target }}
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ matrix.target }}
+          toolchain: 1.90
+          args: "--release --bin openapi-nexus"
 
       - name: Prepare artifact
         shell: bash
@@ -92,4 +71,4 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: artifacts/${{ matrix.artifact_name }}
-          retention-days: 30
+          retention-days: 3

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.1-alpha.4]
+
+### Added
+
+- Cross-compilation support with `cross.toml` configuration for multi-platform builds
+- GitHub Actions CI workflow now uses `cross` tool for Linux cross-compilation targets
+- Comprehensive HTTP response handling with status codes and content types
+- ContentType enum for representing HTTP content types with JSON and text support
+- StatusCode struct to handle exact codes, ranges (e.g., 2XX), and default responses
+- HttpResponse struct to normalize OpenAPI responses with status, content types, and schemas
+- OpenApiRefExt trait for resolving component references (schemas, responses, parameters)
+- collect_responses() method to OperationInfo to categorize success, error, and default responses
+- Type-safe response handling code generation for operations with multiple status codes and content types
+- Support for response handling with different content types and optional response bodies
+- Test fixtures for various response scenarios (default responses, fallback, multi-status, no response body)
+
+### Changed
+
+- Refactored return type generation to use HttpResponse and StatusCode for type-safe response handling
+- Updated response transformer to handle different content types and response body presence
+- Updated dependencies in Cargo.toml and Cargo.lock
+
 ## [0.0.1-alpha.3]
 
 ### Added
