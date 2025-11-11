@@ -18,9 +18,11 @@ export interface ComplexArrayStructure {
   items: Array<{ itemId: string; metadata: ComplexArrayStructureMetadata; nestedData: ComplexArrayStructureNestedData }>,
 }
 
-export function instanceOfComplexArrayStructure(value: object): value is ComplexArrayStructure {
-  if (!('items' in value) || (value as any)['items'] === undefined) return false;
-  return true;
+export function instanceOfComplexArrayStructure(value: unknown): value is ComplexArrayStructure {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "items" in value && (value as any)["items"] !== undefined;
 }
 
 export function ComplexArrayStructureFromJSON(json: any): ComplexArrayStructure {

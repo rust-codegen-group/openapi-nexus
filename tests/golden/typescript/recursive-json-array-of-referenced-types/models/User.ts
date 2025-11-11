@@ -18,10 +18,11 @@ export interface User {
   userName: string,
 }
 
-export function instanceOfUser(value: object): value is User {
-  if (!('userId' in value) || (value as any)['userId'] === undefined) return false;
-  if (!('userName' in value) || (value as any)['userName'] === undefined) return false;
-  return true;
+export function instanceOfUser(value: unknown): value is User {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "user_id" in value && (value as any)["user_id"] !== undefined && "user_name" in value && (value as any)["user_name"] !== undefined;
 }
 
 export function UserFromJSON(json: any): User {

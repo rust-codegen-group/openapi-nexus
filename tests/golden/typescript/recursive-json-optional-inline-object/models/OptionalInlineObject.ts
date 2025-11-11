@@ -17,7 +17,10 @@ export interface OptionalInlineObject {
   optionalConfig?: OptionalInlineObjectOptionalConfig,
 }
 
-export function instanceOfOptionalInlineObject(value: object): value is OptionalInlineObject {
+export function instanceOfOptionalInlineObject(value: unknown): value is OptionalInlineObject {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

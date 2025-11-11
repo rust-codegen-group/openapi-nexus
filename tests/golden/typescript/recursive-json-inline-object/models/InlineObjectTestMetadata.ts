@@ -17,9 +17,11 @@ export interface InlineObjectTestMetadata {
   versionNumber?: number,
 }
 
-export function instanceOfInlineObjectTestMetadata(value: object): value is InlineObjectTestMetadata {
-  if (!('createdAt' in value) || (value as any)['createdAt'] === undefined) return false;
-  return true;
+export function instanceOfInlineObjectTestMetadata(value: unknown): value is InlineObjectTestMetadata {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "created_at" in value && (value as any)["created_at"] !== undefined;
 }
 
 export function InlineObjectTestMetadataFromJSON(json: any): InlineObjectTestMetadata {

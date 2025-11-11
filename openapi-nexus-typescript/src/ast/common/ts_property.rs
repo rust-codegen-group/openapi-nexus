@@ -15,6 +15,20 @@ pub struct TsProperty {
     pub type_expr: TsExpression,
     /// Whether the property is optional in the TypeScript interface
     pub optional: bool,
+    /// Whether this property is an index signature (e.g., `[key: string]: ValueType`).
+    ///
+    /// Index signatures allow additional properties beyond those explicitly defined.
+    /// They are used to represent OpenAPI `additionalProperties` in TypeScript interfaces.
+    ///
+    /// # Example
+    ///
+    /// ```typescript
+    /// interface Example {
+    ///   name: string;
+    ///   [key: string]: string | number;  // This is an index signature
+    /// }
+    /// ```
+    pub is_index_signature: bool,
     /// Documentation/comment for the property (if any)
     pub documentation: Option<TsDocComment>,
 }

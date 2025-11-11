@@ -16,9 +16,11 @@ export interface MyJsonData {
   az: Az,
 }
 
-export function instanceOfMyJsonData(value: object): value is MyJsonData {
-  if (!('az' in value) || (value as any)['az'] === undefined) return false;
-  return true;
+export function instanceOfMyJsonData(value: unknown): value is MyJsonData {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "az" in value && (value as any)["az"] !== undefined;
 }
 
 export function MyJsonDataFromJSON(json: any): MyJsonData {

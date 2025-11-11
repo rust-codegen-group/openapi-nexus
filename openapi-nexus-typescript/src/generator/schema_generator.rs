@@ -215,6 +215,7 @@ impl SchemaGenerator {
                         original_name,
                         type_expr,
                         optional: !is_required,
+                        is_index_signature: false,
                         documentation: description.map(TsDocComment::new),
                     };
 
@@ -271,6 +272,7 @@ impl SchemaGenerator {
                                 original_name: index_name,
                                 type_expr: value_type,
                                 optional: false,
+                                is_index_signature: true,
                                 documentation: Some(TsDocComment::new(
                                     "Additional properties".to_string(),
                                 )),
@@ -284,6 +286,7 @@ impl SchemaGenerator {
                                 original_name: index_name,
                                 type_expr: TsExpression::Primitive(TsPrimitive::Any),
                                 optional: false,
+                                is_index_signature: true,
                                 documentation: Some(TsDocComment::new(
                                     "Additional properties".to_string(),
                                 )),

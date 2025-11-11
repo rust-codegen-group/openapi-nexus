@@ -16,9 +16,11 @@ export interface CreateTestResourceResponse {
   resourceId: string,
 }
 
-export function instanceOfCreateTestResourceResponse(value: object): value is CreateTestResourceResponse {
-  if (!('resourceId' in value) || (value as any)['resourceId'] === undefined) return false;
-  return true;
+export function instanceOfCreateTestResourceResponse(value: unknown): value is CreateTestResourceResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "resource_id" in value && (value as any)["resource_id"] !== undefined;
 }
 
 export function CreateTestResourceResponseFromJSON(json: any): CreateTestResourceResponse {

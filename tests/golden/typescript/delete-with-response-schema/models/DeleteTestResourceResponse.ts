@@ -17,9 +17,11 @@ export interface DeleteTestResourceResponse {
   success: boolean,
 }
 
-export function instanceOfDeleteTestResourceResponse(value: object): value is DeleteTestResourceResponse {
-  if (!('success' in value) || (value as any)['success'] === undefined) return false;
-  return true;
+export function instanceOfDeleteTestResourceResponse(value: unknown): value is DeleteTestResourceResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "success" in value && (value as any)["success"] !== undefined;
 }
 
 export function DeleteTestResourceResponseFromJSON(json: any): DeleteTestResourceResponse {

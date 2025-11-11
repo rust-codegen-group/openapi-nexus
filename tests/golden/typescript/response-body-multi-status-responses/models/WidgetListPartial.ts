@@ -15,9 +15,11 @@ export interface WidgetListPartial {
   items: Array<Widget>,
 }
 
-export function instanceOfWidgetListPartial(value: object): value is WidgetListPartial {
-  if (!('items' in value) || (value as any)['items'] === undefined) return false;
-  return true;
+export function instanceOfWidgetListPartial(value: unknown): value is WidgetListPartial {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "items" in value && (value as any)["items"] !== undefined;
 }
 
 export function WidgetListPartialFromJSON(json: any): WidgetListPartial {

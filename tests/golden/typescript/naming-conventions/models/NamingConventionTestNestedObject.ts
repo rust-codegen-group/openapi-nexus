@@ -18,9 +18,11 @@ export interface NamingConventionTestNestedObject {
   nestedSnakeCase: string,
 }
 
-export function instanceOfNamingConventionTestNestedObject(value: object): value is NamingConventionTestNestedObject {
-  if (!('nestedSnakeCase' in value) || (value as any)['nestedSnakeCase'] === undefined) return false;
-  return true;
+export function instanceOfNamingConventionTestNestedObject(value: unknown): value is NamingConventionTestNestedObject {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "nested_snake_case" in value && (value as any)["nested_snake_case"] !== undefined;
 }
 
 export function NamingConventionTestNestedObjectFromJSON(json: any): NamingConventionTestNestedObject {

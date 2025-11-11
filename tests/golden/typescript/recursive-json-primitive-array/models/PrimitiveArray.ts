@@ -17,10 +17,11 @@ export interface PrimitiveArray {
   stringItems: Array<string>,
 }
 
-export function instanceOfPrimitiveArray(value: object): value is PrimitiveArray {
-  if (!('numberItems' in value) || (value as any)['numberItems'] === undefined) return false;
-  if (!('stringItems' in value) || (value as any)['stringItems'] === undefined) return false;
-  return true;
+export function instanceOfPrimitiveArray(value: unknown): value is PrimitiveArray {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "number_items" in value && (value as any)["number_items"] !== undefined && "string_items" in value && (value as any)["string_items"] !== undefined;
 }
 
 export function PrimitiveArrayFromJSON(json: any): PrimitiveArray {

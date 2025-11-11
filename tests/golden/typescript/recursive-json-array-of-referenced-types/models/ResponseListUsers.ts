@@ -17,9 +17,11 @@ export interface ResponseListUsers {
   users: Array<User>,
 }
 
-export function instanceOfResponseListUsers(value: object): value is ResponseListUsers {
-  if (!('users' in value) || (value as any)['users'] === undefined) return false;
-  return true;
+export function instanceOfResponseListUsers(value: unknown): value is ResponseListUsers {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "users" in value && (value as any)["users"] !== undefined;
 }
 
 export function ResponseListUsersFromJSON(json: any): ResponseListUsers {

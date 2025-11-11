@@ -13,9 +13,11 @@ export interface FooRequest {
   bar: string,
 }
 
-export function instanceOfFooRequest(value: object): value is FooRequest {
-  if (!('bar' in value) || (value as any)['bar'] === undefined) return false;
-  return true;
+export function instanceOfFooRequest(value: unknown): value is FooRequest {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "bar" in value && (value as any)["bar"] !== undefined;
 }
 
 export function FooRequestFromJSON(json: any): FooRequest {

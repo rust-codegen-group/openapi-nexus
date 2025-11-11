@@ -18,9 +18,11 @@ export interface UserWithOptionalProfile {
   userId: string,
 }
 
-export function instanceOfUserWithOptionalProfile(value: object): value is UserWithOptionalProfile {
-  if (!('userId' in value) || (value as any)['userId'] === undefined) return false;
-  return true;
+export function instanceOfUserWithOptionalProfile(value: unknown): value is UserWithOptionalProfile {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "user_id" in value && (value as any)["user_id"] !== undefined;
 }
 
 export function UserWithOptionalProfileFromJSON(json: any): UserWithOptionalProfile {

@@ -16,9 +16,11 @@ export interface FooSpecs {
   fooType: FooType,
 }
 
-export function instanceOfFooSpecs(value: object): value is FooSpecs {
-  if (!('fooType' in value) || (value as any)['fooType'] === undefined) return false;
-  return true;
+export function instanceOfFooSpecs(value: unknown): value is FooSpecs {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "foo_type" in value && (value as any)["foo_type"] !== undefined;
 }
 
 export function FooSpecsFromJSON(json: any): FooSpecs {

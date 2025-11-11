@@ -15,7 +15,10 @@ export interface AllOptionalPropertiesOptionalInline {
   optionalInlineField?: string,
 }
 
-export function instanceOfAllOptionalPropertiesOptionalInline(value: object): value is AllOptionalPropertiesOptionalInline {
+export function instanceOfAllOptionalPropertiesOptionalInline(value: unknown): value is AllOptionalPropertiesOptionalInline {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

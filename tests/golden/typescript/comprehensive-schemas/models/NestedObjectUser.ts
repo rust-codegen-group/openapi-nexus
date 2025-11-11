@@ -17,9 +17,11 @@ export interface NestedObjectUser {
   name?: string,
 }
 
-export function instanceOfNestedObjectUser(value: object): value is NestedObjectUser {
-  if (!('id' in value) || (value as any)['id'] === undefined) return false;
-  return true;
+export function instanceOfNestedObjectUser(value: unknown): value is NestedObjectUser {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "id" in value && (value as any)["id"] !== undefined;
 }
 
 export function NestedObjectUserFromJSON(json: any): NestedObjectUser {

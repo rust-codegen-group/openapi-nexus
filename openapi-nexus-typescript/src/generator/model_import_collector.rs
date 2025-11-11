@@ -125,18 +125,19 @@ impl ModelImportCollector {
                 match response_ref {
                     openapi::RefOr::T(response) => {
                         if let Some(json_content) = response.content.get("application/json")
-                            && let Some(schema_ref) = &json_content.schema {
-                                let ts_type = SchemaMapper::map_ref_or_schema_to_type(schema_ref);
-                                for type_name in ts_type.referenced_types() {
-                                    if Self::is_builtin_type(&type_name) {
-                                        continue;
-                                    }
-                                    dependencies.type_names.insert(type_name.clone());
-                                    dependencies
-                                        .function_names
-                                        .insert(format!("{}FromJSON", type_name));
+                            && let Some(schema_ref) = &json_content.schema
+                        {
+                            let ts_type = SchemaMapper::map_ref_or_schema_to_type(schema_ref);
+                            for type_name in ts_type.referenced_types() {
+                                if Self::is_builtin_type(&type_name) {
+                                    continue;
                                 }
+                                dependencies.type_names.insert(type_name.clone());
+                                dependencies
+                                    .function_names
+                                    .insert(format!("{}FromJSON", type_name));
                             }
+                        }
                     }
                     openapi::RefOr::Ref(reference) => {
                         if let Some(name) = reference.schema_name() {

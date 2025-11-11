@@ -16,9 +16,11 @@ export interface EmptyArrayTest {
   emptyItems: Array<{ itemId: string }>,
 }
 
-export function instanceOfEmptyArrayTest(value: object): value is EmptyArrayTest {
-  if (!('emptyItems' in value) || (value as any)['emptyItems'] === undefined) return false;
-  return true;
+export function instanceOfEmptyArrayTest(value: unknown): value is EmptyArrayTest {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "empty_items" in value && (value as any)["empty_items"] !== undefined;
 }
 
 export function EmptyArrayTestFromJSON(json: any): EmptyArrayTest {

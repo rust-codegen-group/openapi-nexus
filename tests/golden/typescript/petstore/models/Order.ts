@@ -22,7 +22,10 @@ export interface Order {
   status?: null | OrderStatus,
 }
 
-export function instanceOfOrder(value: object): value is Order {
+export function instanceOfOrder(value: unknown): value is Order {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

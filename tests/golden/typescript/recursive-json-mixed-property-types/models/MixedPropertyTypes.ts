@@ -22,10 +22,11 @@ export interface MixedPropertyTypes {
   simpleString: string,
 }
 
-export function instanceOfMixedPropertyTypes(value: object): value is MixedPropertyTypes {
-  if (!('arrayOfInline' in value) || (value as any)['arrayOfInline'] === undefined) return false;
-  if (!('simpleString' in value) || (value as any)['simpleString'] === undefined) return false;
-  return true;
+export function instanceOfMixedPropertyTypes(value: unknown): value is MixedPropertyTypes {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "array_of_inline" in value && (value as any)["array_of_inline"] !== undefined && "simple_string" in value && (value as any)["simple_string"] !== undefined;
 }
 
 export function MixedPropertyTypesFromJSON(json: any): MixedPropertyTypes {

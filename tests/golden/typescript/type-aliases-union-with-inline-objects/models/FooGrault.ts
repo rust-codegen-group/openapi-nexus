@@ -16,9 +16,11 @@ export interface FooGrault {
   garply: string,
 }
 
-export function instanceOfFooGrault(value: object): value is FooGrault {
-  if (!('garply' in value) || (value as any)['garply'] === undefined) return false;
-  return true;
+export function instanceOfFooGrault(value: unknown): value is FooGrault {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "garply" in value && (value as any)["garply"] !== undefined;
 }
 
 export function FooGraultFromJSON(json: any): FooGrault {

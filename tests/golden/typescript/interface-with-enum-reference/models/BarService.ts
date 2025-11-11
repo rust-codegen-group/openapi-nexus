@@ -17,9 +17,11 @@ export interface BarService {
   status: BarStatus,
 }
 
-export function instanceOfBarService(value: object): value is BarService {
-  if (!('status' in value) || (value as any)['status'] === undefined) return false;
-  return true;
+export function instanceOfBarService(value: unknown): value is BarService {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "status" in value && (value as any)["status"] !== undefined;
 }
 
 export function BarServiceFromJSON(json: any): BarService {

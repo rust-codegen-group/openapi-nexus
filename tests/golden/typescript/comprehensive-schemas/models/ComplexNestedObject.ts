@@ -17,10 +17,11 @@ export interface ComplexNestedObject {
   user: ComplexNestedObjectUser,
 }
 
-export function instanceOfComplexNestedObject(value: object): value is ComplexNestedObject {
-  if (!('id' in value) || (value as any)['id'] === undefined) return false;
-  if (!('user' in value) || (value as any)['user'] === undefined) return false;
-  return true;
+export function instanceOfComplexNestedObject(value: unknown): value is ComplexNestedObject {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "id" in value && (value as any)["id"] !== undefined && "user" in value && (value as any)["user"] !== undefined;
 }
 
 export function ComplexNestedObjectFromJSON(json: any): ComplexNestedObject {

@@ -24,10 +24,11 @@ export interface Pet {
   tags?: Array<Tag>,
 }
 
-export function instanceOfPet(value: object): value is Pet {
-  if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  if (!('photoUrls' in value) || (value as any)['photoUrls'] === undefined) return false;
-  return true;
+export function instanceOfPet(value: unknown): value is Pet {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "name" in value && (value as any)["name"] !== undefined && "photo_urls" in value && (value as any)["photo_urls"] !== undefined;
 }
 
 export function PetFromJSON(json: any): Pet {

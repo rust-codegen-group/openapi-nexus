@@ -16,9 +16,11 @@ export interface InlineObjectWithArrayContainerData {
   items?: Array<{ itemName: string; itemValue: number }>,
 }
 
-export function instanceOfInlineObjectWithArrayContainerData(value: object): value is InlineObjectWithArrayContainerData {
-  if (!('containerId' in value) || (value as any)['containerId'] === undefined) return false;
-  return true;
+export function instanceOfInlineObjectWithArrayContainerData(value: unknown): value is InlineObjectWithArrayContainerData {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "container_id" in value && (value as any)["container_id"] !== undefined;
 }
 
 export function InlineObjectWithArrayContainerDataFromJSON(json: any): InlineObjectWithArrayContainerData {

@@ -23,7 +23,10 @@ export interface User {
   username?: string | null,
 }
 
-export function instanceOfUser(value: object): value is User {
+export function instanceOfUser(value: unknown): value is User {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

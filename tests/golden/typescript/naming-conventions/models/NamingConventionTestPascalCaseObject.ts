@@ -15,7 +15,10 @@ export interface NamingConventionTestPascalCaseObject {
   nestedProperty?: string,
 }
 
-export function instanceOfNamingConventionTestPascalCaseObject(value: object): value is NamingConventionTestPascalCaseObject {
+export function instanceOfNamingConventionTestPascalCaseObject(value: unknown): value is NamingConventionTestPascalCaseObject {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

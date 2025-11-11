@@ -16,9 +16,11 @@ export interface FooQuux {
   corge: string,
 }
 
-export function instanceOfFooQuux(value: object): value is FooQuux {
-  if (!('corge' in value) || (value as any)['corge'] === undefined) return false;
-  return true;
+export function instanceOfFooQuux(value: unknown): value is FooQuux {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "corge" in value && (value as any)["corge"] !== undefined;
 }
 
 export function FooQuuxFromJSON(json: any): FooQuux {

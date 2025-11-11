@@ -15,7 +15,10 @@ export interface MixedPropertyTypesInlineObject {
   inlineField?: string,
 }
 
-export function instanceOfMixedPropertyTypesInlineObject(value: object): value is MixedPropertyTypesInlineObject {
+export function instanceOfMixedPropertyTypesInlineObject(value: unknown): value is MixedPropertyTypesInlineObject {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

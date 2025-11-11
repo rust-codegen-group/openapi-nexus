@@ -16,7 +16,10 @@ export interface InlineObjectTestConfig {
   timeoutSeconds?: number,
 }
 
-export function instanceOfInlineObjectTestConfig(value: object): value is InlineObjectTestConfig {
+export function instanceOfInlineObjectTestConfig(value: unknown): value is InlineObjectTestConfig {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

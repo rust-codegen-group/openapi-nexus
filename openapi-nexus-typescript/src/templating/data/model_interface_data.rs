@@ -59,9 +59,8 @@ impl ModelInterfaceData {
         let required_prop_names: Vec<String> = interface
             .properties
             .iter()
-            .filter(|p| !p.optional)
-            .map(|p| p.ts_name.clone())
-            .filter(|name| !name.starts_with('['))
+            .filter(|p| !p.optional && !p.is_index_signature)
+            .map(|p| p.original_name.clone())
             .collect();
 
         // Extract property metadata
@@ -72,7 +71,7 @@ impl ModelInterfaceData {
                 ts_name: p.ts_name.clone(),
                 original_name: p.original_name.clone(),
                 optional: p.optional,
-                is_index_signature: p.ts_name.starts_with('['),
+                is_index_signature: p.is_index_signature,
                 type_expr: p.type_expr.clone(),
                 is_array: p.type_expr.is_array(),
                 is_array_of_objects: p.type_expr.is_array_of_objects(),

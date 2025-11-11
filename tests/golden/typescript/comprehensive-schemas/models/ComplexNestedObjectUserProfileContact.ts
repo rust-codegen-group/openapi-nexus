@@ -17,7 +17,10 @@ export interface ComplexNestedObjectUserProfileContact {
   phone?: string,
 }
 
-export function instanceOfComplexNestedObjectUserProfileContact(value: object): value is ComplexNestedObjectUserProfileContact {
+export function instanceOfComplexNestedObjectUserProfileContact(value: unknown): value is ComplexNestedObjectUserProfileContact {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

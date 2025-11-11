@@ -17,7 +17,10 @@ export interface Tag {
   name?: string | null,
 }
 
-export function instanceOfTag(value: object): value is Tag {
+export function instanceOfTag(value: unknown): value is Tag {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

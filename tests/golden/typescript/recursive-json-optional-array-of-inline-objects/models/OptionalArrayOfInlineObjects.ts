@@ -16,7 +16,10 @@ export interface OptionalArrayOfInlineObjects {
   optionalItems?: Array<{ itemCount: number; itemId: string; itemName: string }>,
 }
 
-export function instanceOfOptionalArrayOfInlineObjects(value: object): value is OptionalArrayOfInlineObjects {
+export function instanceOfOptionalArrayOfInlineObjects(value: unknown): value is OptionalArrayOfInlineObjects {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

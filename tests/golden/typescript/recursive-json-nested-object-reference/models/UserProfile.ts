@@ -18,9 +18,11 @@ export interface UserProfile {
   profileId: string,
 }
 
-export function instanceOfUserProfile(value: object): value is UserProfile {
-  if (!('profileId' in value) || (value as any)['profileId'] === undefined) return false;
-  return true;
+export function instanceOfUserProfile(value: unknown): value is UserProfile {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "profile_id" in value && (value as any)["profile_id"] !== undefined;
 }
 
 export function UserProfileFromJSON(json: any): UserProfile {

@@ -16,9 +16,11 @@ export interface RequiredEnumField {
   status: "active" | "inactive",
 }
 
-export function instanceOfRequiredEnumField(value: object): value is RequiredEnumField {
-  if (!('status' in value) || (value as any)['status'] === undefined) return false;
-  return true;
+export function instanceOfRequiredEnumField(value: unknown): value is RequiredEnumField {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "status" in value && (value as any)["status"] !== undefined;
 }
 
 export function RequiredEnumFieldFromJSON(json: any): RequiredEnumField {

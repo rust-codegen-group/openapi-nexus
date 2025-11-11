@@ -17,9 +17,11 @@ export interface ArrayWithReferenceProperty {
   items: Array<{ itemId: string; owner: User }>,
 }
 
-export function instanceOfArrayWithReferenceProperty(value: object): value is ArrayWithReferenceProperty {
-  if (!('items' in value) || (value as any)['items'] === undefined) return false;
-  return true;
+export function instanceOfArrayWithReferenceProperty(value: unknown): value is ArrayWithReferenceProperty {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "items" in value && (value as any)["items"] !== undefined;
 }
 
 export function ArrayWithReferencePropertyFromJSON(json: any): ArrayWithReferenceProperty {

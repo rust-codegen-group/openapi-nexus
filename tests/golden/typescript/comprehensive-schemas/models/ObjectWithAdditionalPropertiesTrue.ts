@@ -17,9 +17,11 @@ export interface ObjectWithAdditionalPropertiesTrue {
   [key: string]: any,
 }
 
-export function instanceOfObjectWithAdditionalPropertiesTrue(value: object): value is ObjectWithAdditionalPropertiesTrue {
-  if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  return true;
+export function instanceOfObjectWithAdditionalPropertiesTrue(value: unknown): value is ObjectWithAdditionalPropertiesTrue {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "name" in value && (value as any)["name"] !== undefined;
 }
 
 export function ObjectWithAdditionalPropertiesTrueFromJSON(json: any): ObjectWithAdditionalPropertiesTrue {

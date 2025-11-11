@@ -17,9 +17,11 @@ export interface FooMember1 {
   bar: FooMember1Bar,
 }
 
-export function instanceOfFooMember1(value: object): value is FooMember1 {
-  if (!('bar' in value) || (value as any)['bar'] === undefined) return false;
-  return true;
+export function instanceOfFooMember1(value: unknown): value is FooMember1 {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "bar" in value && (value as any)["bar"] !== undefined;
 }
 
 export function FooMember1FromJSON(json: any): FooMember1 {

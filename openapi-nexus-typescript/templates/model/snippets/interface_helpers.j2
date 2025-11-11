@@ -1,8 +1,12 @@
-export function instanceOf{{ model_interface.signature.ts_name }}(value: object): value is {{ model_interface.signature.ts_name }} {
-{% for prop in model_interface.required_prop_names %}
-  if (!('{{ prop }}' in value) || (value as any)['{{ prop }}'] === undefined) return false;
-{% endfor %}
+export function instanceOf{{ model_interface.signature.ts_name }}(value: unknown): value is {{ model_interface.signature.ts_name }} {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+{% if model_interface.required_prop_names %}
+  return {% for prop in model_interface.required_prop_names %}"{{ prop }}" in value && (value as any)["{{ prop }}"] !== undefined{% if not loop.last %} && {% endif %}{% endfor %};
+{% else %}
   return true;
+{% endif %}
 }
 
 export function {{ model_interface.signature.ts_name }}FromJSON(json: any): {{ model_interface.signature.ts_name }} {

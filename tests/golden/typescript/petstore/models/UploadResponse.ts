@@ -18,7 +18,10 @@ export interface UploadResponse {
   type?: string | null,
 }
 
-export function instanceOfUploadResponse(value: object): value is UploadResponse {
+export function instanceOfUploadResponse(value: unknown): value is UploadResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

@@ -13,9 +13,11 @@ export interface ErrorResponse {
   message: string,
 }
 
-export function instanceOfErrorResponse(value: object): value is ErrorResponse {
-  if (!('message' in value) || (value as any)['message'] === undefined) return false;
-  return true;
+export function instanceOfErrorResponse(value: unknown): value is ErrorResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "message" in value && (value as any)["message"] !== undefined;
 }
 
 export function ErrorResponseFromJSON(json: any): ErrorResponse {

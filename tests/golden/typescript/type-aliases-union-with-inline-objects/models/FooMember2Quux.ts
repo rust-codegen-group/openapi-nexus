@@ -16,9 +16,11 @@ export interface FooMember2Quux {
   corge: string,
 }
 
-export function instanceOfFooMember2Quux(value: object): value is FooMember2Quux {
-  if (!('corge' in value) || (value as any)['corge'] === undefined) return false;
-  return true;
+export function instanceOfFooMember2Quux(value: unknown): value is FooMember2Quux {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "corge" in value && (value as any)["corge"] !== undefined;
 }
 
 export function FooMember2QuuxFromJSON(json: any): FooMember2Quux {

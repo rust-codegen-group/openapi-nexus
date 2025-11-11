@@ -18,10 +18,11 @@ export interface BasicObject {
   name: string,
 }
 
-export function instanceOfBasicObject(value: object): value is BasicObject {
-  if (!('id' in value) || (value as any)['id'] === undefined) return false;
-  if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  return true;
+export function instanceOfBasicObject(value: unknown): value is BasicObject {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "id" in value && (value as any)["id"] !== undefined && "name" in value && (value as any)["name"] !== undefined;
 }
 
 export function BasicObjectFromJSON(json: any): BasicObject {

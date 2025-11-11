@@ -542,6 +542,7 @@ impl ApiOperationGenerator {
                     original_name: camel_case_name,
                     type_expr,
                     optional: param.optional,
+                    is_index_signature: false,
                     documentation: None,
                 }
             })

@@ -16,7 +16,10 @@ export interface ComplexArrayStructureMetadata {
   tags?: Array<string>,
 }
 
-export function instanceOfComplexArrayStructureMetadata(value: object): value is ComplexArrayStructureMetadata {
+export function instanceOfComplexArrayStructureMetadata(value: unknown): value is ComplexArrayStructureMetadata {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

@@ -19,9 +19,11 @@ export interface InlineObjectTest {
   metadata: InlineObjectTestMetadata,
 }
 
-export function instanceOfInlineObjectTest(value: object): value is InlineObjectTest {
-  if (!('metadata' in value) || (value as any)['metadata'] === undefined) return false;
-  return true;
+export function instanceOfInlineObjectTest(value: unknown): value is InlineObjectTest {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "metadata" in value && (value as any)["metadata"] !== undefined;
 }
 
 export function InlineObjectTestFromJSON(json: any): InlineObjectTest {

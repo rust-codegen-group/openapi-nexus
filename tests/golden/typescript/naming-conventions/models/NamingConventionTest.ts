@@ -30,11 +30,11 @@ export interface NamingConventionTest {
   snakeCaseNumber?: number,
 }
 
-export function instanceOfNamingConventionTest(value: object): value is NamingConventionTest {
-  if (!('camelCaseField' in value) || (value as any)['camelCaseField'] === undefined) return false;
-  if (!('singleword' in value) || (value as any)['singleword'] === undefined) return false;
-  if (!('snakeCaseField' in value) || (value as any)['snakeCaseField'] === undefined) return false;
-  return true;
+export function instanceOfNamingConventionTest(value: unknown): value is NamingConventionTest {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "camelCaseField" in value && (value as any)["camelCaseField"] !== undefined && "singleword" in value && (value as any)["singleword"] !== undefined && "snake_case_field" in value && (value as any)["snake_case_field"] !== undefined;
 }
 
 export function NamingConventionTestFromJSON(json: any): NamingConventionTest {

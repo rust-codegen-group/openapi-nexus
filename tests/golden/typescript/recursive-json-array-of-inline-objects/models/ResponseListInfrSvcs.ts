@@ -18,9 +18,11 @@ export interface ResponseListInfrSvcs {
   inferenceServices: Array<{ createdAt: string; numReadyReplicas: number; numTotalReplicas: number; status: "decommissioned" | "degraded" | "running"; uid: string }>,
 }
 
-export function instanceOfResponseListInfrSvcs(value: object): value is ResponseListInfrSvcs {
-  if (!('inferenceServices' in value) || (value as any)['inferenceServices'] === undefined) return false;
-  return true;
+export function instanceOfResponseListInfrSvcs(value: unknown): value is ResponseListInfrSvcs {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "inference_services" in value && (value as any)["inference_services"] !== undefined;
 }
 
 export function ResponseListInfrSvcsFromJSON(json: any): ResponseListInfrSvcs {

@@ -17,10 +17,11 @@ export interface Quux {
   name: string,
 }
 
-export function instanceOfQuux(value: object): value is Quux {
-  if (!('foo' in value) || (value as any)['foo'] === undefined) return false;
-  if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  return true;
+export function instanceOfQuux(value: unknown): value is Quux {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "foo" in value && (value as any)["foo"] !== undefined && "name" in value && (value as any)["name"] !== undefined;
 }
 
 export function QuuxFromJSON(json: any): Quux {

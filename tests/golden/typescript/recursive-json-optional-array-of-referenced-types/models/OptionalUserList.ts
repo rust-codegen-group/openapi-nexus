@@ -17,7 +17,10 @@ export interface OptionalUserList {
   optionalUsers?: Array<User>,
 }
 
-export function instanceOfOptionalUserList(value: object): value is OptionalUserList {
+export function instanceOfOptionalUserList(value: unknown): value is OptionalUserList {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

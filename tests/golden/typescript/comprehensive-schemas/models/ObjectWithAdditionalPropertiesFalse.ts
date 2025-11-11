@@ -16,9 +16,11 @@ export interface ObjectWithAdditionalPropertiesFalse {
   name: string,
 }
 
-export function instanceOfObjectWithAdditionalPropertiesFalse(value: object): value is ObjectWithAdditionalPropertiesFalse {
-  if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  return true;
+export function instanceOfObjectWithAdditionalPropertiesFalse(value: unknown): value is ObjectWithAdditionalPropertiesFalse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "name" in value && (value as any)["name"] !== undefined;
 }
 
 export function ObjectWithAdditionalPropertiesFalseFromJSON(json: any): ObjectWithAdditionalPropertiesFalse {

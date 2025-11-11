@@ -37,6 +37,7 @@ impl ApiInterfaceBuilder {
                     original_name: m.name.clone(),
                     type_expr: func_type,
                     optional: false,
+                    is_index_signature: false,
                     documentation: m.documentation.clone(),
                 }
             })
@@ -64,6 +65,7 @@ impl ApiInterfaceBuilder {
                         original_name: conv_name.clone(),
                         type_expr: func_type,
                         optional: false,
+                        is_index_signature: false,
                         documentation: raw_method.documentation.clone(),
                     });
                 }

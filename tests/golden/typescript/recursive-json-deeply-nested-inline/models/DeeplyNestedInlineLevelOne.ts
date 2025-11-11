@@ -17,9 +17,11 @@ export interface DeeplyNestedInlineLevelOne {
   levelTwo?: DeeplyNestedInlineLevelOneLevelTwo,
 }
 
-export function instanceOfDeeplyNestedInlineLevelOne(value: object): value is DeeplyNestedInlineLevelOne {
-  if (!('levelOneField' in value) || (value as any)['levelOneField'] === undefined) return false;
-  return true;
+export function instanceOfDeeplyNestedInlineLevelOne(value: unknown): value is DeeplyNestedInlineLevelOne {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "level_one_field" in value && (value as any)["level_one_field"] !== undefined;
 }
 
 export function DeeplyNestedInlineLevelOneFromJSON(json: any): DeeplyNestedInlineLevelOne {

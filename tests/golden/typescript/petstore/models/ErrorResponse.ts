@@ -17,10 +17,11 @@ export interface ErrorResponse {
   message: string,
 }
 
-export function instanceOfErrorResponse(value: object): value is ErrorResponse {
-  if (!('code' in value) || (value as any)['code'] === undefined) return false;
-  if (!('message' in value) || (value as any)['message'] === undefined) return false;
-  return true;
+export function instanceOfErrorResponse(value: unknown): value is ErrorResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "code" in value && (value as any)["code"] !== undefined && "message" in value && (value as any)["message"] !== undefined;
 }
 
 export function ErrorResponseFromJSON(json: any): ErrorResponse {

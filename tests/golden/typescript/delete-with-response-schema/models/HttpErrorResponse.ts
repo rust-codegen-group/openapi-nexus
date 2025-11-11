@@ -17,9 +17,11 @@ export interface HttpErrorResponse {
   message?: string,
 }
 
-export function instanceOfHttpErrorResponse(value: object): value is HttpErrorResponse {
-  if (!('error' in value) || (value as any)['error'] === undefined) return false;
-  return true;
+export function instanceOfHttpErrorResponse(value: unknown): value is HttpErrorResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "error" in value && (value as any)["error"] !== undefined;
 }
 
 export function HttpErrorResponseFromJSON(json: any): HttpErrorResponse {

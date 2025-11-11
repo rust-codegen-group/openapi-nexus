@@ -17,7 +17,10 @@ export interface Category {
   name?: string | null,
 }
 
-export function instanceOfCategory(value: object): value is Category {
+export function instanceOfCategory(value: unknown): value is Category {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

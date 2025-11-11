@@ -21,7 +21,10 @@ export interface AllOptionalProperties {
   optionalString?: string,
 }
 
-export function instanceOfAllOptionalProperties(value: object): value is AllOptionalProperties {
+export function instanceOfAllOptionalProperties(value: unknown): value is AllOptionalProperties {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

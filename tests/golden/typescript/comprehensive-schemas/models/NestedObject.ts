@@ -19,7 +19,10 @@ export interface NestedObject {
   user?: NestedObjectUser,
 }
 
-export function instanceOfNestedObject(value: object): value is NestedObject {
+export function instanceOfNestedObject(value: unknown): value is NestedObject {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

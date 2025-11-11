@@ -17,7 +17,10 @@ export interface ComplexNestedObjectUser {
   profile?: ComplexNestedObjectUserProfile,
 }
 
-export function instanceOfComplexNestedObjectUser(value: object): value is ComplexNestedObjectUser {
+export function instanceOfComplexNestedObjectUser(value: unknown): value is ComplexNestedObjectUser {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

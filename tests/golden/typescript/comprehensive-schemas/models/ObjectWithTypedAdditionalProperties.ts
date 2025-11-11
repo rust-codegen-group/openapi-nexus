@@ -17,9 +17,11 @@ export interface ObjectWithTypedAdditionalProperties {
   [key: string]: string | number,
 }
 
-export function instanceOfObjectWithTypedAdditionalProperties(value: object): value is ObjectWithTypedAdditionalProperties {
-  if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  return true;
+export function instanceOfObjectWithTypedAdditionalProperties(value: unknown): value is ObjectWithTypedAdditionalProperties {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "name" in value && (value as any)["name"] !== undefined;
 }
 
 export function ObjectWithTypedAdditionalPropertiesFromJSON(json: any): ObjectWithTypedAdditionalProperties {

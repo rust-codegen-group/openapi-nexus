@@ -18,7 +18,10 @@ export interface ObjectWithDefaults {
   name?: string,
 }
 
-export function instanceOfObjectWithDefaults(value: object): value is ObjectWithDefaults {
+export function instanceOfObjectWithDefaults(value: unknown): value is ObjectWithDefaults {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

@@ -16,7 +16,10 @@ export interface NestedObjectMetadata {
   created?: string,
 }
 
-export function instanceOfNestedObjectMetadata(value: object): value is NestedObjectMetadata {
+export function instanceOfNestedObjectMetadata(value: unknown): value is NestedObjectMetadata {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 

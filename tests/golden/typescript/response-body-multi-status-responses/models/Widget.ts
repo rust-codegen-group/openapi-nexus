@@ -15,10 +15,11 @@ export interface Widget {
   name: string,
 }
 
-export function instanceOfWidget(value: object): value is Widget {
-  if (!('id' in value) || (value as any)['id'] === undefined) return false;
-  if (!('name' in value) || (value as any)['name'] === undefined) return false;
-  return true;
+export function instanceOfWidget(value: unknown): value is Widget {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "id" in value && (value as any)["id"] !== undefined && "name" in value && (value as any)["name"] !== undefined;
 }
 
 export function WidgetFromJSON(json: any): Widget {

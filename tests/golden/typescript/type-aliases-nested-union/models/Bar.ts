@@ -16,10 +16,11 @@ export interface Bar {
   type: "bar",
 }
 
-export function instanceOfBar(value: object): value is Bar {
-  if (!('endpoint' in value) || (value as any)['endpoint'] === undefined) return false;
-  if (!('type' in value) || (value as any)['type'] === undefined) return false;
-  return true;
+export function instanceOfBar(value: unknown): value is Bar {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "endpoint" in value && (value as any)["endpoint"] !== undefined && "type" in value && (value as any)["type"] !== undefined;
 }
 
 export function BarFromJSON(json: any): Bar {

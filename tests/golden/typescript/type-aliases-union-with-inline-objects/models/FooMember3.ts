@@ -17,9 +17,11 @@ export interface FooMember3 {
   grault: FooMember3Grault,
 }
 
-export function instanceOfFooMember3(value: object): value is FooMember3 {
-  if (!('grault' in value) || (value as any)['grault'] === undefined) return false;
-  return true;
+export function instanceOfFooMember3(value: unknown): value is FooMember3 {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "grault" in value && (value as any)["grault"] !== undefined;
 }
 
 export function FooMember3FromJSON(json: any): FooMember3 {

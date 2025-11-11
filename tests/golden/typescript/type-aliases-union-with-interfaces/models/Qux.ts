@@ -17,11 +17,11 @@ export interface Qux {
   url: string,
 }
 
-export function instanceOfQux(value: object): value is Qux {
-  if (!('namespace' in value) || (value as any)['namespace'] === undefined) return false;
-  if (!('type' in value) || (value as any)['type'] === undefined) return false;
-  if (!('url' in value) || (value as any)['url'] === undefined) return false;
-  return true;
+export function instanceOfQux(value: unknown): value is Qux {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "namespace" in value && (value as any)["namespace"] !== undefined && "type" in value && (value as any)["type"] !== undefined && "url" in value && (value as any)["url"] !== undefined;
 }
 
 export function QuxFromJSON(json: any): Qux {

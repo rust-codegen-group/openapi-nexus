@@ -16,9 +16,11 @@ export interface Baz {
   email: string,
 }
 
-export function instanceOfBaz(value: object): value is Baz {
-  if (!('email' in value) || (value as any)['email'] === undefined) return false;
-  return true;
+export function instanceOfBaz(value: unknown): value is Baz {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return "email" in value && (value as any)["email"] !== undefined;
 }
 
 export function BazFromJSON(json: any): Baz {

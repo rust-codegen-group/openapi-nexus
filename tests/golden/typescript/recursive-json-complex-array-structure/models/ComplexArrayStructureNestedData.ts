@@ -16,7 +16,10 @@ export interface ComplexArrayStructureNestedData {
   nestedFieldTwo?: number,
 }
 
-export function instanceOfComplexArrayStructureNestedData(value: object): value is ComplexArrayStructureNestedData {
+export function instanceOfComplexArrayStructureNestedData(value: unknown): value is ComplexArrayStructureNestedData {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
   return true;
 }
 
