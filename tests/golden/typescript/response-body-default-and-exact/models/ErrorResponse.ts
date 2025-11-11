@@ -17,7 +17,11 @@ export function instanceOfErrorResponse(value: unknown): value is ErrorResponse 
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "message" in value && (value as any)["message"] !== undefined;
+  const hasAllOriginalNames =
+    "message" in value && (value as any)["message"] !== undefined;
+  const hasAllTsNames =
+    "message" in value && (value as any)["message"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function ErrorResponseFromJSON(json: any): ErrorResponse {

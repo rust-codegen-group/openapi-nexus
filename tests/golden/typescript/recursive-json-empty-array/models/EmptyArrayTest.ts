@@ -20,7 +20,11 @@ export function instanceOfEmptyArrayTest(value: unknown): value is EmptyArrayTes
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "empty_items" in value && (value as any)["empty_items"] !== undefined;
+  const hasAllOriginalNames =
+    "empty_items" in value && (value as any)["empty_items"] !== undefined;
+  const hasAllTsNames =
+    "emptyItems" in value && (value as any)["emptyItems"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function EmptyArrayTestFromJSON(json: any): EmptyArrayTest {

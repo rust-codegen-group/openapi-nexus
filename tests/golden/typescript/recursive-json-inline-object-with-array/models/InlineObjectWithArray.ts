@@ -21,7 +21,11 @@ export function instanceOfInlineObjectWithArray(value: unknown): value is Inline
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "container_data" in value && (value as any)["container_data"] !== undefined;
+  const hasAllOriginalNames =
+    "container_data" in value && (value as any)["container_data"] !== undefined;
+  const hasAllTsNames =
+    "containerData" in value && (value as any)["containerData"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function InlineObjectWithArrayFromJSON(json: any): InlineObjectWithArray {

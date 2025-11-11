@@ -22,7 +22,11 @@ export function instanceOfUserWithOptionalProfile(value: unknown): value is User
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "user_id" in value && (value as any)["user_id"] !== undefined;
+  const hasAllOriginalNames =
+    "user_id" in value && (value as any)["user_id"] !== undefined;
+  const hasAllTsNames =
+    "userId" in value && (value as any)["userId"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function UserWithOptionalProfileFromJSON(json: any): UserWithOptionalProfile {

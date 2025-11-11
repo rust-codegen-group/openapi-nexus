@@ -21,7 +21,11 @@ export function instanceOfResponseListUsers(value: unknown): value is ResponseLi
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "users" in value && (value as any)["users"] !== undefined;
+  const hasAllOriginalNames =
+    "users" in value && (value as any)["users"] !== undefined;
+  const hasAllTsNames =
+    "users" in value && (value as any)["users"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function ResponseListUsersFromJSON(json: any): ResponseListUsers {

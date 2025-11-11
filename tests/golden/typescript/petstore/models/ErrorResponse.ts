@@ -21,7 +21,13 @@ export function instanceOfErrorResponse(value: unknown): value is ErrorResponse 
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "code" in value && (value as any)["code"] !== undefined && "message" in value && (value as any)["message"] !== undefined;
+  const hasAllOriginalNames =
+    "code" in value && (value as any)["code"] !== undefined &&
+    "message" in value && (value as any)["message"] !== undefined;
+  const hasAllTsNames =
+    "code" in value && (value as any)["code"] !== undefined &&
+    "message" in value && (value as any)["message"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function ErrorResponseFromJSON(json: any): ErrorResponse {

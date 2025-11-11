@@ -3,7 +3,17 @@ export function instanceOf{{ model_interface.signature.ts_name }}(value: unknown
     return false;
   }
 {% if model_interface.required_prop_names %}
-  return {% for prop in model_interface.required_prop_names %}"{{ prop }}" in value && (value as any)["{{ prop }}"] !== undefined{% if not loop.last %} && {% endif %}{% endfor %};
+  const hasAllOriginalNames =
+{% for prop in model_interface.required_prop_names %}
+    "{{ prop.original_name }}" in value && (value as any)["{{ prop.original_name }}"] !== undefined{% if not loop.last %} &&{{"\n"}}{% else %};{% endif %}
+{% endfor %}
+
+  const hasAllTsNames =
+{% for prop in model_interface.required_prop_names %}
+    "{{ prop.ts_name }}" in value && (value as any)["{{ prop.ts_name }}"] !== undefined{% if not loop.last %} &&{{"\n"}}{% else %};{% endif %}
+{% endfor %}
+
+  return hasAllOriginalNames || hasAllTsNames;
 {% else %}
   return true;
 {% endif %}

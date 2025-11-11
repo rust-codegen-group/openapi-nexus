@@ -20,7 +20,11 @@ export function instanceOfRequiredEnumField(value: unknown): value is RequiredEn
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "status" in value && (value as any)["status"] !== undefined;
+  const hasAllOriginalNames =
+    "status" in value && (value as any)["status"] !== undefined;
+  const hasAllTsNames =
+    "status" in value && (value as any)["status"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function RequiredEnumFieldFromJSON(json: any): RequiredEnumField {

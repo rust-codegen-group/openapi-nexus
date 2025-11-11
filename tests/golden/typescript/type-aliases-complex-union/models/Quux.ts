@@ -21,7 +21,13 @@ export function instanceOfQuux(value: unknown): value is Quux {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "foo" in value && (value as any)["foo"] !== undefined && "name" in value && (value as any)["name"] !== undefined;
+  const hasAllOriginalNames =
+    "foo" in value && (value as any)["foo"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  const hasAllTsNames =
+    "foo" in value && (value as any)["foo"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function QuuxFromJSON(json: any): Quux {

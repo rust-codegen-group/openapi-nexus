@@ -23,7 +23,15 @@ export function instanceOfUser(value: unknown): value is User {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "email" in value && (value as any)["email"] !== undefined && "id" in value && (value as any)["id"] !== undefined && "name" in value && (value as any)["name"] !== undefined;
+  const hasAllOriginalNames =
+    "email" in value && (value as any)["email"] !== undefined &&
+    "id" in value && (value as any)["id"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  const hasAllTsNames =
+    "email" in value && (value as any)["email"] !== undefined &&
+    "id" in value && (value as any)["id"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function UserFromJSON(json: any): User {

@@ -20,7 +20,11 @@ export function instanceOfFooMember3Grault(value: unknown): value is FooMember3G
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "garply" in value && (value as any)["garply"] !== undefined;
+  const hasAllOriginalNames =
+    "garply" in value && (value as any)["garply"] !== undefined;
+  const hasAllTsNames =
+    "garply" in value && (value as any)["garply"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooMember3GraultFromJSON(json: any): FooMember3Grault {

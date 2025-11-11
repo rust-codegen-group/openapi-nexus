@@ -22,7 +22,13 @@ export function instanceOfBasicObject(value: unknown): value is BasicObject {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "id" in value && (value as any)["id"] !== undefined && "name" in value && (value as any)["name"] !== undefined;
+  const hasAllOriginalNames =
+    "id" in value && (value as any)["id"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  const hasAllTsNames =
+    "id" in value && (value as any)["id"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function BasicObjectFromJSON(json: any): BasicObject {

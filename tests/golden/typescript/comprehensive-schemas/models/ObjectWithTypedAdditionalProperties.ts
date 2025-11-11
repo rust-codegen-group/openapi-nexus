@@ -21,7 +21,11 @@ export function instanceOfObjectWithTypedAdditionalProperties(value: unknown): v
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "name" in value && (value as any)["name"] !== undefined;
+  const hasAllOriginalNames =
+    "name" in value && (value as any)["name"] !== undefined;
+  const hasAllTsNames =
+    "name" in value && (value as any)["name"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function ObjectWithTypedAdditionalPropertiesFromJSON(json: any): ObjectWithTypedAdditionalProperties {

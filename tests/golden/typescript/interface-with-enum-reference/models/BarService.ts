@@ -21,7 +21,11 @@ export function instanceOfBarService(value: unknown): value is BarService {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "status" in value && (value as any)["status"] !== undefined;
+  const hasAllOriginalNames =
+    "status" in value && (value as any)["status"] !== undefined;
+  const hasAllTsNames =
+    "status" in value && (value as any)["status"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function BarServiceFromJSON(json: any): BarService {

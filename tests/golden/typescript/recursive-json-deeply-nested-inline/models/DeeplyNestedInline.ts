@@ -21,7 +21,11 @@ export function instanceOfDeeplyNestedInline(value: unknown): value is DeeplyNes
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "level_one" in value && (value as any)["level_one"] !== undefined;
+  const hasAllOriginalNames =
+    "level_one" in value && (value as any)["level_one"] !== undefined;
+  const hasAllTsNames =
+    "levelOne" in value && (value as any)["levelOne"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function DeeplyNestedInlineFromJSON(json: any): DeeplyNestedInline {

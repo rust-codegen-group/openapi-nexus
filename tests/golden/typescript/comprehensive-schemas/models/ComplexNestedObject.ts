@@ -21,7 +21,13 @@ export function instanceOfComplexNestedObject(value: unknown): value is ComplexN
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "id" in value && (value as any)["id"] !== undefined && "user" in value && (value as any)["user"] !== undefined;
+  const hasAllOriginalNames =
+    "id" in value && (value as any)["id"] !== undefined &&
+    "user" in value && (value as any)["user"] !== undefined;
+  const hasAllTsNames =
+    "id" in value && (value as any)["id"] !== undefined &&
+    "user" in value && (value as any)["user"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function ComplexNestedObjectFromJSON(json: any): ComplexNestedObject {

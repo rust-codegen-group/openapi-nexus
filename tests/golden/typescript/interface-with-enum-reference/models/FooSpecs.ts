@@ -20,7 +20,11 @@ export function instanceOfFooSpecs(value: unknown): value is FooSpecs {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "foo_type" in value && (value as any)["foo_type"] !== undefined;
+  const hasAllOriginalNames =
+    "foo_type" in value && (value as any)["foo_type"] !== undefined;
+  const hasAllTsNames =
+    "fooType" in value && (value as any)["fooType"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooSpecsFromJSON(json: any): FooSpecs {

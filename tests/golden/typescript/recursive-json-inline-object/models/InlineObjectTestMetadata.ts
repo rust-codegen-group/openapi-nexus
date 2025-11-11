@@ -21,7 +21,11 @@ export function instanceOfInlineObjectTestMetadata(value: unknown): value is Inl
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "created_at" in value && (value as any)["created_at"] !== undefined;
+  const hasAllOriginalNames =
+    "created_at" in value && (value as any)["created_at"] !== undefined;
+  const hasAllTsNames =
+    "createdAt" in value && (value as any)["createdAt"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function InlineObjectTestMetadataFromJSON(json: any): InlineObjectTestMetadata {

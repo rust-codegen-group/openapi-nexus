@@ -22,7 +22,11 @@ export function instanceOfComplexArrayStructure(value: unknown): value is Comple
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "items" in value && (value as any)["items"] !== undefined;
+  const hasAllOriginalNames =
+    "items" in value && (value as any)["items"] !== undefined;
+  const hasAllTsNames =
+    "items" in value && (value as any)["items"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function ComplexArrayStructureFromJSON(json: any): ComplexArrayStructure {

@@ -21,7 +21,11 @@ export function instanceOfHttpErrorResponse(value: unknown): value is HttpErrorR
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "error" in value && (value as any)["error"] !== undefined;
+  const hasAllOriginalNames =
+    "error" in value && (value as any)["error"] !== undefined;
+  const hasAllTsNames =
+    "error" in value && (value as any)["error"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function HttpErrorResponseFromJSON(json: any): HttpErrorResponse {

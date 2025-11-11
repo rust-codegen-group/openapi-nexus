@@ -21,7 +21,13 @@ export function instanceOfPrimitiveArray(value: unknown): value is PrimitiveArra
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "number_items" in value && (value as any)["number_items"] !== undefined && "string_items" in value && (value as any)["string_items"] !== undefined;
+  const hasAllOriginalNames =
+    "number_items" in value && (value as any)["number_items"] !== undefined &&
+    "string_items" in value && (value as any)["string_items"] !== undefined;
+  const hasAllTsNames =
+    "numberItems" in value && (value as any)["numberItems"] !== undefined &&
+    "stringItems" in value && (value as any)["stringItems"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function PrimitiveArrayFromJSON(json: any): PrimitiveArray {

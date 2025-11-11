@@ -22,7 +22,11 @@ export function instanceOfResponseListInfrSvcs(value: unknown): value is Respons
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "inference_services" in value && (value as any)["inference_services"] !== undefined;
+  const hasAllOriginalNames =
+    "inference_services" in value && (value as any)["inference_services"] !== undefined;
+  const hasAllTsNames =
+    "inferenceServices" in value && (value as any)["inferenceServices"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function ResponseListInfrSvcsFromJSON(json: any): ResponseListInfrSvcs {

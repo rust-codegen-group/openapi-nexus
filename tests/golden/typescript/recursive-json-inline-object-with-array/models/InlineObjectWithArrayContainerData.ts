@@ -20,7 +20,11 @@ export function instanceOfInlineObjectWithArrayContainerData(value: unknown): va
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "container_id" in value && (value as any)["container_id"] !== undefined;
+  const hasAllOriginalNames =
+    "container_id" in value && (value as any)["container_id"] !== undefined;
+  const hasAllTsNames =
+    "containerId" in value && (value as any)["containerId"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function InlineObjectWithArrayContainerDataFromJSON(json: any): InlineObjectWithArrayContainerData {

@@ -20,7 +20,11 @@ export function instanceOfBaz(value: unknown): value is Baz {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "email" in value && (value as any)["email"] !== undefined;
+  const hasAllOriginalNames =
+    "email" in value && (value as any)["email"] !== undefined;
+  const hasAllTsNames =
+    "email" in value && (value as any)["email"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function BazFromJSON(json: any): Baz {

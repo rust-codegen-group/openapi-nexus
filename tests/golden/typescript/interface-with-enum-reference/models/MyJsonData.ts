@@ -20,7 +20,11 @@ export function instanceOfMyJsonData(value: unknown): value is MyJsonData {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "az" in value && (value as any)["az"] !== undefined;
+  const hasAllOriginalNames =
+    "az" in value && (value as any)["az"] !== undefined;
+  const hasAllTsNames =
+    "az" in value && (value as any)["az"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function MyJsonDataFromJSON(json: any): MyJsonData {

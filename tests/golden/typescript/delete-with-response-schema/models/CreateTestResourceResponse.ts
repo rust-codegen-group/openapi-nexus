@@ -20,7 +20,11 @@ export function instanceOfCreateTestResourceResponse(value: unknown): value is C
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "resource_id" in value && (value as any)["resource_id"] !== undefined;
+  const hasAllOriginalNames =
+    "resource_id" in value && (value as any)["resource_id"] !== undefined;
+  const hasAllTsNames =
+    "resourceId" in value && (value as any)["resourceId"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function CreateTestResourceResponseFromJSON(json: any): CreateTestResourceResponse {

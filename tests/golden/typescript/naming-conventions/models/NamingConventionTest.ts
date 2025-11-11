@@ -34,7 +34,15 @@ export function instanceOfNamingConventionTest(value: unknown): value is NamingC
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "camelCaseField" in value && (value as any)["camelCaseField"] !== undefined && "singleword" in value && (value as any)["singleword"] !== undefined && "snake_case_field" in value && (value as any)["snake_case_field"] !== undefined;
+  const hasAllOriginalNames =
+    "camelCaseField" in value && (value as any)["camelCaseField"] !== undefined &&
+    "singleword" in value && (value as any)["singleword"] !== undefined &&
+    "snake_case_field" in value && (value as any)["snake_case_field"] !== undefined;
+  const hasAllTsNames =
+    "camelCaseField" in value && (value as any)["camelCaseField"] !== undefined &&
+    "singleword" in value && (value as any)["singleword"] !== undefined &&
+    "snakeCaseField" in value && (value as any)["snakeCaseField"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function NamingConventionTestFromJSON(json: any): NamingConventionTest {

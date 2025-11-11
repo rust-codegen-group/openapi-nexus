@@ -26,7 +26,13 @@ export function instanceOfMixedPropertyTypes(value: unknown): value is MixedProp
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "array_of_inline" in value && (value as any)["array_of_inline"] !== undefined && "simple_string" in value && (value as any)["simple_string"] !== undefined;
+  const hasAllOriginalNames =
+    "array_of_inline" in value && (value as any)["array_of_inline"] !== undefined &&
+    "simple_string" in value && (value as any)["simple_string"] !== undefined;
+  const hasAllTsNames =
+    "arrayOfInline" in value && (value as any)["arrayOfInline"] !== undefined &&
+    "simpleString" in value && (value as any)["simpleString"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function MixedPropertyTypesFromJSON(json: any): MixedPropertyTypes {

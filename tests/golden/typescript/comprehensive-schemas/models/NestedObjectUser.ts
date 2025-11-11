@@ -21,7 +21,11 @@ export function instanceOfNestedObjectUser(value: unknown): value is NestedObjec
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "id" in value && (value as any)["id"] !== undefined;
+  const hasAllOriginalNames =
+    "id" in value && (value as any)["id"] !== undefined;
+  const hasAllTsNames =
+    "id" in value && (value as any)["id"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function NestedObjectUserFromJSON(json: any): NestedObjectUser {

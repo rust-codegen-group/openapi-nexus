@@ -21,7 +21,15 @@ export function instanceOfQux(value: unknown): value is Qux {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "namespace" in value && (value as any)["namespace"] !== undefined && "type" in value && (value as any)["type"] !== undefined && "url" in value && (value as any)["url"] !== undefined;
+  const hasAllOriginalNames =
+    "namespace" in value && (value as any)["namespace"] !== undefined &&
+    "type" in value && (value as any)["type"] !== undefined &&
+    "url" in value && (value as any)["url"] !== undefined;
+  const hasAllTsNames =
+    "namespace" in value && (value as any)["namespace"] !== undefined &&
+    "type" in value && (value as any)["type"] !== undefined &&
+    "url" in value && (value as any)["url"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function QuxFromJSON(json: any): Qux {

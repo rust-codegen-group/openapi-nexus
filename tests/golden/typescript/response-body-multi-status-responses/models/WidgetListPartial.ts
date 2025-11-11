@@ -19,7 +19,11 @@ export function instanceOfWidgetListPartial(value: unknown): value is WidgetList
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "items" in value && (value as any)["items"] !== undefined;
+  const hasAllOriginalNames =
+    "items" in value && (value as any)["items"] !== undefined;
+  const hasAllTsNames =
+    "items" in value && (value as any)["items"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function WidgetListPartialFromJSON(json: any): WidgetListPartial {

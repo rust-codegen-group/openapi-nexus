@@ -20,7 +20,11 @@ export function instanceOfFooGrault(value: unknown): value is FooGrault {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "garply" in value && (value as any)["garply"] !== undefined;
+  const hasAllOriginalNames =
+    "garply" in value && (value as any)["garply"] !== undefined;
+  const hasAllTsNames =
+    "garply" in value && (value as any)["garply"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooGraultFromJSON(json: any): FooGrault {

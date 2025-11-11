@@ -22,7 +22,11 @@ export function instanceOfNamingConventionTestNestedObject(value: unknown): valu
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "nested_snake_case" in value && (value as any)["nested_snake_case"] !== undefined;
+  const hasAllOriginalNames =
+    "nested_snake_case" in value && (value as any)["nested_snake_case"] !== undefined;
+  const hasAllTsNames =
+    "nestedSnakeCase" in value && (value as any)["nestedSnakeCase"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function NamingConventionTestNestedObjectFromJSON(json: any): NamingConventionTestNestedObject {

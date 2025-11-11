@@ -17,7 +17,11 @@ export function instanceOfFooRequest(value: unknown): value is FooRequest {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "bar" in value && (value as any)["bar"] !== undefined;
+  const hasAllOriginalNames =
+    "bar" in value && (value as any)["bar"] !== undefined;
+  const hasAllTsNames =
+    "bar" in value && (value as any)["bar"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooRequestFromJSON(json: any): FooRequest {

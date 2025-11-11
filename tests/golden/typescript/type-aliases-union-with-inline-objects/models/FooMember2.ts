@@ -21,7 +21,11 @@ export function instanceOfFooMember2(value: unknown): value is FooMember2 {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "quux" in value && (value as any)["quux"] !== undefined;
+  const hasAllOriginalNames =
+    "quux" in value && (value as any)["quux"] !== undefined;
+  const hasAllTsNames =
+    "quux" in value && (value as any)["quux"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooMember2FromJSON(json: any): FooMember2 {

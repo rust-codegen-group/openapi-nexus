@@ -21,7 +21,11 @@ export function instanceOfDeleteTestResourceResponse(value: unknown): value is D
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "success" in value && (value as any)["success"] !== undefined;
+  const hasAllOriginalNames =
+    "success" in value && (value as any)["success"] !== undefined;
+  const hasAllTsNames =
+    "success" in value && (value as any)["success"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function DeleteTestResourceResponseFromJSON(json: any): DeleteTestResourceResponse {

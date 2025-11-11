@@ -23,7 +23,11 @@ export function instanceOfInlineObjectTest(value: unknown): value is InlineObjec
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "metadata" in value && (value as any)["metadata"] !== undefined;
+  const hasAllOriginalNames =
+    "metadata" in value && (value as any)["metadata"] !== undefined;
+  const hasAllTsNames =
+    "metadata" in value && (value as any)["metadata"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function InlineObjectTestFromJSON(json: any): InlineObjectTest {

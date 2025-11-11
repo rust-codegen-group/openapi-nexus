@@ -20,7 +20,13 @@ export function instanceOfBar(value: unknown): value is Bar {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "id" in value && (value as any)["id"] !== undefined && "name" in value && (value as any)["name"] !== undefined;
+  const hasAllOriginalNames =
+    "id" in value && (value as any)["id"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  const hasAllTsNames =
+    "id" in value && (value as any)["id"] !== undefined &&
+    "name" in value && (value as any)["name"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function BarFromJSON(json: any): Bar {

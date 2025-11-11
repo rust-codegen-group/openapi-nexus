@@ -22,7 +22,13 @@ export function instanceOfUserWithProfile(value: unknown): value is UserWithProf
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "profile" in value && (value as any)["profile"] !== undefined && "user_id" in value && (value as any)["user_id"] !== undefined;
+  const hasAllOriginalNames =
+    "profile" in value && (value as any)["profile"] !== undefined &&
+    "user_id" in value && (value as any)["user_id"] !== undefined;
+  const hasAllTsNames =
+    "profile" in value && (value as any)["profile"] !== undefined &&
+    "userId" in value && (value as any)["userId"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function UserWithProfileFromJSON(json: any): UserWithProfile {

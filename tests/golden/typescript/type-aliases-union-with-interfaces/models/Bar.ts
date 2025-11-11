@@ -21,7 +21,15 @@ export function instanceOfBar(value: unknown): value is Bar {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "bucket" in value && (value as any)["bucket"] !== undefined && "endpoint" in value && (value as any)["endpoint"] !== undefined && "type" in value && (value as any)["type"] !== undefined;
+  const hasAllOriginalNames =
+    "bucket" in value && (value as any)["bucket"] !== undefined &&
+    "endpoint" in value && (value as any)["endpoint"] !== undefined &&
+    "type" in value && (value as any)["type"] !== undefined;
+  const hasAllTsNames =
+    "bucket" in value && (value as any)["bucket"] !== undefined &&
+    "endpoint" in value && (value as any)["endpoint"] !== undefined &&
+    "type" in value && (value as any)["type"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function BarFromJSON(json: any): Bar {

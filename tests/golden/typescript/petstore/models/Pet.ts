@@ -28,7 +28,13 @@ export function instanceOfPet(value: unknown): value is Pet {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "name" in value && (value as any)["name"] !== undefined && "photo_urls" in value && (value as any)["photo_urls"] !== undefined;
+  const hasAllOriginalNames =
+    "name" in value && (value as any)["name"] !== undefined &&
+    "photo_urls" in value && (value as any)["photo_urls"] !== undefined;
+  const hasAllTsNames =
+    "name" in value && (value as any)["name"] !== undefined &&
+    "photoUrls" in value && (value as any)["photoUrls"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function PetFromJSON(json: any): Pet {

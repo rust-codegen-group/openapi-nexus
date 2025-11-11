@@ -20,7 +20,11 @@ export function instanceOfFooMember2Quux(value: unknown): value is FooMember2Quu
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "corge" in value && (value as any)["corge"] !== undefined;
+  const hasAllOriginalNames =
+    "corge" in value && (value as any)["corge"] !== undefined;
+  const hasAllTsNames =
+    "corge" in value && (value as any)["corge"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooMember2QuuxFromJSON(json: any): FooMember2Quux {

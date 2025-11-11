@@ -21,7 +21,11 @@ export function instanceOfFooMember3(value: unknown): value is FooMember3 {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "grault" in value && (value as any)["grault"] !== undefined;
+  const hasAllOriginalNames =
+    "grault" in value && (value as any)["grault"] !== undefined;
+  const hasAllTsNames =
+    "grault" in value && (value as any)["grault"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooMember3FromJSON(json: any): FooMember3 {

@@ -21,7 +21,13 @@ export function instanceOfFooBar(value: unknown): value is FooBar {
   if (!value || typeof value !== "object") {
     return false;
   }
-  return "baz" in value && (value as any)["baz"] !== undefined && "qux" in value && (value as any)["qux"] !== undefined;
+  const hasAllOriginalNames =
+    "baz" in value && (value as any)["baz"] !== undefined &&
+    "qux" in value && (value as any)["qux"] !== undefined;
+  const hasAllTsNames =
+    "baz" in value && (value as any)["baz"] !== undefined &&
+    "qux" in value && (value as any)["qux"] !== undefined;
+  return hasAllOriginalNames || hasAllTsNames;
 }
 
 export function FooBarFromJSON(json: any): FooBar {
