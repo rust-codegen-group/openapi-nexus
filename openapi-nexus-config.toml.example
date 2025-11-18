@@ -1,5 +1,6 @@
 [global]
 output = "generated"
+generator = "typescript-fetch"
 verbose = false
 
 [typescript]

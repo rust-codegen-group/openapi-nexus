@@ -27,7 +27,7 @@ OpenAPI Nexus is a modern, modular code generator that transforms OpenAPI 3.1 sp
 Generate TypeScript code from an OpenAPI specification:
 
 ```bash
-openapi-nexus generate --input path/to/openapi.yaml --output generated --language typescript
+openapi-nexus generate --input path/to/openapi.yaml --output generated --generator typescript-fetch
 ```
 
 ## 📖 Configuration
@@ -50,7 +50,7 @@ All configuration options can also be set via environment variables:
 ```bash
 export OPENAPI_NEXUS_INPUT="spec.yaml"
 export OPENAPI_NEXUS_OUTPUT="generated"
-export OPENAPI_NEXUS_LANGUAGE="typescript"
+export OPENAPI_NEXUS_GENERATOR="typescript-fetch"
 export OPENAPI_NEXUS_TS_FILE_NAMING_CONVENTION="PascalCase"
 ```
 

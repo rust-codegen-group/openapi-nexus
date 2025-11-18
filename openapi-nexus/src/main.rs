@@ -4,7 +4,6 @@ use clap::Parser;
 use std::process;
 use tracing::{error, info};
 
-use openapi_nexus_common::Language;
 use openapi_nexus_config::{CliArgs, Commands, ConfigLoader, ConfigMerger};
 use openapi_nexus_core::OpenApiCodeGenerator;
 use openapi_nexus_typescript::TsLangGenerator;
@@ -52,20 +51,38 @@ fn main() {
 
     match cli_args.command {
         Commands::Generate { .. } => {
-            let language = resolved_config.global.language();
+            let generator_framework = match resolved_config.global.generator() {
+                Some(g) => g,
+                None => {
+                    error!(
+                        "Generator is required. Please specify a generator using --generator (e.g., --generator typescript-fetch)"
+                    );
+                    process::exit(1);
+                }
+            };
+            let language = match resolved_config.global.language() {
+                Some(l) => l,
+                None => {
+                    error!("Language could not be determined from generator");
+                    process::exit(1);
+                }
+            };
             info!("Starting code generation");
             info!("Input: {}", resolved_config.global.input());
             info!("Output: {}", resolved_config.global.output());
-            info!("Language: {}", language);
+            info!("Generator: {}", generator_framework);
 
             let mut generator = OpenApiCodeGenerator::new();
 
-            // Register generators based on selected language
-            match language {
-                Language::TypeScript => {
+            // Register generators based on selected generator framework
+            match generator_framework {
+                openapi_nexus_common::Generator::TypeScriptFetch => {
                     let ts_generator = TsLangGenerator::new(resolved_config.typescript.clone());
                     if let Err(e) = generator.register_language_generator(language, ts_generator) {
-                        error!("Failed to register {} generator: {}", language, e);
+                        error!(
+                            "Failed to register {} generator: {}",
+                            generator_framework, e
+                        );
                         process::exit(1);
                     }
                 }

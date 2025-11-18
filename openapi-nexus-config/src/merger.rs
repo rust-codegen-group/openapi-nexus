@@ -4,7 +4,7 @@ use crate::cli::Commands;
 use crate::config::ConfigFile;
 use crate::global_config::GlobalConfig;
 use crate::typescript_config::TypeScriptConfig;
-use openapi_nexus_common::Language;
+use openapi_nexus_common::Generator;
 
 /// Merge configurations with precedence: CLI > Env > Config File > Defaults
 pub struct ConfigMerger;
@@ -33,7 +33,7 @@ impl ConfigMerger {
         let merged_global = GlobalConfig {
             input: cli_global.input.clone(),
             output: cli_global.output.clone(),
-            language: cli_global.language,
+            generator: cli_global.generator,
         };
 
         // Merge TypeScript config
@@ -59,8 +59,10 @@ impl ConfigMerger {
 
         // Resolve and validate
         let input = merged_global.input.clone();
-        let language = merged_global.language.unwrap_or(Language::TypeScript);
-        let resolved_global = merged_global.resolve(input, language).map_err(|msg| {
+        let generator = merged_global
+            .generator
+            .unwrap_or(Generator::TypeScriptFetch);
+        let resolved_global = merged_global.resolve(input, generator).map_err(|msg| {
             let err = MergeError::ValidationError(msg.clone());
             tracing::error!("{}", err);
             err

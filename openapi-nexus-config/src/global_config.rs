@@ -3,7 +3,7 @@
 use clap::Args;
 use serde::{Deserialize, Serialize};
 
-use openapi_nexus_common::Language;
+use openapi_nexus_common::{Generator, Language};
 
 /// Global configuration settings (supports CLI args, env vars, and config files)
 #[derive(Debug, Clone, Args, Serialize, Deserialize)]
@@ -18,9 +18,9 @@ pub struct GlobalConfig {
     #[serde(default = "default_output_string")]
     pub output: String,
 
-    /// Language to generate code for
-    #[arg(short, long, env = "OPENAPI_NEXUS_LANGUAGE")]
-    pub language: Option<Language>,
+    /// Generator framework to use (e.g., typescript-fetch)
+    #[arg(short = 'g', long, env = "OPENAPI_NEXUS_GENERATOR")]
+    pub generator: Option<Generator>,
 }
 
 fn default_output() -> &'static str {
@@ -36,7 +36,7 @@ impl Default for GlobalConfig {
         Self {
             input: String::new(),
             output: default_output_string(),
-            language: None,
+            generator: None,
         }
     }
 }
@@ -44,9 +44,9 @@ impl Default for GlobalConfig {
 impl GlobalConfig {
     /// Resolve configuration with defaults applied
     ///
-    /// Takes required values that must come from CLI (input, language)
+    /// Takes required values that must come from CLI (input, generator)
     /// and merges with optional values from config/env, applying defaults.
-    pub fn resolve(self, input: String, language: Language) -> Result<Self, String> {
+    pub fn resolve(self, input: String, generator: Generator) -> Result<Self, String> {
         if input.is_empty() {
             return Err("Input is required and cannot be empty".to_string());
         }
@@ -54,7 +54,7 @@ impl GlobalConfig {
         Ok(Self {
             input,
             output: self.output,
-            language: Some(language),
+            generator: Some(generator),
         })
     }
 
@@ -68,8 +68,13 @@ impl GlobalConfig {
         &self.output
     }
 
-    /// Get language
-    pub fn language(&self) -> Language {
-        self.language.unwrap_or(Language::TypeScript)
+    /// Get generator
+    pub fn generator(&self) -> Option<Generator> {
+        self.generator
+    }
+
+    /// Get language (extracted from generator for backward compatibility)
+    pub fn language(&self) -> Option<Language> {
+        self.generator.map(|g| g.to_language())
     }
 }
