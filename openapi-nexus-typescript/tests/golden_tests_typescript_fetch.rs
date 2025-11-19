@@ -37,7 +37,21 @@ fn read_fixture(fixture_path: &str) -> String {
 
 /// Get the golden directory path
 fn get_golden_dir() -> &'static Path {
-    Path::new("../tests/golden/typescript")
+    Path::new("../tests/golden/typescript/typescript-fetch")
+}
+
+/// Convert a generated filename to a golden filename by appending ".golden"
+fn to_golden_filename(filename: &str) -> String {
+    format!("{}.golden", filename)
+}
+
+/// Convert a golden filename back to the original generated filename by removing ".golden" suffix
+fn from_golden_filename(golden_filename: &str) -> Option<String> {
+    if golden_filename.ends_with(".golden") {
+        Some(golden_filename[..golden_filename.len() - 7].to_string())
+    } else {
+        None
+    }
 }
 
 /// Generate files from an OpenAPI specification
@@ -162,7 +176,8 @@ fn update_golden_files(
     fs::create_dir_all(&golden_dir)?;
 
     for (filename, content) in generated {
-        let file_path = golden_dir.join(filename);
+        let golden_filename = to_golden_filename(filename);
+        let file_path = golden_dir.join(&golden_filename);
 
         // Create parent directories if they don't exist
         if let Some(parent) = file_path.parent() {
@@ -214,7 +229,23 @@ fn compare_directories_recursive(
             // Compare individual files
             let relative_path = path.strip_prefix(base_dir)?;
             // Normalize path separators to forward slashes for consistency
-            let filename = relative_path.to_string_lossy().replace('\\', "/");
+            let golden_filename = relative_path.to_string_lossy().replace('\\', "/");
+
+            // Convert golden filename back to generated filename
+            let filename = match from_golden_filename(&golden_filename) {
+                Some(f) => f,
+                None => {
+                    println!(
+                        "Golden file does not have .golden suffix: {}",
+                        golden_filename
+                    );
+                    return Err(format!(
+                        "Golden file does not have .golden suffix: {}",
+                        golden_filename
+                    )
+                    .into());
+                }
+            };
 
             if let Some(generated_content) = generated.get(&filename) {
                 let golden_content = fs::read_to_string(&path)?;
@@ -226,10 +257,15 @@ fn compare_directories_recursive(
                     );
                 }
             } else {
-                println!("Generated file not found for golden file: {}", filename);
-                return Err(
-                    format!("Generated file not found for golden file: {}", filename).into(),
+                println!(
+                    "Generated file not found for golden file: {}",
+                    golden_filename
                 );
+                return Err(format!(
+                    "Generated file not found for golden file: {}",
+                    golden_filename
+                )
+                .into());
             }
         }
     }
