@@ -1,0 +1,38 @@
+{% include "common/file_header.j2" with context %}
+
+package operations
+
+import (
+	"time"
+
+	"{{ module_path }}/models/components"
+	"{{ module_path }}/runtime/retry"
+)
+
+// Option is a function that configures operation options
+type Option func(*Options, ...string) error
+
+// Options contains configuration for API operations
+type Options struct {
+	Retries   *retry.Config
+	Timeout   *time.Duration
+	ServerURL *string
+	SetHeaders map[string]string
+}
+
+const (
+	// SupportedOptionRetries is the name of the retries option
+	SupportedOptionRetries = "retries"
+	// SupportedOptionTimeout is the name of the timeout option
+	SupportedOptionTimeout = "timeout"
+)
+
+{% for response in operations.responses %}
+// {{ response.name }}Response is the response type for {{ response.operation_name }}
+type {{ response.name }}Response struct {
+	HTTPMeta components.HTTPMetadata
+{% if response.body_type %}
+	Body *{{ response.body_type }}
+{% endif %}
+}
+{% endfor %}

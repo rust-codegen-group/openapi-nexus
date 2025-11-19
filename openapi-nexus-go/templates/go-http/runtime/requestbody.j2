@@ -15,7 +15,7 @@ import (
 	"reflect"
 	"regexp"
 
-	"{{ module_path }}/optionalnullable"
+	"{{ module_path }}/runtime/optionalnullable"
 )
 
 const (
@@ -456,4 +456,3 @@ func parseFormTag(field reflect.StructField) *formTag {
 
 	return tag
 }
-

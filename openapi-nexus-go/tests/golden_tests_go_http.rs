@@ -47,11 +47,9 @@ fn to_golden_filename(filename: &str) -> String {
 
 /// Convert a golden filename back to the original generated filename by removing ".golden" suffix
 fn from_golden_filename(golden_filename: &str) -> Option<String> {
-    if golden_filename.ends_with(".golden") {
-        Some(golden_filename[..golden_filename.len() - 7].to_string())
-    } else {
-        None
-    }
+    golden_filename
+        .strip_suffix(".golden")
+        .map(|s| s.to_string())
 }
 
 /// Generate files from an OpenAPI specification

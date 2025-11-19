@@ -5,8 +5,9 @@ package hooks
 import (
 	"context"
 	"errors"
-	"{{ module_path }}/internal/config"
 	"net/http"
+
+	"{{ module_path }}/internal/config"
 )
 
 type FailEarly struct {
@@ -151,4 +152,3 @@ func (h *Hooks) AfterError(hookCtx AfterErrorContext, res *http.Response, err er
 	}
 	return res, err
 }
-

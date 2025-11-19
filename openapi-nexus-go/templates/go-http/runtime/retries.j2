@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"{{ module_path }}/retry"
+	"{{ module_path }}/runtime/retry"
 )
 
 type Retries struct {
@@ -263,4 +263,3 @@ func nextInterval(s *retry.BackoffStrategy, attempt int) time.Duration {
 
 	return time.Duration(interval)
 }
-

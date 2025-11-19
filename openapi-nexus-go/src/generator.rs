@@ -11,7 +11,7 @@ use crate::config::GoHttpConfig;
 use crate::errors::GeneratorError;
 use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, GoApiMethodData, GoParameterInfo, MainSdkData,
-    ModelStructData, ModelTypeAliasData,
+    ModelStructData, ModelTypeAliasData, OperationResponse, OperationsData,
 };
 use crate::templating::{TemplateName, Templates};
 use crate::type_mapping;
@@ -220,6 +220,30 @@ impl CodeGenerator for GoHttpCodeGenerator {
             files.push(file_info);
         }
 
+        // Generate operations types file
+        let mut responses = Vec::new();
+        for api in &apis {
+            let method_name = api.method_name.to_pascal_case();
+            responses.push(OperationResponse {
+                name: format!("{}Response", method_name),
+                operation_name: method_name.clone(),
+                body_type: None, // TODO: Extract from return_type
+            });
+        }
+        let operations_data =
+            OperationsData::new(responses, common_header.clone(), module_path.clone());
+        let operations_context = context! {
+            operations => operations_data,
+            common_file_header => common_header.clone(),
+            module_path => module_path.clone(),
+        };
+        let operations_file = self.templates.render_template(
+            TemplateName::ModelOperations,
+            "operations/operations.go",
+            operations_context,
+        )?;
+        files.push(operations_file);
+
         // Generate main SDK file
         let sdk_name: String = openapi.info.title.to_pascal_case();
         let package_name: String = self
@@ -282,7 +306,10 @@ impl CodeGenerator for GoHttpCodeGenerator {
                 let full_imports: Vec<String> = imports
                     .iter()
                     .map(|imp| {
-                        if imp.starts_with("optionalnullable") || imp.starts_with("internal/") {
+                        if imp.starts_with("optionalnullable") {
+                            format!("{}/runtime/{}", module_path, imp)
+                        } else if imp.starts_with("internal/") {
+                            // Internal packages are now at root level (Option B)
                             format!("{}/{}", module_path, imp)
                         } else {
                             imp.clone()
@@ -290,7 +317,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
                     })
                     .collect();
 
-                let filename = self.generate_filename(&model.name);
+                let filename = format!("components/{}", self.generate_filename(&model.name));
                 use crate::ast::ty::GoTypeDefinition;
                 let (template_context, template_name) = match type_def {
                     GoTypeDefinition::Struct(s) => {
@@ -325,6 +352,17 @@ impl CodeGenerator for GoHttpCodeGenerator {
             }
         }
 
+        // Always generate HTTPMetadata type in components package (needed by operations)
+        let httpmetadata_context = context! {
+            common_file_header => common_header.clone(),
+        };
+        let httpmetadata_file = self.templates.render_template(
+            TemplateName::ModelHttpMetadata,
+            "components/httpmetadata.go",
+            httpmetadata_context,
+        )?;
+        files.push(httpmetadata_file);
+
         Ok(files)
     }
 
@@ -338,7 +376,8 @@ impl CodeGenerator for GoHttpCodeGenerator {
         let mut files = Vec::new();
 
         // Generate runtime utility files
-        let runtime_files = vec![
+        // Internal runtime files.
+        let internal_files = vec![
             ("internal/utils/utils.go", TemplateName::RuntimeUtils),
             (
                 "internal/utils/requestbody.go",
@@ -366,12 +405,15 @@ impl CodeGenerator for GoHttpCodeGenerator {
                 "internal/config/sdkconfiguration.go",
                 TemplateName::RuntimeConfig,
             ),
-            ("retry/config.go", TemplateName::RuntimeRetryConfig),
             ("internal/hooks/hooks.go", TemplateName::RuntimeHooks),
             (
                 "internal/hooks/registration.go",
                 TemplateName::RuntimeHooksRegistration,
             ),
+        ];
+
+        let runtime_files = vec![
+            ("retry/config.go", TemplateName::RuntimeRetryConfig),
             ("types/pointers.go", TemplateName::TypesPointers),
             ("types/date.go", TemplateName::TypesDate),
             ("types/datetime.go", TemplateName::TypesDateTime),
@@ -388,6 +430,20 @@ impl CodeGenerator for GoHttpCodeGenerator {
             .clone()
             .unwrap_or_else(|| "example.com/sdk".to_string());
 
+        // Generate internal files (go to root level with ProjectFiles category)
+        for (filename, template_name) in internal_files {
+            let template_context = context! {
+                common_file_header => common_header.clone(),
+                module_path => module_path.clone(),
+            };
+            let content = self
+                .templates
+                .render_template_string(template_name, template_context)?;
+            // Use ProjectFiles category so files go to root level
+            files.push(FileInfo::project(filename.to_string(), content));
+        }
+
+        // Generate other runtime files (stay in runtime/ directory)
         for (filename, template_name) in runtime_files {
             let template_context = context! {
                 common_file_header => common_header.clone(),

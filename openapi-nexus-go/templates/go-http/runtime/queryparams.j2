@@ -12,8 +12,8 @@ import (
 	"reflect"
 	"time"
 
-	"{{ module_path }}/optionalnullable"
-	"{{ module_path }}/types"
+	"{{ module_path }}/runtime/optionalnullable"
+	"{{ module_path }}/runtime/types"
 )
 
 func PopulateQueryParams(_ context.Context, req *http.Request, queryParams interface{}, globals interface{}) error {
@@ -288,4 +288,3 @@ type paramTag struct {
 func parseQueryParamTag(field reflect.StructField) *paramTag {
 	return parseParamTag(queryParamTagKey, field, "form", true)
 }
-

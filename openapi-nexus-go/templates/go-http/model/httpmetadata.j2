@@ -1,0 +1,12 @@
+{% include "common/file_header.j2" with context %}
+
+package components
+
+import (
+	"net/http"
+)
+
+// HTTPMetadata contains HTTP response metadata
+type HTTPMetadata struct {
+	Response *http.Response
+}

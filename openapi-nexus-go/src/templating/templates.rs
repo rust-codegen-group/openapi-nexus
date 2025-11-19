@@ -34,6 +34,12 @@ pub enum TemplateName {
     /// Type alias model template
     #[serde(rename = "go-http/model/type_alias.j2")]
     ModelTypeAlias,
+    /// Operations types template
+    #[serde(rename = "go-http/model/operations.j2")]
+    ModelOperations,
+    /// HTTPMetadata type template
+    #[serde(rename = "go-http/model/httpmetadata.j2")]
+    ModelHttpMetadata,
 
     // FileCategory::Runtime
     /// Runtime utilities template
@@ -160,6 +166,8 @@ impl TemplateName {
             TemplateName::MainSdk => "go-http/project/main_sdk.j2".to_string(),
             TemplateName::ModelStruct => "go-http/model/struct.j2".to_string(),
             TemplateName::ModelTypeAlias => "go-http/model/type_alias.j2".to_string(),
+            TemplateName::ModelOperations => "go-http/model/operations.j2".to_string(),
+            TemplateName::ModelHttpMetadata => "go-http/model/httpmetadata.j2".to_string(),
             TemplateName::Runtime => "go-http/runtime/runtime.j2".to_string(),
             TemplateName::RuntimeUtils => "go-http/runtime/utils.j2".to_string(),
             TemplateName::RuntimeRequestBody => "go-http/runtime/requestbody.j2".to_string(),
@@ -210,10 +218,16 @@ impl TemplateName {
             Self::Readme => FileCategory::Readme,
 
             // FileCategory::Apis
-            Self::ApiOperation | Self::MainSdk => FileCategory::Apis,
+            Self::ApiOperation => FileCategory::Apis,
+
+            // FileCategory::ProjectFiles
+            Self::MainSdk => FileCategory::ProjectFiles,
 
             // FileCategory::Models
-            Self::ModelStruct | Self::ModelTypeAlias => FileCategory::Models,
+            Self::ModelStruct
+            | Self::ModelTypeAlias
+            | Self::ModelOperations
+            | Self::ModelHttpMetadata => FileCategory::Models,
 
             // FileCategory::Runtime
             Self::Runtime

@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"{{ module_path }}/optionalnullable"
-	"{{ module_path }}/types"
+	"{{ module_path }}/runtime/optionalnullable"
+	"{{ module_path }}/runtime/types"
 )
 
 func GenerateURL(_ context.Context, serverURL, path string, pathParams interface{}, globals interface{}) (string, error) {
@@ -177,4 +177,3 @@ func getSimplePathParams(parentName string, objType reflect.Type, objValue refle
 
 	return pathParams
 }
-

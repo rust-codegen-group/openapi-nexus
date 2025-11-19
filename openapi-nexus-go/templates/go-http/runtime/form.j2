@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"{{ module_path }}/optionalnullable"
-	"{{ module_path }}/types"
+	"{{ module_path }}/runtime/optionalnullable"
+	"{{ module_path }}/runtime/types"
 )
 
 func populateForm(paramName string, explode bool, objType reflect.Type, objValue reflect.Value, delimiter string, defaultValue *string, getFieldName func(reflect.StructField) string) url.Values {
@@ -132,4 +132,3 @@ func parseDelimitedArray(explode bool, objValue reflect.Value, delimiter string)
 
 	return values
 }
-

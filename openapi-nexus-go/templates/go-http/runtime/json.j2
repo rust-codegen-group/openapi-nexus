@@ -14,7 +14,7 @@ import (
 	"time"
 	"unsafe"
 
-	"{{ module_path }}/types"
+	"{{ module_path }}/runtime/types"
 )
 
 func MarshalJSON(v interface{}, tag reflect.StructTag, topLevel bool) ([]byte, error) {
@@ -604,17 +604,6 @@ func unmarshalValue(value json.RawMessage, v reflect.Value, tag reflect.StructTa
 	return json.Unmarshal(value, val)
 }
 
-func dereferencePointers(typ reflect.Type, val reflect.Value) (reflect.Type, reflect.Value) {
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-		val = val.Elem()
-	} else {
-		return typ, val
-	}
-
-	return dereferencePointers(typ, val)
-}
-
 func dereferenceTypePointer(typ reflect.Type) reflect.Type {
 	if typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
@@ -864,4 +853,3 @@ func countFieldsRecursive(typ reflect.Type, val reflect.Value) int {
 
 	return count
 }
-

@@ -3,9 +3,10 @@
 package config
 
 import (
-	"{{ module_path }}/retry"
 	"net/http"
 	"time"
+
+	"{{ module_path }}/runtime/retry"
 )
 
 type HTTPClient interface {
@@ -24,4 +25,3 @@ type SDKConfiguration struct {
 func (c *SDKConfiguration) GetServerDetails() (string, map[string]string) {
 	return c.ServerURL, map[string]string{}
 }
-
