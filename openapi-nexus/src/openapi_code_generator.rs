@@ -8,6 +8,7 @@ use crate::generator_registry::GeneratorRegistry;
 use openapi_nexus_common::GeneratorType;
 use openapi_nexus_config::Config;
 use openapi_nexus_core::traits::{CodeGenerator, FileWriter};
+use openapi_nexus_go::GoHttpCodeGenerator;
 use openapi_nexus_parser::parse_file;
 use openapi_nexus_typescript::TypeScriptFetchCodeGenerator;
 
@@ -26,6 +27,16 @@ impl OpenApiCodeGenerator {
                 config
                     .generators
                     .get(&GeneratorType::TypeScriptFetch)
+                    .cloned()
+                    .unwrap_or_default(),
+            ),
+        );
+        generator_registry.register_generator(
+            GeneratorType::GoHttp,
+            GoHttpCodeGenerator::new(
+                config
+                    .generators
+                    .get(&GeneratorType::GoHttp)
                     .cloned()
                     .unwrap_or_default(),
             ),

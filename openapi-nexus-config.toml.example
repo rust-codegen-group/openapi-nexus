@@ -1,6 +1,6 @@
 [global]
 output = "generated/{generator}"
-generators = ["typescript-fetch"]
+generators = ["typescript-fetch", "go-http"]
 
 [typescript-fetch]
 file_naming_convention = "PascalCase"
@@ -11,3 +11,8 @@ generate_esm_config = true
 include_build_scripts = false
 # package_scope = "@myorg"
 # package_name = "my-api-client"
+
+[go-http]
+file_naming_convention = "snake_case"
+# module_path = "github.com/example/sdk"
+# package_name = "myapiclient"

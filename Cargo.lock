@@ -968,6 +968,7 @@ dependencies = [
  "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
+ "openapi-nexus-go",
  "openapi-nexus-parser",
  "openapi-nexus-typescript",
  "snafu",
@@ -1015,6 +1016,31 @@ dependencies = [
  "serde_norway",
  "snafu",
  "tracing",
+ "utoipa",
+]
+
+[[package]]
+name = "openapi-nexus-go"
+version = "0.0.1-alpha.4"
+dependencies = [
+ "heck",
+ "http",
+ "minijinja",
+ "minijinja-embed",
+ "openapi-nexus-common",
+ "openapi-nexus-config",
+ "openapi-nexus-core",
+ "pretty",
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "similar",
+ "snafu",
+ "tempfile",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-test",
  "utoipa",
 ]
 

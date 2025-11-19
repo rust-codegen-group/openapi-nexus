@@ -1,0 +1,27 @@
+{% include "common/file_header.j2" with context %}
+
+package config
+
+import (
+	"{{ module_path }}/retry"
+	"net/http"
+	"time"
+)
+
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+type SDKConfiguration struct {
+	Client HTTPClient
+
+	ServerURL   string
+	UserAgent   string
+	RetryConfig *retry.Config
+	Timeout     *time.Duration
+}
+
+func (c *SDKConfiguration) GetServerDetails() (string, map[string]string) {
+	return c.ServerURL, map[string]string{}
+}
+

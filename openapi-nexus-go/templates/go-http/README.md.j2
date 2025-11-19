@@ -1,0 +1,28 @@
+# {{ package_name }}
+
+{{ description }}
+
+**Version:** {{ version }}
+
+## Installation
+
+```bash
+go get {{ module_path }}
+```
+
+## Usage
+
+```go
+package main
+
+import (
+    "context"
+    "{{ module_path }}"
+)
+
+func main() {
+    sdk := {{ package_name }}.New("https://api.example.com")
+    // Use the SDK...
+}
+```
+

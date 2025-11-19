@@ -12,6 +12,10 @@ pub enum GeneratorType {
     #[serde(rename = "typescript-fetch")]
     #[value(name = "typescript-fetch")]
     TypeScriptFetch,
+    /// Go client using HTTP
+    #[serde(rename = "go-http")]
+    #[value(name = "go-http")]
+    GoHttp,
 }
 
 serde_plain::derive_display_from_serialize!(GeneratorType);
@@ -22,6 +26,7 @@ impl GeneratorType {
     pub fn language(&self) -> Language {
         match self {
             GeneratorType::TypeScriptFetch => Language::TypeScript,
+            GeneratorType::GoHttp => Language::Go,
         }
     }
 
@@ -29,6 +34,7 @@ impl GeneratorType {
     pub fn framework(&self) -> String {
         match self {
             GeneratorType::TypeScriptFetch => "fetch".to_string(),
+            GeneratorType::GoHttp => "http".to_string(),
         }
     }
 }

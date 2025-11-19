@@ -10,6 +10,10 @@ pub enum Language {
     #[serde(rename = "TypeScript")]
     #[value(name = "TypeScript", aliases = ["typescript", "ts"])]
     TypeScript,
+    /// Go
+    #[serde(rename = "Go")]
+    #[value(name = "Go", aliases = ["go", "golang"])]
+    Go,
 }
 
 serde_plain::derive_display_from_serialize!(Language);
