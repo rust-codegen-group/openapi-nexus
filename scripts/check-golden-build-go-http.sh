@@ -1,8 +1,8 @@
 #!/bin/bash
-# Check TypeScript build status for all golden test directories
+# Check Go build status for all golden test directories
 #
-# This script runs `tsc --noEmit` on each golden test directory in
-# tests/golden/typescript/ to verify that all generated TypeScript code
+# This script runs `go build ./...` on each golden test directory in
+# tests/golden/go/go-http/ to verify that all generated Go code
 # compiles without errors.
 
 set -euo pipefail
@@ -16,12 +16,12 @@ NC='\033[0m' # No Color
 # Get the script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-GOLDEN_DIR="$PROJECT_ROOT/tests/golden/typescript"
+GOLDEN_DIR="$PROJECT_ROOT/tests/golden/go/go-http"
 
-# Check if TypeScript compiler is available
-if ! command -v tsc &> /dev/null; then
-    echo -e "${RED}Error: tsc (TypeScript compiler) not found in PATH${NC}"
-    echo "Please install TypeScript: npm install -g typescript"
+# Check if Go compiler is available
+if ! command -v go &> /dev/null; then
+    echo -e "${RED}Error: go (Go compiler) not found in PATH${NC}"
+    echo "Please install Go: https://golang.org/dl/"
     exit 1
 fi
 
@@ -40,7 +40,7 @@ TOTAL_TESTS=0
 PASSED_COUNT=0
 FAILED_COUNT=0
 
-echo "Checking TypeScript build status for all golden tests..."
+echo "Checking Go build status for all golden tests..."
 echo "Golden test directory: $GOLDEN_DIR"
 echo ""
 
@@ -49,8 +49,8 @@ while IFS= read -r -d '' test_dir; do
     # Get just the directory name (not full path)
     test_name=$(basename "$test_dir")
     
-    # Skip if it's not a directory or doesn't have a tsconfig.json
-    if [ ! -d "$test_dir" ] || [ ! -f "$test_dir/tsconfig.json" ]; then
+    # Skip if it's not a directory or doesn't have a go.mod.golden
+    if [ ! -d "$test_dir" ] || [ ! -f "$test_dir/go.mod.golden" ]; then
         continue
     fi
     
@@ -58,9 +58,26 @@ while IFS= read -r -d '' test_dir; do
     
     echo -n "[$TOTAL_TESTS] Checking $test_name... "
     
-    # Change to the test directory and run tsc --noEmit
+    # Create a temporary directory for this test
+    TEMP_DIR=$(mktemp -d)
+    
+    # Copy all files from test directory to temp directory, removing .golden suffix
+    while IFS= read -r -d '' golden_file; do
+        # Get relative path from test_dir
+        rel_path="${golden_file#$test_dir/}"
+        # Remove .golden suffix
+        actual_rel_path="${rel_path%.golden}"
+        # Create destination path in temp directory
+        dest_file="$TEMP_DIR/$actual_rel_path"
+        # Create parent directories if needed
+        mkdir -p "$(dirname "$dest_file")"
+        # Copy the file
+        cp "$golden_file" "$dest_file"
+    done < <(find "$test_dir" -type f -name "*.golden" -print0)
+    
+    # Change to the temp directory and run go build ./...
     # Capture both stdout and stderr
-    if (cd "$test_dir" && tsc --noEmit > /tmp/tsc_output_$$.txt 2>&1); then
+    if (cd "$TEMP_DIR" && go build ./... > /tmp/go_build_output_$$.txt 2>&1); then
         echo -e "${GREEN}✓ PASSED${NC}"
         PASSED_TESTS+=("$test_name")
         PASSED_COUNT=$((PASSED_COUNT + 1))
@@ -71,12 +88,13 @@ while IFS= read -r -d '' test_dir; do
         
         # Show error output
         echo -e "${YELLOW}  Error output:${NC}"
-        sed 's/^/  /' /tmp/tsc_output_$$.txt || true
+        sed 's/^/  /' /tmp/go_build_output_$$.txt || true
         echo ""
     fi
     
-    # Clean up temp file
-    rm -f /tmp/tsc_output_$$.txt
+    # Clean up temp directory and temp file
+    rm -rf "$TEMP_DIR"
+    rm -f /tmp/go_build_output_$$.txt
     
 done < <(find "$GOLDEN_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 
@@ -104,4 +122,3 @@ if [ $FAILED_COUNT -gt 0 ]; then
 else
     exit 0
 fi
-
