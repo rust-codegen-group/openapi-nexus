@@ -35,7 +35,7 @@ pub struct SchemaGenerator;
 impl SchemaGenerator {
     /// Convert a schema reference to a TypeScript type definition
     ///
-    /// This is the main public API method used by TsLangGenerator.
+    /// This is the main public API method used by TypeScriptFetchCodeGenerator.
     /// It determines whether to generate an Interface, Enum, or TypeAlias based on the schema.
     pub fn schema_to_ts_type_definition(
         &self,

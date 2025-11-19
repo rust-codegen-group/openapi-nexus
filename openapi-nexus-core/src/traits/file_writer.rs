@@ -77,13 +77,6 @@ pub trait FileWriter {
         &self,
         output_dir: &std::path::Path,
         files: &[FileInfo],
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
-
-    /// Write files by category to organized directories
-    fn write_files_by_category(
-        &self,
-        output_dir: &std::path::Path,
-        files: &[FileInfo],
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Group files by category
         let mut files_by_category: HashMap<FileCategory, Vec<&FileInfo>> = HashMap::new();
@@ -113,6 +106,12 @@ pub trait FileWriter {
             // Write files in this category
             for file in category_files {
                 let file_path = category_dir.join(&file.filename);
+
+                // Create parent directories if they don't exist (for subdirectories)
+                if let Some(parent) = file_path.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+
                 fs::write(&file_path, &file.content)?;
             }
         }

@@ -5,7 +5,8 @@ use minijinja::Environment;
 use serde::{Deserialize, Serialize};
 
 use super::environment::create_template_environment;
-use crate::emission::error::EmitError;
+use crate::errors::GeneratorError;
+use openapi_nexus_common::GeneratorType;
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 
@@ -92,6 +93,18 @@ impl TemplateName {
             .expect("TemplateName should always serialize to a valid string")
     }
 
+    /// Resolve the template path with generator prefix if needed
+    /// All entry templates (those with a FileCategory) live in the generator-specific directory
+    /// Snippets (FileCategory::None) remain at the root as they are included by entry templates
+    pub fn resolve_path(&self, generator_name: &str) -> String {
+        let path = self.file_path();
+        if self.file_category() != FileCategory::None {
+            format!("{}/{}", generator_name, path)
+        } else {
+            path
+        }
+    }
+
     /// Get the file category for this template
     pub fn file_category(&self) -> FileCategory {
         match self {
@@ -165,21 +178,20 @@ pub const TEMPLATE_PATHS: &[TemplateName] = &[
 #[derive(Debug, Clone)]
 pub struct Templates {
     env: Environment<'static>,
-}
-
-impl Default for Templates {
-    fn default() -> Self {
-        Self::new()
-    }
+    generator_name: String,
 }
 
 impl Templates {
-    /// Create a new template handler with initialized templates
+    /// Create a new template handler with initialized templates for a specific generator
     /// Each instance has its own Environment (not shared)
     /// Templates are loaded via minijinja_embed from build.rs
-    pub fn new() -> Self {
+    pub fn new(generator: GeneratorType) -> Self {
         let env = create_template_environment();
-        Self { env }
+        let generator_name = generator.to_string();
+        Self {
+            env,
+            generator_name,
+        }
     }
 
     pub fn render_template(
@@ -187,22 +199,20 @@ impl Templates {
         template_name: TemplateName,
         output_filename: &str,
         context: minijinja::Value,
-    ) -> Result<FileInfo, EmitError> {
-        let template_path = template_name.file_path();
+    ) -> Result<FileInfo, GeneratorError> {
+        let template_path = template_name.resolve_path(&self.generator_name);
         let template = self.env.get_template(&template_path).map_err(|e| {
-            let err = EmitError::TemplateError {
-                message: format!("Failed to get {} template: {}", template_path, e),
-            };
-            tracing::error!("{}", err);
-            err
+            GeneratorError::TemplateNotFound {
+                template_path: template_path.clone(),
+                source: e,
+            }
         })?;
-        let content = template.render(context).map_err(|e| {
-            let err = EmitError::TemplateError {
-                message: format!("Failed to render {} template: {}", template_path, e),
-            };
-            tracing::error!("{}", err);
-            err
-        })?;
+        let content = template
+            .render(context)
+            .map_err(|e| GeneratorError::TemplateRender {
+                template_path: template_path.clone(),
+                source: e,
+            })?;
 
         Ok(FileInfo::new(
             output_filename.to_string(),
@@ -216,22 +226,19 @@ impl Templates {
         &self,
         template_name: TemplateName,
         context: minijinja::Value,
-    ) -> Result<String, EmitError> {
-        let template_path = template_name.file_path();
+    ) -> Result<String, GeneratorError> {
+        let template_path = template_name.resolve_path(&self.generator_name);
         let template = self.env.get_template(&template_path).map_err(|e| {
-            let err = EmitError::TemplateError {
-                message: format!("Failed to get {} template: {}", template_path, e),
-            };
-            tracing::error!("{}", err);
-            err
+            GeneratorError::TemplateNotFound {
+                template_path: template_path.clone(),
+                source: e,
+            }
         })?;
-        template.render(context).map_err(|e| {
-            let error_msg = format!("{}", e);
-            let err = EmitError::TemplateError {
-                message: format!("Failed to render {} template: {}", template_path, error_msg),
-            };
-            tracing::error!("Template rendering error details: {}", error_msg);
-            err
-        })
+        template
+            .render(context)
+            .map_err(|e| GeneratorError::TemplateRender {
+                template_path: template_path.clone(),
+                source: e,
+            })
     }
 }

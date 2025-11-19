@@ -1,12 +1,10 @@
 //! Configuration file loader
 
-use std::error::Error;
-use std::fmt;
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::config::ConfigFile;
+use crate::config_file::ConfigFile;
+use crate::errors::ConfigError;
 use toml;
 
 /// Configuration file loader
@@ -52,14 +50,15 @@ impl ConfigLoader {
     }
 
     /// Load configuration from a specific file path
-    pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<ConfigFile, LoadError> {
-        let content = fs::read_to_string(path.as_ref()).map_err(|e| LoadError::FileRead {
-            path: path.as_ref().to_path_buf(),
+    pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<ConfigFile, ConfigError> {
+        let path_buf = path.as_ref().to_path_buf();
+        let content = fs::read_to_string(path.as_ref()).map_err(|e| ConfigError::FileRead {
+            path: path_buf.clone(),
             source: e,
         })?;
 
-        toml::from_str(&content).map_err(|e| LoadError::Parse {
-            path: path.as_ref().to_path_buf(),
+        toml::from_str(&content).map_err(|e| ConfigError::FileParse {
+            path: path_buf,
             source: e,
         })
     }
@@ -69,40 +68,5 @@ impl ConfigLoader {
         Self::discover_config_file()
             .and_then(|path| Self::load_from_file(&path).ok())
             .unwrap_or_default()
-    }
-}
-
-/// Configuration loading errors
-#[derive(Debug)]
-pub enum LoadError {
-    FileRead {
-        path: PathBuf,
-        source: io::Error,
-    },
-    Parse {
-        path: PathBuf,
-        source: toml::de::Error,
-    },
-}
-
-impl fmt::Display for LoadError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LoadError::FileRead { path, source } => {
-                write!(f, "Failed to read config file at {:?}: {}", path, source)
-            }
-            LoadError::Parse { path, source } => {
-                write!(f, "Failed to parse config file at {:?}: {}", path, source)
-            }
-        }
-    }
-}
-
-impl Error for LoadError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            LoadError::FileRead { source, .. } => Some(source),
-            LoadError::Parse { source, .. } => Some(source),
-        }
     }
 }

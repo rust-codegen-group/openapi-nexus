@@ -1,9 +1,8 @@
 [global]
-output = "generated"
-generator = "typescript-fetch"
-verbose = false
+output = "generated/{generator}"
+generators = ["typescript-fetch"]
 
-[typescript]
+[typescript-fetch]
 file_naming_convention = "PascalCase"
 typescript_target = "es6"
 typescript_module = "commonjs"

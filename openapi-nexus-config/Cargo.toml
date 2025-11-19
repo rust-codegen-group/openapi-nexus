@@ -17,4 +17,3 @@ toml.workspace = true
 tracing.workspace = true
 
 openapi-nexus-common.workspace = true
-openapi-nexus-core.workspace = true

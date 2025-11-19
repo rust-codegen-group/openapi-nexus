@@ -18,6 +18,6 @@ pub enum Error {
     #[snafu(display("Unsupported language: {}", language))]
     UnsupportedLanguage { language: String },
 
-    #[snafu(display("Generator not found for language: {}", language))]
-    GeneratorNotFound { language: String },
+    #[snafu(display("Generator not found: {}", generator))]
+    GeneratorNotFound { generator: String },
 }

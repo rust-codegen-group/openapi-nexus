@@ -6,7 +6,7 @@ use crate::ast::{
     TsDocComment, TsEnumDefinition, TsExpression, TsInterfaceDefinition, TsInterfaceSignature,
     TsParameter, TsProperty, TsTypeAliasDefinition, TsTypeDefinition,
 };
-use crate::config::MAX_LINE_WIDTH;
+use crate::consts::MAX_LINE_WIDTH;
 use crate::templating::data::{ApiClassSignature, ApiImportStatement, ApiMethodData};
 use openapi_nexus_core::traits::ToRcDoc;
 

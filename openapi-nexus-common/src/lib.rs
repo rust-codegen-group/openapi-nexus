@@ -8,7 +8,7 @@ pub mod language;
 pub mod location;
 pub mod warning;
 
-pub use generator::Generator;
+pub use generator::GeneratorType;
 pub use language::Language;
 pub use location::SourceLocation;
 pub use warning::ParseWarning;

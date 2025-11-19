@@ -6,7 +6,7 @@ use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use tracing::warn;
 use utoipa::openapi;
 
-use crate::core::GeneratorError;
+use crate::errors::GeneratorError;
 use openapi_nexus_core::data::{OperationInfo, ParameterInfo, ParameterLocation};
 use openapi_nexus_core::traits::OpenApiParameterExt as _;
 

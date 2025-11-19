@@ -1,4 +1,7 @@
-//! Configuration types for TypeScript code generation
+//! Configuration for TypeScript generators
 
-/// Maximum line width for pretty printing TypeScript code
-pub const MAX_LINE_WIDTH: usize = 80;
+pub mod module;
+pub mod typescript_fetch_config;
+
+pub use module::TypeScriptModule;
+pub use typescript_fetch_config::TypeScriptFetchConfig;

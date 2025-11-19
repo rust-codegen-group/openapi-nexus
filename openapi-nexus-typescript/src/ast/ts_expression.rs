@@ -6,7 +6,7 @@ use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
 use crate::ast::{TsParameter, TsPrimitive};
-use crate::config::MAX_LINE_WIDTH;
+use crate::consts::MAX_LINE_WIDTH;
 use openapi_nexus_core::traits::ToRcDoc;
 
 /// Object property with type expression and original name

@@ -1,15 +1,15 @@
-//! Main TypeScript code generator
+//! TypeScript Fetch code generator
 
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::{fs, path};
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
 use crate::ast::{TsTypeAliasDefinition, TsTypeDefinition};
-use crate::core::GeneratorError;
+use crate::config::TypeScriptFetchConfig;
+use crate::errors::GeneratorError;
 use crate::generator::{
     api_operation_generator::ApiOperationGenerator, package_files_generator::PackageFilesGenerator,
     schema_context::SchemaContext, schema_generator::SchemaGenerator,
@@ -19,31 +19,33 @@ use crate::templating::data::{
     ModelEnumData, ModelInterfaceData, ModelTypeAliasData, ProjectIndexData, RuntimeRuntimeData,
 };
 use crate::templating::{TemplateName, Templates};
-use openapi_nexus_common::Language;
-use openapi_nexus_config::TypeScriptConfig;
+use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, RuntimeData};
-use openapi_nexus_core::generator_registry::LanguageGenerator;
-use openapi_nexus_core::traits::code_generator::LanguageCodeGenerator;
-use openapi_nexus_core::traits::file_writer::{FileCategory, FileInfo, FileWriter};
+use openapi_nexus_core::traits::code_generator::CodeGenerator;
+use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
 
-/// Main TypeScript code generator
+/// TypeScript Fetch code generator
 #[derive(Debug, Clone)]
-pub struct TsLangGenerator {
+pub struct TypeScriptFetchCodeGenerator {
     schema_generator: SchemaGenerator,
     api_operation_generator: ApiOperationGenerator,
-    config: TypeScriptConfig,
+    config: TypeScriptFetchConfig,
     templating: Templates,
 }
 
-impl TsLangGenerator {
-    /// Create a new TypeScript generator
-    pub fn new(config: TypeScriptConfig) -> Self {
+impl TypeScriptFetchCodeGenerator {
+    /// Create a new TypeScript Fetch generator
+    ///
+    /// # Arguments
+    /// * `config` - TOML config table
+    pub fn new(config: toml::value::Table) -> Self {
+        let parsed_config = TypeScriptFetchConfig::from(config);
         Self {
             schema_generator: SchemaGenerator,
             api_operation_generator: ApiOperationGenerator::new(),
-            config,
-            templating: Templates::new(),
+            config: parsed_config,
+            templating: Templates::new(GeneratorType::TypeScriptFetch),
         }
     }
 
@@ -98,7 +100,7 @@ impl TsLangGenerator {
         type_alias: &TsTypeAliasDefinition,
         imports: ApiImportStatements,
         schemas: &HashMap<String, TsTypeDefinition>,
-    ) -> ModelTypeAliasData {
+    ) -> Result<ModelTypeAliasData, GeneratorError> {
         let mut model_type_alias =
             ModelTypeAliasData::new(type_alias.clone()).with_imports(imports);
 
@@ -157,7 +159,7 @@ impl TsLangGenerator {
             }
         }
 
-        model_type_alias
+        Ok(model_type_alias)
     }
 
     /// Generate apis/index.ts file
@@ -188,8 +190,9 @@ impl TsLangGenerator {
                 "apis/index.ts",
                 template_context,
             )
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("Failed to render apis/index.ts template: {}", e),
+            .map_err(|e| GeneratorError::IndexFileGeneration {
+                file_path: "apis/index.ts".to_string(),
+                source: Box::new(e),
             })
     }
 
@@ -226,8 +229,9 @@ impl TsLangGenerator {
                 "models/index.ts",
                 template_context,
             )
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("Failed to render models/index.ts template: {}", e),
+            .map_err(|e| GeneratorError::IndexFileGeneration {
+                file_path: "models/index.ts".to_string(),
+                source: Box::new(e),
             })
     }
 
@@ -256,16 +260,14 @@ impl TsLangGenerator {
 
         self.templating
             .render_template(TemplateName::ProjectIndex, "index.ts", template_context)
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("Failed to render index.ts template: {}", e),
+            .map_err(|e| GeneratorError::IndexFileGeneration {
+                file_path: "index.ts".to_string(),
+                source: Box::new(e),
             })
     }
 
     /// Generate package files (package.json, tsconfig.json, etc.)
-    fn generate_package_files(
-        &self,
-        openapi: &OpenApi,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_package_files(&self, openapi: &OpenApi) -> Result<Vec<FileInfo>, GeneratorError> {
         if !self.config.generate_package {
             return Ok(Vec::new());
         }
@@ -284,15 +286,13 @@ impl TsLangGenerator {
     }
 }
 
-impl LanguageGenerator for TsLangGenerator {}
-
-impl LanguageCodeGenerator for TsLangGenerator {
+impl CodeGenerator for TypeScriptFetchCodeGenerator {
     fn language(&self) -> Language {
         Language::TypeScript
     }
 
-    fn framework(&self) -> String {
-        "fetch".to_string()
+    fn generator_type(&self) -> GeneratorType {
+        GeneratorType::TypeScriptFetch
     }
 
     fn generate_apis(
@@ -320,8 +320,9 @@ impl LanguageCodeGenerator for TsLangGenerator {
                         &common_file_header,
                         components,
                     )
-                    .map_err(|e| GeneratorError::Generic {
-                        message: format!("Failed to generate API class for tag {}: {}", tag, e),
+                    .map_err(|e| GeneratorError::ApiClassGenerationForTag {
+                        tag: tag.clone(),
+                        source: Box::new(e),
                     })?;
                 api_classes_map.insert(tag, file_info);
             }
@@ -431,21 +432,23 @@ impl LanguageCodeGenerator for TsLangGenerator {
                     };
                     self.templating
                         .render_template(TemplateName::ModelInterface, &filename, template_context)
-                        .map_err(|e| GeneratorError::Generic {
-                            message: format!("Failed to emit interface model {}: {}", name, e),
+                        .map_err(|e| GeneratorError::ModelInterfaceGeneration {
+                            model_name: name.clone(),
+                            source: Box::new(e),
                         })?
                 }
                 TsTypeDefinition::TypeAlias(type_alias) => {
                     let model_type_alias =
-                        self.create_model_type_alias_data(type_alias, imports, &schemas);
+                        self.create_model_type_alias_data(type_alias, imports, &schemas)?;
                     let template_context = minijinja::context! {
                         common_file_header,
                         model_type_alias,
                     };
                     self.templating
                         .render_template(TemplateName::ModelTypeAlias, &filename, template_context)
-                        .map_err(|e| GeneratorError::Generic {
-                            message: format!("Failed to emit type alias model {}: {}", name, e),
+                        .map_err(|e| GeneratorError::ModelTypeAliasGeneration {
+                            model_name: name.clone(),
+                            source: Box::new(e),
                         })?
                 }
                 TsTypeDefinition::Enum(enum_def) => {
@@ -459,8 +462,9 @@ impl LanguageCodeGenerator for TsLangGenerator {
                     };
                     self.templating
                         .render_template(TemplateName::ModelEnum, &filename, template_context)
-                        .map_err(|e| GeneratorError::Generic {
-                            message: format!("Failed to emit enum model {}: {}", name, e),
+                        .map_err(|e| GeneratorError::ModelEnumGeneration {
+                            model_name: name.clone(),
+                            source: Box::new(e),
                         })?
                 }
             };
@@ -491,8 +495,8 @@ impl LanguageCodeGenerator for TsLangGenerator {
         let file = self
             .templating
             .render_template(TemplateName::Runtime, "runtime.ts", template_context)
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("Failed to render runtime template: {}", e),
+            .map_err(|e| GeneratorError::RuntimeTemplate {
+                source: Box::new(e),
             })?;
 
         Ok(vec![file])
@@ -521,59 +525,4 @@ impl LanguageCodeGenerator for TsLangGenerator {
     }
 }
 
-impl FileWriter for TsLangGenerator {
-    fn write_files(
-        &self,
-        output_dir: &std::path::Path,
-        files: &[FileInfo],
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        // Use custom implementation that handles subdirectories properly
-        self.write_files_by_category(output_dir, files)
-    }
-
-    fn write_files_by_category(
-        &self,
-        output_dir: &path::Path,
-        files: &[FileInfo],
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        // Group files by category
-        let mut files_by_category: HashMap<FileCategory, Vec<&FileInfo>> = HashMap::new();
-        for file in files {
-            files_by_category
-                .entry(file.category.clone())
-                .or_default()
-                .push(file);
-        }
-
-        // Write files for each category
-        for (category, category_files) in files_by_category {
-            let category_dir = match category {
-                FileCategory::None => continue,
-                FileCategory::Readme => output_dir.to_path_buf(),
-                FileCategory::Apis => output_dir.join("apis"),
-                FileCategory::Models => output_dir.join("models"),
-                FileCategory::ProjectFiles => output_dir.to_path_buf(),
-                FileCategory::Runtime => output_dir.join("runtime"),
-            };
-
-            // Create directory if it doesn't exist
-            if !category_dir.exists() {
-                fs::create_dir_all(&category_dir)?;
-            }
-
-            // Write files in this category
-            for file in category_files {
-                let file_path = category_dir.join(&file.filename);
-
-                // Create parent directories if they don't exist (for subdirectories)
-                if let Some(parent) = file_path.parent() {
-                    fs::create_dir_all(parent)?;
-                }
-
-                fs::write(&file_path, &file.content)?;
-            }
-        }
-
-        Ok(())
-    }
-}
+impl FileWriter for TypeScriptFetchCodeGenerator {}

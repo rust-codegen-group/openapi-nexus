@@ -1,8 +1,8 @@
-//! Golden file tests for TypeScript code generation
+//! Golden file tests for TypeScript Fetch generator
 //!
 //! These tests compare generated TypeScript code against known-good golden files.
 //! To update golden files after intentional changes, run:
-//!   UPDATE_GOLDEN=1 cargo test --test golden_tests
+//!   UPDATE_GOLDEN=1 cargo test --test golden_tests_typescript_fetch
 
 use std::collections::HashMap;
 use std::env;
@@ -15,10 +15,9 @@ use similar::TextDiff;
 use tracing_test::traced_test;
 use utoipa::openapi::OpenApi;
 
-use openapi_nexus_config::TypeScriptConfig;
-use openapi_nexus_core::traits::code_generator::LanguageCodeGenerator as _;
+use openapi_nexus_core::traits::code_generator::CodeGenerator as _;
 use openapi_nexus_core::traits::file_writer::FileWriter;
-use openapi_nexus_typescript::TsLangGenerator;
+use openapi_nexus_typescript::TypeScriptFetchCodeGenerator;
 
 /// Read a fixture file from various possible locations
 fn read_fixture(fixture_path: &str) -> String {
@@ -41,13 +40,12 @@ fn get_golden_dir() -> &'static Path {
     Path::new("../tests/golden/typescript")
 }
 
-/// Generate TypeScript files from an OpenAPI specification
-fn generate_typescript_files(
+/// Generate files from an OpenAPI specification
+fn generate_files(
     spec_content: &str,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
     let openapi: OpenApi = serde_norway::from_str(spec_content)?;
-    let config = TypeScriptConfig::default();
-    let generator = TsLangGenerator::new(config);
+    let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
     let generated_files = match generator.generate(&openapi) {
         Ok(files) => {
             println!("Successfully generated {} files", files.len());
@@ -123,7 +121,7 @@ fn test_golden_files(
     fixture_path: &str,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let spec_content = read_fixture(fixture_path);
-    let generated = match generate_typescript_files(&spec_content) {
+    let generated = match generate_files(&spec_content) {
         Ok(files) => files,
         Err(e) => {
             println!(
@@ -253,7 +251,7 @@ fn show_diff(spec_name: &str, filename: &str, golden: &str, generated: &str) {
     );
 
     println!("To update golden files, run:");
-    println!("   UPDATE_GOLDEN=1 cargo test --test golden_tests");
+    println!("   UPDATE_GOLDEN=1 cargo test --test golden_tests_typescript_fetch");
 }
 
 /// Map of test case names to their fixture paths

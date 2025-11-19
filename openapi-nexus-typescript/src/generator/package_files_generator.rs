@@ -3,17 +3,17 @@
 use heck::ToKebabCase as _;
 use utoipa::openapi::OpenApi;
 
-use openapi_nexus_config::TypeScriptConfig;
+use crate::config::TypeScriptFetchConfig;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 
 /// Generator for npm package files
 pub struct PackageFilesGenerator<'a> {
-    config: &'a TypeScriptConfig,
+    config: &'a TypeScriptFetchConfig,
 }
 
 impl<'a> PackageFilesGenerator<'a> {
     /// Create a new package files generator
-    pub fn new(config: &'a TypeScriptConfig) -> Self {
+    pub fn new(config: &'a TypeScriptFetchConfig) -> Self {
         Self { config }
     }
 

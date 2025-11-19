@@ -3,7 +3,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::ast::{TsExpression, TsPrimitive};
-use crate::core::GeneratorError;
+use crate::errors::GeneratorError;
 use crate::utils::schema_mapper::SchemaMapper;
 use openapi_nexus_core::data::{ContentType, HttpResponse, OperationInfo, StatusCode};
 use utoipa::openapi;

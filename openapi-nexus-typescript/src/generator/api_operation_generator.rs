@@ -12,7 +12,7 @@ use crate::ast::{
     TsDocComment, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsParameter,
     TsPrimitive, TsProperty,
 };
-use crate::core::GeneratorError;
+use crate::errors::GeneratorError;
 use crate::generator::{
     api_interface_builder::ApiInterfaceBuilder,
     model_import_collector::ModelImportCollector,
@@ -136,6 +136,7 @@ impl ApiOperationGenerator {
             .build_model_imports(&dependencies);
 
         // Create imports
+        // Runtime import path is always "../runtime/runtime" regardless of generator
         let mut imports = vec![
             ApiImportStatement::new("../runtime/runtime".to_string())
                 .with_import("BaseAPI".to_string(), None)
@@ -196,8 +197,9 @@ impl ApiOperationGenerator {
 
         let content = templating
             .render_template_string(TemplateName::ApiOperation, template_data)
-            .map_err(|e| GeneratorError::Generic {
-                message: format!("Failed to emit API class {}: {}", class_name, e),
+            .map_err(|e| GeneratorError::ApiClassGeneration {
+                class_name: class_name.clone(),
+                source: Box::new(e),
             })?;
 
         // Generate filename based on tag
@@ -320,11 +322,8 @@ impl ApiOperationGenerator {
             Method::GET => Ok(TemplateName::ApiMethodGet),
             Method::POST | Method::PUT | Method::PATCH => Ok(TemplateName::ApiMethodPostPutPatch),
             Method::DELETE => Ok(TemplateName::ApiMethodDelete),
-            _ => Err(GeneratorError::Generic {
-                message: format!(
-                    "Unsupported HTTP method: {:?}. Only GET, POST, PUT, PATCH, and DELETE are supported.",
-                    method
-                ),
+            _ => Err(GeneratorError::UnsupportedHttpMethod {
+                method: method.clone(),
             }),
         }
     }

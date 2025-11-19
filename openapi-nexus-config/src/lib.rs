@@ -5,16 +5,14 @@
 
 pub mod cli;
 pub mod config;
+pub mod config_file;
+pub mod errors;
 pub mod global_config;
-pub mod language;
 pub mod loader;
-pub mod merger;
-pub mod typescript_config;
 
 pub use cli::{CliArgs, Commands};
-pub use config::{ConfigFile, ResolvedConfig};
+pub use config::Config;
+pub use config_file::ConfigFile;
+pub use errors::ConfigError;
 pub use global_config::GlobalConfig;
-pub use language::Language;
-pub use loader::{ConfigLoader, LoadError};
-pub use merger::{ConfigMerger, MergeError};
-pub use typescript_config::{TypeScriptConfig, TypeScriptModule};
+pub use loader::ConfigLoader;

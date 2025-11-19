@@ -5,19 +5,19 @@ use std::error::Error;
 
 use heck::ToKebabCase as _;
 use http::Method;
-use openapi_nexus_common::Language;
 use utoipa::openapi::OpenApi;
 
 use crate::data::{ApiMethodData, ModelData, OperationInfo, ReadmeData, RuntimeData};
 use crate::traits::file_writer::FileInfo;
+use openapi_nexus_common::{GeneratorType, Language};
 
-/// Trait for language-specific code generators
-pub trait LanguageCodeGenerator {
+/// Trait for code generators
+pub trait CodeGenerator {
     /// Returns the language
     fn language(&self) -> Language;
 
-    /// Returns the framework name (e.g., "fetch", "reqwest", "axios")
-    fn framework(&self) -> String;
+    /// Returns the generator type
+    fn generator_type(&self) -> GeneratorType;
 
     /// Generate files from an OpenAPI specification
     ///
