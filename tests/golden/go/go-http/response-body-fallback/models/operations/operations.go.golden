@@ -30,12 +30,12 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// GetFallbackNoBodyResponseResponse is the response type for GetFallbackNoBody
-type GetFallbackNoBodyResponseResponse struct {
+// GetFallbackNoBodyResponse is the response type for GetFallbackNoBody
+type GetFallbackNoBodyResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
 
-// GetFallbackWithBodyResponseResponse is the response type for GetFallbackWithBody
-type GetFallbackWithBodyResponseResponse struct {
+// GetFallbackWithBodyResponse is the response type for GetFallbackWithBody
+type GetFallbackWithBodyResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

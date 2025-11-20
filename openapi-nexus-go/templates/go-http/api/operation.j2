@@ -5,7 +5,11 @@ package {{ api_operation.package_name }}
 {% if api_operation.imports %}
 import (
 {% for import in api_operation.imports %}
+{% if import %}
 	"{{ import }}"
+{% else %}
+
+{% endif %}
 {% endfor %}
 )
 {% endif %}

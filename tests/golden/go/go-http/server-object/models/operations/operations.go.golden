@@ -32,12 +32,12 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// GetAllUsersResponseResponse is the response type for GetAllUsers
-type GetAllUsersResponseResponse struct {
+// GetAllUsersResponse is the response type for GetAllUsers
+type GetAllUsersResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
 
-// GetUserByIdResponseResponse is the response type for GetUserById
-type GetUserByIdResponseResponse struct {
+// GetUserByIdResponse is the response type for GetUserById
+type GetUserByIdResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

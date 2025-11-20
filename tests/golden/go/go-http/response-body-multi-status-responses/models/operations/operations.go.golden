@@ -30,7 +30,7 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// ListWidgetsResponseResponse is the response type for ListWidgets
-type ListWidgetsResponseResponse struct {
+// ListWidgetsResponse is the response type for ListWidgets
+type ListWidgetsResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

@@ -32,12 +32,12 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// GetWithQueryParamsResponseResponse is the response type for GetWithQueryParams
-type GetWithQueryParamsResponseResponse struct {
+// GetWithQueryParamsResponse is the response type for GetWithQueryParams
+type GetWithQueryParamsResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
 
-// TestNamingConventionsResponseResponse is the response type for TestNamingConventions
-type TestNamingConventionsResponseResponse struct {
+// TestNamingConventionsResponse is the response type for TestNamingConventions
+type TestNamingConventionsResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

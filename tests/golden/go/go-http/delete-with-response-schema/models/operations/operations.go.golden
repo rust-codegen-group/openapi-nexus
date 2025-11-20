@@ -32,12 +32,12 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// CreateTestResourceResponseResponse is the response type for CreateTestResource
-type CreateTestResourceResponseResponse struct {
+// CreateTestResourceResponse is the response type for CreateTestResource
+type CreateTestResourceResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
 
-// DeleteTestResourceResponseResponse is the response type for DeleteTestResource
-type DeleteTestResourceResponseResponse struct {
+// DeleteTestResourceResponse is the response type for DeleteTestResource
+type DeleteTestResourceResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

@@ -30,7 +30,7 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// GetTestResponseResponse is the response type for GetTest
-type GetTestResponseResponse struct {
+// GetTestResponse is the response type for GetTest
+type GetTestResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

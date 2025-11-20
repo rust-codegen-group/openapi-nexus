@@ -6,16 +6,16 @@
 package operations
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/url"
+
 	"example.com/sdk/internal/config"
 	"example.com/sdk/internal/hooks"
 	"example.com/sdk/internal/utils"
 	"example.com/sdk/models/components"
 	"example.com/sdk/models/operations"
-	"context"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 )
 
 // Foo - Foo operations

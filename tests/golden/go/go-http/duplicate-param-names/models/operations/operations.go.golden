@@ -32,12 +32,12 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// GetUserByIdDuplicateResponseResponse is the response type for GetUserByIdDuplicate
-type GetUserByIdDuplicateResponseResponse struct {
+// CreateItemWithBodyConflictResponse is the response type for CreateItemWithBodyConflict
+type CreateItemWithBodyConflictResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
 
-// CreateItemWithBodyConflictResponseResponse is the response type for CreateItemWithBodyConflict
-type CreateItemWithBodyConflictResponseResponse struct {
+// GetUserByIdDuplicateResponse is the response type for GetUserByIdDuplicate
+type GetUserByIdDuplicateResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

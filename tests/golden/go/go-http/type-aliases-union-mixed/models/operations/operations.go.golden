@@ -32,7 +32,7 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// TestMixedUnionResponseResponse is the response type for TestMixedUnion
-type TestMixedUnionResponseResponse struct {
+// TestMixedUnionResponse is the response type for TestMixedUnion
+type TestMixedUnionResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

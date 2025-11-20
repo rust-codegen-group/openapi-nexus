@@ -32,7 +32,7 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// TestComplexUnionResponseResponse is the response type for TestComplexUnion
-type TestComplexUnionResponseResponse struct {
+// TestComplexUnionResponse is the response type for TestComplexUnion
+type TestComplexUnionResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

@@ -32,7 +32,7 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// TestSimpleAliasResponseResponse is the response type for TestSimpleAlias
-type TestSimpleAliasResponseResponse struct {
+// TestSimpleAliasResponse is the response type for TestSimpleAlias
+type TestSimpleAliasResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

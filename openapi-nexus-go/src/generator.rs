@@ -187,19 +187,34 @@ impl CodeGenerator for GoHttpCodeGenerator {
             // Get SDK name from OpenAPI title
             let sdk_name = openapi.info.title.to_pascal_case();
 
-            // Collect imports
-            let imports = vec![
+            // Check if any method needs io import (when has_request_body is false)
+            let needs_io_import = go_methods.iter().any(|method| !method.has_request_body);
+
+            // Collect and separate std imports from project imports
+            let mut std_imports = vec![
+                "context".to_string(),
+                "fmt".to_string(),
+                "net/http".to_string(),
+                "net/url".to_string(),
+            ];
+            if needs_io_import {
+                std_imports.push("io".to_string());
+            }
+            std_imports.sort();
+
+            let mut project_imports = vec![
                 format!("{}/internal/config", module_path),
                 format!("{}/internal/hooks", module_path),
                 format!("{}/internal/utils", module_path),
                 format!("{}/models/components", module_path),
                 format!("{}/models/operations", module_path),
-                "context".to_string(),
-                "fmt".to_string(),
-                "io".to_string(),
-                "net/http".to_string(),
-                "net/url".to_string(),
             ];
+            project_imports.sort();
+
+            // Combine: std imports, empty string separator, project imports
+            let mut imports = std_imports;
+            imports.push(String::new()); // Empty string as separator for newline
+            imports.extend(project_imports);
 
             let api_data =
                 ApiOperationData::new(client_struct, tag.clone(), sdk_name, common_header.clone())
@@ -231,6 +246,8 @@ impl CodeGenerator for GoHttpCodeGenerator {
                 body_type: None, // TODO: Extract from return_type
             });
         }
+        // Sort responses by name to ensure stable ordering across generations
+        responses.sort_by(|a, b| a.name.cmp(&b.name));
         let operations_data =
             OperationsData::new(responses, common_header.clone(), module_path.clone());
         let operations_context = context! {

@@ -5,7 +5,9 @@ package operations
 import (
 	"time"
 
+{% if operations.responses %}
 	"{{ module_path }}/models/components"
+{% endif %}
 	"{{ module_path }}/runtime/retry"
 )
 
@@ -28,8 +30,8 @@ const (
 )
 
 {% for response in operations.responses %}
-// {{ response.name }}Response is the response type for {{ response.operation_name }}
-type {{ response.name }}Response struct {
+// {{ response.name }} is the response type for {{ response.operation_name }}
+type {{ response.name }} struct {
 	HTTPMeta components.HTTPMetadata
 {% if response.body_type %}
 	Body *{{ response.body_type }}

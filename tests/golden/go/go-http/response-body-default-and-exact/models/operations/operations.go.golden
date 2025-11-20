@@ -30,7 +30,7 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// GetWidgetResponseResponse is the response type for GetWidget
-type GetWidgetResponseResponse struct {
+// GetWidgetResponse is the response type for GetWidget
+type GetWidgetResponse struct {
 	HTTPMeta components.HTTPMetadata
 }

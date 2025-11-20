@@ -30,7 +30,7 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// UpdateFooBarResponseResponse is the response type for UpdateFooBar
-type UpdateFooBarResponseResponse struct {
+// UpdateFooBarResponse is the response type for UpdateFooBar
+type UpdateFooBarResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
