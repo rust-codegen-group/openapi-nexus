@@ -32,78 +32,96 @@ const (
 	SupportedOptionTimeout = "timeout"
 )
 
-// GetInventoryResponseResponse is the response type for GetInventory
-type GetInventoryResponseResponse struct {
-	HTTPMeta components.HTTPMetadata
-}
-// PlaceOrderResponseResponse is the response type for PlaceOrder
-type PlaceOrderResponseResponse struct {
-	HTTPMeta components.HTTPMetadata
-}
-// GetOrderByIdResponseResponse is the response type for GetOrderById
-type GetOrderByIdResponseResponse struct {
-	HTTPMeta components.HTTPMetadata
-}
-// DeleteOrderResponseResponse is the response type for DeleteOrder
-type DeleteOrderResponseResponse struct {
-	HTTPMeta components.HTTPMetadata
-}
 // CreateUserResponseResponse is the response type for CreateUser
 type CreateUserResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // CreateUsersWithListInputResponseResponse is the response type for CreateUsersWithListInput
 type CreateUsersWithListInputResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // LoginUserResponseResponse is the response type for LoginUser
 type LoginUserResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // LogoutUserResponseResponse is the response type for LogoutUser
 type LogoutUserResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // GetUserByNameResponseResponse is the response type for GetUserByName
 type GetUserByNameResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // UpdateUserResponseResponse is the response type for UpdateUser
 type UpdateUserResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // DeleteUserResponseResponse is the response type for DeleteUser
 type DeleteUserResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
+// GetInventoryResponseResponse is the response type for GetInventory
+type GetInventoryResponseResponse struct {
+	HTTPMeta components.HTTPMetadata
+}
+
+// PlaceOrderResponseResponse is the response type for PlaceOrder
+type PlaceOrderResponseResponse struct {
+	HTTPMeta components.HTTPMetadata
+}
+
+// GetOrderByIdResponseResponse is the response type for GetOrderById
+type GetOrderByIdResponseResponse struct {
+	HTTPMeta components.HTTPMetadata
+}
+
+// DeleteOrderResponseResponse is the response type for DeleteOrder
+type DeleteOrderResponseResponse struct {
+	HTTPMeta components.HTTPMetadata
+}
+
 // AddPetResponseResponse is the response type for AddPet
 type AddPetResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // UpdatePetResponseResponse is the response type for UpdatePet
 type UpdatePetResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // FindPetsByStatusResponseResponse is the response type for FindPetsByStatus
 type FindPetsByStatusResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // FindPetsByTagsResponseResponse is the response type for FindPetsByTags
 type FindPetsByTagsResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // GetPetByIdResponseResponse is the response type for GetPetById
 type GetPetByIdResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // UpdatePetWithFormResponseResponse is the response type for UpdatePetWithForm
 type UpdatePetWithFormResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // DeletePetResponseResponse is the response type for DeletePet
 type DeletePetResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // UploadFileResponseResponse is the response type for UploadFile
 type UploadFileResponseResponse struct {
 	HTTPMeta components.HTTPMetadata

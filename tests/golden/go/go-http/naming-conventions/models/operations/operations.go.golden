@@ -36,6 +36,7 @@ const (
 type GetWithQueryParamsResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // TestNamingConventionsResponseResponse is the response type for TestNamingConventions
 type TestNamingConventionsResponseResponse struct {
 	HTTPMeta components.HTTPMetadata

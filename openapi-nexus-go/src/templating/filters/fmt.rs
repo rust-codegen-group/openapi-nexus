@@ -5,9 +5,8 @@ use minijinja::value::ViaDeserialize;
 use crate::ast::{
     GoDocComment, GoExpression, GoField, GoParameter, GoStruct, GoTypeAlias, GoTypeDefinition,
 };
+use crate::consts::MAX_LINE_WIDTH;
 use openapi_nexus_core::traits::ToRcDoc;
-
-const MAX_LINE_WIDTH: usize = 100;
 
 /// Macro to simplify fmt filter match arms
 /// Converts a value implementing ToRcDoc to a formatted string

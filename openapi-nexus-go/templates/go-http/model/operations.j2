@@ -35,4 +35,7 @@ type {{ response.name }}Response struct {
 	Body *{{ response.body_type }}
 {% endif %}
 }
+{% if not loop.last %}
+
+{% endif %}
 {% endfor %}

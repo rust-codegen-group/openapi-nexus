@@ -7,6 +7,9 @@
 
 package components
 
+import (
+	"time"
+)
 
 // String with date-time format
 type DateTimeString = time.Time

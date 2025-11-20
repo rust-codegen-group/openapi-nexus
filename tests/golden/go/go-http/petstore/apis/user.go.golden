@@ -27,7 +27,8 @@ type User struct {
 	hooks            *hooks.Hooks
 }
 
-func newUser(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *User {
+// NewUser creates a new User client
+func NewUser(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *User {
 	return &User{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

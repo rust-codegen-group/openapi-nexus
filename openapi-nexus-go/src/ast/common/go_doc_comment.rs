@@ -3,9 +3,8 @@
 use pretty::RcDoc;
 use serde::{Deserialize, Serialize};
 
+use crate::consts::MAX_LINE_WIDTH;
 use openapi_nexus_core::traits::ToRcDoc;
-
-const MAX_LINE_WIDTH: usize = 100;
 
 /// Go documentation comment
 #[derive(Debug, Clone, Serialize, Deserialize)]

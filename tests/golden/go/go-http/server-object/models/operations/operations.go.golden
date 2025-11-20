@@ -36,6 +36,7 @@ const (
 type GetAllUsersResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // GetUserByIdResponseResponse is the response type for GetUserById
 type GetUserByIdResponseResponse struct {
 	HTTPMeta components.HTTPMetadata

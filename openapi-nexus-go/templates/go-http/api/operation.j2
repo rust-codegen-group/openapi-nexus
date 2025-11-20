@@ -17,7 +17,8 @@ type {{ api_operation.client_struct.name }} struct {
 	hooks            *hooks.Hooks
 }
 
-func new{{ api_operation.client_struct.name }}(rootSDK *{{ api_operation.sdk_name }}SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *{{ api_operation.client_struct.name }} {
+// New{{ api_operation.client_struct.name }} creates a new {{ api_operation.client_struct.name }} client
+func New{{ api_operation.client_struct.name }}(rootSDK *{{ api_operation.sdk_name }}SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *{{ api_operation.client_struct.name }} {
 	return &{{ api_operation.client_struct.name }}{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

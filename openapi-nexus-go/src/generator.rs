@@ -8,10 +8,11 @@ use utoipa::openapi::OpenApi;
 
 use crate::ast::GoStruct;
 use crate::config::GoHttpConfig;
+use crate::consts::MAX_LINE_WIDTH;
 use crate::errors::GeneratorError;
 use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, GoApiMethodData, GoParameterInfo, MainSdkData,
-    ModelStructData, ModelTypeAliasData, OperationResponse, OperationsData,
+    ModelStructData, ModelTypeAliasData, OperationResponse, OperationsData, SubClientInfo,
 };
 use crate::templating::{TemplateName, Templates};
 use crate::type_mapping;
@@ -67,7 +68,7 @@ impl GoHttpCodeGenerator {
             let go_expr = type_mapping::schema_to_go_expression(schema_ref, components)?;
             // Convert GoExpression to string
             let doc = go_expr.to_rcdoc();
-            doc.pretty(80).to_string().trim().to_string()
+            doc.pretty(MAX_LINE_WIDTH).to_string().trim().to_string()
         } else {
             "string".to_string() // Default to string if no schema
         };
@@ -253,10 +254,22 @@ impl CodeGenerator for GoHttpCodeGenerator {
             .map(|s| s.to_snake_case())
             .unwrap_or_else(|| "sdk".to_string());
 
-        let main_sdk_data = MainSdkData::new(sdk_name.clone(), package_name, common_header.clone());
+        // Collect sub-clients from all tags
+        let mut sub_clients: Vec<SubClientInfo> = Vec::new();
+        for tag in apis_by_tag.keys() {
+            let client_name = tag.to_pascal_case();
+            sub_clients.push(SubClientInfo {
+                name: tag.to_lower_camel_case(),
+                type_name: client_name.clone(),
+            });
+        }
+
+        let main_sdk_data = MainSdkData::new(sdk_name.clone(), package_name, common_header.clone())
+            .with_sub_clients(sub_clients);
         let template_context = context! {
             main_sdk => main_sdk_data,
             common_file_header => common_header,
+            module_path => module_path.clone(),
         };
         let sdk_filename = if let Some(pkg) = &self.config.package_name {
             format!("{}.go", pkg.to_snake_case())
@@ -303,7 +316,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
                 })?;
 
                 // Add module path to imports
-                let full_imports: Vec<String> = imports
+                let mut full_imports: Vec<String> = imports
                     .iter()
                     .map(|imp| {
                         if imp.starts_with("optionalnullable") {
@@ -317,8 +330,25 @@ impl CodeGenerator for GoHttpCodeGenerator {
                     })
                     .collect();
 
-                let filename = format!("components/{}", self.generate_filename(&model.name));
+                // Check if the type definition uses time types and add time import if needed
                 use crate::ast::ty::GoTypeDefinition;
+                let type_def_str = match &type_def {
+                    GoTypeDefinition::Struct(s) => {
+                        let doc = s.to_rcdoc();
+                        doc.pretty(MAX_LINE_WIDTH).to_string()
+                    }
+                    GoTypeDefinition::TypeAlias(t) => {
+                        let doc = t.to_rcdoc();
+                        doc.pretty(MAX_LINE_WIDTH).to_string()
+                    }
+                };
+                if (type_def_str.contains("time.Time") || type_def_str.contains("time.Duration"))
+                    && !full_imports.iter().any(|imp| imp == "time")
+                {
+                    full_imports.push("time".to_string());
+                }
+
+                let filename = format!("components/{}", self.generate_filename(&model.name));
                 let (template_context, template_name) = match type_def {
                     GoTypeDefinition::Struct(s) => {
                         let model_data = ModelStructData::new(s, common_header.clone())

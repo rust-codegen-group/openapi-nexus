@@ -25,7 +25,8 @@ type Foo struct {
 	hooks            *hooks.Hooks
 }
 
-func newFoo(rootSDK *NoResponseBodyApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Foo {
+// NewFoo creates a new Foo client
+func NewFoo(rootSDK *NoResponseBodyApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Foo {
 	return &Foo{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

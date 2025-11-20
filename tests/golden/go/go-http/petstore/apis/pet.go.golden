@@ -27,7 +27,8 @@ type Pet struct {
 	hooks            *hooks.Hooks
 }
 
-func newPet(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Pet {
+// NewPet creates a new Pet client
+func NewPet(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Pet {
 	return &Pet{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

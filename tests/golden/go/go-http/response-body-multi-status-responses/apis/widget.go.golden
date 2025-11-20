@@ -25,7 +25,8 @@ type Widget struct {
 	hooks            *hooks.Hooks
 }
 
-func newWidget(rootSDK *MultiStatusApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Widget {
+// NewWidget creates a new Widget client
+func NewWidget(rootSDK *MultiStatusApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Widget {
 	return &Widget{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

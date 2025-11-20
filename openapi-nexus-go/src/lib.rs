@@ -4,6 +4,7 @@
 
 pub mod ast;
 pub mod config;
+pub mod consts;
 pub mod errors;
 pub mod generator;
 pub mod templating;

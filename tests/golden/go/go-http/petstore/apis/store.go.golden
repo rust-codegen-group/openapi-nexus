@@ -27,7 +27,8 @@ type Store struct {
 	hooks            *hooks.Hooks
 }
 
-func newStore(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Store {
+// NewStore creates a new Store client
+func NewStore(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Store {
 	return &Store{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

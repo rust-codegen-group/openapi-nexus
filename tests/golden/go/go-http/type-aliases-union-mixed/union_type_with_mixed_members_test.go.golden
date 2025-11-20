@@ -7,4 +7,61 @@
 
 package sdk
 
-// TODO: Implement main SDK file
+import (
+	"net/http"
+
+	"example.com/sdk/internal/config"
+	"example.com/sdk/internal/hooks"
+	"example.com/sdk/apis"
+)
+
+// UnionTypeWithMixedMembersTestSDK is the main SDK struct
+type UnionTypeWithMixedMembersTestSDK struct {
+	sdkConfiguration config.SDKConfiguration
+	hooks            *hooks.Hooks
+	default *apis.Default
+}
+
+// New creates a new instance of UnionTypeWithMixedMembersTestSDK
+func New(opts ...SdkOption) (*UnionTypeWithMixedMembersTestSDK, error) {
+	sdkConfig := config.NewSDKConfiguration()
+	h := hooks.New()
+
+	// Apply options
+	for _, opt := range opts {
+		if err := opt(&sdkConfig); err != nil {
+			return nil, err
+		}
+	}
+
+	// Initialize hooks
+	sdkConfig = h.SDKInit(sdkConfig)
+
+	sdk := &UnionTypeWithMixedMembersTestSDK{
+		sdkConfiguration: sdkConfig,
+		hooks:            h,
+	}
+
+	// Initialize sub-clients
+	sdk.default = apis.NewDefault(sdk, sdkConfig, h)
+
+	return sdk, nil
+}
+
+// SdkOption is a function that configures the SDK
+type SdkOption func(*config.SDKConfiguration) error
+
+// WithBaseURL sets the base URL for the SDK
+func WithBaseURL(baseURL string) SdkOption {
+	return func(cfg *config.SDKConfiguration) error {
+		return cfg.SetServerURL(baseURL)
+	}
+}
+
+// WithHTTPClient sets a custom HTTP client for the SDK
+func WithHTTPClient(client *http.Client) SdkOption {
+	return func(cfg *config.SDKConfiguration) error {
+		cfg.SetClient(client)
+		return nil
+	}
+}

@@ -27,7 +27,8 @@ type Users struct {
 	hooks            *hooks.Hooks
 }
 
-func newUsers(rootSDK *DuplicateParameterNamesTestApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Users {
+// NewUsers creates a new Users client
+func NewUsers(rootSDK *DuplicateParameterNamesTestApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Users {
 	return &Users{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

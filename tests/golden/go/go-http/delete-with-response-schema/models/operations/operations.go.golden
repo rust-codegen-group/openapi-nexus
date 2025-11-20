@@ -36,6 +36,7 @@ const (
 type CreateTestResourceResponseResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
+
 // DeleteTestResourceResponseResponse is the response type for DeleteTestResource
 type DeleteTestResourceResponseResponse struct {
 	HTTPMeta components.HTTPMetadata

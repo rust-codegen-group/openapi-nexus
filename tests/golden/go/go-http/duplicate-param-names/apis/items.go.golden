@@ -27,7 +27,8 @@ type Items struct {
 	hooks            *hooks.Hooks
 }
 
-func newItems(rootSDK *DuplicateParameterNamesTestApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Items {
+// NewItems creates a new Items client
+func NewItems(rootSDK *DuplicateParameterNamesTestApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Items {
 	return &Items{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

@@ -27,7 +27,8 @@ type TestResource struct {
 	hooks            *hooks.Hooks
 }
 
-func newTestResource(rootSDK *TestApiWithDeleteResponseSchemaSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *TestResource {
+// NewTestResource creates a new TestResource client
+func NewTestResource(rootSDK *TestApiWithDeleteResponseSchemaSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *TestResource {
 	return &TestResource{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

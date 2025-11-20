@@ -27,7 +27,8 @@ type Default struct {
 	hooks            *hooks.Hooks
 }
 
-func newDefault(rootSDK *NestedObjectReferenceTestSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Default {
+// NewDefault creates a new Default client
+func NewDefault(rootSDK *NestedObjectReferenceTestSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Default {
 	return &Default{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
