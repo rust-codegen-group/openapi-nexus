@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 
 // TestResource - test-resource operations
 type TestResource struct {
-	rootSDK          *TestApiWithDeleteResponseSchemaSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewTestResource creates a new TestResource client
-func NewTestResource(rootSDK *TestApiWithDeleteResponseSchemaSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *TestResource {
+func NewTestResource(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *TestResource {
 	return &TestResource{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

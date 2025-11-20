@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -22,13 +22,13 @@ import (
 
 // Items - items operations
 type Items struct {
-	rootSDK          *DuplicateParameterNamesTestApiSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewItems creates a new Items client
-func NewItems(rootSDK *DuplicateParameterNamesTestApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Items {
+func NewItems(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Items {
 	return &Items{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

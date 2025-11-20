@@ -30,8 +30,15 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// SDK is the interface that the main SDK struct implements.
+// This interface is defined in hooks package to avoid circular dependencies
+// between the SDK and API client packages.
+type SDK interface {
+	// SDK interface - can be extended with methods if hooks need to call SDK methods
+}
+
 type HookContext struct {
-	SDK              any
+	SDK              SDK
 	SDKConfiguration config.SDKConfiguration
 	BaseURL          string
 	Context          context.Context

@@ -18,6 +18,7 @@ pub struct GoApiMethodData {
     pub body_param: Option<GoParameterInfo>,
     pub has_request_body: bool,
     pub request_body_content_type: String,
+    pub request_body_type: Option<String>, // Type name for request body (e.g., "AddPetRequest" or "Pet" for references)
     pub response_type: Option<String>,
     pub description: Option<String>,
 }
@@ -62,7 +63,7 @@ impl ApiOperationData {
             tag: tag.clone(),
             tag_pascal_case: tag.to_pascal_case(),
             tag_snake_case: tag.to_snake_case(),
-            package_name: "operations".to_string(),
+            package_name: "apis".to_string(),
             sdk_name,
             common_file_header,
         }

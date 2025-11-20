@@ -16,13 +16,13 @@ import (
 
 // {{ api_operation.client_struct.name }} - {{ api_operation.tag }} operations
 type {{ api_operation.client_struct.name }} struct {
-	rootSDK          *{{ api_operation.sdk_name }}SDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // New{{ api_operation.client_struct.name }} creates a new {{ api_operation.client_struct.name }} client
-func New{{ api_operation.client_struct.name }}(rootSDK *{{ api_operation.sdk_name }}SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *{{ api_operation.client_struct.name }} {
+func New{{ api_operation.client_struct.name }}(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *{{ api_operation.client_struct.name }} {
 	return &{{ api_operation.client_struct.name }}{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
@@ -41,7 +41,7 @@ func (s *{{ api_operation.client_struct.name }}) {{ method.name }}(
 	path{{ param.param_name }} {{ param.go_type }}{% endfor %}{% endif %}{% if method.query_params %}{% for param in method.query_params %},
 	query{{ param.param_name }} {{ param.go_type }}{% endfor %}{% endif %}{% if method.header_params %}{% for param in method.header_params %},
 	header{{ param.param_name }} {{ param.go_type }}{% endfor %}{% endif %}{% if method.has_request_body %},
-	request components.{{ method.name }}Request{% endif %},
+	request components.{{ method.request_body_type }}{% endif %},
 	opts ...operations.Option,
 ) (*operations.{{ method.name }}Response, error) {
 	o := operations.Options{}

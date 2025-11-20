@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 
 // Users - users operations
 type Users struct {
-	rootSDK          *DuplicateParameterNamesTestApiSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewUsers creates a new Users client
-func NewUsers(rootSDK *DuplicateParameterNamesTestApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Users {
+func NewUsers(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Users {
 	return &Users{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

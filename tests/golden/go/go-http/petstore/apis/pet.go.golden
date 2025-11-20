@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 
 // Pet - pet operations
 type Pet struct {
-	rootSDK          *PetstoreApiSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewPet creates a new Pet client
-func NewPet(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Pet {
+func NewPet(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Pet {
 	return &Pet{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
@@ -40,7 +40,7 @@ func NewPet(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *h
 // AddPet - POST /pet
 func (s *Pet) AddPet(
 	ctx context.Context,
-	request components.AddPetRequest,
+	request components.Pet,
 	opts ...operations.Option,
 ) (*operations.AddPetResponse, error) {
 	o := operations.Options{}
@@ -178,7 +178,7 @@ func (s *Pet) AddPet(
 // UpdatePet - PUT /pet
 func (s *Pet) UpdatePet(
 	ctx context.Context,
-	request components.UpdatePetRequest,
+	request components.Pet,
 	opts ...operations.Option,
 ) (*operations.UpdatePetResponse, error) {
 	o := operations.Options{}

@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 
 // Default - default operations
 type Default struct {
-	rootSDK          *OptionalNestedObjectReferenceTestSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewDefault creates a new Default client
-func NewDefault(rootSDK *OptionalNestedObjectReferenceTestSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Default {
+func NewDefault(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Default {
 	return &Default{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,

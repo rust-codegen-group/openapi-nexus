@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 
 // Store - store operations
 type Store struct {
-	rootSDK          *PetstoreApiSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewStore creates a new Store client
-func NewStore(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Store {
+func NewStore(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Store {
 	return &Store{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
@@ -175,7 +175,7 @@ func (s *Store) GetInventory(
 // PlaceOrder - POST /store/order
 func (s *Store) PlaceOrder(
 	ctx context.Context,
-	request components.PlaceOrderRequest,
+	request components.Order,
 	opts ...operations.Option,
 ) (*operations.PlaceOrderResponse, error) {
 	o := operations.Options{}

@@ -3,7 +3,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -20,13 +20,13 @@ import (
 
 // Foo - Foo operations
 type Foo struct {
-	rootSDK          *NoResponseBodyApiSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewFoo creates a new Foo client
-func NewFoo(rootSDK *NoResponseBodyApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Foo {
+func NewFoo(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Foo {
 	return &Foo{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
@@ -38,7 +38,7 @@ func NewFoo(rootSDK *NoResponseBodyApiSDK, sdkConfig config.SDKConfiguration, ho
 func (s *Foo) UpdateFooBar(
 	ctx context.Context,
 	pathFooId string,
-	request components.UpdateFooBarRequest,
+	request components.FooRequest,
 	opts ...operations.Option,
 ) (*operations.UpdateFooBarResponse, error) {
 	o := operations.Options{}

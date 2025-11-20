@@ -19,6 +19,9 @@ type {{ main_sdk.sdk_name }}SDK struct {
 {% endfor %}
 }
 
+// Ensure {{ main_sdk.sdk_name }}SDK implements hooks.SDK interface
+var _ hooks.SDK = (*{{ main_sdk.sdk_name }}SDK)(nil)
+
 // New creates a new instance of {{ main_sdk.sdk_name }}SDK
 func New(opts ...SdkOption) (*{{ main_sdk.sdk_name }}SDK, error) {
 	sdkConfig := config.NewSDKConfiguration()

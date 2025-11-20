@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -22,13 +22,13 @@ import (
 
 // Default - default operations
 type Default struct {
-	rootSDK          *ComplexUnionTypeTestSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewDefault creates a new Default client
-func NewDefault(rootSDK *ComplexUnionTypeTestSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Default {
+func NewDefault(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Default {
 	return &Default{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
@@ -39,7 +39,7 @@ func NewDefault(rootSDK *ComplexUnionTypeTestSDK, sdkConfig config.SDKConfigurat
 // TestComplexUnion - POST /test
 func (s *Default) TestComplexUnion(
 	ctx context.Context,
-	request components.TestComplexUnionRequest,
+	request components.Foo,
 	opts ...operations.Option,
 ) (*operations.TestComplexUnionResponse, error) {
 	o := operations.Options{}

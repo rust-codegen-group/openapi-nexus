@@ -5,7 +5,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -23,13 +23,13 @@ import (
 
 // User - user operations
 type User struct {
-	rootSDK          *PetstoreApiSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewUser creates a new User client
-func NewUser(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *User {
+func NewUser(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *User {
 	return &User{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
@@ -40,7 +40,7 @@ func NewUser(rootSDK *PetstoreApiSDK, sdkConfig config.SDKConfiguration, hooks *
 // CreateUser - POST /user
 func (s *User) CreateUser(
 	ctx context.Context,
-	request components.CreateUserRequest,
+	request components.User,
 	opts ...operations.Option,
 ) (*operations.CreateUserResponse, error) {
 	o := operations.Options{}
@@ -741,7 +741,7 @@ func (s *User) GetUserByName(
 func (s *User) UpdateUser(
 	ctx context.Context,
 	pathUsername string,
-	request components.UpdateUserRequest,
+	request components.User,
 	opts ...operations.Option,
 ) (*operations.UpdateUserResponse, error) {
 	o := operations.Options{}

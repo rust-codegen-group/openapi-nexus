@@ -5,6 +5,8 @@ use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 use minijinja::context;
+use tracing::warn;
+use utoipa::openapi;
 use utoipa::openapi::OpenApi;
 
 use crate::ast::GoStruct;
@@ -147,6 +149,47 @@ impl GoHttpCodeGenerator {
             .map(|p| self.convert_parameter(p, components))
             .collect();
 
+        // Extract request body content type
+        let request_body_content_type = api
+            .request_body
+            .as_ref()
+            .and_then(|rb| {
+                // Prefer application/json, but use first available content type
+                rb.content
+                    .get("application/json")
+                    .map(|_| "application/json")
+                    .or_else(|| rb.content.keys().next().map(|k| k.as_str()))
+            })
+            .unwrap_or("application/json")
+            .to_string();
+
+        // Extract request body type name
+        let request_body_type = api
+            .request_body
+            .as_ref()
+            .and_then(|rb| rb.content.get("application/json"))
+            .and_then(|json_content| json_content.schema.as_ref())
+            .map(|schema_ref| {
+                match schema_ref {
+                    // For inline schemas, generate a new type name
+                    openapi::RefOr::T(_) => format!("{}Request", method_name),
+                    // For references, extract schema name from ref_location
+                    openapi::RefOr::Ref(reference) => {
+                        // Parse schema name from ref_location (e.g., "#/components/schemas/Pet" -> "Pet")
+                        if reference.ref_location.starts_with("#/components/schemas/") {
+                            let schema_name = reference
+                                .ref_location
+                                .trim_start_matches("#/components/schemas/");
+                            use heck::ToPascalCase;
+                            schema_name.to_pascal_case()
+                        } else {
+                            // Fallback to method name + Request if we can't parse the reference
+                            format!("{}Request", method_name)
+                        }
+                    }
+                }
+            });
+
         Ok(GoApiMethodData {
             name: method_name.clone(),
             http_method: api.http_method.as_str().to_uppercase(),
@@ -157,9 +200,10 @@ impl GoHttpCodeGenerator {
             path_params: path_params?,
             query_params: query_params?,
             header_params: header_params?,
-            body_param: None, // TODO: Extract from request_body
+            body_param: None, // Request body is handled as a separate parameter
             has_request_body: api.request_body.is_some(),
-            request_body_content_type: "application/json".to_string(), // TODO: Extract from request_body
+            request_body_content_type,
+            request_body_type,
             response_type: None, // TODO: Extract from return_type
             description: op_info.and_then(|op| op.operation.description.clone()),
         })
@@ -189,6 +233,7 @@ impl GoHttpCodeGenerator {
             format!("{}/models/components", module_path),
             format!("{}/models/operations", module_path),
         ];
+
         project_imports.sort();
 
         // Combine: std imports, empty string separator, project imports
@@ -316,10 +361,11 @@ impl GoHttpCodeGenerator {
             common_file_header => common_header,
             module_path => module_path,
         };
+        // SDK file goes in sdk/ subdirectory so it can be imported
         let sdk_filename = if let Some(pkg) = &self.config.package_name {
-            format!("{}.go", pkg.to_snake_case())
+            format!("sdk/{}.go", pkg.to_snake_case())
         } else {
-            format!("{}.go", sdk_name.to_snake_case())
+            format!("sdk/{}.go", sdk_name.to_snake_case())
         };
         let file_info = self.templates.render_template(
             TemplateName::MainSdk,
@@ -470,6 +516,68 @@ impl GoHttpCodeGenerator {
         }
         Ok(files)
     }
+
+    /// Generate request body models for inline schemas
+    fn generate_request_body_models(
+        &self,
+        apis: &[ApiMethodData],
+        components: Option<&utoipa::openapi::Components>,
+        header_data: &HeaderData,
+        common_header: &CommonFileHeaderData,
+        module_path: &str,
+    ) -> Vec<FileInfo> {
+        let mut files = Vec::new();
+
+        for api in apis {
+            // Extract inline request body schema
+            let Some(request_body) = &api.request_body else {
+                continue;
+            };
+            let Some(json_content) = request_body.content.get("application/json") else {
+                continue;
+            };
+            let Some(schema_ref) = &json_content.schema else {
+                continue;
+            };
+
+            // Only generate a new model if it's an inline schema (not a reference)
+            // If it's a reference, the model already exists and will be used directly
+            let openapi::RefOr::T(_) = schema_ref else {
+                continue;
+            };
+
+            let method_name = api.method_name.to_pascal_case();
+            let request_type_name = format!("{}Request", method_name);
+
+            // Generate model for request body
+            let Some(components_ref) = components else {
+                continue;
+            };
+
+            let model_data = ModelData {
+                name: request_type_name.clone(),
+                schema: schema_ref.clone(),
+            };
+
+            if let Ok(file_info) = self.process_model(
+                &model_data,
+                components_ref,
+                header_data,
+                common_header,
+                module_path,
+            ) {
+                files.push(file_info);
+            } else {
+                // Log error but continue - some request bodies might not be generatable
+                warn!(
+                    request_type_name = %request_type_name,
+                    "Failed to generate request body type"
+                );
+            }
+        }
+
+        files
+    }
 }
 
 impl CodeGenerator for GoHttpCodeGenerator {
@@ -486,19 +594,26 @@ impl CodeGenerator for GoHttpCodeGenerator {
         openapi: &OpenApi,
         apis: Vec<ApiMethodData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let operations_by_tag = self.collect_operations_by_tag(openapi);
+        let operations_by_tag = <Self as CodeGenerator>::collect_operations_by_tag(self, openapi);
         let header_data = HeaderData::from_openapi(openapi);
-        let common_header = CommonFileHeaderData::from(header_data);
-        let mut files = Vec::new();
-
+        let common_header = CommonFileHeaderData::from(header_data.clone());
         let module_path = self.get_module_path();
+        let components = openapi.components.as_ref();
 
         // Group APIs by tag
         let apis_by_tag = self.group_apis_by_tag(&apis, &operations_by_tag);
 
+        // Generate request body models for inline schemas
+        let mut files = self.generate_request_body_models(
+            &apis,
+            components,
+            &header_data,
+            &common_header,
+            &module_path,
+        );
+
         // Generate API client files for each tag
         for (tag, operations) in operations_by_tag {
-            // Find matching APIs for this tag
             let tag_apis: Vec<&ApiMethodData> = apis_by_tag.get(&tag).cloned().unwrap_or_default();
 
             let file_info = self.generate_api_client_file(
@@ -513,13 +628,15 @@ impl CodeGenerator for GoHttpCodeGenerator {
         }
 
         // Generate operations types file
-        let operations_file = self.generate_operations_file(&apis, &common_header, &module_path)?;
-        files.push(operations_file);
+        files.push(self.generate_operations_file(&apis, &common_header, &module_path)?);
 
         // Generate main SDK file
-        let main_sdk_file =
-            self.generate_main_sdk_file(openapi, &apis_by_tag, &common_header, &module_path)?;
-        files.push(main_sdk_file);
+        files.push(self.generate_main_sdk_file(
+            openapi,
+            &apis_by_tag,
+            &common_header,
+            &module_path,
+        )?);
 
         Ok(files)
     }

@@ -3,7 +3,7 @@
 //
 // Generated from OpenAPI doc version 1.0.0
 
-package operations
+package apis
 
 import (
 	"context"
@@ -21,13 +21,13 @@ import (
 
 // Widget - Widget operations
 type Widget struct {
-	rootSDK          *MultiStatusApiSDK
+	rootSDK          hooks.SDK
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
 }
 
 // NewWidget creates a new Widget client
-func NewWidget(rootSDK *MultiStatusApiSDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Widget {
+func NewWidget(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks.Hooks) *Widget {
 	return &Widget{
 		rootSDK:          rootSDK,
 		sdkConfiguration: sdkConfig,
