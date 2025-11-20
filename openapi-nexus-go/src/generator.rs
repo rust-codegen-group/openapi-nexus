@@ -1,5 +1,6 @@
 //! Go HTTP code generator
 
+use std::collections::BTreeMap;
 use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
@@ -7,6 +8,7 @@ use minijinja::context;
 use utoipa::openapi::OpenApi;
 
 use crate::ast::GoStruct;
+use crate::ast::ty::GoTypeDefinition;
 use crate::config::GoHttpConfig;
 use crate::consts::MAX_LINE_WIDTH;
 use crate::errors::GeneratorError;
@@ -18,7 +20,7 @@ use crate::templating::{TemplateName, Templates};
 use crate::type_mapping;
 use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::data::{
-    ApiMethodData, HeaderData, ModelData, ParameterInfo, ReadmeData, RuntimeData,
+    ApiMethodData, HeaderData, ModelData, OperationInfo, ParameterInfo, ReadmeData, RuntimeData,
 };
 use openapi_nexus_core::traits::ToRcDoc;
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
@@ -82,40 +84,26 @@ impl GoHttpCodeGenerator {
             description: param.description.clone(),
         })
     }
-}
 
-impl CodeGenerator for GoHttpCodeGenerator {
-    fn language(&self) -> Language {
-        Language::Go
-    }
-
-    fn generator_type(&self) -> GeneratorType {
-        GeneratorType::GoHttp
-    }
-
-    fn generate_apis(
-        &self,
-        openapi: &OpenApi,
-        apis: Vec<ApiMethodData>,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let operations_by_tag = self.collect_operations_by_tag(openapi);
-        let header_data = HeaderData::from_openapi(openapi);
-        let common_header = CommonFileHeaderData::from(header_data);
-        let mut files = Vec::new();
-
-        let module_path = self
-            .config
+    /// Get module path from config or return default
+    fn get_module_path(&self) -> String {
+        self.config
             .module_path
             .clone()
-            .unwrap_or_else(|| "example.com/sdk".to_string());
+            .unwrap_or_else(|| "example.com/sdk".to_string())
+    }
 
-        // Group APIs by tag
-        let mut apis_by_tag: std::collections::BTreeMap<String, Vec<&ApiMethodData>> =
-            std::collections::BTreeMap::new();
-        for api in &apis {
+    /// Group APIs by their tags based on matching operations
+    fn group_apis_by_tag<'a>(
+        &self,
+        apis: &'a [ApiMethodData],
+        operations_by_tag: &std::collections::HashMap<String, Vec<OperationInfo>>,
+    ) -> BTreeMap<String, Vec<&'a ApiMethodData>> {
+        let mut apis_by_tag: BTreeMap<String, Vec<&'a ApiMethodData>> = BTreeMap::new();
+        for api in apis {
             // Extract tag from operation (we'll need to match by path/method)
             // For now, group by finding matching operations
-            for (tag, operations) in &operations_by_tag {
+            for (tag, operations) in operations_by_tag {
                 for op_info in operations {
                     if op_info.path == api.path && op_info.method == api.http_method {
                         apis_by_tag.entry(tag.clone()).or_default().push(api);
@@ -124,121 +112,153 @@ impl CodeGenerator for GoHttpCodeGenerator {
                 }
             }
         }
+        apis_by_tag
+    }
 
-        // Generate API client files for each tag
-        for (tag, operations) in operations_by_tag {
-            // Find matching APIs for this tag
-            let tag_apis: Vec<&ApiMethodData> = apis_by_tag.get(&tag).cloned().unwrap_or_default();
+    /// Convert a single ApiMethodData to GoApiMethodData
+    fn convert_api_to_go_method(
+        &self,
+        api: &ApiMethodData,
+        operations: &[OperationInfo],
+        components: Option<&utoipa::openapi::Components>,
+    ) -> Result<GoApiMethodData, GeneratorError> {
+        // Find matching operation for additional details
+        let op_info = operations
+            .iter()
+            .find(|op| op.path == api.path && op.method == api.http_method);
 
-            // Convert core ApiMethodData to Go-specific GoApiMethodData
-            let components = openapi.components.as_ref();
-            let go_methods: Result<Vec<GoApiMethodData>, GeneratorError> = tag_apis
-                .iter()
-                .map(|api| {
-                    // Find matching operation for additional details
-                    let op_info = operations
-                        .iter()
-                        .find(|op| op.path == api.path && op.method == api.http_method);
+        // Convert method name to PascalCase for Go
+        let method_name = api.method_name.to_pascal_case();
 
-                    // Convert method name to PascalCase for Go
-                    let method_name = api.method_name.to_pascal_case();
+        // Convert parameters
+        let path_params: Result<Vec<GoParameterInfo>, GeneratorError> = api
+            .path_params
+            .iter()
+            .map(|p| self.convert_parameter(p, components))
+            .collect();
+        let query_params: Result<Vec<GoParameterInfo>, GeneratorError> = api
+            .query_params
+            .iter()
+            .map(|p| self.convert_parameter(p, components))
+            .collect();
+        let header_params: Result<Vec<GoParameterInfo>, GeneratorError> = api
+            .header_params
+            .iter()
+            .map(|p| self.convert_parameter(p, components))
+            .collect();
 
-                    // Convert parameters
-                    let path_params: Result<Vec<GoParameterInfo>, GeneratorError> = api
-                        .path_params
-                        .iter()
-                        .map(|p| self.convert_parameter(p, components))
-                        .collect();
-                    let query_params: Result<Vec<GoParameterInfo>, GeneratorError> = api
-                        .query_params
-                        .iter()
-                        .map(|p| self.convert_parameter(p, components))
-                        .collect();
-                    let header_params: Result<Vec<GoParameterInfo>, GeneratorError> = api
-                        .header_params
-                        .iter()
-                        .map(|p| self.convert_parameter(p, components))
-                        .collect();
+        Ok(GoApiMethodData {
+            name: method_name.clone(),
+            http_method: api.http_method.as_str().to_uppercase(),
+            path: api.path.clone(),
+            operation_id: op_info
+                .and_then(|op| op.operation.operation_id.clone())
+                .unwrap_or_else(|| method_name.clone()),
+            path_params: path_params?,
+            query_params: query_params?,
+            header_params: header_params?,
+            body_param: None, // TODO: Extract from request_body
+            has_request_body: api.request_body.is_some(),
+            request_body_content_type: "application/json".to_string(), // TODO: Extract from request_body
+            response_type: None, // TODO: Extract from return_type
+            description: op_info.and_then(|op| op.operation.description.clone()),
+        })
+    }
 
-                    Ok(GoApiMethodData {
-                        name: method_name.clone(),
-                        http_method: api.http_method.as_str().to_uppercase(),
-                        path: api.path.clone(),
-                        operation_id: op_info
-                            .and_then(|op| op.operation.operation_id.clone())
-                            .unwrap_or_else(|| method_name.clone()),
-                        path_params: path_params?,
-                        query_params: query_params?,
-                        header_params: header_params?,
-                        body_param: None, // TODO: Extract from request_body
-                        has_request_body: api.request_body.is_some(),
-                        request_body_content_type: "application/json".to_string(), // TODO: Extract from request_body
-                        response_type: None, // TODO: Extract from return_type
-                        description: op_info.and_then(|op| op.operation.description.clone()),
-                    })
-                })
-                .collect();
+    /// Build import list for API client files
+    fn build_api_imports(&self, go_methods: &[GoApiMethodData], module_path: &str) -> Vec<String> {
+        // Check if any method needs io import (when has_request_body is false)
+        let needs_io_import = go_methods.iter().any(|method| !method.has_request_body);
 
-            let go_methods = go_methods?;
-
-            // Create client struct
-            let client_struct = GoStruct::new(tag.to_pascal_case());
-
-            // Get SDK name from OpenAPI title
-            let sdk_name = openapi.info.title.to_pascal_case();
-
-            // Check if any method needs io import (when has_request_body is false)
-            let needs_io_import = go_methods.iter().any(|method| !method.has_request_body);
-
-            // Collect and separate std imports from project imports
-            let mut std_imports = vec![
-                "context".to_string(),
-                "fmt".to_string(),
-                "net/http".to_string(),
-                "net/url".to_string(),
-            ];
-            if needs_io_import {
-                std_imports.push("io".to_string());
-            }
-            std_imports.sort();
-
-            let mut project_imports = vec![
-                format!("{}/internal/config", module_path),
-                format!("{}/internal/hooks", module_path),
-                format!("{}/internal/utils", module_path),
-                format!("{}/models/components", module_path),
-                format!("{}/models/operations", module_path),
-            ];
-            project_imports.sort();
-
-            // Combine: std imports, empty string separator, project imports
-            let mut imports = std_imports;
-            imports.push(String::new()); // Empty string as separator for newline
-            imports.extend(project_imports);
-
-            let api_data =
-                ApiOperationData::new(client_struct, tag.clone(), sdk_name, common_header.clone())
-                    .with_methods(go_methods)
-                    .with_imports(imports);
-
-            // Wrap in context with api_operation key (matching template expectations)
-            let template_context = context! {
-                api_operation => api_data,
-                common_file_header => common_header,
-                module_path => module_path.clone(),
-            };
-            let filename = self.generate_filename(&tag);
-            let file_info = self.templates.render_template(
-                TemplateName::ApiOperation,
-                &filename,
-                template_context,
-            )?;
-            files.push(file_info);
+        // Collect and separate std imports from project imports
+        let mut std_imports = vec![
+            "context".to_string(),
+            "fmt".to_string(),
+            "net/http".to_string(),
+            "net/url".to_string(),
+        ];
+        if needs_io_import {
+            std_imports.push("io".to_string());
         }
+        std_imports.sort();
 
-        // Generate operations types file
+        let mut project_imports = vec![
+            format!("{}/internal/config", module_path),
+            format!("{}/internal/hooks", module_path),
+            format!("{}/internal/utils", module_path),
+            format!("{}/models/components", module_path),
+            format!("{}/models/operations", module_path),
+        ];
+        project_imports.sort();
+
+        // Combine: std imports, empty string separator, project imports
+        let mut imports = std_imports;
+        imports.push(String::new()); // Empty string as separator for newline
+        imports.extend(project_imports);
+        imports
+    }
+
+    /// Generate API client file for a single tag
+    fn generate_api_client_file(
+        &self,
+        tag: &str,
+        operations: &[OperationInfo],
+        tag_apis: &[&ApiMethodData],
+        openapi: &OpenApi,
+        common_header: &CommonFileHeaderData,
+        module_path: &str,
+    ) -> Result<FileInfo, Box<dyn Error + Send + Sync>> {
+        // Convert core ApiMethodData to Go-specific GoApiMethodData
+        let components = openapi.components.as_ref();
+        let go_methods: Result<Vec<GoApiMethodData>, GeneratorError> = tag_apis
+            .iter()
+            .map(|api| self.convert_api_to_go_method(api, operations, components))
+            .collect();
+
+        let go_methods = go_methods?;
+
+        // Create client struct
+        let client_struct = GoStruct::new(tag.to_pascal_case());
+
+        // Get SDK name from OpenAPI title
+        let sdk_name = openapi.info.title.to_pascal_case();
+
+        // Build imports
+        let imports = self.build_api_imports(&go_methods, module_path);
+
+        let api_data = ApiOperationData::new(
+            client_struct,
+            tag.to_string(),
+            sdk_name,
+            common_header.clone(),
+        )
+        .with_methods(go_methods)
+        .with_imports(imports);
+
+        // Wrap in context with api_operation key (matching template expectations)
+        let template_context = context! {
+            api_operation => api_data,
+            common_file_header => common_header,
+            module_path => module_path,
+        };
+        let filename = self.generate_filename(tag);
+        let file_info = self.templates.render_template(
+            TemplateName::ApiOperation,
+            &filename,
+            template_context,
+        )?;
+        Ok(file_info)
+    }
+
+    /// Generate operations types file
+    fn generate_operations_file(
+        &self,
+        apis: &[ApiMethodData],
+        common_header: &CommonFileHeaderData,
+        module_path: &str,
+    ) -> Result<FileInfo, Box<dyn Error + Send + Sync>> {
         let mut responses = Vec::new();
-        for api in &apis {
+        for api in apis {
             let method_name = api.method_name.to_pascal_case();
             responses.push(OperationResponse {
                 name: format!("{}Response", method_name),
@@ -249,20 +269,28 @@ impl CodeGenerator for GoHttpCodeGenerator {
         // Sort responses by name to ensure stable ordering across generations
         responses.sort_by(|a, b| a.name.cmp(&b.name));
         let operations_data =
-            OperationsData::new(responses, common_header.clone(), module_path.clone());
+            OperationsData::new(responses, common_header.clone(), module_path.to_string());
         let operations_context = context! {
             operations => operations_data,
-            common_file_header => common_header.clone(),
-            module_path => module_path.clone(),
+            common_file_header => common_header,
+            module_path => module_path,
         };
         let operations_file = self.templates.render_template(
             TemplateName::ModelOperations,
             "operations/operations.go",
             operations_context,
         )?;
-        files.push(operations_file);
+        Ok(operations_file)
+    }
 
-        // Generate main SDK file
+    /// Generate main SDK file
+    fn generate_main_sdk_file(
+        &self,
+        openapi: &OpenApi,
+        apis_by_tag: &BTreeMap<String, Vec<&ApiMethodData>>,
+        common_header: &CommonFileHeaderData,
+        module_path: &str,
+    ) -> Result<FileInfo, Box<dyn Error + Send + Sync>> {
         let sdk_name: String = openapi.info.title.to_pascal_case();
         let package_name: String = self
             .config
@@ -286,7 +314,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
         let template_context = context! {
             main_sdk => main_sdk_data,
             common_file_header => common_header,
-            module_path => module_path.clone(),
+            module_path => module_path,
         };
         let sdk_filename = if let Some(pkg) = &self.config.package_name {
             format!("{}.go", pkg.to_snake_case())
@@ -298,7 +326,200 @@ impl CodeGenerator for GoHttpCodeGenerator {
             &sdk_filename,
             template_context,
         )?;
-        files.push(file_info);
+        Ok(file_info)
+    }
+
+    /// Build model imports with module path and time import detection
+    fn build_model_imports(
+        &self,
+        imports: &[String],
+        module_path: &str,
+        type_def: &GoTypeDefinition,
+    ) -> Vec<String> {
+        // Add module path to imports
+        let mut full_imports: Vec<String> = imports
+            .iter()
+            .map(|imp| {
+                if imp.starts_with("optionalnullable") {
+                    format!("{}/runtime/{}", module_path, imp)
+                } else if imp.starts_with("internal/") {
+                    // Internal packages are now at root level (Option B)
+                    format!("{}/{}", module_path, imp)
+                } else {
+                    imp.clone()
+                }
+            })
+            .collect();
+
+        // Check if the type definition uses time types and add time import if needed
+        let type_def_str = match type_def {
+            GoTypeDefinition::Struct(s) => {
+                let doc = s.to_rcdoc();
+                doc.pretty(MAX_LINE_WIDTH).to_string()
+            }
+            GoTypeDefinition::TypeAlias(t) => {
+                let doc = t.to_rcdoc();
+                doc.pretty(MAX_LINE_WIDTH).to_string()
+            }
+        };
+        if (type_def_str.contains("time.Time") || type_def_str.contains("time.Duration"))
+            && !full_imports.iter().any(|imp| imp == "time")
+        {
+            full_imports.push("time".to_string());
+        }
+
+        full_imports
+    }
+
+    /// Process a single model and generate its file
+    fn process_model(
+        &self,
+        model: &ModelData,
+        components: &utoipa::openapi::Components,
+        header_data: &HeaderData,
+        common_header: &CommonFileHeaderData,
+        module_path: &str,
+    ) -> Result<FileInfo, Box<dyn Error + Send + Sync>> {
+        let (type_def, imports, required_fields) = type_mapping::generate_model_data(
+            &model.name,
+            &model.schema,
+            components,
+            &self.config,
+            header_data,
+        )
+        .map_err(|e| GeneratorError::ModelGeneration {
+            model_name: model.name.clone(),
+            source: Box::new(e),
+        })?;
+
+        // Build imports with module path and time detection
+        let full_imports = self.build_model_imports(&imports, module_path, &type_def);
+
+        let filename = format!("components/{}", self.generate_filename(&model.name));
+        let (template_context, template_name) = match type_def {
+            GoTypeDefinition::Struct(s) => {
+                let model_data = ModelStructData::new(s, common_header.clone())
+                    .with_imports(full_imports)
+                    .with_required_fields(required_fields);
+                (
+                    context! {
+                        model_struct => model_data,
+                        common_file_header => common_header,
+                    },
+                    TemplateName::ModelStruct,
+                )
+            }
+            GoTypeDefinition::TypeAlias(t) => {
+                let model_data =
+                    ModelTypeAliasData::new(t, common_header.clone()).with_imports(full_imports);
+                (
+                    context! {
+                        model_type_alias => model_data,
+                        common_file_header => common_header,
+                    },
+                    TemplateName::ModelTypeAlias,
+                )
+            }
+        };
+
+        let file_info =
+            self.templates
+                .render_template(template_name, &filename, template_context)?;
+        Ok(file_info)
+    }
+
+    /// Generate internal runtime files
+    fn generate_internal_runtime_files(
+        &self,
+        internal_files: &[(&str, TemplateName)],
+        common_header: &CommonFileHeaderData,
+        module_path: &str,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let mut files = Vec::new();
+        for (filename, template_name) in internal_files {
+            let template_context = context! {
+                common_file_header => common_header,
+                module_path => module_path,
+            };
+            let content = self
+                .templates
+                .render_template_string(*template_name, template_context)?;
+            // Use ProjectFiles category so files go to root level
+            files.push(FileInfo::project(filename.to_string(), content));
+        }
+        Ok(files)
+    }
+
+    /// Generate runtime type files
+    fn generate_runtime_type_files(
+        &self,
+        runtime_files: &[(&str, TemplateName)],
+        common_header: &CommonFileHeaderData,
+        module_path: &str,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let mut files = Vec::new();
+        for (filename, template_name) in runtime_files {
+            let template_context = context! {
+                common_file_header => common_header,
+                module_path => module_path,
+            };
+            let file_info =
+                self.templates
+                    .render_template(*template_name, filename, template_context)?;
+            files.push(file_info);
+        }
+        Ok(files)
+    }
+}
+
+impl CodeGenerator for GoHttpCodeGenerator {
+    fn language(&self) -> Language {
+        Language::Go
+    }
+
+    fn generator_type(&self) -> GeneratorType {
+        GeneratorType::GoHttp
+    }
+
+    fn generate_apis(
+        &self,
+        openapi: &OpenApi,
+        apis: Vec<ApiMethodData>,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let operations_by_tag = self.collect_operations_by_tag(openapi);
+        let header_data = HeaderData::from_openapi(openapi);
+        let common_header = CommonFileHeaderData::from(header_data);
+        let mut files = Vec::new();
+
+        let module_path = self.get_module_path();
+
+        // Group APIs by tag
+        let apis_by_tag = self.group_apis_by_tag(&apis, &operations_by_tag);
+
+        // Generate API client files for each tag
+        for (tag, operations) in operations_by_tag {
+            // Find matching APIs for this tag
+            let tag_apis: Vec<&ApiMethodData> = apis_by_tag.get(&tag).cloned().unwrap_or_default();
+
+            let file_info = self.generate_api_client_file(
+                &tag,
+                &operations,
+                &tag_apis,
+                openapi,
+                &common_header,
+                &module_path,
+            )?;
+            files.push(file_info);
+        }
+
+        // Generate operations types file
+        let operations_file = self.generate_operations_file(&apis, &common_header, &module_path)?;
+        files.push(operations_file);
+
+        // Generate main SDK file
+        let main_sdk_file =
+            self.generate_main_sdk_file(openapi, &apis_by_tag, &common_header, &module_path)?;
+        files.push(main_sdk_file);
 
         Ok(files)
     }
@@ -312,89 +533,17 @@ impl CodeGenerator for GoHttpCodeGenerator {
         let common_header = CommonFileHeaderData::from(header_data.clone());
         let mut files = Vec::new();
 
-        let module_path = self
-            .config
-            .module_path
-            .clone()
-            .unwrap_or_else(|| "example.com/sdk".to_string());
+        let module_path = self.get_module_path();
 
         if let Some(components) = &openapi.components {
             for model in models {
-                let (type_def, imports, required_fields) = type_mapping::generate_model_data(
-                    &model.name,
-                    &model.schema,
+                let file_info = self.process_model(
+                    &model,
                     components,
-                    &self.config,
                     &header_data,
-                )
-                .map_err(|e| GeneratorError::ModelGeneration {
-                    model_name: model.name.clone(),
-                    source: Box::new(e),
-                })?;
-
-                // Add module path to imports
-                let mut full_imports: Vec<String> = imports
-                    .iter()
-                    .map(|imp| {
-                        if imp.starts_with("optionalnullable") {
-                            format!("{}/runtime/{}", module_path, imp)
-                        } else if imp.starts_with("internal/") {
-                            // Internal packages are now at root level (Option B)
-                            format!("{}/{}", module_path, imp)
-                        } else {
-                            imp.clone()
-                        }
-                    })
-                    .collect();
-
-                // Check if the type definition uses time types and add time import if needed
-                use crate::ast::ty::GoTypeDefinition;
-                let type_def_str = match &type_def {
-                    GoTypeDefinition::Struct(s) => {
-                        let doc = s.to_rcdoc();
-                        doc.pretty(MAX_LINE_WIDTH).to_string()
-                    }
-                    GoTypeDefinition::TypeAlias(t) => {
-                        let doc = t.to_rcdoc();
-                        doc.pretty(MAX_LINE_WIDTH).to_string()
-                    }
-                };
-                if (type_def_str.contains("time.Time") || type_def_str.contains("time.Duration"))
-                    && !full_imports.iter().any(|imp| imp == "time")
-                {
-                    full_imports.push("time".to_string());
-                }
-
-                let filename = format!("components/{}", self.generate_filename(&model.name));
-                let (template_context, template_name) = match type_def {
-                    GoTypeDefinition::Struct(s) => {
-                        let model_data = ModelStructData::new(s, common_header.clone())
-                            .with_imports(full_imports)
-                            .with_required_fields(required_fields);
-                        (
-                            context! {
-                                model_struct => model_data,
-                                common_file_header => common_header,
-                            },
-                            TemplateName::ModelStruct,
-                        )
-                    }
-                    GoTypeDefinition::TypeAlias(t) => {
-                        let model_data = ModelTypeAliasData::new(t, common_header.clone())
-                            .with_imports(full_imports);
-                        (
-                            context! {
-                                model_type_alias => model_data,
-                                common_file_header => common_header,
-                            },
-                            TemplateName::ModelTypeAlias,
-                        )
-                    }
-                };
-
-                let file_info =
-                    self.templates
-                        .render_template(template_name, &filename, template_context)?;
+                    &common_header,
+                    &module_path,
+                )?;
                 files.push(file_info);
             }
         }
@@ -471,36 +620,17 @@ impl CodeGenerator for GoHttpCodeGenerator {
             ),
         ];
 
-        let module_path = self
-            .config
-            .module_path
-            .clone()
-            .unwrap_or_else(|| "example.com/sdk".to_string());
+        let module_path = self.get_module_path();
 
         // Generate internal files (go to root level with ProjectFiles category)
-        for (filename, template_name) in internal_files {
-            let template_context = context! {
-                common_file_header => common_header.clone(),
-                module_path => module_path.clone(),
-            };
-            let content = self
-                .templates
-                .render_template_string(template_name, template_context)?;
-            // Use ProjectFiles category so files go to root level
-            files.push(FileInfo::project(filename.to_string(), content));
-        }
+        let mut internal_file_infos =
+            self.generate_internal_runtime_files(&internal_files, &common_header, &module_path)?;
+        files.append(&mut internal_file_infos);
 
         // Generate other runtime files (stay in runtime/ directory)
-        for (filename, template_name) in runtime_files {
-            let template_context = context! {
-                common_file_header => common_header.clone(),
-                module_path => module_path.clone(),
-            };
-            let file_info =
-                self.templates
-                    .render_template(template_name, filename, template_context)?;
-            files.push(file_info);
-        }
+        let mut runtime_file_infos =
+            self.generate_runtime_type_files(&runtime_files, &common_header, &module_path)?;
+        files.append(&mut runtime_file_infos);
 
         Ok(files)
     }
@@ -509,11 +639,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
         &self,
         _openapi: &OpenApi,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let module_path = self
-            .config
-            .module_path
-            .clone()
-            .unwrap_or_else(|| "example.com/sdk".to_string());
+        let module_path = self.get_module_path();
 
         let template_context = context! {
             module_path => module_path,
