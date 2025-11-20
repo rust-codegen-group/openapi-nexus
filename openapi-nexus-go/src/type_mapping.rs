@@ -9,6 +9,7 @@ use crate::ast::common::GoDocComment;
 use crate::ast::go_expression::GoExpression;
 use crate::ast::ty::{GoPrimitive, GoStruct, GoTypeAlias, GoTypeDefinition};
 use crate::config::GoHttpConfig;
+use crate::consts::escape_go_keyword;
 use crate::errors::GeneratorError;
 use openapi_nexus_core::traits::OpenApiRefExt as _;
 
@@ -46,7 +47,7 @@ pub fn schema_to_go_expression(
 
 fn schema_to_go_expression_inner(
     schema: &openapi::Schema,
-    _components: Option<&openapi::Components>,
+    components: Option<&openapi::Components>,
 ) -> Result<GoExpression, GeneratorError> {
     match schema {
         openapi::Schema::Object(obj_schema) => {
@@ -72,10 +73,37 @@ fn schema_to_go_expression_inner(
         openapi::Schema::Array(arr_schema) => {
             // Array items are stored as ArrayItems
             let item_type = match &arr_schema.items {
-                ArrayItems::RefOrSchema(item_ref) => schema_to_go_expression(item_ref, None)?,
+                ArrayItems::RefOrSchema(item_ref) => schema_to_go_expression(item_ref, components)?,
                 ArrayItems::False => GoExpression::Any,
             };
             Ok(GoExpression::Slice(Box::new(item_type)))
+        }
+        openapi::Schema::OneOf(one_of) => {
+            // For oneOf unions, use interface{} (any type) as Go doesn't have native union types
+            // In the future, we could generate a discriminated union interface
+            if let Some(first_item) = one_of.items.first() {
+                // Use the first type in the union as a fallback, but wrap in interface{} for flexibility
+                schema_to_go_expression(first_item, components)
+            } else {
+                Ok(GoExpression::Any)
+            }
+        }
+        openapi::Schema::AnyOf(any_of) => {
+            // Similar to oneOf, use interface{} for anyOf
+            if let Some(first_item) = any_of.items.first() {
+                schema_to_go_expression(first_item, components)
+            } else {
+                Ok(GoExpression::Any)
+            }
+        }
+        openapi::Schema::AllOf(all_of) => {
+            // For allOf (intersection), use the first type as Go doesn't support intersections
+            // In practice, allOf is often used for composition, so we'll use the first schema
+            if let Some(first_item) = all_of.items.first() {
+                schema_to_go_expression(first_item, components)
+            } else {
+                Ok(GoExpression::Any)
+            }
         }
         _ => Ok(GoExpression::Any),
     }
@@ -111,7 +139,7 @@ pub fn schema_to_go_type_definition(
             if !obj_schema.properties.is_empty() {
                 let mut fields = Vec::new();
                 for (prop_name, prop_schema) in &obj_schema.properties {
-                    let field_name = prop_name.to_pascal_case();
+                    let field_name = escape_go_keyword(&prop_name.to_pascal_case());
                     let go_type = schema_to_go_expression(prop_schema, Some(components))?;
 
                     // Check if required
@@ -208,8 +236,45 @@ pub fn schema_to_go_type_definition(
             }
             Ok(GoTypeDefinition::TypeAlias(type_alias))
         }
+        openapi::RefOr::T(openapi::Schema::OneOf(one_of)) => {
+            // For oneOf unions, create a type alias to interface{} (any type)
+            // Go doesn't have native union types, so we use interface{} for flexibility
+            let type_expr = if let Some(first_item) = one_of.items.first() {
+                schema_to_go_expression(first_item, Some(components))?
+            } else {
+                GoExpression::Any
+            };
+            Ok(GoTypeDefinition::TypeAlias(GoTypeAlias::new(
+                struct_name,
+                type_expr,
+            )))
+        }
+        openapi::RefOr::T(openapi::Schema::AnyOf(any_of)) => {
+            // Similar to oneOf, create a type alias
+            let type_expr = if let Some(first_item) = any_of.items.first() {
+                schema_to_go_expression(first_item, Some(components))?
+            } else {
+                GoExpression::Any
+            };
+            Ok(GoTypeDefinition::TypeAlias(GoTypeAlias::new(
+                struct_name,
+                type_expr,
+            )))
+        }
+        openapi::RefOr::T(openapi::Schema::AllOf(all_of)) => {
+            // For allOf (intersection), use the first type
+            let type_expr = if let Some(first_item) = all_of.items.first() {
+                schema_to_go_expression(first_item, Some(components))?
+            } else {
+                GoExpression::Any
+            };
+            Ok(GoTypeDefinition::TypeAlias(GoTypeAlias::new(
+                struct_name,
+                type_expr,
+            )))
+        }
         openapi::RefOr::T(_) => {
-            // For non-object schemas, create a type alias
+            // For other non-object schemas, create a type alias
             let type_expr = schema_to_go_expression(schema_ref, Some(components))?;
             Ok(GoTypeDefinition::TypeAlias(GoTypeAlias::new(
                 struct_name,

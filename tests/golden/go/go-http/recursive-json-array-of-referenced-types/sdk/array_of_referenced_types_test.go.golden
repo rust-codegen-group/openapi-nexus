@@ -19,7 +19,7 @@ import (
 type ArrayOfReferencedTypesTestSDK struct {
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
-	default *apis.Default
+	default_ *apis.Default
 }
 
 // Ensure ArrayOfReferencedTypesTestSDK implements hooks.SDK interface
@@ -46,7 +46,7 @@ func New(opts ...SdkOption) (*ArrayOfReferencedTypesTestSDK, error) {
 	}
 
 	// Initialize sub-clients
-	sdk.default = apis.NewDefault(sdk, sdkConfig, h)
+	sdk.default_ = apis.NewDefault(sdk, sdkConfig, h)
 
 	return sdk, nil
 }

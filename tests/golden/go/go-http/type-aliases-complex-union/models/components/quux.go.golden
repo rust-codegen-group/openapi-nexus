@@ -12,7 +12,7 @@ import (
 )
 
 type Quux struct {
-	Foo interface{} `json:"foo"`
+	Foo string `json:"foo"`
 	Name string `json:"name"`
 }
 
@@ -31,9 +31,9 @@ func (c *Quux) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Quux) GetFoo() // Any {
+func (c *Quux) GetFoo() string {
 	if c == nil {
-		var zero // Any
+		var zero string
 		return zero
 	}
 	return c.Foo

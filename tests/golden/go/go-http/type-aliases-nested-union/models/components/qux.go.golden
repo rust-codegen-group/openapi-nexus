@@ -8,4 +8,4 @@
 package components
 
 
-type Qux = interface{}
+type Qux = string

@@ -13,7 +13,7 @@ import (
 
 // Response containing array of User references
 type ResponseListUsers struct {
-	Users []User `json:"users"`
+	Users []string `json:"users"`
 }
 
 func (c ResponseListUsers) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *ResponseListUsers) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *ResponseListUsers) GetUsers() []User {
+func (c *ResponseListUsers) GetUsers() []string {
 	if c == nil {
-		var zero []User
+		var zero []string
 		return zero
 	}
 	return c.Users

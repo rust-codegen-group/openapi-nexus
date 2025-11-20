@@ -20,7 +20,7 @@ type Order struct {
 	PetId optionalnullable.OptionalNullable[string] `json:"pet_id,omitzero"`
 	Quantity optionalnullable.OptionalNullable[string] `json:"quantity,omitzero"`
 	ShipDate optionalnullable.OptionalNullable[time.Time] `json:"ship_date,omitzero"`
-	Status optionalnullable.OptionalNullable[interface{}] `json:"status,omitzero"`
+	Status optionalnullable.OptionalNullable[string] `json:"status,omitzero"`
 }
 
 func (c Order) MarshalJSON() ([]byte, error) {
@@ -76,9 +76,9 @@ func (c *Order) GetShipDate() optionalnullable.OptionalNullable[time.Time] {
 	return c.ShipDate
 }
 
-func (c *Order) GetStatus() optionalnullable.OptionalNullable[interface{}] {
+func (c *Order) GetStatus() optionalnullable.OptionalNullable[string] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[interface{}]
+		var zero optionalnullable.OptionalNullable[string]
 		return zero
 	}
 	return c.Status

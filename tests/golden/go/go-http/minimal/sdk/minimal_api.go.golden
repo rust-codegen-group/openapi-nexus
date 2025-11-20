@@ -17,7 +17,7 @@ import (
 type MinimalApiSDK struct {
 	sdkConfiguration config.SDKConfiguration
 	hooks            *hooks.Hooks
-	default *apis.Default
+	default_ *apis.Default
 }
 
 // Ensure MinimalApiSDK implements hooks.SDK interface
@@ -44,7 +44,7 @@ func New(opts ...SdkOption) (*MinimalApiSDK, error) {
 	}
 
 	// Initialize sub-clients
-	sdk.default = apis.NewDefault(sdk, sdkConfig, h)
+	sdk.default_ = apis.NewDefault(sdk, sdkConfig, h)
 
 	return sdk, nil
 }

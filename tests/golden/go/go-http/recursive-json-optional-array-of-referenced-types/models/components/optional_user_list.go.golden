@@ -14,7 +14,7 @@ import (
 
 // Object with optional array of User references
 type OptionalUserList struct {
-	OptionalUsers optionalnullable.OptionalNullable[[]User] `json:"optional_users,omitzero"`
+	OptionalUsers optionalnullable.OptionalNullable[[]string] `json:"optional_users,omitzero"`
 }
 
 func (c OptionalUserList) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *OptionalUserList) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *OptionalUserList) GetOptionalUsers() optionalnullable.OptionalNullable[[]User] {
+func (c *OptionalUserList) GetOptionalUsers() optionalnullable.OptionalNullable[[]string] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[[]User]
+		var zero optionalnullable.OptionalNullable[[]string]
 		return zero
 	}
 	return c.OptionalUsers

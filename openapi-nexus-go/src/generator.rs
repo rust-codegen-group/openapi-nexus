@@ -12,7 +12,7 @@ use utoipa::openapi::OpenApi;
 use crate::ast::GoStruct;
 use crate::ast::ty::GoTypeDefinition;
 use crate::config::GoHttpConfig;
-use crate::consts::MAX_LINE_WIDTH;
+use crate::consts::{escape_go_keyword, MAX_LINE_WIDTH};
 use crate::errors::GeneratorError;
 use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, GoApiMethodData, GoParameterInfo, MainSdkData,
@@ -57,8 +57,10 @@ impl GoHttpCodeGenerator {
             openapi_nexus_core::NamingConvention::SnakeCase => name.to_snake_case(),
             openapi_nexus_core::NamingConvention::PascalCase => name.to_pascal_case(),
         };
+        // Escape reserved keywords in filename to avoid issues
+        let escaped_name = escape_go_keyword(&base_name);
 
-        format!("{}.go", base_name)
+        format!("{}.go", escaped_name)
     }
 
     /// Convert ParameterInfo to GoParameterInfo
@@ -77,10 +79,13 @@ impl GoHttpCodeGenerator {
             "string".to_string() // Default to string if no schema
         };
 
+        let param_name_pascal = escape_go_keyword(&param.param_name.to_pascal_case());
+        let param_name_camel = escape_go_keyword(&param.param_name.to_lower_camel_case());
+
         Ok(GoParameterInfo {
             original_name: param.original_name.clone(),
-            param_name: param.param_name.to_pascal_case(),
-            param_name_camel: param.param_name.to_lower_camel_case(),
+            param_name: param_name_pascal,
+            param_name_camel,
             go_type,
             required: param.required,
             description: param.description.clone(),
@@ -262,8 +267,8 @@ impl GoHttpCodeGenerator {
 
         let go_methods = go_methods?;
 
-        // Create client struct
-        let client_struct = GoStruct::new(tag.to_pascal_case());
+        // Create client struct (escape reserved keywords)
+        let client_struct = GoStruct::new(escape_go_keyword(&tag.to_pascal_case()));
 
         // Get SDK name from OpenAPI title
         let sdk_name = openapi.info.title.to_pascal_case();
@@ -273,7 +278,7 @@ impl GoHttpCodeGenerator {
 
         let api_data = ApiOperationData::new(
             client_struct,
-            tag.to_string(),
+            escape_go_keyword(&tag.to_string()),
             sdk_name,
             common_header.clone(),
         )
@@ -347,9 +352,9 @@ impl GoHttpCodeGenerator {
         // Collect sub-clients from all tags
         let mut sub_clients: Vec<SubClientInfo> = Vec::new();
         for tag in apis_by_tag.keys() {
-            let client_name = tag.to_pascal_case();
+            let client_name = escape_go_keyword(&tag.to_pascal_case());
             sub_clients.push(SubClientInfo {
-                name: tag.to_lower_camel_case(),
+                name: escape_go_keyword(&tag.to_lower_camel_case()),
                 type_name: client_name.clone(),
             });
         }
