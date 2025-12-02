@@ -12,7 +12,7 @@ use utoipa::openapi::OpenApi;
 use crate::ast::GoStruct;
 use crate::ast::ty::GoTypeDefinition;
 use crate::config::GoHttpConfig;
-use crate::consts::{escape_go_keyword, MAX_LINE_WIDTH};
+use crate::consts::{MAX_LINE_WIDTH, escape_go_keyword};
 use crate::errors::GeneratorError;
 use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, GoApiMethodData, GoParameterInfo, MainSdkData,
@@ -24,6 +24,7 @@ use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::data::{
     ApiMethodData, HeaderData, ModelData, OperationInfo, ParameterInfo, ReadmeData, RuntimeData,
 };
+use openapi_nexus_core::traits::OpenApiRefExt as _;
 use openapi_nexus_core::traits::ToRcDoc;
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
@@ -178,17 +179,13 @@ impl GoHttpCodeGenerator {
                 match schema_ref {
                     // For inline schemas, generate a new type name
                     openapi::RefOr::T(_) => format!("{}Request", method_name),
-                    // For references, extract schema name from ref_location
+                    // For references, extract schema name using OpenApiRefExt trait
                     openapi::RefOr::Ref(reference) => {
-                        // Parse schema name from ref_location (e.g., "#/components/schemas/Pet" -> "Pet")
-                        if reference.ref_location.starts_with("#/components/schemas/") {
-                            let schema_name = reference
-                                .ref_location
-                                .trim_start_matches("#/components/schemas/");
-                            use heck::ToPascalCase;
+                        // Use schema_name() method for consistent extraction
+                        if let Some(schema_name) = reference.schema_name() {
                             schema_name.to_pascal_case()
                         } else {
-                            // Fallback to method name + Request if we can't parse the reference
+                            // Fallback to method name + Request if we can't extract the schema name
                             format!("{}Request", method_name)
                         }
                     }
@@ -278,7 +275,7 @@ impl GoHttpCodeGenerator {
 
         let api_data = ApiOperationData::new(
             client_struct,
-            escape_go_keyword(&tag.to_string()),
+            escape_go_keyword(tag),
             sdk_name,
             common_header.clone(),
         )
