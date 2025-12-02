@@ -962,7 +962,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "openapi-nexus"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "clap",
  "openapi-nexus-common",
@@ -979,7 +979,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-common"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "clap",
  "serde",
@@ -989,7 +989,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-config"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "clap",
  "dirs",
@@ -1001,7 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-core"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "heck",
@@ -1021,7 +1021,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-go"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "heck",
  "http",
@@ -1046,7 +1046,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-ir"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "indexmap",
  "openapi-nexus-common",
@@ -1059,7 +1059,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-parser"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -1071,7 +1071,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-petstore-example"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "axum",
  "axum-extra",
@@ -1092,7 +1092,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-plugin"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -1102,7 +1102,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-rust"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "heck",
  "indexmap",
@@ -1117,7 +1117,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-transforms"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "heck",
  "indexmap",
@@ -1130,7 +1130,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-typescript"
-version = "0.0.1-alpha.4"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "clap",

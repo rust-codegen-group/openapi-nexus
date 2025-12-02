@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.2]
+
+### Added
+
+- Go HTTP client generator (`openapi-nexus-go` crate) with comprehensive OpenAPI schema support
+- Generator framework abstraction replacing the language option (--generator instead of --language)
+- Go reserved keyword escaping for parameter, struct, field, and API client names
+- Union type support (oneOf, anyOf, allOf) in Go type mapping
+- Main SDK file generation for Go with New() function and options pattern (WithBaseURL, WithHTTPClient)
+- Golden build check scripts for go-http generator
+- SDK interface system with hooks package for type safety
+- Request body type extraction and generation for inline schemas
+
+### Changed
+
+- Replaced language CLI option with generator option (--generator, OPENAPI_NEXUS_GENERATOR env var)
+- Reorganized generator architecture: moved registry to main crate, organized by generator framework
+- Improved Go SDK architecture: changed API client package from operations to apis, moved SDK files to sdk/ subdirectory
+- Improved import organization in Go generator (separated stdlib and project imports)
+- Simplified response type names by removing Response suffix
+- Updated golden test file naming convention to use .golden suffix
+
+### Fixed
+
+- Improved TypeScript instanceOf type guard to check both original and TypeScript property names
+- Fixed TypeScript instanceOf type guard with proper type checking (null/undefined handling, unknown parameter type)
+
 ## [0.0.1-alpha.4]
 
 ### Added
