@@ -299,6 +299,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("duplicate-param-names", "valid/duplicate-param-names.yaml"),
         ("interface-with-enum-reference", "valid/interface-with-enum-reference.yaml"),
         ("minimal", "valid/minimal.yaml"),
+        ("multiple-similar-request-schemas", "valid/multiple-similar-request-schemas.yaml"),
         ("naming-conventions", "valid/naming-conventions.yaml"),
         ("server-object", "valid/server-object.yaml"),
 
@@ -372,6 +373,7 @@ generate_golden_tests! {
     test_duplicate_param_names_golden: "duplicate-param-names",
     test_interface_with_enum_reference_golden: "interface-with-enum-reference",
     test_minimal_golden: "minimal",
+    test_multiple_similar_request_schemas_golden: "multiple-similar-request-schemas",
     test_naming_conventions_golden: "naming-conventions",
     test_server_object_golden: "server-object",
 
