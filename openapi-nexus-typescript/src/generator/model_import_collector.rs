@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use heck::ToPascalCase as _;
 use utoipa::openapi;
 
 use crate::generator::response_transformer::ResponseTransformer;
@@ -178,23 +179,31 @@ impl ModelImportCollector {
         let mut models_by_file: BTreeMap<String, (Vec<String>, Vec<String>)> = BTreeMap::new();
 
         // Group type names by file
+        // Store both original name (for alias) and PascalCase name (for import)
         for model_name in &dependencies.type_names {
-            let filename = format!("../models/{}", model_name);
+            // Convert model name to PascalCase to match generated filename and exported type name
+            let filename_base = model_name.to_pascal_case();
+            let filename = format!("../models/{}", filename_base);
             let entry = models_by_file
                 .entry(filename)
                 .or_insert_with(|| (Vec::new(), Vec::new()));
+            // Store original name (we'll convert to PascalCase when building imports)
             entry.0.push(model_name.clone());
         }
 
         // Group function names by file
+        // Store original function name (we'll convert to PascalCase when building imports)
         for func_name in &dependencies.function_names {
             // Extract model name from function name (e.g., "PetFromJSON" -> "Pet")
             if let Some(model_name) = func_name
                 .strip_suffix("FromJSON")
                 .or_else(|| func_name.strip_suffix("ToJSON"))
             {
-                let filename = format!("../models/{}", model_name);
+                // Convert model name to PascalCase to match generated filename
+                let filename_base = model_name.to_pascal_case();
+                let filename = format!("../models/{}", filename_base);
                 if let Some(entry) = models_by_file.get_mut(&filename) {
+                    // Store original function name (we'll convert when building imports)
                     entry.1.push(func_name.clone());
                 } else {
                     // Function without a type import (shouldn't happen, but handle gracefully)
@@ -209,22 +218,50 @@ impl ModelImportCollector {
 
         for (file_path, (type_names, func_names)) in models_by_file {
             processed_files.insert(file_path.clone());
-            if !type_names.is_empty() && !func_names.is_empty() {
-                // Mixed imports: create single import with both types and functions
-                let import_stmt = ApiImportStatement::new(file_path.clone())
-                    .with_type_imports(type_names)
-                    .with_imports(func_names);
+            let mut import_stmt = ApiImportStatement::new(file_path.clone());
+
+            // Add type imports with aliases (PascalCase name -> original name)
+            for original_type_name in type_names {
+                // The type_names vector contains original names, but we need to convert to PascalCase for the import
+                let pascal_type_name = original_type_name.to_pascal_case();
+                // Only add alias if names differ (to avoid unnecessary aliases)
+                let alias = if pascal_type_name != original_type_name {
+                    Some(original_type_name)
+                } else {
+                    None
+                };
+                import_stmt = import_stmt.with_type_import(pascal_type_name, alias);
+            }
+
+            // Add function imports with aliases (PascalCase name -> original name)
+            for original_func_name in func_names {
+                // Extract model name and reconstruct with PascalCase
+                let (pascal_func_name, alias) = if let Some(model_name) = original_func_name
+                    .strip_suffix("FromJSON")
+                    .or_else(|| original_func_name.strip_suffix("ToJSON"))
+                {
+                    let pascal_model_name = model_name.to_pascal_case();
+                    let pascal_name = if original_func_name.ends_with("FromJSON") {
+                        format!("{}FromJSON", pascal_model_name)
+                    } else {
+                        format!("{}ToJSON", pascal_model_name)
+                    };
+                    // Only add alias if names differ
+                    let alias = if pascal_name != original_func_name {
+                        Some(original_func_name)
+                    } else {
+                        None
+                    };
+                    (pascal_name, alias)
+                } else {
+                    (original_func_name.clone(), None)
+                };
+                import_stmt = import_stmt.with_import(pascal_func_name, alias);
+            }
+
+            // Only add import if it has any imports
+            if !import_stmt.imports.is_empty() {
                 imports.push(import_stmt);
-            } else if !type_names.is_empty() {
-                // Only types (will auto-detect and use `import type { ... }`)
-                let type_import =
-                    ApiImportStatement::new(file_path.clone()).with_type_imports(type_names);
-                imports.push(type_import);
-            } else if !func_names.is_empty() {
-                // Only functions
-                let func_import =
-                    ApiImportStatement::new(file_path.clone()).with_imports(func_names);
-                imports.push(func_import);
             }
         }
 
@@ -234,11 +271,21 @@ impl ModelImportCollector {
                 .strip_suffix("FromJSON")
                 .or_else(|| func_name.strip_suffix("ToJSON"))
             {
-                let filename = format!("../models/{}", model_name);
+                // Convert model name to PascalCase to match generated filename
+                let filename_base = model_name.to_pascal_case();
+                let filename = format!("../models/{}", filename_base);
                 // Only add if we didn't already add this file
                 if !processed_files.contains(&filename) {
+                    // Reconstruct function name with PascalCase model name
+                    let pascal_func_name = if func_name.ends_with("FromJSON") {
+                        format!("{}FromJSON", filename_base)
+                    } else if func_name.ends_with("ToJSON") {
+                        format!("{}ToJSON", filename_base)
+                    } else {
+                        func_name.clone()
+                    };
                     imports.push(
-                        ApiImportStatement::new(filename).with_import(func_name.clone(), None),
+                        ApiImportStatement::new(filename).with_import(pascal_func_name, None),
                     );
                 }
             }

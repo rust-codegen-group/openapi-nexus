@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: Multiple Similar Request Schemas API
+  description: Test API with multiple operations having similar request body schema names
+  version: 1.0.0
+paths:
+  /api/v1/type-a/resources:
+    post:
+      tags:
+      - test-api
+      summary: Create TypeA resource
+      operationId: create_type_a
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest_TypeA'
+        required: true
+      responses:
+        '200':
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource_TypeA'
+  /api/v1/type-b/resources:
+    post:
+      tags:
+      - test-api
+      summary: Create TypeB resource
+      operationId: create_type_b
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest_TypeB'
+        required: true
+      responses:
+        '200':
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource_TypeB'
+components:
+  schemas:
+    CreateRequest_TypeA:
+      type: object
+      description: Request to create TypeA resource
+      required:
+      - resource
+      properties:
+        resource:
+          $ref: '#/components/schemas/Resource_TypeA'
+          description: Resource information
+    CreateRequest_TypeB:
+      type: object
+      description: Request to create TypeB resource
+      required:
+      - resource
+      properties:
+        resource:
+          $ref: '#/components/schemas/Resource_TypeB'
+          description: Resource information
+    Resource_TypeA:
+      type: object
+      description: TypeA resource
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Resource_TypeB:
+      type: object
+      description: TypeB resource
+      properties:
+        id:
+          type: string
+        name:
+          type: string
