@@ -19,6 +19,40 @@ pub struct UnionMemberInfo {
     pub is_interface: bool,
 }
 
+/// Helper struct for intersection object properties with extracted reference info
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntersectionObjectProperty {
+    /// The camelCase property name used in the TypeScript interface
+    pub ts_name: String,
+    /// The original property name from the OpenAPI spec (used in JSON)
+    pub original_name: String,
+    /// The TypeScript type expression for this property
+    pub type_expr: TsExpression,
+    /// The reference name if this is a direct reference type
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reference_name: Option<String>,
+    /// The reference name if this is a nullable reference union (null | Reference)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nullable_reference_name: Option<String>,
+}
+
+/// Information about an intersection member type
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntersectionMemberInfo {
+    /// The TypeScript name of the member type
+    pub ts_name: String,
+    /// The TypeScript expression for this member
+    pub type_expr: TsExpression,
+    /// Whether this member is a reference type (needs FromJSONTyped conversion)
+    pub is_reference: bool,
+    /// Whether this member is an inline object type (needs property-by-property conversion)
+    pub is_object: bool,
+    /// Object properties with extracted reference info for template iteration
+    /// (only populated when is_object is true)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub object_properties: Option<Vec<IntersectionObjectProperty>>,
+}
+
 /// Represents a TypeScript type alias definition, which may be a plain alias,
 /// a union (`oneOf`/`anyOf`), or an intersection (`allOf`). This struct
 /// contains all the metadata and type structure required to emit the TypeScript
@@ -40,6 +74,9 @@ pub struct TsTypeAliasDefinition {
     /// For union types (`oneOf`/`anyOf`): describes the constituent members.
     /// `None` if not a union.
     pub union_members: Option<Vec<UnionMemberInfo>>,
+    /// For intersection types (`allOf`): describes the constituent members.
+    /// `None` if not an intersection.
+    pub intersection_members: Option<Vec<IntersectionMemberInfo>>,
 }
 
 impl TsTypeAliasDefinition {
@@ -52,6 +89,7 @@ impl TsTypeAliasDefinition {
             generics: Vec::new(),
             documentation: None,
             union_members: None,
+            intersection_members: None,
         }
     }
 

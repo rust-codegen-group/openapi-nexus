@@ -1,0 +1,27 @@
+# intersection-type-with-nullable-reference-test
+
+Test fixture for allOf intersection types with nullable reference properties
+
+**Version:** 1.0.0
+
+## Installation
+
+```bash
+go get example.com/sdk
+```
+
+## Usage
+
+```go
+package main
+
+import (
+    "context"
+    "example.com/sdk"
+)
+
+func main() {
+    sdk := intersection-type-with-nullable-reference-test.New("https://api.example.com")
+    // Use the SDK...
+}
+```

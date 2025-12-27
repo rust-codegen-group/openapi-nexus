@@ -1,0 +1,105 @@
+openapi: 3.1.0
+info:
+  title: Intersection Type with Nullable Reference Test
+  description: Test fixture for allOf intersection types with nullable reference properties
+  version: 1.0.0
+
+paths:
+  /test:
+    post:
+      summary: Create test with intersection type
+      operationId: create_test
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Baz'
+      responses:
+        '200':
+          description: Test created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Baz'
+  /test/{id}:
+    get:
+      summary: Get test
+      operationId: get_test
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Baz'
+
+components:
+  schemas:
+    # Base type
+    Foo:
+      type: object
+      description: Base type with common properties
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        count1:
+          type: integer
+          description: First count
+        count2:
+          type: integer
+          description: Second count
+        status:
+          type: string
+          enum: [active, inactive, pending]
+          description: Status
+        id:
+          type: string
+          description: Unique identifier
+      required:
+        - createdAt
+        - count1
+        - count2
+        - status
+        - id
+
+    # Metadata type
+    Bar:
+      type: object
+      description: Metadata type
+      properties:
+        field1:
+          type: string
+          description: First field
+        field2:
+          type: string
+          description: Second field
+        field3:
+          type: string
+          description: Third field
+        field4:
+          type: string
+          description: Fourth field
+
+    # Intersection type with nullable reference
+    # This extends Foo with additional properties
+    # The metaData property is nullable (null | Bar)
+    Baz:
+      allOf:
+        - $ref: '#/components/schemas/Foo'
+          description: Flattened fields from Foo
+        - type: object
+          properties:
+            metaData:
+              oneOf:
+                - type: 'null'
+                - $ref: '#/components/schemas/Bar'
+              description: Metadata (nullable)

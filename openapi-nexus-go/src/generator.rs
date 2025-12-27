@@ -61,7 +61,15 @@ impl GoHttpCodeGenerator {
         // Escape reserved keywords in filename to avoid issues
         let escaped_name = escape_go_keyword(&base_name);
 
-        format!("{}.go", escaped_name)
+        // Avoid creating filenames ending with _test.go as Go treats them as test files
+        // and excludes them from regular builds. Append _type to avoid this issue.
+        let final_name = if escaped_name.ends_with("_test") {
+            format!("{}_type", escaped_name)
+        } else {
+            escaped_name
+        };
+
+        format!("{}.go", final_name)
     }
 
     /// Convert ParameterInfo to GoParameterInfo

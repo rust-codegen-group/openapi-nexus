@@ -63,6 +63,16 @@ impl TsTypeDefinition {
             }
         }
     }
+
+    /// Check if this type definition is an intersection type (allOf)
+    ///
+    /// Returns `true` if this is a type alias with intersection members.
+    pub fn is_intersection_type(&self) -> bool {
+        matches!(
+            self,
+            TsTypeDefinition::TypeAlias(alias) if alias.intersection_members.is_some()
+        )
+    }
 }
 
 impl ToRcDoc for TsTypeDefinition {

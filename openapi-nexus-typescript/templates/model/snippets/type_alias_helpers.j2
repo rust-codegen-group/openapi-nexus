@@ -1,6 +1,8 @@
 {% if model_type_alias.union_members %}
 {% include "model/snippets/type_alias_helpers_union.j2" with context %}
+{% elif model_type_alias.intersection_members %}
+{% include "model/snippets/type_alias_helpers_intersection.j2" with context %}
 {% else %}
-{# Simple type alias or intersection type (allOf) - both use pass-through functions #}
+{# Simple type alias - use pass-through functions #}
 {% include "model/snippets/type_alias_helpers_simple.j2" with context %}
 {% endif %}

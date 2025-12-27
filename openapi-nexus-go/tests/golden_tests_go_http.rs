@@ -318,6 +318,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
 
         ("type-aliases-complex-union", "valid/type-aliases/complex-union.yaml"),
         ("type-aliases-intersection-allof", "valid/type-aliases/intersection-allof.yaml"),
+        ("type-aliases-intersection-with-nullable-reference", "valid/type-aliases/intersection-with-nullable-reference.yaml"),
         ("type-aliases-nested-union", "valid/type-aliases/nested-union.yaml"),
         ("type-aliases-simple-type-alias", "valid/type-aliases/simple-type-alias.yaml"),
         ("type-aliases-union-mixed", "valid/type-aliases/union-mixed.yaml"),
@@ -387,6 +388,7 @@ generate_golden_tests! {
 
     test_type_aliases_complex_union_golden: "type-aliases-complex-union",
     test_type_aliases_intersection_allof_golden: "type-aliases-intersection-allof",
+    test_type_aliases_intersection_with_nullable_reference_golden: "type-aliases-intersection-with-nullable-reference",
     test_type_aliases_nested_union_golden: "type-aliases-nested-union",
     test_type_aliases_simple_type_alias_golden: "type-aliases-simple-type-alias",
     test_type_aliases_union_mixed_golden: "type-aliases-union-mixed",
