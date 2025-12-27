@@ -13,7 +13,9 @@ use utoipa::openapi::schema::{
 };
 use utoipa::openapi::{RefOr, Schema};
 
-use crate::ast::ty::ts_type_alias_definition::UnionMemberInfo;
+use crate::ast::ty::ts_type_alias_definition::{
+    IntersectionMemberInfo, IntersectionObjectProperty, UnionMemberInfo,
+};
 use crate::ast::{
     ObjectProperty, TsDocComment, TsEnumDefinition, TsEnumValue, TsEnumVariant, TsExpression,
     TsInterfaceDefinition, TsInterfaceSignature, TsPrimitive, TsProperty, TsTypeAliasDefinition,
@@ -109,6 +111,7 @@ impl SchemaGenerator {
                     generics: vec![],
                     documentation: obj_schema.description.clone().map(TsDocComment::new),
                     union_members: None,
+                    intersection_members: None,
                 })
             }
             Schema::Array(_) => {
@@ -121,6 +124,7 @@ impl SchemaGenerator {
                     generics: vec![],
                     documentation: None,
                     union_members: None,
+                    intersection_members: None,
                 })
             }
             Schema::OneOf(one_of) => {
@@ -135,6 +139,7 @@ impl SchemaGenerator {
                     generics: vec![],
                     documentation: None,
                     union_members: Some(union_members),
+                    intersection_members: None,
                 })
             }
             Schema::AnyOf(any_of) => {
@@ -149,12 +154,15 @@ impl SchemaGenerator {
                     generics: vec![],
                     documentation: None,
                     union_members: Some(union_members),
+                    intersection_members: None,
                 })
             }
-            Schema::AllOf(_) => {
-                // Composition schemas become type aliases with union/intersection types
+            Schema::AllOf(all_of) => {
+                // Composition schemas become type aliases with intersection types
                 let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
-                // For allOf, we don't extract union members since it's an intersection
+                // Extract intersection members for proper conversion
+                let intersection_members =
+                    self.extract_intersection_members(&all_of.items, context, ts_name.as_str());
                 TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
                     ts_name,
                     original_name,
@@ -162,6 +170,7 @@ impl SchemaGenerator {
                     generics: vec![],
                     documentation: None,
                     union_members: None,
+                    intersection_members: Some(intersection_members),
                 })
             }
             _ => {
@@ -173,6 +182,7 @@ impl SchemaGenerator {
                     generics: vec![],
                     documentation: None,
                     union_members: None,
+                    intersection_members: None,
                 })
             }
         }
@@ -741,6 +751,35 @@ impl SchemaGenerator {
         }
     }
 
+    /// Extract nullable reference name from a type expression
+    ///
+    /// Checks if the type expression is a union containing both `null` and a reference type.
+    /// Returns the reference name if found, `None` otherwise.
+    ///
+    /// Example: `null | ServiceMetadata` -> `Some("ServiceMetadata")`
+    fn extract_nullable_reference_name(&self, type_expr: &TsExpression) -> Option<String> {
+        if let TsExpression::Union(union_types) = type_expr {
+            let mut has_null = false;
+            let mut ref_name = None;
+
+            for ut in union_types {
+                if matches!(ut, TsExpression::Primitive(TsPrimitive::Null)) {
+                    has_null = true;
+                } else if let Some(ref_name_val) = ut.reference_name() {
+                    ref_name = Some(ref_name_val);
+                }
+            }
+
+            if has_null && ref_name.is_some() {
+                ref_name
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
     /// Extract description from a RefOr<Schema>
     fn extract_description_from_schema(&self, schema_ref: &RefOr<Schema>) -> Option<String> {
         match schema_ref {
@@ -862,6 +901,7 @@ impl SchemaGenerator {
                     ref_original_name
                 ))),
                 union_members: None,
+                intersection_members: None,
             });
         }
 
@@ -893,6 +933,7 @@ impl SchemaGenerator {
                     ref_original_name
                 ))),
                 union_members: None,
+                intersection_members: None,
             })
         }
     }
@@ -974,6 +1015,68 @@ impl SchemaGenerator {
                     type_expr,
                     is_primitive,
                     is_interface,
+                }
+            })
+            .collect()
+    }
+
+    /// Extract intersection member information from allOf schema items
+    ///
+    /// This extracts basic metadata about each member of an intersection (allOf) for generating
+    /// FromJSON/ToJSON functions. The type_expr contains all the detailed information needed.
+    fn extract_intersection_members(
+        &self,
+        items: &[RefOr<Schema>],
+        context: &mut SchemaContext,
+        parent_name: &str,
+    ) -> Vec<IntersectionMemberInfo> {
+        items
+            .iter()
+            .map(|schema_ref| {
+                let type_expr =
+                    self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None);
+
+                // Check if it's a reference type
+                let is_reference = matches!(type_expr, TsExpression::Reference(_));
+
+                // Check if it's an object type and extract properties with reference info
+                let (is_object, object_properties) =
+                    if let TsExpression::Object(properties) = &type_expr {
+                        let props: Vec<IntersectionObjectProperty> = properties
+                            .values()
+                            .map(|prop| {
+                                let reference_name = prop.type_expr.reference_name();
+                                let nullable_reference_name =
+                                    self.extract_nullable_reference_name(&prop.type_expr);
+
+                                IntersectionObjectProperty {
+                                    ts_name: prop.ts_name.clone(),
+                                    original_name: prop.original_name.clone(),
+                                    type_expr: prop.type_expr.clone(),
+                                    reference_name,
+                                    nullable_reference_name,
+                                }
+                            })
+                            .collect();
+                        (true, Some(props))
+                    } else {
+                        (false, None)
+                    };
+
+                // Extract TypeScript name
+                let ts_name = match &type_expr {
+                    TsExpression::Reference(name) => name.clone(),
+                    TsExpression::Object(_) => "object".to_string(),
+                    TsExpression::Primitive(prim) => prim.to_string(),
+                    _ => "any".to_string(),
+                };
+
+                IntersectionMemberInfo {
+                    ts_name,
+                    type_expr,
+                    is_reference,
+                    is_object,
+                    object_properties,
                 }
             })
             .collect()

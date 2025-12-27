@@ -3,7 +3,7 @@
 use serde::Serialize;
 
 use crate::ast::ty::TsTypeAliasDefinition;
-use crate::ast::ty::ts_type_alias_definition::UnionMemberInfo;
+use crate::ast::ty::ts_type_alias_definition::{IntersectionMemberInfo, UnionMemberInfo};
 use crate::ast::{TsExpression, TsPrimitive};
 use crate::templating::data::ApiImportStatements;
 
@@ -24,6 +24,10 @@ pub struct ModelTypeAliasData {
     /// Whether the union contains the `any` type.
     /// This is computed and exposed to templates for efficient checking.
     has_any_in_union: bool,
+    /// Members of the intersection if this type alias is an intersection (e.g., allOf).
+    /// - Each entry represents a single intersection member (e.g., reference or object type).
+    /// - `None` if this is not an intersection type.
+    intersection_members: Option<Vec<IntersectionMemberInfo>>,
 }
 
 impl ModelTypeAliasData {
@@ -38,12 +42,14 @@ impl ModelTypeAliasData {
                     .any(|m| matches!(m.type_expr, TsExpression::Primitive(TsPrimitive::Any)))
             })
             .unwrap_or(false);
+        let intersection_members = type_alias_definition.intersection_members.clone();
 
         Self {
             union_members,
             type_alias_definition,
             imports: ApiImportStatements::new(),
             has_any_in_union,
+            intersection_members,
         }
     }
 
@@ -61,5 +67,11 @@ impl ModelTypeAliasData {
     /// Check if the union contains the `any` type.
     pub fn has_any_in_union(&self) -> bool {
         self.has_any_in_union
+    }
+
+    /// Get intersection members if this is an intersection type.
+    /// Returns `None` if this is not an intersection type.
+    pub fn intersection_members(&self) -> Option<&[IntersectionMemberInfo]> {
+        self.intersection_members.as_deref()
     }
 }

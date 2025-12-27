@@ -5,9 +5,31 @@ pub const MAX_LINE_WIDTH: usize = 100;
 
 /// Go reserved keywords that cannot be used as identifiers
 pub const GO_RESERVED_KEYWORDS: &[&str] = &[
-    "break", "default", "func", "interface", "select", "case", "defer", "go", "map", "struct",
-    "chan", "else", "goto", "package", "switch", "const", "fallthrough", "if", "range", "type",
-    "continue", "for", "import", "return", "var",
+    "break",
+    "default",
+    "func",
+    "interface",
+    "select",
+    "case",
+    "defer",
+    "go",
+    "map",
+    "struct",
+    "chan",
+    "else",
+    "goto",
+    "package",
+    "switch",
+    "const",
+    "fallthrough",
+    "if",
+    "range",
+    "type",
+    "continue",
+    "for",
+    "import",
+    "return",
+    "var",
 ];
 
 /// Escape a Go identifier if it's a reserved keyword by appending an underscore

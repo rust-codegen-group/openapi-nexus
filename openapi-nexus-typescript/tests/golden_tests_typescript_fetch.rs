@@ -326,6 +326,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
 
         ("type-aliases-complex-union", "valid/type-aliases/complex-union.yaml"),
         ("type-aliases-intersection-allof", "valid/type-aliases/intersection-allof.yaml"),
+        ("type-aliases-intersection-with-nullable-reference", "valid/type-aliases/intersection-with-nullable-reference.yaml"),
         ("type-aliases-nested-union", "valid/type-aliases/nested-union.yaml"),
         ("type-aliases-simple-type-alias", "valid/type-aliases/simple-type-alias.yaml"),
         ("type-aliases-union-mixed", "valid/type-aliases/union-mixed.yaml"),
@@ -388,14 +389,15 @@ generate_golden_tests! {
     test_recursive_json_inline_object_with_array_golden: "recursive-json-inline-object-with-array",
     test_recursive_json_mixed_property_types_golden: "recursive-json-mixed-property-types",
     test_recursive_json_nested_object_reference_golden: "recursive-json-nested-object-reference",
+
     test_recursive_json_optional_array_of_inline_objects_golden: "recursive-json-optional-array-of-inline-objects",
     test_recursive_json_optional_array_of_referenced_types_golden: "recursive-json-optional-array-of-referenced-types",
     test_recursive_json_optional_inline_object_golden: "recursive-json-optional-inline-object",
     test_recursive_json_optional_nested_object_reference_golden: "recursive-json-optional-nested-object-reference",
     test_recursive_json_primitive_array_golden: "recursive-json-primitive-array",
-
     test_type_aliases_complex_union_golden: "type-aliases-complex-union",
     test_type_aliases_intersection_allof_golden: "type-aliases-intersection-allof",
+    test_type_aliases_intersection_with_nullable_reference_golden: "type-aliases-intersection-with-nullable-reference",
     test_type_aliases_nested_union_golden: "type-aliases-nested-union",
     test_type_aliases_simple_type_alias_golden: "type-aliases-simple-type-alias",
     test_type_aliases_union_mixed_golden: "type-aliases-union-mixed",
