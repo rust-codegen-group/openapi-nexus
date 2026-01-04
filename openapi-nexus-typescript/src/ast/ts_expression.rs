@@ -190,7 +190,19 @@ impl ToRcDoc for TsExpression {
                 .append(item_type.to_rcdoc())
                 .append(RcDoc::text(">")),
             TsExpression::Union(types) => {
-                let docs: Vec<_> = types.iter().map(|t| t.to_rcdoc()).collect();
+                let docs: Vec<_> = types
+                    .iter()
+                    .map(|t| {
+                        let doc = t.to_rcdoc();
+                        // Wrap intersection types in parentheses when they're part of a union
+                        // for clarity: (A & B) | (C & D) instead of A & B | C & D
+                        if matches!(t, TsExpression::Intersection(_)) {
+                            RcDoc::text("(").append(doc).append(RcDoc::text(")"))
+                        } else {
+                            doc
+                        }
+                    })
+                    .collect();
                 RcDoc::intersperse(
                     docs,
                     RcDoc::space()

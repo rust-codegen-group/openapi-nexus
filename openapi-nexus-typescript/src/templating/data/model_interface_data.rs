@@ -1,5 +1,6 @@
 //! Model interface data for template generation
 
+use heck::ToLowerCamelCase as _;
 use serde::Serialize;
 
 use crate::ast::common::TsDocComment;
@@ -16,6 +17,9 @@ pub struct RequiredPropertyName {
     pub ts_name: String,
     /// The original property name from the OpenAPI spec (used in JSON)
     pub original_name: String,
+    /// Optional enum discriminator value - if this property is an enum discriminator,
+    /// this contains the expected enum value for this variant
+    pub enum_value: Option<String>,
 }
 
 /// Simplified property metadata for template helpers
@@ -87,6 +91,7 @@ impl ModelInterfaceData {
             .map(|p| RequiredPropertyName {
                 ts_name: p.ts_name.clone(),
                 original_name: p.original_name.clone(),
+                enum_value: None, // Will be set by schema generator for tagged enum variants
             })
             .collect();
 
@@ -117,6 +122,19 @@ impl ModelInterfaceData {
             required_prop_names,
             property_metadata,
             imports: ApiImportStatements::new(),
+        }
+    }
+
+    /// Update enum discriminator values from context
+    pub fn update_enum_discriminators(&mut self, interface_name: &str, enum_discriminators: &std::collections::HashMap<String, (String, String)>) {
+        if let Some((prop_name, enum_val)) = enum_discriminators.get(interface_name) {
+            // Find the property in required_prop_names and set its enum_value
+            for req_prop in &mut self.required_prop_names {
+                if req_prop.original_name == *prop_name || req_prop.ts_name == prop_name.to_lower_camel_case() {
+                    req_prop.enum_value = Some(enum_val.clone());
+                    break;
+                }
+            }
         }
     }
 }

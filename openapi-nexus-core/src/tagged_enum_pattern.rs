@@ -1,0 +1,248 @@
+//! Tagged enum pattern types for OpenAPI schema representation
+//!
+//! This module defines the different ways enums can be represented in OpenAPI/JSON Schema,
+//! which correspond to Serde's tagged enum representations.
+
+use heck::ToPascalCase as _;
+use utoipa::openapi::{RefOr, Schema};
+
+/// Tagged enum pattern types
+///
+/// These represent the four different ways enums can be tagged in JSON:
+/// - **ExternallyTagged**: The variant name is the key, content is the value
+///   (e.g., `{"VariantA": {"field1": "value"}}`)
+/// - **AdjacentlyTagged**: The tag and content are separate fields
+///   (e.g., `{"ty": "VariantA", "data": {"field1": "value"}}`)
+/// - **InternallyTagged**: The tag is a field inside the object alongside other fields
+///   (e.g., `{"ty": "VariantA", "field1": "value"}`)
+/// - **Untagged**: No tag is used, variants are distinguished by their structure
+///   (e.g., `{"field1": "value"}` or `{"field2": 123}`)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TaggedEnumPattern {
+    /// Externally tagged enum (default Serde representation)
+    ///
+    /// The variant name is the key and the content is the value:
+    /// `{"VariantA": {"field1": "...", "field2": 123}}`
+    ExternallyTagged {
+        /// The variant name in PascalCase
+        variant_name: String,
+    },
+    /// Adjacently tagged enum
+    ///
+    /// The tag and content are separate fields:
+    /// `{"ty": "VariantA", "data": {"field1": "...", "field2": 123}}`
+    AdjacentlyTagged {
+        /// The variant name in PascalCase
+        variant_name: String,
+        /// The tag field name (e.g., "ty")
+        tag_field: String,
+        /// The content field name (e.g., "data")
+        content_field: String,
+    },
+    /// Internally tagged enum
+    ///
+    /// The tag is a field inside the object alongside other fields:
+    /// `{"ty": "VariantA", "field1": "...", "field2": 123}`
+    InternallyTagged {
+        /// The variant name in PascalCase
+        variant_name: String,
+        /// The tag field name (e.g., "ty")
+        tag_field: String,
+    },
+    /// Untagged enum
+    ///
+    /// No tag is used, variants are distinguished by their structure:
+    /// `{"field1": "...", "field2": 123}` or `{"field3": true, "field4": 1.23}`
+    Untagged {
+        /// The variant name in PascalCase (from the referenced schema)
+        variant_name: String,
+    },
+}
+
+impl TaggedEnumPattern {
+    /// Detect tagged enum pattern from a oneOf schema item
+    ///
+    /// Returns the detected pattern with variant name and field names embedded.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_ref` - The schema reference to analyze
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(TaggedEnumPattern)` if a tagged enum pattern is detected,
+    /// with the variant name and field names embedded in the enum variant.
+    /// Returns `None` if no pattern is detected.
+    ///
+    /// # Examples
+    ///
+    /// - Externally tagged: Single required property becomes the variant name
+    /// - Adjacently tagged: Object with exactly 2 properties - one string enum (tag) and one object/ref (content)
+    /// - Internally tagged: allOf schema with a string enum property (tag field)
+    /// - Untagged: Schema reference to a component schema
+    pub fn detect_from_schema(schema_ref: &RefOr<Schema>) -> Option<Self> {
+        match schema_ref {
+            // Externally tagged: single property with the variant name as key
+            RefOr::T(Schema::Object(obj_schema)) if obj_schema.properties.len() == 1 => {
+                if let Some((prop_name, _)) = obj_schema.properties.iter().next() {
+                    // Check if this property is required (typical for externally tagged)
+                    if obj_schema.required.contains(prop_name) {
+                        let variant_name = prop_name.to_pascal_case();
+                        return Some(TaggedEnumPattern::ExternallyTagged { variant_name });
+                    }
+                }
+            }
+            // Adjacently tagged: object with exactly 2 properties
+            // One should be a string enum (tag field), the other should be an object/ref (content field)
+            RefOr::T(Schema::Object(obj_schema)) if obj_schema.properties.len() == 2 => {
+                let mut tag_field: Option<String> = None;
+                let mut content_field: Option<String> = None;
+                let mut enum_value: Option<String> = None;
+
+                // Find the tag field (string enum) and content field (object/ref)
+                for (prop_name, prop_schema) in &obj_schema.properties {
+                    if let RefOr::T(Schema::Object(prop_obj)) = prop_schema {
+                        // Check if this is a string enum (tag field)
+                        if let Some(enum_values) = &prop_obj.enum_values {
+                            if let Some(serde_json::Value::String(enum_val)) = enum_values.first() {
+                                tag_field = Some(prop_name.clone());
+                                enum_value = Some(enum_val.clone());
+                                continue;
+                            }
+                        }
+                    }
+                    // Check if this is an object with properties or a reference (content field)
+                    // Skip if we already identified this as the tag field (checked above with continue)
+                    match prop_schema {
+                        RefOr::T(Schema::Object(content_obj)) => {
+                            // Only consider it a content field if it doesn't have enum_values
+                            // (we already checked for enum_values above and used continue if found)
+                            // and it has properties (indicating it's an object schema, not a primitive)
+                            if content_obj.enum_values.is_none()
+                                && !content_obj.properties.is_empty()
+                            {
+                                content_field = Some(prop_name.clone());
+                            }
+                        }
+                        RefOr::Ref(_) => {
+                            // References are always content fields
+                            content_field = Some(prop_name.clone());
+                        }
+                        _ => {}
+                    }
+                }
+
+                // Both fields must be found for adjacently tagged pattern
+                if let (Some(tag), Some(content)) = (tag_field, content_field) {
+                    if let Some(enum_val) = enum_value {
+                        let variant_name = enum_val.to_pascal_case();
+                        return Some(TaggedEnumPattern::AdjacentlyTagged {
+                            variant_name,
+                            tag_field: tag,
+                            content_field: content,
+                        });
+                    }
+                }
+            }
+            // Internally tagged: allOf with a string enum property (tag field)
+            RefOr::T(Schema::AllOf(all_of)) => {
+                for item in &all_of.items {
+                    if let RefOr::T(Schema::Object(obj_schema)) = item {
+                        // Look for a property that is a string enum (tag field)
+                        for (prop_name, prop_schema) in &obj_schema.properties {
+                            if let RefOr::T(Schema::Object(prop_obj)) = prop_schema {
+                                if let Some(enum_values) = &prop_obj.enum_values {
+                                    if let Some(serde_json::Value::String(enum_val)) =
+                                        enum_values.first()
+                                    {
+                                        let variant_name = enum_val.to_pascal_case();
+                                        return Some(TaggedEnumPattern::InternallyTagged {
+                                            variant_name,
+                                            tag_field: prop_name.clone(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Untagged: just a reference
+            RefOr::Ref(reference) => {
+                let ref_path = &reference.ref_location;
+                if let Some(schema_name) = ref_path.strip_prefix("#/components/schemas/") {
+                    return Some(TaggedEnumPattern::Untagged {
+                        variant_name: schema_name.to_pascal_case(),
+                    });
+                }
+            }
+            _ => {}
+        }
+        None
+    }
+
+    /// Get the variant name from the pattern
+    pub fn variant_name(&self) -> &str {
+        match self {
+            TaggedEnumPattern::ExternallyTagged { variant_name }
+            | TaggedEnumPattern::AdjacentlyTagged { variant_name, .. }
+            | TaggedEnumPattern::InternallyTagged { variant_name, .. }
+            | TaggedEnumPattern::Untagged { variant_name } => variant_name,
+        }
+    }
+
+    /// Get the tag field name if this pattern has one
+    pub fn tag_field(&self) -> Option<&str> {
+        match self {
+            TaggedEnumPattern::AdjacentlyTagged { tag_field, .. }
+            | TaggedEnumPattern::InternallyTagged { tag_field, .. } => Some(tag_field),
+            _ => None,
+        }
+    }
+
+    /// Get the content field name if this pattern has one (adjacently tagged only)
+    pub fn content_field(&self) -> Option<&str> {
+        match self {
+            TaggedEnumPattern::AdjacentlyTagged { content_field, .. } => Some(content_field),
+            _ => None,
+        }
+    }
+
+    /// Generate an interface name for this variant, combining with parent name if needed
+    ///
+    /// For adjacently and internally tagged enums, combines the parent name with the variant name
+    /// unless the variant name already starts with the parent name (to avoid duplication).
+    /// For externally tagged and untagged enums, returns the variant name as-is.
+    ///
+    /// The returned name is in PascalCase, which is required for TypeScript interface names.
+    /// Both `parent_name` and the internal `variant_name` are already in PascalCase, so the
+    /// result is guaranteed to be valid PascalCase.
+    ///
+    /// # Arguments
+    ///
+    /// * `parent_name` - The parent enum name in PascalCase (e.g., "AdjacentlyTaggedEnum")
+    ///
+    /// # Returns
+    ///
+    /// Returns the interface name in PascalCase for this variant (e.g., "AdjacentlyTaggedEnumVariantA")
+    pub fn to_interface_name(&self, parent_name: &str) -> String {
+        let variant_name = self.variant_name();
+        match self {
+            TaggedEnumPattern::ExternallyTagged { .. } | TaggedEnumPattern::Untagged { .. } => {
+                // For externally tagged and untagged, use the variant name as-is
+                variant_name.to_string()
+            }
+            TaggedEnumPattern::AdjacentlyTagged { .. }
+            | TaggedEnumPattern::InternallyTagged { .. } => {
+                // Check if variant name already starts with parent name
+                if variant_name.starts_with(parent_name) {
+                    // Use as-is to avoid duplication
+                    variant_name.to_string()
+                } else {
+                    // Combine parent name with variant name
+                    format!("{}{}", parent_name, variant_name)
+                }
+            }
+        }
+    }
+}
