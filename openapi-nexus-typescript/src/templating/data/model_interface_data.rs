@@ -126,11 +126,17 @@ impl ModelInterfaceData {
     }
 
     /// Update enum discriminator values from context
-    pub fn update_enum_discriminators(&mut self, interface_name: &str, enum_discriminators: &std::collections::HashMap<String, (String, String)>) {
+    pub fn update_enum_discriminators(
+        &mut self,
+        interface_name: &str,
+        enum_discriminators: &std::collections::HashMap<String, (String, String)>,
+    ) {
         if let Some((prop_name, enum_val)) = enum_discriminators.get(interface_name) {
             // Find the property in required_prop_names and set its enum_value
             for req_prop in &mut self.required_prop_names {
-                if req_prop.original_name == *prop_name || req_prop.ts_name == prop_name.to_lower_camel_case() {
+                if req_prop.original_name == *prop_name
+                    || req_prop.ts_name == prop_name.to_lower_camel_case()
+                {
                     req_prop.enum_value = Some(enum_val.clone());
                     break;
                 }

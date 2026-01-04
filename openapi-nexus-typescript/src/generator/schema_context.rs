@@ -43,8 +43,14 @@ impl<'a> SchemaContext<'a> {
     }
 
     /// Register an enum discriminator for a tagged enum variant interface
-    pub fn register_enum_discriminator(&mut self, interface_name: String, property_name: String, enum_value: String) {
-        self.enum_discriminators.insert(interface_name, (property_name, enum_value));
+    pub fn register_enum_discriminator(
+        &mut self,
+        interface_name: String,
+        property_name: String,
+        enum_value: String,
+    ) {
+        self.enum_discriminators
+            .insert(interface_name, (property_name, enum_value));
     }
 
     /// Get enum discriminator info for an interface

@@ -1059,24 +1059,15 @@ impl SchemaGenerator {
                                             self.extract_description_from_schema(prop_schema);
 
                                         // Check if this is an enum discriminator (tag field with single enum value)
-                                        if let Some(ref tag_field) = tag_field_name {
-                                            if prop_name == tag_field {
-                                                if let RefOr::T(Schema::Object(ty_obj)) =
-                                                    prop_schema
-                                                {
-                                                    if let Some(enum_values) = &ty_obj.enum_values {
-                                                        if let Some(serde_json::Value::String(
-                                                            enum_val,
-                                                        )) = enum_values.first()
-                                                        {
-                                                            enum_discriminator = Some((
-                                                                prop_name.clone(),
-                                                                enum_val.clone(),
-                                                            ));
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                        if let Some(ref tag_field) = tag_field_name
+                                            && prop_name == tag_field
+                                            && let RefOr::T(Schema::Object(ty_obj)) = prop_schema
+                                            && let Some(enum_values) = &ty_obj.enum_values
+                                            && let Some(serde_json::Value::String(enum_val)) =
+                                                enum_values.first()
+                                        {
+                                            enum_discriminator =
+                                                Some((prop_name.clone(), enum_val.clone()));
                                         }
 
                                         let camel_case_name = prop_name.to_lower_camel_case();
@@ -1098,45 +1089,35 @@ impl SchemaGenerator {
                                 let ref_path = &reference.ref_location;
                                 if let Some(schema_name) =
                                     ref_path.strip_prefix("#/components/schemas/")
+                                    && let Some(ref_schema_ref) = context.schemas.get(schema_name)
+                                    && let RefOr::T(Schema::Object(ref_obj_schema)) = ref_schema_ref
                                 {
-                                    if let Some(ref_schema_ref) = context.schemas.get(schema_name) {
-                                        if let RefOr::T(Schema::Object(ref_obj_schema)) =
-                                            ref_schema_ref
-                                        {
-                                            // Merge properties from the referenced schema
-                                            for (prop_name, prop_schema) in
-                                                &ref_obj_schema.properties
-                                            {
-                                                if seen_properties.insert(prop_name.clone()) {
-                                                    let type_expr = self.map_ref_or_schema_to_type(
-                                                        prop_schema,
-                                                        context,
-                                                        &inline_interface_name,
-                                                        Some(prop_name),
-                                                    );
-                                                    let is_required =
-                                                        ref_obj_schema.required.contains(prop_name);
-                                                    let description = self
-                                                        .extract_description_from_schema(
-                                                            prop_schema,
-                                                        );
+                                    // Merge properties from the referenced schema
+                                    for (prop_name, prop_schema) in &ref_obj_schema.properties {
+                                        if seen_properties.insert(prop_name.clone()) {
+                                            let type_expr = self.map_ref_or_schema_to_type(
+                                                prop_schema,
+                                                context,
+                                                &inline_interface_name,
+                                                Some(prop_name),
+                                            );
+                                            let is_required =
+                                                ref_obj_schema.required.contains(prop_name);
+                                            let description =
+                                                self.extract_description_from_schema(prop_schema);
 
-                                                    let camel_case_name =
-                                                        prop_name.to_lower_camel_case();
-                                                    let original_name = prop_name.clone();
+                                            let camel_case_name = prop_name.to_lower_camel_case();
+                                            let original_name = prop_name.clone();
 
-                                                    let property = TsProperty {
-                                                        ts_name: camel_case_name,
-                                                        original_name,
-                                                        type_expr,
-                                                        optional: !is_required,
-                                                        is_index_signature: false,
-                                                        documentation: description
-                                                            .map(TsDocComment::new),
-                                                    };
-                                                    all_properties.push(property);
-                                                }
-                                            }
+                                            let property = TsProperty {
+                                                ts_name: camel_case_name,
+                                                original_name,
+                                                type_expr,
+                                                optional: !is_required,
+                                                is_index_signature: false,
+                                                documentation: description.map(TsDocComment::new),
+                                            };
+                                            all_properties.push(property);
                                         }
                                     }
                                 }
