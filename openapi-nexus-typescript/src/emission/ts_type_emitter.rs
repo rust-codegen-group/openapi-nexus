@@ -47,7 +47,16 @@ impl TsTypeEmitter {
             TsExpression::Union(types) => {
                 let docs: Vec<RcDoc<'static, ()>> = types
                     .iter()
-                    .map(|t| self.emit_type_expression_doc_with_indent(t, indent_level + 1))
+                    .map(|t| {
+                        let doc = self.emit_type_expression_doc_with_indent(t, indent_level + 1);
+                        // Wrap intersection types in parentheses when they're part of a union
+                        // for clarity: (A & B) | (C & D) instead of A & B | C & D
+                        if matches!(t, TsExpression::Intersection(_)) {
+                            RcDoc::text("(").append(doc).append(RcDoc::text(")"))
+                        } else {
+                            doc
+                        }
+                    })
                     .collect();
                 if docs.len() == 1 {
                     docs[0].clone()

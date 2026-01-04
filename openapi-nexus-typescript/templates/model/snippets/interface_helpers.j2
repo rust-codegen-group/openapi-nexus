@@ -5,12 +5,12 @@ export function instanceOf{{ model_interface.signature.ts_name }}(value: unknown
 {% if model_interface.required_prop_names %}
   const hasAllOriginalNames =
 {% for prop in model_interface.required_prop_names %}
-    "{{ prop.original_name }}" in value && (value as any)["{{ prop.original_name }}"] !== undefined{% if not loop.last %} &&{{"\n"}}{% else %};{% endif %}
+    "{{ prop.original_name }}" in value && (value as any)["{{ prop.original_name }}"] !== undefined{% if prop.enum_value %} && (value as any)["{{ prop.original_name }}"] === "{{ prop.enum_value }}"{% endif %}{% if not loop.last %} &&{{"\n"}}{% else %};{% endif %}
 {% endfor %}
 
   const hasAllTsNames =
 {% for prop in model_interface.required_prop_names %}
-    "{{ prop.ts_name }}" in value && (value as any)["{{ prop.ts_name }}"] !== undefined{% if not loop.last %} &&{{"\n"}}{% else %};{% endif %}
+    "{{ prop.ts_name }}" in value && (value as any)["{{ prop.ts_name }}"] !== undefined{% if prop.enum_value %} && (value as any)["{{ prop.ts_name }}"] === "{{ prop.enum_value }}"{% endif %}{% if not loop.last %} &&{{"\n"}}{% else %};{% endif %}
 {% endfor %}
 
   return hasAllOriginalNames || hasAllTsNames;

@@ -56,12 +56,13 @@ impl TypeScriptFetchCodeGenerator {
         &self,
         models: Vec<ModelData>,
         components: &openapi::Components,
-    ) -> HashMap<String, TsTypeDefinition> {
+    ) -> (HashMap<String, TsTypeDefinition>, HashMap<String, (String, String)>) {
         let mut schemas = HashMap::new();
         let mut visited = HashSet::new();
         let mut inline_interfaces = HashMap::new();
+        let mut enum_discriminators = HashMap::new();
         let mut context =
-            SchemaContext::new(&components.schemas, &mut visited, &mut inline_interfaces);
+            SchemaContext::new(&components.schemas, &mut visited, &mut inline_interfaces, &mut enum_discriminators);
 
         for model in models {
             let type_def = self.schema_generator.schema_to_ts_type_definition(
@@ -79,7 +80,7 @@ impl TypeScriptFetchCodeGenerator {
             schemas.insert(original_name, type_def.clone());
         }
 
-        schemas
+        (schemas, enum_discriminators)
     }
 
     /// Generate filename based on naming convention
@@ -464,10 +465,10 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
         openapi: &OpenApi,
         models: Vec<ModelData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let schemas = if let Some(components) = &openapi.components {
+        let (schemas, enum_discriminators) = if let Some(components) = &openapi.components {
             self.generate_model_type_definitions(models, components)
         } else {
-            HashMap::new()
+            (HashMap::new(), HashMap::new())
         };
 
         let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
@@ -553,6 +554,10 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
                     // Create ModelInterfaceData from interface definition
                     let mut model_interface_data = ModelInterfaceData::from_interface(interface);
                     model_interface_data.imports = imports;
+                    // Update enum discriminators if this is a tagged enum variant
+                    // Use the TypeScript name (PascalCase) for lookup
+                    let ts_name = type_def.ts_name();
+                    model_interface_data.update_enum_discriminators(&ts_name, &enum_discriminators);
 
                     let template_context = minijinja::context! {
                         common_file_header,

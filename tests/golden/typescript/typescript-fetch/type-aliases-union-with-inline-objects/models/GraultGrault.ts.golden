@@ -11,49 +11,49 @@
  * Do not edit the file manually.
  */
 
-/** Nested object in second type */
-export interface FooMember2Quux {
-  corge: string,
+/** Nested object in third type */
+export interface GraultGrault {
+  garply: string,
 }
 
-export function instanceOfFooMember2Quux(value: unknown): value is FooMember2Quux {
+export function instanceOfGraultGrault(value: unknown): value is GraultGrault {
   if (!value || typeof value !== "object") {
     return false;
   }
   const hasAllOriginalNames =
-    "corge" in value && (value as any)["corge"] !== undefined;
+    "garply" in value && (value as any)["garply"] !== undefined;
   const hasAllTsNames =
-    "corge" in value && (value as any)["corge"] !== undefined;
+    "garply" in value && (value as any)["garply"] !== undefined;
   return hasAllOriginalNames || hasAllTsNames;
 }
 
-export function FooMember2QuuxFromJSON(json: any): FooMember2Quux {
-  return FooMember2QuuxFromJSONTyped(json, false);
+export function GraultGraultFromJSON(json: any): GraultGrault {
+  return GraultGraultFromJSONTyped(json, false);
 }
 
-export function FooMember2QuuxFromJSONTyped(json: any, ignoreDiscriminator: boolean): FooMember2Quux {
+export function GraultGraultFromJSONTyped(json: any, ignoreDiscriminator: boolean): GraultGrault {
   if (json == null) {
     return json;
   }
   return {
-    'corge': json['corge'],
+    'garply': json['garply'],
   };
 }
 
-export function FooMember2QuuxToJSON(value?: FooMember2Quux | null): any {
-  return FooMember2QuuxToJSONTyped(value, false);
+export function GraultGraultToJSON(value?: GraultGrault | null): any {
+  return GraultGraultToJSONTyped(value, false);
 }
 
-export function FooMember2QuuxToJSONTyped(value?: FooMember2Quux | null, ignoreDiscriminator: boolean = false): any {
+export function GraultGraultToJSONTyped(value?: GraultGrault | null, ignoreDiscriminator: boolean = false): any {
   if (value == null) {
     return value;
   }
   return {
-    'corge': value['corge'],
+    'garply': value['garply'],
   };
 }
 
-export const FooMember2QuuxPropertyValidationAttributesMap: {
+export const GraultGraultPropertyValidationAttributesMap: {
   [property: string]: {
     maxLength?: number,
     minLength?: number,

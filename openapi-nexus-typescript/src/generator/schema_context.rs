@@ -21,6 +21,8 @@ pub struct SchemaContext<'a> {
     pub depth: usize,
     /// Inline interfaces generated from nested inline objects. Key is the TypeScript name (PascalCase).
     pub inline_interfaces: &'a mut HashMap<String, TsTypeDefinition>,
+    /// Enum discriminator values for tagged enum variants. Key is interface name, value is (property_name, enum_value).
+    pub enum_discriminators: &'a mut HashMap<String, (String, String)>,
 }
 
 impl<'a> SchemaContext<'a> {
@@ -29,13 +31,25 @@ impl<'a> SchemaContext<'a> {
         schemas: &'a BTreeMap<String, RefOr<Schema>>,
         visited: &'a mut HashSet<String>,
         inline_interfaces: &'a mut HashMap<String, TsTypeDefinition>,
+        enum_discriminators: &'a mut HashMap<String, (String, String)>,
     ) -> Self {
         Self {
             schemas,
             visited,
             depth: 0,
             inline_interfaces,
+            enum_discriminators,
         }
+    }
+
+    /// Register an enum discriminator for a tagged enum variant interface
+    pub fn register_enum_discriminator(&mut self, interface_name: String, property_name: String, enum_value: String) {
+        self.enum_discriminators.insert(interface_name, (property_name, enum_value));
+    }
+
+    /// Get enum discriminator info for an interface
+    pub fn get_enum_discriminator(&self, interface_name: &str) -> Option<&(String, String)> {
+        self.enum_discriminators.get(interface_name)
     }
 
     /// Register a generated inline interface

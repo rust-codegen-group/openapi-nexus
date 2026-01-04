@@ -12,12 +12,12 @@
  */
 
 /** Nested object in first type */
-export interface FooMember1Bar {
+export interface BarBar {
   baz: string,
   qux: string,
 }
 
-export function instanceOfFooMember1Bar(value: unknown): value is FooMember1Bar {
+export function instanceOfBarBar(value: unknown): value is BarBar {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -30,11 +30,11 @@ export function instanceOfFooMember1Bar(value: unknown): value is FooMember1Bar 
   return hasAllOriginalNames || hasAllTsNames;
 }
 
-export function FooMember1BarFromJSON(json: any): FooMember1Bar {
-  return FooMember1BarFromJSONTyped(json, false);
+export function BarBarFromJSON(json: any): BarBar {
+  return BarBarFromJSONTyped(json, false);
 }
 
-export function FooMember1BarFromJSONTyped(json: any, ignoreDiscriminator: boolean): FooMember1Bar {
+export function BarBarFromJSONTyped(json: any, ignoreDiscriminator: boolean): BarBar {
   if (json == null) {
     return json;
   }
@@ -44,11 +44,11 @@ export function FooMember1BarFromJSONTyped(json: any, ignoreDiscriminator: boole
   };
 }
 
-export function FooMember1BarToJSON(value?: FooMember1Bar | null): any {
-  return FooMember1BarToJSONTyped(value, false);
+export function BarBarToJSON(value?: BarBar | null): any {
+  return BarBarToJSONTyped(value, false);
 }
 
-export function FooMember1BarToJSONTyped(value?: FooMember1Bar | null, ignoreDiscriminator: boolean = false): any {
+export function BarBarToJSONTyped(value?: BarBar | null, ignoreDiscriminator: boolean = false): any {
   if (value == null) {
     return value;
   }
@@ -58,7 +58,7 @@ export function FooMember1BarToJSONTyped(value?: FooMember1Bar | null, ignoreDis
   };
 }
 
-export const FooMember1BarPropertyValidationAttributesMap: {
+export const BarBarPropertyValidationAttributesMap: {
   [property: string]: {
     maxLength?: number,
     minLength?: number,

@@ -22,6 +22,7 @@ use crate::ast::{
     TsTypeDefinition,
 };
 use crate::generator::schema_context::SchemaContext;
+use openapi_nexus_core::TaggedEnumPattern;
 
 /// Thread-safe counter for unknown schema references
 static UNKNOWN_SCHEMA_COUNTER: OnceLock<Mutex<usize>> = OnceLock::new();
@@ -972,21 +973,194 @@ impl SchemaGenerator {
             .iter()
             .enumerate()
             .map(|(index, schema_ref)| {
+                // Detect tagged enum pattern once and reuse it
+                let tagged_enum_pattern = TaggedEnumPattern::detect_from_schema(schema_ref);
+
+                // Try to extract a meaningful variant name for tagged enums
+                let inline_interface_name = tagged_enum_pattern
+                    .as_ref()
+                    .map(|pattern| pattern.to_interface_name(parent_name))
+                    .unwrap_or_else(|| format!("{parent_name}Member{}", index + 1));
+
                 // For inline object schemas in unions, create a named interface
                 let (type_expr, is_interface) = if let RefOr::T(Schema::Object(obj_schema)) =
                     schema_ref
                     && !obj_schema.properties.is_empty()
                 {
-                    // Create a named interface for this inline object
-                    let inline_interface_name = format!("{parent_name}Member{}", index + 1);
-
                     if !context.has_inline_interface(&inline_interface_name) {
+                        // Check for enum discriminator using the detected pattern
+                        let enum_discriminator = tagged_enum_pattern
+                            .as_ref()
+                            .and_then(|pattern| pattern.tag_field())
+                            .and_then(|tag_field| {
+                                obj_schema.properties.get(tag_field).and_then(|tag_prop| {
+                                    if let RefOr::T(Schema::Object(tag_obj)) = tag_prop {
+                                        tag_obj
+                                            .enum_values
+                                            .as_ref()
+                                            .and_then(|enum_values| enum_values.first())
+                                            .and_then(|v| v.as_str())
+                                            .map(|enum_val| {
+                                                (tag_field.to_string(), enum_val.to_string())
+                                            })
+                                    } else {
+                                        None
+                                    }
+                                })
+                            });
+
                         let interface = self.schema_to_interface(
                             &inline_interface_name,
                             &Schema::Object(obj_schema.clone()),
                             context,
                             &inline_interface_name,
                         );
+
+                        // Register enum discriminator if found
+                        if let Some((prop_name, enum_val)) = enum_discriminator {
+                            context.register_enum_discriminator(
+                                inline_interface_name.clone(),
+                                prop_name,
+                                enum_val,
+                            );
+                        }
+
+                        let type_def = TsTypeDefinition::Interface(interface);
+                        context.register_inline_interface(inline_interface_name.clone(), type_def);
+                    }
+
+                    (TsExpression::Reference(inline_interface_name.clone()), true)
+                } else if let RefOr::T(Schema::AllOf(all_of)) = schema_ref {
+                    // Handle internally tagged enums (allOf with variant schema + tag field)
+                    if !context.has_inline_interface(&inline_interface_name) {
+                        // Get the tag field name from the detected pattern
+                        let tag_field_name = tagged_enum_pattern
+                            .as_ref()
+                            .and_then(|pattern| pattern.tag_field().map(|s| s.to_string()));
+
+                        // Create an interface that combines all allOf members
+                        let mut all_properties = Vec::new();
+                        let mut seen_properties = BTreeSet::new();
+                        let mut enum_discriminator: Option<(String, String)> = None;
+
+                        for item in &all_of.items {
+                            if let RefOr::T(Schema::Object(obj_schema)) = item {
+                                // Add properties from inline object schemas
+                                for (prop_name, prop_schema) in &obj_schema.properties {
+                                    if seen_properties.insert(prop_name.clone()) {
+                                        let type_expr = self.map_ref_or_schema_to_type(
+                                            prop_schema,
+                                            context,
+                                            &inline_interface_name,
+                                            Some(prop_name),
+                                        );
+                                        let is_required = obj_schema.required.contains(prop_name);
+                                        let description =
+                                            self.extract_description_from_schema(prop_schema);
+
+                                        // Check if this is an enum discriminator (tag field with single enum value)
+                                        if let Some(ref tag_field) = tag_field_name {
+                                            if prop_name == tag_field {
+                                                if let RefOr::T(Schema::Object(ty_obj)) =
+                                                    prop_schema
+                                                {
+                                                    if let Some(enum_values) = &ty_obj.enum_values {
+                                                        if let Some(serde_json::Value::String(
+                                                            enum_val,
+                                                        )) = enum_values.first()
+                                                        {
+                                                            enum_discriminator = Some((
+                                                                prop_name.clone(),
+                                                                enum_val.clone(),
+                                                            ));
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        let camel_case_name = prop_name.to_lower_camel_case();
+                                        let original_name = prop_name.clone();
+
+                                        let property = TsProperty {
+                                            ts_name: camel_case_name,
+                                            original_name,
+                                            type_expr,
+                                            optional: !is_required,
+                                            is_index_signature: false,
+                                            documentation: description.map(TsDocComment::new),
+                                        };
+                                        all_properties.push(property);
+                                    }
+                                }
+                            } else if let RefOr::Ref(reference) = item {
+                                // For references, look up the schema and merge its properties
+                                let ref_path = &reference.ref_location;
+                                if let Some(schema_name) =
+                                    ref_path.strip_prefix("#/components/schemas/")
+                                {
+                                    if let Some(ref_schema_ref) = context.schemas.get(schema_name) {
+                                        if let RefOr::T(Schema::Object(ref_obj_schema)) =
+                                            ref_schema_ref
+                                        {
+                                            // Merge properties from the referenced schema
+                                            for (prop_name, prop_schema) in
+                                                &ref_obj_schema.properties
+                                            {
+                                                if seen_properties.insert(prop_name.clone()) {
+                                                    let type_expr = self.map_ref_or_schema_to_type(
+                                                        prop_schema,
+                                                        context,
+                                                        &inline_interface_name,
+                                                        Some(prop_name),
+                                                    );
+                                                    let is_required =
+                                                        ref_obj_schema.required.contains(prop_name);
+                                                    let description = self
+                                                        .extract_description_from_schema(
+                                                            prop_schema,
+                                                        );
+
+                                                    let camel_case_name =
+                                                        prop_name.to_lower_camel_case();
+                                                    let original_name = prop_name.clone();
+
+                                                    let property = TsProperty {
+                                                        ts_name: camel_case_name,
+                                                        original_name,
+                                                        type_expr,
+                                                        optional: !is_required,
+                                                        is_index_signature: false,
+                                                        documentation: description
+                                                            .map(TsDocComment::new),
+                                                    };
+                                                    all_properties.push(property);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Register enum discriminator if found
+                        if let Some((prop_name, enum_val)) = enum_discriminator {
+                            context.register_enum_discriminator(
+                                inline_interface_name.clone(),
+                                prop_name,
+                                enum_val,
+                            );
+                        }
+
+                        let interface_signature = TsInterfaceSignature::new(
+                            inline_interface_name.clone(),
+                            inline_interface_name.clone(),
+                        );
+                        let interface = TsInterfaceDefinition {
+                            signature: interface_signature,
+                            properties: all_properties,
+                            documentation: None,
+                        };
                         let type_def = TsTypeDefinition::Interface(interface);
                         context.register_inline_interface(inline_interface_name.clone(), type_def);
                     }
