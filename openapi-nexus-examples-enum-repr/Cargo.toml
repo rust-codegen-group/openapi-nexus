@@ -1,0 +1,31 @@
+[package]
+name = "openapi-nexus-examples-enum-repr"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "openapi-nexus-examples-enum-repr-spec-generator"
+path = "src/bin/openapi-nexus-examples-enum-repr-spec-generator.rs"
+
+[dependencies]
+axum-extra.workspace = true
+axum.workspace = true
+chrono.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_norway.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tower.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+utoipa-swagger-ui.workspace = true
+utoipa.workspace = true
+uuid.workspace = true
