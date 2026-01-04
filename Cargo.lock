@@ -1020,6 +1020,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "openapi-nexus-examples-petstore"
+version = "0.0.2-alpha.2"
+dependencies = [
+ "axum",
+ "axum-extra",
+ "chrono",
+ "clap",
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "uuid",
+]
+
+[[package]]
 name = "openapi-nexus-go"
 version = "0.0.2-alpha.2"
 dependencies = [
@@ -1067,27 +1088,6 @@ dependencies = [
  "snafu",
  "tracing",
  "utoipa",
-]
-
-[[package]]
-name = "openapi-nexus-petstore-example"
-version = "0.0.2-alpha.2"
-dependencies = [
- "axum",
- "axum-extra",
- "chrono",
- "clap",
- "serde",
- "serde_json",
- "serde_norway",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "utoipa",
- "utoipa-swagger-ui",
- "uuid",
 ]
 
 [[package]]

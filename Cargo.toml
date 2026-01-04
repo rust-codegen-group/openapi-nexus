@@ -8,7 +8,7 @@ members = [
     "openapi-nexus-go",
     "openapi-nexus-ir",
     "openapi-nexus-parser",
-    "openapi-nexus-petstore-example",
+    "openapi-nexus-examples-petstore",
     "openapi-nexus-plugin",
     "openapi-nexus-rust",
     "openapi-nexus-transforms",

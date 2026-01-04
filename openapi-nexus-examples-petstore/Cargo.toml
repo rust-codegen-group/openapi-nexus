@@ -1,5 +1,5 @@
 [package]
-name = "openapi-nexus-petstore-example"
+name = "openapi-nexus-examples-petstore"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
@@ -10,12 +10,12 @@ license.workspace = true
 publish = false
 
 [[bin]]
-name = "openapi-nexus-petstore-example-server"
-path = "src/bin/openapi-nexus-petstore-example-server.rs"
+name = "openapi-nexus-examples-petstore-server"
+path = "src/bin/openapi-nexus-examples-petstore-server.rs"
 
 [[bin]]
-name = "openapi-nexus-petstore-example-spec-generator"
-path = "src/bin/openapi-nexus-petstore-example-spec-generator.rs"
+name = "openapi-nexus-examples-petstore-spec-generator"
+path = "src/bin/openapi-nexus-examples-petstore-spec-generator.rs"
 
 [dependencies]
 axum.workspace = true
