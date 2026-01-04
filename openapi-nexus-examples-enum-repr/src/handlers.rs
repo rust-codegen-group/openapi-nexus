@@ -1,9 +1,6 @@
 //! Enum representation API handlers
 
-use axum::{
-    http::StatusCode,
-    response::Json,
-};
+use axum::{http::StatusCode, response::Json};
 
 use crate::models::{
     AdjacentlyTaggedEnum, ExternallyTaggedEnum, InternallyTaggedEnum, UntaggedEnum,

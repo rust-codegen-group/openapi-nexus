@@ -103,12 +103,12 @@ impl TaggedEnumPattern {
                 for (prop_name, prop_schema) in &obj_schema.properties {
                     if let RefOr::T(Schema::Object(prop_obj)) = prop_schema {
                         // Check if this is a string enum (tag field)
-                        if let Some(enum_values) = &prop_obj.enum_values {
-                            if let Some(serde_json::Value::String(enum_val)) = enum_values.first() {
-                                tag_field = Some(prop_name.clone());
-                                enum_value = Some(enum_val.clone());
-                                continue;
-                            }
+                        if let Some(enum_values) = &prop_obj.enum_values
+                            && let Some(serde_json::Value::String(enum_val)) = enum_values.first()
+                        {
+                            tag_field = Some(prop_name.clone());
+                            enum_value = Some(enum_val.clone());
+                            continue;
                         }
                     }
                     // Check if this is an object with properties or a reference (content field)
@@ -133,15 +133,15 @@ impl TaggedEnumPattern {
                 }
 
                 // Both fields must be found for adjacently tagged pattern
-                if let (Some(tag), Some(content)) = (tag_field, content_field) {
-                    if let Some(enum_val) = enum_value {
-                        let variant_name = enum_val.to_pascal_case();
-                        return Some(TaggedEnumPattern::AdjacentlyTagged {
-                            variant_name,
-                            tag_field: tag,
-                            content_field: content,
-                        });
-                    }
+                if let (Some(tag), Some(content)) = (tag_field, content_field)
+                    && let Some(enum_val) = enum_value
+                {
+                    let variant_name = enum_val.to_pascal_case();
+                    return Some(TaggedEnumPattern::AdjacentlyTagged {
+                        variant_name,
+                        tag_field: tag,
+                        content_field: content,
+                    });
                 }
             }
             // Internally tagged: allOf with a string enum property (tag field)
@@ -150,18 +150,16 @@ impl TaggedEnumPattern {
                     if let RefOr::T(Schema::Object(obj_schema)) = item {
                         // Look for a property that is a string enum (tag field)
                         for (prop_name, prop_schema) in &obj_schema.properties {
-                            if let RefOr::T(Schema::Object(prop_obj)) = prop_schema {
-                                if let Some(enum_values) = &prop_obj.enum_values {
-                                    if let Some(serde_json::Value::String(enum_val)) =
-                                        enum_values.first()
-                                    {
-                                        let variant_name = enum_val.to_pascal_case();
-                                        return Some(TaggedEnumPattern::InternallyTagged {
-                                            variant_name,
-                                            tag_field: prop_name.clone(),
-                                        });
-                                    }
-                                }
+                            if let RefOr::T(Schema::Object(prop_obj)) = prop_schema
+                                && let Some(enum_values) = &prop_obj.enum_values
+                                && let Some(serde_json::Value::String(enum_val)) =
+                                    enum_values.first()
+                            {
+                                let variant_name = enum_val.to_pascal_case();
+                                return Some(TaggedEnumPattern::InternallyTagged {
+                                    variant_name,
+                                    tag_field: prop_name.clone(),
+                                });
                             }
                         }
                     }

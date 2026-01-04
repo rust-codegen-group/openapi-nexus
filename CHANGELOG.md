@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3]
+
+### Added
+
+- Tagged enum pattern detection and support in TypeScript generator (externally, adjacently, internally, and untagged enum patterns)
+- Intersection type support with nullable references in TypeScript generator
+- Enum representation test fixture generator (`openapi-nexus-examples-enum-repr`)
+
+### Changed
+
+- Renamed `openapi-nexus-petstore-example` package to `openapi-nexus-examples-petstore` (organizational change)
+
+### Fixed
+
+- PascalCase conversion handling in model imports with aliases for TypeScript
+
 ## [0.0.2]
 
 ### Added
