@@ -14,7 +14,7 @@ use tower_http::{
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 
-use openapi_nexus_petstore_example::{
+use openapi_nexus_examples_petstore::{
     ApiDoc, add_pet, create_user, create_users_with_list_input, delete_order, delete_pet,
     delete_user, find_pets_by_status, find_pets_by_tags, get_inventory, get_order_by_id,
     get_pet_by_id, get_user_by_name, login_user, logout_user, place_order, update_pet,
