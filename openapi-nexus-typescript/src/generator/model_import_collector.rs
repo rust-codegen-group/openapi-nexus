@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use heck::ToPascalCase as _;
 use utoipa::openapi;
 
+use crate::generator::parameter_extractor::ParameterExtractor;
 use crate::generator::response_transformer::ResponseTransformer;
 use crate::templating::data::ApiImportStatement;
 use crate::utils::schema_mapper::SchemaMapper;
@@ -44,7 +45,7 @@ impl ModelImportCollector {
 
     /// Extract model name from request body schema reference
     ///
-    /// Returns the model name if the operation has an `application/json` request body
+    /// Returns the PascalCase model name if the operation has an `application/json` request body
     /// with a schema reference to `#/components/schemas/{name}`.
     pub fn extract_request_body_model_name(
         &self,
@@ -55,7 +56,9 @@ impl ModelImportCollector {
         let schema_ref = json_content.schema.as_ref()?;
 
         if let openapi::RefOr::Ref(reference) = schema_ref {
-            reference.schema_name().map(|name| name.to_string())
+            reference
+                .schema_name()
+                .map(|name| name.to_pascal_case())
         } else {
             None
         }
@@ -116,10 +119,11 @@ impl ModelImportCollector {
         // Collect from response models
         for op_info in operations {
             if let Some(model_name) = response_transformer.compute_model_name(op_info) {
-                dependencies.type_names.insert(model_name.clone());
+                let pascal_name = model_name.to_pascal_case();
+                dependencies.type_names.insert(pascal_name.clone());
                 dependencies
                     .function_names
-                    .insert(format!("{}FromJSON", model_name));
+                    .insert(format!("{}FromJSON", pascal_name));
             }
 
             for response_ref in op_info.operation.responses.responses.values() {
@@ -142,10 +146,11 @@ impl ModelImportCollector {
                     }
                     openapi::RefOr::Ref(reference) => {
                         if let Some(name) = reference.schema_name() {
-                            dependencies.type_names.insert(name.to_string());
+                            let pascal_name = name.to_pascal_case();
+                            dependencies.type_names.insert(pascal_name.clone());
                             dependencies
                                 .function_names
-                                .insert(format!("{}FromJSON", name));
+                                .insert(format!("{}FromJSON", pascal_name));
                         }
                     }
                 }
@@ -155,14 +160,59 @@ impl ModelImportCollector {
         // Collect from request body models
         for op_info in operations {
             if let Some(model_name) = self.extract_request_body_model_name(&op_info.operation) {
-                dependencies.type_names.insert(model_name.clone());
+                let pascal_name = model_name.to_pascal_case();
+                dependencies.type_names.insert(pascal_name.clone());
 
                 // Only add ToJSON import if the schema is an interface
                 // Type aliases don't have ToJSON functions
                 if self.is_schema_interface(&model_name, components) {
                     dependencies
                         .function_names
-                        .insert(format!("{}ToJSON", model_name));
+                        .insert(format!("{}ToJSON", pascal_name));
+                }
+            }
+        }
+
+        // Collect from query/path/header parameters
+        let parameter_extractor = ParameterExtractor;
+        for op_info in operations {
+            if let Ok(extracted) = parameter_extractor.extract_parameters(op_info, components) {
+                // Helper function to collect schema references from a parameter
+                let mut collect_from_param = |param: &openapi_nexus_core::data::ParameterInfo| {
+                    if let Some(schema_ref) = &param.schema {
+                        // Extract original schema name from reference if it's a reference
+                        if let openapi::RefOr::Ref(reference) = schema_ref {
+                            if let Some(original_name) = reference.schema_name()
+                                && !Self::is_builtin_type(original_name) {
+                                    // Store PascalCase name (always use PascalCase)
+                                    dependencies.type_names.insert(original_name.to_pascal_case());
+                                }
+                        } else {
+                            // For inline schemas, use the type expression to find references
+                            let ts_type = SchemaMapper::map_ref_or_schema_to_type(schema_ref);
+                            for type_name in ts_type.referenced_types() {
+                                if !Self::is_builtin_type(&type_name) {
+                                    // Type expressions already return PascalCase names
+                                    dependencies.type_names.insert(type_name.clone());
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // Collect from query params
+                for param in &extracted.query_params {
+                    collect_from_param(param);
+                }
+
+                // Collect from path params
+                for param in &extracted.path_params {
+                    collect_from_param(param);
+                }
+
+                // Collect from header params
+                for param in &extracted.header_params {
+                    collect_from_param(param);
                 }
             }
         }
@@ -179,31 +229,29 @@ impl ModelImportCollector {
         let mut models_by_file: BTreeMap<String, (Vec<String>, Vec<String>)> = BTreeMap::new();
 
         // Group type names by file
-        // Store both original name (for alias) and PascalCase name (for import)
-        for model_name in &dependencies.type_names {
-            // Convert model name to PascalCase to match generated filename and exported type name
-            let filename_base = model_name.to_pascal_case();
-            let filename = format!("../models/{}", filename_base);
+        // type_names already contains PascalCase names
+        for pascal_name in &dependencies.type_names {
+            // Use PascalCase name directly for filename (already in PascalCase)
+            let filename = format!("../models/{}", pascal_name);
             let entry = models_by_file
                 .entry(filename)
                 .or_insert_with(|| (Vec::new(), Vec::new()));
-            // Store original name (we'll convert to PascalCase when building imports)
-            entry.0.push(model_name.clone());
+            // Store PascalCase name (no conversion needed)
+            entry.0.push(pascal_name.clone());
         }
 
         // Group function names by file
-        // Store original function name (we'll convert to PascalCase when building imports)
+        // Function names already use PascalCase model names
         for func_name in &dependencies.function_names {
             // Extract model name from function name (e.g., "PetFromJSON" -> "Pet")
             if let Some(model_name) = func_name
                 .strip_suffix("FromJSON")
                 .or_else(|| func_name.strip_suffix("ToJSON"))
             {
-                // Convert model name to PascalCase to match generated filename
-                let filename_base = model_name.to_pascal_case();
-                let filename = format!("../models/{}", filename_base);
+                // Model name is already in PascalCase
+                let filename = format!("../models/{}", model_name);
                 if let Some(entry) = models_by_file.get_mut(&filename) {
-                    // Store original function name (we'll convert when building imports)
+                    // Store function name (already in PascalCase)
                     entry.1.push(func_name.clone());
                 } else {
                     // Function without a type import (shouldn't happen, but handle gracefully)
@@ -220,43 +268,18 @@ impl ModelImportCollector {
             processed_files.insert(file_path.clone());
             let mut import_stmt = ApiImportStatement::new(file_path.clone());
 
-            // Add type imports with aliases (PascalCase name -> original name)
-            for original_type_name in type_names {
-                // The type_names vector contains original names, but we need to convert to PascalCase for the import
-                let pascal_type_name = original_type_name.to_pascal_case();
-                // Only add alias if names differ (to avoid unnecessary aliases)
-                let alias = if pascal_type_name != original_type_name {
-                    Some(original_type_name)
-                } else {
-                    None
-                };
-                import_stmt = import_stmt.with_type_import(pascal_type_name, alias);
+            // Add type imports (always use PascalCase, no aliases needed)
+            // The type_names vector now contains PascalCase names directly
+            for pascal_type_name in type_names {
+                // No alias needed since we always use PascalCase
+                import_stmt = import_stmt.with_type_import(pascal_type_name, None);
             }
 
-            // Add function imports with aliases (PascalCase name -> original name)
-            for original_func_name in func_names {
-                // Extract model name and reconstruct with PascalCase
-                let (pascal_func_name, alias) = if let Some(model_name) = original_func_name
-                    .strip_suffix("FromJSON")
-                    .or_else(|| original_func_name.strip_suffix("ToJSON"))
-                {
-                    let pascal_model_name = model_name.to_pascal_case();
-                    let pascal_name = if original_func_name.ends_with("FromJSON") {
-                        format!("{}FromJSON", pascal_model_name)
-                    } else {
-                        format!("{}ToJSON", pascal_model_name)
-                    };
-                    // Only add alias if names differ
-                    let alias = if pascal_name != original_func_name {
-                        Some(original_func_name)
-                    } else {
-                        None
-                    };
-                    (pascal_name, alias)
-                } else {
-                    (original_func_name.clone(), None)
-                };
-                import_stmt = import_stmt.with_import(pascal_func_name, alias);
+            // Add function imports (always use PascalCase, no aliases needed)
+            // Function names are already in PascalCase format
+            for func_name in func_names {
+                // No alias needed since we always use PascalCase
+                import_stmt = import_stmt.with_import(func_name.clone(), None);
             }
 
             // Only add import if it has any imports
@@ -271,21 +294,13 @@ impl ModelImportCollector {
                 .strip_suffix("FromJSON")
                 .or_else(|| func_name.strip_suffix("ToJSON"))
             {
-                // Convert model name to PascalCase to match generated filename
-                let filename_base = model_name.to_pascal_case();
-                let filename = format!("../models/{}", filename_base);
+                // Model name is already in PascalCase
+                let filename = format!("../models/{}", model_name);
                 // Only add if we didn't already add this file
                 if !processed_files.contains(&filename) {
-                    // Reconstruct function name with PascalCase model name
-                    let pascal_func_name = if func_name.ends_with("FromJSON") {
-                        format!("{}FromJSON", filename_base)
-                    } else if func_name.ends_with("ToJSON") {
-                        format!("{}ToJSON", filename_base)
-                    } else {
-                        func_name.clone()
-                    };
+                    // Function name is already in PascalCase
                     imports.push(
-                        ApiImportStatement::new(filename).with_import(pascal_func_name, None),
+                        ApiImportStatement::new(filename).with_import(func_name.clone(), None),
                     );
                 }
             }

@@ -83,6 +83,11 @@ impl ApiOperationGenerator {
         // Check for duplicate method names and emit errors but continue
         self.check_duplicate_method_names(operations, &class_name);
 
+        // Check for duplicate schema names (PascalCase) and return error if found
+        if let Some(components) = components {
+            self.check_duplicate_schema_names(components)?;
+        }
+
         let mut methods = vec![
             // Constructor method
             ApiMethodData {
@@ -731,5 +736,48 @@ impl ApiOperationGenerator {
             }
             used_convenience_names.insert(base_method_name);
         }
+    }
+
+    /// Check for duplicate schema names (PascalCase) and return error if found
+    ///
+    /// This method checks if multiple schema names map to the same PascalCase name.
+    /// If duplicates are found, an error is returned to prevent code generation.
+    fn check_duplicate_schema_names(
+        &self,
+        components: &openapi::Components,
+    ) -> Result<(), GeneratorError> {
+        let mut pascal_to_originals: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+        for original_name in components.schemas.keys() {
+            let pascal_name = original_name.to_pascal_case();
+            pascal_to_originals
+                .entry(pascal_name)
+                .or_default()
+                .push(original_name.clone());
+        }
+
+        // Check for duplicates and collect error messages
+        let mut duplicates_found = false;
+        let mut error_messages = Vec::new();
+
+        for (pascal_name, original_names) in &pascal_to_originals {
+            if original_names.len() > 1 {
+                duplicates_found = true;
+                error_messages.push(format!(
+                    "'{}' maps to multiple schema names: {:?}",
+                    pascal_name, original_names
+                ));
+            }
+        }
+
+        if duplicates_found {
+            let message = format!(
+                "Multiple schema names map to the same PascalCase name, which will cause TypeScript compilation errors. Conflicting names: {}. Please rename schemas to avoid conflicts.",
+                error_messages.join("; ")
+            );
+            return Err(GeneratorError::ConflictingSchemaNames { message });
+        }
+
+        Ok(())
     }
 }

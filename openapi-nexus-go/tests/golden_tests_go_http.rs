@@ -333,6 +333,8 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("response-body-no-response-body", "valid/response-body/no-response-body.yaml"),
 
         ("enum-repr", "valid/enum-repr/enum-repr.yaml"),
+
+        ("query-param-enum", "valid/query/query-param-enum.yaml"),
     ]
     .into_iter()
     .collect()
@@ -405,4 +407,6 @@ generate_golden_tests! {
     test_response_body_no_response_body_golden: "response-body-no-response-body",
 
     test_enum_repr_golden: "enum-repr",
+
+    test_query_param_enum_golden: "query-param-enum",
 }

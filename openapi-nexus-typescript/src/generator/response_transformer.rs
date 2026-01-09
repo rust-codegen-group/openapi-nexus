@@ -1,5 +1,6 @@
 //! Response transformer computation for API operations
 
+use heck::ToPascalCase as _;
 use utoipa::openapi;
 
 use openapi_nexus_core::data::OperationInfo;
@@ -56,17 +57,19 @@ impl ResponseTransformer {
         schema_ref: &openapi::RefOr<openapi::schema::Schema>,
     ) -> Option<String> {
         match schema_ref {
-            openapi::RefOr::Ref(reference) => reference
-                .schema_name()
-                .map(|name| format!("(jsonValue) => {}FromJSON(jsonValue)", name)),
+            openapi::RefOr::Ref(reference) => reference.schema_name().map(|name| {
+                let pascal_name = name.to_pascal_case();
+                format!("(jsonValue) => {}FromJSON(jsonValue)", pascal_name)
+            }),
             openapi::RefOr::T(schema) => {
                 if let openapi::Schema::Array(array_schema) = schema {
                     match &array_schema.items {
                         openapi::schema::ArrayItems::RefOrSchema(item_ref) => match &**item_ref {
                             openapi::RefOr::Ref(reference) => reference.schema_name().map(|name| {
+                                let pascal_name = name.to_pascal_case();
                                 format!(
                                     "(jsonValue) => (jsonValue as Array<any>).map({}FromJSON)",
-                                    name
+                                    pascal_name
                                 )
                             }),
                             openapi::RefOr::T(_) => None,

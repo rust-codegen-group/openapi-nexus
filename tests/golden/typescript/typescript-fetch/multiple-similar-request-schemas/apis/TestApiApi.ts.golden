@@ -11,17 +11,17 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type CreateRequestTypeA as CreateRequest_TypeA, CreateRequestTypeAToJSON as CreateRequest_TypeAToJSON } from '../models/CreateRequestTypeA';
-import { type CreateRequestTypeB as CreateRequest_TypeB, CreateRequestTypeBToJSON as CreateRequest_TypeBToJSON } from '../models/CreateRequestTypeB';
-import { type ResourceTypeA as Resource_TypeA, ResourceTypeAFromJSON as Resource_TypeAFromJSON } from '../models/ResourceTypeA';
-import { type ResourceTypeB as Resource_TypeB, ResourceTypeBFromJSON as Resource_TypeBFromJSON } from '../models/ResourceTypeB';
+import { type CreateRequestTypeA, CreateRequestTypeAToJSON } from '../models/CreateRequestTypeA';
+import { type CreateRequestTypeB, CreateRequestTypeBToJSON } from '../models/CreateRequestTypeB';
+import { type ResourceTypeA, ResourceTypeAFromJSON } from '../models/ResourceTypeA';
+import { type ResourceTypeB, ResourceTypeBFromJSON } from '../models/ResourceTypeB';
 
 export interface ApiCreateTypeARequest {
-    body: CreateRequest_TypeA;
+    body: CreateRequestTypeA;
 }
 
 export interface ApiCreateTypeBRequest {
-    body: CreateRequest_TypeB;
+    body: CreateRequestTypeB;
 }
 
 /** API client for test-api operations */
@@ -30,35 +30,35 @@ export interface TestApiApiInterface {
   /**
    * Create TypeA resource
    *
-   * @param {CreateRequest_TypeA} body
+   * @param {CreateRequestTypeA} body
    *
    * @throws {RequiredError}
    */
-  createTypeARaw: (requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Resource_TypeA> & { status: 200 } | JSONApiResponse<any> & { status: number }>;
+  createTypeARaw: (requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<ResourceTypeA> & { status: 200 } | JSONApiResponse<any> & { status: number }>;
   /**
    * Create TypeB resource
    *
-   * @param {CreateRequest_TypeB} body
+   * @param {CreateRequestTypeB} body
    *
    * @throws {RequiredError}
    */
-  createTypeBRaw: (requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Resource_TypeB> & { status: 200 } | JSONApiResponse<any> & { status: number }>;
+  createTypeBRaw: (requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<ResourceTypeB> & { status: 200 } | JSONApiResponse<any> & { status: number }>;
   /**
    * Create TypeA resource
    *
-   * @param {CreateRequest_TypeA} body
+   * @param {CreateRequestTypeA} body
    *
    * @throws {RequiredError}
    */
-  createTypeA: (requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Resource_TypeA>;
+  createTypeA: (requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<ResourceTypeA>;
   /**
    * Create TypeB resource
    *
-   * @param {CreateRequest_TypeB} body
+   * @param {CreateRequestTypeB} body
    *
    * @throws {RequiredError}
    */
-  createTypeB: (requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<Resource_TypeB>;
+  createTypeB: (requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<ResourceTypeB>;
 }
 
 export class TestApiApi extends BaseAPI implements TestApiApiInterface {
@@ -71,11 +71,11 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   /**
    * Create TypeA resource
    *
-   * @param {CreateRequest_TypeA} body
+   * @param {CreateRequestTypeA} body
    *
    * @throws {RequiredError}
    */
-  async createTypeARaw(requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Resource_TypeA> & { status: 200 } | JSONApiResponse<any> & { status: number }> {
+  async createTypeARaw(requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<ResourceTypeA> & { status: 200 } | JSONApiResponse<any> & { status: number }> {
     if (requestParameters['body'] == null) {
       throw new RequiredError(
         'body',
@@ -94,7 +94,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = CreateRequest_TypeAToJSON(requestParameters['body']);
+    const requestBody = CreateRequestTypeAToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -106,7 +106,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => Resource_TypeAFromJSON(jsonValue)) as JSONApiResponse<Resource_TypeA> & { status: 200 };
+      return new JSONApiResponse(response, (jsonValue) => ResourceTypeAFromJSON(jsonValue)) as JSONApiResponse<ResourceTypeA> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
@@ -117,11 +117,11 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   /**
    * Create TypeA resource
    *
-   * @param {CreateRequest_TypeA} body
+   * @param {CreateRequestTypeA} body
    *
    * @throws {RequiredError}
    */
-  async createTypeA(requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<Resource_TypeA> {
+  async createTypeA(requestParameters: ApiCreateTypeARequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<ResourceTypeA> {
     const response = await this.createTypeARaw(requestParameters, initOverrides);
     return await response.value();
   }
@@ -129,11 +129,11 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   /**
    * Create TypeB resource
    *
-   * @param {CreateRequest_TypeB} body
+   * @param {CreateRequestTypeB} body
    *
    * @throws {RequiredError}
    */
-  async createTypeBRaw(requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Resource_TypeB> & { status: 200 } | JSONApiResponse<any> & { status: number }> {
+  async createTypeBRaw(requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<ResourceTypeB> & { status: 200 } | JSONApiResponse<any> & { status: number }> {
     if (requestParameters['body'] == null) {
       throw new RequiredError(
         'body',
@@ -152,7 +152,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = CreateRequest_TypeBToJSON(requestParameters['body']);
+    const requestBody = CreateRequestTypeBToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -164,7 +164,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => Resource_TypeBFromJSON(jsonValue)) as JSONApiResponse<Resource_TypeB> & { status: 200 };
+      return new JSONApiResponse(response, (jsonValue) => ResourceTypeBFromJSON(jsonValue)) as JSONApiResponse<ResourceTypeB> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
@@ -175,11 +175,11 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   /**
    * Create TypeB resource
    *
-   * @param {CreateRequest_TypeB} body
+   * @param {CreateRequestTypeB} body
    *
    * @throws {RequiredError}
    */
-  async createTypeB(requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<Resource_TypeB> {
+  async createTypeB(requestParameters: ApiCreateTypeBRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<ResourceTypeB> {
     const response = await this.createTypeBRaw(requestParameters, initOverrides);
     return await response.value();
   }
