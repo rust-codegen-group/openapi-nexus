@@ -472,6 +472,9 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
         openapi: &OpenApi,
         models: Vec<ModelData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        // Note: Duplicate schema name checking is performed in generate_apis
+        // to catch conflicts early in the generation process
+
         let (schemas, enum_discriminators) = if let Some(components) = &openapi.components {
             self.generate_model_type_definitions(models, components)
         } else {

@@ -98,6 +98,13 @@ pub enum GeneratorError {
     /// Generic error for cases that don't fit other categories
     #[snafu(display("Generator error: {}", message))]
     Generic { message: String },
+
+    /// Conflicting schema names error
+    ///
+    /// This error occurs when multiple schema names map to the same PascalCase name,
+    /// which would cause TypeScript compilation errors.
+    #[snafu(display("{message}"))]
+    ConflictingSchemaNames { message: String },
 }
 
 impl From<minijinja::Error> for GeneratorError {

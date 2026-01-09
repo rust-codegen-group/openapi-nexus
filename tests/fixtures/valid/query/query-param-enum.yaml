@@ -1,0 +1,49 @@
+openapi: 3.1.0
+info:
+  title: Query Parameter Enum Test
+  version: 1.0.0
+  description: Test case for query parameters that reference enum schemas
+
+paths:
+  /items:
+    get:
+      tags:
+        - items
+      summary: Get items with enum query parameter
+      operationId: get_items
+      parameters:
+        - name: status
+          in: query
+          description: Optional. The status to filter items by.
+          required: false
+          schema:
+            $ref: '#/components/schemas/FooStatus'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+        '400':
+          description: Invalid status supplied
+
+components:
+  schemas:
+    FooStatus:
+      type: string
+      enum:
+        - foo
+        - bar
+        - baz
+      description: Foo status enum
