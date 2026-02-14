@@ -8,4 +8,5 @@
 package components
 
 
+// A simple array type alias
 type Baz = []string

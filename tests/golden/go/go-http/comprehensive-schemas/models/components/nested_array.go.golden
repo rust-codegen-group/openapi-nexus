@@ -8,4 +8,5 @@
 package components
 
 
+// Array of arrays (nested)
 type NestedArray = [][]string

@@ -6,7 +6,6 @@ use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use http::Method;
 use minijinja::context;
 use tracing::error;
-use utoipa::openapi;
 
 use crate::ast::{
     TsDocComment, TsExpression, TsInterfaceDefinition, TsInterfaceSignature, TsParameter,
@@ -33,6 +32,7 @@ use openapi_nexus_core::data::StatusCode;
 use openapi_nexus_core::traits::FileCategory;
 use openapi_nexus_core::traits::OperationInfoExt as _;
 use openapi_nexus_core::traits::file_writer::FileInfo;
+use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference};
 
 /// Helper struct to hold all response template data
 struct ResponseTemplates {
@@ -75,7 +75,7 @@ impl ApiOperationGenerator {
         operations: &[OperationInfo],
         templating: &Templates,
         common_file_header: &CommonFileHeaderData,
-        components: Option<&openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<FileInfo, GeneratorError> {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let interface_name = format!("{}Interface", class_name);
@@ -217,7 +217,7 @@ impl ApiOperationGenerator {
     fn generate_operation_method_raw(
         &self,
         op_info: &OperationInfo,
-        components: Option<&openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<
         (
             ApiMethodData,
@@ -281,7 +281,7 @@ impl ApiOperationGenerator {
         &self,
         op_info: &OperationInfo,
         return_type_info: &ReturnTypeInfo,
-        components: Option<&openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<MethodTemplateData, GeneratorError> {
         // Derive method name and template name from operation info
         let method_name = format!("{}Raw", op_info.method_name());
@@ -340,7 +340,7 @@ impl ApiOperationGenerator {
         extracted: &ExtractedParameters,
         return_type_info: &ReturnTypeInfo,
         uses_request_object: bool,
-        components: Option<&openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<HttpParamData, GeneratorError> {
         // Extract body model name if body is an interface (has ToJSON function)
         let body_model_name = self
@@ -635,18 +635,22 @@ impl ApiOperationGenerator {
         let mut param_descriptions: HashMap<String, String> = HashMap::new();
 
         // Extract from operation parameters
-        if let Some(op_params) = &op_info.operation.parameters {
-            for param in op_params {
-                let desc = param.description.clone().unwrap_or_else(String::new);
+        for param_ref in &op_info.operation.parameters {
+            if let ObjectOrReference::Object(param) = param_ref {
+                let desc = param.description.clone().unwrap_or_default();
                 param_descriptions.insert(param.name.clone(), desc);
             }
         }
 
         // Extract from request body
-        if let Some(request_body) = &op_info.operation.request_body
-            && let Some(desc) = &request_body.description
-        {
-            param_descriptions.insert("body".to_string(), desc.clone());
+        if let Some(request_body_ref) = &op_info.operation.request_body {
+            let desc = match request_body_ref {
+                ObjectOrReference::Object(rb) => rb.description.clone(),
+                ObjectOrReference::Ref { description, .. } => description.clone(),
+            };
+            if let Some(desc) = desc {
+                param_descriptions.insert("body".to_string(), desc);
+            }
         }
 
         // Build @param annotations
@@ -742,10 +746,7 @@ impl ApiOperationGenerator {
     ///
     /// This method checks if multiple schema names map to the same PascalCase name.
     /// If duplicates are found, an error is returned to prevent code generation.
-    fn check_duplicate_schema_names(
-        &self,
-        components: &openapi::Components,
-    ) -> Result<(), GeneratorError> {
+    fn check_duplicate_schema_names(&self, components: &Components) -> Result<(), GeneratorError> {
         let mut pascal_to_originals: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
         for original_name in components.schemas.keys() {

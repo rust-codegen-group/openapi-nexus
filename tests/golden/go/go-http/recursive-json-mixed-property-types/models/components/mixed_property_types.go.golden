@@ -14,9 +14,9 @@ import (
 
 // Object with mixed property types
 type MixedPropertyTypes struct {
-	ArrayOfInline []string `json:"array_of_inline"`
-	InlineObject optionalnullable.OptionalNullable[string] `json:"inline_object,omitzero"`
-	NestedReference optionalnullable.OptionalNullable[string] `json:"nested_reference,omitzero"`
+	ArrayOfInline []interface{} `json:"array_of_inline"`
+	InlineObject optionalnullable.OptionalNullable[interface{}] `json:"inline_object,omitzero"`
+	NestedReference optionalnullable.OptionalNullable[interface{}] `json:"nested_reference,omitzero"`
 	SimpleNumber optionalnullable.OptionalNullable[string] `json:"simple_number,omitzero"`
 	SimpleString string `json:"simple_string"`
 }
@@ -36,25 +36,25 @@ func (c *MixedPropertyTypes) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *MixedPropertyTypes) GetArrayOfInline() []string {
+func (c *MixedPropertyTypes) GetArrayOfInline() []interface{} {
 	if c == nil {
-		var zero []string
+		var zero []interface{}
 		return zero
 	}
 	return c.ArrayOfInline
 }
 
-func (c *MixedPropertyTypes) GetInlineObject() optionalnullable.OptionalNullable[string] {
+func (c *MixedPropertyTypes) GetInlineObject() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.InlineObject
 }
 
-func (c *MixedPropertyTypes) GetNestedReference() optionalnullable.OptionalNullable[string] {
+func (c *MixedPropertyTypes) GetNestedReference() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.NestedReference

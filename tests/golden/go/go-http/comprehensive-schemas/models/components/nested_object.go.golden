@@ -14,8 +14,8 @@ import (
 
 // Object with nested object property
 type NestedObject struct {
-	Metadata optionalnullable.OptionalNullable[string] `json:"metadata,omitzero"`
-	User optionalnullable.OptionalNullable[string] `json:"user,omitzero"`
+	Metadata optionalnullable.OptionalNullable[interface{}] `json:"metadata,omitzero"`
+	User optionalnullable.OptionalNullable[interface{}] `json:"user,omitzero"`
 }
 
 func (c NestedObject) MarshalJSON() ([]byte, error) {
@@ -31,17 +31,17 @@ func (c *NestedObject) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *NestedObject) GetMetadata() optionalnullable.OptionalNullable[string] {
+func (c *NestedObject) GetMetadata() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.Metadata
 }
 
-func (c *NestedObject) GetUser() optionalnullable.OptionalNullable[string] {
+func (c *NestedObject) GetUser() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.User

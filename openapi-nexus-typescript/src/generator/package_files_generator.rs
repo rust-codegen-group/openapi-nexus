@@ -1,7 +1,7 @@
 //! Package file generators for npm package structure
 
 use heck::ToKebabCase as _;
-use utoipa::openapi::OpenApi;
+use openapi_nexus_ir::OpenApi;
 
 use crate::config::TypeScriptFetchConfig;
 use openapi_nexus_core::traits::file_writer::FileInfo;
@@ -22,8 +22,8 @@ impl<'a> PackageFilesGenerator<'a> {
     /// Returns keywords from `x-keywords` extension if present, otherwise None.
     /// If None is returned, default keywords should be used.
     fn extract_keywords(&self, openapi: &OpenApi) -> Option<Vec<String>> {
-        if let Some(extensions) = &openapi.info.extensions
-            && let Some(serde_json::Value::Array(keywords_array)) = extensions.get("x-keywords")
+        if let Some(serde_json::Value::Array(keywords_array)) =
+            openapi.info.extensions.get("x-keywords")
         {
             let keywords: Vec<String> = keywords_array
                 .iter()

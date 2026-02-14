@@ -14,8 +14,8 @@ import (
 
 // Object with inline object properties
 type InlineObjectTest struct {
-	Config optionalnullable.OptionalNullable[string] `json:"config,omitzero"`
-	Metadata string `json:"metadata"`
+	Config optionalnullable.OptionalNullable[interface{}] `json:"config,omitzero"`
+	Metadata interface{} `json:"metadata"`
 }
 
 func (c InlineObjectTest) MarshalJSON() ([]byte, error) {
@@ -32,17 +32,17 @@ func (c *InlineObjectTest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *InlineObjectTest) GetConfig() optionalnullable.OptionalNullable[string] {
+func (c *InlineObjectTest) GetConfig() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.Config
 }
 
-func (c *InlineObjectTest) GetMetadata() string {
+func (c *InlineObjectTest) GetMetadata() // Any {
 	if c == nil {
-		var zero string
+		var zero // Any
 		return zero
 	}
 	return c.Metadata

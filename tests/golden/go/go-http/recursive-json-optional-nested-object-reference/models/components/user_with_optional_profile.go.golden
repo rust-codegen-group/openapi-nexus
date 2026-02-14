@@ -14,7 +14,7 @@ import (
 
 // User with optional nested profile reference
 type UserWithOptionalProfile struct {
-	OptionalProfile optionalnullable.OptionalNullable[string] `json:"optional_profile,omitzero"`
+	OptionalProfile optionalnullable.OptionalNullable[interface{}] `json:"optional_profile,omitzero"`
 	UserId string `json:"user_id"`
 }
 
@@ -32,9 +32,9 @@ func (c *UserWithOptionalProfile) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *UserWithOptionalProfile) GetOptionalProfile() optionalnullable.OptionalNullable[string] {
+func (c *UserWithOptionalProfile) GetOptionalProfile() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.OptionalProfile

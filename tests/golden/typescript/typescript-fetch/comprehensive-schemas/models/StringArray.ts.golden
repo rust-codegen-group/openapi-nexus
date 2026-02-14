@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Array of strings */
 export type StringArray = Array<string>
 
 export function StringArrayFromJSON(json: any): StringArray {

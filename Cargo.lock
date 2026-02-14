@@ -1034,14 +1034,15 @@ dependencies = [
  "minijinja",
  "openapi-nexus-common",
  "openapi-nexus-config",
+ "openapi-nexus-ir",
  "openapi-nexus-parser",
+ "openapi-nexus-spec",
  "pretty",
  "serde",
  "serde_json",
  "serde_norway",
  "snafu",
  "tracing",
- "utoipa",
 ]
 
 [[package]]
@@ -1097,6 +1098,9 @@ dependencies = [
  "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "openapi-nexus-spec",
  "pretty",
  "serde",
  "serde_json",
@@ -1108,7 +1112,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-test",
- "utoipa",
 ]
 
 [[package]]
@@ -1117,6 +1120,8 @@ version = "0.0.3-alpha.1"
 dependencies = [
  "indexmap",
  "openapi-nexus-common",
+ "openapi-nexus-parser",
+ "openapi-nexus-spec",
  "serde",
  "snafu",
  "tempfile",
@@ -1128,6 +1133,7 @@ dependencies = [
 name = "openapi-nexus-parser"
 version = "0.0.3-alpha.1"
 dependencies = [
+ "openapi-nexus-spec",
  "serde",
  "serde_json",
  "serde_norway",
@@ -1140,6 +1146,7 @@ dependencies = [
 name = "openapi-nexus-plugin"
 version = "0.0.3-alpha.1"
 dependencies = [
+ "openapi-nexus-spec",
  "serde",
  "serde_json",
  "snafu",
@@ -1154,6 +1161,7 @@ dependencies = [
  "indexmap",
  "openapi-nexus-ir",
  "openapi-nexus-plugin",
+ "openapi-nexus-spec",
  "pretty",
  "serde",
  "snafu",
@@ -1184,9 +1192,10 @@ dependencies = [
  "indexmap",
  "openapi-nexus-common",
  "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "openapi-nexus-spec",
  "snafu",
  "tracing",
- "utoipa",
 ]
 
 [[package]]
@@ -1203,6 +1212,9 @@ dependencies = [
  "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "openapi-nexus-spec",
  "pretty",
  "serde",
  "serde_json",
@@ -1215,7 +1227,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-test",
- "utoipa",
 ]
 
 [[package]]

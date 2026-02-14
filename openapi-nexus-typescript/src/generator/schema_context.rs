@@ -6,7 +6,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::ast::TsTypeDefinition;
-use utoipa::openapi::{RefOr, Schema};
+use openapi_nexus_spec::oas31::spec::{ObjectOrReference, ObjectSchema};
 
 /// Context for schema resolution with reference tracking
 ///
@@ -14,7 +14,7 @@ use utoipa::openapi::{RefOr, Schema};
 /// to prevent circular dependency issues during reference resolution.
 pub struct SchemaContext<'a> {
     /// All available schemas from components. Key is the original name of the schema.
-    pub schemas: &'a BTreeMap<String, RefOr<Schema>>,
+    pub schemas: &'a BTreeMap<String, ObjectOrReference<ObjectSchema>>,
     /// Track visited schemas to prevent circular dependencies
     pub visited: &'a mut HashSet<String>,
     /// Current resolution depth (for debugging)
@@ -28,7 +28,7 @@ pub struct SchemaContext<'a> {
 impl<'a> SchemaContext<'a> {
     /// Create a new schema context with empty visited set
     pub fn new(
-        schemas: &'a BTreeMap<String, RefOr<Schema>>,
+        schemas: &'a BTreeMap<String, ObjectOrReference<ObjectSchema>>,
         visited: &'a mut HashSet<String>,
         inline_interfaces: &'a mut HashMap<String, TsTypeDefinition>,
         enum_discriminators: &'a mut HashMap<String, (String, String)>,

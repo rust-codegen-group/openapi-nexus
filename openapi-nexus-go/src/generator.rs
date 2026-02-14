@@ -6,8 +6,6 @@ use std::error::Error;
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 use minijinja::context;
 use tracing::warn;
-use utoipa::openapi;
-use utoipa::openapi::OpenApi;
 
 use crate::ast::GoStruct;
 use crate::ast::ty::GoTypeDefinition;
@@ -28,6 +26,8 @@ use openapi_nexus_core::traits::OpenApiRefExt as _;
 use openapi_nexus_core::traits::ToRcDoc;
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
+use openapi_nexus_ir::OpenApi;
+use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference};
 
 /// Go HTTP code generator
 #[derive(Debug, Clone)]
@@ -76,7 +76,7 @@ impl GoHttpCodeGenerator {
     fn convert_parameter(
         &self,
         param: &ParameterInfo,
-        components: Option<&utoipa::openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<GoParameterInfo, GeneratorError> {
         // Convert schema to Go type
         let go_type = if let Some(schema_ref) = &param.schema {
@@ -136,7 +136,7 @@ impl GoHttpCodeGenerator {
         &self,
         api: &ApiMethodData,
         operations: &[OperationInfo],
-        components: Option<&utoipa::openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<GoApiMethodData, GeneratorError> {
         // Find matching operation for additional details
         let op_info = operations
@@ -167,8 +167,11 @@ impl GoHttpCodeGenerator {
         let request_body_content_type = api
             .request_body
             .as_ref()
+            .and_then(|rb_ref| match rb_ref {
+                ObjectOrReference::Object(rb) => Some(rb),
+                ObjectOrReference::Ref { .. } => None,
+            })
             .and_then(|rb| {
-                // Prefer application/json, but use first available content type
                 rb.content
                     .get("application/json")
                     .map(|_| "application/json")
@@ -181,23 +184,18 @@ impl GoHttpCodeGenerator {
         let request_body_type = api
             .request_body
             .as_ref()
+            .and_then(|rb_ref| match rb_ref {
+                ObjectOrReference::Object(rb) => Some(rb),
+                ObjectOrReference::Ref { .. } => None,
+            })
             .and_then(|rb| rb.content.get("application/json"))
             .and_then(|json_content| json_content.schema.as_ref())
-            .map(|schema_ref| {
-                match schema_ref {
-                    // For inline schemas, generate a new type name
-                    openapi::RefOr::T(_) => format!("{}Request", method_name),
-                    // For references, extract schema name using OpenApiRefExt trait
-                    openapi::RefOr::Ref(reference) => {
-                        // Use schema_name() method for consistent extraction
-                        if let Some(schema_name) = reference.schema_name() {
-                            schema_name.to_pascal_case()
-                        } else {
-                            // Fallback to method name + Request if we can't extract the schema name
-                            format!("{}Request", method_name)
-                        }
-                    }
-                }
+            .map(|schema_ref| match schema_ref {
+                ObjectOrReference::Object(_) => format!("{}Request", method_name),
+                ObjectOrReference::Ref { .. } => schema_ref
+                    .schema_name()
+                    .map(|n| n.to_pascal_case())
+                    .unwrap_or_else(|| format!("{}Request", method_name)),
             });
 
         Ok(GoApiMethodData {
@@ -431,7 +429,7 @@ impl GoHttpCodeGenerator {
     fn process_model(
         &self,
         model: &ModelData,
-        components: &utoipa::openapi::Components,
+        components: &Components,
         header_data: &HeaderData,
         common_header: &CommonFileHeaderData,
         module_path: &str,
@@ -531,7 +529,7 @@ impl GoHttpCodeGenerator {
     fn generate_request_body_models(
         &self,
         apis: &[ApiMethodData],
-        components: Option<&utoipa::openapi::Components>,
+        components: Option<&Components>,
         header_data: &HeaderData,
         common_header: &CommonFileHeaderData,
         module_path: &str,
@@ -539,8 +537,7 @@ impl GoHttpCodeGenerator {
         let mut files = Vec::new();
 
         for api in apis {
-            // Extract inline request body schema
-            let Some(request_body) = &api.request_body else {
+            let Some(ObjectOrReference::Object(request_body)) = &api.request_body else {
                 continue;
             };
             let Some(json_content) = request_body.content.get("application/json") else {
@@ -551,22 +548,20 @@ impl GoHttpCodeGenerator {
             };
 
             // Only generate a new model if it's an inline schema (not a reference)
-            // If it's a reference, the model already exists and will be used directly
-            let openapi::RefOr::T(_) = schema_ref else {
+            let ObjectOrReference::Object(inline_schema) = schema_ref else {
                 continue;
             };
 
             let method_name = api.method_name.to_pascal_case();
             let request_type_name = format!("{}Request", method_name);
 
-            // Generate model for request body
             let Some(components_ref) = components else {
                 continue;
             };
 
             let model_data = ModelData {
                 name: request_type_name.clone(),
-                schema: schema_ref.clone(),
+                schema: ObjectOrReference::Object(inline_schema.clone()),
             };
 
             if let Ok(file_info) = self.process_model(

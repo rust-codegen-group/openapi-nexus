@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Array with minimum items constraint */
 export type ArrayWithMinItems = Array<string>
 
 export function ArrayWithMinItemsFromJSON(json: any): ArrayWithMinItems {

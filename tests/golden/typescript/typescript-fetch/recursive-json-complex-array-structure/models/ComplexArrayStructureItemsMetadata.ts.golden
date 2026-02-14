@@ -11,23 +11,23 @@
  * Do not edit the file manually.
  */
 
-export interface ComplexArrayStructureMetadata {
+export interface ComplexArrayStructureItemsMetadata {
   createdAt?: string,
   tags?: Array<string>,
 }
 
-export function instanceOfComplexArrayStructureMetadata(value: unknown): value is ComplexArrayStructureMetadata {
+export function instanceOfComplexArrayStructureItemsMetadata(value: unknown): value is ComplexArrayStructureItemsMetadata {
   if (!value || typeof value !== "object") {
     return false;
   }
   return true;
 }
 
-export function ComplexArrayStructureMetadataFromJSON(json: any): ComplexArrayStructureMetadata {
-  return ComplexArrayStructureMetadataFromJSONTyped(json, false);
+export function ComplexArrayStructureItemsMetadataFromJSON(json: any): ComplexArrayStructureItemsMetadata {
+  return ComplexArrayStructureItemsMetadataFromJSONTyped(json, false);
 }
 
-export function ComplexArrayStructureMetadataFromJSONTyped(json: any, ignoreDiscriminator: boolean): ComplexArrayStructureMetadata {
+export function ComplexArrayStructureItemsMetadataFromJSONTyped(json: any, ignoreDiscriminator: boolean): ComplexArrayStructureItemsMetadata {
   if (json == null) {
     return json;
   }
@@ -37,11 +37,11 @@ export function ComplexArrayStructureMetadataFromJSONTyped(json: any, ignoreDisc
   };
 }
 
-export function ComplexArrayStructureMetadataToJSON(value?: ComplexArrayStructureMetadata | null): any {
-  return ComplexArrayStructureMetadataToJSONTyped(value, false);
+export function ComplexArrayStructureItemsMetadataToJSON(value?: ComplexArrayStructureItemsMetadata | null): any {
+  return ComplexArrayStructureItemsMetadataToJSONTyped(value, false);
 }
 
-export function ComplexArrayStructureMetadataToJSONTyped(value?: ComplexArrayStructureMetadata | null, ignoreDiscriminator: boolean = false): any {
+export function ComplexArrayStructureItemsMetadataToJSONTyped(value?: ComplexArrayStructureItemsMetadata | null, ignoreDiscriminator: boolean = false): any {
   if (value == null) {
     return value;
   }
@@ -51,7 +51,7 @@ export function ComplexArrayStructureMetadataToJSONTyped(value?: ComplexArrayStr
   };
 }
 
-export const ComplexArrayStructureMetadataPropertyValidationAttributesMap: {
+export const ComplexArrayStructureItemsMetadataPropertyValidationAttributesMap: {
   [property: string]: {
     maxLength?: number,
     minLength?: number,

@@ -8,4 +8,5 @@
 package components
 
 
+// Array of strings
 type StringArray = []string

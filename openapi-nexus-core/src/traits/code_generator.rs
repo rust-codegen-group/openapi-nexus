@@ -5,7 +5,7 @@ use std::error::Error;
 
 use heck::ToKebabCase as _;
 use http::Method;
-use utoipa::openapi::OpenApi;
+use openapi_nexus_ir::OpenApi;
 
 use crate::data::{ApiMethodData, ModelData, OperationInfo, ReadmeData, RuntimeData};
 use crate::traits::file_writer::FileInfo;
@@ -96,29 +96,35 @@ pub trait CodeGenerator {
         let mut tag_operations = HashMap::new();
         let default_tags = vec!["default".to_string()];
 
-        for (path, path_item) in &openapi.paths.paths {
-            let methods = [
-                (Method::GET, path_item.get.as_ref()),
-                (Method::POST, path_item.post.as_ref()),
-                (Method::PUT, path_item.put.as_ref()),
-                (Method::DELETE, path_item.delete.as_ref()),
-                (Method::PATCH, path_item.patch.as_ref()),
-                (Method::OPTIONS, path_item.options.as_ref()),
-                (Method::HEAD, path_item.head.as_ref()),
-            ];
+        if let Some(paths) = &openapi.paths {
+            for (path, path_item) in paths {
+                let methods = [
+                    (Method::GET, path_item.get.as_ref()),
+                    (Method::POST, path_item.post.as_ref()),
+                    (Method::PUT, path_item.put.as_ref()),
+                    (Method::DELETE, path_item.delete.as_ref()),
+                    (Method::PATCH, path_item.patch.as_ref()),
+                    (Method::OPTIONS, path_item.options.as_ref()),
+                    (Method::HEAD, path_item.head.as_ref()),
+                ];
 
-            for (method, operation_opt) in methods {
-                if let Some(operation) = operation_opt {
-                    let tags = operation.tags.as_ref().unwrap_or(&default_tags);
-                    for tag in tags {
-                        tag_operations
-                            .entry(tag.clone())
-                            .or_insert_with(Vec::new)
-                            .push(OperationInfo {
-                                path: path.clone(),
-                                method: method.clone(),
-                                operation: operation.clone(),
-                            });
+                for (method, operation_opt) in methods {
+                    if let Some(operation) = operation_opt {
+                        let tags = if operation.tags.is_empty() {
+                            &default_tags
+                        } else {
+                            &operation.tags
+                        };
+                        for tag in tags {
+                            tag_operations
+                                .entry(tag.clone())
+                                .or_insert_with(Vec::new)
+                                .push(OperationInfo {
+                                    path: path.clone(),
+                                    method: method.clone(),
+                                    operation: operation.clone(),
+                                });
+                        }
                     }
                 }
             }

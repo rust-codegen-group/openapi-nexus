@@ -1,8 +1,7 @@
 //! Traversal utilities for OpenAPI specifications
 
-use utoipa::openapi::{
-    OpenApi, Paths, RefOr, Response, Schema,
-    path::{Operation, Parameter},
+use crate::{
+    ObjectOrReference, ObjectSchema, OpenApi, Operation, Parameter, Paths, RefOr, Response,
 };
 
 /// Visitor pattern for traversing OpenAPI specifications
@@ -25,7 +24,11 @@ pub trait OpenApiVisitor {
     }
 
     /// Visit a schema definition
-    fn visit_schema(&mut self, _name: &str, _schema: &RefOr<Schema>) -> Result<(), Self::Error> {
+    fn visit_schema(
+        &mut self,
+        _name: &str,
+        _schema: &ObjectOrReference<ObjectSchema>,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 
@@ -58,34 +61,36 @@ impl OpenApiTraverser {
         visitor.visit_openapi(openapi)?;
 
         // Visit paths
-        visitor.visit_paths(&openapi.paths)?;
+        if let Some(paths) = &openapi.paths {
+            visitor.visit_paths(paths)?;
 
-        // Visit all operations
-        for (path, path_item) in &openapi.paths.paths {
-            // Visit each HTTP method operation
-            if let Some(op) = &path_item.get {
-                visitor.visit_operation(path, op)?;
-            }
-            if let Some(op) = &path_item.post {
-                visitor.visit_operation(path, op)?;
-            }
-            if let Some(op) = &path_item.put {
-                visitor.visit_operation(path, op)?;
-            }
-            if let Some(op) = &path_item.delete {
-                visitor.visit_operation(path, op)?;
-            }
-            if let Some(op) = &path_item.patch {
-                visitor.visit_operation(path, op)?;
-            }
-            if let Some(op) = &path_item.head {
-                visitor.visit_operation(path, op)?;
-            }
-            if let Some(op) = &path_item.options {
-                visitor.visit_operation(path, op)?;
-            }
-            if let Some(op) = &path_item.trace {
-                visitor.visit_operation(path, op)?;
+            // Visit all operations
+            for (path, path_item) in paths {
+                // Visit each HTTP method operation
+                if let Some(op) = &path_item.get {
+                    visitor.visit_operation(path, op)?;
+                }
+                if let Some(op) = &path_item.post {
+                    visitor.visit_operation(path, op)?;
+                }
+                if let Some(op) = &path_item.put {
+                    visitor.visit_operation(path, op)?;
+                }
+                if let Some(op) = &path_item.delete {
+                    visitor.visit_operation(path, op)?;
+                }
+                if let Some(op) = &path_item.patch {
+                    visitor.visit_operation(path, op)?;
+                }
+                if let Some(op) = &path_item.head {
+                    visitor.visit_operation(path, op)?;
+                }
+                if let Some(op) = &path_item.options {
+                    visitor.visit_operation(path, op)?;
+                }
+                if let Some(op) = &path_item.trace {
+                    visitor.visit_operation(path, op)?;
+                }
             }
         }
 
@@ -111,26 +116,21 @@ impl OpenApiTraverser {
 
 #[cfg(test)]
 mod tests {
-    use utoipa::openapi::schema::Object;
-    use utoipa::openapi::{Components, Info, OpenApi, Paths, RefOr, Schema};
-
     use super::*;
+    use crate::{ObjectSchema, OpenApi};
 
     fn create_test_openapi() -> OpenApi {
-        let mut components = Components::new();
-
-        // Add a simple schema
-        let user_schema = Object::new();
-        components
-            .schemas
-            .insert("User".to_string(), RefOr::T(Schema::Object(user_schema)));
-
-        let info = Info::new("Test API", "1.0.0");
-        let paths = Paths::new();
-
-        let mut openapi = OpenApi::new(info, paths);
-        openapi.components = Some(components);
-        openapi
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  schemas:
+    User:
+      type: object
+"#;
+        openapi_nexus_parser::parse_content_yaml(yaml).unwrap()
     }
 
     #[test]
@@ -148,7 +148,7 @@ mod tests {
             fn visit_schema(
                 &mut self,
                 name: &str,
-                _schema: &RefOr<Schema>,
+                _schema: &ObjectOrReference<ObjectSchema>,
             ) -> Result<(), Self::Error> {
                 assert_eq!(name, "User");
                 self.schema_count += 1;
@@ -158,7 +158,7 @@ mod tests {
             fn visit_operation(
                 &mut self,
                 _path: &str,
-                _operation: &utoipa::openapi::path::Operation,
+                _operation: &Operation,
             ) -> Result<(), Self::Error> {
                 self.operation_count += 1;
                 Ok(())
@@ -174,7 +174,7 @@ mod tests {
         assert!(result.is_ok());
 
         assert_eq!(visitor.schema_count, 1);
-        assert_eq!(visitor.operation_count, 0); // No operations in test OpenAPI
+        assert_eq!(visitor.operation_count, 0);
     }
 
     #[test]
@@ -189,7 +189,7 @@ mod tests {
             fn visit_schema(
                 &mut self,
                 _name: &str,
-                _schema: &RefOr<Schema>,
+                _schema: &ObjectOrReference<ObjectSchema>,
             ) -> Result<(), Self::Error> {
                 Err(crate::error::IrError::AnalysisError {
                     message: "Test error".to_string(),

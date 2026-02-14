@@ -13,7 +13,7 @@ import (
 
 // Object with array that can be empty
 type EmptyArrayTest struct {
-	EmptyItems []string `json:"empty_items"`
+	EmptyItems []interface{} `json:"empty_items"`
 }
 
 func (c EmptyArrayTest) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *EmptyArrayTest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *EmptyArrayTest) GetEmptyItems() []string {
+func (c *EmptyArrayTest) GetEmptyItems() []interface{} {
 	if c == nil {
-		var zero []string
+		var zero []interface{}
 		return zero
 	}
 	return c.EmptyItems

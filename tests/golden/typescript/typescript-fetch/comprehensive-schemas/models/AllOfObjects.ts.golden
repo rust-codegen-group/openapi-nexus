@@ -12,6 +12,7 @@
  */
 import { type BasicObject, BasicObjectFromJSONTyped, BasicObjectToJSONTyped } from './BasicObject';
 
+/** Intersection of object types (merge) */
 export type AllOfObjects = { metadata: string } & BasicObject
 
 export function AllOfObjectsFromJSON(json: any): AllOfObjects {

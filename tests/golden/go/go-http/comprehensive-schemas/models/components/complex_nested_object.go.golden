@@ -13,7 +13,7 @@ import (
 
 type ComplexNestedObject struct {
 	Id string `json:"id"`
-	User string `json:"user"`
+	User interface{} `json:"user"`
 }
 
 func (c ComplexNestedObject) MarshalJSON() ([]byte, error) {
@@ -39,9 +39,9 @@ func (c *ComplexNestedObject) GetId() string {
 	return c.Id
 }
 
-func (c *ComplexNestedObject) GetUser() string {
+func (c *ComplexNestedObject) GetUser() // Any {
 	if c == nil {
-		var zero string
+		var zero // Any
 		return zero
 	}
 	return c.User

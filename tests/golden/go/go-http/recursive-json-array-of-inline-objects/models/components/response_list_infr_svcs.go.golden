@@ -13,7 +13,7 @@ import (
 
 // Response containing a list of inference services - main test case for recursive JSON parsing
 type ResponseListInfrSvcs struct {
-	InferenceServices []string `json:"inference_services"`
+	InferenceServices []interface{} `json:"inference_services"`
 }
 
 func (c ResponseListInfrSvcs) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *ResponseListInfrSvcs) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *ResponseListInfrSvcs) GetInferenceServices() []string {
+func (c *ResponseListInfrSvcs) GetInferenceServices() []interface{} {
 	if c == nil {
-		var zero []string
+		var zero []interface{}
 		return zero
 	}
 	return c.InferenceServices

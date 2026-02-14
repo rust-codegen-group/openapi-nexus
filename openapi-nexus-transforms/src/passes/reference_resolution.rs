@@ -1,8 +1,8 @@
 //! Reference resolution transformation pass
 
-use utoipa::openapi::OpenApi;
-
 use super::{OpenApiTransformPass, TransformError, TransformPass};
+use openapi_nexus_ir::OpenApi;
+use openapi_nexus_spec::oas31::spec::ObjectOrReference;
 
 /// Reference resolution transformation pass
 pub struct ReferenceResolutionPass;
@@ -30,23 +30,21 @@ impl OpenApiTransformPass for ReferenceResolutionPass {
         // Use ReferenceResolver from openapi-nexus-ir
         use openapi_nexus_ir::ReferenceResolver;
 
-        let resolver = ReferenceResolver::new(openapi);
+        let resolver = ReferenceResolver::new(&*openapi);
 
         // For now, just validate that references can be resolved
         // Full resolution would require deep cloning and replacement
         // which is complex with the utoipa types
         if let Some(components) = &openapi.components {
             for (name, schema_ref) in &components.schemas {
-                if let utoipa::openapi::RefOr::Ref(ref_ref) = schema_ref {
-                    let ref_location = &ref_ref.ref_location;
-                    if ref_location.starts_with("#/components/schemas/") {
-                        let schema_name = ref_location.trim_start_matches("#/components/schemas/");
-                        tracing::debug!("Found reference {} -> {}", name, schema_name);
+                if let ObjectOrReference::Ref { ref_path, .. } = schema_ref
+                    && ref_path.starts_with("#/components/schemas/")
+                {
+                    let schema_name = ref_path.trim_start_matches("#/components/schemas/");
+                    tracing::debug!("Found reference {} -> {}", name, schema_name);
 
-                        // Validate the reference exists
-                        if let Err(e) = resolver.resolve_schema_ref(ref_location) {
-                            tracing::warn!("Invalid reference {}: {}", ref_location, e);
-                        }
+                    if let Err(e) = resolver.resolve_schema_ref(ref_path) {
+                        tracing::warn!("Invalid reference {}: {}", ref_path, e);
                     }
                 }
             }
@@ -69,7 +67,7 @@ impl TransformPass for ReferenceResolutionPass {
 #[cfg(test)]
 mod tests {
     use super::{OpenApiTransformPass, ReferenceResolutionPass};
-    use utoipa::openapi::{Info, OpenApi, Paths};
+    use openapi_nexus_ir::OpenApi;
 
     #[test]
     fn test_reference_resolution_pass_name() {
@@ -87,7 +85,13 @@ mod tests {
     #[test]
     fn test_reference_resolution_pass_transform() {
         let pass = ReferenceResolutionPass::new();
-        let mut openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+"#;
+        let mut openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
 
         // Should not panic or error on empty OpenAPI
         assert!(OpenApiTransformPass::transform(&pass, &mut openapi).is_ok());

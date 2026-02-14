@@ -5,15 +5,15 @@ use std::collections::BTreeMap;
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use serde::{Deserialize, Serialize};
 use tracing::error;
-use utoipa::openapi;
 
 use crate::data::api_method_data::ApiMethodData;
 use crate::data::parameter_info::ParameterInfo;
 use crate::data::{HttpResponse, StatusCode};
 use crate::serde::http_method;
-use crate::traits::OpenApiParameterExt as _;
-use crate::traits::OpenApiRefExt as _;
 use crate::traits::OperationInfoExt;
+use openapi_nexus_spec::oas31::spec::{
+    Components, ObjectOrReference, ObjectSchema, Operation, Parameter, ParameterIn,
+};
 
 /// Operation information for grouping by tag
 #[derive(Clone, Serialize, Deserialize)]
@@ -21,7 +21,7 @@ pub struct OperationInfo {
     pub path: String,
     #[serde(with = "http_method")]
     pub method: http::Method,
-    pub operation: openapi::path::Operation,
+    pub operation: Operation,
 }
 
 impl OperationInfoExt for OperationInfo {
@@ -41,18 +41,23 @@ impl OperationInfoExt for OperationInfo {
         }
     }
 
-    fn parameters(&self) -> Vec<openapi::path::Parameter> {
-        if let Some(parameters) = &self.operation.parameters {
-            parameters.clone()
-        } else {
-            Vec::new()
-        }
+    fn parameters(&self) -> Vec<Parameter> {
+        self.operation
+            .parameters
+            .iter()
+            .filter_map(|param_ref| {
+                match param_ref {
+                    ObjectOrReference::Object(param) => Some(param.clone()),
+                    ObjectOrReference::Ref { .. } => None, // TODO: Resolve references
+                }
+            })
+            .collect()
     }
 }
 
 impl OperationInfo {
     /// Convert to ApiMethodData with optional Components for schema resolution
-    pub fn to_api_method_data(&self, components: Option<&openapi::Components>) -> ApiMethodData {
+    pub fn to_api_method_data(&self, _components: Option<&Components>) -> ApiMethodData {
         let method_name = self.method_name();
 
         // Extract parameters
@@ -60,33 +65,39 @@ impl OperationInfo {
         let mut query_params = Vec::new();
         let mut header_params = Vec::new();
 
-        if let Some(params) = &self.operation.parameters {
-            for param in params {
-                // Extract schema from parameter
-                let schema = param.schema.clone();
-
-                let required = param.required();
-                let deprecated = param.deprecated();
-
-                // Extract default value from schema
-                let default_value = param.default_value(components);
-
-                let param_info = ParameterInfo {
-                    original_name: param.name.clone(),
-                    param_name: param.name.clone(),
-                    schema,
-                    required,
-                    deprecated,
-                    description: param.description.clone(),
-                    default_value,
-                    location: param.parameter_in.clone().into(),
-                };
-                match param.parameter_in {
-                    openapi::path::ParameterIn::Path => path_params.push(param_info),
-                    openapi::path::ParameterIn::Query => query_params.push(param_info),
-                    openapi::path::ParameterIn::Header => header_params.push(param_info),
-                    openapi::path::ParameterIn::Cookie => header_params.push(param_info), // Treat cookie as header
+        for param_ref in &self.operation.parameters {
+            let param = match param_ref {
+                ObjectOrReference::Object(param) => param,
+                ObjectOrReference::Ref { .. } => {
+                    // TODO: Resolve parameter references
+                    continue;
                 }
+            };
+
+            // Extract schema from parameter
+            let schema = param.schema.clone();
+
+            let required = param.required.unwrap_or(false);
+            let deprecated = param.deprecated.unwrap_or(false);
+
+            // Extract default value from schema
+            let default_value = None; // TODO: Extract from schema
+
+            let param_info = ParameterInfo {
+                original_name: param.name.clone(),
+                param_name: param.name.clone(),
+                schema,
+                required,
+                deprecated,
+                description: param.description.clone(),
+                default_value,
+                location: param.location.into(),
+            };
+            match param.location {
+                ParameterIn::Path => path_params.push(param_info),
+                ParameterIn::Query => query_params.push(param_info),
+                ParameterIn::Header => header_params.push(param_info),
+                ParameterIn::Cookie => header_params.push(param_info), // Treat cookie as header
             }
         }
 
@@ -101,14 +112,14 @@ impl OperationInfo {
             header_params,
             request_body: self.operation.request_body.clone(),
             return_type,
-            has_auth: self.operation.security.is_some(),
+            has_auth: !self.operation.security.is_empty(),
             has_error_handling: true,
         }
     }
 
     pub fn collect_responses(
         &self,
-        components: Option<&openapi::Components>,
+        _components: Option<&Components>,
     ) -> (
         BTreeMap<StatusCode, HttpResponse>,
         BTreeMap<StatusCode, HttpResponse>,
@@ -118,26 +129,27 @@ impl OperationInfo {
         let mut error = BTreeMap::new();
         let mut default_response = None;
 
-        for (status_code, response_ref) in &self.operation.responses.responses {
-            let status = StatusCode::new(status_code);
-            let response = match response_ref {
-                openapi::RefOr::T(response) => HttpResponse::from_openapi(status.clone(), response),
-                openapi::RefOr::Ref(reference) => {
-                    if let Some(resolved) = reference.resolve_response(components) {
-                        HttpResponse::from_openapi(status.clone(), resolved)
-                    } else {
-                        error!(%status, ?reference, "Failed to resolve response reference.");
+        if let Some(responses) = &self.operation.responses {
+            for (status_code, response_ref) in responses {
+                let status = StatusCode::new(status_code);
+                let response = match response_ref {
+                    ObjectOrReference::Object(response) => {
+                        HttpResponse::from_openapi(status.clone(), response)
+                    }
+                    ObjectOrReference::Ref { ref_path, .. } => {
+                        // TODO: Resolve response references
+                        error!(%status, %ref_path, "Failed to resolve response reference.");
                         continue;
                     }
-                }
-            };
+                };
 
-            if status.is_default() {
-                default_response = Some(response);
-            } else if response.is_success() {
-                success.insert(status, response);
-            } else {
-                error.insert(status, response);
+                if status.is_default() {
+                    default_response = Some(response);
+                } else if response.is_success() {
+                    success.insert(status, response);
+                } else {
+                    error.insert(status, response);
+                }
             }
         }
 
@@ -147,14 +159,16 @@ impl OperationInfo {
 
 /// Extract return type from operation responses
 fn extract_return_type_from_responses(
-    operation: &openapi::path::Operation,
-) -> Option<openapi::RefOr<openapi::schema::Schema>> {
-    for (status_code, response_ref) in operation.responses.responses.iter() {
-        if status_code.starts_with('2')
-            && let openapi::RefOr::T(response) = response_ref
-            && let Some(json_content) = response.content.get("application/json")
-        {
-            return json_content.schema.clone();
+    operation: &Operation,
+) -> Option<ObjectOrReference<ObjectSchema>> {
+    if let Some(responses) = &operation.responses {
+        for (status_code, response_ref) in responses {
+            if status_code.starts_with('2')
+                && let ObjectOrReference::Object(response) = response_ref
+                && let Some(json_content) = response.content.get("application/json")
+            {
+                return json_content.schema.clone();
+            }
         }
     }
     None

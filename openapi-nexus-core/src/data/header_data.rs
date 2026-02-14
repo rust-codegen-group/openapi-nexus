@@ -1,7 +1,7 @@
 //! Header data for template generation
 
+use openapi_nexus_ir::OpenApi;
 use serde::{Deserialize, Serialize};
-use utoipa::openapi;
 
 /// Header data for template generation
 #[derive(Clone, Serialize, Deserialize)]
@@ -12,7 +12,7 @@ pub struct HeaderData {
 }
 
 impl HeaderData {
-    pub fn from_openapi(openapi: &openapi::OpenApi) -> Self {
+    pub fn from_openapi(openapi: &OpenApi) -> Self {
         Self {
             title: openapi.info.title.clone(),
             description: openapi.info.description.clone(),

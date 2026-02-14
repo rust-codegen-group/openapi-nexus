@@ -13,7 +13,7 @@ import (
 
 // Array of inline objects with reference property
 type ArrayWithReferenceProperty struct {
-	Items []string `json:"items"`
+	Items []interface{} `json:"items"`
 }
 
 func (c ArrayWithReferenceProperty) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *ArrayWithReferenceProperty) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *ArrayWithReferenceProperty) GetItems() []string {
+func (c *ArrayWithReferenceProperty) GetItems() []interface{} {
 	if c == nil {
-		var zero []string
+		var zero []interface{}
 		return zero
 	}
 	return c.Items

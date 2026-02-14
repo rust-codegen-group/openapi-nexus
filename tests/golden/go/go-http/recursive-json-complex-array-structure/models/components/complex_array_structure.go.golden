@@ -13,7 +13,7 @@ import (
 
 // Array of inline objects with nested inline objects and arrays
 type ComplexArrayStructure struct {
-	Items []string `json:"items"`
+	Items []interface{} `json:"items"`
 }
 
 func (c ComplexArrayStructure) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *ComplexArrayStructure) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *ComplexArrayStructure) GetItems() []string {
+func (c *ComplexArrayStructure) GetItems() []interface{} {
 	if c == nil {
-		var zero []string
+		var zero []interface{}
 		return zero
 	}
 	return c.Items

@@ -14,7 +14,8 @@ heck.workspace = true
 indexmap.workspace = true
 snafu.workspace = true
 tracing.workspace = true
-utoipa.workspace = true
 
 openapi-nexus-common.workspace = true
 openapi-nexus-ir.workspace = true
+openapi-nexus-parser.workspace = true
+openapi-nexus-spec.workspace = true

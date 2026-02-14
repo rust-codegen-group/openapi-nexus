@@ -8,4 +8,5 @@
 package components
 
 
-type ObjectArray = []string
+// Array of objects
+type ObjectArray = []interface{}

@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Any of multiple types */
 export type AnyOfTypes = string | number
 
 export function AnyOfTypesFromJSON(json: any): AnyOfTypes {

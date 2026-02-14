@@ -4,7 +4,7 @@
 //! which correspond to Serde's tagged enum representations.
 
 use heck::ToPascalCase as _;
-use utoipa::openapi::{RefOr, Schema};
+use openapi_nexus_spec::oas31::spec::{ObjectOrReference, ObjectSchema};
 
 /// Tagged enum pattern types
 ///
@@ -80,59 +80,45 @@ impl TaggedEnumPattern {
     /// - Adjacently tagged: Object with exactly 2 properties - one string enum (tag) and one object/ref (content)
     /// - Internally tagged: allOf schema with a string enum property (tag field)
     /// - Untagged: Schema reference to a component schema
-    pub fn detect_from_schema(schema_ref: &RefOr<Schema>) -> Option<Self> {
+    pub fn detect_from_schema(schema_ref: &ObjectOrReference<ObjectSchema>) -> Option<Self> {
         match schema_ref {
-            // Externally tagged: single property with the variant name as key
-            RefOr::T(Schema::Object(obj_schema)) if obj_schema.properties.len() == 1 => {
-                if let Some((prop_name, _)) = obj_schema.properties.iter().next() {
-                    // Check if this property is required (typical for externally tagged)
-                    if obj_schema.required.contains(prop_name) {
-                        let variant_name = prop_name.to_pascal_case();
-                        return Some(TaggedEnumPattern::ExternallyTagged { variant_name });
-                    }
+            ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 1 => {
+                if let Some((prop_name, _)) = obj_schema.properties.iter().next()
+                    && obj_schema.required.contains(prop_name)
+                {
+                    let variant_name = prop_name.to_pascal_case();
+                    return Some(TaggedEnumPattern::ExternallyTagged { variant_name });
                 }
             }
-            // Adjacently tagged: object with exactly 2 properties
-            // One should be a string enum (tag field), the other should be an object/ref (content field)
-            RefOr::T(Schema::Object(obj_schema)) if obj_schema.properties.len() == 2 => {
+            ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 2 => {
                 let mut tag_field: Option<String> = None;
                 let mut content_field: Option<String> = None;
                 let mut enum_value: Option<String> = None;
 
-                // Find the tag field (string enum) and content field (object/ref)
                 for (prop_name, prop_schema) in &obj_schema.properties {
-                    if let RefOr::T(Schema::Object(prop_obj)) = prop_schema {
-                        // Check if this is a string enum (tag field)
-                        if let Some(enum_values) = &prop_obj.enum_values
-                            && let Some(serde_json::Value::String(enum_val)) = enum_values.first()
-                        {
-                            tag_field = Some(prop_name.clone());
-                            enum_value = Some(enum_val.clone());
-                            continue;
-                        }
+                    if let ObjectOrReference::Object(prop_obj) = prop_schema
+                        && !prop_obj.enum_values.is_empty()
+                        && let Some(serde_json::Value::String(enum_val)) =
+                            prop_obj.enum_values.first()
+                    {
+                        tag_field = Some(prop_name.clone());
+                        enum_value = Some(enum_val.clone());
+                        continue;
                     }
-                    // Check if this is an object with properties or a reference (content field)
-                    // Skip if we already identified this as the tag field (checked above with continue)
                     match prop_schema {
-                        RefOr::T(Schema::Object(content_obj)) => {
-                            // Only consider it a content field if it doesn't have enum_values
-                            // (we already checked for enum_values above and used continue if found)
-                            // and it has properties (indicating it's an object schema, not a primitive)
-                            if content_obj.enum_values.is_none()
+                        ObjectOrReference::Object(content_obj) => {
+                            if content_obj.enum_values.is_empty()
                                 && !content_obj.properties.is_empty()
                             {
                                 content_field = Some(prop_name.clone());
                             }
                         }
-                        RefOr::Ref(_) => {
-                            // References are always content fields
+                        ObjectOrReference::Ref { .. } => {
                             content_field = Some(prop_name.clone());
                         }
-                        _ => {}
                     }
                 }
 
-                // Both fields must be found for adjacently tagged pattern
                 if let (Some(tag), Some(content)) = (tag_field, content_field)
                     && let Some(enum_val) = enum_value
                 {
@@ -144,16 +130,14 @@ impl TaggedEnumPattern {
                     });
                 }
             }
-            // Internally tagged: allOf with a string enum property (tag field)
-            RefOr::T(Schema::AllOf(all_of)) => {
-                for item in &all_of.items {
-                    if let RefOr::T(Schema::Object(obj_schema)) = item {
-                        // Look for a property that is a string enum (tag field)
-                        for (prop_name, prop_schema) in &obj_schema.properties {
-                            if let RefOr::T(Schema::Object(prop_obj)) = prop_schema
-                                && let Some(enum_values) = &prop_obj.enum_values
+            ObjectOrReference::Object(obj_schema) if !obj_schema.all_of.is_empty() => {
+                for item in &obj_schema.all_of {
+                    if let ObjectOrReference::Object(item_schema) = item {
+                        for (prop_name, prop_schema) in &item_schema.properties {
+                            if let ObjectOrReference::Object(prop_obj) = prop_schema
+                                && !prop_obj.enum_values.is_empty()
                                 && let Some(serde_json::Value::String(enum_val)) =
-                                    enum_values.first()
+                                    prop_obj.enum_values.first()
                             {
                                 let variant_name = enum_val.to_pascal_case();
                                 return Some(TaggedEnumPattern::InternallyTagged {
@@ -165,10 +149,8 @@ impl TaggedEnumPattern {
                     }
                 }
             }
-            // Untagged: just a reference
-            RefOr::Ref(reference) => {
-                let ref_path = &reference.ref_location;
-                if let Some(schema_name) = ref_path.strip_prefix("#/components/schemas/") {
+            ObjectOrReference::Ref { ref_path, .. } => {
+                if let Some(schema_name) = ref_path.as_str().strip_prefix("#/components/schemas/") {
                     return Some(TaggedEnumPattern::Untagged {
                         variant_name: schema_name.to_pascal_case(),
                     });

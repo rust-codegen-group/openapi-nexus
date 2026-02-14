@@ -4,10 +4,10 @@ use std::fs;
 use std::path::Path;
 
 use tracing::{debug, error};
-use utoipa::openapi::OpenApi;
 
 use crate::error::ParseError;
 use crate::serde_error::SerdeErrorExtractor;
+use openapi_nexus_spec::OpenApiV31Spec;
 
 fn extract_error_context(content: &str, error_msg: &str) -> Vec<String> {
     let (line, column) = SerdeErrorExtractor::new(error_msg).extract_location();
@@ -55,8 +55,9 @@ fn extract_error_context(content: &str, error_msg: &str) -> Vec<String> {
     }
 }
 
-pub fn parse_content_json(content: &str) -> Result<OpenApi, ParseError> {
-    let value: serde_json::Value = serde_json::from_str(content).map_err(|e| {
+pub fn parse_content_json(content: &str) -> Result<OpenApiV31Spec, ParseError> {
+    // First try to parse as JSON to get proper error context for JSON syntax errors
+    let _value: serde_json::Value = serde_json::from_str(content).map_err(|e| {
         let error_msg = e.to_string();
         debug!("Serde error message: {}", error_msg);
         let context = extract_error_context(content, &error_msg);
@@ -68,11 +69,23 @@ pub fn parse_content_json(content: &str) -> Result<OpenApi, ParseError> {
         ParseError::JsonParse { source: e, context }
     })?;
 
-    serde_json::from_value(value).map_err(|e| ParseError::OpenApiDeserializeJson { source: e })
+    // Deserialize as OpenAPI spec
+    serde_json::from_str::<OpenApiV31Spec>(content).map_err(|e| {
+        let error_msg = e.to_string();
+        debug!("parse error: {}", error_msg);
+        let context = extract_error_context(content, &error_msg);
+
+        for line in &context {
+            error!("{}", line);
+        }
+
+        ParseError::OpenApiDeserializeJson { source: e }
+    })
 }
 
-pub fn parse_content_yaml(content: &str) -> Result<OpenApi, ParseError> {
-    let value: serde_norway::Value = serde_norway::from_str(content).map_err(|e| {
+pub fn parse_content_yaml(content: &str) -> Result<OpenApiV31Spec, ParseError> {
+    // First try to parse as YAML to get proper error context for YAML syntax errors
+    let _value: serde_norway::Value = serde_norway::from_str(content).map_err(|e| {
         let error_msg = e.to_string();
         debug!("Serde error message: {}", error_msg);
         let context = extract_error_context(content, &error_msg);
@@ -84,11 +97,22 @@ pub fn parse_content_yaml(content: &str) -> Result<OpenApi, ParseError> {
         ParseError::YamlParse { source: e, context }
     })?;
 
-    serde_norway::from_value(value).map_err(|e| ParseError::OpenApiDeserializeYaml { source: e })
+    // Deserialize as OpenAPI spec
+    serde_norway::from_str::<OpenApiV31Spec>(content).map_err(|e| {
+        let error_msg = e.to_string();
+        debug!("parse error: {}", error_msg);
+        let context = extract_error_context(content, &error_msg);
+
+        for line in &context {
+            error!("{}", line);
+        }
+
+        ParseError::OpenApiDeserializeYaml { source: e }
+    })
 }
 
 /// Parse an OpenAPI specification from a file
-pub fn parse_file(path: &Path) -> Result<OpenApi, ParseError> {
+pub fn parse_file(path: &Path) -> Result<OpenApiV31Spec, ParseError> {
     let content = fs::read_to_string(path).map_err(|e| ParseError::FileRead {
         path: path.to_string_lossy().to_string(),
         source: e,

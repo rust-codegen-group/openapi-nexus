@@ -4,11 +4,11 @@ use std::collections::HashMap;
 
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use tracing::warn;
-use utoipa::openapi;
 
 use crate::errors::GeneratorError;
 use openapi_nexus_core::data::{OperationInfo, ParameterInfo, ParameterLocation};
 use openapi_nexus_core::traits::OpenApiParameterExt as _;
+use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference, ParameterIn};
 
 /// Extracted parameters from an OpenAPI operation
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ impl ParameterExtractor {
     pub fn extract_parameters(
         &self,
         op_info: &OperationInfo,
-        components: Option<&openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<ExtractedParameters, GeneratorError> {
         let mut extracted = self.extract_raw_parameters(op_info, components)?;
         self.resolve_and_apply_name_conflicts(&mut extracted);
@@ -43,7 +43,7 @@ impl ParameterExtractor {
     fn extract_raw_parameters(
         &self,
         op_info: &OperationInfo,
-        components: Option<&openapi::Components>,
+        components: Option<&Components>,
     ) -> Result<ExtractedParameters, GeneratorError> {
         let mut path_params = Vec::new();
         let mut query_params = Vec::new();
@@ -54,54 +54,51 @@ impl ParameterExtractor {
         let path_param_names = Self::extract_path_parameter_names(&op_info.path);
 
         // Extract parameters from the operation
-        if let Some(parameters) = &op_info.operation.parameters {
-            for param in parameters {
-                let original_name = param.name.clone();
-                let schema = param.schema.clone();
-                let default_value = param.default_value(components);
-                let location = match param.parameter_in {
-                    openapi::path::ParameterIn::Path => {
-                        if path_param_names.contains(&param.name) {
-                            // Validate that this parameter actually exists in the path
-                            ParameterLocation::Path
-                        } else {
-                            // If parameter is marked as Path but not in path, treat as query parameter
-                            ParameterLocation::Query
-                        }
+        for param_ref in &op_info.operation.parameters {
+            let param = match param_ref {
+                ObjectOrReference::Object(p) => p,
+                ObjectOrReference::Ref { .. } => continue, // TODO: resolve ref from components
+            };
+            let original_name = param.name.clone();
+            let schema = param.schema.clone();
+            let default_value = param.default_value(components);
+            let location = match param.location {
+                ParameterIn::Path => {
+                    if path_param_names.contains(&param.name) {
+                        ParameterLocation::Path
+                    } else {
+                        ParameterLocation::Query
                     }
-                    openapi::path::ParameterIn::Query => ParameterLocation::Query,
-                    openapi::path::ParameterIn::Header => ParameterLocation::Header,
-                    _ => {
-                        // Skip other parameter locations for now
-                        continue;
-                    }
-                };
+                }
+                ParameterIn::Query => ParameterLocation::Query,
+                ParameterIn::Header => ParameterLocation::Header,
+                _ => continue,
+            };
 
-                let param_info = ParameterInfo {
-                    original_name: original_name.clone(),
-                    param_name: original_name.clone(), // Will be resolved later
-                    schema,
-                    required: matches!(param.required, openapi::Required::True),
-                    deprecated: matches!(param.deprecated, Some(openapi::Deprecated::True)),
-                    description: param.description.clone(),
-                    default_value,
-                    location,
-                };
+            let param_info = ParameterInfo {
+                original_name: original_name.clone(),
+                param_name: original_name.clone(),
+                schema,
+                required: param.required.unwrap_or(false),
+                deprecated: param.deprecated.unwrap_or(false),
+                description: param.description.clone(),
+                default_value,
+                location,
+            };
 
-                match location {
-                    ParameterLocation::Path => path_params.push(param_info),
-                    ParameterLocation::Query => query_params.push(param_info),
-                    ParameterLocation::Header => header_params.push(param_info),
-                    ParameterLocation::Body => {
-                        // Body is handled separately
-                        unreachable!("Body parameters should not reach here")
-                    }
+            match location {
+                ParameterLocation::Path => path_params.push(param_info),
+                ParameterLocation::Query => query_params.push(param_info),
+                ParameterLocation::Header => header_params.push(param_info),
+                ParameterLocation::Body => {
+                    unreachable!("Body parameters should not reach here")
                 }
             }
         }
 
         // Extract request body parameter
-        if let Some(request_body) = &op_info.operation.request_body
+        if let Some(request_body_ref) = &op_info.operation.request_body
+            && let ObjectOrReference::Object(request_body) = request_body_ref
             && let Some(json_content) = request_body.content.get("application/json")
             && let Some(schema_ref) = &json_content.schema
         {
@@ -109,7 +106,7 @@ impl ParameterExtractor {
                 original_name: "body".to_string(),
                 param_name: "body".to_string(), // Will be resolved later
                 schema: Some(schema_ref.clone()),
-                required: matches!(request_body.required, Some(openapi::Required::True)),
+                required: request_body.required.unwrap_or(false),
                 deprecated: false, // Request body doesn't have deprecated field in OpenAPI
                 description: request_body.description.clone(),
                 default_value: None,

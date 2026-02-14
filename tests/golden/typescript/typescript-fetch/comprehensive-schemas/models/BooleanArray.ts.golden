@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Array of booleans */
 export type BooleanArray = Array<boolean>
 
 export function BooleanArrayFromJSON(json: any): BooleanArray {

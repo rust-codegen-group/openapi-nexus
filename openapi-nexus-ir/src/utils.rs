@@ -1,8 +1,7 @@
 //! Utility functions for working with OpenAPI specifications
 
-use utoipa::openapi::{OpenApi, RefOr, Response, Schema, path::Parameter};
-
 use crate::error::IrError;
+use crate::{ObjectOrReference, ObjectSchema, OpenApi, Parameter, RefOr, Response, Schema};
 use openapi_nexus_common::SourceLocation;
 
 /// Utility functions for OpenAPI processing
@@ -11,36 +10,56 @@ pub struct Utils;
 impl Utils {
     /// Check if a schema is a reference
     pub fn is_reference(schema: &RefOr<Schema>) -> bool {
-        matches!(schema, RefOr::Ref(_))
+        matches!(schema, ObjectOrReference::Ref { .. })
     }
 
     /// Get the reference name if this is a reference
     pub fn get_reference_name(schema: &RefOr<Schema>) -> Option<&str> {
         match schema {
-            RefOr::Ref(reference) => Some(&reference.ref_location),
+            ObjectOrReference::Ref { ref_path, .. } => Some(ref_path),
             _ => None,
         }
     }
 
-    /// Extract all schema references from a schema
-    pub fn extract_schema_refs(schema: &Schema) -> Vec<String> {
+    /// Extract all schema references from a schema (utoipa compatibility - deprecated)
+    pub fn extract_schema_refs(schema: &utoipa::openapi::Schema) -> Vec<String> {
         let mut refs = Vec::new();
 
         match schema {
-            Schema::Object(object_schema) => {
+            utoipa::openapi::Schema::Object(object_schema) => {
                 for prop_schema in object_schema.properties.values() {
-                    if let RefOr::Ref(ref_ref) = prop_schema {
+                    if let utoipa::openapi::RefOr::Ref(ref_ref) = prop_schema {
                         refs.push(ref_ref.ref_location.clone());
-                    } else if let RefOr::T(prop_schema) = prop_schema {
+                    } else if let utoipa::openapi::RefOr::T(prop_schema) = prop_schema {
                         refs.extend(Self::extract_schema_refs(prop_schema));
                     }
                 }
             }
-            Schema::Array(_array_schema) => {
+            utoipa::openapi::Schema::Array(_array_schema) => {
                 // Note: Array items handling is complex in utoipa
                 // For now, we'll skip array item reference extraction
             }
             _ => {} // Other schema types don't contain references
+        }
+
+        refs
+    }
+
+    /// Extract all schema references from an object schema
+    pub fn extract_schema_refs_from_object_schema(object_schema: &ObjectSchema) -> Vec<String> {
+        let mut refs = Vec::new();
+
+        // Extract from properties
+        for prop_schema in object_schema.properties.values() {
+            match prop_schema {
+                ObjectOrReference::Ref { ref_path, .. } => {
+                    refs.push(ref_path.clone());
+                }
+                ObjectOrReference::Object(object_schema) => {
+                    // In properties, schema is directly ObjectSchema, not wrapped in Schema enum
+                    refs.extend(Self::extract_schema_refs_from_object_schema(object_schema));
+                }
+            }
         }
 
         refs
@@ -59,7 +78,7 @@ impl<'a> ReferenceResolver<'a> {
     }
 
     /// Resolve a schema reference to the actual schema
-    pub fn resolve_schema_ref(&self, reference: &str) -> Result<&Schema, IrError> {
+    pub fn resolve_schema_ref(&self, reference: &str) -> Result<&ObjectSchema, IrError> {
         if self.is_external_reference(reference) {
             let err = IrError::ExternalReference {
                 reference: reference.to_string(),
@@ -86,8 +105,8 @@ impl<'a> ReferenceResolver<'a> {
             .as_ref()
             .and_then(|components| components.schemas.get(&name))
             .and_then(|schema_ref| match schema_ref {
-                RefOr::T(schema) => Some(schema),
-                RefOr::Ref(_) => None,
+                ObjectOrReference::Object(object_schema) => Some(object_schema),
+                ObjectOrReference::Ref { .. } => None,
             })
             .ok_or_else(|| {
                 let err = IrError::UnresolvedReference {
@@ -127,8 +146,8 @@ impl<'a> ReferenceResolver<'a> {
             .as_ref()
             .and_then(|components| components.responses.get(&name))
             .and_then(|response_ref| match response_ref {
-                RefOr::T(response) => Some(response),
-                RefOr::Ref(_) => None,
+                ObjectOrReference::Object(response) => Some(response),
+                ObjectOrReference::Ref { .. } => None,
             })
             .ok_or_else(|| {
                 let err = IrError::UnresolvedReference {
@@ -197,33 +216,37 @@ impl<'a> ReferenceResolver<'a> {
 
 #[cfg(test)]
 mod tests {
-    use utoipa::openapi::schema::Object;
-    use utoipa::openapi::{Components, Info, OpenApi, Paths, RefOr, Schema};
-
     use super::*;
+    use crate::{ObjectOrReference, OpenApi, Schema};
 
     fn create_test_openapi() -> OpenApi {
-        let mut components = Components::new();
-        let user_schema = Object::new();
-        components
-            .schemas
-            .insert("User".to_string(), RefOr::T(Schema::Object(user_schema)));
-
-        let mut openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
-        openapi.components = Some(components);
-        openapi
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  schemas:
+    User:
+      type: object
+"#;
+        openapi_nexus_parser::parse_content_yaml(yaml).unwrap()
     }
 
     #[test]
     fn test_utils_functions() {
-        // Test is_reference
-        let schema_ref = RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/User"));
+        let schema_ref = ObjectOrReference::<Schema>::Ref {
+            ref_path: "#/components/schemas/User".to_string(),
+            summary: None,
+            description: None,
+        };
         assert!(Utils::is_reference(&schema_ref));
 
-        let schema_obj = RefOr::T(Schema::Object(Object::new()));
+        let schema_obj = ObjectOrReference::Object(Schema::Boolean(
+            openapi_nexus_spec::oas31::spec::BooleanSchema(false),
+        ));
         assert!(!Utils::is_reference(&schema_obj));
 
-        // Test get_reference_name
         let name = Utils::get_reference_name(&schema_ref);
         assert_eq!(name, Some("#/components/schemas/User"));
 
@@ -233,24 +256,24 @@ mod tests {
 
     #[test]
     fn test_extract_schema_refs() {
-        let schema = Schema::Object(Object::new());
+        let schema = utoipa::openapi::Schema::Object(utoipa::openapi::schema::Object::new());
         let refs = Utils::extract_schema_refs(&schema);
-        assert_eq!(refs.len(), 0); // Empty object has no references
+        assert_eq!(refs.len(), 0);
     }
 
     #[test]
     fn test_extract_schema_refs_with_properties() {
-        let mut object_schema = Object::new();
+        let mut object_schema = utoipa::openapi::schema::Object::new();
         object_schema.properties.insert(
             "user".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/User")),
+            utoipa::openapi::RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/User")),
         );
         object_schema.properties.insert(
             "profile".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/Profile")),
+            utoipa::openapi::RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/Profile")),
         );
 
-        let schema = Schema::Object(object_schema);
+        let schema = utoipa::openapi::Schema::Object(object_schema);
         let refs = Utils::extract_schema_refs(&schema);
         assert_eq!(refs.len(), 2);
         assert!(refs.contains(&"#/components/schemas/User".to_string()));
@@ -259,22 +282,23 @@ mod tests {
 
     #[test]
     fn test_extract_schema_refs_nested() {
-        let mut inner_schema = Object::new();
+        let mut inner_schema = utoipa::openapi::schema::Object::new();
         inner_schema.properties.insert(
             "nested".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/Nested")),
+            utoipa::openapi::RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/Nested")),
         );
 
-        let mut outer_schema = Object::new();
-        outer_schema
-            .properties
-            .insert("inner".to_string(), RefOr::T(Schema::Object(inner_schema)));
+        let mut outer_schema = utoipa::openapi::schema::Object::new();
+        outer_schema.properties.insert(
+            "inner".to_string(),
+            utoipa::openapi::RefOr::T(utoipa::openapi::Schema::Object(inner_schema)),
+        );
         outer_schema.properties.insert(
             "direct".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/Direct")),
+            utoipa::openapi::RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/Direct")),
         );
 
-        let schema = Schema::Object(outer_schema);
+        let schema = utoipa::openapi::Schema::Object(outer_schema);
         let refs = Utils::extract_schema_refs(&schema);
         assert_eq!(refs.len(), 2);
         assert!(refs.contains(&"#/components/schemas/Nested".to_string()));
@@ -283,19 +307,10 @@ mod tests {
 
     #[test]
     fn test_resolve_schema_reference_valid() {
-        let mut components = Components::new();
-        let user_schema = Object::new();
-        components
-            .schemas
-            .insert("User".to_string(), RefOr::T(Schema::Object(user_schema)));
-
-        let mut openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
-        openapi.components = Some(components);
-
+        let openapi = create_test_openapi();
         let resolver = ReferenceResolver::new(&openapi);
         let result = resolver.resolve_schema_ref("#/components/schemas/User");
         assert!(result.is_ok());
-        assert!(matches!(result.unwrap(), Schema::Object(_)));
     }
 
     #[test]
@@ -345,15 +360,17 @@ mod tests {
 
     #[test]
     fn test_resolve_response_reference_valid() {
-        let mut components = Components::new();
-        let response = utoipa::openapi::Response::new("Not Found");
-        components
-            .responses
-            .insert("NotFound".to_string(), RefOr::T(response));
-
-        let mut openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
-        openapi.components = Some(components);
-
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  responses:
+    NotFound:
+      description: Not Found
+"#;
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
         let resolver = ReferenceResolver::new(&openapi);
         let result = resolver.resolve_response_ref("#/components/responses/NotFound");
         assert!(result.is_ok());

@@ -1,6 +1,6 @@
 //! Intermediate representation for OpenAPI code generation
 //!
-//! This crate provides utilities for working with utoipa's OpenAPI types
+//! This crate provides utilities for working with OpenAPI types
 //! as our intermediate representation, including traversal, analysis,
 //! and transformation helpers.
 //!
@@ -13,13 +13,20 @@
 //! # Example
 //!
 //! ```rust
-//! use openapi_nexus_ir::{SchemaAnalyzer, ReferenceResolver, OpenApiTraverser};
-//! use utoipa::openapi::{OpenApi, Info, Paths};
+//! use openapi_nexus_ir::{SchemaAnalyzer, ReferenceResolver, OpenApiTraverser, OpenApi};
 //!
-//! // Create a simple OpenAPI specification
-//! let info = Info::new("Test API", "1.0.0");
-//! let paths = Paths::new();
-//! let openapi = OpenApi::new(info, paths);
+//! // Parse an OpenAPI specification (e.g. from YAML or JSON)
+//! let yaml = r#"
+//! openapi: 3.0.0
+//! info:
+//!   title: Test API
+//!   version: 1.0.0
+//! components:
+//!   schemas:
+//!     User:
+//!       type: object
+//! "#;
+//! let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
 //!
 //! // Analyze an OpenAPI specification
 //! let analyzer = SchemaAnalyzer::new(&openapi);
@@ -28,8 +35,7 @@
 //!
 //! // Resolve references
 //! let resolver = ReferenceResolver::new(&openapi);
-//! // Note: This would fail for non-existent references
-//! // let schema = resolver.resolve_schema_ref("#/components/schemas/User").unwrap();
+//! let _schema = resolver.resolve_schema_ref("#/components/schemas/User").unwrap();
 //!
 //! // Traverse with visitor pattern
 //! struct MyVisitor;
@@ -45,12 +51,21 @@ pub mod error;
 pub mod traversal;
 pub mod utils;
 
-// Re-export key utoipa types for convenience
-pub use utoipa::openapi::path::{Operation, Parameter};
-pub use utoipa::openapi::{
-    Components, ExternalDocs, Info, OpenApi, PathItem, Paths, RefOr, Response, Schema,
-    SecurityRequirement, Server, Tag,
+// Re-export key OpenAPI spec types for convenience
+pub use openapi_nexus_spec::oas31::spec::{
+    Components, ExternalDoc, Info, ObjectOrReference, ObjectSchema, Operation, Parameter, PathItem,
+    RequestBody, Response, Schema, SecurityRequirement, SecurityScheme, Server, Tag,
 };
+pub use openapi_nexus_spec::OpenApiV31Spec;
+
+// Type aliases for compatibility with utoipa API
+pub type OpenApi = OpenApiV31Spec;
+pub type Paths = std::collections::BTreeMap<String, PathItem>;
+pub type RefOr<T> = ObjectOrReference<T>;
+pub type ExternalDocs = ExternalDoc;
+
+// ObjectOrReference uses ObjectOrReference::Object(T) for inline values
+// and ObjectOrReference::Ref { ref_path, ... } instead of RefOr::Ref(Ref { ref_location, ... })
 
 // Re-export IR types
 pub use analysis::{Analyzer, CircularRef, SchemaAnalyzer};
