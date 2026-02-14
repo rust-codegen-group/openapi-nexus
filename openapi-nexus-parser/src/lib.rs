@@ -8,5 +8,5 @@ pub mod parser;
 pub mod serde_error;
 
 pub use error::ParseError;
-pub use parser::parse_file;
+pub use parser::{parse_content_json, parse_content_yaml, parse_file};
 pub use serde_error::SerdeErrorExtractor;

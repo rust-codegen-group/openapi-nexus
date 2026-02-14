@@ -1,9 +1,11 @@
 //! Parameter information with raw OpenAPI schema
 
 use serde::{Deserialize, Serialize};
-use utoipa::openapi;
-use utoipa::openapi::RefOr;
-use utoipa::openapi::schema::Schema;
+
+use openapi_nexus_spec::oas31::spec::{ObjectOrReference, ObjectSchema, ParameterIn};
+
+// Type alias for compatibility
+pub type RefOr<T> = ObjectOrReference<T>;
 
 /// Parameter location for conflict resolution
 ///
@@ -27,13 +29,13 @@ pub enum ParameterLocation {
     Body,
 }
 
-impl From<openapi::path::ParameterIn> for ParameterLocation {
-    fn from(param_in: openapi::path::ParameterIn) -> Self {
+impl From<ParameterIn> for ParameterLocation {
+    fn from(param_in: ParameterIn) -> Self {
         match param_in {
-            openapi::path::ParameterIn::Path => ParameterLocation::Path,
-            openapi::path::ParameterIn::Query => ParameterLocation::Query,
-            openapi::path::ParameterIn::Header => ParameterLocation::Header,
-            openapi::path::ParameterIn::Cookie => ParameterLocation::Header, // Treat cookie as header
+            ParameterIn::Path => ParameterLocation::Path,
+            ParameterIn::Query => ParameterLocation::Query,
+            ParameterIn::Header => ParameterLocation::Header,
+            ParameterIn::Cookie => ParameterLocation::Header, // Treat cookie as header
         }
     }
 }
@@ -76,7 +78,7 @@ pub struct ParameterInfo {
     ///
     /// Contains the type information and validation rules from the OpenAPI spec.
     /// May be `None` if not needed for template rendering.
-    pub schema: Option<RefOr<Schema>>,
+    pub schema: Option<ObjectOrReference<ObjectSchema>>,
     /// Whether the parameter is required
     ///
     /// If `true`, the parameter must be provided when calling the API.

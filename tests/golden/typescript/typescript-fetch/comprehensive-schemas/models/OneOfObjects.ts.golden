@@ -13,6 +13,7 @@
 import { type BasicObject, BasicObjectFromJSON, BasicObjectFromJSONTyped, BasicObjectToJSON, instanceOfBasicObject } from './BasicObject';
 import { type NestedObject, NestedObjectFromJSON, NestedObjectFromJSONTyped, NestedObjectToJSON, instanceOfNestedObject } from './NestedObject';
 
+/** Union of object types */
 export type OneOfObjects = BasicObject | NestedObject
 
 export function OneOfObjectsFromJSON(json: any): OneOfObjects {

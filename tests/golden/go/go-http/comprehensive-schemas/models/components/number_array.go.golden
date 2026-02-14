@@ -8,4 +8,5 @@
 package components
 
 
+// Array of numbers
 type NumberArray = []string

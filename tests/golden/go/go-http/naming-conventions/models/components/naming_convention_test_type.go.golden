@@ -14,16 +14,16 @@ import (
 
 type NamingConventionTest struct {
 	PascalCaseField optionalnullable.OptionalNullable[string] `json:"PascalCaseField,omitzero"`
-	PascalCaseObject optionalnullable.OptionalNullable[string] `json:"PascalCaseObject,omitzero"`
+	PascalCaseObject optionalnullable.OptionalNullable[interface{}] `json:"PascalCaseObject,omitzero"`
 	ScreamingNumber optionalnullable.OptionalNullable[string] `json:"SCREAMING_NUMBER,omitzero"`
 	ScreamingSnakeCase optionalnullable.OptionalNullable[string] `json:"SCREAMING_SNAKE_CASE,omitzero"`
 	CamelCaseField string `json:"camelCaseField"`
 	CamelCaseNumber optionalnullable.OptionalNullable[string] `json:"camelCaseNumber,omitzero"`
 	Id optionalnullable.OptionalNullable[string] `json:"id,omitzero"`
-	ItemsArray optionalnullable.OptionalNullable[[]string] `json:"items_array,omitzero"`
+	ItemsArray optionalnullable.OptionalNullable[[]interface{}] `json:"items_array,omitzero"`
 	KebabCaseArray optionalnullable.OptionalNullable[[]string] `json:"kebab-case-array,omitzero"`
 	KebabCaseField optionalnullable.OptionalNullable[string] `json:"kebab-case-field,omitzero"`
-	NestedObject optionalnullable.OptionalNullable[string] `json:"nested_object,omitzero"`
+	NestedObject optionalnullable.OptionalNullable[interface{}] `json:"nested_object,omitzero"`
 	Singleword string `json:"singleword"`
 	SnakeCaseField string `json:"snake_case_field"`
 	SnakeCaseNumber optionalnullable.OptionalNullable[string] `json:"snake_case_number,omitzero"`
@@ -53,9 +53,9 @@ func (c *NamingConventionTest) GetPascalCaseField() optionalnullable.OptionalNul
 	return c.PascalCaseField
 }
 
-func (c *NamingConventionTest) GetPascalCaseObject() optionalnullable.OptionalNullable[string] {
+func (c *NamingConventionTest) GetPascalCaseObject() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.PascalCaseObject
@@ -101,9 +101,9 @@ func (c *NamingConventionTest) GetId() optionalnullable.OptionalNullable[string]
 	return c.Id
 }
 
-func (c *NamingConventionTest) GetItemsArray() optionalnullable.OptionalNullable[[]string] {
+func (c *NamingConventionTest) GetItemsArray() optionalnullable.OptionalNullable[[]interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[[]string]
+		var zero optionalnullable.OptionalNullable[[]interface{}]
 		return zero
 	}
 	return c.ItemsArray
@@ -125,9 +125,9 @@ func (c *NamingConventionTest) GetKebabCaseField() optionalnullable.OptionalNull
 	return c.KebabCaseField
 }
 
-func (c *NamingConventionTest) GetNestedObject() optionalnullable.OptionalNullable[string] {
+func (c *NamingConventionTest) GetNestedObject() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.NestedObject

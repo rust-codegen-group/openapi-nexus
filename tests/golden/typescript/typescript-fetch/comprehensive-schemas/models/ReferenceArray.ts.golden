@@ -12,6 +12,7 @@
  */
 import { type StringType, StringTypeFromJSON, StringTypeFromJSONTyped, StringTypeToJSON } from './StringType';
 
+/** Array of references */
 export type ReferenceArray = Array<StringType>
 
 export function ReferenceArrayFromJSON(json: any): ReferenceArray {

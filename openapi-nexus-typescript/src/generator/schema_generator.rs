@@ -8,10 +8,6 @@ use std::sync::{Mutex, OnceLock};
 
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use tracing::{error, warn};
-use utoipa::openapi::schema::{
-    AdditionalProperties, KnownFormat, Object, SchemaFormat, SchemaType, Type,
-};
-use utoipa::openapi::{RefOr, Schema};
 
 use crate::ast::ty::ts_type_alias_definition::{
     IntersectionMemberInfo, IntersectionObjectProperty, UnionMemberInfo,
@@ -23,6 +19,9 @@ use crate::ast::{
 };
 use crate::generator::schema_context::SchemaContext;
 use openapi_nexus_core::TaggedEnumPattern;
+use openapi_nexus_spec::oas31::spec::{
+    BooleanSchema, ObjectOrReference, ObjectSchema, Schema, SchemaType, SchemaTypeSet,
+};
 
 /// Thread-safe counter for unknown schema references
 static UNKNOWN_SCHEMA_COUNTER: OnceLock<Mutex<usize>> = OnceLock::new();
@@ -43,17 +42,15 @@ impl SchemaGenerator {
     pub fn schema_to_ts_type_definition(
         &self,
         original_name: &str,
-        schema_ref: &RefOr<Schema>,
+        schema_ref: &ObjectOrReference<ObjectSchema>,
         context: &mut SchemaContext,
     ) -> TsTypeDefinition {
         match schema_ref {
-            RefOr::T(schema) => {
-                // Determine the appropriate node type based on schema content
-                self.determine_node_type(original_name, schema, context)
+            ObjectOrReference::Object(object_schema) => {
+                self.determine_node_type(original_name, object_schema, context)
             }
-            RefOr::Ref(reference) => {
-                // Handle reference - resolve to actual schema or create type alias
-                self.handle_schema_reference(original_name, reference, context)
+            ObjectOrReference::Ref { ref_path, .. } => {
+                self.handle_schema_reference(original_name, ref_path, context)
             }
         }
     }
@@ -66,289 +63,192 @@ impl SchemaGenerator {
     fn determine_node_type(
         &self,
         original_name: &str,
-        schema: &Schema,
+        obj_schema: &ObjectSchema,
         context: &mut SchemaContext,
     ) -> TsTypeDefinition {
         let ts_name = original_name.to_pascal_case();
         let original_name = original_name.to_string();
 
-        match schema {
-            Schema::Object(obj_schema) => {
-                // Check if this is an enum schema
-                if let Some(enum_values) = &obj_schema.enum_values
-                    && !enum_values.is_empty()
-                {
-                    return TsTypeDefinition::Enum(
-                        self.schema_to_enum(original_name.as_str(), schema),
-                    );
-                }
-
-                // Check if this is an object with properties
-                if !obj_schema.properties.is_empty() {
-                    return TsTypeDefinition::Interface(self.schema_to_interface(
-                        original_name.as_str(),
-                        schema,
-                        context,
-                        ts_name.as_str(),
-                    ));
-                }
-
-                // Check if this has additionalProperties (typed map)
-                if obj_schema.additional_properties.is_some() {
-                    return TsTypeDefinition::Interface(self.schema_to_interface(
-                        original_name.as_str(),
-                        schema,
-                        context,
-                        ts_name.as_str(),
-                    ));
-                }
-
-                // Otherwise, create a type alias
-                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
-                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    ts_name,
-                    original_name: original_name.to_string(),
-                    type_expr,
-                    generics: vec![],
-                    documentation: obj_schema.description.clone().map(TsDocComment::new),
-                    union_members: None,
-                    intersection_members: None,
-                })
-            }
-            Schema::Array(_) => {
-                // Array schemas become type aliases
-                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
-                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    ts_name,
-                    original_name,
-                    type_expr,
-                    generics: vec![],
-                    documentation: None,
-                    union_members: None,
-                    intersection_members: None,
-                })
-            }
-            Schema::OneOf(one_of) => {
-                // Composition schemas become type aliases with union/intersection types
-                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
-                let union_members =
-                    self.extract_union_members(&one_of.items, context, ts_name.as_str());
-                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    ts_name,
-                    original_name,
-                    type_expr,
-                    generics: vec![],
-                    documentation: None,
-                    union_members: Some(union_members),
-                    intersection_members: None,
-                })
-            }
-            Schema::AnyOf(any_of) => {
-                // Composition schemas become type aliases with union/intersection types
-                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
-                let union_members =
-                    self.extract_union_members(&any_of.items, context, ts_name.as_str());
-                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    ts_name,
-                    original_name,
-                    type_expr,
-                    generics: vec![],
-                    documentation: None,
-                    union_members: Some(union_members),
-                    intersection_members: None,
-                })
-            }
-            Schema::AllOf(all_of) => {
-                // Composition schemas become type aliases with intersection types
-                let type_expr = self.map_schema_to_type(schema, context, ts_name.as_str());
-                // Extract intersection members for proper conversion
-                let intersection_members =
-                    self.extract_intersection_members(&all_of.items, context, ts_name.as_str());
-                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    ts_name,
-                    original_name,
-                    type_expr,
-                    generics: vec![],
-                    documentation: None,
-                    union_members: None,
-                    intersection_members: Some(intersection_members),
-                })
-            }
-            _ => {
-                // Fallback for unknown schema types
-                TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
-                    ts_name,
-                    original_name,
-                    type_expr: TsExpression::Primitive(TsPrimitive::Any),
-                    generics: vec![],
-                    documentation: None,
-                    union_members: None,
-                    intersection_members: None,
-                })
-            }
+        // Check if this is an enum schema
+        if !obj_schema.enum_values.is_empty() {
+            return TsTypeDefinition::Enum(self.schema_to_enum(original_name.as_str(), obj_schema));
         }
+
+        // Check if this is an object with properties or additionalProperties
+        if !obj_schema.properties.is_empty() || obj_schema.additional_properties.is_some() {
+            return TsTypeDefinition::Interface(self.schema_to_interface(
+                original_name.as_str(),
+                obj_schema,
+                context,
+                ts_name.as_str(),
+            ));
+        }
+
+        // oneOf -> type alias with union
+        if !obj_schema.one_of.is_empty() {
+            let type_expr = self.map_object_schema_to_type(obj_schema, context, ts_name.as_str());
+            let union_members =
+                self.extract_union_members(&obj_schema.one_of, context, ts_name.as_str());
+            return TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                ts_name,
+                original_name: original_name.clone(),
+                type_expr,
+                generics: vec![],
+                documentation: obj_schema.description.clone().map(TsDocComment::new),
+                union_members: Some(union_members),
+                intersection_members: None,
+            });
+        }
+        // anyOf -> type alias with union
+        if !obj_schema.any_of.is_empty() {
+            let type_expr = self.map_object_schema_to_type(obj_schema, context, ts_name.as_str());
+            let union_members =
+                self.extract_union_members(&obj_schema.any_of, context, ts_name.as_str());
+            return TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                ts_name,
+                original_name: original_name.clone(),
+                type_expr,
+                generics: vec![],
+                documentation: obj_schema.description.clone().map(TsDocComment::new),
+                union_members: Some(union_members),
+                intersection_members: None,
+            });
+        }
+        // allOf -> type alias with intersection
+        if !obj_schema.all_of.is_empty() {
+            let type_expr = self.map_object_schema_to_type(obj_schema, context, ts_name.as_str());
+            let intersection_members =
+                self.extract_intersection_members(&obj_schema.all_of, context, ts_name.as_str());
+            return TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+                ts_name,
+                original_name: original_name.clone(),
+                type_expr,
+                generics: vec![],
+                documentation: obj_schema.description.clone().map(TsDocComment::new),
+                union_members: None,
+                intersection_members: Some(intersection_members),
+            });
+        }
+
+        // Otherwise, create a type alias (array or primitive)
+        let type_expr = self.map_object_schema_to_type(obj_schema, context, ts_name.as_str());
+        TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
+            ts_name,
+            original_name,
+            type_expr,
+            generics: vec![],
+            documentation: obj_schema.description.clone().map(TsDocComment::new),
+            union_members: None,
+            intersection_members: None,
+        })
     }
 
     /// Convert a schema to a TypeScript interface
-    ///
-    /// Only object schemas are supported;
-    /// any non-object schemas will cause this function to panic.
     fn schema_to_interface(
         &self,
         original_name: &str,
-        schema: &Schema,
+        obj_schema: &ObjectSchema,
         context: &mut SchemaContext,
         current_interface_name: &str,
     ) -> TsInterfaceDefinition {
         let interface_name = original_name.to_pascal_case();
-        match schema {
-            Schema::Object(obj_schema) => {
-                let mut properties = Vec::new();
+        let mut properties = Vec::new();
 
-                // Extract properties from the object schema
-                for (prop_name, prop_schema) in &obj_schema.properties {
-                    // Pass the current interface name as parent for nested inline objects
-                    let type_expr = self.map_ref_or_schema_to_type(
-                        prop_schema,
+        for (prop_name, prop_schema) in &obj_schema.properties {
+            let type_expr = self.map_object_or_ref_schema_to_type(
+                prop_schema,
+                context,
+                current_interface_name,
+                Some(prop_name),
+            );
+            let is_required = obj_schema.required.contains(prop_name);
+            let description = self.extract_description_from_schema_ref(prop_schema);
+
+            let camel_case_name = prop_name.to_lower_camel_case();
+            let prop_original_name = prop_name.clone();
+
+            let property = TsProperty {
+                ts_name: camel_case_name,
+                original_name: prop_original_name,
+                type_expr,
+                optional: !is_required,
+                is_index_signature: false,
+                documentation: description.map(TsDocComment::new),
+            };
+
+            properties.push(property);
+        }
+
+        // Handle additionalProperties
+        if let Some(additional_props) = &obj_schema.additional_properties {
+            match additional_props {
+                Schema::Object(schema_ref) => {
+                    let mut value_type = self.map_object_or_ref_schema_to_type(
+                        schema_ref.as_ref(),
                         context,
                         current_interface_name,
-                        Some(prop_name),
+                        None,
                     );
-                    let is_required = obj_schema.required.contains(prop_name);
-                    let description = self.extract_description_from_schema(prop_schema);
 
-                    // Convert property name to camelCase for TypeScript interface
-                    let camel_case_name = prop_name.to_lower_camel_case();
-                    let original_name = prop_name.clone();
-
-                    let property = TsProperty {
-                        ts_name: camel_case_name,
-                        original_name,
-                        type_expr,
-                        optional: !is_required,
-                        is_index_signature: false,
-                        documentation: description.map(TsDocComment::new),
-                    };
-
-                    properties.push(property);
-                }
-
-                // Handle additionalProperties as index signature
-                if let Some(additional_props) = &obj_schema.additional_properties {
-                    match additional_props.as_ref() {
-                        AdditionalProperties::RefOr(schema_ref) => {
-                            let mut value_type = self.map_ref_or_schema_to_type(
-                                schema_ref,
-                                context,
-                                current_interface_name,
-                                None,
-                            );
-
-                            // If there are explicit properties, we need to union their types with additionalProperties type
-                            // to satisfy TypeScript's index signature compatibility requirements.
-                            //
-                            // Example: OpenAPI schema with properties: {name: string, age: number} and additionalProperties: number
-                            // Without union: [key: string]: number would conflict with name: string
-                            // With union: [key: string]: string | number satisfies both explicit properties and additionalProperties
-                            //
-                            // Generated TypeScript:
-                            // interface Example {
-                            //   name: string;
-                            //   age?: number;
-                            //   [key: string]: string | number;  // Union of all property types
-                            // }
-                            if !obj_schema.properties.is_empty() {
-                                let mut unique_types: BTreeSet<TsExpression> = obj_schema
-                                    .properties
-                                    .iter()
-                                    .map(|(prop_name, prop_schema)| {
-                                        self.map_ref_or_schema_to_type(
-                                            prop_schema,
-                                            context,
-                                            current_interface_name,
-                                            Some(prop_name),
-                                        )
-                                    })
-                                    .collect();
-
-                                if !unique_types.is_empty() {
-                                    unique_types.insert(value_type.clone());
-                                    value_type = TsExpression::Union(unique_types);
-                                }
-                            }
-
-                            let index_name = "[key: string]".to_string();
-                            let index_property = TsProperty {
-                                ts_name: index_name.clone(),
-                                original_name: index_name,
-                                type_expr: value_type,
-                                optional: false,
-                                is_index_signature: true,
-                                documentation: Some(TsDocComment::new(
-                                    "Additional properties".to_string(),
-                                )),
-                            };
-                            properties.push(index_property);
-                        }
-                        AdditionalProperties::FreeForm(true) => {
-                            let index_name = "[key: string]".to_string();
-                            let index_property = TsProperty {
-                                ts_name: index_name.clone(),
-                                original_name: index_name,
-                                type_expr: TsExpression::Primitive(TsPrimitive::Any),
-                                optional: false,
-                                is_index_signature: true,
-                                documentation: Some(TsDocComment::new(
-                                    "Additional properties".to_string(),
-                                )),
-                            };
-                            properties.push(index_property);
-                        }
-                        AdditionalProperties::FreeForm(false) => {
-                            // No additional properties allowed - no index signature
-                        }
+                    if !obj_schema.properties.is_empty() {
+                        let mut unique_types: BTreeSet<TsExpression> = obj_schema
+                            .properties
+                            .iter()
+                            .map(|(prop_name, prop_schema)| {
+                                self.map_object_or_ref_schema_to_type(
+                                    prop_schema,
+                                    context,
+                                    current_interface_name,
+                                    Some(prop_name),
+                                )
+                            })
+                            .collect();
+                        unique_types.insert(value_type.clone());
+                        value_type = TsExpression::Union(unique_types);
                     }
-                }
 
-                TsInterfaceDefinition {
-                    signature: TsInterfaceSignature::new(
-                        interface_name.clone(),
-                        original_name.to_string(),
-                    ),
-                    properties,
-                    documentation: obj_schema.description.clone().map(TsDocComment::new),
+                    let index_name = "[key: string]".to_string();
+                    properties.push(TsProperty {
+                        ts_name: index_name.clone(),
+                        original_name: index_name,
+                        type_expr: value_type,
+                        optional: false,
+                        is_index_signature: true,
+                        documentation: Some(TsDocComment::new("Additional properties".to_string())),
+                    });
                 }
-            }
-            _ => {
-                // For non-object schemas, create an empty interface
-                TsInterfaceDefinition {
-                    signature: TsInterfaceSignature::new(
-                        interface_name.clone(),
-                        original_name.to_string(),
-                    ),
-                    properties: vec![],
-                    documentation: None,
+                Schema::Boolean(BooleanSchema(true)) => {
+                    let index_name = "[key: string]".to_string();
+                    properties.push(TsProperty {
+                        ts_name: index_name.clone(),
+                        original_name: index_name,
+                        type_expr: TsExpression::Primitive(TsPrimitive::Any),
+                        optional: false,
+                        is_index_signature: true,
+                        documentation: Some(TsDocComment::new("Additional properties".to_string())),
+                    });
                 }
+                Schema::Boolean(BooleanSchema(false)) => {}
             }
+        }
+
+        TsInterfaceDefinition {
+            signature: TsInterfaceSignature::new(interface_name.clone(), original_name.to_string()),
+            properties,
+            documentation: obj_schema.description.clone().map(TsDocComment::new),
         }
     }
 
-    /// Convert a schema to a TypeScript enum.
-    ///
-    /// Only object schemas with `enum_values` are supported;
-    /// any non-object schemas will cause this function to panic.
-    fn schema_to_enum(&self, original_name: &str, schema: &Schema) -> TsEnumDefinition {
-        let Schema::Object(obj_schema) = schema else {
-            panic!("schema_to_enum called with non-object schema");
-        };
-
+    /// Convert a schema to a TypeScript enum
+    fn schema_to_enum(&self, original_name: &str, obj_schema: &ObjectSchema) -> TsEnumDefinition {
         let ts_name = original_name.to_pascal_case();
         let enum_descriptions = Self::extract_enum_descriptions(obj_schema);
 
-        let variants: Vec<TsEnumVariant> = obj_schema.enum_values.as_ref().unwrap_or(&Vec::new())
-                    .iter()
-                    .enumerate()
-                    .map(|(index, enum_value)| {
+        let variants: Vec<TsEnumVariant> = obj_schema
+            .enum_values
+            .iter()
+            .enumerate()
+            .map(|(index, enum_value)| {
                         if let serde_json::Value::Bool(_) = enum_value {
                             warn!(
                                 "Boolean enum value found for schema '{original_name}'. TypeScript enums don't support booleans, converting to number (0 for false, 1 for true).",
@@ -381,16 +281,8 @@ impl SchemaGenerator {
     }
 
     /// Extract x-enumDescriptions extension from schema
-    ///
-    /// This extension is a common convention to provide per-value documentation
-    /// for enum types, even though it's not part of the official OpenAPI
-    /// specification.
-    fn extract_enum_descriptions(obj_schema: &Object) -> Vec<serde_json::Value> {
-        // Try to access extensions field - in utoipa, extensions are typically stored
-        // in a field called `extensions` or accessed via a method
-        // Check if there's an extensions field or method
-        if let Some(extensions) = &obj_schema.extensions
-            && let Some(enum_descriptions_value) = extensions.get("x-enumDescriptions")
+    fn extract_enum_descriptions(obj_schema: &ObjectSchema) -> Vec<serde_json::Value> {
+        if let Some(enum_descriptions_value) = obj_schema.extensions.get("x-enumDescriptions")
             && let serde_json::Value::Array(descriptions) = enum_descriptions_value
         {
             return descriptions.clone();
@@ -425,203 +317,157 @@ impl SchemaGenerator {
     ///
     /// # Examples
     ///
-    /// ```
-    /// // Schema reference: "#/components/schemas/User"
-    /// // Result: TsExpression::Reference("User")
-    ///
-    /// // Nested inline object with parent "DeeplyNestedInline" and field "level_one"
-    /// // Result: Creates interface "DeeplyNestedInlineLevelOne" and returns Reference("DeeplyNestedInlineLevelOne")
-    ///
-    /// // Inline primitive schema
-    /// // Result: TsExpression::Primitive(TsPrimitive::String)
-    /// ```
-    fn map_ref_or_schema_to_type(
+    /// - Schema reference `#/components/schemas/User` yields `TsExpression::Reference("User")`
+    /// - Nested inline object with parent and field yields a generated interface reference
+    fn map_object_schema_to_type(
         &self,
-        schema_ref: &RefOr<Schema>,
+        obj_schema: &ObjectSchema,
+        context: &mut SchemaContext,
+        parent_name: &str,
+    ) -> TsExpression {
+        if !obj_schema.enum_values.is_empty() {
+            return self.map_enum_to_type(&obj_schema.enum_values);
+        }
+        if !obj_schema.properties.is_empty() {
+            return self.map_inline_object_to_type(obj_schema, context, parent_name);
+        }
+        if obj_schema
+            .schema_type
+            .as_ref()
+            .is_some_and(|t| t.is_array_or_nullable_array())
+            && obj_schema.items.is_some()
+        {
+            let item_type = self.map_schema_to_ts_type(
+                obj_schema.items.as_ref().unwrap().as_ref(),
+                context,
+                parent_name,
+            );
+            return TsExpression::Array(Box::new(item_type));
+        }
+        if !obj_schema.one_of.is_empty() {
+            return self.map_composition_to_type(&obj_schema.one_of, context, parent_name);
+        }
+        if !obj_schema.any_of.is_empty() {
+            return self.map_composition_to_type(&obj_schema.any_of, context, parent_name);
+        }
+        if !obj_schema.all_of.is_empty() {
+            let types: BTreeSet<TsExpression> = obj_schema
+                .all_of
+                .iter()
+                .map(|schema_ref| {
+                    self.map_object_or_ref_schema_to_type(schema_ref, context, parent_name, None)
+                })
+                .collect();
+            return TsExpression::Intersection(types);
+        }
+        self.map_primitive_type_from_schema(obj_schema)
+    }
+
+    /// Map ObjectOrReference<ObjectSchema> to TypeScript type expression
+    fn map_object_or_ref_schema_to_type(
+        &self,
+        schema_ref: &ObjectOrReference<ObjectSchema>,
         context: &mut SchemaContext,
         parent_name: &str,
         field_name: Option<&str>,
     ) -> TsExpression {
         match schema_ref {
-            RefOr::T(schema) => {
-                // For inline schemas, check if we should create a named interface
-                // Only create named interfaces for nested inline objects
+            ObjectOrReference::Object(object_schema) => {
                 if let Some(field) = field_name
-                    && let Schema::Object(obj_schema) = schema
-                    && !obj_schema.properties.is_empty()
+                    && !object_schema.properties.is_empty()
                 {
-                    // Generate name using {parent_name}{field_name} convention
-                    let field_pascal = field.to_pascal_case();
-                    let inline_interface_name = format!("{parent_name}{field_pascal}");
-
-                    // Check if this interface already exists
-                    if !context.has_inline_interface(&inline_interface_name) {
-                        // Create the interface definition
-                        let interface = self.schema_to_interface(
-                            &inline_interface_name,
-                            schema,
+                    let nested_name = format!("{}{}", parent_name, field.to_pascal_case());
+                    if !context.has_inline_interface(&nested_name) {
+                        let iface = self.schema_to_interface(
+                            &nested_name,
+                            object_schema,
                             context,
-                            &inline_interface_name,
+                            &nested_name,
                         );
-
-                        // Register it in the context
-                        let type_def = TsTypeDefinition::Interface(interface);
-                        context.register_inline_interface(inline_interface_name.clone(), type_def);
+                        context.register_inline_interface(
+                            nested_name.clone(),
+                            TsTypeDefinition::Interface(iface),
+                        );
                     }
-
-                    // Return a reference to the named interface
-                    return TsExpression::Reference(inline_interface_name);
+                    return TsExpression::Reference(nested_name.to_pascal_case());
                 }
-
-                // For other cases, map directly to TypeScript types
-                self.map_schema_to_type(schema, context, parent_name)
+                self.map_object_schema_to_type(
+                    object_schema,
+                    context,
+                    field_name
+                        .map(|f| format!("{}{}", parent_name, f.to_pascal_case()))
+                        .as_deref()
+                        .unwrap_or(parent_name),
+                )
             }
-            RefOr::Ref(reference) => {
-                // Extract the original schema name from the reference path
-                let original_name = self.extract_schema_name(&reference.ref_location);
-
-                // Validate that the schema exists in the context
-                if !context.schemas.contains_key(&original_name) {
-                    warn!(
-                        "Unresolved schema reference: {} (from {})",
-                        original_name, reference.ref_location
-                    );
-                }
-
-                // Convert to TypeScript name immediately (PascalCase conversion)
-                // since TypeScript names are always original_name.to_pascal_case().
-                let ts_name = original_name.to_pascal_case();
-                TsExpression::Reference(ts_name)
+            ObjectOrReference::Ref { ref_path, .. } => {
+                let schema_name = self.extract_schema_name(ref_path);
+                TsExpression::Reference(schema_name.to_pascal_case())
             }
         }
     }
 
-    /// Map a Schema to a TypeScript type expression
-    fn map_schema_to_type(
+    /// Map schema (Boolean | Object) to TypeScript type - used for array items and additionalProperties
+    fn map_schema_to_ts_type(
         &self,
         schema: &Schema,
         context: &mut SchemaContext,
         parent_name: &str,
     ) -> TsExpression {
         match schema {
-            Schema::Object(obj_schema) => {
-                // Handle enum schemas
-                if let Some(enum_values) = &obj_schema.enum_values
-                    && !enum_values.is_empty()
-                {
-                    return self.map_enum_to_type(enum_values);
-                }
-
-                // Handle inline object schemas with properties
-                if !obj_schema.properties.is_empty() {
-                    return self.map_inline_object_to_type(obj_schema, context, parent_name);
-                }
-
-                // Handle primitive types
-                self.map_primitive_type_from_schema(obj_schema)
-            }
-            Schema::Array(arr_schema) => {
-                // Map array schema to TypeScript array type using the items field
-                let item_type =
-                    self.map_array_items_to_type(&arr_schema.items, context, parent_name);
-                TsExpression::Array(Box::new(item_type))
-            }
-            Schema::OneOf(one_of) => {
-                // Map oneOf to union type with discriminator support
-                self.map_composition_to_type(&one_of.items, context, parent_name)
-            }
-            Schema::AllOf(all_of) => {
-                // Map allOf to intersection type with deduplication
-                let types: BTreeSet<TsExpression> = all_of
-                    .items
-                    .iter()
-                    .map(|schema_ref| {
-                        self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None)
-                    })
-                    .collect();
-                TsExpression::Intersection(types)
-            }
-            Schema::AnyOf(any_of) => {
-                // Map anyOf to union type with discriminator support
-                self.map_composition_to_type(&any_of.items, context, parent_name)
-            }
-            _ => {
-                // Fallback for unknown schema types
-                TsExpression::Primitive(TsPrimitive::Any)
-            }
+            Schema::Object(schema_ref) => self.map_object_or_ref_schema_to_type(
+                schema_ref.as_ref(),
+                context,
+                parent_name,
+                None,
+            ),
+            Schema::Boolean(_) => TsExpression::Primitive(TsPrimitive::Any),
         }
     }
 
-    /// Map primitive type from schema object using OpenAPI 3.1.2 features
-    fn map_primitive_type_from_schema(&self, obj_schema: &Object) -> TsExpression {
-        // Handle nullable types (OpenAPI 3.1.2)
+    /// Map primitive type from schema object
+    fn map_primitive_type_from_schema(&self, obj_schema: &ObjectSchema) -> TsExpression {
         let base_type = Self::map_schema_type_to_primitive(&obj_schema.schema_type);
-
-        // Apply format handling for better type inference
-        let formatted_type = self.handle_known_format(base_type, &obj_schema.format);
-
-        // Handle nullable (if schema_type includes Null)
+        let formatted_type = self.handle_known_format_str(base_type, &obj_schema.format);
         self.handle_nullable(formatted_type, &obj_schema.schema_type)
     }
 
-    /// Map schema type to primitive TypeScript type
-    fn map_schema_type_to_primitive(schema_type: &SchemaType) -> TsExpression {
-        match schema_type {
-            SchemaType::Type(openapi_type) => match openapi_type {
-                Type::String => TsExpression::Primitive(TsPrimitive::String),
-                Type::Integer => TsExpression::Primitive(TsPrimitive::Number),
-                Type::Number => TsExpression::Primitive(TsPrimitive::Number),
-                Type::Boolean => TsExpression::Primitive(TsPrimitive::Boolean),
-                Type::Array => {
-                    TsExpression::Array(Box::new(TsExpression::Primitive(TsPrimitive::String)))
-                }
-                Type::Object => {
-                    // For object types, check if it has properties
-                    TsExpression::Primitive(TsPrimitive::Any)
-                }
-                Type::Null => TsExpression::Primitive(TsPrimitive::Null),
-            },
-            SchemaType::Array(types) => {
-                // Handle multi-type support (OpenAPI 3.1.2)
-                if types.len() == 1 {
-                    // Single type in array
-                    Self::map_schema_type_to_primitive(&SchemaType::Type(types[0].clone()))
+    /// Map schema type set to primitive TypeScript type
+    fn map_schema_type_to_primitive(schema_type: &Option<SchemaTypeSet>) -> TsExpression {
+        let type_set = match schema_type {
+            Some(ts) => ts,
+            None => return TsExpression::Primitive(TsPrimitive::Any),
+        };
+        match type_set {
+            SchemaTypeSet::Single(t) => Self::map_single_type_to_primitive(*t),
+            SchemaTypeSet::Multiple(types) => {
+                let non_null: Vec<_> = types.iter().filter(|t| **t != SchemaType::Null).collect();
+                if non_null.is_empty() {
+                    TsExpression::Primitive(TsPrimitive::Null)
+                } else if non_null.len() == 1 {
+                    Self::map_single_type_to_primitive(*non_null[0])
                 } else {
-                    // Multiple types - create union
-                    let union_types: BTreeSet<TsExpression> = types
+                    let union_types: BTreeSet<TsExpression> = non_null
                         .iter()
-                        .map(|t| Self::map_schema_type_to_primitive(&SchemaType::Type(t.clone())))
+                        .map(|t| Self::map_single_type_to_primitive(**t))
                         .collect();
-
-                    if union_types.len() == 1 {
-                        union_types.first().unwrap().clone()
-                    } else {
-                        TsExpression::Union(union_types)
-                    }
+                    TsExpression::Union(union_types)
                 }
-            }
-            SchemaType::AnyValue => {
-                // AnyValue represents any JSON value
-                TsExpression::Primitive(TsPrimitive::Any)
             }
         }
     }
 
-    /// Map ArrayItems to TypeScript type
-    fn map_array_items_to_type(
-        &self,
-        array_items: &utoipa::openapi::schema::ArrayItems,
-        context: &mut SchemaContext,
-        parent_name: &str,
-    ) -> TsExpression {
-        match array_items {
-            utoipa::openapi::schema::ArrayItems::RefOrSchema(schema_ref) => {
-                self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None)
+    fn map_single_type_to_primitive(t: SchemaType) -> TsExpression {
+        match t {
+            SchemaType::String => TsExpression::Primitive(TsPrimitive::String),
+            SchemaType::Integer => TsExpression::Primitive(TsPrimitive::Number),
+            SchemaType::Number => TsExpression::Primitive(TsPrimitive::Number),
+            SchemaType::Boolean => TsExpression::Primitive(TsPrimitive::Boolean),
+            SchemaType::Array => {
+                TsExpression::Array(Box::new(TsExpression::Primitive(TsPrimitive::String)))
             }
-            utoipa::openapi::schema::ArrayItems::False => {
-                // No additional items allowed - use any as fallback
-                TsExpression::Primitive(TsPrimitive::Any)
-            }
+            SchemaType::Object => TsExpression::Primitive(TsPrimitive::Any),
+            SchemaType::Null => TsExpression::Primitive(TsPrimitive::Null),
         }
     }
 
@@ -662,16 +508,14 @@ impl SchemaGenerator {
     /// Map inline object schema to TypeScript object type expression
     fn map_inline_object_to_type(
         &self,
-        obj_schema: &Object,
+        obj_schema: &ObjectSchema,
         context: &mut SchemaContext,
         parent_name: &str,
     ) -> TsExpression {
         let mut properties = BTreeMap::new();
 
-        // Map each property to its TypeScript type
-        // Convert property names to camelCase for consistency, but preserve original name
         for (original_name, prop_schema) in &obj_schema.properties {
-            let type_expr = self.map_ref_or_schema_to_type(
+            let type_expr = self.map_object_or_ref_schema_to_type(
                 prop_schema,
                 context,
                 parent_name,
@@ -691,17 +535,17 @@ impl SchemaGenerator {
         TsExpression::Object(properties)
     }
 
-    /// Map composition schemas (oneOf/anyOf) to TypeScript types with discriminator support
+    /// Map composition schemas (oneOf/anyOf) to TypeScript types
     fn map_composition_to_type(
         &self,
-        items: &[RefOr<Schema>],
+        items: &[ObjectOrReference<ObjectSchema>],
         context: &mut SchemaContext,
         parent_name: &str,
     ) -> TsExpression {
         let types: BTreeSet<TsExpression> = items
             .iter()
             .map(|schema_ref| {
-                self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None)
+                self.map_object_or_ref_schema_to_type(schema_ref, context, parent_name, None)
             })
             .collect();
 
@@ -719,13 +563,14 @@ impl SchemaGenerator {
     // ============================================================================
 
     /// Handle nullable types by adding null to union types
-    fn handle_nullable(&self, base_type: TsExpression, schema_type: &SchemaType) -> TsExpression {
-        // Check if schema_type includes Null (OpenAPI 3.1.2 nullable support)
-        let is_nullable = match schema_type {
-            SchemaType::Array(types) => types.contains(&Type::Null),
-            SchemaType::Type(Type::Null) => true,
-            _ => false,
-        };
+    fn handle_nullable(
+        &self,
+        base_type: TsExpression,
+        schema_type: &Option<SchemaTypeSet>,
+    ) -> TsExpression {
+        let is_nullable = schema_type
+            .as_ref()
+            .is_some_and(|t| t.contains(SchemaType::Null));
 
         if is_nullable {
             // Check if base_type already contains null to avoid duplicates
@@ -781,48 +626,27 @@ impl SchemaGenerator {
         }
     }
 
-    /// Extract description from a RefOr<Schema>
-    fn extract_description_from_schema(&self, schema_ref: &RefOr<Schema>) -> Option<String> {
+    /// Extract description from ObjectOrReference<ObjectSchema>
+    fn extract_description_from_schema_ref(
+        &self,
+        schema_ref: &ObjectOrReference<ObjectSchema>,
+    ) -> Option<String> {
         match schema_ref {
-            RefOr::T(schema) => match schema {
-                Schema::Object(obj_schema) => obj_schema.description.clone(),
-                _ => None,
-            },
-            RefOr::Ref(reference) => Some(reference.description.clone()),
+            ObjectOrReference::Object(obj_schema) => obj_schema.description.clone(),
+            ObjectOrReference::Ref { description, .. } => description.clone(),
         }
     }
 
-    /// Handle known format annotations for better type inference
-    /// TODO: Implement proper format handling for better type inference
-    fn handle_known_format(
+    /// Handle known format annotations
+    fn handle_known_format_str(
         &self,
         base_type: TsExpression,
-        format: &Option<SchemaFormat>,
+        format: &Option<String>,
     ) -> TsExpression {
-        // For now, format doesn't change the base type, but we could add comments or
-        // more specific types in the future (e.g., branded types for email, uuid, etc.)
-        match format {
-            Some(SchemaFormat::KnownFormat(KnownFormat::DateTime)) => {
-                // Could generate branded type for date-time in the future
-                base_type
-            }
-            Some(SchemaFormat::KnownFormat(KnownFormat::Email)) => {
-                // Could generate branded type for email in the future
-                base_type
-            }
-            Some(SchemaFormat::KnownFormat(KnownFormat::Uri)) => {
-                // Could generate branded type for URI in the future
-                base_type
-            }
-            Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)) => {
-                // Could generate branded type for UUID in the future
-                base_type
-            }
-            Some(SchemaFormat::KnownFormat(KnownFormat::Int64))
-            | Some(SchemaFormat::KnownFormat(KnownFormat::Int32)) => {
-                // Integer formats still map to number in TypeScript
-                base_type
-            }
+        match format.as_deref() {
+            Some("date-time") | Some("date") => base_type,
+            Some("email") | Some("uri") | Some("uuid") => base_type,
+            Some("int64") | Some("int32") => base_type,
             _ => base_type,
         }
     }
@@ -880,12 +704,11 @@ impl SchemaGenerator {
     fn handle_schema_reference(
         &self,
         original_name: &str,
-        reference: &utoipa::openapi::Ref,
+        ref_path: &str,
         context: &mut SchemaContext,
     ) -> TsTypeDefinition {
         let ts_name = original_name.to_pascal_case();
-        // Extract schema name from reference path (this is the original name of the referenced schema)
-        let ref_original_name = self.extract_schema_name(&reference.ref_location);
+        let ref_original_name = self.extract_schema_name(ref_path);
         let ref_ts_name = ref_original_name.to_pascal_case();
 
         // Check for circular dependency
@@ -940,22 +763,21 @@ impl SchemaGenerator {
     }
 
     /// Check if a schema reference represents an interface
-    fn is_schema_ref_interface(&self, schema_ref: &RefOr<Schema>, context: &SchemaContext) -> bool {
+    fn is_schema_ref_interface(
+        &self,
+        schema_ref: &ObjectOrReference<ObjectSchema>,
+        context: &SchemaContext,
+    ) -> bool {
         match schema_ref {
-            RefOr::T(Schema::Object(obj_schema)) => {
+            ObjectOrReference::Object(obj_schema) => {
                 !obj_schema.properties.is_empty() || obj_schema.additional_properties.is_some()
             }
-            RefOr::Ref(reference) => {
-                let original_name = self.extract_schema_name(&reference.ref_location);
-                context
-                    .schemas
-                    .get(&original_name)
-                    .map(|s| {
-                        matches!(s, RefOr::T(Schema::Object(obj_schema)) if !obj_schema.properties.is_empty() || obj_schema.additional_properties.is_some())
-                    })
-                    .unwrap_or(false)
+            ObjectOrReference::Ref { ref_path, .. } => {
+                let original_name = self.extract_schema_name(ref_path);
+                context.schemas.get(&original_name).map(|s| {
+                    matches!(s, ObjectOrReference::Object(obj_schema) if !obj_schema.properties.is_empty() || obj_schema.additional_properties.is_some())
+                }).unwrap_or(false)
             }
-            _ => false,
         }
     }
 
@@ -965,7 +787,7 @@ impl SchemaGenerator {
     /// FromJSON/ToJSON functions that can discriminate between union members.
     fn extract_union_members(
         &self,
-        items: &[RefOr<Schema>],
+        items: &[ObjectOrReference<ObjectSchema>],
         context: &mut SchemaContext,
         parent_name: &str,
     ) -> Vec<UnionMemberInfo> {
@@ -973,36 +795,29 @@ impl SchemaGenerator {
             .iter()
             .enumerate()
             .map(|(index, schema_ref)| {
-                // Detect tagged enum pattern once and reuse it
                 let tagged_enum_pattern = TaggedEnumPattern::detect_from_schema(schema_ref);
 
-                // Try to extract a meaningful variant name for tagged enums
                 let inline_interface_name = tagged_enum_pattern
                     .as_ref()
                     .map(|pattern| pattern.to_interface_name(parent_name))
                     .unwrap_or_else(|| format!("{parent_name}Member{}", index + 1));
 
-                // For inline object schemas in unions, create a named interface
-                let (type_expr, is_interface) = if let RefOr::T(Schema::Object(obj_schema)) =
+                let (type_expr, is_interface) = if let ObjectOrReference::Object(obj_schema) =
                     schema_ref
                     && !obj_schema.properties.is_empty()
                 {
                     if !context.has_inline_interface(&inline_interface_name) {
-                        // Check for enum discriminator using the detected pattern
                         let enum_discriminator = tagged_enum_pattern
                             .as_ref()
                             .and_then(|pattern| pattern.tag_field())
                             .and_then(|tag_field| {
                                 obj_schema.properties.get(tag_field).and_then(|tag_prop| {
-                                    if let RefOr::T(Schema::Object(tag_obj)) = tag_prop {
-                                        tag_obj
-                                            .enum_values
-                                            .as_ref()
-                                            .and_then(|enum_values| enum_values.first())
-                                            .and_then(|v| v.as_str())
-                                            .map(|enum_val| {
+                                    if let ObjectOrReference::Object(tag_obj) = tag_prop {
+                                        tag_obj.enum_values.first().and_then(|v| v.as_str()).map(
+                                            |enum_val| {
                                                 (tag_field.to_string(), enum_val.to_string())
-                                            })
+                                            },
+                                        )
                                     } else {
                                         None
                                     }
@@ -1011,12 +826,11 @@ impl SchemaGenerator {
 
                         let interface = self.schema_to_interface(
                             &inline_interface_name,
-                            &Schema::Object(obj_schema.clone()),
+                            obj_schema,
                             context,
                             &inline_interface_name,
                         );
 
-                        // Register enum discriminator if found
                         if let Some((prop_name, enum_val)) = enum_discriminator {
                             context.register_enum_discriminator(
                                 inline_interface_name.clone(),
@@ -1030,41 +844,38 @@ impl SchemaGenerator {
                     }
 
                     (TsExpression::Reference(inline_interface_name.clone()), true)
-                } else if let RefOr::T(Schema::AllOf(all_of)) = schema_ref {
-                    // Handle internally tagged enums (allOf with variant schema + tag field)
+                } else if let ObjectOrReference::Object(obj_schema) = schema_ref
+                    && !obj_schema.all_of.is_empty()
+                {
                     if !context.has_inline_interface(&inline_interface_name) {
-                        // Get the tag field name from the detected pattern
                         let tag_field_name = tagged_enum_pattern
                             .as_ref()
                             .and_then(|pattern| pattern.tag_field().map(|s| s.to_string()));
 
-                        // Create an interface that combines all allOf members
                         let mut all_properties = Vec::new();
                         let mut seen_properties = BTreeSet::new();
                         let mut enum_discriminator: Option<(String, String)> = None;
 
-                        for item in &all_of.items {
-                            if let RefOr::T(Schema::Object(obj_schema)) = item {
-                                // Add properties from inline object schemas
-                                for (prop_name, prop_schema) in &obj_schema.properties {
+                        for item in &obj_schema.all_of {
+                            if let ObjectOrReference::Object(item_schema) = item {
+                                for (prop_name, prop_schema) in &item_schema.properties {
                                     if seen_properties.insert(prop_name.clone()) {
-                                        let type_expr = self.map_ref_or_schema_to_type(
+                                        let type_expr = self.map_object_or_ref_schema_to_type(
                                             prop_schema,
                                             context,
                                             &inline_interface_name,
                                             Some(prop_name),
                                         );
-                                        let is_required = obj_schema.required.contains(prop_name);
+                                        let is_required = item_schema.required.contains(prop_name);
                                         let description =
-                                            self.extract_description_from_schema(prop_schema);
+                                            self.extract_description_from_schema_ref(prop_schema);
 
-                                        // Check if this is an enum discriminator (tag field with single enum value)
                                         if let Some(ref tag_field) = tag_field_name
                                             && prop_name == tag_field
-                                            && let RefOr::T(Schema::Object(ty_obj)) = prop_schema
-                                            && let Some(enum_values) = &ty_obj.enum_values
+                                            && let ObjectOrReference::Object(ty_obj) = prop_schema
+                                            && !ty_obj.enum_values.is_empty()
                                             && let Some(serde_json::Value::String(enum_val)) =
-                                                enum_values.first()
+                                                ty_obj.enum_values.first()
                                         {
                                             enum_discriminator =
                                                 Some((prop_name.clone(), enum_val.clone()));
@@ -1073,58 +884,48 @@ impl SchemaGenerator {
                                         let camel_case_name = prop_name.to_lower_camel_case();
                                         let original_name = prop_name.clone();
 
-                                        let property = TsProperty {
+                                        all_properties.push(TsProperty {
                                             ts_name: camel_case_name,
                                             original_name,
                                             type_expr,
                                             optional: !is_required,
                                             is_index_signature: false,
                                             documentation: description.map(TsDocComment::new),
-                                        };
-                                        all_properties.push(property);
+                                        });
                                     }
                                 }
-                            } else if let RefOr::Ref(reference) = item {
-                                // For references, look up the schema and merge its properties
-                                let ref_path = &reference.ref_location;
-                                if let Some(schema_name) =
+                            } else if let ObjectOrReference::Ref { ref_path, .. } = item
+                                && let Some(schema_name) =
                                     ref_path.strip_prefix("#/components/schemas/")
-                                    && let Some(ref_schema_ref) = context.schemas.get(schema_name)
-                                    && let RefOr::T(Schema::Object(ref_obj_schema)) = ref_schema_ref
-                                {
-                                    // Merge properties from the referenced schema
-                                    for (prop_name, prop_schema) in &ref_obj_schema.properties {
-                                        if seen_properties.insert(prop_name.clone()) {
-                                            let type_expr = self.map_ref_or_schema_to_type(
-                                                prop_schema,
-                                                context,
-                                                &inline_interface_name,
-                                                Some(prop_name),
-                                            );
-                                            let is_required =
-                                                ref_obj_schema.required.contains(prop_name);
-                                            let description =
-                                                self.extract_description_from_schema(prop_schema);
+                                && let Some(ref_schema_ref) = context.schemas.get(schema_name)
+                                && let ObjectOrReference::Object(ref_obj_schema) = ref_schema_ref
+                            {
+                                for (prop_name, prop_schema) in &ref_obj_schema.properties {
+                                    if seen_properties.insert(prop_name.clone()) {
+                                        let type_expr = self.map_object_or_ref_schema_to_type(
+                                            prop_schema,
+                                            context,
+                                            &inline_interface_name,
+                                            Some(prop_name),
+                                        );
+                                        let is_required =
+                                            ref_obj_schema.required.contains(prop_name);
+                                        let description =
+                                            self.extract_description_from_schema_ref(prop_schema);
 
-                                            let camel_case_name = prop_name.to_lower_camel_case();
-                                            let original_name = prop_name.clone();
-
-                                            let property = TsProperty {
-                                                ts_name: camel_case_name,
-                                                original_name,
-                                                type_expr,
-                                                optional: !is_required,
-                                                is_index_signature: false,
-                                                documentation: description.map(TsDocComment::new),
-                                            };
-                                            all_properties.push(property);
-                                        }
+                                        all_properties.push(TsProperty {
+                                            ts_name: prop_name.to_lower_camel_case(),
+                                            original_name: prop_name.clone(),
+                                            type_expr,
+                                            optional: !is_required,
+                                            is_index_signature: false,
+                                            documentation: description.map(TsDocComment::new),
+                                        });
                                     }
                                 }
                             }
                         }
 
-                        // Register enum discriminator if found
                         if let Some((prop_name, enum_val)) = enum_discriminator {
                             context.register_enum_discriminator(
                                 inline_interface_name.clone(),
@@ -1133,23 +934,28 @@ impl SchemaGenerator {
                             );
                         }
 
-                        let interface_signature = TsInterfaceSignature::new(
-                            inline_interface_name.clone(),
-                            inline_interface_name.clone(),
-                        );
                         let interface = TsInterfaceDefinition {
-                            signature: interface_signature,
+                            signature: TsInterfaceSignature::new(
+                                inline_interface_name.clone(),
+                                inline_interface_name.clone(),
+                            ),
                             properties: all_properties,
                             documentation: None,
                         };
-                        let type_def = TsTypeDefinition::Interface(interface);
-                        context.register_inline_interface(inline_interface_name.clone(), type_def);
+                        context.register_inline_interface(
+                            inline_interface_name.clone(),
+                            TsTypeDefinition::Interface(interface),
+                        );
                     }
 
                     (TsExpression::Reference(inline_interface_name.clone()), true)
                 } else {
-                    let expr =
-                        self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None);
+                    let expr = self.map_object_or_ref_schema_to_type(
+                        schema_ref,
+                        context,
+                        parent_name,
+                        None,
+                    );
                     let is_intf = self.is_schema_ref_interface(schema_ref, context);
                     (expr, is_intf)
                 };
@@ -1181,7 +987,7 @@ impl SchemaGenerator {
     /// FromJSON/ToJSON functions. The type_expr contains all the detailed information needed.
     fn extract_intersection_members(
         &self,
-        items: &[RefOr<Schema>],
+        items: &[ObjectOrReference<ObjectSchema>],
         context: &mut SchemaContext,
         parent_name: &str,
     ) -> Vec<IntersectionMemberInfo> {
@@ -1189,7 +995,7 @@ impl SchemaGenerator {
             .iter()
             .map(|schema_ref| {
                 let type_expr =
-                    self.map_ref_or_schema_to_type(schema_ref, context, parent_name, None);
+                    self.map_object_or_ref_schema_to_type(schema_ref, context, parent_name, None);
 
                 // Check if it's a reference type
                 let is_reference = matches!(type_expr, TsExpression::Reference(_));

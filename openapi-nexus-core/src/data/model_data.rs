@@ -1,11 +1,10 @@
 //! Model data for template generation
 
-use utoipa::openapi::RefOr;
-use utoipa::openapi::schema::Schema;
+use openapi_nexus_spec::oas31::spec::{ObjectOrReference, ObjectSchema};
 
 /// Model data
 #[derive(Clone)]
 pub struct ModelData {
     pub name: String,
-    pub schema: RefOr<Schema>,
+    pub schema: ObjectOrReference<ObjectSchema>,
 }

@@ -1,6 +1,6 @@
 //! Path normalization transformation pass
 
-use utoipa::openapi::OpenApi;
+use openapi_nexus_ir::OpenApi;
 
 use super::{OpenApiTransformPass, TransformError, TransformPass};
 
@@ -27,27 +27,23 @@ impl OpenApiTransformPass for PathNormalizationPass {
     fn transform(&self, openapi: &mut OpenApi) -> Result<(), TransformError> {
         tracing::debug!("Normalizing path patterns");
 
-        // Normalize all paths to ensure consistency
-        let paths = std::mem::take(&mut openapi.paths.paths);
+        let paths = openapi.paths.take().unwrap_or_default();
         let mut normalized_paths = std::collections::BTreeMap::new();
 
         for (mut path, path_item) in paths {
-            // Normalize path: remove trailing slashes (except for root)
             if path.len() > 1 && path.ends_with('/') {
                 path.pop();
             }
-
-            // Ensure path starts with /
             if !path.starts_with('/') {
                 path = format!("/{}", path);
             }
-
             normalized_paths.insert(path, path_item);
         }
 
-        openapi.paths.paths = normalized_paths;
+        let len = normalized_paths.len();
+        openapi.paths = Some(normalized_paths);
 
-        tracing::debug!("Normalized {} paths", openapi.paths.paths.len());
+        tracing::debug!("Normalized {} paths", len);
 
         Ok(())
     }

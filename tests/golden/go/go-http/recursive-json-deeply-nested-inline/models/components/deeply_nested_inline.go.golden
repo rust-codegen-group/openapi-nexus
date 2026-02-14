@@ -13,7 +13,7 @@ import (
 
 // Three levels of nested inline objects
 type DeeplyNestedInline struct {
-	LevelOne string `json:"level_one"`
+	LevelOne interface{} `json:"level_one"`
 }
 
 func (c DeeplyNestedInline) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *DeeplyNestedInline) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *DeeplyNestedInline) GetLevelOne() string {
+func (c *DeeplyNestedInline) GetLevelOne() // Any {
 	if c == nil {
-		var zero string
+		var zero // Any
 		return zero
 	}
 	return c.LevelOne

@@ -14,7 +14,7 @@ import (
 
 // Object with optional array of inline objects
 type OptionalArrayOfInlineObjects struct {
-	OptionalItems optionalnullable.OptionalNullable[[]string] `json:"optional_items,omitzero"`
+	OptionalItems optionalnullable.OptionalNullable[[]interface{}] `json:"optional_items,omitzero"`
 }
 
 func (c OptionalArrayOfInlineObjects) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *OptionalArrayOfInlineObjects) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *OptionalArrayOfInlineObjects) GetOptionalItems() optionalnullable.OptionalNullable[[]string] {
+func (c *OptionalArrayOfInlineObjects) GetOptionalItems() optionalnullable.OptionalNullable[[]interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[[]string]
+		var zero optionalnullable.OptionalNullable[[]interface{}]
 		return zero
 	}
 	return c.OptionalItems

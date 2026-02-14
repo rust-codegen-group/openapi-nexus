@@ -17,6 +17,7 @@ import { type FooQuux, FooQuuxFromJSON, FooQuuxFromJSONTyped, FooQuuxToJSON, ins
 import { type Grault, GraultFromJSONTyped, GraultToJSON, instanceOfGrault } from './Grault';
 import { type Quux, QuuxFromJSONTyped, QuuxToJSON, instanceOfQuux } from './Quux';
 
+/** Union type with inline object schemas */
 export type Foo = { bar: FooBar } | { grault: FooGrault } | { quux: FooQuux }
 
 export function FooFromJSON(json: any): Foo {

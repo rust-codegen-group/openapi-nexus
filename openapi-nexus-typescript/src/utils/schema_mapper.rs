@@ -3,25 +3,25 @@
 use std::collections::BTreeSet;
 
 use heck::ToPascalCase as _;
-use utoipa::openapi;
-use utoipa::openapi::{RefOr, Schema};
 
 use crate::ast::{TsExpression, TsPrimitive};
+use openapi_nexus_spec::oas31::spec::{ObjectOrReference, ObjectSchema, Schema};
 
 /// Unified schema mapper for converting OpenAPI schemas to TypeScript types
 #[derive(Debug, Clone)]
 pub struct SchemaMapper;
 
 impl SchemaMapper {
-    /// Map a RefOr<Schema> to a TypeScript type expression
+    /// Map an ObjectOrReference<ObjectSchema> to a TypeScript type expression
     ///
     /// For schema references, this always uses the PascalCase version of the schema name.
     /// The original schema name is preserved in imports with an alias when needed.
-    pub fn map_ref_or_schema_to_type(schema_ref: &RefOr<Schema>) -> TsExpression {
+    pub fn map_ref_or_schema_to_type(schema_ref: &ObjectOrReference<ObjectSchema>) -> TsExpression {
         match schema_ref {
-            RefOr::T(schema) => Self::map_schema_to_type(schema),
-            RefOr::Ref(reference) => {
-                let ref_path = &reference.ref_location;
+            ObjectOrReference::Object(object_schema) => {
+                Self::map_object_schema_to_type(object_schema)
+            }
+            ObjectOrReference::Ref { ref_path, .. } => {
                 if let Some(schema_name) = ref_path.strip_prefix("#/components/schemas/") {
                     TsExpression::Reference(schema_name.to_pascal_case())
                 } else {
@@ -31,30 +31,27 @@ impl SchemaMapper {
         }
     }
 
-    /// Map a Schema to a TypeScript type expression
-    pub fn map_schema_to_type(schema: &Schema) -> TsExpression {
-        match schema {
-            Schema::Object(obj_schema) => {
-                // Check if this is an enum schema
-                if let Some(enum_values) = &obj_schema.enum_values
-                    && !enum_values.is_empty()
-                {
-                    return Self::map_enum_to_type(enum_values);
-                }
+    /// Map an object schema to a TypeScript type expression
+    fn map_object_schema_to_type(object_schema: &ObjectSchema) -> TsExpression {
+        if !object_schema.enum_values.is_empty() {
+            return Self::map_enum_to_type(&object_schema.enum_values);
+        }
+        if let Some(items) = &object_schema.items {
+            let item_type = Self::map_schema_to_ts_type(items);
+            return TsExpression::Array(Box::new(item_type));
+        }
+        if object_schema.properties.is_empty() {
+            TsExpression::Primitive(TsPrimitive::String)
+        } else {
+            TsExpression::Reference("object".to_string())
+        }
+    }
 
-                if obj_schema.properties.is_empty() {
-                    // This is likely a primitive type
-                    TsExpression::Primitive(TsPrimitive::String)
-                } else {
-                    TsExpression::Reference("object".to_string())
-                }
-            }
-            Schema::Array(arr_schema) => {
-                // Map array schema to TypeScript array type using the items field
-                let item_type = Self::map_array_items_to_type(&arr_schema.items);
-                TsExpression::Array(Box::new(item_type))
-            }
-            _ => TsExpression::Primitive(TsPrimitive::String),
+    /// Map schema (Boolean | Object) to TsExpression
+    fn map_schema_to_ts_type(schema: &Schema) -> TsExpression {
+        match schema {
+            Schema::Object(schema_ref) => Self::map_ref_or_schema_to_type(schema_ref.as_ref()),
+            Schema::Boolean(_) => TsExpression::Primitive(TsPrimitive::Any),
         }
     }
 
@@ -93,19 +90,6 @@ impl SchemaMapper {
                         .expect("unique_types should have exactly one element"),
                     _ => TsExpression::Union(unique_types),
                 }
-            }
-        }
-    }
-
-    /// Map ArrayItems to TypeScript type
-    fn map_array_items_to_type(array_items: &openapi::schema::ArrayItems) -> TsExpression {
-        match array_items {
-            openapi::schema::ArrayItems::RefOrSchema(schema_ref) => {
-                Self::map_ref_or_schema_to_type(schema_ref)
-            }
-            openapi::schema::ArrayItems::False => {
-                // No additional items allowed - use any as fallback
-                TsExpression::Primitive(TsPrimitive::Any)
             }
         }
     }

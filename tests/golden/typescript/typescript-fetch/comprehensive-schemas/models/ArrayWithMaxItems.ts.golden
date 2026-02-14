@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Array with maximum items constraint */
 export type ArrayWithMaxItems = Array<string>
 
 export function ArrayWithMaxItemsFromJSON(json: any): ArrayWithMaxItems {

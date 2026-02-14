@@ -13,7 +13,7 @@ import (
 
 // Inline object containing array of inline objects
 type InlineObjectWithArray struct {
-	ContainerData string `json:"container_data"`
+	ContainerData interface{} `json:"container_data"`
 }
 
 func (c InlineObjectWithArray) MarshalJSON() ([]byte, error) {
@@ -30,9 +30,9 @@ func (c *InlineObjectWithArray) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *InlineObjectWithArray) GetContainerData() string {
+func (c *InlineObjectWithArray) GetContainerData() // Any {
 	if c == nil {
-		var zero string
+		var zero // Any
 		return zero
 	}
 	return c.ContainerData

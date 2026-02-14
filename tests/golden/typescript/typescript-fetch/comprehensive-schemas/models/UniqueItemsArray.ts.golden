@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Array with unique items constraint */
 export type UniqueItemsArray = Array<string>
 
 export function UniqueItemsArrayFromJSON(json: any): UniqueItemsArray {

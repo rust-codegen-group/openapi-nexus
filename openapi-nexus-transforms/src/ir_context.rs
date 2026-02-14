@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use utoipa::openapi::OpenApi;
+use openapi_nexus_ir::OpenApi;
 
 /// Analysis results from the IR layer
 #[derive(Debug, Clone)]

@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Union of multiple primitive types */
 export type OneOfTypes = string | number | boolean
 
 export function OneOfTypesFromJSON(json: any): OneOfTypes {

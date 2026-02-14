@@ -20,9 +20,10 @@ serde_json.workspace = true
 serde_norway.workspace = true
 snafu.workspace = true
 tracing.workspace = true
-utoipa.workspace = true
 
 openapi-nexus-common.workspace = true
 openapi-nexus-config.workspace = true
+openapi-nexus-ir.workspace = true
 openapi-nexus-parser.workspace = true
+openapi-nexus-spec.workspace = true
 # openapi-nexus-transforms.workspace = true

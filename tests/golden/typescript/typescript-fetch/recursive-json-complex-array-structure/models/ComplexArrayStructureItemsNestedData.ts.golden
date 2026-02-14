@@ -11,23 +11,23 @@
  * Do not edit the file manually.
  */
 
-export interface ComplexArrayStructureNestedData {
+export interface ComplexArrayStructureItemsNestedData {
   nestedFieldOne?: string,
   nestedFieldTwo?: number,
 }
 
-export function instanceOfComplexArrayStructureNestedData(value: unknown): value is ComplexArrayStructureNestedData {
+export function instanceOfComplexArrayStructureItemsNestedData(value: unknown): value is ComplexArrayStructureItemsNestedData {
   if (!value || typeof value !== "object") {
     return false;
   }
   return true;
 }
 
-export function ComplexArrayStructureNestedDataFromJSON(json: any): ComplexArrayStructureNestedData {
-  return ComplexArrayStructureNestedDataFromJSONTyped(json, false);
+export function ComplexArrayStructureItemsNestedDataFromJSON(json: any): ComplexArrayStructureItemsNestedData {
+  return ComplexArrayStructureItemsNestedDataFromJSONTyped(json, false);
 }
 
-export function ComplexArrayStructureNestedDataFromJSONTyped(json: any, ignoreDiscriminator: boolean): ComplexArrayStructureNestedData {
+export function ComplexArrayStructureItemsNestedDataFromJSONTyped(json: any, ignoreDiscriminator: boolean): ComplexArrayStructureItemsNestedData {
   if (json == null) {
     return json;
   }
@@ -37,11 +37,11 @@ export function ComplexArrayStructureNestedDataFromJSONTyped(json: any, ignoreDi
   };
 }
 
-export function ComplexArrayStructureNestedDataToJSON(value?: ComplexArrayStructureNestedData | null): any {
-  return ComplexArrayStructureNestedDataToJSONTyped(value, false);
+export function ComplexArrayStructureItemsNestedDataToJSON(value?: ComplexArrayStructureItemsNestedData | null): any {
+  return ComplexArrayStructureItemsNestedDataToJSONTyped(value, false);
 }
 
-export function ComplexArrayStructureNestedDataToJSONTyped(value?: ComplexArrayStructureNestedData | null, ignoreDiscriminator: boolean = false): any {
+export function ComplexArrayStructureItemsNestedDataToJSONTyped(value?: ComplexArrayStructureItemsNestedData | null, ignoreDiscriminator: boolean = false): any {
   if (value == null) {
     return value;
   }
@@ -51,7 +51,7 @@ export function ComplexArrayStructureNestedDataToJSONTyped(value?: ComplexArrayS
   };
 }
 
-export const ComplexArrayStructureNestedDataPropertyValidationAttributesMap: {
+export const ComplexArrayStructureItemsNestedDataPropertyValidationAttributesMap: {
   [property: string]: {
     maxLength?: number,
     minLength?: number,

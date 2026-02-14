@@ -30,16 +30,23 @@ impl IrTransformPass for TypeInferencePass {
         let schemas = Analyzer::get_all_schemas(&ir.openapi);
 
         for (name, schema_ref) in schemas {
-            // Infer the type based on the schema structure
             let inferred_type = match schema_ref {
-                utoipa::openapi::RefOr::T(schema) => match schema {
-                    utoipa::openapi::Schema::Object(_) => "object",
-                    utoipa::openapi::Schema::Array(_) => "array",
-                    utoipa::openapi::Schema::OneOf(_) => "oneOf",
-                    utoipa::openapi::Schema::AllOf(_) => "allOf",
-                    _ => "unknown",
-                },
-                utoipa::openapi::RefOr::Ref(_) => "reference",
+                openapi_nexus_spec::oas31::spec::ObjectOrReference::Object(obj_schema) => {
+                    if !obj_schema.one_of.is_empty() {
+                        "oneOf"
+                    } else if !obj_schema.all_of.is_empty() {
+                        "allOf"
+                    } else if obj_schema.items.is_some() {
+                        "array"
+                    } else if !obj_schema.properties.is_empty()
+                        || obj_schema.additional_properties.is_some()
+                    {
+                        "object"
+                    } else {
+                        "unknown"
+                    }
+                }
+                openapi_nexus_spec::oas31::spec::ObjectOrReference::Ref { .. } => "reference",
             };
 
             tracing::debug!("Inferred type for schema '{}': {}", name, inferred_type);

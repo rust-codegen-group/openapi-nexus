@@ -1,6 +1,6 @@
 //! Transformation pipeline for OpenAPI specifications
 
-use utoipa::openapi::OpenApi;
+use openapi_nexus_ir::OpenApi;
 
 use crate::passes::{TransformError, TransformPass};
 

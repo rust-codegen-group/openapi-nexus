@@ -15,6 +15,12 @@ import { type ExternallyTaggedEnumVariantB, ExternallyTaggedEnumVariantBFromJSON
 import { type VariantA, VariantAFromJSON, VariantAFromJSONTyped, VariantAToJSON, instanceOfVariantA } from './VariantA';
 import { type VariantB, VariantBFromJSON, VariantBFromJSONTyped, VariantBToJSON, instanceOfVariantB } from './VariantB';
 
+/**
+ * Externally tagged enum (default Serde representation)
+ *
+ * This is the default representation where the variant name is the key
+ * and the content is the value: `{"VariantA": {"field1": "...", "field2": 123}}`
+ */
 export type ExternallyTaggedEnum = { externallyTaggedEnumVariantA: VariantA } | { externallyTaggedEnumVariantB: VariantB }
 
 export function ExternallyTaggedEnumFromJSON(json: any): ExternallyTaggedEnum {

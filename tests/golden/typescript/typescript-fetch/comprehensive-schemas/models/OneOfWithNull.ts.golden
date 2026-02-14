@@ -12,6 +12,7 @@
  */
 import { type BasicObject, BasicObjectFromJSON, BasicObjectFromJSONTyped, BasicObjectToJSON, instanceOfBasicObject } from './BasicObject';
 
+/** Union of string, null, and schema reference */
 export type OneOfWithNull = string | null | BasicObject
 
 export function OneOfWithNullFromJSON(json: any): OneOfWithNull {

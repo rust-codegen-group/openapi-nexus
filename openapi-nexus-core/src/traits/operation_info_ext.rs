@@ -1,4 +1,4 @@
-use utoipa::openapi;
+use openapi_nexus_spec::oas31::spec::Parameter;
 
 pub trait OperationInfoExt {
     /// Returns the computed method name for this operation, using the
@@ -6,5 +6,5 @@ pub trait OperationInfoExt {
     /// and path if not.
     fn method_name(&self) -> String;
 
-    fn parameters(&self) -> Vec<openapi::path::Parameter>;
+    fn parameters(&self) -> Vec<Parameter>;
 }

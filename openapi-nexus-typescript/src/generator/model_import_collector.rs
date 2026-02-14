@@ -3,14 +3,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use heck::ToPascalCase as _;
-use utoipa::openapi;
 
 use crate::generator::parameter_extractor::ParameterExtractor;
 use crate::generator::response_transformer::ResponseTransformer;
 use crate::templating::data::ApiImportStatement;
 use crate::utils::schema_mapper::SchemaMapper;
 use openapi_nexus_core::data::OperationInfo;
-use openapi_nexus_core::traits::OpenApiRefExt as _;
+use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference, Operation};
 
 /// Collected model dependencies for an API class
 #[derive(Debug, Clone)]
@@ -47,20 +46,20 @@ impl ModelImportCollector {
     ///
     /// Returns the PascalCase model name if the operation has an `application/json` request body
     /// with a schema reference to `#/components/schemas/{name}`.
-    pub fn extract_request_body_model_name(
-        &self,
-        operation: &openapi::path::Operation,
-    ) -> Option<String> {
-        let request_body = operation.request_body.as_ref()?;
+    pub fn extract_request_body_model_name(&self, operation: &Operation) -> Option<String> {
+        let request_body_ref = operation.request_body.as_ref()?;
+        let request_body = match request_body_ref {
+            ObjectOrReference::Object(rb) => rb,
+            ObjectOrReference::Ref { .. } => return None, // TODO: Resolve references
+        };
         let json_content = request_body.content.get("application/json")?;
         let schema_ref = json_content.schema.as_ref()?;
 
-        if let openapi::RefOr::Ref(reference) = schema_ref {
-            reference
-                .schema_name()
-                .map(|name| name.to_pascal_case())
-        } else {
-            None
+        match schema_ref {
+            ObjectOrReference::Ref { ref_path, .. } => ref_path
+                .strip_prefix("#/components/schemas/")
+                .map(|name| name.to_pascal_case()),
+            ObjectOrReference::Object(_) => None,
         }
     }
 
@@ -70,11 +69,7 @@ impl ModelImportCollector {
     /// Type aliases (arrays, primitives, etc.) don't have ToJSON functions.
     ///
     /// Returns `true` for unresolved references (safe default).
-    pub fn is_schema_interface(
-        &self,
-        model_name: &str,
-        components: Option<&openapi::Components>,
-    ) -> bool {
+    pub fn is_schema_interface(&self, model_name: &str, components: Option<&Components>) -> bool {
         let Some(components) = components else {
             // No components available, default to true to be safe
             return true;
@@ -86,17 +81,13 @@ impl ModelImportCollector {
         };
 
         match schema_ref {
-            openapi::RefOr::T(schema) => match schema {
-                openapi::schema::Schema::Object(obj_schema) => {
-                    // Interfaces have properties or additionalProperties
-                    !obj_schema.properties.is_empty() || obj_schema.additional_properties.is_some()
-                }
-                _ => {
-                    // Arrays and other types are type aliases
-                    false
-                }
-            },
-            openapi::RefOr::Ref(_) => {
+            ObjectOrReference::Object(object_schema) => {
+                // Check if this is an object schema with properties
+                // Check properties or additionalProperties directly
+                !object_schema.properties.is_empty()
+                    || object_schema.additional_properties.is_some()
+            }
+            ObjectOrReference::Ref { .. } => {
                 // Can't determine without resolving, default to true to be safe
                 true
             }
@@ -111,7 +102,7 @@ impl ModelImportCollector {
     pub fn collect_model_dependencies(
         &self,
         operations: &[OperationInfo],
-        components: Option<&openapi::Components>,
+        components: Option<&Components>,
         response_transformer: &ResponseTransformer,
     ) -> ModelDependencies {
         let mut dependencies = ModelDependencies::new();
@@ -126,31 +117,33 @@ impl ModelImportCollector {
                     .insert(format!("{}FromJSON", pascal_name));
             }
 
-            for response_ref in op_info.operation.responses.responses.values() {
-                match response_ref {
-                    openapi::RefOr::T(response) => {
-                        if let Some(json_content) = response.content.get("application/json")
-                            && let Some(schema_ref) = &json_content.schema
-                        {
-                            let ts_type = SchemaMapper::map_ref_or_schema_to_type(schema_ref);
-                            for type_name in ts_type.referenced_types() {
-                                if Self::is_builtin_type(&type_name) {
-                                    continue;
+            if let Some(responses) = &op_info.operation.responses {
+                for response_ref in responses.values() {
+                    match response_ref {
+                        ObjectOrReference::Object(response) => {
+                            if let Some(json_content) = response.content.get("application/json")
+                                && let Some(schema_ref) = &json_content.schema
+                            {
+                                let ts_type = SchemaMapper::map_ref_or_schema_to_type(schema_ref);
+                                for type_name in ts_type.referenced_types() {
+                                    if Self::is_builtin_type(&type_name) {
+                                        continue;
+                                    }
+                                    dependencies.type_names.insert(type_name.clone());
+                                    dependencies
+                                        .function_names
+                                        .insert(format!("{}FromJSON", type_name));
                                 }
-                                dependencies.type_names.insert(type_name.clone());
-                                dependencies
-                                    .function_names
-                                    .insert(format!("{}FromJSON", type_name));
                             }
                         }
-                    }
-                    openapi::RefOr::Ref(reference) => {
-                        if let Some(name) = reference.schema_name() {
-                            let pascal_name = name.to_pascal_case();
-                            dependencies.type_names.insert(pascal_name.clone());
-                            dependencies
-                                .function_names
-                                .insert(format!("{}FromJSON", pascal_name));
+                        ObjectOrReference::Ref { ref_path, .. } => {
+                            if let Some(name) = ref_path.strip_prefix("#/components/schemas/") {
+                                let pascal_name = name.to_pascal_case();
+                                dependencies.type_names.insert(pascal_name.clone());
+                                dependencies
+                                    .function_names
+                                    .insert(format!("{}FromJSON", pascal_name));
+                            }
                         }
                     }
                 }
@@ -181,12 +174,16 @@ impl ModelImportCollector {
                 let mut collect_from_param = |param: &openapi_nexus_core::data::ParameterInfo| {
                     if let Some(schema_ref) = &param.schema {
                         // Extract original schema name from reference if it's a reference
-                        if let openapi::RefOr::Ref(reference) = schema_ref {
-                            if let Some(original_name) = reference.schema_name()
-                                && !Self::is_builtin_type(original_name) {
-                                    // Store PascalCase name (always use PascalCase)
-                                    dependencies.type_names.insert(original_name.to_pascal_case());
-                                }
+                        if let ObjectOrReference::Ref { ref_path, .. } = schema_ref {
+                            if let Some(original_name) =
+                                ref_path.strip_prefix("#/components/schemas/")
+                                && !Self::is_builtin_type(original_name)
+                            {
+                                // Store PascalCase name (always use PascalCase)
+                                dependencies
+                                    .type_names
+                                    .insert(original_name.to_pascal_case());
+                            }
                         } else {
                             // For inline schemas, use the type expression to find references
                             let ts_type = SchemaMapper::map_ref_or_schema_to_type(schema_ref);

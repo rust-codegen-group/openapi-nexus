@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Array of objects */
 export type ObjectArray = Array<{ name: string }>
 
 export function ObjectArrayFromJSON(json: any): ObjectArray {

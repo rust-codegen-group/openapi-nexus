@@ -8,4 +8,5 @@
 package components
 
 
+// Array of booleans
 type BooleanArray = []string

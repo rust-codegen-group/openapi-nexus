@@ -4,8 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
-use utoipa::openapi;
-use utoipa::openapi::OpenApi;
+use openapi_nexus_ir::OpenApi;
 
 use crate::ast::{TsTypeAliasDefinition, TsTypeDefinition};
 use crate::config::TypeScriptFetchConfig;
@@ -55,7 +54,7 @@ impl TypeScriptFetchCodeGenerator {
     fn generate_model_type_definitions(
         &self,
         models: Vec<ModelData>,
-        components: &openapi::Components,
+        components: &openapi_nexus_spec::oas31::spec::Components,
     ) -> (
         HashMap<String, TsTypeDefinition>,
         HashMap<String, (String, String)>,
@@ -368,7 +367,9 @@ impl TypeScriptFetchCodeGenerator {
         let mut exports = vec!["export * from './runtime/runtime';".to_string()];
 
         // Only export from './apis' if there are paths in the OpenAPI spec
-        if !openapi.paths.paths.is_empty() {
+        if let Some(paths) = &openapi.paths
+            && !paths.is_empty()
+        {
             exports.push("export * from './apis';".to_string());
         }
 

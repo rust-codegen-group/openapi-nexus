@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
-use utoipa::openapi;
 
 use super::content_type::ContentType;
 use super::status_code::StatusCode;
+use openapi_nexus_spec::oas31::spec::{Header, ObjectOrReference, ObjectSchema, Response};
 
 /// Normalized representation of an OpenAPI response for template generation.
 ///
@@ -15,8 +15,8 @@ use super::status_code::StatusCode;
 pub struct HttpResponse {
     pub status: StatusCode,
     pub description: String,
-    pub headers: BTreeMap<String, openapi::Header>,
-    pub contents: BTreeMap<ContentType, Option<openapi::RefOr<openapi::schema::Schema>>>,
+    pub headers: BTreeMap<String, ObjectOrReference<Header>>,
+    pub contents: BTreeMap<ContentType, Option<ObjectOrReference<ObjectSchema>>>,
 }
 
 impl HttpResponse {
@@ -24,7 +24,7 @@ impl HttpResponse {
     ///
     /// The method copies metadata we need during code generation while preserving
     /// any referenced schemas for later resolution.
-    pub fn from_openapi(status: StatusCode, response: &openapi::Response) -> HttpResponse {
+    pub fn from_openapi(status: StatusCode, response: &Response) -> HttpResponse {
         let contents = response
             .content
             .iter()
@@ -36,7 +36,7 @@ impl HttpResponse {
 
         HttpResponse {
             status,
-            description: response.description.clone(),
+            description: response.description.clone().unwrap_or_default(),
             headers: response.headers.clone(),
             contents,
         }
@@ -50,7 +50,7 @@ impl HttpResponse {
         self.status.is_default()
     }
 
-    pub fn json_schema(&self) -> Option<&openapi::RefOr<openapi::schema::Schema>> {
+    pub fn json_schema(&self) -> Option<&ObjectOrReference<ObjectSchema>> {
         self.contents
             .get(&ContentType::Json)
             .and_then(|schema| schema.as_ref())

@@ -1,8 +1,8 @@
-use utoipa::openapi;
+use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference, ObjectSchema, Response};
 
-const COMPONENTS_PREFIX: &str = "#/components/";
+pub const COMPONENTS_PREFIX: &str = "#/components/";
 
-/// Extension trait for `openapi::Ref` providing helpers to extract component names.
+/// Extension trait for `ObjectOrReference::Ref` providing helpers to extract component names.
 pub trait OpenApiRefExt {
     /// Returns the referenced schema name if the reference points to `#/components/schemas/...`.
     fn schema_name(&self) -> Option<&str> {
@@ -58,29 +58,40 @@ pub trait OpenApiRefExt {
     fn component_name(&self, component: &str) -> Option<&str>;
 
     /// Resolve the referenced response from the supplied OpenAPI components.
-    fn resolve_response<'a>(
-        &self,
-        components: Option<&'a openapi::Components>,
-    ) -> Option<&'a openapi::Response>;
+    fn resolve_response<'a>(&self, components: Option<&'a Components>) -> Option<&'a Response>;
 }
 
-impl OpenApiRefExt for openapi::Ref {
+impl OpenApiRefExt for ObjectOrReference<Response> {
     fn component_name(&self, component: &str) -> Option<&str> {
-        extract_component_name(&self.ref_location, component)
+        match self {
+            ObjectOrReference::Ref { ref_path, .. } => extract_component_name(ref_path, component),
+            ObjectOrReference::Object(_) => None,
+        }
     }
 
-    fn resolve_response<'a>(
-        &self,
-        components: Option<&'a openapi::Components>,
-    ) -> Option<&'a openapi::Response> {
+    fn resolve_response<'a>(&self, components: Option<&'a Components>) -> Option<&'a Response> {
         let components = components?;
         let response_name = self.response_name()?;
         match components.responses.get(response_name)? {
-            openapi::RefOr::T(response) => Some(response),
-            openapi::RefOr::Ref(inner_reference) => {
-                inner_reference.resolve_response(Some(components))
+            ObjectOrReference::Object(response) => Some(response),
+            ObjectOrReference::Ref { .. } => {
+                // TODO: Handle nested references
+                None
             }
         }
+    }
+}
+
+impl OpenApiRefExt for ObjectOrReference<ObjectSchema> {
+    fn component_name(&self, component: &str) -> Option<&str> {
+        match self {
+            ObjectOrReference::Ref { ref_path, .. } => extract_component_name(ref_path, component),
+            ObjectOrReference::Object(_) => None,
+        }
+    }
+
+    fn resolve_response<'a>(&self, _components: Option<&'a Components>) -> Option<&'a Response> {
+        None
     }
 }
 

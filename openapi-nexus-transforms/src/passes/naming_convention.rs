@@ -1,7 +1,7 @@
 //! Naming convention transformation pass
 
 use heck::{ToKebabCase, ToLowerCamelCase, ToPascalCase, ToSnakeCase};
-use utoipa::openapi::OpenApi;
+use openapi_nexus_ir::OpenApi;
 
 use super::{OpenApiTransformPass, TransformError, TransformPass};
 
@@ -43,7 +43,7 @@ impl OpenApiTransformPass for NamingConventionPass {
         }
 
         // Transform path names
-        let paths = std::mem::take(&mut openapi.paths.paths);
+        let paths = openapi.paths.take().unwrap_or_default();
         let mut transformed_paths = std::collections::BTreeMap::new();
 
         for (path, path_item) in paths {
@@ -54,7 +54,7 @@ impl OpenApiTransformPass for NamingConventionPass {
             transformed_paths.insert(transformed_path, path_item);
         }
 
-        openapi.paths.paths = transformed_paths;
+        openapi.paths = Some(transformed_paths);
 
         Ok(())
     }

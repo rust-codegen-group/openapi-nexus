@@ -1,7 +1,7 @@
 //! Transformation passes for OpenAPI specifications
 
+use openapi_nexus_ir::OpenApi;
 use snafu::Snafu;
-use utoipa::openapi::OpenApi;
 
 use crate::ir_context::IrContext;
 

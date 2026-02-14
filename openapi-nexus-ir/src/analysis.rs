@@ -1,8 +1,9 @@
 //! Analysis utilities for OpenAPI specifications
 
-use utoipa::openapi::request_body::RequestBody;
-use utoipa::openapi::security::SecurityScheme;
-use utoipa::openapi::{OpenApi, RefOr, Schema, path::Operation};
+use crate::{
+    ObjectOrReference, ObjectSchema, OpenApi, Operation, Parameter, RefOr, RequestBody, Response,
+    SecurityScheme,
+};
 
 use crate::error::IrError;
 use crate::utils::Utils;
@@ -21,7 +22,7 @@ pub struct Analyzer;
 
 impl Analyzer {
     /// Get all schemas from the OpenAPI specification
-    pub fn get_all_schemas(openapi: &OpenApi) -> Vec<(&String, &utoipa::openapi::RefOr<Schema>)> {
+    pub fn get_all_schemas(openapi: &OpenApi) -> Vec<(&String, &ObjectOrReference<ObjectSchema>)> {
         openapi
             .components
             .as_ref()
@@ -30,49 +31,49 @@ impl Analyzer {
     }
 
     /// Get all operations from the OpenAPI specification
-    pub fn get_all_operations(
-        openapi: &OpenApi,
-    ) -> Vec<(&String, &utoipa::openapi::path::Operation)> {
+    pub fn get_all_operations(openapi: &OpenApi) -> Vec<(&String, &Operation)> {
         openapi
             .paths
-            .paths
-            .iter()
-            .flat_map(|(path, path_item)| {
-                // Access operations through individual HTTP methods
-                let mut operations = Vec::new();
-                if let Some(op) = &path_item.get {
-                    operations.push((path, op));
-                }
-                if let Some(op) = &path_item.post {
-                    operations.push((path, op));
-                }
-                if let Some(op) = &path_item.put {
-                    operations.push((path, op));
-                }
-                if let Some(op) = &path_item.delete {
-                    operations.push((path, op));
-                }
-                if let Some(op) = &path_item.patch {
-                    operations.push((path, op));
-                }
-                if let Some(op) = &path_item.head {
-                    operations.push((path, op));
-                }
-                if let Some(op) = &path_item.options {
-                    operations.push((path, op));
-                }
-                if let Some(op) = &path_item.trace {
-                    operations.push((path, op));
-                }
-                operations
+            .as_ref()
+            .map(|paths| {
+                paths
+                    .iter()
+                    .flat_map(|(path, path_item)| {
+                        // Access operations through individual HTTP methods
+                        let mut operations = Vec::new();
+                        if let Some(op) = &path_item.get {
+                            operations.push((path, op));
+                        }
+                        if let Some(op) = &path_item.post {
+                            operations.push((path, op));
+                        }
+                        if let Some(op) = &path_item.put {
+                            operations.push((path, op));
+                        }
+                        if let Some(op) = &path_item.delete {
+                            operations.push((path, op));
+                        }
+                        if let Some(op) = &path_item.patch {
+                            operations.push((path, op));
+                        }
+                        if let Some(op) = &path_item.head {
+                            operations.push((path, op));
+                        }
+                        if let Some(op) = &path_item.options {
+                            operations.push((path, op));
+                        }
+                        if let Some(op) = &path_item.trace {
+                            operations.push((path, op));
+                        }
+                        operations
+                    })
+                    .collect()
             })
-            .collect()
+            .unwrap_or_default()
     }
 
     /// Get all response schemas from the OpenAPI specification
-    pub fn get_all_responses(
-        openapi: &OpenApi,
-    ) -> Vec<(&String, &utoipa::openapi::RefOr<utoipa::openapi::Response>)> {
+    pub fn get_all_responses(openapi: &OpenApi) -> Vec<(&String, &RefOr<Response>)> {
         openapi
             .components
             .as_ref()
@@ -82,18 +83,15 @@ impl Analyzer {
 
     /// Get all parameters from the OpenAPI specification
     /// Note: Parameters are typically defined inline in operations, not in components
-    pub fn get_all_parameters(
-        _openapi: &OpenApi,
-    ) -> Vec<(
-        &String,
-        &utoipa::openapi::RefOr<utoipa::openapi::path::Parameter>,
-    )> {
+    pub fn get_all_parameters(_openapi: &OpenApi) -> Vec<(&String, &RefOr<Parameter>)> {
         // TODO: Extract parameters from operations
         Vec::new()
     }
 
     /// Get all security schemes from the OpenAPI specification
-    pub fn get_all_security_schemes(openapi: &OpenApi) -> Vec<(&String, &SecurityScheme)> {
+    pub fn get_all_security_schemes(
+        openapi: &OpenApi,
+    ) -> Vec<(&String, &ObjectOrReference<SecurityScheme>)> {
         openapi
             .components
             .as_ref()
@@ -114,23 +112,30 @@ impl<'a> SchemaAnalyzer<'a> {
     }
 
     /// Find all schemas in the OpenAPI specification
-    pub fn find_all_schemas(&self) -> Vec<(&String, &RefOr<Schema>)> {
+    pub fn find_all_schemas(&self) -> Vec<(&String, &ObjectOrReference<ObjectSchema>)> {
         Analyzer::get_all_schemas(self.openapi)
     }
 
     /// Find all schemas referenced by an operation
-    pub fn find_operation_schemas(&self, operation: &Operation) -> Result<Vec<&Schema>, IrError> {
+    pub fn find_operation_schemas(
+        &self,
+        operation: &Operation,
+    ) -> Result<Vec<&ObjectSchema>, IrError> {
         let mut schemas = Vec::new();
 
         // Extract schemas from request body
-        if let Some(request_body) = &operation.request_body {
+        if let Some(request_body_ref) = &operation.request_body
+            && let ObjectOrReference::Object(request_body) = request_body_ref
+        {
             schemas.extend(self.extract_schemas_from_request_body(request_body)?);
         }
 
         // Extract schemas from responses
-        for response in operation.responses.responses.values() {
-            if let RefOr::T(response) = response {
-                schemas.extend(self.extract_schemas_from_response(response)?);
+        if let Some(responses) = &operation.responses {
+            for response in responses.values() {
+                if let ObjectOrReference::Object(response) = response {
+                    schemas.extend(self.extract_schemas_from_response(response)?);
+                }
             }
         }
 
@@ -138,7 +143,9 @@ impl<'a> SchemaAnalyzer<'a> {
         let mut schema_refs = Vec::new();
         if let Some(components) = &self.openapi.components {
             for schema_name in schemas {
-                if let Some(RefOr::T(schema)) = components.schemas.get(&schema_name) {
+                if let Some(ObjectOrReference::Object(schema)) =
+                    components.schemas.get(&schema_name)
+                {
                     schema_refs.push(schema);
                 }
             }
@@ -157,17 +164,18 @@ impl<'a> SchemaAnalyzer<'a> {
         for media_type in request_body.content.values() {
             if let Some(schema_ref) = &media_type.schema {
                 match schema_ref {
-                    RefOr::Ref(ref_ref) => {
-                        if ref_ref.ref_location.starts_with("#/components/schemas/") {
-                            let schema_name = ref_ref
-                                .ref_location
+                    ObjectOrReference::Ref { ref_path, .. } => {
+                        if ref_path.starts_with("#/components/schemas/") {
+                            let schema_name = ref_path
                                 .trim_start_matches("#/components/schemas/")
                                 .to_string();
                             schemas.push(schema_name);
                         }
                     }
-                    RefOr::T(schema) => {
-                        schemas.extend(Utils::extract_schema_refs(schema));
+                    ObjectOrReference::Object(object_schema) => {
+                        // media_type.schema is ObjectOrReference<ObjectSchema>
+                        schemas
+                            .extend(Utils::extract_schema_refs_from_object_schema(object_schema));
                     }
                 }
             }
@@ -177,26 +185,24 @@ impl<'a> SchemaAnalyzer<'a> {
     }
 
     /// Extract schema names from a response
-    fn extract_schemas_from_response(
-        &self,
-        response: &utoipa::openapi::Response,
-    ) -> Result<Vec<String>, IrError> {
+    fn extract_schemas_from_response(&self, response: &Response) -> Result<Vec<String>, IrError> {
         let mut schemas = Vec::new();
 
-        for (_, media_type) in &response.content {
+        for media_type in response.content.values() {
             if let Some(schema_ref) = &media_type.schema {
                 match schema_ref {
-                    RefOr::Ref(ref_ref) => {
-                        if ref_ref.ref_location.starts_with("#/components/schemas/") {
-                            let schema_name = ref_ref
-                                .ref_location
+                    ObjectOrReference::Ref { ref_path, .. } => {
+                        if ref_path.starts_with("#/components/schemas/") {
+                            let schema_name = ref_path
                                 .trim_start_matches("#/components/schemas/")
                                 .to_string();
                             schemas.push(schema_name);
                         }
                     }
-                    RefOr::T(schema) => {
-                        schemas.extend(Utils::extract_schema_refs(schema));
+                    ObjectOrReference::Object(object_schema) => {
+                        // media_type.schema is ObjectOrReference<ObjectSchema>
+                        schemas
+                            .extend(Utils::extract_schema_refs_from_object_schema(object_schema));
                     }
                 }
             }
@@ -343,11 +349,11 @@ impl<'a> SchemaAnalyzer<'a> {
         let mut dependencies = Vec::new();
 
         match schema {
-            RefOr::T(schema) => {
-                dependencies.extend(Utils::extract_schema_refs(schema));
+            ObjectOrReference::Object(object_schema) => {
+                dependencies.extend(Utils::extract_schema_refs_from_object_schema(object_schema));
             }
-            RefOr::Ref(ref_ref) => {
-                dependencies.push(ref_ref.ref_location.clone());
+            ObjectOrReference::Ref { ref_path, .. } => {
+                dependencies.push(ref_path.clone());
             }
         }
 
@@ -373,26 +379,21 @@ impl<'a> SchemaAnalyzer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use utoipa::openapi::schema::Object;
-    use utoipa::openapi::{Components, Info, OpenApi, Paths, RefOr, Schema};
-
     use super::*;
+    use crate::OpenApi;
 
     fn create_test_openapi() -> OpenApi {
-        let mut components = Components::new();
-
-        // Add a simple schema
-        let user_schema = Object::new();
-        components
-            .schemas
-            .insert("User".to_string(), RefOr::T(Schema::Object(user_schema)));
-
-        let info = Info::new("Test API", "1.0.0");
-        let paths = Paths::new();
-
-        let mut openapi = OpenApi::new(info, paths);
-        openapi.components = Some(components);
-        openapi
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  schemas:
+    User:
+      type: object
+"#;
+        openapi_nexus_parser::parse_content_yaml(yaml).unwrap()
     }
 
     #[test]
@@ -453,16 +454,23 @@ mod tests {
 
     #[test]
     fn test_find_operation_schemas() {
-        let openapi = create_test_openapi();
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      operationId: listUsers
+"#;
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
-
-        // Create a mock operation (simplified)
-        let operation = utoipa::openapi::path::Operation::new();
-        let result = analyzer.find_operation_schemas(&operation);
-
-        // Should return empty vec for now (simplified implementation)
+        let operations = Analyzer::get_all_operations(&openapi);
+        assert_eq!(operations.len(), 1);
+        let (_path, op) = &operations[0];
+        let result = analyzer.find_operation_schemas(op);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().len(), 0);
     }
 
     #[test]
@@ -491,35 +499,34 @@ mod tests {
 
     #[test]
     fn test_analyzer_get_all_schemas_empty() {
-        let openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+"#;
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
         let schemas = Analyzer::get_all_schemas(&openapi);
         assert_eq!(schemas.len(), 0);
     }
 
     #[test]
     fn test_analyzer_get_all_schemas_multiple() {
-        let mut components = Components::new();
-
-        // Add multiple schemas
-        let user_schema = Object::new();
-        components
-            .schemas
-            .insert("User".to_string(), RefOr::T(Schema::Object(user_schema)));
-
-        let product_schema = Object::new();
-        components.schemas.insert(
-            "Product".to_string(),
-            RefOr::T(Schema::Object(product_schema)),
-        );
-
-        let order_schema = Object::new();
-        components
-            .schemas
-            .insert("Order".to_string(), RefOr::T(Schema::Object(order_schema)));
-
-        let mut openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
-        openapi.components = Some(components);
-
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  schemas:
+    User:
+      type: object
+    Product:
+      type: object
+    Order:
+      type: object
+"#;
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
         let schemas = Analyzer::get_all_schemas(&openapi);
         assert_eq!(schemas.len(), 3);
 
@@ -540,30 +547,25 @@ mod tests {
 
     #[test]
     fn test_schema_analyzer_analyze_schema_dependencies_with_refs() {
-        let mut openapi = create_test_openapi();
-        let mut components = openapi.components.take().unwrap_or_default();
-
-        // Add schemas with references
-        let mut profile_schema = Object::new();
-        profile_schema
-            .properties
-            .insert("name".to_string(), RefOr::T(Schema::Object(Object::new())));
-        components.schemas.insert(
-            "Profile".to_string(),
-            RefOr::T(Schema::Object(profile_schema)),
-        );
-
-        let mut user_schema = Object::new();
-        user_schema.properties.insert(
-            "profile".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/Profile")),
-        );
-        components
-            .schemas
-            .insert("User".to_string(), RefOr::T(Schema::Object(user_schema)));
-
-        openapi.components = Some(components);
-
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  schemas:
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+    User:
+      type: object
+      properties:
+        profile:
+          $ref: '#/components/schemas/Profile'
+"#;
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
         let dependencies = analyzer.analyze_schema_dependencies("User").unwrap();
         assert_eq!(dependencies.len(), 1);
@@ -581,39 +583,30 @@ mod tests {
 
     #[test]
     fn test_detect_circular_references_complex() {
-        let mut components = Components::new();
-
-        // Create a more complex circular reference: A -> B -> C -> A
-        let mut schema_a = Object::new();
-        schema_a.properties.insert(
-            "b".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/B")),
-        );
-        components
-            .schemas
-            .insert("A".to_string(), RefOr::T(Schema::Object(schema_a)));
-
-        let mut schema_b = Object::new();
-        schema_b.properties.insert(
-            "c".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/C")),
-        );
-        components
-            .schemas
-            .insert("B".to_string(), RefOr::T(Schema::Object(schema_b)));
-
-        let mut schema_c = Object::new();
-        schema_c.properties.insert(
-            "a".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/A")),
-        );
-        components
-            .schemas
-            .insert("C".to_string(), RefOr::T(Schema::Object(schema_c)));
-
-        let mut openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
-        openapi.components = Some(components);
-
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  schemas:
+    A:
+      type: object
+      properties:
+        b:
+          $ref: '#/components/schemas/B'
+    B:
+      type: object
+      properties:
+        c:
+          $ref: '#/components/schemas/C'
+    C:
+      type: object
+      properties:
+        a:
+          $ref: '#/components/schemas/A'
+"#;
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
         let circular_refs = analyzer.detect_circular_references().unwrap();
         assert_eq!(circular_refs.len(), 1);
@@ -625,48 +618,35 @@ mod tests {
 
     #[test]
     fn test_detect_circular_references_multiple_cycles() {
-        let mut components = Components::new();
-
-        // Create two separate circular references: A -> B -> A and C -> D -> C
-        let mut schema_a = Object::new();
-        schema_a.properties.insert(
-            "b".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/B")),
-        );
-        components
-            .schemas
-            .insert("A".to_string(), RefOr::T(Schema::Object(schema_a)));
-
-        let mut schema_b = Object::new();
-        schema_b.properties.insert(
-            "a".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/A")),
-        );
-        components
-            .schemas
-            .insert("B".to_string(), RefOr::T(Schema::Object(schema_b)));
-
-        let mut schema_c = Object::new();
-        schema_c.properties.insert(
-            "d".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/D")),
-        );
-        components
-            .schemas
-            .insert("C".to_string(), RefOr::T(Schema::Object(schema_c)));
-
-        let mut schema_d = Object::new();
-        schema_d.properties.insert(
-            "c".to_string(),
-            RefOr::Ref(utoipa::openapi::Ref::new("#/components/schemas/C")),
-        );
-        components
-            .schemas
-            .insert("D".to_string(), RefOr::T(Schema::Object(schema_d)));
-
-        let mut openapi = OpenApi::new(Info::new("Test API", "1.0.0"), Paths::new());
-        openapi.components = Some(components);
-
+        let yaml = r#"
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+components:
+  schemas:
+    A:
+      type: object
+      properties:
+        b:
+          $ref: '#/components/schemas/B'
+    B:
+      type: object
+      properties:
+        a:
+          $ref: '#/components/schemas/A'
+    C:
+      type: object
+      properties:
+        d:
+          $ref: '#/components/schemas/D'
+    D:
+      type: object
+      properties:
+        c:
+          $ref: '#/components/schemas/C'
+"#;
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
         let circular_refs = analyzer.detect_circular_references().unwrap();
         assert_eq!(circular_refs.len(), 2);

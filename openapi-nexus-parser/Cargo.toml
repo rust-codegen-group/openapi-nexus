@@ -16,3 +16,5 @@ serde_norway.workspace = true
 snafu.workspace = true
 tracing.workspace = true
 utoipa.workspace = true
+
+openapi-nexus-spec.workspace = true

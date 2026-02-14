@@ -17,6 +17,8 @@ tracing.workspace = true
 utoipa.workspace = true
 
 openapi-nexus-common.workspace = true
+openapi-nexus-spec.workspace = true
 
 [dev-dependencies]
+openapi-nexus-parser.workspace = true
 tempfile.workspace = true

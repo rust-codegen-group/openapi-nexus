@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 
+/** Array of numbers */
 export type NumberArray = Array<number>
 
 export function NumberArrayFromJSON(json: any): NumberArray {

@@ -1,12 +1,10 @@
 //! API method data with raw OpenAPI types
 
 use serde::{Deserialize, Serialize};
-use utoipa::openapi::RefOr;
-use utoipa::openapi::request_body::RequestBody;
-use utoipa::openapi::schema::Schema;
 
 use super::parameter_info::ParameterInfo;
 use crate::serde::http_method;
+use openapi_nexus_spec::oas31::spec::{ObjectOrReference, ObjectSchema, RequestBody};
 
 /// API method data with raw OpenAPI types
 #[derive(Clone, Serialize, Deserialize)]
@@ -18,8 +16,8 @@ pub struct ApiMethodData {
     pub path_params: Vec<ParameterInfo>,
     pub query_params: Vec<ParameterInfo>,
     pub header_params: Vec<ParameterInfo>,
-    pub request_body: Option<RequestBody>,
-    pub return_type: Option<RefOr<Schema>>,
+    pub request_body: Option<ObjectOrReference<RequestBody>>,
+    pub return_type: Option<ObjectOrReference<ObjectSchema>>,
     pub has_auth: bool,
     pub has_error_handling: bool,
 }
