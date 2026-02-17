@@ -43,6 +43,10 @@ pub struct PropertyMetadata {
     pub is_object_reference: bool,
     /// Whether the property is an inline object type
     pub is_inline_object: bool,
+    /// Whether the property is a record type (e.g., { [key: string]: T })
+    pub is_record_type: bool,
+    /// For record types, the reference name of the value type (for recursive FromJSON/ToJSON)
+    pub record_value_reference_name: Option<String>,
     /// The reference name if this is a reference type (for FromJSON calls)
     pub reference_name: Option<String>,
     /// The array item type expression (if this is an array)
@@ -109,6 +113,8 @@ impl ModelInterfaceData {
                 is_array_of_objects: p.type_expr.is_array_of_objects(),
                 is_object_reference: p.type_expr.is_object_reference(),
                 is_inline_object: p.type_expr.is_inline_object(),
+                is_record_type: p.type_expr.is_record_type(),
+                record_value_reference_name: p.type_expr.record_value_reference_name(),
                 reference_name: p.type_expr.reference_name(),
                 array_item_type: p.type_expr.array_item_type(),
                 inline_object_properties: p.type_expr.object_properties(),

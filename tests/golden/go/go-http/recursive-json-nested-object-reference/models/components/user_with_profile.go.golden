@@ -13,7 +13,7 @@ import (
 
 // User with required nested profile reference
 type UserWithProfile struct {
-	Profile interface{} `json:"profile"`
+	Profile UserProfile `json:"profile"`
 	UserId string `json:"user_id"`
 }
 
@@ -32,9 +32,9 @@ func (c *UserWithProfile) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *UserWithProfile) GetProfile() // Any {
+func (c *UserWithProfile) GetProfile() UserProfile {
 	if c == nil {
-		var zero // Any
+		var zero UserProfile
 		return zero
 	}
 	return c.Profile

@@ -12,7 +12,7 @@ import (
 )
 
 type FooSpecs struct {
-	FooType string `json:"foo_type"`
+	FooType FooType `json:"foo_type"`
 }
 
 func (c FooSpecs) MarshalJSON() ([]byte, error) {
@@ -29,9 +29,9 @@ func (c *FooSpecs) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *FooSpecs) GetFooType() string {
+func (c *FooSpecs) GetFooType() FooType {
 	if c == nil {
-		var zero string
+		var zero FooType
 		return zero
 	}
 	return c.FooType

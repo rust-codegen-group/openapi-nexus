@@ -30,13 +30,8 @@ pub fn schema_to_go_expression(
                             format!("Invalid schema reference: {:?}", schema_ref),
                         )),
                     })?;
-
-            if let Some(components) = components
-                && let Some(resolved_schema) = components.schemas.get(schema_name)
-            {
-                return schema_to_go_expression(resolved_schema, Some(components));
-            }
-
+            // Use the component name as the type; do not resolve and recurse, or we'd
+            // treat object schemas as interface{} when used as map values etc.
             Ok(GoExpression::Reference(schema_name.to_pascal_case()))
         }
     }
@@ -62,6 +57,32 @@ fn schema_to_go_expression_inner(
     // Enum
     if !obj_schema.enum_values.is_empty() {
         return Ok(GoExpression::Primitive(GoPrimitive::String));
+    }
+
+    // Object with only additionalProperties (map-like): emit map[string]ValueType
+    if obj_schema.properties.is_empty()
+        && obj_schema.items.is_none()
+        && obj_schema.one_of.is_empty()
+        && obj_schema.any_of.is_empty()
+        && obj_schema.all_of.is_empty()
+        && let Some(additional_props) = obj_schema.additional_properties.as_ref()
+    {
+        match additional_props {
+            Schema::Object(schema_ref) => {
+                let value_type = schema_to_go_expression(schema_ref.as_ref(), components)?;
+                return Ok(GoExpression::Map {
+                    key: Box::new(GoExpression::Primitive(GoPrimitive::String)),
+                    value: Box::new(value_type),
+                });
+            }
+            Schema::Boolean(BooleanSchema(true)) => {
+                return Ok(GoExpression::Map {
+                    key: Box::new(GoExpression::Primitive(GoPrimitive::String)),
+                    value: Box::new(GoExpression::Any),
+                });
+            }
+            Schema::Boolean(BooleanSchema(false)) => {}
+        }
     }
 
     // Object with no properties -> string fallback

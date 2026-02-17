@@ -16,7 +16,7 @@ import (
 type AllOptionalProperties struct {
 	OptionalArray optionalnullable.OptionalNullable[[]interface{}] `json:"optional_array,omitzero"`
 	OptionalInline optionalnullable.OptionalNullable[interface{}] `json:"optional_inline,omitzero"`
-	OptionalReference optionalnullable.OptionalNullable[interface{}] `json:"optional_reference,omitzero"`
+	OptionalReference optionalnullable.OptionalNullable[User] `json:"optional_reference,omitzero"`
 	OptionalString optionalnullable.OptionalNullable[string] `json:"optional_string,omitzero"`
 }
 
@@ -49,9 +49,9 @@ func (c *AllOptionalProperties) GetOptionalInline() optionalnullable.OptionalNul
 	return c.OptionalInline
 }
 
-func (c *AllOptionalProperties) GetOptionalReference() optionalnullable.OptionalNullable[interface{}] {
+func (c *AllOptionalProperties) GetOptionalReference() optionalnullable.OptionalNullable[User] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[interface{}]
+		var zero optionalnullable.OptionalNullable[User]
 		return zero
 	}
 	return c.OptionalReference

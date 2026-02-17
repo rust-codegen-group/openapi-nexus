@@ -12,7 +12,7 @@ import (
 )
 
 type MyJsonData struct {
-	Az string `json:"az"`
+	Az Az `json:"az"`
 }
 
 func (c MyJsonData) MarshalJSON() ([]byte, error) {
@@ -29,9 +29,9 @@ func (c *MyJsonData) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *MyJsonData) GetAz() string {
+func (c *MyJsonData) GetAz() Az {
 	if c == nil {
-		var zero string
+		var zero Az
 		return zero
 	}
 	return c.Az

@@ -1,0 +1,27 @@
+# additional-properties-api
+
+API demonstrating OpenAPI additionalProperties with multiple levels of structs (RootLevel -> MiddleLevel -> LeafValue), each with HashMap fields.
+
+**Version:** 1.0.0
+
+## Installation
+
+```bash
+go get example.com/sdk
+```
+
+## Usage
+
+```go
+package main
+
+import (
+    "context"
+    "example.com/sdk"
+)
+
+func main() {
+    sdk := additional-properties-api.New("https://api.example.com")
+    // Use the SDK...
+}
+```

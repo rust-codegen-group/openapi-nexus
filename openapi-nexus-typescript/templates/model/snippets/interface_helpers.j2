@@ -57,6 +57,18 @@ export function {{ model_interface.signature.ts_name }}FromJSONTyped(json: any, 
     {% else %}
     '{{ prop.ts_name }}': {{ prop.reference_name }}FromJSON(json['{{ prop.original_name }}']),
     {% endif %}
+  {% elif prop.is_record_type and prop.record_value_reference_name %}
+    {% if prop.optional %}
+    '{{ prop.ts_name }}': json['{{ prop.original_name }}'] == null ? undefined : Object.fromEntries(Object.entries(json['{{ prop.original_name }}']).map(([k, v]) => [k, {{ prop.record_value_reference_name }}FromJSON(v)])),
+    {% else %}
+    '{{ prop.ts_name }}': json['{{ prop.original_name }}'] == null ? {} : Object.fromEntries(Object.entries(json['{{ prop.original_name }}']).map(([k, v]) => [k, {{ prop.record_value_reference_name }}FromJSON(v)])),
+    {% endif %}
+  {% elif prop.is_record_type %}
+    {% if prop.optional %}
+    '{{ prop.ts_name }}': json['{{ prop.original_name }}'] ?? undefined,
+    {% else %}
+    '{{ prop.ts_name }}': json['{{ prop.original_name }}'] == null ? {} : json['{{ prop.original_name }}'],
+    {% endif %}
   {% elif prop.is_inline_object %}
     {% if prop.reference_name %}
       {% if prop.optional %}
@@ -112,6 +124,10 @@ export function {{ model_interface.signature.ts_name }}ToJSONTyped(value?: {{ mo
     {% endif %}
   {% elif prop.is_object_reference %}
     '{{ prop.original_name }}': {{ prop.reference_name }}ToJSON(value['{{ prop.ts_name }}']),
+  {% elif prop.is_record_type and prop.record_value_reference_name %}
+    '{{ prop.original_name }}': value['{{ prop.ts_name }}'] == null ? undefined : Object.fromEntries(Object.entries(value['{{ prop.ts_name }}']).map(([k, v]) => [k, {{ prop.record_value_reference_name }}ToJSON(v)])),
+  {% elif prop.is_record_type %}
+    '{{ prop.original_name }}': value['{{ prop.ts_name }}'],
   {% elif prop.is_inline_object %}
     {% if prop.reference_name %}
     '{{ prop.original_name }}': {{ prop.reference_name }}ToJSON(value['{{ prop.ts_name }}']),

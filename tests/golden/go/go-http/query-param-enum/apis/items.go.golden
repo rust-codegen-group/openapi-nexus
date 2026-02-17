@@ -40,7 +40,7 @@ func NewItems(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks
 // GetItems - GET /items
 func (s *Items) GetItems(
 	ctx context.Context,
-	queryStatus string,
+	queryStatus FooStatus,
 	opts ...operations.Option,
 ) (*operations.GetItemsResponse, error) {
 	o := operations.Options{}
@@ -103,7 +103,7 @@ func (s *Items) GetItems(
 
 	// Build query parameters
 	queryParams := struct {
-		Status string `queryParam:"name=status,style=form,explode=true"`
+		Status FooStatus `queryParam:"name=status,style=form,explode=true"`
 	}{
 		Status: queryStatus,
 	}

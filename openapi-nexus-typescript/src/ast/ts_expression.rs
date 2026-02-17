@@ -91,6 +91,27 @@ impl TsExpression {
         matches!(self, TsExpression::Object(_))
     }
 
+    /// Check if this expression is a record type (e.g., { [key: string]: T })
+    /// rather than a regular object with named properties
+    pub fn is_record_type(&self) -> bool {
+        matches!(
+            self,
+            TsExpression::Object(properties)
+                if properties.len() == 1 && properties.contains_key("[key: string]")
+        )
+    }
+
+    /// For record types, return the reference name of the value type if it is a reference.
+    /// Used to generate recursive FromJSON/ToJSON for map properties whose values are schema refs.
+    pub fn record_value_reference_name(&self) -> Option<String> {
+        if let TsExpression::Object(properties) = self
+            && let Some(prop) = properties.get("[key: string]")
+        {
+            return prop.type_expr.reference_name();
+        }
+        None
+    }
+
     /// Extract reference name from this expression, recursing into arrays if needed
     pub fn reference_name(&self) -> Option<String> {
         match self {

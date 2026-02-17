@@ -1,5 +1,5 @@
 [package]
-name = "openapi-nexus-examples-enum-repr"
+name = "fixture-generator-additional-properties"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
@@ -10,8 +10,8 @@ license.workspace = true
 publish = false
 
 [[bin]]
-name = "openapi-nexus-examples-enum-repr-spec-generator"
-path = "src/bin/openapi-nexus-examples-enum-repr-spec-generator.rs"
+name = "fixture-generator-additional-properties-spec-generator"
+path = "src/bin/fixture-generator-additional-properties-spec-generator.rs"
 
 [dependencies]
 axum-extra.workspace = true
