@@ -12,6 +12,7 @@ members = [
     "openapi-nexus-parser",
     "openapi-nexus-plugin",
     "openapi-nexus-rust",
+    "openapi-nexus-spec",
     "openapi-nexus-transforms",
     "openapi-nexus-typescript",
 ]
@@ -27,6 +28,8 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
+derive_more = { version = "2", features = ["display", "from"] }
+regex = "1.12.3"
 axum = { version = "0.8.8", features = ["macros"] }
 axum-extra = { version = "0.12.5", features = ["typed-header"] }
 bytes = "1.11.0"
@@ -57,7 +60,7 @@ tower-http = { version = "0.6.8", features = ["cors", "trace"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 tracing-test = "0.2.5"
-url = "2.5.7"
+url = { version = "2.5.7", features = ["serde"] }
 utoipa = { version = "5.4.0", features = ["axum_extras", "chrono", "config", "debug", "non_strict_integers", "openapi_extensions", "time", "ulid", "url", "uuid", "yaml"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "cache", "vendored"] }
 uuid = { version = "1.19.0", features = ["v4", "v7", "serde"] }
@@ -74,6 +77,7 @@ openapi-nexus-petstore-example = { version = "0.0.3-alpha.1", path = "openapi-ne
 openapi-nexus-plugin = { version = "0.0.3-alpha.1", path = "openapi-nexus-plugin" }
 openapi-nexus-rust = { version = "0.0.3-alpha.1", path = "openapi-nexus-rust" }
 openapi-nexus-transforms = { version = "0.0.3-alpha.1", path = "openapi-nexus-transforms" }
+openapi-nexus-spec = { version = "0.0.3-alpha.1", path = "openapi-nexus-spec" }
 openapi-nexus-typescript = { version = "0.0.3-alpha.1", path = "openapi-nexus-typescript" }
 
 [workspace.metadata.publish]
