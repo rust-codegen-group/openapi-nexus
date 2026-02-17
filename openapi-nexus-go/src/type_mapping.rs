@@ -41,7 +41,8 @@ fn schema_to_go_expression_inner(
     obj_schema: &ObjectSchema,
     components: Option<&Components>,
 ) -> Result<GoExpression, GeneratorError> {
-    // Format overrides
+    // Format overrides only for types that change the kind of value (date-time, date, byte).
+    // Integer/number/boolean formats (e.g. int32, double) are handled with schema_type below.
     if let Some(format) = &obj_schema.format {
         match format.as_str() {
             "date-time" | "date" => return Ok(GoExpression::Reference("time.Time".to_string())),
@@ -50,7 +51,7 @@ fn schema_to_go_expression_inner(
                     GoPrimitive::Byte,
                 ))));
             }
-            _ => return Ok(GoExpression::Primitive(GoPrimitive::String)),
+            _ => {}
         }
     }
 
@@ -85,13 +86,19 @@ fn schema_to_go_expression_inner(
         }
     }
 
-    // Object with no properties -> string fallback
+    // Object with no properties: use primitive from schema_type+format if present, else string fallback
     if obj_schema.properties.is_empty()
         && obj_schema.items.is_none()
         && obj_schema.one_of.is_empty()
         && obj_schema.any_of.is_empty()
         && obj_schema.all_of.is_empty()
     {
+        if obj_schema.schema_type.is_some() {
+            return Ok(map_schema_type_and_format_to_primitive(
+                &obj_schema.schema_type,
+                obj_schema.format.as_deref(),
+            ));
+        }
         return Ok(GoExpression::Primitive(GoPrimitive::String));
     }
 
@@ -109,49 +116,67 @@ fn schema_to_go_expression_inner(
         return Ok(GoExpression::Slice(Box::new(item_type)));
     }
 
-    // one_of / any_of / all_of: use first member
+    // one_of / any_of / all_of: multiple members -> interface{}; single member -> that type
     if !obj_schema.one_of.is_empty() {
-        return schema_to_go_expression(&obj_schema.one_of[0], components);
+        return if obj_schema.one_of.len() > 1 {
+            Ok(GoExpression::Any)
+        } else {
+            schema_to_go_expression(&obj_schema.one_of[0], components)
+        };
     }
     if !obj_schema.any_of.is_empty() {
-        return schema_to_go_expression(&obj_schema.any_of[0], components);
+        return if obj_schema.any_of.len() > 1 {
+            Ok(GoExpression::Any)
+        } else {
+            schema_to_go_expression(&obj_schema.any_of[0], components)
+        };
     }
     if !obj_schema.all_of.is_empty() {
-        return schema_to_go_expression(&obj_schema.all_of[0], components);
+        return if obj_schema.all_of.len() > 1 {
+            Ok(GoExpression::Any)
+        } else {
+            schema_to_go_expression(&obj_schema.all_of[0], components)
+        };
     }
 
-    // Primitive from schema_type
-    let base = map_schema_type_to_primitive(&obj_schema.schema_type);
+    // Primitive from schema_type and optional format (e.g. int32, double)
+    let base = map_schema_type_and_format_to_primitive(
+        &obj_schema.schema_type,
+        obj_schema.format.as_deref(),
+    );
     Ok(base)
 }
 
-fn map_schema_type_to_primitive(schema_type: &Option<SchemaTypeSet>) -> GoExpression {
+fn map_schema_type_and_format_to_primitive(
+    schema_type: &Option<SchemaTypeSet>,
+    format: Option<&str>,
+) -> GoExpression {
     let type_set = match schema_type {
         Some(ts) => ts,
         None => return GoExpression::Any,
     };
-    match type_set {
-        SchemaTypeSet::Single(t) => map_single_type_to_primitive(*t),
+    let single_type = match type_set {
+        SchemaTypeSet::Single(t) => *t,
         SchemaTypeSet::Multiple(types) => {
             let non_null: Vec<_> = types.iter().filter(|t| **t != SchemaType::Null).collect();
             if non_null.is_empty() {
-                GoExpression::Any
-            } else if non_null.len() == 1 {
-                map_single_type_to_primitive(*non_null[0])
-            } else {
-                // Multiple non-null types -> use first
-                map_single_type_to_primitive(*non_null[0])
+                return GoExpression::Any;
             }
+            *non_null[0]
         }
-    }
-}
-
-fn map_single_type_to_primitive(t: SchemaType) -> GoExpression {
-    match t {
-        SchemaType::String => GoExpression::Primitive(GoPrimitive::String),
-        SchemaType::Integer => GoExpression::Primitive(GoPrimitive::Int),
-        SchemaType::Number => GoExpression::Primitive(GoPrimitive::Float64),
+    };
+    match single_type {
+        SchemaType::Integer => match format {
+            Some("int32") => GoExpression::Primitive(GoPrimitive::Int32),
+            Some("int64") => GoExpression::Primitive(GoPrimitive::Int64),
+            _ => GoExpression::Primitive(GoPrimitive::Int),
+        },
+        SchemaType::Number => match format {
+            Some("float") => GoExpression::Primitive(GoPrimitive::Float32),
+            _ => GoExpression::Primitive(GoPrimitive::Float64),
+        },
         SchemaType::Boolean => GoExpression::Primitive(GoPrimitive::Bool),
+        SchemaType::String => GoExpression::Primitive(GoPrimitive::String),
         SchemaType::Array => GoExpression::Slice(Box::new(GoExpression::Any)),
         SchemaType::Object => GoExpression::Any,
         SchemaType::Null => GoExpression::Any,
@@ -256,23 +281,35 @@ pub fn schema_to_go_type_definition(
                 return Ok(GoTypeDefinition::Struct(struct_def));
             }
 
-            // one_of / any_of / all_of
+            // one_of / any_of / all_of: multiple members -> interface{}; single member -> that type
             if !obj_schema.one_of.is_empty() {
-                let type_expr = schema_to_go_expression(&obj_schema.one_of[0], Some(components))?;
+                let type_expr = if obj_schema.one_of.len() > 1 {
+                    GoExpression::Any
+                } else {
+                    schema_to_go_expression(&obj_schema.one_of[0], Some(components))?
+                };
                 return Ok(GoTypeDefinition::TypeAlias(GoTypeAlias::new(
                     struct_name,
                     type_expr,
                 )));
             }
             if !obj_schema.any_of.is_empty() {
-                let type_expr = schema_to_go_expression(&obj_schema.any_of[0], Some(components))?;
+                let type_expr = if obj_schema.any_of.len() > 1 {
+                    GoExpression::Any
+                } else {
+                    schema_to_go_expression(&obj_schema.any_of[0], Some(components))?
+                };
                 return Ok(GoTypeDefinition::TypeAlias(GoTypeAlias::new(
                     struct_name,
                     type_expr,
                 )));
             }
             if !obj_schema.all_of.is_empty() {
-                let type_expr = schema_to_go_expression(&obj_schema.all_of[0], Some(components))?;
+                let type_expr = if obj_schema.all_of.len() > 1 {
+                    GoExpression::Any
+                } else {
+                    schema_to_go_expression(&obj_schema.all_of[0], Some(components))?
+                };
                 return Ok(GoTypeDefinition::TypeAlias(GoTypeAlias::new(
                     struct_name,
                     type_expr,

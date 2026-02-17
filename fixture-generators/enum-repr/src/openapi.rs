@@ -2,10 +2,10 @@
 
 use crate::handlers::{
     __path_handle_adjacently_tagged, __path_handle_externally_tagged,
-    __path_handle_internally_tagged, __path_handle_untagged,
+    __path_handle_internally_tagged, __path_handle_mixed, __path_handle_untagged,
 };
 use crate::models::{
-    AdjacentlyTaggedEnum, ExternallyTaggedEnum, InternallyTaggedEnum, UntaggedEnum,
+    AdjacentlyTaggedEnum, ExternallyTaggedEnum, InternallyTaggedEnum, MixedEnum, UntaggedEnum,
 };
 
 /// OpenAPI documentation
@@ -15,14 +15,16 @@ use crate::models::{
         handle_externally_tagged,
         handle_internally_tagged,
         handle_adjacently_tagged,
-        handle_untagged
+        handle_untagged,
+        handle_mixed
     ),
     components(
         schemas(
             ExternallyTaggedEnum,
             InternallyTaggedEnum,
             AdjacentlyTaggedEnum,
-            UntaggedEnum
+            UntaggedEnum,
+            MixedEnum
         )
     ),
     tags(

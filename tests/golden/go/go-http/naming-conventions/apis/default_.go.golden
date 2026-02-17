@@ -41,17 +41,17 @@ func NewDefault(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hoo
 func (s *Default) GetWithQueryParams(
 	ctx context.Context,
 	querySnakeCaseParam string,
-	querySnakeCaseNumber string,
+	querySnakeCaseNumber int,
 	queryKebabCaseParam string,
 	queryKebabCaseArray []string,
 	queryPascalCaseParam string,
-	queryPascalCaseNumber string,
+	queryPascalCaseNumber int,
 	queryScreamingSnakeCase string,
-	queryScreamingNumber string,
+	queryScreamingNumber int,
 	queryCamelCaseParam string,
-	queryCamelCaseNumber string,
+	queryCamelCaseNumber int,
 	querySingleword string,
-	queryId string,
+	queryId int,
 	opts ...operations.Option,
 ) (*operations.GetWithQueryParamsResponse, error) {
 	o := operations.Options{}
@@ -115,17 +115,17 @@ func (s *Default) GetWithQueryParams(
 	// Build query parameters
 	queryParams := struct {
 		SnakeCaseParam string `queryParam:"name=snake_case_param,style=form,explode=true"`
-		SnakeCaseNumber string `queryParam:"name=snake_case_number,style=form,explode=true"`
+		SnakeCaseNumber int `queryParam:"name=snake_case_number,style=form,explode=true"`
 		KebabCaseParam string `queryParam:"name=kebab-case-param,style=form,explode=true"`
 		KebabCaseArray []string `queryParam:"name=kebab-case-array,style=form,explode=true"`
 		PascalCaseParam string `queryParam:"name=PascalCaseParam,style=form,explode=true"`
-		PascalCaseNumber string `queryParam:"name=PascalCaseNumber,style=form,explode=true"`
+		PascalCaseNumber int `queryParam:"name=PascalCaseNumber,style=form,explode=true"`
 		ScreamingSnakeCase string `queryParam:"name=SCREAMING_SNAKE_CASE,style=form,explode=true"`
-		ScreamingNumber string `queryParam:"name=SCREAMING_NUMBER,style=form,explode=true"`
+		ScreamingNumber int `queryParam:"name=SCREAMING_NUMBER,style=form,explode=true"`
 		CamelCaseParam string `queryParam:"name=camelCaseParam,style=form,explode=true"`
-		CamelCaseNumber string `queryParam:"name=camelCaseNumber,style=form,explode=true"`
+		CamelCaseNumber int `queryParam:"name=camelCaseNumber,style=form,explode=true"`
 		Singleword string `queryParam:"name=singleword,style=form,explode=true"`
-		Id string `queryParam:"name=id,style=form,explode=true"`
+		Id int `queryParam:"name=id,style=form,explode=true"`
 	}{
 		SnakeCaseParam: querySnakeCaseParam,
 		SnakeCaseNumber: querySnakeCaseNumber,

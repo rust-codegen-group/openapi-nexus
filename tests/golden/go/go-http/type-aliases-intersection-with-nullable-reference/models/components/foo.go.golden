@@ -14,8 +14,8 @@ import (
 
 // Base type with common properties
 type Foo struct {
-	Count1 string `json:"count1"`
-	Count2 string `json:"count2"`
+	Count1 int `json:"count1"`
+	Count2 int `json:"count2"`
 	CreatedAt time.Time `json:"createdAt"`
 	Id string `json:"id"`
 	Status string `json:"status"`
@@ -39,17 +39,17 @@ func (c *Foo) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Foo) GetCount1() string {
+func (c *Foo) GetCount1() int {
 	if c == nil {
-		var zero string
+		var zero int
 		return zero
 	}
 	return c.Count1
 }
 
-func (c *Foo) GetCount2() string {
+func (c *Foo) GetCount2() int {
 	if c == nil {
-		var zero string
+		var zero int
 		return zero
 	}
 	return c.Count2

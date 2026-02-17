@@ -8,4 +8,4 @@
 package components
 
 
-type AnyOfTypes = string
+type AnyOfTypes = interface{}

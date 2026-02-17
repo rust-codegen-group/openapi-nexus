@@ -17,8 +17,8 @@ type LeafValue struct {
 	Attributes map[string]string `json:"attributes"`
 	Extras optionalnullable.OptionalNullable[map[string]interface{}] `json:"extras,omitzero"`
 	Label optionalnullable.OptionalNullable[string] `json:"label,omitzero"`
-	Scores optionalnullable.OptionalNullable[map[string]string] `json:"scores,omitzero"`
-	Value string `json:"value"`
+	Scores optionalnullable.OptionalNullable[map[string]int32] `json:"scores,omitzero"`
+	Value int32 `json:"value"`
 }
 
 func (c LeafValue) MarshalJSON() ([]byte, error) {
@@ -60,17 +60,17 @@ func (c *LeafValue) GetLabel() optionalnullable.OptionalNullable[string] {
 	return c.Label
 }
 
-func (c *LeafValue) GetScores() optionalnullable.OptionalNullable[map[string]string] {
+func (c *LeafValue) GetScores() optionalnullable.OptionalNullable[map[string]int32] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[map[string]string]
+		var zero optionalnullable.OptionalNullable[map[string]int32]
 		return zero
 	}
 	return c.Scores
 }
 
-func (c *LeafValue) GetValue() string {
+func (c *LeafValue) GetValue() int32 {
 	if c == nil {
-		var zero string
+		var zero int32
 		return zero
 	}
 	return c.Value

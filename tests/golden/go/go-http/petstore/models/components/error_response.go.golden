@@ -13,7 +13,7 @@ import (
 
 // Error response model
 type ErrorResponse struct {
-	Code string `json:"code"`
+	Code int32 `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -32,9 +32,9 @@ func (c *ErrorResponse) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *ErrorResponse) GetCode() string {
+func (c *ErrorResponse) GetCode() int32 {
 	if c == nil {
-		var zero string
+		var zero int32
 		return zero
 	}
 	return c.Code

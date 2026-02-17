@@ -14,7 +14,7 @@ import (
 
 // Upload response model
 type UploadResponse struct {
-	Code optionalnullable.OptionalNullable[string] `json:"code,omitzero"`
+	Code optionalnullable.OptionalNullable[int32] `json:"code,omitzero"`
 	Message optionalnullable.OptionalNullable[string] `json:"message,omitzero"`
 	Type optionalnullable.OptionalNullable[string] `json:"type,omitzero"`
 }
@@ -32,9 +32,9 @@ func (c *UploadResponse) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *UploadResponse) GetCode() optionalnullable.OptionalNullable[string] {
+func (c *UploadResponse) GetCode() optionalnullable.OptionalNullable[int32] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int32]
 		return zero
 	}
 	return c.Code

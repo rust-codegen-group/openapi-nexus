@@ -9,4 +9,4 @@ package components
 
 
 // Number with maximum value
-type NumberWithMaximum = string
+type NumberWithMaximum = float64

@@ -14,7 +14,7 @@ import (
 
 // Category model
 type Category struct {
-	Id optionalnullable.OptionalNullable[string] `json:"id,omitzero"`
+	Id optionalnullable.OptionalNullable[int64] `json:"id,omitzero"`
 	Name optionalnullable.OptionalNullable[string] `json:"name,omitzero"`
 }
 
@@ -31,9 +31,9 @@ func (c *Category) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Category) GetId() optionalnullable.OptionalNullable[string] {
+func (c *Category) GetId() optionalnullable.OptionalNullable[int64] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int64]
 		return zero
 	}
 	return c.Id

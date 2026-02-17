@@ -9,4 +9,4 @@ package components
 
 
 // Request to create a new test resource (type alias - no properties)
-type CreateTestResourceRequest = string
+type CreateTestResourceRequest = interface{}

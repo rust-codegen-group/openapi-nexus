@@ -16,7 +16,7 @@ import (
 type RootLevel struct {
 	Children map[string]MiddleLevel `json:"children"`
 	Extras optionalnullable.OptionalNullable[map[string]interface{}] `json:"extras,omitzero"`
-	Id string `json:"id"`
+	Id int64 `json:"id"`
 	Labels optionalnullable.OptionalNullable[map[string][]string] `json:"labels,omitzero"`
 	Name string `json:"name"`
 }
@@ -53,9 +53,9 @@ func (c *RootLevel) GetExtras() optionalnullable.OptionalNullable[map[string]int
 	return c.Extras
 }
 
-func (c *RootLevel) GetId() string {
+func (c *RootLevel) GetId() int64 {
 	if c == nil {
-		var zero string
+		var zero int64
 		return zero
 	}
 	return c.Id

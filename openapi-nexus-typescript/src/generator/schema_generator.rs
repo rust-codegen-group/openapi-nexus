@@ -809,10 +809,19 @@ impl SchemaGenerator {
             .map(|(index, schema_ref)| {
                 let tagged_enum_pattern = TaggedEnumPattern::detect_from_schema(schema_ref);
 
-                let inline_interface_name = tagged_enum_pattern
+                let base_inline_name = tagged_enum_pattern
                     .as_ref()
                     .map(|pattern| pattern.to_interface_name(parent_name))
                     .unwrap_or_else(|| format!("{parent_name}Member{}", index + 1));
+
+                // Avoid colliding with a component schema (e.g. ExternallyTagged variant "VariantA"
+                // vs. component schema VariantA with field1/field2). Use parent-prefixed name.
+                let inline_interface_name =
+                    if context.schemas.contains_key(base_inline_name.as_str()) {
+                        format!("{parent_name}{base_inline_name}")
+                    } else {
+                        base_inline_name
+                    };
 
                 let (type_expr, is_interface) = if let ObjectOrReference::Object(obj_schema) =
                     schema_ref

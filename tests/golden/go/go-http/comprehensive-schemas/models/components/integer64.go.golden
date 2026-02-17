@@ -9,4 +9,4 @@ package components
 
 
 // 64-bit integer
-type Integer64 = string
+type Integer64 = int64

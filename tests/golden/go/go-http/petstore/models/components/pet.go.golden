@@ -14,11 +14,11 @@ import (
 
 // Pet model
 type Pet struct {
-	Category optionalnullable.OptionalNullable[string] `json:"category,omitzero"`
-	Id optionalnullable.OptionalNullable[string] `json:"id,omitzero"`
+	Category optionalnullable.OptionalNullable[interface{}] `json:"category,omitzero"`
+	Id optionalnullable.OptionalNullable[int64] `json:"id,omitzero"`
 	Name string `json:"name"`
 	PhotoUrls []string `json:"photo_urls"`
-	Status optionalnullable.OptionalNullable[string] `json:"status,omitzero"`
+	Status optionalnullable.OptionalNullable[interface{}] `json:"status,omitzero"`
 	Tags optionalnullable.OptionalNullable[[]Tag] `json:"tags,omitzero"`
 }
 
@@ -37,17 +37,17 @@ func (c *Pet) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Pet) GetCategory() optionalnullable.OptionalNullable[string] {
+func (c *Pet) GetCategory() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.Category
 }
 
-func (c *Pet) GetId() optionalnullable.OptionalNullable[string] {
+func (c *Pet) GetId() optionalnullable.OptionalNullable[int64] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int64]
 		return zero
 	}
 	return c.Id
@@ -69,9 +69,9 @@ func (c *Pet) GetPhotoUrls() []string {
 	return c.PhotoUrls
 }
 
-func (c *Pet) GetStatus() optionalnullable.OptionalNullable[string] {
+func (c *Pet) GetStatus() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.Status

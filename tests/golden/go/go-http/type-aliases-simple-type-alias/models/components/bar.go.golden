@@ -9,4 +9,4 @@ package components
 
 
 // A simple number type alias
-type Bar = string
+type Bar = float64

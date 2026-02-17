@@ -14,7 +14,7 @@ import (
 
 // Tag model
 type Tag struct {
-	Id optionalnullable.OptionalNullable[string] `json:"id,omitzero"`
+	Id optionalnullable.OptionalNullable[int64] `json:"id,omitzero"`
 	Name optionalnullable.OptionalNullable[string] `json:"name,omitzero"`
 }
 
@@ -31,9 +31,9 @@ func (c *Tag) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Tag) GetId() optionalnullable.OptionalNullable[string] {
+func (c *Tag) GetId() optionalnullable.OptionalNullable[int64] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int64]
 		return zero
 	}
 	return c.Id

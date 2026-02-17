@@ -14,8 +14,8 @@ import (
 
 // Basic object with properties
 type BasicObject struct {
-	Active optionalnullable.OptionalNullable[string] `json:"active,omitzero"`
-	Id string `json:"id"`
+	Active optionalnullable.OptionalNullable[bool] `json:"active,omitzero"`
+	Id int64 `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -34,17 +34,17 @@ func (c *BasicObject) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *BasicObject) GetActive() optionalnullable.OptionalNullable[string] {
+func (c *BasicObject) GetActive() optionalnullable.OptionalNullable[bool] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[bool]
 		return zero
 	}
 	return c.Active
 }
 
-func (c *BasicObject) GetId() string {
+func (c *BasicObject) GetId() int64 {
 	if c == nil {
-		var zero string
+		var zero int64
 		return zero
 	}
 	return c.Id

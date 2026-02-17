@@ -14,8 +14,8 @@ import (
 
 // Object with default values
 type ObjectWithDefaults struct {
-	Active optionalnullable.OptionalNullable[string] `json:"active,omitzero"`
-	Age optionalnullable.OptionalNullable[string] `json:"age,omitzero"`
+	Active optionalnullable.OptionalNullable[bool] `json:"active,omitzero"`
+	Age optionalnullable.OptionalNullable[int] `json:"age,omitzero"`
 	Name optionalnullable.OptionalNullable[string] `json:"name,omitzero"`
 }
 
@@ -32,17 +32,17 @@ func (c *ObjectWithDefaults) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *ObjectWithDefaults) GetActive() optionalnullable.OptionalNullable[string] {
+func (c *ObjectWithDefaults) GetActive() optionalnullable.OptionalNullable[bool] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[bool]
 		return zero
 	}
 	return c.Active
 }
 
-func (c *ObjectWithDefaults) GetAge() optionalnullable.OptionalNullable[string] {
+func (c *ObjectWithDefaults) GetAge() optionalnullable.OptionalNullable[int] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int]
 		return zero
 	}
 	return c.Age

@@ -9,4 +9,4 @@ package components
 
 
 // Array of numbers
-type NumberArray = []string
+type NumberArray = []float64

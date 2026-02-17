@@ -11,7 +11,7 @@ import (
 )
 
 type WidgetListPartial struct {
-	HasMore optionalnullable.OptionalNullable[string] `json:"hasMore,omitzero"`
+	HasMore optionalnullable.OptionalNullable[bool] `json:"hasMore,omitzero"`
 	Items []Widget `json:"items"`
 }
 
@@ -29,9 +29,9 @@ func (c *WidgetListPartial) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *WidgetListPartial) GetHasMore() optionalnullable.OptionalNullable[string] {
+func (c *WidgetListPartial) GetHasMore() optionalnullable.OptionalNullable[bool] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[bool]
 		return zero
 	}
 	return c.HasMore

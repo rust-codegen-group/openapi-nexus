@@ -14,7 +14,7 @@ import (
 // Variant A with string and integer fields
 type VariantA struct {
 	Field1 string `json:"field1"`
-	Field2 string `json:"field2"`
+	Field2 int32 `json:"field2"`
 }
 
 func (c VariantA) MarshalJSON() ([]byte, error) {
@@ -40,9 +40,9 @@ func (c *VariantA) GetField1() string {
 	return c.Field1
 }
 
-func (c *VariantA) GetField2() string {
+func (c *VariantA) GetField2() int32 {
 	if c == nil {
-		var zero string
+		var zero int32
 		return zero
 	}
 	return c.Field2

@@ -9,4 +9,4 @@ package components
 
 
 // Double precision floating point
-type DoubleType = string
+type DoubleType = float64

@@ -606,7 +606,7 @@ func (s *Pet) FindPetsByTags(
 // GetPetById - GET /pet/{petId}
 func (s *Pet) GetPetById(
 	ctx context.Context,
-	pathPetId string,
+	pathPetId int64,
 	opts ...operations.Option,
 ) (*operations.GetPetByIdResponse, error) {
 	o := operations.Options{}
@@ -747,7 +747,7 @@ func (s *Pet) GetPetById(
 // UpdatePetWithForm - POST /pet/{petId}
 func (s *Pet) UpdatePetWithForm(
 	ctx context.Context,
-	pathPetId string,
+	pathPetId int64,
 	queryName string,
 	queryStatus string,
 	opts ...operations.Option,
@@ -901,7 +901,7 @@ func (s *Pet) UpdatePetWithForm(
 // DeletePet - DELETE /pet/{petId}
 func (s *Pet) DeletePet(
 	ctx context.Context,
-	pathPetId string,
+	pathPetId int64,
 	opts ...operations.Option,
 ) (*operations.DeletePetResponse, error) {
 	o := operations.Options{}
@@ -1042,7 +1042,7 @@ func (s *Pet) DeletePet(
 // UploadFile - POST /pet/{petId}/uploadImage
 func (s *Pet) UploadFile(
 	ctx context.Context,
-	pathPetId string,
+	pathPetId int64,
 	queryAdditionalMetadata string,
 	opts ...operations.Option,
 ) (*operations.UploadFileResponse, error) {

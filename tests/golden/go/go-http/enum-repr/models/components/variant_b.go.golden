@@ -13,8 +13,8 @@ import (
 
 // Variant B with boolean and float fields
 type VariantB struct {
-	Field3 string `json:"field3"`
-	Field4 string `json:"field4"`
+	Field3 bool `json:"field3"`
+	Field4 float64 `json:"field4"`
 }
 
 func (c VariantB) MarshalJSON() ([]byte, error) {
@@ -32,17 +32,17 @@ func (c *VariantB) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *VariantB) GetField3() string {
+func (c *VariantB) GetField3() bool {
 	if c == nil {
-		var zero string
+		var zero bool
 		return zero
 	}
 	return c.Field3
 }
 
-func (c *VariantB) GetField4() string {
+func (c *VariantB) GetField4() float64 {
 	if c == nil {
-		var zero string
+		var zero float64
 		return zero
 	}
 	return c.Field4

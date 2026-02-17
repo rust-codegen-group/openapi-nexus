@@ -17,7 +17,7 @@ type MixedPropertyTypes struct {
 	ArrayOfInline []interface{} `json:"array_of_inline"`
 	InlineObject optionalnullable.OptionalNullable[interface{}] `json:"inline_object,omitzero"`
 	NestedReference optionalnullable.OptionalNullable[User] `json:"nested_reference,omitzero"`
-	SimpleNumber optionalnullable.OptionalNullable[string] `json:"simple_number,omitzero"`
+	SimpleNumber optionalnullable.OptionalNullable[int] `json:"simple_number,omitzero"`
 	SimpleString string `json:"simple_string"`
 }
 
@@ -60,9 +60,9 @@ func (c *MixedPropertyTypes) GetNestedReference() optionalnullable.OptionalNulla
 	return c.NestedReference
 }
 
-func (c *MixedPropertyTypes) GetSimpleNumber() optionalnullable.OptionalNullable[string] {
+func (c *MixedPropertyTypes) GetSimpleNumber() optionalnullable.OptionalNullable[int] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int]
 		return zero
 	}
 	return c.SimpleNumber
