@@ -8,4 +8,4 @@
 package components
 
 
-type Baz = interface{}
+type Baz = Foo

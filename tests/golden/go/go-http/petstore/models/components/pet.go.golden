@@ -19,7 +19,7 @@ type Pet struct {
 	Name string `json:"name"`
 	PhotoUrls []string `json:"photo_urls"`
 	Status optionalnullable.OptionalNullable[string] `json:"status,omitzero"`
-	Tags optionalnullable.OptionalNullable[[]interface{}] `json:"tags,omitzero"`
+	Tags optionalnullable.OptionalNullable[[]Tag] `json:"tags,omitzero"`
 }
 
 func (c Pet) MarshalJSON() ([]byte, error) {
@@ -77,9 +77,9 @@ func (c *Pet) GetStatus() optionalnullable.OptionalNullable[string] {
 	return c.Status
 }
 
-func (c *Pet) GetTags() optionalnullable.OptionalNullable[[]interface{}] {
+func (c *Pet) GetTags() optionalnullable.OptionalNullable[[]Tag] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[[]interface{}]
+		var zero optionalnullable.OptionalNullable[[]Tag]
 		return zero
 	}
 	return c.Tags

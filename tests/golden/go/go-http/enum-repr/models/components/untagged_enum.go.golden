@@ -8,4 +8,4 @@
 package components
 
 
-type UntaggedEnum = interface{}
+type UntaggedEnum = VariantA

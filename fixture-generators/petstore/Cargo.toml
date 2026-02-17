@@ -1,5 +1,5 @@
 [package]
-name = "openapi-nexus-examples-petstore"
+name = "fixture-generator-petstore"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
@@ -10,12 +10,12 @@ license.workspace = true
 publish = false
 
 [[bin]]
-name = "openapi-nexus-examples-petstore-server"
-path = "src/bin/openapi-nexus-examples-petstore-server.rs"
+name = "fixture-generator-petstore-server"
+path = "src/bin/fixture-generator-petstore-server.rs"
 
 [[bin]]
-name = "openapi-nexus-examples-petstore-spec-generator"
-path = "src/bin/openapi-nexus-examples-petstore-spec-generator.rs"
+name = "fixture-generator-petstore-spec-generator"
+path = "src/bin/fixture-generator-petstore-spec-generator.rs"
 
 [dependencies]
 axum.workspace = true

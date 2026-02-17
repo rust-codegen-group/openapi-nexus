@@ -1,12 +1,13 @@
 [workspace]
 resolver = "3"
 members = [
+    "fixture-generators/additional-properties",
+    "fixture-generators/enum-repr",
+    "fixture-generators/petstore",
     "openapi-nexus",
     "openapi-nexus-common",
     "openapi-nexus-config",
     "openapi-nexus-core",
-    "openapi-nexus-examples-enum-repr",
-    "openapi-nexus-examples-petstore",
     "openapi-nexus-go",
     "openapi-nexus-ir",
     "openapi-nexus-parser",

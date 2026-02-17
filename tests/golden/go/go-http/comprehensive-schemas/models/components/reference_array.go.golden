@@ -9,4 +9,4 @@ package components
 
 
 // Array of references
-type ReferenceArray = []string
+type ReferenceArray = []StringType

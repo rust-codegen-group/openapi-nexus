@@ -360,6 +360,18 @@ impl SchemaGenerator {
                 .collect();
             return TsExpression::Intersection(types);
         }
+        // Object with only additionalProperties (map-like): emit { [key: string]: ValueType }
+        if obj_schema.properties.is_empty() && obj_schema.additional_properties.is_some() {
+            let additional_props = obj_schema.additional_properties.as_ref().unwrap();
+            let value_type = self.map_schema_to_ts_type(additional_props, context, parent_name);
+            let index_key = "[key: string]".to_string();
+            let prop = ObjectProperty {
+                ts_name: index_key.clone(),
+                original_name: index_key.clone(),
+                type_expr: value_type,
+            };
+            return TsExpression::Object(BTreeMap::from([(index_key, prop)]));
+        }
         self.map_primitive_type_from_schema(obj_schema)
     }
 
