@@ -5,8 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::ast::{TsExpression, TsPrimitive};
 use crate::errors::GeneratorError;
 use crate::utils::schema_mapper::SchemaMapper;
-use openapi_nexus_spec::oas31::spec::Components;
 use openapi_nexus_core::data::{ContentType, HttpResponse, OperationInfo, StatusCode};
+use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference, ObjectSchema};
 
 /// Generator for API operation return types
 #[derive(Debug, Clone)]
@@ -248,7 +248,7 @@ impl ReturnTypeGenerator {
 }
 
 enum ResponseBodyKind<'a> {
-    Json(Option<&'a openapi_nexus_spec::oas31::spec::ObjectOrReference<openapi_nexus_spec::oas31::spec::ObjectSchema>>),
+    Json(Option<&'a ObjectOrReference<ObjectSchema>>),
     Text,
     Blob,
     None,
