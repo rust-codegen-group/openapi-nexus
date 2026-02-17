@@ -18,6 +18,5 @@ snafu.workspace = true
 tracing.workspace = true
 utoipa.workspace = true
 
-openapi-nexus-ir.workspace = true
 openapi-nexus-plugin.workspace = true
 openapi-nexus-spec.workspace = true

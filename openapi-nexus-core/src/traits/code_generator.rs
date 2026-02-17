@@ -5,11 +5,11 @@ use std::error::Error;
 
 use heck::ToKebabCase as _;
 use http::Method;
-use openapi_nexus_ir::OpenApi;
 
 use crate::data::{ApiMethodData, ModelData, OperationInfo, ReadmeData, RuntimeData};
 use crate::traits::file_writer::FileInfo;
 use openapi_nexus_common::{GeneratorType, Language};
+use openapi_nexus_spec::OpenApiV31Spec;
 
 /// Trait for code generators
 pub trait CodeGenerator {
@@ -22,7 +22,10 @@ pub trait CodeGenerator {
     /// Generate files from an OpenAPI specification
     ///
     /// Default implementation calls all category methods and aggregates results.
-    fn generate(&self, openapi: &OpenApi) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate(
+        &self,
+        openapi: &OpenApiV31Spec,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let mut files = Vec::new();
 
         // Collect operations by tag and generate API method data
@@ -60,39 +63,42 @@ pub trait CodeGenerator {
     /// Generate API files from OpenAPI spec and aggregated API method data
     fn generate_apis(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         apis: Vec<ApiMethodData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
 
     /// Generate model files from OpenAPI spec and model data
     fn generate_models(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         models: Vec<ModelData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
 
     /// Generate runtime files from OpenAPI spec and runtime data
     fn generate_runtime(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         runtime_data: RuntimeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
 
     /// Generate project files (package.json, README, index files, etc.)
     fn generate_project_files(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
 
     /// Generate README file from OpenAPI spec and README data
     fn generate_readme(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         data: ReadmeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
 
     /// Collect all operations grouped by their tags
-    fn collect_operations_by_tag(&self, openapi: &OpenApi) -> HashMap<String, Vec<OperationInfo>> {
+    fn collect_operations_by_tag(
+        &self,
+        openapi: &OpenApiV31Spec,
+    ) -> HashMap<String, Vec<OperationInfo>> {
         let mut tag_operations = HashMap::new();
         let default_tags = vec!["default".to_string()];
 
@@ -134,7 +140,7 @@ pub trait CodeGenerator {
     }
 
     /// Extract README data from OpenAPI specification
-    fn extract_readme_data(&self, openapi: &OpenApi) -> ReadmeData {
+    fn extract_readme_data(&self, openapi: &OpenApiV31Spec) -> ReadmeData {
         let title = openapi.info.title.clone();
         let version = openapi.info.version.clone();
         let description = openapi

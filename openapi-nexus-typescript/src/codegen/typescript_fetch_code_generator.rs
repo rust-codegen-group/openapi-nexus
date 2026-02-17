@@ -4,7 +4,6 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
-use openapi_nexus_ir::OpenApi;
 
 use crate::ast::{TsTypeAliasDefinition, TsTypeDefinition};
 use crate::config::TypeScriptFetchConfig;
@@ -23,6 +22,7 @@ use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, RuntimeData};
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
+use openapi_nexus_spec::OpenApiV31Spec;
 
 /// TypeScript Fetch code generator
 #[derive(Debug, Clone)]
@@ -292,7 +292,7 @@ impl TypeScriptFetchCodeGenerator {
     /// Generate apis/index.ts file
     fn generate_apis_index_file(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         api_classes: &HashMap<String, FileInfo>,
     ) -> Result<FileInfo, GeneratorError> {
         let mut exports = Vec::new();
@@ -326,7 +326,7 @@ impl TypeScriptFetchCodeGenerator {
     /// Generate models/index.ts file
     fn generate_models_index_file(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         schemas: &HashMap<String, TsTypeDefinition>,
     ) -> Result<FileInfo, GeneratorError> {
         let mut exports = Vec::new();
@@ -363,7 +363,10 @@ impl TypeScriptFetchCodeGenerator {
     }
 
     /// Generate main index.ts file
-    fn generate_main_index_file(&self, openapi: &OpenApi) -> Result<FileInfo, GeneratorError> {
+    fn generate_main_index_file(
+        &self,
+        openapi: &OpenApiV31Spec,
+    ) -> Result<FileInfo, GeneratorError> {
         let mut exports = vec!["export * from './runtime/runtime';".to_string()];
 
         // Only export from './apis' if there are paths in the OpenAPI spec
@@ -396,7 +399,10 @@ impl TypeScriptFetchCodeGenerator {
     }
 
     /// Generate package files (package.json, tsconfig.json, etc.)
-    fn generate_package_files(&self, openapi: &OpenApi) -> Result<Vec<FileInfo>, GeneratorError> {
+    fn generate_package_files(
+        &self,
+        openapi: &OpenApiV31Spec,
+    ) -> Result<Vec<FileInfo>, GeneratorError> {
         if !self.config.generate_package {
             return Ok(Vec::new());
         }
@@ -426,7 +432,7 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
 
     fn generate_apis(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         _apis: Vec<ApiMethodData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let operations_by_tag = self.collect_operations_by_tag(openapi);
@@ -470,7 +476,7 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
 
     fn generate_models(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         models: Vec<ModelData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         // Note: Duplicate schema name checking is performed in generate_apis
@@ -626,7 +632,7 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
 
     fn generate_runtime(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         runtime_data: RuntimeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let header_data = HeaderData::from_openapi(openapi);
@@ -648,7 +654,7 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
 
     fn generate_project_files(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let mut files = self.generate_package_files(openapi)?;
         files.push(self.generate_main_index_file(openapi)?);
@@ -657,7 +663,7 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
 
     fn generate_readme(
         &self,
-        _: &OpenApi,
+        _: &OpenApiV31Spec,
         data: openapi_nexus_core::data::ReadmeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let file = self.templating.render_template(

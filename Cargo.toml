@@ -84,6 +84,7 @@ openapi-nexus-typescript = { version = "0.0.4", path = "openapi-nexus-typescript
 [workspace.metadata.publish]
 order = [
     "openapi-nexus-common",
+    "openapi-nexus-spec",
     "openapi-nexus-parser",
     "openapi-nexus-core",
     "openapi-nexus-config",

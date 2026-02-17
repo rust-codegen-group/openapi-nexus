@@ -1,7 +1,8 @@
 //! Runtime data for template generation
 
-use openapi_nexus_ir::OpenApi;
 use serde::{Deserialize, Serialize};
+
+use openapi_nexus_spec::OpenApiV31Spec;
 
 /// Runtime data for template generation
 #[derive(Clone, Serialize, Deserialize)]
@@ -10,7 +11,7 @@ pub struct RuntimeData {
 }
 
 impl RuntimeData {
-    pub fn from_openapi(openapi: &OpenApi) -> Self {
+    pub fn from_openapi(openapi: &OpenApiV31Spec) -> Self {
         let base_path = openapi
             .servers
             .first()

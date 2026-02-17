@@ -26,7 +26,7 @@ use openapi_nexus_core::traits::OpenApiRefExt as _;
 use openapi_nexus_core::traits::ToRcDoc;
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
-use openapi_nexus_ir::OpenApi;
+use openapi_nexus_spec::OpenApiV31Spec;
 use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference};
 
 /// Go HTTP code generator
@@ -257,7 +257,7 @@ impl GoHttpCodeGenerator {
         tag: &str,
         operations: &[OperationInfo],
         tag_apis: &[&ApiMethodData],
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         common_header: &CommonFileHeaderData,
         module_path: &str,
     ) -> Result<FileInfo, Box<dyn Error + Send + Sync>> {
@@ -339,7 +339,7 @@ impl GoHttpCodeGenerator {
     /// Generate main SDK file
     fn generate_main_sdk_file(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         apis_by_tag: &BTreeMap<String, Vec<&ApiMethodData>>,
         common_header: &CommonFileHeaderData,
         module_path: &str,
@@ -596,7 +596,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
 
     fn generate_apis(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         apis: Vec<ApiMethodData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let operations_by_tag = <Self as CodeGenerator>::collect_operations_by_tag(self, openapi);
@@ -648,7 +648,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
 
     fn generate_models(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         models: Vec<ModelData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let header_data = HeaderData::from_openapi(openapi);
@@ -686,7 +686,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
 
     fn generate_runtime(
         &self,
-        openapi: &OpenApi,
+        openapi: &OpenApiV31Spec,
         _: RuntimeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let header_data = HeaderData::from_openapi(openapi);
@@ -759,7 +759,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
 
     fn generate_project_files(
         &self,
-        _openapi: &OpenApi,
+        _openapi: &OpenApiV31Spec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let module_path = self.get_module_path();
 
@@ -776,7 +776,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
 
     fn generate_readme(
         &self,
-        _openapi: &OpenApi,
+        _openapi: &OpenApiV31Spec,
         data: ReadmeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let default_module = "example.com/sdk".to_string();

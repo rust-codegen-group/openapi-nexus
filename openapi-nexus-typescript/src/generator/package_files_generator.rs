@@ -1,10 +1,10 @@
 //! Package file generators for npm package structure
 
 use heck::ToKebabCase as _;
-use openapi_nexus_ir::OpenApi;
 
 use crate::config::TypeScriptFetchConfig;
 use openapi_nexus_core::traits::file_writer::FileInfo;
+use openapi_nexus_spec::OpenApiV31Spec;
 
 /// Generator for npm package files
 pub struct PackageFilesGenerator<'a> {
@@ -21,7 +21,7 @@ impl<'a> PackageFilesGenerator<'a> {
     ///
     /// Returns keywords from `x-keywords` extension if present, otherwise None.
     /// If None is returned, default keywords should be used.
-    fn extract_keywords(&self, openapi: &OpenApi) -> Option<Vec<String>> {
+    fn extract_keywords(&self, openapi: &OpenApiV31Spec) -> Option<Vec<String>> {
         if let Some(serde_json::Value::Array(keywords_array)) =
             openapi.info.extensions.get("x-keywords")
         {
@@ -37,7 +37,7 @@ impl<'a> PackageFilesGenerator<'a> {
     }
 
     /// Generate package.json file from OpenAPI specification
-    pub fn generate_package_json(&self, openapi: &OpenApi) -> FileInfo {
+    pub fn generate_package_json(&self, openapi: &OpenApiV31Spec) -> FileInfo {
         // Extract metadata from OpenAPI spec
         let title = openapi.info.title.clone();
         let version = openapi.info.version.clone();
@@ -110,7 +110,7 @@ impl<'a> PackageFilesGenerator<'a> {
     }
 
     /// Generate tsconfig.json file
-    pub fn generate_tsconfig(&self, _openapi: &OpenApi) -> FileInfo {
+    pub fn generate_tsconfig(&self, _openapi: &OpenApiV31Spec) -> FileInfo {
         let module_str = self.config.ts_module.to_string();
 
         let mut tsconfig = serde_json::json!({
@@ -149,7 +149,7 @@ impl<'a> PackageFilesGenerator<'a> {
     }
 
     /// Generate tsconfig.esm.json file for ES modules
-    pub fn generate_tsconfig_esm(&self, _openapi: &OpenApi) -> FileInfo {
+    pub fn generate_tsconfig_esm(&self, _openapi: &OpenApiV31Spec) -> FileInfo {
         let module_str = self.config.ts_module.to_string();
         let tsconfig_esm = serde_json::json!({
             "extends": "./tsconfig.json",

@@ -16,6 +16,7 @@ use tracing_test::traced_test;
 
 use openapi_nexus_core::traits::code_generator::CodeGenerator as _;
 use openapi_nexus_core::traits::file_writer::FileWriter;
+use openapi_nexus_spec::OpenApiV31Spec;
 use openapi_nexus_typescript::TypeScriptFetchCodeGenerator;
 
 /// Read a fixture file from various possible locations
@@ -55,8 +56,7 @@ fn from_golden_filename(golden_filename: &str) -> Option<String> {
 fn generate_files(
     spec_content: &str,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
-    let openapi: openapi_nexus_ir::OpenApi =
-        openapi_nexus_parser::parse_content_yaml(spec_content)?;
+    let openapi: OpenApiV31Spec = openapi_nexus_parser::parse_content_yaml(spec_content)?;
     let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
     let generated_files = match generator.generate(&openapi) {
         Ok(files) => {
