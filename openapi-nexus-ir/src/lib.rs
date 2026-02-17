@@ -52,11 +52,11 @@ pub mod traversal;
 pub mod utils;
 
 // Re-export key OpenAPI spec types for convenience
+pub use openapi_nexus_spec::OpenApiV31Spec;
 pub use openapi_nexus_spec::oas31::spec::{
     Components, ExternalDoc, Info, ObjectOrReference, ObjectSchema, Operation, Parameter, PathItem,
     RequestBody, Response, Schema, SecurityRequirement, SecurityScheme, Server, Tag,
 };
-pub use openapi_nexus_spec::OpenApiV31Spec;
 
 // Type aliases for compatibility with utoipa API
 pub type OpenApi = OpenApiV31Spec;

@@ -35,7 +35,9 @@ impl OpenApiTransformPass for SchemaNormalizationPass {
 
         if let Some(components) = openapi.components.as_mut() {
             for (_name, schema_ref) in components.schemas.iter_mut() {
-                if let openapi_nexus_spec::oas31::spec::ObjectOrReference::Object(obj_schema) = schema_ref {
+                if let openapi_nexus_spec::oas31::spec::ObjectOrReference::Object(obj_schema) =
+                    schema_ref
+                {
                     if !obj_schema.properties.is_empty() && self.normalize_objects {
                         tracing::debug!("Normalizing object schema properties");
                     }

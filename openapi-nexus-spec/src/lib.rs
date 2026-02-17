@@ -14,12 +14,12 @@ pub use oas31::OpenApiV31Spec;
 mod test_utils;
 
 #[cfg(test)]
-#[allow(non_snake_case)]
-mod generated_fixture_tests {
-    include!(concat!(env!("OUT_DIR"), "/generated_fixture_tests.rs"));
+fn run_fixture_test(rel_path: &str) {
+    test_utils::run_fixture_test(rel_path);
 }
 
 #[cfg(test)]
-fn run_fixture_test(rel_path: &str) {
-    test_utils::run_fixture_test(rel_path);
+#[allow(non_snake_case)]
+mod generated_fixture_tests {
+    include!(concat!(env!("OUT_DIR"), "/generated_fixture_tests.rs"));
 }

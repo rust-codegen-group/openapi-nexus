@@ -40,9 +40,7 @@ pub use self::{
     error::ErrorSpec,
     example::Example,
     external_doc::ExternalDoc,
-    flows::{
-        AuthorizationCodeFlow, ClientCredentialsFlow, Flows, ImplicitFlow, PasswordFlow,
-    },
+    flows::{AuthorizationCodeFlow, ClientCredentialsFlow, Flows, ImplicitFlow, PasswordFlow},
     header::Header,
     info::Info,
     license::License,
@@ -56,9 +54,7 @@ pub use self::{
     reference::{ErrorRef, FromRef, ObjectOrReference, Ref, RefType},
     request_body::RequestBody,
     response::Response,
-    schema::{
-        AdditionalProperties, BooleanSchema, ErrorSchema, ObjectSchema, Schema,
-    },
+    schema::{AdditionalProperties, BooleanSchema, ErrorSchema, ObjectSchema, Schema},
     security_requirement::SecurityRequirement,
     security_scheme::SecurityScheme,
     server::{Server, ServerVariable},
