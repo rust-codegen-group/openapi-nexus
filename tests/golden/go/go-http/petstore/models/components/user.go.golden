@@ -16,11 +16,11 @@ import (
 type User struct {
 	Email optionalnullable.OptionalNullable[string] `json:"email,omitzero"`
 	FirstName optionalnullable.OptionalNullable[string] `json:"first_name,omitzero"`
-	Id optionalnullable.OptionalNullable[string] `json:"id,omitzero"`
+	Id optionalnullable.OptionalNullable[int64] `json:"id,omitzero"`
 	LastName optionalnullable.OptionalNullable[string] `json:"last_name,omitzero"`
 	Password optionalnullable.OptionalNullable[string] `json:"password,omitzero"`
 	Phone optionalnullable.OptionalNullable[string] `json:"phone,omitzero"`
-	UserStatus optionalnullable.OptionalNullable[string] `json:"user_status,omitzero"`
+	UserStatus optionalnullable.OptionalNullable[int32] `json:"user_status,omitzero"`
 	Username optionalnullable.OptionalNullable[string] `json:"username,omitzero"`
 }
 
@@ -53,9 +53,9 @@ func (c *User) GetFirstName() optionalnullable.OptionalNullable[string] {
 	return c.FirstName
 }
 
-func (c *User) GetId() optionalnullable.OptionalNullable[string] {
+func (c *User) GetId() optionalnullable.OptionalNullable[int64] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int64]
 		return zero
 	}
 	return c.Id
@@ -85,9 +85,9 @@ func (c *User) GetPhone() optionalnullable.OptionalNullable[string] {
 	return c.Phone
 }
 
-func (c *User) GetUserStatus() optionalnullable.OptionalNullable[string] {
+func (c *User) GetUserStatus() optionalnullable.OptionalNullable[int32] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int32]
 		return zero
 	}
 	return c.UserStatus

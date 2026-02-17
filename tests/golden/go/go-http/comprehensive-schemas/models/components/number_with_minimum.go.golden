@@ -9,4 +9,4 @@ package components
 
 
 // Number with minimum value
-type NumberWithMinimum = string
+type NumberWithMinimum = float64

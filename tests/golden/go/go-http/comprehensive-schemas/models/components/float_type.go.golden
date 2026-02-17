@@ -9,4 +9,4 @@ package components
 
 
 // Floating point number
-type FloatType = string
+type FloatType = float32

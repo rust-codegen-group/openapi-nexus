@@ -9,4 +9,4 @@ package components
 
 
 // Basic number type
-type NumberType = string
+type NumberType = float64

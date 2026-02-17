@@ -12,7 +12,7 @@ import (
 )
 
 type Bar struct {
-	Id string `json:"id"`
+	Id int `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -31,9 +31,9 @@ func (c *Bar) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Bar) GetId() string {
+func (c *Bar) GetId() int {
 	if c == nil {
-		var zero string
+		var zero int
 		return zero
 	}
 	return c.Id

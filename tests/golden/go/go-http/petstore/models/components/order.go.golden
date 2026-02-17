@@ -15,12 +15,12 @@ import (
 
 // Order model
 type Order struct {
-	Complete optionalnullable.OptionalNullable[string] `json:"complete,omitzero"`
-	Id optionalnullable.OptionalNullable[string] `json:"id,omitzero"`
-	PetId optionalnullable.OptionalNullable[string] `json:"pet_id,omitzero"`
-	Quantity optionalnullable.OptionalNullable[string] `json:"quantity,omitzero"`
+	Complete optionalnullable.OptionalNullable[bool] `json:"complete,omitzero"`
+	Id optionalnullable.OptionalNullable[int64] `json:"id,omitzero"`
+	PetId optionalnullable.OptionalNullable[int64] `json:"pet_id,omitzero"`
+	Quantity optionalnullable.OptionalNullable[int32] `json:"quantity,omitzero"`
 	ShipDate optionalnullable.OptionalNullable[time.Time] `json:"ship_date,omitzero"`
-	Status optionalnullable.OptionalNullable[string] `json:"status,omitzero"`
+	Status optionalnullable.OptionalNullable[interface{}] `json:"status,omitzero"`
 }
 
 func (c Order) MarshalJSON() ([]byte, error) {
@@ -36,33 +36,33 @@ func (c *Order) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Order) GetComplete() optionalnullable.OptionalNullable[string] {
+func (c *Order) GetComplete() optionalnullable.OptionalNullable[bool] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[bool]
 		return zero
 	}
 	return c.Complete
 }
 
-func (c *Order) GetId() optionalnullable.OptionalNullable[string] {
+func (c *Order) GetId() optionalnullable.OptionalNullable[int64] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int64]
 		return zero
 	}
 	return c.Id
 }
 
-func (c *Order) GetPetId() optionalnullable.OptionalNullable[string] {
+func (c *Order) GetPetId() optionalnullable.OptionalNullable[int64] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int64]
 		return zero
 	}
 	return c.PetId
 }
 
-func (c *Order) GetQuantity() optionalnullable.OptionalNullable[string] {
+func (c *Order) GetQuantity() optionalnullable.OptionalNullable[int32] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[int32]
 		return zero
 	}
 	return c.Quantity
@@ -76,9 +76,9 @@ func (c *Order) GetShipDate() optionalnullable.OptionalNullable[time.Time] {
 	return c.ShipDate
 }
 
-func (c *Order) GetStatus() optionalnullable.OptionalNullable[string] {
+func (c *Order) GetStatus() optionalnullable.OptionalNullable[interface{}] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[string]
+		var zero optionalnullable.OptionalNullable[interface{}]
 		return zero
 	}
 	return c.Status

@@ -3,7 +3,7 @@
 use axum::{http::StatusCode, response::Json};
 
 use crate::models::{
-    AdjacentlyTaggedEnum, ExternallyTaggedEnum, InternallyTaggedEnum, UntaggedEnum,
+    AdjacentlyTaggedEnum, ExternallyTaggedEnum, InternallyTaggedEnum, MixedEnum, UntaggedEnum,
 };
 
 /// Handle externally tagged enum
@@ -74,6 +74,24 @@ pub async fn handle_adjacently_tagged(
 pub async fn handle_untagged(
     Json(value): Json<UntaggedEnum>,
 ) -> Result<Json<UntaggedEnum>, (StatusCode, Json<String>)> {
+    // In a real implementation, this would process the enum
+    Ok(Json(value))
+}
+
+/// Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
+#[utoipa::path(
+    post,
+    path = "/mixed",
+    request_body = MixedEnum,
+    responses(
+        (status = 200, description = "Successful operation", body = MixedEnum),
+        (status = 400, description = "Invalid input")
+    ),
+    tag = "enum-repr"
+)]
+pub async fn handle_mixed(
+    Json(value): Json<MixedEnum>,
+) -> Result<Json<MixedEnum>, (StatusCode, Json<String>)> {
     // In a real implementation, this would process the enum
     Ok(Json(value))
 }

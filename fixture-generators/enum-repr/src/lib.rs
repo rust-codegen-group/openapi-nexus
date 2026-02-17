@@ -6,7 +6,10 @@ pub mod openapi;
 
 // Re-export commonly used items
 pub use handlers::{
-    handle_adjacently_tagged, handle_externally_tagged, handle_internally_tagged, handle_untagged,
+    handle_adjacently_tagged, handle_externally_tagged, handle_internally_tagged, handle_mixed,
+    handle_untagged,
 };
-pub use models::{AdjacentlyTaggedEnum, ExternallyTaggedEnum, InternallyTaggedEnum, UntaggedEnum};
+pub use models::{
+    AdjacentlyTaggedEnum, ExternallyTaggedEnum, InternallyTaggedEnum, MixedEnum, UntaggedEnum,
+};
 pub use openapi::ApiDoc;

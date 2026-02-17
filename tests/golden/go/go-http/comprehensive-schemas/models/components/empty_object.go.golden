@@ -9,4 +9,4 @@ package components
 
 
 // Object without properties
-type EmptyObject = string
+type EmptyObject = interface{}

@@ -86,8 +86,9 @@ order = [
     "openapi-nexus-common",
     "openapi-nexus-spec",
     "openapi-nexus-parser",
-    "openapi-nexus-core",
     "openapi-nexus-config",
+    "openapi-nexus-core",
     "openapi-nexus-typescript",
+    "openapi-nexus-go",
     "openapi-nexus",
 ]

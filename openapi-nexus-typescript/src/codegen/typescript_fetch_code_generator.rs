@@ -79,11 +79,14 @@ impl TypeScriptFetchCodeGenerator {
             schemas.insert(model.name, type_def);
         }
 
-        // Collect all generated inline interfaces and add them to schemas
-        // Use the original_name from the type definition as the key for consistency
+        // Collect all generated inline interfaces and add them to schemas.
+        // Use the original_name from the type definition as the key for consistency.
+        // Do not overwrite an existing component schema (component schema wins).
         for type_def in context.get_inline_interfaces().values() {
             let original_name = type_def.original_name().to_string();
-            schemas.insert(original_name, type_def.clone());
+            schemas
+                .entry(original_name)
+                .or_insert_with(|| type_def.clone());
         }
 
         (schemas, enum_discriminators)

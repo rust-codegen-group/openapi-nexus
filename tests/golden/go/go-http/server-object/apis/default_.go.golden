@@ -175,7 +175,7 @@ func (s *Default) GetAllUsers(
 // GetUserById - Retrieve a specific user by their ID
 func (s *Default) GetUserById(
 	ctx context.Context,
-	pathId string,
+	pathId int64,
 	opts ...operations.Option,
 ) (*operations.GetUserByIdResponse, error) {
 	o := operations.Options{}

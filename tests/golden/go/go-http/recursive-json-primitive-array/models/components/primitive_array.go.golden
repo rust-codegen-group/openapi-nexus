@@ -13,7 +13,7 @@ import (
 
 // Arrays with primitive items should remain unchanged
 type PrimitiveArray struct {
-	NumberItems []string `json:"number_items"`
+	NumberItems []int `json:"number_items"`
 	StringItems []string `json:"string_items"`
 }
 
@@ -32,9 +32,9 @@ func (c *PrimitiveArray) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *PrimitiveArray) GetNumberItems() []string {
+func (c *PrimitiveArray) GetNumberItems() []int {
 	if c == nil {
-		var zero []string
+		var zero []int
 		return zero
 	}
 	return c.NumberItems

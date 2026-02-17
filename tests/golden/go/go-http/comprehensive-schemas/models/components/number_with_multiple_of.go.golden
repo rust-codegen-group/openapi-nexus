@@ -9,4 +9,4 @@ package components
 
 
 // Number divisible by multipleOf
-type NumberWithMultipleOf = string
+type NumberWithMultipleOf = float64

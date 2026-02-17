@@ -79,3 +79,19 @@ pub enum UntaggedEnum {
     #[serde(rename = "UNTAGGED_ENUM_VARIANT_B")]
     VariantB(VariantB),
 }
+
+/// Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
+///
+/// Serializes as externally tagged: `{"SimpleA": null}`, `{"VariantA": {"field1": "...", "field2": 123}}`,
+/// `{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}`
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub enum MixedEnum {
+    /// Unit variant SimpleA
+    SimpleA,
+    /// Tuple variant with VariantA payload
+    VariantA(VariantA),
+    /// Unit variant SimpleB
+    SimpleB,
+    /// Tuple variant with VariantB payload
+    VariantB(VariantB),
+}

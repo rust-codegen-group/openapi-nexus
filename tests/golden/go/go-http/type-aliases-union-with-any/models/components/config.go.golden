@@ -8,4 +8,4 @@
 package components
 
 
-type Config = string
+type Config = interface{}

@@ -8,4 +8,4 @@
 package components
 
 
-type AllOfObjects = BasicObject
+type AllOfObjects = interface{}

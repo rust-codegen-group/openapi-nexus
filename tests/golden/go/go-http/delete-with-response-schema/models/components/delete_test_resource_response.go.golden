@@ -15,7 +15,7 @@ import (
 // Response after deleting a test resource
 type DeleteTestResourceResponse struct {
 	Message optionalnullable.OptionalNullable[string] `json:"message,omitzero"`
-	Success string `json:"success"`
+	Success bool `json:"success"`
 }
 
 func (c DeleteTestResourceResponse) MarshalJSON() ([]byte, error) {
@@ -40,9 +40,9 @@ func (c *DeleteTestResourceResponse) GetMessage() optionalnullable.OptionalNulla
 	return c.Message
 }
 
-func (c *DeleteTestResourceResponse) GetSuccess() string {
+func (c *DeleteTestResourceResponse) GetSuccess() bool {
 	if c == nil {
-		var zero string
+		var zero bool
 		return zero
 	}
 	return c.Success

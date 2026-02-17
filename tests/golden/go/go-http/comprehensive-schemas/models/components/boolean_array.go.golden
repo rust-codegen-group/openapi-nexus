@@ -9,4 +9,4 @@ package components
 
 
 // Array of booleans
-type BooleanArray = []string
+type BooleanArray = []bool

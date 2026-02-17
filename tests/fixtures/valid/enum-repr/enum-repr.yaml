@@ -77,6 +77,27 @@ paths:
                 $ref: '#/components/schemas/InternallyTaggedEnum'
         '400':
           description: Invalid input
+  /mixed:
+    post:
+      tags:
+      - enum-repr
+      summary: Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
+      operationId: handle_mixed
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MixedEnum'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MixedEnum'
+        '400':
+          description: Invalid input
   /untagged:
     post:
       tags:
@@ -187,6 +208,37 @@ components:
 
         The tag is a field inside the object alongside other fields:
         `{"ty": "VariantA", "field1": "...", "field2": 123}`
+    MixedEnum:
+      oneOf:
+      - type: string
+        description: Unit variant SimpleA
+        enum:
+        - SimpleA
+      - type: object
+        description: Tuple variant with VariantA payload
+        required:
+        - VariantA
+        properties:
+          VariantA:
+            $ref: '#/components/schemas/VariantA'
+            description: Tuple variant with VariantA payload
+      - type: string
+        description: Unit variant SimpleB
+        enum:
+        - SimpleB
+      - type: object
+        description: Tuple variant with VariantB payload
+        required:
+        - VariantB
+        properties:
+          VariantB:
+            $ref: '#/components/schemas/VariantB'
+            description: Tuple variant with VariantB payload
+      description: |-
+        Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
+
+        Serializes as externally tagged: `{"SimpleA": null}`, `{"VariantA": {"field1": "...", "field2": 123}}`,
+        `{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}`
     UntaggedEnum:
       oneOf:
       - $ref: '#/components/schemas/VariantA'

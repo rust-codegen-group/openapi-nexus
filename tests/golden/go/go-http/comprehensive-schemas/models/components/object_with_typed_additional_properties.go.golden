@@ -14,7 +14,7 @@ import (
 // Object with typed additional properties
 type ObjectWithTypedAdditionalProperties struct {
 	Name string `json:"name"`
-	AdditionalProperties map[string]string `additionalProperties:"true" json:"-"`
+	AdditionalProperties map[string]float64 `additionalProperties:"true" json:"-"`
 }
 
 func (c ObjectWithTypedAdditionalProperties) MarshalJSON() ([]byte, error) {
@@ -39,9 +39,9 @@ func (c *ObjectWithTypedAdditionalProperties) GetName() string {
 	return c.Name
 }
 
-func (c *ObjectWithTypedAdditionalProperties) GetAdditionalProperties() map[string]string {
+func (c *ObjectWithTypedAdditionalProperties) GetAdditionalProperties() map[string]float64 {
 	if c == nil {
-		var zero map[string]string
+		var zero map[string]float64
 		return zero
 	}
 	return c.AdditionalProperties

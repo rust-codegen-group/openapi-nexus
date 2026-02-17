@@ -9,4 +9,4 @@ package components
 
 
 // Boolean type
-type BooleanType = string
+type BooleanType = bool

@@ -14,9 +14,9 @@ import (
 
 // Middle level: fixed fields plus maps with object ref and boolean value kinds.
 type MiddleLevel struct {
-	Count string `json:"count"`
+	Count int32 `json:"count"`
 	Extras optionalnullable.OptionalNullable[map[string]interface{}] `json:"extras,omitzero"`
-	Flags optionalnullable.OptionalNullable[map[string]string] `json:"flags,omitzero"`
+	Flags optionalnullable.OptionalNullable[map[string]bool] `json:"flags,omitzero"`
 	Key string `json:"key"`
 	Nested map[string]LeafValue `json:"nested"`
 }
@@ -37,9 +37,9 @@ func (c *MiddleLevel) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *MiddleLevel) GetCount() string {
+func (c *MiddleLevel) GetCount() int32 {
 	if c == nil {
-		var zero string
+		var zero int32
 		return zero
 	}
 	return c.Count
@@ -53,9 +53,9 @@ func (c *MiddleLevel) GetExtras() optionalnullable.OptionalNullable[map[string]i
 	return c.Extras
 }
 
-func (c *MiddleLevel) GetFlags() optionalnullable.OptionalNullable[map[string]string] {
+func (c *MiddleLevel) GetFlags() optionalnullable.OptionalNullable[map[string]bool] {
 	if c == nil {
-		var zero optionalnullable.OptionalNullable[map[string]string]
+		var zero optionalnullable.OptionalNullable[map[string]bool]
 		return zero
 	}
 	return c.Flags

@@ -313,7 +313,7 @@ func (s *Store) PlaceOrder(
 // GetOrderById - GET /store/order/{orderId}
 func (s *Store) GetOrderById(
 	ctx context.Context,
-	pathOrderId string,
+	pathOrderId int64,
 	opts ...operations.Option,
 ) (*operations.GetOrderByIdResponse, error) {
 	o := operations.Options{}
@@ -454,7 +454,7 @@ func (s *Store) GetOrderById(
 // DeleteOrder - DELETE /store/order/{orderId}
 func (s *Store) DeleteOrder(
 	ctx context.Context,
-	pathOrderId string,
+	pathOrderId int64,
 	opts ...operations.Option,
 ) (*operations.DeleteOrderResponse, error) {
 	o := operations.Options{}

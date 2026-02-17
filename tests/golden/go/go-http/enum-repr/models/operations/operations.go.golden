@@ -47,6 +47,11 @@ type HandleInternallyTaggedResponse struct {
 	HTTPMeta components.HTTPMetadata
 }
 
+// HandleMixedResponse is the response type for HandleMixed
+type HandleMixedResponse struct {
+	HTTPMeta components.HTTPMetadata
+}
+
 // HandleUntaggedResponse is the response type for HandleUntagged
 type HandleUntaggedResponse struct {
 	HTTPMeta components.HTTPMetadata

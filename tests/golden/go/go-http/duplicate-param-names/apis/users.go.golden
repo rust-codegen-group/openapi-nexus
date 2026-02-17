@@ -40,8 +40,8 @@ func NewUsers(rootSDK hooks.SDK, sdkConfig config.SDKConfiguration, hooks *hooks
 // GetUserByIdDuplicate - GET /users/{id}
 func (s *Users) GetUserByIdDuplicate(
 	ctx context.Context,
-	pathId string,
-	queryId string,
+	pathId int64,
+	queryId int64,
 	headerId string,
 	opts ...operations.Option,
 ) (*operations.GetUserByIdDuplicateResponse, error) {
@@ -110,7 +110,7 @@ func (s *Users) GetUserByIdDuplicate(
 
 	// Build query parameters
 	queryParams := struct {
-		Id string `queryParam:"name=id,style=form,explode=true"`
+		Id int64 `queryParam:"name=id,style=form,explode=true"`
 	}{
 		Id: queryId,
 	}

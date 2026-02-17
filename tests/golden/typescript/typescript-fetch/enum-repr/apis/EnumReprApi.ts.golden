@@ -14,6 +14,7 @@ import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitO
 import { type AdjacentlyTaggedEnum, AdjacentlyTaggedEnumFromJSON } from '../models/AdjacentlyTaggedEnum';
 import { type ExternallyTaggedEnum, ExternallyTaggedEnumFromJSON } from '../models/ExternallyTaggedEnum';
 import { type InternallyTaggedEnum, InternallyTaggedEnumFromJSON } from '../models/InternallyTaggedEnum';
+import { type MixedEnum, MixedEnumFromJSON } from '../models/MixedEnum';
 import { type UntaggedEnum, UntaggedEnumFromJSON } from '../models/UntaggedEnum';
 
 export interface ApiHandleAdjacentlyTaggedRequest {
@@ -26,6 +27,10 @@ export interface ApiHandleExternallyTaggedRequest {
 
 export interface ApiHandleInternallyTaggedRequest {
     body: InternallyTaggedEnum;
+}
+
+export interface ApiHandleMixedRequest {
+    body: MixedEnum;
 }
 
 export interface ApiHandleUntaggedRequest {
@@ -60,6 +65,14 @@ export interface EnumReprApiInterface {
    */
   handleInternallyTaggedRaw: (requestParameters: ApiHandleInternallyTaggedRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<InternallyTaggedEnum> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 400 }>;
   /**
+   * Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
+   *
+   * @param {MixedEnum} body
+   *
+   * @throws {RequiredError}
+   */
+  handleMixedRaw: (requestParameters: ApiHandleMixedRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<MixedEnum> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 400 }>;
+  /**
    * Handle untagged enum
    *
    * @param {UntaggedEnum} body
@@ -91,6 +104,14 @@ export interface EnumReprApiInterface {
    * @throws {RequiredError}
    */
   handleInternallyTagged: (requestParameters: ApiHandleInternallyTaggedRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | InternallyTaggedEnum>;
+  /**
+   * Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
+   *
+   * @param {MixedEnum} body
+   *
+   * @throws {RequiredError}
+   */
+  handleMixed: (requestParameters: ApiHandleMixedRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | MixedEnum>;
   /**
    * Handle untagged enum
    *
@@ -288,6 +309,67 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
    */
   async handleInternallyTagged(requestParameters: ApiHandleInternallyTaggedRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<any | InternallyTaggedEnum> {
     const response = await this.handleInternallyTaggedRaw(requestParameters, initOverrides);
+    return await response.value();
+  }
+
+  /**
+   * Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
+   *
+   * @param {MixedEnum} body
+   *
+   * @throws {RequiredError}
+   */
+  async handleMixedRaw(requestParameters: ApiHandleMixedRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<MixedEnum> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 400 }> {
+    if (requestParameters['body'] == null) {
+      throw new RequiredError(
+        'body',
+        'Required parameter "body" was null or undefined when calling handleMixedRaw().'
+      );
+    }
+    // Build path with path parameters
+    let urlPath = `/mixed`;
+    // Build query parameters
+    const queryParameters: any = {};
+    // Build headers
+    const headerParameters: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...this.configuration?.headers,
+    };
+
+    // Add header parameters
+    // Prepare request body
+    const requestBody = requestParameters['body'];
+    // Make request
+    const response = await this.request({
+        path: urlPath,
+        method: 'POST',
+        headers: headerParameters,
+        query: queryParameters,
+        body: requestBody,
+    }, initOverrides);
+
+    // Handle responses
+    if (response.status === 200) {
+      return new JSONApiResponse(response, (jsonValue) => MixedEnumFromJSON(jsonValue)) as JSONApiResponse<MixedEnum> & { status: 200 };
+    }
+    else if (response.status === 400) {
+      return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
+    }
+    else {
+      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+    }
+
+  }
+
+  /**
+   * Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
+   *
+   * @param {MixedEnum} body
+   *
+   * @throws {RequiredError}
+   */
+  async handleMixed(requestParameters: ApiHandleMixedRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<any | MixedEnum> {
+    const response = await this.handleMixedRaw(requestParameters, initOverrides);
     return await response.value();
   }
 

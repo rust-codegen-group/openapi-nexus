@@ -16,7 +16,7 @@ import (
 type User struct {
 	CreatedAt optionalnullable.OptionalNullable[time.Time] `json:"createdAt,omitzero"`
 	Email string `json:"email"`
-	Id string `json:"id"`
+	Id int64 `json:"id"`
 	Name string `json:"name"`
 	UpdatedAt optionalnullable.OptionalNullable[time.Time] `json:"updatedAt,omitzero"`
 }
@@ -53,9 +53,9 @@ func (c *User) GetEmail() string {
 	return c.Email
 }
 
-func (c *User) GetId() string {
+func (c *User) GetId() int64 {
 	if c == nil {
-		var zero string
+		var zero int64
 		return zero
 	}
 	return c.Id
