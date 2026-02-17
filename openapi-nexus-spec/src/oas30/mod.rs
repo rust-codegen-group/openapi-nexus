@@ -1,7 +1,7 @@
-//! OpenAPI 3.0.x specification (stub).
+//! OpenAPI 3.0.x specification.
 //!
-//! Reserved for future 3.0 support and 3.0 → 3.1 migration tooling.
+//! Types for parsing and navigating OpenAPI 3.0.4 documents.
 
-pub mod spec {
-    //! Placeholder for OpenAPI 3.0.x spec types.
-}
+pub mod spec;
+
+pub use spec::OpenApiV30Spec;
