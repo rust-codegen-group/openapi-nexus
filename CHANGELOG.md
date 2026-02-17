@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4]
+
+### Added
+
+- additional-properties fixture and generator with Go and TypeScript support
+- openapi-nexus-spec: OAS 3.0 spec types and openapi-generator fixture tests
+- openapi-nexus-spec: OAS 3.1 spec types
+- TypeScript: query parameter enum support and improved PascalCase consistency
+
+### Changed
+
+- Migrated core and codegen to OAS 3.1 spec types
+
 ## [0.0.3]
 
 ### Added
