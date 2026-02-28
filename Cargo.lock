@@ -447,7 +447,7 @@ checksum = "52051878f80a721bb68ebfbc930e07b65ba72f2da88968ea5c06fd6ca3d3a127"
 
 [[package]]
 name = "fixture-generator-additional-properties"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "axum",
  "axum-extra",
@@ -468,7 +468,7 @@ dependencies = [
 
 [[package]]
 name = "fixture-generator-enum-repr"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "axum",
  "axum-extra",
@@ -489,7 +489,7 @@ dependencies = [
 
 [[package]]
 name = "fixture-generator-petstore"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "axum",
  "axum-extra",
@@ -1050,7 +1050,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "openapi-nexus"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "clap",
  "openapi-nexus-common",
@@ -1067,7 +1067,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-common"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "clap",
  "serde",
@@ -1077,7 +1077,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-config"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "clap",
  "dirs",
@@ -1089,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-core"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "chrono",
  "heck",
@@ -1109,7 +1109,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-go"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "heck",
  "http",
@@ -1135,7 +1135,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-ir"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "indexmap",
  "openapi-nexus-common",
@@ -1150,7 +1150,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-parser"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "openapi-nexus-spec",
  "serde",
@@ -1163,7 +1163,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-plugin"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "openapi-nexus-spec",
  "serde",
@@ -1174,7 +1174,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-rust"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "heck",
  "indexmap",
@@ -1189,7 +1189,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-spec"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "derive_more",
  "http",
@@ -1204,7 +1204,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-transforms"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "heck",
  "indexmap",
@@ -1218,7 +1218,7 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-typescript"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "chrono",
  "clap",

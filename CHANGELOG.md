@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.5]
+
+### Added
+
+- Justfile with build, generate, lint, and test actions
+- Kind type generation for discriminated unions in TypeScript generator
+- Mixed enum support in enum-repr test fixture generator
+
+### Changed
+
+- Added openapi-nexus-spec to published crates list
+
 ## [0.0.4]
 
 ### Added
