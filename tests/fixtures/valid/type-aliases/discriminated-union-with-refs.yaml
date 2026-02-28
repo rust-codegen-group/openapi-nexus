@@ -1,0 +1,74 @@
+openapi: 3.1.0
+info:
+  title: Discriminated Union with References Test
+  description: |
+    Test fixture for discriminated union where variants are references to component schemas.
+    This is similar to the ContainerImage pattern in the infiron API.
+  version: 1.0.0
+
+paths:
+  /container:
+    post:
+      summary: Create container with discriminated union
+      operationId: create_container
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerImage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerImage'
+
+components:
+  schemas:
+    # Referenced schema 1 - managed image
+    ContainerImageManaged:
+      type: object
+      properties:
+        managedField:
+          type: string
+      required:
+        - managedField
+
+    # Referenced schema 2 - custom image
+    ContainerImageCustom:
+      type: object
+      properties:
+        customField:
+          type: string
+      required:
+        - customField
+
+    # Discriminated union type using references
+    ContainerImage:
+      oneOf:
+        # Variant 1: managed image
+        - allOf:
+            - $ref: '#/components/schemas/ContainerImageManaged'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - CONTAINER_IMAGE_MANAGED
+              description: Managed container image
+        # Variant 2: custom image
+        - allOf:
+            - $ref: '#/components/schemas/ContainerImageCustom'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - CONTAINER_IMAGE_CUSTOM
+              description: Custom container image

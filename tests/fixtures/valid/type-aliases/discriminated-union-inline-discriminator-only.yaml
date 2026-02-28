@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: Discriminated Union with Inline Discriminator Only Test
+  description: |
+    Test fixture for discriminated union where variants are inline objects
+    with ONLY a discriminator property (no additional fields).
+
+    This specifically tests the fix for the bug where inline objects with
+    only a discriminator property (like { kind: "UNSPECIFIED" }) were
+    generating generic "Kind.ts" files that conflicted across different
+    discriminated unions.
+
+    After the fix, these should generate properly prefixed names like
+    "EventKindUnspecified" instead of generic "Kind".
+  version: 1.0.0
+
+paths:
+  /event:
+    post:
+      summary: Create event with discriminated union
+      operationId: create_event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+components:
+  schemas:
+    # Inline object variant with ONLY a discriminator - no additional fields
+    # This should generate EventKindUnspecified, NOT a generic "Kind.ts"
+    Event:
+      oneOf:
+        # First variant: only discriminator, no additional fields
+        - type: object
+          description: Unspecified event variant (empty)
+          required:
+            - kind
+          properties:
+            kind:
+              type: string
+              enum:
+                - EVENT_UNSPECIFIED
+        # Second variant: discriminator with additional field
+        - type: object
+          description: Created event with timestamp
+          required:
+            - kind
+            - timestamp
+          properties:
+            kind:
+              type: string
+              enum:
+                - EVENT_CREATED
+            timestamp:
+              type: string
+              format: date-time
+              description: When the event was created
+        # Third variant: discriminator with different additional field
+        - type: object
+          description: Updated event with new value
+          required:
+            - kind
+            - newValue
+          properties:
+            kind:
+              type: string
+              enum:
+                - EVENT_UPDATED
+            newValue:
+              type: string
+              description: The new value after update

@@ -82,12 +82,23 @@ impl TaggedEnumPattern {
     /// - Untagged: Schema reference to a component schema
     pub fn detect_from_schema(schema_ref: &ObjectOrReference<ObjectSchema>) -> Option<Self> {
         match schema_ref {
+            // ExternallyTagged: object with exactly 1 property that is a string enum (discriminator)
             ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 1 => {
-                if let Some((prop_name, _)) = obj_schema.properties.iter().next()
+                if let Some((prop_name, prop_schema)) = obj_schema.properties.iter().next()
                     && obj_schema.required.contains(prop_name)
                 {
-                    let variant_name = prop_name.to_pascal_case();
-                    return Some(TaggedEnumPattern::ExternallyTagged { variant_name });
+                    // Only detect as ExternallyTagged if the property is a string enum (discriminator)
+                    // Not just any object property
+                    if let ObjectOrReference::Object(prop_obj) = prop_schema
+                        && !prop_obj.enum_values.is_empty()
+                        && prop_obj
+                            .enum_values
+                            .iter()
+                            .any(|v| matches!(v, serde_json::Value::String(_)))
+                    {
+                        let variant_name = prop_name.to_pascal_case();
+                        return Some(TaggedEnumPattern::ExternallyTagged { variant_name });
+                    }
                 }
             }
             ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 2 => {
@@ -205,23 +216,28 @@ impl TaggedEnumPattern {
     /// # Returns
     ///
     /// Returns the interface name in PascalCase for this variant (e.g., "AdjacentlyTaggedEnumVariantA")
+    /// Convert variant name to interface name with prefix based on whether it's tagged
+    ///
+    /// For tagged patterns (ExternallyTagged, AdjacentlyTagged, InternallyTagged): always prefix
+    /// to avoid naming conflicts between different discriminated unions.
+    /// For Untagged: don't prefix to maintain compatibility.
     pub fn to_interface_name(&self, parent_name: &str) -> String {
         let variant_name = self.variant_name();
         match self {
-            TaggedEnumPattern::ExternallyTagged { .. } | TaggedEnumPattern::Untagged { .. } => {
-                // For externally tagged and untagged, use the variant name as-is
-                variant_name.to_string()
-            }
-            TaggedEnumPattern::AdjacentlyTagged { .. }
+            TaggedEnumPattern::ExternallyTagged { .. }
+            | TaggedEnumPattern::AdjacentlyTagged { .. }
             | TaggedEnumPattern::InternallyTagged { .. } => {
-                // Check if variant name already starts with parent name
+                // Always prefix to avoid naming conflicts between different discriminated unions
+                // e.g., ContainerImage + Kind = ContainerImageKind, not just Kind
                 if variant_name.starts_with(parent_name) {
-                    // Use as-is to avoid duplication
                     variant_name.to_string()
                 } else {
-                    // Combine parent name with variant name
                     format!("{}{}", parent_name, variant_name)
                 }
+            }
+            TaggedEnumPattern::Untagged { .. } => {
+                // Don't prefix - these are references to component schemas
+                variant_name.to_string()
             }
         }
     }

@@ -1,0 +1,29 @@
+# discriminated-union-with-references-test
+
+Test fixture for discriminated union where variants are references to component schemas.
+This is similar to the ContainerImage pattern in the infiron API.
+
+
+**Version:** 1.0.0
+
+## Installation
+
+```bash
+go get example.com/sdk
+```
+
+## Usage
+
+```go
+package main
+
+import (
+    "context"
+    "example.com/sdk"
+)
+
+func main() {
+    sdk := discriminated-union-with-references-test.New("https://api.example.com")
+    // Use the SDK...
+}
+```

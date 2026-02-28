@@ -1,0 +1,26 @@
+{
+  "description": "Test fixture for internally tagged (adjacently tagged) discriminator unions.\nThis tests that discriminator properties have literal types instead of union types.\nSee: https://www.openapis.org/understanding-openapi/specification/models/\n",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.js",
+  "name": "discriminated-union-internally-tagged-test",
+  "scripts": {
+    "build": "tsc"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}

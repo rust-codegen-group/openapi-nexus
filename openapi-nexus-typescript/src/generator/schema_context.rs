@@ -23,6 +23,8 @@ pub struct SchemaContext<'a> {
     pub inline_interfaces: &'a mut HashMap<String, TsTypeDefinition>,
     /// Enum discriminator values for tagged enum variants. Key is interface name, value is (property_name, enum_value).
     pub enum_discriminators: &'a mut HashMap<String, (String, String)>,
+    /// Union-level discriminator values for Kind type generation. Key is union name, value is Vec of (property_name, enum_value).
+    pub union_discriminators: &'a mut HashMap<String, Vec<(String, String)>>,
 }
 
 impl<'a> SchemaContext<'a> {
@@ -32,6 +34,7 @@ impl<'a> SchemaContext<'a> {
         visited: &'a mut HashSet<String>,
         inline_interfaces: &'a mut HashMap<String, TsTypeDefinition>,
         enum_discriminators: &'a mut HashMap<String, (String, String)>,
+        union_discriminators: &'a mut HashMap<String, Vec<(String, String)>>,
     ) -> Self {
         Self {
             schemas,
@@ -39,6 +42,7 @@ impl<'a> SchemaContext<'a> {
             depth: 0,
             inline_interfaces,
             enum_discriminators,
+            union_discriminators,
         }
     }
 
@@ -58,6 +62,29 @@ impl<'a> SchemaContext<'a> {
         self.enum_discriminators.get(interface_name)
     }
 
+    /// Register a union discriminator value for Kind type generation
+    pub fn register_union_discriminator(
+        &mut self,
+        union_name: String,
+        property_name: String,
+        enum_value: String,
+    ) {
+        self.union_discriminators
+            .entry(union_name)
+            .or_default()
+            .push((property_name, enum_value));
+    }
+
+    /// Get all discriminator values for a union (Kind type)
+    pub fn get_union_discriminators(&self, union_name: &str) -> Option<&Vec<(String, String)>> {
+        self.union_discriminators.get(union_name)
+    }
+
+    /// Get all union discriminator mappings
+    pub fn get_all_union_discriminators(&self) -> &HashMap<String, Vec<(String, String)>> {
+        self.union_discriminators
+    }
+
     /// Register a generated inline interface
     pub fn register_inline_interface(&mut self, ts_name: String, type_def: TsTypeDefinition) {
         self.inline_interfaces.insert(ts_name, type_def);
@@ -70,6 +97,11 @@ impl<'a> SchemaContext<'a> {
 
     /// Get all generated inline interfaces
     pub fn get_inline_interfaces(&self) -> &HashMap<String, TsTypeDefinition> {
+        self.inline_interfaces
+    }
+
+    /// Get mutable access to inline interfaces for updating
+    pub fn get_inline_interfaces_mut(&mut self) -> &mut HashMap<String, TsTypeDefinition> {
         self.inline_interfaces
     }
 
