@@ -63,11 +63,13 @@ impl TypeScriptFetchCodeGenerator {
         let mut visited = HashSet::new();
         let mut inline_interfaces = HashMap::new();
         let mut enum_discriminators = HashMap::new();
+        let mut union_discriminators = HashMap::new();
         let mut context = SchemaContext::new(
             &components.schemas,
             &mut visited,
             &mut inline_interfaces,
             &mut enum_discriminators,
+            &mut union_discriminators,
         );
 
         for model in models {
@@ -121,7 +123,9 @@ impl TypeScriptFetchCodeGenerator {
             .unwrap_or_default();
 
         for member in &union_members {
-            if member.is_interface {
+            // Skip Kind types - they're string unions, not interfaces, so instanceOf doesn't make sense
+            // This also avoids importing from Kind files which don't export instanceOf functions
+            if member.is_interface && !member.ts_name.ends_with("Kind") {
                 // Find the file for this member type
                 let member_type_def = schemas
                     .values()

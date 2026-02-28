@@ -334,6 +334,10 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("type-aliases-union-with-inline-objects", "valid/type-aliases/union-with-inline-objects.yaml"),
         ("type-aliases-union-with-interfaces", "valid/type-aliases/union-with-interfaces.yaml"),
         ("type-aliases-union-with-primitives", "valid/type-aliases/union-with-primitives.yaml"),
+        ("type-aliases-discriminated-union-internally-tagged", "valid/type-aliases/discriminated-union-internally-tagged.yaml"),
+        ("type-aliases-discriminated-union-with-refs", "valid/type-aliases/discriminated-union-with-refs.yaml"),
+        ("type-aliases-discriminated-union-multiple", "valid/type-aliases/discriminated-union-multiple.yaml"),
+        ("type-aliases-discriminated-union-inline-discriminator-only", "valid/type-aliases/discriminated-union-inline-discriminator-only.yaml"),
 
         ("response-body-default-and-exact", "valid/response-body/default-and-exact.yaml"),
         ("response-body-fallback", "valid/response-body/fallback.yaml"),
@@ -409,6 +413,10 @@ generate_golden_tests! {
     test_type_aliases_union_with_inline_objects_golden: "type-aliases-union-with-inline-objects",
     test_type_aliases_union_with_interfaces_golden: "type-aliases-union-with-interfaces",
     test_type_aliases_union_with_primitives_golden: "type-aliases-union-with-primitives",
+    test_type_aliases_discriminated_union_internally_tagged_golden: "type-aliases-discriminated-union-internally-tagged",
+    test_type_aliases_discriminated_union_with_refs_golden: "type-aliases-discriminated-union-with-refs",
+    test_type_aliases_discriminated_union_multiple_golden: "type-aliases-discriminated-union-multiple",
+    test_type_aliases_discriminated_union_inline_discriminator_only_golden: "type-aliases-discriminated-union-inline-discriminator-only",
 
     test_response_body_default_and_exact_golden: "response-body-default-and-exact",
     test_response_body_fallback_golden: "response-body-fallback",

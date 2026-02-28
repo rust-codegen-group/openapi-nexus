@@ -11,17 +11,19 @@
  * Do not edit the file manually.
  */
 export * from './AdjacentlyTaggedEnum';
+export * from './AdjacentlyTaggedEnumKind';
 export * from './AdjacentlyTaggedEnumVariantA';
 export * from './AdjacentlyTaggedEnumVariantB';
 export * from './ExternallyTaggedEnum';
-export * from './ExternallyTaggedEnumVariantA';
-export * from './ExternallyTaggedEnumVariantB';
+export * from './ExternallyTaggedEnumMember1';
+export * from './ExternallyTaggedEnumMember2';
 export * from './InternallyTaggedEnum';
+export * from './InternallyTaggedEnumKind';
 export * from './InternallyTaggedEnumVariantA';
 export * from './InternallyTaggedEnumVariantB';
 export * from './MixedEnum';
-export * from './MixedEnumVariantA';
-export * from './MixedEnumVariantB';
+export * from './MixedEnumMember2';
+export * from './MixedEnumMember4';
 export * from './UntaggedEnum';
 export * from './VariantA';
 export * from './VariantB';

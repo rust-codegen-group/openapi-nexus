@@ -1,0 +1,26 @@
+{
+  "description": "Test fixture for discriminated union where variants are inline objects\nwith ONLY a discriminator property (no additional fields).\n\nThis specifically tests the fix for the bug where inline objects with\nonly a discriminator property (like { kind: \"UNSPECIFIED\" }) were\ngenerating generic \"Kind.ts\" files that conflicted across different\ndiscriminated unions.\n\nAfter the fix, these should generate properly prefixed names like\n\"EventKindUnspecified\" instead of generic \"Kind\".\n",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.js",
+  "name": "discriminated-union-with-inline-discriminator-only-test",
+  "scripts": {
+    "build": "tsc"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}

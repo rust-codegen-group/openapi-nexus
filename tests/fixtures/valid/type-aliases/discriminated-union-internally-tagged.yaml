@@ -1,0 +1,96 @@
+openapi: 3.1.0
+info:
+  title: Discriminated Union (Internally Tagged) Test
+  description: |
+    Test fixture for internally tagged (adjacently tagged) discriminator unions.
+    This tests that discriminator properties have literal types instead of union types.
+    See: https://www.openapis.org/understanding-openapi/specification/models/
+  version: 1.0.0
+
+paths:
+  /resource:
+    post:
+      summary: Create resource with discriminated union
+      operationId: create_resource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resource'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resource'
+
+components:
+  schemas:
+    # Unspecified variant - empty object with unspecified kind
+    ResourceUnspecified:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    # Quick variant
+    ResourceQuick:
+      type: object
+      properties:
+        quickField:
+          type: string
+      required:
+        - quickField
+
+    # Custom variant
+    ResourceCustom:
+      type: object
+      properties:
+        customField:
+          type: string
+      required:
+        - customField
+
+    # Discriminated union type (internally tagged)
+    Resource:
+      oneOf:
+        # First variant: allOf with unspecified variant + discriminator
+        - allOf:
+            - $ref: '#/components/schemas/ResourceUnspecified'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - RESOURCE_UNSPECIFIED
+              description: Unspecified resource variant
+        # Second variant: allOf with quick variant + discriminator
+        - allOf:
+            - $ref: '#/components/schemas/ResourceQuick'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - RESOURCE_QUICK
+              description: Quick resource variant
+        # Third variant: allOf with custom variant + discriminator
+        - allOf:
+            - $ref: '#/components/schemas/ResourceCustom'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - RESOURCE_CUSTOM
+              description: Custom resource variant

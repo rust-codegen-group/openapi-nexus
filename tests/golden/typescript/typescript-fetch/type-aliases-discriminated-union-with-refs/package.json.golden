@@ -1,0 +1,26 @@
+{
+  "description": "Test fixture for discriminated union where variants are references to component schemas.\nThis is similar to the ContainerImage pattern in the infiron API.\n",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.js",
+  "name": "discriminated-union-with-references-test",
+  "scripts": {
+    "build": "tsc"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}

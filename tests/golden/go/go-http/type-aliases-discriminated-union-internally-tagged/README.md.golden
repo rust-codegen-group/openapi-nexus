@@ -1,0 +1,30 @@
+# discriminated-union-internally-tagged-test
+
+Test fixture for internally tagged (adjacently tagged) discriminator unions.
+This tests that discriminator properties have literal types instead of union types.
+See: https://www.openapis.org/understanding-openapi/specification/models/
+
+
+**Version:** 1.0.0
+
+## Installation
+
+```bash
+go get example.com/sdk
+```
+
+## Usage
+
+```go
+package main
+
+import (
+    "context"
+    "example.com/sdk"
+)
+
+func main() {
+    sdk := discriminated-union-internally-tagged-test.New("https://api.example.com")
+    // Use the SDK...
+}
+```

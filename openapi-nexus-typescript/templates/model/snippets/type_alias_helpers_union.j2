@@ -36,9 +36,12 @@ export function {{ model_type_alias.type_alias_definition.ts_name }}FromJSONType
   }
 {% for member in model_type_alias.union_members %}
   {% if member.is_interface %}
+  {# Skip Kind types - they're string unions, not interfaces, so instanceOf doesn't apply #}
+  {% if 'Kind' not in member.ts_name %}
   if (instanceOf{{ member.ts_name }}(json)) {
     return {{ member.ts_name }}FromJSONTyped(json, true);
   }
+  {% endif %}
   {% endif %}
 {% endfor %}
   return {} as any;
@@ -82,9 +85,12 @@ export function {{ model_type_alias.type_alias_definition.ts_name }}ToJSONTyped(
   }
 {% for member in model_type_alias.union_members %}
   {% if member.is_interface %}
+  {# Skip Kind types - they're string unions, not interfaces, so instanceOf doesn't apply #}
+  {% if 'Kind' not in member.ts_name %}
   if (instanceOf{{ member.ts_name }}(value)) {
     return {{ member.ts_name }}ToJSON(value as {{ member.ts_name }});
   }
+  {% endif %}
   {% endif %}
 {% endfor %}
   return {};

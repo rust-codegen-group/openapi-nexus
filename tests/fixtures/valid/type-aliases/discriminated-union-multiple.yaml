@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  title: Multiple Discriminated Unions Test
+  description: |
+    Test fixture with multiple discriminated unions to verify Kind types
+    are properly namespaced and don't conflict.
+    This reproduces the original bug where both unions would generate
+    the same Kind.ts file causing conflicts.
+  version: 1.0.0
+
+paths:
+  /container:
+    post:
+      summary: Create container with ContainerKind discriminated union
+      operationId: create_container
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerKind'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerKind'
+
+  /volume:
+    post:
+      summary: Create volume with VolumeKind discriminated union
+      operationId: create_volume
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VolumeKind'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumeKind'
+
+components:
+  schemas:
+    # === First discriminated union: ContainerKind ===
+
+    # Referenced schema 1 - managed container
+    ContainerKindManaged:
+      type: object
+      properties:
+        managedField:
+          type: string
+      required:
+        - managedField
+
+    # Referenced schema 2 - custom container
+    ContainerKindCustom:
+      type: object
+      properties:
+        customField:
+          type: string
+      required:
+        - customField
+
+    # Discriminated union type using references - generates ContainerKindKind.ts
+    ContainerKind:
+      oneOf:
+        # Variant 1: managed container
+        - allOf:
+            - $ref: '#/components/schemas/ContainerKindManaged'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - CONTAINER_KIND_MANAGED
+              description: Managed container
+        # Variant 2: custom container
+        - allOf:
+            - $ref: '#/components/schemas/ContainerKindCustom'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - CONTAINER_KIND_CUSTOM
+              description: Custom container
+
+    # === Second discriminated union: VolumeKind ===
+
+    # Referenced schema 1 - local volume
+    VolumeKindLocal:
+      type: object
+      properties:
+        localPath:
+          type: string
+      required:
+        - localPath
+
+    # Referenced schema 2 - remote volume
+    VolumeKindRemote:
+      type: object
+      properties:
+        remotePath:
+          type: string
+      required:
+        - remotePath
+
+    # Discriminated union type using references - generates VolumeKindKind.ts
+    VolumeKind:
+      oneOf:
+        # Variant 1: local volume
+        - allOf:
+            - $ref: '#/components/schemas/VolumeKindLocal'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - VOLUME_KIND_LOCAL
+              description: Local volume
+        # Variant 2: remote volume
+        - allOf:
+            - $ref: '#/components/schemas/VolumeKindRemote'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - VOLUME_KIND_REMOTE
+              description: Remote volume

@@ -89,6 +89,10 @@ impl SchemaGenerator {
             let type_expr = self.map_object_schema_to_type(obj_schema, context, ts_name.as_str());
             let union_members =
                 self.extract_union_members(&obj_schema.one_of, context, ts_name.as_str());
+
+            // Generate Kind type and update inline interfaces if discriminators exist
+            self.generate_kind_type_and_update_interfaces(ts_name.as_str(), context);
+
             return TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
                 ts_name,
                 original_name: original_name.clone(),
@@ -104,6 +108,10 @@ impl SchemaGenerator {
             let type_expr = self.map_object_schema_to_type(obj_schema, context, ts_name.as_str());
             let union_members =
                 self.extract_union_members(&obj_schema.any_of, context, ts_name.as_str());
+
+            // Generate Kind type and update inline interfaces if discriminators exist
+            self.generate_kind_type_and_update_interfaces(ts_name.as_str(), context);
+
             return TsTypeDefinition::TypeAlias(TsTypeAliasDefinition {
                 ts_name,
                 original_name: original_name.clone(),
@@ -823,11 +831,96 @@ impl SchemaGenerator {
                         base_inline_name
                     };
 
+                // Extract schema for discriminator-only check (before the main if)
+                let schema_obj = match schema_ref {
+                    ObjectOrReference::Object(obj) => Some(obj),
+                    _ => None,
+                };
+
+                // Check if this is a discriminator-only inline object (only has the discriminator property,
+                // no additional fields). In this case, we should NOT create a separate interface -
+                // instead, inline the type directly in the union. This avoids naming conflicts with
+                // the Kind type that gets generated for the union.
+                let is_discriminator_only = schema_obj
+                    .map(|obj| {
+                        obj.properties.len() == 1
+                            && tagged_enum_pattern
+                                .as_ref()
+                                .and_then(|pattern| pattern.tag_field())
+                                .map(|tag_field| obj.properties.contains_key(tag_field))
+                                .unwrap_or(false)
+                    })
+                    .unwrap_or(false);
+
                 let (type_expr, is_interface) = if let ObjectOrReference::Object(obj_schema) =
                     schema_ref
                     && !obj_schema.properties.is_empty()
+                    && !is_discriminator_only
                 {
                     if !context.has_inline_interface(&inline_interface_name) {
+                        let mut enum_discriminator = tagged_enum_pattern
+                            .as_ref()
+                            .and_then(|pattern| pattern.tag_field())
+                            .and_then(|tag_field| {
+                                obj_schema.properties.get(tag_field).and_then(|tag_prop| {
+                                    if let ObjectOrReference::Object(tag_obj) = tag_prop {
+                                        tag_obj.enum_values.first().and_then(|v| v.as_str()).map(
+                                            |enum_val| {
+                                                (tag_field.to_string(), enum_val.to_string())
+                                            },
+                                        )
+                                    } else {
+                                        None
+                                    }
+                                })
+                            });
+
+                        let mut interface = self.schema_to_interface(
+                            &inline_interface_name,
+                            obj_schema,
+                            context,
+                            &inline_interface_name,
+                        );
+
+                        // If this interface has an enum discriminator, update the property type
+                        // to be a literal type instead of the union type
+                        if let Some((prop_name, enum_val)) = enum_discriminator.take() {
+                            context.register_enum_discriminator(
+                                inline_interface_name.clone(),
+                                prop_name.clone(),
+                                enum_val.clone(),
+                            );
+
+                            // Also register with parent union for Kind type generation
+                            context.register_union_discriminator(
+                                parent_name.to_string(),
+                                prop_name.clone(),
+                                enum_val.clone(),
+                            );
+
+                            // Find the discriminator property and update its type to literal
+                            // For now, keep literal type; will be updated to Kind reference in Phase 3
+                            let literal_type = TsExpression::Literal(format!("\"{}\"", enum_val));
+                            for prop in &mut interface.properties {
+                                if prop.original_name == prop_name
+                                    || prop.ts_name == prop_name.to_lower_camel_case()
+                                {
+                                    prop.type_expr = literal_type.clone();
+                                    break;
+                                }
+                            }
+                        }
+
+                        let type_def = TsTypeDefinition::Interface(interface);
+                        context.register_inline_interface(inline_interface_name.clone(), type_def);
+                    }
+
+                    (TsExpression::Reference(inline_interface_name.clone()), true)
+                } else if is_discriminator_only {
+                    // For discriminator-only inline objects, inline the type directly without
+                    // creating a separate interface. This avoids naming conflicts with the Kind type.
+                    if let Some(obj_schema) = schema_obj {
+                        // Get the discriminator info
                         let enum_discriminator = tagged_enum_pattern
                             .as_ref()
                             .and_then(|pattern| pattern.tag_field())
@@ -845,26 +938,42 @@ impl SchemaGenerator {
                                 })
                             });
 
-                        let interface = self.schema_to_interface(
-                            &inline_interface_name,
-                            obj_schema,
-                            context,
-                            &inline_interface_name,
-                        );
-
-                        if let Some((prop_name, enum_val)) = enum_discriminator {
-                            context.register_enum_discriminator(
-                                inline_interface_name.clone(),
-                                prop_name,
-                                enum_val,
+                        // Register the discriminator with parent union for Kind type generation
+                        if let Some((ref prop_name, ref enum_val)) = enum_discriminator {
+                            context.register_union_discriminator(
+                                parent_name.to_string(),
+                                prop_name.clone(),
+                                enum_val.clone(),
                             );
                         }
 
-                        let type_def = TsTypeDefinition::Interface(interface);
-                        context.register_inline_interface(inline_interface_name.clone(), type_def);
-                    }
+                        // Build inline object type with literal discriminator
+                        let mut properties = BTreeMap::new();
+                        if let Some((ref prop_name, ref enum_val)) = enum_discriminator {
+                            properties.insert(
+                                prop_name.to_lower_camel_case(),
+                                ObjectProperty {
+                                    ts_name: prop_name.to_lower_camel_case(),
+                                    original_name: prop_name.clone(),
+                                    type_expr: TsExpression::Literal(format!("\"{}\"", enum_val)),
+                                },
+                            );
+                        }
 
-                    (TsExpression::Reference(inline_interface_name.clone()), true)
+                        (
+                            TsExpression::Object(properties),
+                            false, // Not an interface, so no instanceOf needed
+                        )
+                    } else {
+                        // Fallback - shouldn't happen but handle gracefully
+                        let expr = self.map_object_or_ref_schema_to_type(
+                            schema_ref,
+                            context,
+                            parent_name,
+                            None,
+                        );
+                        (expr, false)
+                    }
                 } else if let ObjectOrReference::Object(obj_schema) = schema_ref
                     && !obj_schema.all_of.is_empty()
                 {
@@ -947,12 +1056,31 @@ impl SchemaGenerator {
                             }
                         }
 
-                        if let Some((prop_name, enum_val)) = enum_discriminator {
+                        if let Some((prop_name, enum_val)) = enum_discriminator.take() {
                             context.register_enum_discriminator(
                                 inline_interface_name.clone(),
-                                prop_name,
-                                enum_val,
+                                prop_name.clone(),
+                                enum_val.clone(),
                             );
+
+                            // Also register with parent union for Kind type generation
+                            context.register_union_discriminator(
+                                parent_name.to_string(),
+                                prop_name.clone(),
+                                enum_val.clone(),
+                            );
+
+                            // Update the discriminator property type to be a literal type
+                            // For now, keep literal type; will be updated to Kind reference in Phase 3
+                            let literal_type = TsExpression::Literal(format!("\"{}\"", enum_val));
+                            for prop in &mut all_properties {
+                                if prop.original_name == prop_name
+                                    || prop.ts_name == prop_name.to_lower_camel_case()
+                                {
+                                    prop.type_expr = literal_type;
+                                    break;
+                                }
+                            }
                         }
 
                         let interface = TsInterfaceDefinition {
@@ -1083,6 +1211,63 @@ impl SchemaGenerator {
             );
             format!("Unknown{}", count)
         }
+    }
+
+    /// Generate Kind type for discriminated unions and update inline interfaces to use it
+    ///
+    /// This method:
+    /// 1. Checks if there are discriminator values for the given union
+    /// 2. Creates a Kind type (e.g., ContainerImageKind) with union of discriminator values
+    ///
+    /// Note: We keep literal types on variant interfaces because each variant has a specific
+    /// discriminator value. The Kind type is generated separately for use cases where you need
+    /// to reference any valid discriminator value.
+    fn generate_kind_type_and_update_interfaces(
+        &self,
+        union_name: &str,
+        context: &mut SchemaContext,
+    ) {
+        // Check if there are discriminator values for this union
+        // Clone to avoid borrow checker issues
+        let discriminators = match context.get_union_discriminators(union_name) {
+            Some(discriminators) if !discriminators.is_empty() => discriminators.clone(),
+            _ => return,
+        };
+
+        // Generate Kind type name: e.g., ContainerImageKind
+        let kind_type_name = format!("{}Kind", union_name);
+
+        // Build the union type expression from discriminator values
+        let kind_union_expr = TsExpression::Union(
+            discriminators
+                .iter()
+                .map(|(_, enum_val)| TsExpression::Literal(format!("\"{}\"", enum_val)))
+                .collect(),
+        );
+
+        // Create the Kind type alias definition
+        let kind_type_alias = TsTypeAliasDefinition {
+            ts_name: kind_type_name.clone(),
+            original_name: kind_type_name.clone(),
+            type_expr: kind_union_expr,
+            generics: vec![],
+            documentation: Some(TsDocComment::new(format!(
+                "Kind type for {} discriminator union",
+                union_name
+            ))),
+            union_members: None,
+            intersection_members: None,
+        };
+
+        // Register the Kind type as an inline interface so it gets emitted as a file
+        context.register_inline_interface(
+            kind_type_name.clone(),
+            TsTypeDefinition::TypeAlias(kind_type_alias),
+        );
+
+        // Note: We intentionally do NOT update the variant interfaces to use Kind reference.
+        // Each variant interface has a specific discriminator value (e.g., kind: "RESOURCE_QUICK"),
+        // and this is correct for the internally-tagged pattern.
     }
 }
 
