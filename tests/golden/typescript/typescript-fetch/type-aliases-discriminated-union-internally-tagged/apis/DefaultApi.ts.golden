@@ -14,7 +14,7 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type Resource, ResourceFromJSON } from '../models/Resource';
+import { type Resource, ResourceFromJSON, ResourceToJSON } from '../models/Resource';
 
 export interface ApiCreateResourceRequest {
     body: Resource;
@@ -74,7 +74,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = ResourceToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

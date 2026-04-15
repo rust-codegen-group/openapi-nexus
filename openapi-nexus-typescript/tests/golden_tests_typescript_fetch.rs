@@ -503,7 +503,10 @@ components:
     );
 
     // Verify Status file contains enum definition
-    let status_file = files.iter().find(|f| f.filename.contains("Status")).unwrap();
+    let status_file = files
+        .iter()
+        .find(|f| f.filename.contains("Status"))
+        .unwrap();
     assert!(
         status_file.content.contains("Status"),
         "Status file should contain 'Status'"
@@ -537,7 +540,10 @@ components:
     let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
     let files = generator.generate_models_from_ir(&ir).unwrap();
 
-    let profile_file = files.iter().find(|f| f.filename.contains("Profile")).unwrap();
+    let profile_file = files
+        .iter()
+        .find(|f| f.filename.contains("Profile"))
+        .unwrap();
     // Nullable string in TS should contain "null" in the type
     assert!(
         profile_file.content.contains("null"),
@@ -572,7 +578,11 @@ components:
     let files = generator.generate_models_from_ir(&ir).unwrap();
 
     // Should have at least Pet, MyPet, and index
-    assert!(files.len() >= 3, "Expected at least 3 files, got {}", files.len());
+    assert!(
+        files.len() >= 3,
+        "Expected at least 3 files, got {}",
+        files.len()
+    );
 
     let my_pet_file = files.iter().find(|f| f.filename.contains("MyPet")).unwrap();
     // MyPet should be a type alias referencing Pet
@@ -582,4 +592,3 @@ components:
         my_pet_file.content
     );
 }
-

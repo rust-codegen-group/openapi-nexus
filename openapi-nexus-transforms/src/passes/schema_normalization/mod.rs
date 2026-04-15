@@ -173,8 +173,16 @@ components:
 
         let schemas = &spec.components.as_ref().unwrap().schemas;
         // Bottom-up: PetAddressZipInfo promoted first, then PetAddress
-        assert!(schemas.contains_key("PetAddressZipInfo"), "keys: {:?}", schemas.keys().collect::<Vec<_>>());
-        assert!(schemas.contains_key("PetAddress"), "keys: {:?}", schemas.keys().collect::<Vec<_>>());
+        assert!(
+            schemas.contains_key("PetAddressZipInfo"),
+            "keys: {:?}",
+            schemas.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            schemas.contains_key("PetAddress"),
+            "keys: {:?}",
+            schemas.keys().collect::<Vec<_>>()
+        );
 
         // PetAddress should reference PetAddressZipInfo
         if let ObjectOrReference::Object(addr) = schemas.get("PetAddress").unwrap() {
@@ -214,7 +222,11 @@ components:
         OpenApiTransformPass::transform(&pass, &mut spec).unwrap();
 
         let schemas = &spec.components.as_ref().unwrap().schemas;
-        assert!(schemas.contains_key("AnimalVariant0"), "keys: {:?}", schemas.keys().collect::<Vec<_>>());
+        assert!(
+            schemas.contains_key("AnimalVariant0"),
+            "keys: {:?}",
+            schemas.keys().collect::<Vec<_>>()
+        );
 
         // The oneOf member should now be a ref
         if let ObjectOrReference::Object(animal) = schemas.get("Animal").unwrap() {
@@ -437,8 +449,19 @@ components:
 
         // Should be identical
         assert_eq!(
-            first_run.components.as_ref().unwrap().schemas.keys().collect::<Vec<_>>(),
-            spec.components.as_ref().unwrap().schemas.keys().collect::<Vec<_>>()
+            first_run
+                .components
+                .as_ref()
+                .unwrap()
+                .schemas
+                .keys()
+                .collect::<Vec<_>>(),
+            spec.components
+                .as_ref()
+                .unwrap()
+                .schemas
+                .keys()
+                .collect::<Vec<_>>()
         );
     }
 

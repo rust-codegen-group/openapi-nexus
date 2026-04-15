@@ -1,6 +1,6 @@
 //! TypeScript Fetch code generator
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
@@ -10,8 +10,6 @@ use crate::config::TypeScriptFetchConfig;
 use crate::errors::GeneratorError;
 use crate::generator::{
     api_operation_generator::ApiOperationGenerator, ir_schema_generator::IrSchemaGenerator,
-    package_files_generator::PackageFilesGenerator, schema_context::SchemaContext,
-    schema_generator::SchemaGenerator,
 };
 use crate::templating::data::{
     ApiImportSpecifier, ApiImportStatement, ApiImportStatements, CommonFileHeaderData,
@@ -20,7 +18,7 @@ use crate::templating::data::{
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::NamingConvention;
-use openapi_nexus_core::data::{ApiMethodData, HeaderData, ModelData, ReadmeData, RuntimeData};
+use openapi_nexus_core::data::{ReadmeData, RuntimeData};
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
 use openapi_nexus_spec::OpenApiV31Spec;
@@ -28,7 +26,6 @@ use openapi_nexus_spec::OpenApiV31Spec;
 /// TypeScript Fetch code generator
 #[derive(Debug, Clone)]
 pub struct TypeScriptFetchCodeGenerator {
-    schema_generator: SchemaGenerator,
     api_operation_generator: ApiOperationGenerator,
     config: TypeScriptFetchConfig,
     templating: Templates,
@@ -42,7 +39,6 @@ impl TypeScriptFetchCodeGenerator {
     pub fn new(config: toml::value::Table) -> Self {
         let parsed_config = TypeScriptFetchConfig::from(config);
         Self {
-            schema_generator: SchemaGenerator,
             api_operation_generator: ApiOperationGenerator::new(),
             config: parsed_config,
             templating: Templates::new(GeneratorType::TypeScriptFetch),
@@ -50,50 +46,6 @@ impl TypeScriptFetchCodeGenerator {
     }
 
     // Helper methods
-
-    /// Generate TypeScript type definitions from model data
-    fn generate_model_type_definitions(
-        &self,
-        models: Vec<ModelData>,
-        components: &openapi_nexus_spec::oas31::spec::Components,
-    ) -> (
-        HashMap<String, TsTypeDefinition>,
-        HashMap<String, (String, String)>,
-    ) {
-        let mut schemas = HashMap::new();
-        let mut visited = HashSet::new();
-        let mut inline_interfaces = HashMap::new();
-        let mut enum_discriminators = HashMap::new();
-        let mut union_discriminators = HashMap::new();
-        let mut context = SchemaContext::new(
-            &components.schemas,
-            &mut visited,
-            &mut inline_interfaces,
-            &mut enum_discriminators,
-            &mut union_discriminators,
-        );
-
-        for model in models {
-            let type_def = self.schema_generator.schema_to_ts_type_definition(
-                &model.name,
-                &model.schema,
-                &mut context,
-            );
-            schemas.insert(model.name, type_def);
-        }
-
-        // Collect all generated inline interfaces and add them to schemas.
-        // Use the original_name from the type definition as the key for consistency.
-        // Do not overwrite an existing component schema (component schema wins).
-        for type_def in context.get_inline_interfaces().values() {
-            let original_name = type_def.original_name().to_string();
-            schemas
-                .entry(original_name)
-                .or_insert_with(|| type_def.clone());
-        }
-
-        (schemas, enum_discriminators)
-    }
 
     /// Generate filename based on naming convention
     fn generate_filename(&self, name: &str) -> String {
@@ -297,137 +249,6 @@ impl TypeScriptFetchCodeGenerator {
         Ok(model_type_alias)
     }
 
-    /// Generate apis/index.ts file
-    fn generate_apis_index_file(
-        &self,
-        openapi: &OpenApiV31Spec,
-        api_classes: &HashMap<String, FileInfo>,
-    ) -> Result<FileInfo, GeneratorError> {
-        let mut exports = Vec::new();
-
-        let mut sorted_api_vec: Vec<(&String, &FileInfo)> = api_classes.iter().collect();
-        sorted_api_vec.sort_by(|a, b| a.0.cmp(b.0));
-        for (_, file_info) in sorted_api_vec {
-            let import_name = file_info.filename.trim_end_matches(".ts");
-            exports.push(format!("export * from './{}';", import_name));
-        }
-
-        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
-        let project_index = ProjectIndexData { exports };
-        let template_context = minijinja::context! {
-            common_file_header,
-            project_index,
-        };
-
-        self.templating
-            .render_template(
-                TemplateName::ProjectIndex,
-                "apis/index.ts",
-                template_context,
-            )
-            .map_err(|e| GeneratorError::IndexFileGeneration {
-                file_path: "apis/index.ts".to_string(),
-                source: Box::new(e),
-            })
-    }
-
-    /// Generate models/index.ts file
-    fn generate_models_index_file(
-        &self,
-        openapi: &OpenApiV31Spec,
-        schemas: &HashMap<String, TsTypeDefinition>,
-    ) -> Result<FileInfo, GeneratorError> {
-        let mut exports = Vec::new();
-
-        // Collect and sort by actual type names
-        let mut type_names: Vec<String> = schemas
-            .values()
-            .map(|def| def.ts_name().to_string())
-            .collect();
-        type_names.sort();
-        for type_name in type_names {
-            let filename = self.generate_filename(&type_name);
-            let import_name = filename.trim_end_matches(".ts");
-            exports.push(format!("export * from './{}';", import_name));
-        }
-
-        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
-        let project_index = ProjectIndexData { exports };
-        let template_context = minijinja::context! {
-            common_file_header,
-            project_index,
-        };
-
-        self.templating
-            .render_template(
-                TemplateName::ProjectIndex,
-                "models/index.ts",
-                template_context,
-            )
-            .map_err(|e| GeneratorError::IndexFileGeneration {
-                file_path: "models/index.ts".to_string(),
-                source: Box::new(e),
-            })
-    }
-
-    /// Generate main index.ts file
-    fn generate_main_index_file(
-        &self,
-        openapi: &OpenApiV31Spec,
-    ) -> Result<FileInfo, GeneratorError> {
-        let mut exports = vec!["export * from './runtime/runtime';".to_string()];
-
-        // Only export from './apis' if there are paths in the OpenAPI spec
-        if let Some(paths) = &openapi.paths
-            && !paths.is_empty()
-        {
-            exports.push("export * from './apis';".to_string());
-        }
-
-        // Only export from './models' if there are schemas in the OpenAPI spec
-        if let Some(components) = &openapi.components
-            && !components.schemas.is_empty()
-        {
-            exports.push("export * from './models';".to_string());
-        }
-
-        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
-        let project_index = ProjectIndexData { exports };
-        let template_context = minijinja::context! {
-            common_file_header,
-            project_index,
-        };
-
-        self.templating
-            .render_template(TemplateName::ProjectIndex, "index.ts", template_context)
-            .map_err(|e| GeneratorError::IndexFileGeneration {
-                file_path: "index.ts".to_string(),
-                source: Box::new(e),
-            })
-    }
-
-    /// Generate package files (package.json, tsconfig.json, etc.)
-    fn generate_package_files(
-        &self,
-        openapi: &OpenApiV31Spec,
-    ) -> Result<Vec<FileInfo>, GeneratorError> {
-        if !self.config.generate_package {
-            return Ok(Vec::new());
-        }
-
-        let package_generator = PackageFilesGenerator::new(&self.config);
-
-        let mut files = vec![
-            package_generator.generate_package_json(openapi),
-            package_generator.generate_tsconfig(openapi),
-        ];
-        if self.config.generate_esm_config {
-            files.push(package_generator.generate_tsconfig_esm(openapi));
-        }
-
-        Ok(files)
-    }
-
     // =========================================================================
     // IR-based generation
     // =========================================================================
@@ -444,22 +265,6 @@ impl TypeScriptFetchCodeGenerator {
         let output = IrSchemaGenerator::generate(&ir.schemas);
         let schemas = output.type_definitions;
         let enum_discriminators = output.enum_discriminators;
-
-        // Only generate model files for component schemas (not promoted inline schemas)
-        // Schemas generated by IrSchemaGenerator (wrapper interfaces, Kind types) that
-        // don't appear in ir.schemas are always included.
-        let promoted_names: std::collections::HashSet<String> = ir
-            .schemas
-            .iter()
-            .filter(|(_, s)| !s.is_component)
-            .map(|(name, _)| name.to_pascal_case())
-            .collect();
-
-        // Filter schemas to only those we should generate files for
-        let schemas: HashMap<String, TsTypeDefinition> = schemas
-            .into_iter()
-            .filter(|(name, _)| !promoted_names.contains(name))
-            .collect();
 
         let common_file_header = CommonFileHeaderData::new(
             ir.info.title.clone(),
@@ -486,9 +291,7 @@ impl TypeScriptFetchCodeGenerator {
                     continue;
                 }
 
-                let ref_type_def = schemas
-                    .values()
-                    .find(|td| td.ts_name() == ref_type_name);
+                let ref_type_def = schemas.values().find(|td| td.ts_name() == ref_type_name);
 
                 if let Some(ref_type_def) = ref_type_def {
                     let actual_type_name = ref_type_def.ts_name();
@@ -628,37 +431,31 @@ impl TypeScriptFetchCodeGenerator {
             })
     }
 
-    /// Generate ALL files from the IR spec, using the legacy spec only for API generation.
+    /// Generate ALL files from the IR spec.
     ///
     /// This is the main entry point for the IR pipeline. It produces:
     /// - Model files from `IrSpec.schemas` (via `IrSchemaGenerator`)
-    /// - API files from legacy spec (not yet migrated to IR)
+    /// - API files from `IrSpec.operations` (via `ApiOperationGenerator`)
     /// - Runtime, project, readme files from `IrSpec.info`/`IrSpec.servers`
     pub fn generate_from_ir(
         &self,
         ir: &openapi_nexus_ir::types::IrSpec,
-        openapi: &OpenApiV31Spec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let mut files = Vec::new();
 
-        // --- APIs (legacy path, not yet migrated to IR) ---
-        let all_api_data = self
-            .collect_operations_by_tag(openapi)
-            .into_values()
-            .flatten()
-            .map(|op_info| op_info.to_api_method_data(openapi.components.as_ref()))
-            .collect::<Vec<_>>();
-        files.extend(self.generate_apis(openapi, all_api_data)?);
-
-        // --- Models (IR path) ---
-        files.extend(self.generate_models_from_ir(ir)?);
-
-        // --- Runtime (IR path) ---
         let common_file_header = CommonFileHeaderData::new(
             ir.info.title.clone(),
             ir.info.description.clone(),
             ir.info.version.clone(),
         );
+
+        // --- APIs (IR path) ---
+        files.extend(self.generate_apis_from_ir(ir, &common_file_header)?);
+
+        // --- Models (IR path) ---
+        files.extend(self.generate_models_from_ir(ir)?);
+
+        // --- Runtime (IR path) ---
         let base_path = ir
             .servers
             .first()
@@ -706,6 +503,92 @@ impl TypeScriptFetchCodeGenerator {
         Ok(files)
     }
 
+    /// Generate API files from IR operations, grouped by tag.
+    fn generate_apis_from_ir(
+        &self,
+        ir: &openapi_nexus_ir::types::IrSpec,
+        common_file_header: &CommonFileHeaderData,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        // Group operations by all tags (or "default" if no tags)
+        let mut operations_by_tag: HashMap<String, Vec<&openapi_nexus_ir::types::IrOperation>> =
+            HashMap::new();
+        for op in &ir.operations {
+            let tags = if op.tags.is_empty() {
+                vec!["default".to_string()]
+            } else {
+                op.tags.clone()
+            };
+            for tag in tags {
+                operations_by_tag.entry(tag).or_default().push(op);
+            }
+        }
+
+        let mut api_classes_map = HashMap::new();
+        let mut files = Vec::new();
+
+        for (tag, operations) in &operations_by_tag {
+            if !operations.is_empty() {
+                let file_info = self
+                    .api_operation_generator
+                    .generate_api_class_from_ir(
+                        tag,
+                        operations,
+                        &ir.schemas,
+                        &self.templating,
+                        common_file_header,
+                    )
+                    .map_err(|e| GeneratorError::ApiClassGenerationForTag {
+                        tag: tag.clone(),
+                        source: Box::new(e),
+                    })?;
+                api_classes_map.insert(tag.clone(), file_info);
+            }
+        }
+
+        files.extend(api_classes_map.values().cloned());
+
+        // Generate apis/index.ts file
+        if !api_classes_map.is_empty() {
+            files
+                .push(self.generate_apis_index_file_from_ir(common_file_header, &api_classes_map)?);
+        }
+
+        Ok(files)
+    }
+
+    /// Generate apis/index.ts from IR (no raw spec dependency).
+    fn generate_apis_index_file_from_ir(
+        &self,
+        common_file_header: &CommonFileHeaderData,
+        api_classes: &HashMap<String, FileInfo>,
+    ) -> Result<FileInfo, GeneratorError> {
+        let mut exports = Vec::new();
+
+        let mut sorted_api_vec: Vec<(&String, &FileInfo)> = api_classes.iter().collect();
+        sorted_api_vec.sort_by(|a, b| a.0.cmp(b.0));
+        for (_, file_info) in sorted_api_vec {
+            let import_name = file_info.filename.trim_end_matches(".ts");
+            exports.push(format!("export * from './{}';", import_name));
+        }
+
+        let project_index = ProjectIndexData { exports };
+        let template_context = minijinja::context! {
+            common_file_header,
+            project_index,
+        };
+
+        self.templating
+            .render_template(
+                TemplateName::ProjectIndex,
+                "apis/index.ts",
+                template_context,
+            )
+            .map_err(|e| GeneratorError::IndexFileGeneration {
+                file_path: "apis/index.ts".to_string(),
+                source: Box::new(e),
+            })
+    }
+
     /// Generate project files (package.json, tsconfig, main index) from IR.
     fn generate_project_files_from_ir(
         &self,
@@ -731,10 +614,7 @@ impl TypeScriptFetchCodeGenerator {
     }
 
     /// Generate package.json from IR info.
-    fn generate_package_json_from_ir(
-        &self,
-        ir: &openapi_nexus_ir::types::IrSpec,
-    ) -> FileInfo {
+    fn generate_package_json_from_ir(&self, ir: &openapi_nexus_ir::types::IrSpec) -> FileInfo {
         let title = ir.info.title.clone();
         let version = ir.info.version.clone();
         let description = ir
@@ -876,42 +756,6 @@ impl TypeScriptFetchCodeGenerator {
                 source: Box::new(e),
             })
     }
-
-    /// Legacy generation path (mirrors the default `CodeGenerator::generate` implementation).
-    /// Used as fallback when IR lowering is unavailable.
-    fn generate_legacy(
-        &self,
-        openapi: &OpenApiV31Spec,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let mut files = Vec::new();
-
-        let all_api_data = self
-            .collect_operations_by_tag(openapi)
-            .into_values()
-            .flatten()
-            .map(|op_info| op_info.to_api_method_data(openapi.components.as_ref()))
-            .collect::<Vec<_>>();
-        files.extend(self.generate_apis(openapi, all_api_data)?);
-
-        let mut models = Vec::new();
-        if let Some(components) = &openapi.components {
-            for (name, schema_ref) in &components.schemas {
-                models.push(ModelData {
-                    name: name.clone(),
-                    schema: schema_ref.clone(),
-                });
-            }
-        }
-        files.extend(self.generate_models(openapi, models)?);
-
-        let runtime_data = RuntimeData::from_openapi(openapi);
-        files.extend(self.generate_runtime(openapi, runtime_data)?);
-
-        files.extend(self.generate_readme(openapi, self.extract_readme_data(openapi))?);
-        files.extend(self.generate_project_files(openapi)?);
-
-        Ok(files)
-    }
 }
 
 impl CodeGenerator for TypeScriptFetchCodeGenerator {
@@ -927,274 +771,13 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
         &self,
         openapi: &OpenApiV31Spec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        // Use IR pipeline by default. Set OPENAPI_NEXUS_NO_IR=1 to fall back
-        // to the legacy path for debugging/comparison.
-        let use_ir = std::env::var("OPENAPI_NEXUS_NO_IR").is_err();
-
-        if use_ir {
-            match openapi_nexus_ir::lower::v31::lower_v31(openapi) {
-                Ok(ir) => {
-                    tracing::info!(
-                        "TypeScript generator using IR pipeline ({} schemas, {} operations)",
-                        ir.schemas.len(),
-                        ir.operations.len()
-                    );
-                    return self.generate_from_ir(&ir, openapi);
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        "IR lowering failed, falling back to legacy pipeline: {}",
-                        e
-                    );
-                }
-            }
-        }
-
-        self.generate_legacy(openapi)
-    }
-
-    fn generate_apis(
-        &self,
-        openapi: &OpenApiV31Spec,
-        _apis: Vec<ApiMethodData>,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let operations_by_tag = self.collect_operations_by_tag(openapi);
-        let header_data = HeaderData::from_openapi(openapi);
-        let common_file_header = CommonFileHeaderData::from(header_data);
-
-        let mut api_classes_map = HashMap::new();
-        let mut files = Vec::new();
-
-        // Generate API class files
-        let components = openapi.components.as_ref();
-        for (tag, operations) in operations_by_tag {
-            if !operations.is_empty() {
-                let file_info = self
-                    .api_operation_generator
-                    .generate_api_class(
-                        &tag,
-                        &operations,
-                        &self.templating,
-                        &common_file_header,
-                        components,
-                    )
-                    .map_err(|e| GeneratorError::ApiClassGenerationForTag {
-                        tag: tag.clone(),
-                        source: Box::new(e),
-                    })?;
-                api_classes_map.insert(tag, file_info);
-            }
-        }
-
-        // Add API class files
-        files.extend(api_classes_map.values().cloned());
-
-        // Generate apis/index.ts file
-        if !api_classes_map.is_empty() {
-            files.push(self.generate_apis_index_file(openapi, &api_classes_map)?);
-        }
-
-        Ok(files)
-    }
-
-    fn generate_models(
-        &self,
-        openapi: &OpenApiV31Spec,
-        models: Vec<ModelData>,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        // Note: Duplicate schema name checking is performed in generate_apis
-        // to catch conflicts early in the generation process
-
-        let (schemas, enum_discriminators) = if let Some(components) = &openapi.components {
-            self.generate_model_type_definitions(models, components)
-        } else {
-            (HashMap::new(), HashMap::new())
-        };
-
-        let common_file_header = CommonFileHeaderData::from(HeaderData::from_openapi(openapi));
-        let mut files = Vec::new();
-
-        // Generate model files
-        for (name, type_def) in &schemas {
-            let common_file_header = common_file_header.clone();
-            let filename = self.generate_filename(type_def.ts_name());
-
-            // Collect referenced types for this model
-            let referenced_types = type_def.referenced_types();
-
-            // Build import statements for referenced types
-            // BTreeMap ensures stable ordering, BTreeSet in ApiImportStatement ensures sorted/deduplicated specifiers
-            let mut imports = ApiImportStatements::new();
-
-            // For intersection types (allOf), we handle imports separately in create_model_type_alias_data
-            // to only import what we actually use (FromJSONTyped/ToJSONTyped)
-            let is_intersection_type = type_def.is_intersection_type();
-
-            for ref_type_name in &referenced_types {
-                // Skip self-reference
-                if ref_type_name == name {
-                    continue;
-                }
-
-                // Find the schema where ts_name() matches the referenced type name
-                // Note: schemas HashMap is keyed by original OpenAPI names (e.g., "AZ"),
-                // but ref_type_name is PascalCase (e.g., "Az"), so we need to search by ts_name()
-                let ref_type_def = schemas
-                    .values()
-                    .find(|type_def| type_def.ts_name() == ref_type_name);
-
-                if let Some(ref_type_def) = ref_type_def {
-                    // Use the actual name from the type definition
-                    let actual_type_name = ref_type_def.ts_name();
-                    let ref_filename = self.generate_filename(actual_type_name);
-                    let import_path = format!("./{}", ref_filename.trim_end_matches(".ts"));
-
-                    // Get or create the import statement for this file
-                    let import_stmt = imports
-                        .entry(import_path.clone())
-                        .or_insert_with(|| ApiImportStatement::new(import_path.clone()));
-
-                    import_stmt.imports.insert(ApiImportSpecifier {
-                        name: actual_type_name.to_string(),
-                        alias: None,
-                        is_type: true,
-                    });
-
-                    // For intersection types, skip general function imports - they're handled separately
-                    // to only import what's actually used (FromJSONTyped/ToJSONTyped)
-                    if !is_intersection_type {
-                        // All type definitions (Interface, Enum, TypeAlias) have FromJSON/ToJSON/FromJSONTyped functions
-                        for func_name in &[
-                            format!("{}FromJSON", actual_type_name),
-                            format!("{}FromJSONTyped", actual_type_name),
-                            format!("{}ToJSON", actual_type_name),
-                        ] {
-                            import_stmt.imports.insert(ApiImportSpecifier {
-                                name: func_name.clone(),
-                                alias: None,
-                                is_type: false,
-                            });
-                        }
-
-                        // Interfaces also have instanceOf functions (as values, not types)
-                        if let TsTypeDefinition::Interface(_) = ref_type_def {
-                            import_stmt.imports.insert(ApiImportSpecifier {
-                                name: format!("instanceOf{}", actual_type_name),
-                                alias: None,
-                                is_type: false,
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Emit model content using template
-            let file = match type_def {
-                TsTypeDefinition::Interface(interface) => {
-                    // Create ModelInterfaceData from interface definition
-                    let mut model_interface_data = ModelInterfaceData::from_interface(interface);
-                    model_interface_data.imports = imports;
-                    // Update enum discriminators if this is a tagged enum variant
-                    // Use the TypeScript name (PascalCase) for lookup
-                    let ts_name = type_def.ts_name();
-                    model_interface_data.update_enum_discriminators(ts_name, &enum_discriminators);
-
-                    let template_context = minijinja::context! {
-                        common_file_header,
-                        model_interface => model_interface_data,
-                    };
-                    self.templating
-                        .render_template(TemplateName::ModelInterface, &filename, template_context)
-                        .map_err(|e| GeneratorError::ModelInterfaceGeneration {
-                            model_name: name.clone(),
-                            source: Box::new(e),
-                        })?
-                }
-                TsTypeDefinition::TypeAlias(type_alias) => {
-                    let model_type_alias =
-                        self.create_model_type_alias_data(type_alias, imports, &schemas)?;
-                    let template_context = minijinja::context! {
-                        common_file_header,
-                        model_type_alias,
-                    };
-                    self.templating
-                        .render_template(TemplateName::ModelTypeAlias, &filename, template_context)
-                        .map_err(|e| GeneratorError::ModelTypeAliasGeneration {
-                            model_name: name.clone(),
-                            source: Box::new(e),
-                        })?
-                }
-                TsTypeDefinition::Enum(enum_def) => {
-                    let model_enum = ModelEnumData {
-                        enum_definition: enum_def.clone(),
-                        imports: Vec::new(),
-                    };
-                    let template_context = minijinja::context! {
-                        common_file_header,
-                        model_enum,
-                    };
-                    self.templating
-                        .render_template(TemplateName::ModelEnum, &filename, template_context)
-                        .map_err(|e| GeneratorError::ModelEnumGeneration {
-                            model_name: name.clone(),
-                            source: Box::new(e),
-                        })?
-                }
-            };
-
-            files.push(file);
-        }
-
-        // Generate models/index.ts file only if there are schemas
-        if !schemas.is_empty() {
-            files.push(self.generate_models_index_file(openapi, &schemas)?);
-        }
-
-        Ok(files)
-    }
-
-    fn generate_runtime(
-        &self,
-        openapi: &OpenApiV31Spec,
-        runtime_data: RuntimeData,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let header_data = HeaderData::from_openapi(openapi);
-        let common_file_header = CommonFileHeaderData::from(header_data);
-        let runtime_runtime = RuntimeRuntimeData::from(runtime_data);
-        let template_context = minijinja::context! {
-            common_file_header,
-            runtime_runtime,
-        };
-        let file = self
-            .templating
-            .render_template(TemplateName::Runtime, "runtime.ts", template_context)
-            .map_err(|e| GeneratorError::RuntimeTemplate {
-                source: Box::new(e),
-            })?;
-
-        Ok(vec![file])
-    }
-
-    fn generate_project_files(
-        &self,
-        openapi: &OpenApiV31Spec,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let mut files = self.generate_package_files(openapi)?;
-        files.push(self.generate_main_index_file(openapi)?);
-        Ok(files)
-    }
-
-    fn generate_readme(
-        &self,
-        _: &OpenApiV31Spec,
-        data: openapi_nexus_core::data::ReadmeData,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let file = self.templating.render_template(
-            TemplateName::Readme,
-            "README.md",
-            minijinja::Value::from_serialize(data),
-        )?;
-        Ok(vec![file])
+        let ir = openapi_nexus_ir::lower::v31::lower_v31(openapi)?;
+        tracing::info!(
+            "TypeScript generator using IR pipeline ({} schemas, {} operations)",
+            ir.schemas.len(),
+            ir.operations.len()
+        );
+        self.generate_from_ir(&ir)
     }
 }
 

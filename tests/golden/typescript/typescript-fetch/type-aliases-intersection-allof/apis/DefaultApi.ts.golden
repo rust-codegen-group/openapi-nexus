@@ -11,7 +11,7 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type Foo, FooFromJSON } from '../models/Foo';
+import { type Foo, FooFromJSON, FooToJSON } from '../models/Foo';
 
 export interface ApiTestIntersectionRequest {
     body: Foo;
@@ -71,7 +71,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = FooToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

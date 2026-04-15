@@ -64,11 +64,9 @@ export class FooApi extends BaseAPI implements FooApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/foo/bar`;
+    urlPath = urlPath.replace(`{${ 'foo_id' }}`, encodeURIComponent(String(requestParameters['fooId'])));
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['fooId'] !== undefined) {
-      queryParameters['foo_id'] = requestParameters['fooId'];
-    }
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',

@@ -11,7 +11,7 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type Baz, BazFromJSON } from '../models/Baz';
+import { type Baz, BazFromJSON, BazToJSON } from '../models/Baz';
 
 export interface ApiCreateTestRequest {
     body: Baz;
@@ -91,7 +91,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = BazToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

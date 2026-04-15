@@ -4,18 +4,17 @@ use heck::ToPascalCase;
 use indexmap::IndexMap;
 
 use openapi_nexus_spec::oas31::spec::{
-    self as oas, ObjectOrReference, ObjectSchema, Schema,
-    SchemaType, SchemaTypeSet,
+    self as oas, ObjectOrReference, ObjectSchema, Schema, SchemaType, SchemaTypeSet,
 };
 
+use super::LowerError;
 use crate::types::{
     ApiKeyLocation, IrContact, IrEnum, IrEnumValue, IrEnumValueType, IrHeader, IrInfo,
     IrIntersection, IrLicense, IrOAuth2Flow, IrOAuth2Flows, IrObject, IrOperation, IrParameter,
-    IrPrimitive, IrProperty, IrRequestBody, IrResponse, IrSchema, IrSchemaKind, IrSecurityRequirement,
-    IrSecurityScheme, IrServer, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion,
-    IrValidation, ParameterLocation, TaggingStyle,
+    IrPrimitive, IrProperty, IrRequestBody, IrResponse, IrSchema, IrSchemaKind,
+    IrSecurityRequirement, IrSecurityScheme, IrServer, IrSpec, IrTaggedUnion, IrTaggedVariant,
+    IrTypeExpr, IrUnion, IrValidation, ParameterLocation, TaggingStyle,
 };
-use super::LowerError;
 
 // ---------------------------------------------------------------------------
 // Public entry point
@@ -193,7 +192,10 @@ impl<'a> LowerCtx<'a> {
                     self.lower_schema_ref_with_promotion(&candidate, m)
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            return Ok(IrSchemaKind::Union(IrUnion { members, nullable: has_null }));
+            return Ok(IrSchemaKind::Union(IrUnion {
+                members,
+                nullable: has_null,
+            }));
         }
 
         // anyOf without oneOf → union
@@ -208,7 +210,10 @@ impl<'a> LowerCtx<'a> {
                     self.lower_schema_ref_with_promotion(&candidate, m)
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            return Ok(IrSchemaKind::Union(IrUnion { members, nullable: has_null }));
+            return Ok(IrSchemaKind::Union(IrUnion {
+                members,
+                nullable: has_null,
+            }));
         }
 
         // allOf → intersection
@@ -279,9 +284,9 @@ impl<'a> LowerCtx<'a> {
         }
 
         // Check if all patterns are externally tagged (no common tag field needed)
-        let all_external = patterns.iter().all(|p| {
-            matches!(p, Some(TaggedEnumPattern::ExternallyTagged { .. }))
-        });
+        let all_external = patterns
+            .iter()
+            .all(|p| matches!(p, Some(TaggedEnumPattern::ExternallyTagged { .. })));
 
         if all_external {
             // Externally tagged: no tag field, discrimination is by property name
@@ -380,7 +385,8 @@ impl<'a> LowerCtx<'a> {
                     ObjectOrReference::Object(inline_obj) => {
                         let variant_name =
                             self.generate_unique_name(&format!("{parent_name}Variant"));
-                        let schema = self.lower_object_schema_to_ir_schema(&variant_name, inline_obj)?;
+                        let schema =
+                            self.lower_object_schema_to_ir_schema(&variant_name, inline_obj)?;
                         let disc_value = variant_name.clone();
                         self.schemas.insert(variant_name.clone(), schema);
                         variants.push(IrTaggedVariant {
@@ -424,7 +430,8 @@ impl<'a> LowerCtx<'a> {
                                 }
                                 ObjectOrReference::Object(tag_obj) => {
                                     // Extract discriminator value from the tag object
-                                    if let Some(ObjectOrReference::Object(prop_schema)) = tag_obj.properties.get(tag_field.as_str())
+                                    if let Some(ObjectOrReference::Object(prop_schema)) =
+                                        tag_obj.properties.get(tag_field.as_str())
                                         && let Some(first_enum) = prop_schema.enum_values.first()
                                     {
                                         disc_value = first_enum.as_str().map(String::from);
@@ -436,29 +443,33 @@ impl<'a> LowerCtx<'a> {
                         let content_type = content_ref
                             .map(IrTypeExpr::Named)
                             .unwrap_or(IrTypeExpr::Any);
-                        let disc_value = disc_value.unwrap_or_else(|| {
-                            pattern.variant_name().to_string()
-                        });
+                        let disc_value =
+                            disc_value.unwrap_or_else(|| pattern.variant_name().to_string());
                         Ok((disc_value, content_type))
                     } else {
                         // Plain object with tag property embedded
                         // Extract discriminator value from the tag property
-                        let disc_value = obj.properties.get(tag_field.as_str())
+                        let disc_value = obj
+                            .properties
+                            .get(tag_field.as_str())
                             .and_then(|prop_ref| match prop_ref {
-                                ObjectOrReference::Object(prop_obj) => {
-                                    prop_obj.enum_values.first()
-                                        .and_then(|v| v.as_str().map(String::from))
-                                }
+                                ObjectOrReference::Object(prop_obj) => prop_obj
+                                    .enum_values
+                                    .first()
+                                    .and_then(|v| v.as_str().map(String::from)),
                                 _ => None,
                             })
                             .unwrap_or_else(|| pattern.variant_name().to_string());
 
                         // The content type is this object itself, promoted to a named schema
                         // (excluding the tag field since it's in the discriminator)
-                        let variant_name = self.generate_unique_name(
-                            &format!("{}{}", parent_name, disc_value.to_pascal_case()),
-                        );
-                        let mut variant_schema = self.lower_object_schema_to_ir_schema(&variant_name, obj)?;
+                        let variant_name = self.generate_unique_name(&format!(
+                            "{}{}",
+                            parent_name,
+                            disc_value.to_pascal_case()
+                        ));
+                        let mut variant_schema =
+                            self.lower_object_schema_to_ir_schema(&variant_name, obj)?;
                         variant_schema.is_component = self.in_component_phase;
                         self.schemas.insert(variant_name.clone(), variant_schema);
                         Ok((disc_value, IrTypeExpr::Named(variant_name)))
@@ -479,10 +490,7 @@ impl<'a> LowerCtx<'a> {
                         let content_type = self.lower_schema_ref(prop_schema)?;
                         Ok((prop_name.clone(), content_type))
                     } else {
-                        Ok((
-                            pattern.variant_name().to_string(),
-                            IrTypeExpr::Any,
-                        ))
+                        Ok((pattern.variant_name().to_string(), IrTypeExpr::Any))
                     }
                 } else {
                     Ok((
@@ -525,12 +533,10 @@ impl<'a> LowerCtx<'a> {
                 }
             }
 
-            TaggedEnumPattern::Untagged { .. } => {
-                Ok((
-                    pattern.variant_name().to_string(),
-                    self.lower_schema_ref(member)?,
-                ))
-            }
+            TaggedEnumPattern::Untagged { .. } => Ok((
+                pattern.variant_name().to_string(),
+                self.lower_schema_ref(member)?,
+            )),
         }
     }
 
@@ -582,9 +588,7 @@ impl<'a> LowerCtx<'a> {
                     None
                 }
             }
-            Some(Schema::Object(boxed_ref)) => {
-                Some(self.lower_schema_ref(boxed_ref)?)
-            }
+            Some(Schema::Object(boxed_ref)) => Some(self.lower_schema_ref(boxed_ref)?),
             None => None,
         };
 
@@ -905,13 +909,10 @@ impl<'a> LowerCtx<'a> {
             type_expr,
             required: param.required.unwrap_or(false),
             description: param.description.clone(),
-            default_value: param
-                .schema
-                .as_ref()
-                .and_then(|s| match s {
-                    ObjectOrReference::Object(obj) => obj.default.clone(),
-                    _ => None,
-                }),
+            default_value: param.schema.as_ref().and_then(|s| match s {
+                ObjectOrReference::Object(obj) => obj.default.clone(),
+                _ => None,
+            }),
         })
     }
 
@@ -1042,7 +1043,11 @@ fn type_set_to_type_expr(type_set: &SchemaTypeSet, obj: &ObjectSchema) -> IrType
     };
 
     // Filter out null
-    let non_null: Vec<SchemaType> = types.iter().copied().filter(|t| *t != SchemaType::Null).collect();
+    let non_null: Vec<SchemaType> = types
+        .iter()
+        .copied()
+        .filter(|t| *t != SchemaType::Null)
+        .collect();
     let has_null = types.contains(&SchemaType::Null);
 
     if non_null.is_empty() {
@@ -1068,7 +1073,6 @@ fn type_set_to_type_expr(type_set: &SchemaTypeSet, obj: &ObjectSchema) -> IrType
 }
 
 fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
-
     match t {
         SchemaType::String => match obj.format.as_deref() {
             Some("date") => IrTypeExpr::Primitive(IrPrimitive::Date),
@@ -1091,11 +1095,9 @@ fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
             if let Some(items) = &obj.items {
                 match items.as_ref() {
                     Schema::Object(boxed_ref) => match boxed_ref.as_ref() {
-                        ObjectOrReference::Ref { ref_path, .. } => {
-                            IrTypeExpr::Array(Box::new(IrTypeExpr::Named(
-                                extract_schema_name(ref_path),
-                            )))
-                        }
+                        ObjectOrReference::Ref { ref_path, .. } => IrTypeExpr::Array(Box::new(
+                            IrTypeExpr::Named(extract_schema_name(ref_path)),
+                        )),
                         ObjectOrReference::Object(inner) => {
                             let inner_type = single_type_to_expr(
                                 inner
@@ -1103,12 +1105,11 @@ fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
                                     .as_ref()
                                     .map(|ts| match ts {
                                         oas::SchemaTypeSet::Single(t) => *t,
-                                        oas::SchemaTypeSet::Multiple(ts) => {
-                                            ts.iter()
-                                                .copied()
-                                                .find(|t| *t != oas::SchemaType::Null)
-                                                .unwrap_or(oas::SchemaType::String)
-                                        }
+                                        oas::SchemaTypeSet::Multiple(ts) => ts
+                                            .iter()
+                                            .copied()
+                                            .find(|t| *t != oas::SchemaType::Null)
+                                            .unwrap_or(oas::SchemaType::String),
                                     })
                                     .unwrap_or(oas::SchemaType::String),
                                 inner,
@@ -1133,11 +1134,9 @@ fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
                         }
                     }
                     Schema::Object(boxed_ref) => match boxed_ref.as_ref() {
-                        ObjectOrReference::Ref { ref_path, .. } => {
-                            IrTypeExpr::Map(Box::new(IrTypeExpr::Named(
-                                extract_schema_name(ref_path),
-                            )))
-                        }
+                        ObjectOrReference::Ref { ref_path, .. } => IrTypeExpr::Map(Box::new(
+                            IrTypeExpr::Named(extract_schema_name(ref_path)),
+                        )),
                         ObjectOrReference::Object(inner) => {
                             let inner_type = single_type_to_expr(
                                 inner
@@ -1145,12 +1144,11 @@ fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
                                     .as_ref()
                                     .map(|ts| match ts {
                                         oas::SchemaTypeSet::Single(t) => *t,
-                                        oas::SchemaTypeSet::Multiple(ts) => {
-                                            ts.iter()
-                                                .copied()
-                                                .find(|t| *t != oas::SchemaType::Null)
-                                                .unwrap_or(oas::SchemaType::String)
-                                        }
+                                        oas::SchemaTypeSet::Multiple(ts) => ts
+                                            .iter()
+                                            .copied()
+                                            .find(|t| *t != oas::SchemaType::Null)
+                                            .unwrap_or(oas::SchemaType::String),
                                     })
                                     .unwrap_or(oas::SchemaType::String),
                                 inner,
@@ -1186,7 +1184,10 @@ fn classify_enum_values(values: &[serde_json::Value]) -> IrEnumValueType {
         }
     }
 
-    let mixed_count = [has_string, has_number, has_integer].iter().filter(|&&b| b).count();
+    let mixed_count = [has_string, has_number, has_integer]
+        .iter()
+        .filter(|&&b| b)
+        .count();
     if mixed_count >= 2 {
         IrEnumValueType::Mixed
     } else if has_number {
@@ -1268,15 +1269,9 @@ fn extract_validation(obj: &ObjectSchema) -> Option<IrValidation> {
         min_length: obj.min_length,
         pattern: obj.pattern.clone(),
         maximum: obj.maximum.as_ref().and_then(|n| n.as_f64()),
-        exclusive_maximum: obj
-            .exclusive_maximum
-            .as_ref()
-            .map(|_| true),
+        exclusive_maximum: obj.exclusive_maximum.as_ref().map(|_| true),
         minimum: obj.minimum.as_ref().and_then(|n| n.as_f64()),
-        exclusive_minimum: obj
-            .exclusive_minimum
-            .as_ref()
-            .map(|_| true),
+        exclusive_minimum: obj.exclusive_minimum.as_ref().map(|_| true),
         multiple_of: obj.multiple_of.as_ref().and_then(|n| n.as_f64()),
         max_items: obj.max_items,
         min_items: obj.min_items,
@@ -1338,9 +1333,7 @@ fn lower_security_scheme(scheme: &oas::SecurityScheme) -> IrSecurityScheme {
             description: description.clone(),
         },
         SS::OAuth2 {
-            flows,
-            description,
-            ..
+            flows, description, ..
         } => IrSecurityScheme::OAuth2 {
             flows: Box::new(lower_oauth2_flows(flows)),
             description: description.clone(),

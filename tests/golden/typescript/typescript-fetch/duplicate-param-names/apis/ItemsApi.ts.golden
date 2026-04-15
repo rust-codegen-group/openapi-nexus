@@ -11,11 +11,13 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
+import { type CreateItemWithBodyConflictRequest, CreateItemWithBodyConflictRequestToJSON } from '../models/CreateItemWithBodyConflictRequest';
+import { type CreateItemWithBodyConflictResponse200, CreateItemWithBodyConflictResponse200FromJSON } from '../models/CreateItemWithBodyConflictResponse200';
 
 export interface ApiCreateItemWithBodyConflictRequest {
     itemId: string;
-    queryBody?: string;
-    bodyBody: object;
+    queryBody?: CreateItemWithBodyConflictRequest;
+    bodyBody: CreateItemWithBodyConflictRequest;
 }
 
 /** API client for items operations */
@@ -25,22 +27,22 @@ export interface ItemsApiInterface {
    * Create item with body parameter conflict
    *
    * @param {string} itemId Item ID in path
-   * @param {string} queryBody
-   * @param {object} bodyBody
+   * @param {CreateItemWithBodyConflictRequest} queryBody
+   * @param {CreateItemWithBodyConflictRequest} bodyBody
    *
    * @throws {RequiredError}
    */
-  createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | VoidApiResponse & { status: 400 }>;
+  createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 400 }>;
   /**
    * Create item with body parameter conflict
    *
    * @param {string} itemId Item ID in path
-   * @param {string} queryBody
-   * @param {object} bodyBody
+   * @param {CreateItemWithBodyConflictRequest} queryBody
+   * @param {CreateItemWithBodyConflictRequest} bodyBody
    *
    * @throws {RequiredError}
    */
-  createItemWithBodyConflict: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | object>;
+  createItemWithBodyConflict: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | CreateItemWithBodyConflictResponse200>;
 }
 
 export class ItemsApi extends BaseAPI implements ItemsApiInterface {
@@ -54,12 +56,12 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
    * Create item with body parameter conflict
    *
    * @param {string} itemId Item ID in path
-   * @param {string} queryBody
-   * @param {object} bodyBody
+   * @param {CreateItemWithBodyConflictRequest} queryBody
+   * @param {CreateItemWithBodyConflictRequest} bodyBody
    *
    * @throws {RequiredError}
    */
-  async createItemWithBodyConflictRaw(requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | VoidApiResponse & { status: 400 }> {
+  async createItemWithBodyConflictRaw(requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 400 }> {
     if (requestParameters['itemId'] == null) {
       throw new RequiredError(
         'itemId',
@@ -88,7 +90,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['bodyBody'];
+    const requestBody = CreateItemWithBodyConflictRequestToJSON(requestParameters['bodyBody']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -100,7 +102,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<object> & { status: 200 };
+      return new JSONApiResponse(response, (jsonValue) => CreateItemWithBodyConflictResponse200FromJSON(jsonValue)) as JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -115,12 +117,12 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
    * Create item with body parameter conflict
    *
    * @param {string} itemId Item ID in path
-   * @param {string} queryBody
-   * @param {object} bodyBody
+   * @param {CreateItemWithBodyConflictRequest} queryBody
+   * @param {CreateItemWithBodyConflictRequest} bodyBody
    *
    * @throws {RequiredError}
    */
-  async createItemWithBodyConflict(requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<any | object> {
+  async createItemWithBodyConflict(requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<any | CreateItemWithBodyConflictResponse200> {
     const response = await this.createItemWithBodyConflictRaw(requestParameters, initOverrides);
     return await response.value();
   }

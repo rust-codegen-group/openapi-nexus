@@ -92,12 +92,7 @@ impl SchemaNameGenerator {
 
     /// Generate a name for a request body schema.
     #[allow(dead_code)]
-    pub fn for_request_body(
-        &mut self,
-        op_id: Option<&str>,
-        method: &str,
-        path: &str,
-    ) -> String {
+    pub fn for_request_body(&mut self, op_id: Option<&str>, method: &str, path: &str) -> String {
         let base_name = op_id
             .map(|id| id.to_pascal_case())
             .unwrap_or_else(|| path_to_pascal(method, path));
@@ -281,6 +276,9 @@ mod tests {
             path_to_pascal("GET", "/api/v1/users/{id}"),
             "GetApiV1UsersId"
         );
-        assert_eq!(path_to_pascal("DELETE", "/items/{item_id}/tags/{tag_id}"), "DeleteItemsItemIdTagsTagId");
+        assert_eq!(
+            path_to_pascal("DELETE", "/items/{item_id}/tags/{tag_id}"),
+            "DeleteItemsItemIdTagsTagId"
+        );
     }
 }

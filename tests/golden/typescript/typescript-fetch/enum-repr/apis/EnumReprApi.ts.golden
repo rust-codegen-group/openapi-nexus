@@ -11,9 +11,9 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type AdjacentlyTaggedEnum, AdjacentlyTaggedEnumFromJSON } from '../models/AdjacentlyTaggedEnum';
-import { type ExternallyTaggedEnum, ExternallyTaggedEnumFromJSON } from '../models/ExternallyTaggedEnum';
-import { type InternallyTaggedEnum, InternallyTaggedEnumFromJSON } from '../models/InternallyTaggedEnum';
+import { type AdjacentlyTaggedEnum, AdjacentlyTaggedEnumFromJSON, AdjacentlyTaggedEnumToJSON } from '../models/AdjacentlyTaggedEnum';
+import { type ExternallyTaggedEnum, ExternallyTaggedEnumFromJSON, ExternallyTaggedEnumToJSON } from '../models/ExternallyTaggedEnum';
+import { type InternallyTaggedEnum, InternallyTaggedEnumFromJSON, InternallyTaggedEnumToJSON } from '../models/InternallyTaggedEnum';
 import { type MixedEnum, MixedEnumFromJSON } from '../models/MixedEnum';
 import { type UntaggedEnum, UntaggedEnumFromJSON } from '../models/UntaggedEnum';
 
@@ -155,7 +155,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = AdjacentlyTaggedEnumToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -216,7 +216,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = ExternallyTaggedEnumToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -277,7 +277,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = InternallyTaggedEnumToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

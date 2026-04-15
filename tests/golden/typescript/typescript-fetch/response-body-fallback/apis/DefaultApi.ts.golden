@@ -9,14 +9,15 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
+import { type GetFallbackWithBodyResponse200, GetFallbackWithBodyResponse200FromJSON } from '../models/GetFallbackWithBodyResponse200';
 
 /** API client for default operations */
 
 export interface DefaultApiInterface {
   getFallbackNoBodyRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<VoidApiResponse & { status: 200 } | VoidApiResponse & { status: 400 } | VoidApiResponse & { status: number }>;
-  getFallbackWithBodyRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | VoidApiResponse & { status: 404 }>;
+  getFallbackWithBodyRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<GetFallbackWithBodyResponse200> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 404 }>;
   getFallbackNoBody: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | void>;
-  getFallbackWithBody: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | object>;
+  getFallbackWithBody: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | GetFallbackWithBodyResponse200>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -65,7 +66,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     return await response.value();
   }
 
-  async getFallbackWithBodyRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | VoidApiResponse & { status: 404 }> {
+  async getFallbackWithBodyRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<GetFallbackWithBodyResponse200> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 404 }> {
     // Build path with path parameters
     let urlPath = `/fallback/with-body`;
     // Build query parameters
@@ -88,7 +89,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<object> & { status: 200 };
+      return new JSONApiResponse(response, (jsonValue) => GetFallbackWithBodyResponse200FromJSON(jsonValue)) as JSONApiResponse<GetFallbackWithBodyResponse200> & { status: 200 };
     }
     else if (response.status === 404) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 404 };
@@ -99,7 +100,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
   }
 
-  async getFallbackWithBody(initOverrides?: InitOverrideFunction | RequestInit): Promise<any | object> {
+  async getFallbackWithBody(initOverrides?: InitOverrideFunction | RequestInit): Promise<any | GetFallbackWithBodyResponse200> {
     const response = await this.getFallbackWithBodyRaw(initOverrides);
     return await response.value();
   }

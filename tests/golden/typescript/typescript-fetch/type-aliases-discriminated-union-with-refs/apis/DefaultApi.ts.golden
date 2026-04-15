@@ -13,7 +13,7 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type ContainerImage, ContainerImageFromJSON } from '../models/ContainerImage';
+import { type ContainerImage, ContainerImageFromJSON, ContainerImageToJSON } from '../models/ContainerImage';
 
 export interface ApiCreateContainerRequest {
     body: ContainerImage;
@@ -73,7 +73,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = ContainerImageToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

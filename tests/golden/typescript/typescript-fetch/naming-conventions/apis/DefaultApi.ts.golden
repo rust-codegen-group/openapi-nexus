@@ -15,17 +15,17 @@ import { type NamingConventionTest, NamingConventionTestFromJSON, NamingConventi
 
 export interface ApiGetWithQueryParamsRequest {
     snakeCaseParam: string;
-    snakeCaseNumber?: string;
+    snakeCaseNumber?: number;
     kebabCaseParam?: string;
     kebabCaseArray?: Array<string>;
     pascalCaseParam?: string;
-    pascalCaseNumber?: string;
+    pascalCaseNumber?: number;
     screamingSnakeCase?: string;
-    screamingNumber?: string;
+    screamingNumber?: number;
     camelCaseParam?: string;
-    camelCaseNumber?: string;
+    camelCaseNumber?: number;
     singleword?: string;
-    id?: string;
+    id?: number;
 }
 
 export interface ApiTestNamingConventionsRequest {
@@ -39,17 +39,17 @@ export interface DefaultApiInterface {
    * Get with query parameters
    *
    * @param {string} snakeCaseParam
-   * @param {string} snakeCaseNumber
+   * @param {number} snakeCaseNumber
    * @param {string} kebabCaseParam
    * @param {Array<string>} kebabCaseArray
    * @param {string} pascalCaseParam
-   * @param {string} pascalCaseNumber
+   * @param {number} pascalCaseNumber
    * @param {string} screamingSnakeCase
-   * @param {string} screamingNumber
+   * @param {number} screamingNumber
    * @param {string} camelCaseParam
-   * @param {string} camelCaseNumber
+   * @param {number} camelCaseNumber
    * @param {string} singleword
-   * @param {string} id
+   * @param {number} id
    *
    * @throws {RequiredError}
    */
@@ -66,17 +66,17 @@ export interface DefaultApiInterface {
    * Get with query parameters
    *
    * @param {string} snakeCaseParam
-   * @param {string} snakeCaseNumber
+   * @param {number} snakeCaseNumber
    * @param {string} kebabCaseParam
    * @param {Array<string>} kebabCaseArray
    * @param {string} pascalCaseParam
-   * @param {string} pascalCaseNumber
+   * @param {number} pascalCaseNumber
    * @param {string} screamingSnakeCase
-   * @param {string} screamingNumber
+   * @param {number} screamingNumber
    * @param {string} camelCaseParam
-   * @param {string} camelCaseNumber
+   * @param {number} camelCaseNumber
    * @param {string} singleword
-   * @param {string} id
+   * @param {number} id
    *
    * @throws {RequiredError}
    */
@@ -102,17 +102,17 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
    * Get with query parameters
    *
    * @param {string} snakeCaseParam
-   * @param {string} snakeCaseNumber
+   * @param {number} snakeCaseNumber
    * @param {string} kebabCaseParam
    * @param {Array<string>} kebabCaseArray
    * @param {string} pascalCaseParam
-   * @param {string} pascalCaseNumber
+   * @param {number} pascalCaseNumber
    * @param {string} screamingSnakeCase
-   * @param {string} screamingNumber
+   * @param {number} screamingNumber
    * @param {string} camelCaseParam
-   * @param {string} camelCaseNumber
+   * @param {number} camelCaseNumber
    * @param {string} singleword
-   * @param {string} id
+   * @param {number} id
    *
    * @throws {RequiredError}
    */
@@ -193,17 +193,17 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
    * Get with query parameters
    *
    * @param {string} snakeCaseParam
-   * @param {string} snakeCaseNumber
+   * @param {number} snakeCaseNumber
    * @param {string} kebabCaseParam
    * @param {Array<string>} kebabCaseArray
    * @param {string} pascalCaseParam
-   * @param {string} pascalCaseNumber
+   * @param {number} pascalCaseNumber
    * @param {string} screamingSnakeCase
-   * @param {string} screamingNumber
+   * @param {number} screamingNumber
    * @param {string} camelCaseParam
-   * @param {string} camelCaseNumber
+   * @param {number} camelCaseNumber
    * @param {string} singleword
-   * @param {string} id
+   * @param {number} id
    *
    * @throws {RequiredError}
    */
