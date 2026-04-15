@@ -21,7 +21,7 @@ export interface Pet {
   name: string,
   photoUrls: Array<string>,
   status?: null | PetStatus,
-  tags?: Array<Tag>,
+  tags?: null | Array<Tag>,
 }
 
 export function instanceOfPet(value: unknown): value is Pet {
@@ -46,11 +46,11 @@ export function PetFromJSONTyped(json: any, ignoreDiscriminator: boolean): Pet {
     return json;
   }
   return {
-    'category': json['category'] ?? undefined,
+    'category': CategoryFromJSON(json['category']) ?? undefined,
     'id': json['id'] ?? undefined,
     'name': json['name'],
     'photoUrls': json['photo_urls'],
-    'status': json['status'] ?? undefined,
+    'status': PetStatusFromJSON(json['status']) ?? undefined,
     'tags': json['tags']?.map((item: any) => TagFromJSON(item)) ?? undefined,
   };
 }
@@ -64,11 +64,11 @@ export function PetToJSONTyped(value?: Pet | null, ignoreDiscriminator: boolean 
     return value;
   }
   return {
-    'category': value['category'],
+    'category': CategoryToJSON(value['category']),
     'id': value['id'],
     'name': value['name'],
     'photo_urls': value['photoUrls'],
-    'status': value['status'],
+    'status': PetStatusToJSON(value['status']),
     'tags': value['tags']?.map((item: any) => TagToJSON(item)),
   };
 }

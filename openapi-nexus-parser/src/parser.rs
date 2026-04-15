@@ -7,7 +7,8 @@ use tracing::{debug, error};
 
 use crate::error::ParseError;
 use crate::serde_error::SerdeErrorExtractor;
-use openapi_nexus_spec::OpenApiV31Spec;
+use crate::ParsedSpec;
+use openapi_nexus_spec::{OpenApiV30Spec, OpenApiV31Spec};
 
 fn extract_error_context(content: &str, error_msg: &str) -> Vec<String> {
     let (line, column) = SerdeErrorExtractor::new(error_msg).extract_location();
@@ -55,64 +56,118 @@ fn extract_error_context(content: &str, error_msg: &str) -> Vec<String> {
     }
 }
 
-pub fn parse_content_json(content: &str) -> Result<OpenApiV31Spec, ParseError> {
-    // First try to parse as JSON to get proper error context for JSON syntax errors
-    let _value: serde_json::Value = serde_json::from_str(content).map_err(|e| {
+/// Detect the OpenAPI version from a JSON value.
+fn detect_version_json(value: &serde_json::Value) -> Result<&str, ParseError> {
+    value
+        .get("openapi")
+        .and_then(|v| v.as_str())
+        .ok_or(ParseError::MissingVersionField)
+}
+
+/// Detect the OpenAPI version from a YAML value.
+fn detect_version_yaml(value: &serde_norway::Value) -> Result<String, ParseError> {
+    let mapping = value.as_mapping().ok_or(ParseError::MissingVersionField)?;
+    for (k, v) in mapping {
+        if k.as_str() == Some("openapi") {
+            if let Some(s) = v.as_str() {
+                return Ok(s.to_string());
+            }
+            // Could be a number like 3.0 (YAML parses unquoted 3.0 as float)
+            if let Some(f) = v.as_f64() {
+                // Preserve at least one decimal place: 3.0 → "3.0", not "3"
+                let s = format!("{f}");
+                if s.contains('.') {
+                    return Ok(s);
+                }
+                return Ok(format!("{f:.1}"));
+            }
+        }
+    }
+    Err(ParseError::MissingVersionField)
+}
+
+/// Classify a version string into a major.minor bucket.
+fn classify_version(version: &str) -> Result<OpenApiMajorMinor, ParseError> {
+    if version.starts_with("3.0") {
+        Ok(OpenApiMajorMinor::V3_0)
+    } else if version.starts_with("3.1") {
+        Ok(OpenApiMajorMinor::V3_1)
+    } else {
+        Err(ParseError::UnsupportedVersion {
+            version: version.to_string(),
+        })
+    }
+}
+
+enum OpenApiMajorMinor {
+    V3_0,
+    V3_1,
+}
+
+pub fn parse_content_json(content: &str) -> Result<ParsedSpec, ParseError> {
+    // First parse as generic JSON to get error context and version
+    let value: serde_json::Value = serde_json::from_str(content).map_err(|e| {
         let error_msg = e.to_string();
         debug!("Serde error message: {}", error_msg);
         let context = extract_error_context(content, &error_msg);
-
         for line in &context {
             error!("{}", line);
         }
-
         ParseError::JsonParse { source: e, context }
     })?;
 
-    // Deserialize as OpenAPI spec
-    serde_json::from_str::<OpenApiV31Spec>(content).map_err(|e| {
-        let error_msg = e.to_string();
-        debug!("parse error: {}", error_msg);
-        let context = extract_error_context(content, &error_msg);
-
-        for line in &context {
-            error!("{}", line);
+    let version = detect_version_json(&value)?;
+    match classify_version(version)? {
+        OpenApiMajorMinor::V3_0 => {
+            let spec: OpenApiV30Spec = serde_json::from_value(value).map_err(|e| {
+                debug!("parse error: {}", e);
+                ParseError::OpenApiDeserializeJson { source: e }
+            })?;
+            Ok(ParsedSpec::V30(Box::new(spec)))
         }
-
-        ParseError::OpenApiDeserializeJson { source: e }
-    })
+        OpenApiMajorMinor::V3_1 => {
+            let spec: OpenApiV31Spec = serde_json::from_value(value).map_err(|e| {
+                debug!("parse error: {}", e);
+                ParseError::OpenApiDeserializeJson { source: e }
+            })?;
+            Ok(ParsedSpec::V31(Box::new(spec)))
+        }
+    }
 }
 
-pub fn parse_content_yaml(content: &str) -> Result<OpenApiV31Spec, ParseError> {
-    // First try to parse as YAML to get proper error context for YAML syntax errors
-    let _value: serde_norway::Value = serde_norway::from_str(content).map_err(|e| {
+pub fn parse_content_yaml(content: &str) -> Result<ParsedSpec, ParseError> {
+    // First parse as generic YAML
+    let value: serde_norway::Value = serde_norway::from_str(content).map_err(|e| {
         let error_msg = e.to_string();
         debug!("Serde error message: {}", error_msg);
         let context = extract_error_context(content, &error_msg);
-
         for line in &context {
             error!("{}", line);
         }
-
         ParseError::YamlParse { source: e, context }
     })?;
 
-    // Deserialize as OpenAPI spec
-    serde_norway::from_str::<OpenApiV31Spec>(content).map_err(|e| {
-        let error_msg = e.to_string();
-        debug!("parse error: {}", error_msg);
-        let context = extract_error_context(content, &error_msg);
-
-        for line in &context {
-            error!("{}", line);
+    let version = detect_version_yaml(&value)?;
+    match classify_version(&version)? {
+        OpenApiMajorMinor::V3_0 => {
+            let spec: OpenApiV30Spec = serde_norway::from_value(value).map_err(|e| {
+                debug!("parse error: {}", e);
+                ParseError::OpenApiDeserializeYaml { source: e }
+            })?;
+            Ok(ParsedSpec::V30(Box::new(spec)))
         }
-
-        ParseError::OpenApiDeserializeYaml { source: e }
-    })
+        OpenApiMajorMinor::V3_1 => {
+            let spec: OpenApiV31Spec = serde_norway::from_value(value).map_err(|e| {
+                debug!("parse error: {}", e);
+                ParseError::OpenApiDeserializeYaml { source: e }
+            })?;
+            Ok(ParsedSpec::V31(Box::new(spec)))
+        }
+    }
 }
 
 /// Parse an OpenAPI specification from a file
-pub fn parse_file(path: &Path) -> Result<OpenApiV31Spec, ParseError> {
+pub fn parse_file(path: &Path) -> Result<ParsedSpec, ParseError> {
     let content = fs::read_to_string(path).map_err(|e| ParseError::FileRead {
         path: path.to_string_lossy().to_string(),
         source: e,
@@ -130,4 +185,30 @@ pub fn parse_file(path: &Path) -> Result<OpenApiV31Spec, ParseError> {
             format: "<unknown>".to_string(),
         }),
     }
+}
+
+/// Parse content as an OpenAPI v3.1 spec specifically (for callers that know the version).
+pub fn parse_content_yaml_v31(content: &str) -> Result<OpenApiV31Spec, ParseError> {
+    let _value: serde_norway::Value = serde_norway::from_str(content).map_err(|e| {
+        let error_msg = e.to_string();
+        let context = extract_error_context(content, &error_msg);
+        ParseError::YamlParse { source: e, context }
+    })?;
+
+    serde_norway::from_str::<OpenApiV31Spec>(content).map_err(|e| {
+        ParseError::OpenApiDeserializeYaml { source: e }
+    })
+}
+
+/// Parse content as an OpenAPI v3.1 JSON spec specifically.
+pub fn parse_content_json_v31(content: &str) -> Result<OpenApiV31Spec, ParseError> {
+    let _value: serde_json::Value = serde_json::from_str(content).map_err(|e| {
+        let error_msg = e.to_string();
+        let context = extract_error_context(content, &error_msg);
+        ParseError::JsonParse { source: e, context }
+    })?;
+
+    serde_json::from_str::<OpenApiV31Spec>(content).map_err(|e| {
+        ParseError::OpenApiDeserializeJson { source: e }
+    })
 }

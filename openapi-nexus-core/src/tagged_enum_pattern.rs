@@ -82,20 +82,26 @@ impl TaggedEnumPattern {
     /// - Untagged: Schema reference to a component schema
     pub fn detect_from_schema(schema_ref: &ObjectOrReference<ObjectSchema>) -> Option<Self> {
         match schema_ref {
-            // ExternallyTagged: object with exactly 1 property that is a string enum (discriminator)
+            // ExternallyTagged: object with exactly 1 required property whose value is either:
+            // - a string enum (inline discriminator), OR
+            // - a $ref to another schema (the property name IS the variant discriminator)
             ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 1 => {
                 if let Some((prop_name, prop_schema)) = obj_schema.properties.iter().next()
                     && obj_schema.required.contains(prop_name)
                 {
-                    // Only detect as ExternallyTagged if the property is a string enum (discriminator)
-                    // Not just any object property
-                    if let ObjectOrReference::Object(prop_obj) = prop_schema
-                        && !prop_obj.enum_values.is_empty()
-                        && prop_obj
-                            .enum_values
-                            .iter()
-                            .any(|v| matches!(v, serde_json::Value::String(_)))
-                    {
+                    let is_externally_tagged = match prop_schema {
+                        // Inline object with string enum values
+                        ObjectOrReference::Object(prop_obj) => {
+                            !prop_obj.enum_values.is_empty()
+                                && prop_obj
+                                    .enum_values
+                                    .iter()
+                                    .any(|v| matches!(v, serde_json::Value::String(_)))
+                        }
+                        // $ref to another schema (property name is the variant key)
+                        ObjectOrReference::Ref { .. } => true,
+                    };
+                    if is_externally_tagged {
                         let variant_name = prop_name.to_pascal_case();
                         return Some(TaggedEnumPattern::ExternallyTagged { variant_name });
                     }

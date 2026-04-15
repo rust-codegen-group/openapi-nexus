@@ -56,7 +56,8 @@ fn from_golden_filename(golden_filename: &str) -> Option<String> {
 fn generate_files(
     spec_content: &str,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
-    let openapi: OpenApiV31Spec = openapi_nexus_parser::parse_content_yaml(spec_content)?;
+    let openapi: OpenApiV31Spec = openapi_nexus_parser::parse_content_yaml_v31(spec_content)?;
+
     let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
     let generated_files = match generator.generate(&openapi) {
         Ok(files) => {
@@ -428,3 +429,157 @@ generate_golden_tests! {
 
     test_query_param_enum_golden: "query-param-enum",
 }
+
+// ===========================================================================
+// IR pipeline integration tests
+// ===========================================================================
+
+/// Test that the IR-based model generation produces output for a simple spec.
+#[test]
+fn test_ir_model_generation_produces_files() {
+    let yaml = r#"
+openapi: "3.1.0"
+info:
+  title: IR Test API
+  version: "1.0.0"
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+      required:
+        - id
+        - name
+    Status:
+      type: string
+      enum:
+        - active
+        - inactive
+        - suspended
+"#;
+
+    let parsed = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+    let ir = openapi_nexus_ir::lower::lower(parsed).unwrap();
+
+    let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
+    let files = generator.generate_models_from_ir(&ir).unwrap();
+
+    // Should produce model files + index
+    assert!(
+        files.len() >= 3,
+        "Expected at least 3 files (User, Status, index), got {}",
+        files.len()
+    );
+
+    // Check we have model files with actual content
+    let filenames: Vec<&str> = files.iter().map(|f| f.filename.as_str()).collect();
+    assert!(
+        filenames.iter().any(|f| f.contains("User")),
+        "Expected a User model file, got: {:?}",
+        filenames
+    );
+    assert!(
+        filenames.iter().any(|f| f.contains("Status")),
+        "Expected a Status model file, got: {:?}",
+        filenames
+    );
+
+    // Verify User file contains interface definition
+    let user_file = files.iter().find(|f| f.filename.contains("User")).unwrap();
+    assert!(
+        user_file.content.contains("export interface User"),
+        "User file should contain 'export interface User', got:\n{}",
+        user_file.content
+    );
+    assert!(
+        user_file.content.contains("id:") || user_file.content.contains("id?:"),
+        "User file should contain 'id' property"
+    );
+
+    // Verify Status file contains enum definition
+    let status_file = files.iter().find(|f| f.filename.contains("Status")).unwrap();
+    assert!(
+        status_file.content.contains("Status"),
+        "Status file should contain 'Status'"
+    );
+}
+
+/// Test that IR-based generation handles nullable types correctly.
+#[test]
+fn test_ir_model_nullable_types() {
+    let yaml = r#"
+openapi: "3.1.0"
+info:
+  title: Test
+  version: "1.0.0"
+components:
+  schemas:
+    Profile:
+      type: object
+      properties:
+        bio:
+          type:
+            - string
+            - "null"
+      required:
+        - bio
+"#;
+
+    let parsed = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+    let ir = openapi_nexus_ir::lower::lower(parsed).unwrap();
+
+    let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
+    let files = generator.generate_models_from_ir(&ir).unwrap();
+
+    let profile_file = files.iter().find(|f| f.filename.contains("Profile")).unwrap();
+    // Nullable string in TS should contain "null" in the type
+    assert!(
+        profile_file.content.contains("null"),
+        "Profile file should contain null type for nullable property, got:\n{}",
+        profile_file.content
+    );
+}
+
+/// Test that IR-based generation handles refs (type aliases) correctly.
+#[test]
+fn test_ir_model_ref_alias() {
+    let yaml = r##"
+openapi: "3.1.0"
+info:
+  title: Test
+  version: "1.0.0"
+components:
+  schemas:
+    Pet:
+      type: object
+      properties:
+        name:
+          type: string
+    MyPet:
+      $ref: "#/components/schemas/Pet"
+"##;
+
+    let parsed = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+    let ir = openapi_nexus_ir::lower::lower(parsed).unwrap();
+
+    let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
+    let files = generator.generate_models_from_ir(&ir).unwrap();
+
+    // Should have at least Pet, MyPet, and index
+    assert!(files.len() >= 3, "Expected at least 3 files, got {}", files.len());
+
+    let my_pet_file = files.iter().find(|f| f.filename.contains("MyPet")).unwrap();
+    // MyPet should be a type alias referencing Pet
+    assert!(
+        my_pet_file.content.contains("Pet"),
+        "MyPet file should reference Pet, got:\n{}",
+        my_pet_file.content
+    );
+}
+

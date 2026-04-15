@@ -64,26 +64,55 @@ impl TsExpression {
             .to_string()
     }
 
-    /// Check if this expression is an array type
+    /// Check if this expression is an array type (including nullable arrays)
     pub fn is_array(&self) -> bool {
-        matches!(self, TsExpression::Array(_))
-    }
-
-    /// Check if this expression is an array of objects (inline or reference)
-    pub fn is_array_of_objects(&self) -> bool {
-        if let TsExpression::Array(item_type) = self {
-            matches!(
-                item_type.as_ref(),
-                TsExpression::Object(_) | TsExpression::Reference(_)
-            )
-        } else {
-            false
+        match self {
+            TsExpression::Array(_) => true,
+            TsExpression::Union(types) => {
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                non_null.len() == 1 && non_null[0].is_array()
+            }
+            _ => false,
         }
     }
 
-    /// Check if this expression is an object reference
+    /// Check if this expression is an array of objects (inline or reference),
+    /// including nullable arrays of objects.
+    pub fn is_array_of_objects(&self) -> bool {
+        match self {
+            TsExpression::Array(item_type) => {
+                matches!(
+                    item_type.as_ref(),
+                    TsExpression::Object(_) | TsExpression::Reference(_)
+                )
+            }
+            TsExpression::Union(types) => {
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                non_null.len() == 1 && non_null[0].is_array_of_objects()
+            }
+            _ => false,
+        }
+    }
+
+    /// Check if this expression is an object reference (including nullable references)
     pub fn is_object_reference(&self) -> bool {
-        matches!(self, TsExpression::Reference(_))
+        match self {
+            TsExpression::Reference(_) => true,
+            TsExpression::Union(types) => {
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                non_null.len() == 1 && non_null[0].is_object_reference()
+            }
+            _ => false,
+        }
     }
 
     /// Check if this expression is an inline object
@@ -94,49 +123,107 @@ impl TsExpression {
     /// Check if this expression is a record type (e.g., { [key: string]: T })
     /// rather than a regular object with named properties
     pub fn is_record_type(&self) -> bool {
-        matches!(
-            self,
-            TsExpression::Object(properties)
-                if properties.len() == 1 && properties.contains_key("[key: string]")
-        )
+        match self {
+            TsExpression::Object(properties) => {
+                properties.len() == 1 && properties.contains_key("[key: string]")
+            }
+            TsExpression::Union(types) => {
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                non_null.len() == 1 && non_null[0].is_record_type()
+            }
+            _ => false,
+        }
     }
 
     /// For record types, return the reference name of the value type if it is a reference.
     /// Used to generate recursive FromJSON/ToJSON for map properties whose values are schema refs.
     pub fn record_value_reference_name(&self) -> Option<String> {
-        if let TsExpression::Object(properties) = self
-            && let Some(prop) = properties.get("[key: string]")
-        {
-            return prop.type_expr.reference_name();
-        }
-        None
-    }
-
-    /// Extract reference name from this expression, recursing into arrays if needed
-    pub fn reference_name(&self) -> Option<String> {
         match self {
-            TsExpression::Reference(name) => Some(name.clone()),
-            TsExpression::Array(item_type) => item_type.reference_name(),
+            TsExpression::Object(properties) => {
+                if let Some(prop) = properties.get("[key: string]") {
+                    prop.type_expr.reference_name()
+                } else {
+                    None
+                }
+            }
+            TsExpression::Union(types) => {
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                if non_null.len() == 1 {
+                    non_null[0].record_value_reference_name()
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
 
-    /// Extract array item type from this expression
-    pub fn array_item_type(&self) -> Option<TsExpression> {
-        if let TsExpression::Array(item_type) = self {
-            Some(*item_type.clone())
-        } else {
-            None
+    /// Extract reference name from this expression, recursing into arrays and
+    /// nullable unions (e.g. `null | Array<Tag>` → `"Tag"`).
+    pub fn reference_name(&self) -> Option<String> {
+        match self {
+            TsExpression::Reference(name) => Some(name.clone()),
+            TsExpression::Array(item_type) => item_type.reference_name(),
+            TsExpression::Union(types) => {
+                // Unwrap nullable unions: if the union is `null | T`, recurse into T
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                if non_null.len() == 1 {
+                    non_null[0].reference_name()
+                } else {
+                    None
+                }
+            }
+            _ => None,
         }
     }
 
-    /// Extract object properties from this expression, recursing into arrays if needed
+    /// Extract array item type from this expression, including nullable arrays
+    pub fn array_item_type(&self) -> Option<TsExpression> {
+        match self {
+            TsExpression::Array(item_type) => Some(*item_type.clone()),
+            TsExpression::Union(types) => {
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                if non_null.len() == 1 {
+                    non_null[0].array_item_type()
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Extract object properties from this expression, recursing into arrays and
+    /// nullable unions if needed
     pub fn object_properties(&self) -> Vec<ObjectProperty> {
         match self {
             TsExpression::Object(properties) => properties.values().cloned().collect(),
             TsExpression::Array(item_type) => {
                 // If it's an array, extract from the item type
                 item_type.object_properties()
+            }
+            TsExpression::Union(types) => {
+                let non_null: Vec<_> = types
+                    .iter()
+                    .filter(|t| !matches!(t, TsExpression::Primitive(TsPrimitive::Null)))
+                    .collect();
+                if non_null.len() == 1 {
+                    non_null[0].object_properties()
+                } else {
+                    Vec::new()
+                }
             }
             _ => Vec::new(),
         }

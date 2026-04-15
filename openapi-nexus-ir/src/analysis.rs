@@ -393,7 +393,7 @@ components:
     User:
       type: object
 "#;
-        openapi_nexus_parser::parse_content_yaml(yaml).unwrap()
+        openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap()
     }
 
     #[test]
@@ -464,7 +464,7 @@ paths:
     get:
       operationId: listUsers
 "#;
-        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
         let operations = Analyzer::get_all_operations(&openapi);
         assert_eq!(operations.len(), 1);
@@ -505,7 +505,7 @@ info:
   title: Test API
   version: 1.0.0
 "#;
-        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
         let schemas = Analyzer::get_all_schemas(&openapi);
         assert_eq!(schemas.len(), 0);
     }
@@ -526,7 +526,7 @@ components:
     Order:
       type: object
 "#;
-        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
         let schemas = Analyzer::get_all_schemas(&openapi);
         assert_eq!(schemas.len(), 3);
 
@@ -565,7 +565,7 @@ components:
         profile:
           $ref: '#/components/schemas/Profile'
 "#;
-        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
         let dependencies = analyzer.analyze_schema_dependencies("User").unwrap();
         assert_eq!(dependencies.len(), 1);
@@ -606,7 +606,7 @@ components:
         a:
           $ref: '#/components/schemas/A'
 "#;
-        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
         let circular_refs = analyzer.detect_circular_references().unwrap();
         assert_eq!(circular_refs.len(), 1);
@@ -646,7 +646,7 @@ components:
         c:
           $ref: '#/components/schemas/C'
 "#;
-        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
         let analyzer = SchemaAnalyzer::new(&openapi);
         let circular_refs = analyzer.detect_circular_references().unwrap();
         assert_eq!(circular_refs.len(), 2);

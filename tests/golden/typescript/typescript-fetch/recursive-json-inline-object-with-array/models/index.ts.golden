@@ -12,3 +12,4 @@
  */
 export * from './InlineObjectWithArray';
 export * from './InlineObjectWithArrayContainerData';
+export * from './InlineObjectWithArrayContainerDataItemsItem';

@@ -32,4 +32,10 @@ pub enum ParseError {
 
     #[snafu(display("Failed to deserialize OpenAPI schema from YAML: {}", source))]
     OpenApiDeserializeYaml { source: serde_norway::Error },
+
+    #[snafu(display("Unsupported OpenAPI version: '{}'. Supported versions: 3.0.x, 3.1.x", version))]
+    UnsupportedVersion { version: String },
+
+    #[snafu(display("Missing 'openapi' version field in specification"))]
+    MissingVersionField,
 }

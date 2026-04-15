@@ -230,7 +230,7 @@ components:
     User:
       type: object
 "#;
-        openapi_nexus_parser::parse_content_yaml(yaml).unwrap()
+        openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap()
     }
 
     #[test]
@@ -370,7 +370,7 @@ components:
     NotFound:
       description: Not Found
 "#;
-        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
         let resolver = ReferenceResolver::new(&openapi);
         let result = resolver.resolve_response_ref("#/components/responses/NotFound");
         assert!(result.is_ok());

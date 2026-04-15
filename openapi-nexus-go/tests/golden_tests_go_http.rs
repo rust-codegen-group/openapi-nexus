@@ -56,7 +56,8 @@ fn from_golden_filename(golden_filename: &str) -> Option<String> {
 fn generate_files(
     spec_content: &str,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
-    let openapi: OpenApiV31Spec = openapi_nexus_parser::parse_content_yaml(spec_content)?;
+    let openapi: OpenApiV31Spec = openapi_nexus_parser::parse_content_yaml_v31(spec_content)?;
+
     let generator = GoHttpCodeGenerator::new(toml::value::Table::new());
     let generated_files = match generator.generate(&openapi) {
         Ok(files) => {

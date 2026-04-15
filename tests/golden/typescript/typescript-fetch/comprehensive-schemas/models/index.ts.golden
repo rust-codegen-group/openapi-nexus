@@ -11,6 +11,7 @@
  * Do not edit the file manually.
  */
 export * from './AllOfObjects';
+export * from './AllOfObjectsAllOf2';
 export * from './AnyOfTypes';
 export * from './ArrayWithMaxItems';
 export * from './ArrayWithMinItems';
@@ -23,6 +24,7 @@ export * from './ComplexNestedObject';
 export * from './ComplexNestedObjectUser';
 export * from './ComplexNestedObjectUserProfile';
 export * from './ComplexNestedObjectUserProfileContact';
+export * from './ComplexNestedObjectUserProfileContactAddressesItem';
 export * from './DateTimeString';
 export * from './DoubleType';
 export * from './EmailString';
@@ -43,6 +45,7 @@ export * from './NumberWithMaximum';
 export * from './NumberWithMinimum';
 export * from './NumberWithMultipleOf';
 export * from './ObjectArray';
+export * from './ObjectArrayItems';
 export * from './ObjectWithAdditionalPropertiesFalse';
 export * from './ObjectWithAdditionalPropertiesTrue';
 export * from './ObjectWithDefaults';

@@ -91,7 +91,7 @@ info:
   title: Test API
   version: 1.0.0
 "#;
-        let mut openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        let mut openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
 
         // Should not panic or error on empty OpenAPI
         assert!(OpenApiTransformPass::transform(&pass, &mut openapi).is_ok());

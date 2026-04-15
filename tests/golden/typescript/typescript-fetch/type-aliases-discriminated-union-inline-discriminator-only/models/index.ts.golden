@@ -21,6 +21,6 @@
  * Do not edit the file manually.
  */
 export * from './Event';
-export * from './EventKind';
+export * from './EventMember1';
 export * from './EventMember2';
 export * from './EventMember3';
