@@ -12,4 +12,5 @@
  */
 export * from './Bar';
 export * from './Baz';
+export * from './BazAllOf2';
 export * from './Foo';

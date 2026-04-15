@@ -11,4 +11,5 @@
  * Do not edit the file manually.
  */
 export * from './ArrayWithReferenceProperty';
+export * from './ArrayWithReferencePropertyItemsItem';
 export * from './User';

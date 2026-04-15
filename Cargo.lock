@@ -1137,11 +1137,14 @@ dependencies = [
 name = "openapi-nexus-ir"
 version = "0.0.5"
 dependencies = [
+ "heck",
  "indexmap",
  "openapi-nexus-common",
+ "openapi-nexus-core",
  "openapi-nexus-parser",
  "openapi-nexus-spec",
  "serde",
+ "serde_json",
  "snafu",
  "tempfile",
  "tracing",
@@ -1212,6 +1215,7 @@ dependencies = [
  "openapi-nexus-ir",
  "openapi-nexus-parser",
  "openapi-nexus-spec",
+ "serde_json",
  "snafu",
  "tracing",
 ]
@@ -1230,6 +1234,7 @@ dependencies = [
  "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
+ "openapi-nexus-ir",
  "openapi-nexus-parser",
  "openapi-nexus-spec",
  "pretty",

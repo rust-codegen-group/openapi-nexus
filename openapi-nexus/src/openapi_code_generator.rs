@@ -58,12 +58,25 @@ impl OpenApiCodeGenerator {
     /// Logs errors and continues to generate the next generator instead of returning errors
     pub fn generate(&self, config: &Config) {
         info!("Parsing OpenAPI specification from: {}", config.input);
-        let openapi = match parse_file(Path::new(&config.input)) {
-            Ok(openapi) => openapi,
+        let parsed = match parse_file(Path::new(&config.input)) {
+            Ok(parsed) => parsed,
             Err(e) => {
                 error!(
                     "Failed to parse OpenAPI file {:?}: {}. Skipping code generation.",
                     config.input, e
+                );
+                return;
+            }
+        };
+
+        // Legacy path: extract v3.1 spec for current generators
+        // (TypeScript generator handles IR lowering internally)
+        let openapi = match parsed.as_v31() {
+            Some(spec) => spec,
+            None => {
+                error!(
+                    "OpenAPI 3.0 specs are not yet supported by generators directly. \
+                     This will be resolved when generators migrate to the IR pipeline."
                 );
                 return;
             }
@@ -99,7 +112,7 @@ impl OpenApiCodeGenerator {
                 }
             };
 
-            let files = match generator.generate(&openapi) {
+            let files = match generator.generate(openapi) {
                 Ok(files) => files,
                 Err(e) => {
                     error!(

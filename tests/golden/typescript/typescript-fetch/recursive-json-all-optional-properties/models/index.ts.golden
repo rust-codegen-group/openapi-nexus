@@ -11,5 +11,6 @@
  * Do not edit the file manually.
  */
 export * from './AllOptionalProperties';
+export * from './AllOptionalPropertiesOptionalArrayItem';
 export * from './AllOptionalPropertiesOptionalInline';
 export * from './User';

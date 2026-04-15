@@ -19,3 +19,6 @@ openapi-nexus-common.workspace = true
 openapi-nexus-ir.workspace = true
 openapi-nexus-parser.workspace = true
 openapi-nexus-spec.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -130,7 +130,7 @@ components:
     User:
       type: object
 "#;
-        openapi_nexus_parser::parse_content_yaml(yaml).unwrap()
+        openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap()
     }
 
     #[test]

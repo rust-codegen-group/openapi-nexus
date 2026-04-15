@@ -26,7 +26,7 @@
 //!     User:
 //!       type: object
 //! "#;
-//! let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+//! let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
 //!
 //! // Analyze an OpenAPI specification
 //! let analyzer = SchemaAnalyzer::new(&openapi);
@@ -48,7 +48,9 @@
 
 pub mod analysis;
 pub mod error;
+pub mod lower;
 pub mod traversal;
+pub mod types;
 pub mod utils;
 
 // Re-export key OpenAPI spec types for convenience

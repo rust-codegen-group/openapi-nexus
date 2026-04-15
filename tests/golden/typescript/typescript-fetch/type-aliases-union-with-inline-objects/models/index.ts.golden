@@ -11,12 +11,9 @@
  * Do not edit the file manually.
  */
 export * from './Foo';
-export * from './FooBar';
-export * from './FooGrault';
 export * from './FooMember1';
 export * from './FooMember1Bar';
 export * from './FooMember2';
 export * from './FooMember2Quux';
 export * from './FooMember3';
 export * from './FooMember3Grault';
-export * from './FooQuux';
