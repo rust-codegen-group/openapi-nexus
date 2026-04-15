@@ -19,8 +19,10 @@ use crate::templating::data::{
 use crate::templating::{TemplateName, Templates};
 use crate::type_mapping;
 use openapi_nexus_common::{GeneratorType, Language};
+use openapi_nexus_core::data::LegacyPipelineCallbacks;
 use openapi_nexus_core::data::{
     ApiMethodData, HeaderData, ModelData, OperationInfo, ParameterInfo, ReadmeData, RuntimeData,
+    collect_operations_by_tag,
 };
 use openapi_nexus_core::traits::OpenApiRefExt as _;
 use openapi_nexus_core::traits::ToRcDoc;
@@ -594,12 +596,21 @@ impl CodeGenerator for GoHttpCodeGenerator {
         GeneratorType::GoHttp
     }
 
+    fn generate(
+        &self,
+        openapi: &OpenApiV31Spec,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        openapi_nexus_core::data::run_legacy_pipeline(openapi, self)
+    }
+}
+
+impl LegacyPipelineCallbacks for GoHttpCodeGenerator {
     fn generate_apis(
         &self,
         openapi: &OpenApiV31Spec,
         apis: Vec<ApiMethodData>,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let operations_by_tag = <Self as CodeGenerator>::collect_operations_by_tag(self, openapi);
+        let operations_by_tag = collect_operations_by_tag(openapi);
         let header_data = HeaderData::from_openapi(openapi);
         let common_header = CommonFileHeaderData::from(header_data.clone());
         let module_path = self.get_module_path();

@@ -11,34 +11,37 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
+import { type GetAllUsersResponse200Item, GetAllUsersResponse200ItemFromJSON } from '../models/GetAllUsersResponse200Item';
+import { type GetUserByIdResponse200, GetUserByIdResponse200FromJSON } from '../models/GetUserByIdResponse200';
+import { type GetUserByIdResponse404, GetUserByIdResponse404FromJSON } from '../models/GetUserByIdResponse404';
 
 export interface ApiGetUserByIdRequest {
-    id: string;
+    id: number;
 }
 
 /** API client for default operations */
 
 export interface DefaultApiInterface {
   /** Get all users */
-  getAllUsersRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<object>> & { status: 200 } | JSONApiResponse<any> & { status: number }>;
+  getAllUsersRaw: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<Array<GetAllUsersResponse200Item>> & { status: 200 } | JSONApiResponse<any> & { status: number }>;
   /**
    * Get user by ID
    *
-   * @param {string} id User ID
+   * @param {number} id User ID
    *
    * @throws {RequiredError}
    */
-  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | JSONApiResponse<object> & { status: 404 }>;
+  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<GetUserByIdResponse200> & { status: 200 } | JSONApiResponse<GetUserByIdResponse404> & { status: 404 } | JSONApiResponse<any> & { status: number }>;
   /** Get all users */
-  getAllUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<object>>;
+  getAllUsers: (initOverrides?: InitOverrideFunction | RequestInit) => Promise<Array<GetAllUsersResponse200Item>>;
   /**
    * Get user by ID
    *
-   * @param {string} id User ID
+   * @param {number} id User ID
    *
    * @throws {RequiredError}
    */
-  getUserById: (requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<object>;
+  getUserById: (requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<GetUserByIdResponse200 | GetUserByIdResponse404>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -49,7 +52,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   /** Get all users */
-  async getAllUsersRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<object>> & { status: 200 } | JSONApiResponse<any> & { status: number }> {
+  async getAllUsersRaw(initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<Array<GetAllUsersResponse200Item>> & { status: 200 } | JSONApiResponse<any> & { status: number }> {
     // Build path with path parameters
     let urlPath = `/users`;
     // Build query parameters
@@ -72,7 +75,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<Array<object>> & { status: 200 };
+      return new JSONApiResponse(response, (jsonValue) => (jsonValue as Array<any>).map(GetAllUsersResponse200ItemFromJSON)) as JSONApiResponse<Array<GetAllUsersResponse200Item>> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
@@ -81,7 +84,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   /** Get all users */
-  async getAllUsers(initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<object>> {
+  async getAllUsers(initOverrides?: InitOverrideFunction | RequestInit): Promise<Array<GetAllUsersResponse200Item>> {
     const response = await this.getAllUsersRaw(initOverrides);
     return await response.value();
   }
@@ -89,11 +92,11 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   /**
    * Get user by ID
    *
-   * @param {string} id User ID
+   * @param {number} id User ID
    *
    * @throws {RequiredError}
    */
-  async getUserByIdRaw(requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | JSONApiResponse<object> & { status: 404 }> {
+  async getUserByIdRaw(requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<GetUserByIdResponse200> & { status: 200 } | JSONApiResponse<GetUserByIdResponse404> & { status: 404 } | JSONApiResponse<any> & { status: number }> {
     if (requestParameters['id'] == null) {
       throw new RequiredError(
         'id',
@@ -123,10 +126,10 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<object> & { status: 200 };
+      return new JSONApiResponse(response, (jsonValue) => GetUserByIdResponse200FromJSON(jsonValue)) as JSONApiResponse<GetUserByIdResponse200> & { status: 200 };
     }
     else if (response.status === 404) {
-      return new JSONApiResponse(response) as JSONApiResponse<object> & { status: 404 };
+      return new JSONApiResponse(response, (jsonValue) => GetUserByIdResponse404FromJSON(jsonValue)) as JSONApiResponse<GetUserByIdResponse404> & { status: 404 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
@@ -137,11 +140,11 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   /**
    * Get user by ID
    *
-   * @param {string} id User ID
+   * @param {number} id User ID
    *
    * @throws {RequiredError}
    */
-  async getUserById(requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<object> {
+  async getUserById(requestParameters: ApiGetUserByIdRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<GetUserByIdResponse200 | GetUserByIdResponse404> {
     const response = await this.getUserByIdRaw(requestParameters, initOverrides);
     return await response.value();
   }

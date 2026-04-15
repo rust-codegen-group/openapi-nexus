@@ -5,9 +5,9 @@ use std::path::Path;
 
 use tracing::{debug, error};
 
+use crate::ParsedSpec;
 use crate::error::ParseError;
 use crate::serde_error::SerdeErrorExtractor;
-use crate::ParsedSpec;
 use openapi_nexus_spec::{OpenApiV30Spec, OpenApiV31Spec};
 
 fn extract_error_context(content: &str, error_msg: &str) -> Vec<String> {
@@ -195,9 +195,8 @@ pub fn parse_content_yaml_v31(content: &str) -> Result<OpenApiV31Spec, ParseErro
         ParseError::YamlParse { source: e, context }
     })?;
 
-    serde_norway::from_str::<OpenApiV31Spec>(content).map_err(|e| {
-        ParseError::OpenApiDeserializeYaml { source: e }
-    })
+    serde_norway::from_str::<OpenApiV31Spec>(content)
+        .map_err(|e| ParseError::OpenApiDeserializeYaml { source: e })
 }
 
 /// Parse content as an OpenAPI v3.1 JSON spec specifically.
@@ -208,7 +207,6 @@ pub fn parse_content_json_v31(content: &str) -> Result<OpenApiV31Spec, ParseErro
         ParseError::JsonParse { source: e, context }
     })?;
 
-    serde_json::from_str::<OpenApiV31Spec>(content).map_err(|e| {
-        ParseError::OpenApiDeserializeJson { source: e }
-    })
+    serde_json::from_str::<OpenApiV31Spec>(content)
+        .map_err(|e| ParseError::OpenApiDeserializeJson { source: e })
 }

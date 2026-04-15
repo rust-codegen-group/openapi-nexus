@@ -8,8 +8,8 @@
 
 pub mod v31;
 
-use openapi_nexus_parser::ParsedSpec;
 use crate::types::IrSpec;
+use openapi_nexus_parser::ParsedSpec;
 
 mod error;
 pub use error::LowerError;

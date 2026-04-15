@@ -1,8 +1,9 @@
 //! Operation information for grouping by tag
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
+use http::Method;
 use serde::{Deserialize, Serialize};
 use tracing::error;
 
@@ -11,6 +12,7 @@ use crate::data::parameter_info::ParameterInfo;
 use crate::data::{HttpResponse, StatusCode};
 use crate::serde::http_method;
 use crate::traits::OperationInfoExt;
+use openapi_nexus_spec::OpenApiV31Spec;
 use openapi_nexus_spec::oas31::spec::{
     Components, ObjectOrReference, ObjectSchema, Operation, Parameter, ParameterIn,
 };
@@ -172,4 +174,46 @@ fn extract_return_type_from_responses(
         }
     }
     None
+}
+
+/// Collect all operations from an OpenAPI spec grouped by their tags.
+pub fn collect_operations_by_tag(openapi: &OpenApiV31Spec) -> HashMap<String, Vec<OperationInfo>> {
+    let mut tag_operations = HashMap::new();
+    let default_tags = vec!["default".to_string()];
+
+    if let Some(paths) = &openapi.paths {
+        for (path, path_item) in paths {
+            let methods = [
+                (Method::GET, path_item.get.as_ref()),
+                (Method::POST, path_item.post.as_ref()),
+                (Method::PUT, path_item.put.as_ref()),
+                (Method::DELETE, path_item.delete.as_ref()),
+                (Method::PATCH, path_item.patch.as_ref()),
+                (Method::OPTIONS, path_item.options.as_ref()),
+                (Method::HEAD, path_item.head.as_ref()),
+            ];
+
+            for (method, operation_opt) in methods {
+                if let Some(operation) = operation_opt {
+                    let tags = if operation.tags.is_empty() {
+                        &default_tags
+                    } else {
+                        &operation.tags
+                    };
+                    for tag in tags {
+                        tag_operations
+                            .entry(tag.clone())
+                            .or_insert_with(Vec::new)
+                            .push(OperationInfo {
+                                path: path.clone(),
+                                method: method.clone(),
+                                operation: operation.clone(),
+                            });
+                    }
+                }
+            }
+        }
+    }
+
+    tag_operations
 }

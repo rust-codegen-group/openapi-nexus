@@ -15,8 +15,8 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type ContainerKind, ContainerKindFromJSON } from '../models/ContainerKind';
-import { type VolumeKind, VolumeKindFromJSON } from '../models/VolumeKind';
+import { type ContainerKind, ContainerKindFromJSON, ContainerKindToJSON } from '../models/ContainerKind';
+import { type VolumeKind, VolumeKindFromJSON, VolumeKindToJSON } from '../models/VolumeKind';
 
 export interface ApiCreateContainerRequest {
     body: ContainerKind;
@@ -96,7 +96,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = ContainerKindToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -154,7 +154,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = VolumeKindToJSON(requestParameters['body']);
     // Make request
     const response = await this.request({
         path: urlPath,

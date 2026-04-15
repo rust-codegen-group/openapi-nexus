@@ -11,8 +11,8 @@ use openapi_nexus_spec::oas31::spec::{
     RequestBody, Response, Schema,
 };
 
-use super::predicate::should_promote;
 use super::naming::{FieldContext, SchemaNameGenerator};
+use super::predicate::should_promote;
 use crate::passes::TransformError;
 
 /// Configuration for the normalization pass.
@@ -107,9 +107,7 @@ pub fn normalize_spec(
 
     // 8. Insert all promoted schemas into components
     if !state.promoted.is_empty() {
-        let components = spec
-            .components
-            .get_or_insert_with(Default::default);
+        let components = spec.components.get_or_insert_with(Default::default);
         for (name, schema) in state.promoted {
             components
                 .schemas
@@ -237,11 +235,7 @@ fn normalize_schema(
 // Path / Operation traversal
 // ---------------------------------------------------------------------------
 
-fn normalize_path_item(
-    item: &mut PathItem,
-    path: &str,
-    state: &mut NormalizationState,
-) {
+fn normalize_path_item(item: &mut PathItem, path: &str, state: &mut NormalizationState) {
     macro_rules! normalize_method {
         ($field:ident, $method_str:expr) => {
             if let Some(ref mut op) = item.$field {
@@ -375,11 +369,7 @@ fn normalize_request_body_content(
     );
 }
 
-fn normalize_response_content(
-    resp: &mut Response,
-    name: &str,
-    state: &mut NormalizationState,
-) {
+fn normalize_response_content(resp: &mut Response, name: &str, state: &mut NormalizationState) {
     normalize_media_type_map(
         &mut resp.content,
         name,
@@ -410,11 +400,7 @@ fn normalize_parameter_schema(
     }
 }
 
-fn normalize_header_schema(
-    header: &mut Header,
-    parent_name: &str,
-    state: &mut NormalizationState,
-) {
+fn normalize_header_schema(header: &mut Header, parent_name: &str, state: &mut NormalizationState) {
     if let Some(ref mut schema_ref) = header.schema {
         normalize_object_or_ref(
             schema_ref,

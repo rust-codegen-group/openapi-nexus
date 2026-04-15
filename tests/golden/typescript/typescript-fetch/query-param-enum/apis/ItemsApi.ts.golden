@@ -12,6 +12,7 @@
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
 import type { FooStatus } from '../models/FooStatus';
+import { type GetItemsResponse200, GetItemsResponse200FromJSON } from '../models/GetItemsResponse200';
 
 export interface ApiGetItemsRequest {
     status?: FooStatus;
@@ -25,13 +26,13 @@ export interface ItemsApiInterface {
    *
    * @param {FooStatus} status Optional. The status to filter items by.
    */
-  getItemsRaw: (requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | VoidApiResponse & { status: 400 }>;
+  getItemsRaw: (requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<JSONApiResponse<GetItemsResponse200> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 400 }>;
   /**
    * Get items with enum query parameter
    *
    * @param {FooStatus} status Optional. The status to filter items by.
    */
-  getItems: (requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | object>;
+  getItems: (requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit) => Promise<any | GetItemsResponse200>;
 }
 
 export class ItemsApi extends BaseAPI implements ItemsApiInterface {
@@ -46,7 +47,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
    *
    * @param {FooStatus} status Optional. The status to filter items by.
    */
-  async getItemsRaw(requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<any> & { status: number } | JSONApiResponse<object> & { status: 200 } | VoidApiResponse & { status: 400 }> {
+  async getItemsRaw(requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<JSONApiResponse<GetItemsResponse200> & { status: 200 } | JSONApiResponse<any> & { status: number } | VoidApiResponse & { status: 400 }> {
     // Build path with path parameters
     let urlPath = `/items`;
     // Build query parameters
@@ -72,7 +73,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<object> & { status: 200 };
+      return new JSONApiResponse(response, (jsonValue) => GetItemsResponse200FromJSON(jsonValue)) as JSONApiResponse<GetItemsResponse200> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -88,7 +89,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
    *
    * @param {FooStatus} status Optional. The status to filter items by.
    */
-  async getItems(requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<any | object> {
+  async getItems(requestParameters: ApiGetItemsRequest, initOverrides?: InitOverrideFunction | RequestInit): Promise<any | GetItemsResponse200> {
     const response = await this.getItemsRaw(requestParameters, initOverrides);
     return await response.value();
   }

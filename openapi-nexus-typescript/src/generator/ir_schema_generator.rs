@@ -9,13 +9,11 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 
 use openapi_nexus_ir::types::{
-    IrEnum, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
-    IrSchemaKind, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
+    IrEnum, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema, IrSchemaKind,
+    IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 
-use crate::ast::ty::ts_type_alias_definition::{
-    IntersectionMemberInfo, UnionMemberInfo,
-};
+use crate::ast::ty::ts_type_alias_definition::{IntersectionMemberInfo, UnionMemberInfo};
 use crate::ast::{
     ObjectProperty, TsDocComment, TsEnumDefinition, TsEnumValue, TsEnumVariant, TsExpression,
     TsInterfaceDefinition, TsInterfaceSignature, TsPrimitive, TsProperty, TsTypeAliasDefinition,
@@ -55,9 +53,7 @@ impl IrSchemaGenerator {
             match &schema.kind {
                 IrSchemaKind::TaggedUnion(tagged) => {
                     let docs = schema.description.as_deref().map(TsDocComment::new);
-                    let result = Self::tagged_union_to_types(
-                        &ts_name, name, tagged, docs, schemas,
-                    );
+                    let result = Self::tagged_union_to_types(&ts_name, name, tagged, docs, schemas);
                     // Insert main type alias
                     type_definitions.insert(ts_name, result.main_type);
                     // Insert wrapper interfaces
@@ -104,14 +100,12 @@ impl IrSchemaGenerator {
         let docs = schema.description.as_deref().map(TsDocComment::new);
 
         match &schema.kind {
-            IrSchemaKind::Object(obj) => {
-                TsTypeDefinition::Interface(Self::object_to_interface(
-                    &ts_name,
-                    &original_name,
-                    obj,
-                    docs,
-                ))
-            }
+            IrSchemaKind::Object(obj) => TsTypeDefinition::Interface(Self::object_to_interface(
+                &ts_name,
+                &original_name,
+                obj,
+                docs,
+            )),
             IrSchemaKind::Enum(e) => {
                 TsTypeDefinition::Enum(Self::enum_to_ts_enum(&ts_name, &original_name, e, docs))
             }
@@ -123,12 +117,7 @@ impl IrSchemaGenerator {
                 Self::union_to_type_alias(&ts_name, &original_name, union_type, docs, schemas)
             }
             IrSchemaKind::Intersection(intersection) => {
-                Self::intersection_to_type_alias(
-                    &ts_name,
-                    &original_name,
-                    intersection,
-                    docs,
-                )
+                Self::intersection_to_type_alias(&ts_name, &original_name, intersection, docs)
             }
             IrSchemaKind::Alias(type_expr) => {
                 let ts_expr = Self::type_expr_to_ts(type_expr);
@@ -275,19 +264,21 @@ impl IrSchemaGenerator {
 
             // Build the wrapper interface name
             let wrapper_name = Self::wrapper_interface_name(
-                ts_name, &variant.content_type, disc_value, idx, &tagged.tagging, schemas,
+                ts_name,
+                &variant.content_type,
+                disc_value,
+                idx,
+                &tagged.tagging,
+                schemas,
             );
 
             match &tagged.tagging {
                 TaggingStyle::Internal => {
                     // Type alias member: ({ tag: "LITERAL" } & ContentType)
-                    let tag_obj = Self::make_single_prop_object(
-                        tag_field, tag_field, disc_literal.clone(),
-                    );
-                    let intersection = TsExpression::Intersection(BTreeSet::from([
-                        tag_obj,
-                        content_ts.clone(),
-                    ]));
+                    let tag_obj =
+                        Self::make_single_prop_object(tag_field, tag_field, disc_literal.clone());
+                    let intersection =
+                        TsExpression::Intersection(BTreeSet::from([tag_obj, content_ts.clone()]));
                     union_types.insert(intersection.clone());
                     union_members.push(UnionMemberInfo {
                         ts_name: wrapper_name.clone(),
@@ -298,33 +289,39 @@ impl IrSchemaGenerator {
 
                     // Wrapper interface: flattened content properties + tag field
                     let wrapper_iface = Self::build_internal_wrapper(
-                        &wrapper_name, tag_field, disc_value,
-                        &variant.content_type, schemas,
+                        &wrapper_name,
+                        tag_field,
+                        disc_value,
+                        &variant.content_type,
+                        schemas,
                     );
                     wrapper_interfaces.push((
                         wrapper_name.clone(),
                         TsTypeDefinition::Interface(wrapper_iface),
                     ));
-                    discriminators.push((
-                        wrapper_name,
-                        (tag_field.clone(), disc_value.clone()),
-                    ));
+                    discriminators.push((wrapper_name, (tag_field.clone(), disc_value.clone())));
                 }
                 TaggingStyle::Adjacent { content_field } => {
                     // Type alias member: { data: ContentType; tag: "LITERAL" }
                     let mut props = BTreeMap::new();
                     let content_field_camel = content_field.to_lower_camel_case();
-                    props.insert(content_field_camel.clone(), ObjectProperty {
-                        ts_name: content_field_camel.clone(),
-                        original_name: content_field.clone(),
-                        type_expr: content_ts.clone(),
-                    });
+                    props.insert(
+                        content_field_camel.clone(),
+                        ObjectProperty {
+                            ts_name: content_field_camel.clone(),
+                            original_name: content_field.clone(),
+                            type_expr: content_ts.clone(),
+                        },
+                    );
                     let tag_camel = tag_field.to_lower_camel_case();
-                    props.insert(tag_camel.clone(), ObjectProperty {
-                        ts_name: tag_camel.clone(),
-                        original_name: tag_field.clone(),
-                        type_expr: disc_literal.clone(),
-                    });
+                    props.insert(
+                        tag_camel.clone(),
+                        ObjectProperty {
+                            ts_name: tag_camel.clone(),
+                            original_name: tag_field.clone(),
+                            type_expr: disc_literal.clone(),
+                        },
+                    );
                     let obj_expr = TsExpression::Object(props);
 
                     union_types.insert(obj_expr.clone());
@@ -337,25 +334,24 @@ impl IrSchemaGenerator {
 
                     // Wrapper interface: { content_field: ContentType, tag_field: "LITERAL" }
                     let mut wrapper_iface = Self::build_adjacent_wrapper(
-                        &wrapper_name, tag_field, disc_value,
-                        content_field, &content_ts,
+                        &wrapper_name,
+                        tag_field,
+                        disc_value,
+                        content_field,
+                        &content_ts,
                     );
                     wrapper_iface.documentation = variant_docs.clone();
                     wrapper_interfaces.push((
                         wrapper_name.clone(),
                         TsTypeDefinition::Interface(wrapper_iface),
                     ));
-                    discriminators.push((
-                        wrapper_name,
-                        (tag_field.clone(), disc_value.clone()),
-                    ));
+                    discriminators.push((wrapper_name, (tag_field.clone(), disc_value.clone())));
                 }
                 TaggingStyle::External => {
                     // Type alias member: { camelCasedVariantName: ContentType }
                     let variant_key = disc_value.to_lower_camel_case();
-                    let obj_expr = Self::make_single_prop_object(
-                        &variant_key, disc_value, content_ts.clone(),
-                    );
+                    let obj_expr =
+                        Self::make_single_prop_object(&variant_key, disc_value, content_ts.clone());
 
                     union_types.insert(obj_expr.clone());
                     union_members.push(UnionMemberInfo {
@@ -366,9 +362,8 @@ impl IrSchemaGenerator {
                     });
 
                     // Wrapper interface: { camelCasedVariantName: ContentType }
-                    let mut wrapper_iface = Self::build_external_wrapper(
-                        &wrapper_name, disc_value, &content_ts,
-                    );
+                    let mut wrapper_iface =
+                        Self::build_external_wrapper(&wrapper_name, disc_value, &content_ts);
                     wrapper_iface.documentation = variant_docs.clone();
                     wrapper_interfaces.push((
                         wrapper_name.clone(),
@@ -395,9 +390,10 @@ impl IrSchemaGenerator {
             let kind_original = format!("{}Kind", original_name);
             let mut kind_members = BTreeSet::new();
             for variant in &tagged.variants {
-                kind_members.insert(TsExpression::Literal(
-                    format!("\"{}\"", variant.discriminator_value),
-                ));
+                kind_members.insert(TsExpression::Literal(format!(
+                    "\"{}\"",
+                    variant.discriminator_value
+                )));
             }
             Some((
                 kind_name.clone(),
@@ -645,7 +641,10 @@ impl IrSchemaGenerator {
                 IrTypeExpr::StringLiteral(val) => val.clone(),
                 _ => ts_expr.to_string_formatted(),
             };
-            let is_primitive = matches!(member, IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_));
+            let is_primitive = matches!(
+                member,
+                IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_)
+            );
 
             // A Named reference is an interface only if it refers to an Object schema
             let is_interface = match member {
@@ -744,9 +743,7 @@ impl IrSchemaGenerator {
                 }
                 TsExpression::Union(union)
             }
-            IrTypeExpr::Array(inner) => {
-                TsExpression::Array(Box::new(Self::type_expr_to_ts(inner)))
-            }
+            IrTypeExpr::Array(inner) => TsExpression::Array(Box::new(Self::type_expr_to_ts(inner))),
             IrTypeExpr::Map(inner) => {
                 let value_type = Self::type_expr_to_ts(inner);
                 let index_key = "[key: string]".to_string();
@@ -765,10 +762,8 @@ impl IrSchemaGenerator {
                 TsExpression::Union(union)
             }
             IrTypeExpr::Union(members) => {
-                let ts_members: BTreeSet<TsExpression> = members
-                    .iter()
-                    .map(Self::type_expr_to_ts)
-                    .collect();
+                let ts_members: BTreeSet<TsExpression> =
+                    members.iter().map(Self::type_expr_to_ts).collect();
                 TsExpression::Union(ts_members)
             }
             IrTypeExpr::Any => TsExpression::Primitive(TsPrimitive::Any),
