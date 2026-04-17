@@ -8,10 +8,10 @@ use openapi_nexus_spec::OpenApiV31Spec;
 
 /// Trait for code generators.
 ///
-/// This is the minimal contract that all generators must fulfill.
-/// Generators that want a 5-phase decomposition (apis, models, runtime, readme,
-/// project files) can implement [`LegacyPipelineCallbacks`](crate::data::LegacyPipelineCallbacks)
-/// and delegate to [`run_legacy_pipeline`](crate::data::run_legacy_pipeline).
+/// Minimal contract: every generator lowers the parsed spec (via
+/// [`openapi_nexus_ir::lower`](https://docs.rs/openapi-nexus-ir) or equivalent)
+/// and returns a list of files. How a generator decomposes its pipeline
+/// internally is up to the implementation.
 pub trait CodeGenerator {
     /// Returns the target language.
     fn language(&self) -> Language;

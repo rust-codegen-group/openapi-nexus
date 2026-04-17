@@ -24,6 +24,7 @@ tracing.workspace = true
 openapi-nexus-common.workspace = true
 openapi-nexus-config.workspace = true
 openapi-nexus-core.workspace = true
+openapi-nexus-ir.workspace = true
 openapi-nexus-spec.workspace = true
 
 [build-dependencies]
