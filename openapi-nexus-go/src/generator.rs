@@ -19,15 +19,14 @@ use crate::templating::data::{
 use crate::templating::{TemplateName, Templates};
 use crate::type_mapping;
 use openapi_nexus_common::{GeneratorType, Language};
-use openapi_nexus_core::data::LegacyPipelineCallbacks;
 use openapi_nexus_core::data::{
-    ApiMethodData, HeaderData, ModelData, OperationInfo, ParameterInfo, ReadmeData, RuntimeData,
-    collect_operations_by_tag,
+    ApiMethodData, HeaderData, ModelData, OperationInfo, ParameterInfo, collect_operations_by_tag,
 };
 use openapi_nexus_core::traits::OpenApiRefExt as _;
 use openapi_nexus_core::traits::ToRcDoc;
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
+use openapi_nexus_ir::types::IrSpec;
 use openapi_nexus_spec::OpenApiV31Spec;
 use openapi_nexus_spec::oas31::spec::{Components, ObjectOrReference};
 
@@ -600,12 +599,60 @@ impl CodeGenerator for GoHttpCodeGenerator {
         &self,
         openapi: &OpenApiV31Spec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        openapi_nexus_core::data::run_legacy_pipeline(openapi, self)
+        let ir = openapi_nexus_ir::lower::v31::lower_v31(openapi)?;
+        tracing::info!(
+            "Go generator using IR pipeline ({} schemas, {} operations)",
+            ir.schemas.len(),
+            ir.operations.len()
+        );
+        self.generate_from_ir(openapi, &ir)
     }
 }
 
-impl LegacyPipelineCallbacks for GoHttpCodeGenerator {
-    fn generate_apis(
+impl GoHttpCodeGenerator {
+    /// Top-level IR pipeline entry: produce all files for the Go HTTP generator.
+    ///
+    /// The IR drives spec-level orchestration (info/servers/schema+operation counts),
+    /// but the per-schema Go type mapping still consumes raw `OpenApiV31Spec` /
+    /// `Components` because `type_mapping::schema_to_go_expression` has not yet been
+    /// ported to `IrTypeExpr`. That port is Phase 4 work.
+    fn generate_from_ir(
+        &self,
+        openapi: &OpenApiV31Spec,
+        ir: &IrSpec,
+    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let mut files = Vec::new();
+
+        let apis: Vec<ApiMethodData> = collect_operations_by_tag(openapi)
+            .into_values()
+            .flatten()
+            .map(|op_info| op_info.to_api_method_data(openapi.components.as_ref()))
+            .collect();
+
+        let models: Vec<ModelData> = openapi
+            .components
+            .as_ref()
+            .map(|c| {
+                c.schemas
+                    .iter()
+                    .map(|(name, schema_ref)| ModelData {
+                        name: name.clone(),
+                        schema: schema_ref.clone(),
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        files.extend(self.generate_apis_phase(openapi, apis)?);
+        files.extend(self.generate_models_phase(openapi, models)?);
+        files.extend(self.generate_runtime_phase(openapi)?);
+        files.extend(self.generate_readme_phase(ir)?);
+        files.extend(self.generate_project_files_phase()?);
+
+        Ok(files)
+    }
+
+    fn generate_apis_phase(
         &self,
         openapi: &OpenApiV31Spec,
         apis: Vec<ApiMethodData>,
@@ -657,7 +704,7 @@ impl LegacyPipelineCallbacks for GoHttpCodeGenerator {
         Ok(files)
     }
 
-    fn generate_models(
+    fn generate_models_phase(
         &self,
         openapi: &OpenApiV31Spec,
         models: Vec<ModelData>,
@@ -695,10 +742,9 @@ impl LegacyPipelineCallbacks for GoHttpCodeGenerator {
         Ok(files)
     }
 
-    fn generate_runtime(
+    fn generate_runtime_phase(
         &self,
         openapi: &OpenApiV31Spec,
-        _: RuntimeData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let header_data = HeaderData::from_openapi(openapi);
         let common_header = CommonFileHeaderData::from(header_data);
@@ -768,9 +814,8 @@ impl LegacyPipelineCallbacks for GoHttpCodeGenerator {
         Ok(files)
     }
 
-    fn generate_project_files(
+    fn generate_project_files_phase(
         &self,
-        _openapi: &OpenApiV31Spec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let module_path = self.get_module_path();
 
@@ -785,18 +830,25 @@ impl LegacyPipelineCallbacks for GoHttpCodeGenerator {
         Ok(vec![file_info])
     }
 
-    fn generate_readme(
+    fn generate_readme_phase(
         &self,
-        _openapi: &OpenApiV31Spec,
-        data: ReadmeData,
+        ir: &IrSpec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let default_module = "example.com/sdk".to_string();
         let module_path = self.config.module_path.as_ref().unwrap_or(&default_module);
 
+        let package_name = ir.info.title.to_kebab_case();
+        let version = ir.info.version.clone();
+        let description = ir
+            .info
+            .description
+            .clone()
+            .unwrap_or_else(|| "Generated API client".to_string());
+
         let template_context = context! {
-            package_name => data.package_name,
-            description => data.description,
-            version => data.version,
+            package_name => package_name,
+            description => description,
+            version => version,
             module_path => module_path,
         };
 
