@@ -11,6 +11,7 @@ pub mod emission;
 pub mod errors;
 pub mod generator;
 pub mod sigil_emit;
+pub mod sigil_emit_api;
 pub mod templating;
 pub mod utils;
 
