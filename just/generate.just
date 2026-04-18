@@ -15,15 +15,3 @@
 # Check TypeScript compilation in output directory
 @check-ts OUTPUT_DIR:
     cd {{ OUTPUT_DIR }} && npx tsc --noEmit
-
-# Check TypeScript golden build
-@golden-ts:
-    ../scripts/check-golden-build-typescript-fetch.sh
-
-# Check Go golden build
-@golden-go:
-    ../scripts/check-golden-build-go-http.sh
-
-# Check all golden builds
-@golden-all:
-    ../scripts/check-golden-build-all.sh
