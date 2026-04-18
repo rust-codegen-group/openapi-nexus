@@ -11,7 +11,11 @@ use std::path::Path;
 use openapi_nexus_typescript::sigil_emit;
 
 fn read_fixture(rel: &str) -> String {
-    for base in ["tests/fixtures", "../tests/fixtures", "../../tests/fixtures"] {
+    for base in [
+        "tests/fixtures",
+        "../tests/fixtures",
+        "../../tests/fixtures",
+    ] {
         let p = Path::new(base).join(rel);
         if p.exists() {
             return fs::read_to_string(p).unwrap();

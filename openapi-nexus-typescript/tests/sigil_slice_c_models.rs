@@ -13,7 +13,11 @@ use openapi_nexus_typescript::sigil_emit;
 use similar::TextDiff;
 
 fn read_fixture(rel: &str) -> String {
-    for base in ["tests/fixtures", "../tests/fixtures", "../../tests/fixtures"] {
+    for base in [
+        "tests/fixtures",
+        "../tests/fixtures",
+        "../../tests/fixtures",
+    ] {
         let p = Path::new(base).join(rel);
         if p.exists() {
             return fs::read_to_string(p).unwrap();
@@ -43,10 +47,8 @@ fn multiple_similar_request_schemas_models_match_target() {
     let ir = openapi_nexus_ir::lower::lower(parsed).unwrap();
 
     let files = sigil_emit::generate_model_files(&ir).expect("slice C renders");
-    let generated: HashMap<String, String> = files
-        .into_iter()
-        .map(|f| (f.filename, f.content))
-        .collect();
+    let generated: HashMap<String, String> =
+        files.into_iter().map(|f| (f.filename, f.content)).collect();
 
     let spec_dir = golden_dir().join("multiple-similar-request-schemas/models");
 
@@ -93,7 +95,9 @@ fn multiple_similar_request_schemas_models_match_target() {
             let diff = TextDiff::from_lines(&want, got);
             eprintln!(
                 "{}",
-                diff.unified_diff().context_radius(3).header("golden", "generated")
+                diff.unified_diff()
+                    .context_radius(3)
+                    .header("golden", "generated")
             );
             panic!("sigil golden mismatch for {name}");
         }

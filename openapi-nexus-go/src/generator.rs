@@ -814,9 +814,7 @@ impl GoHttpCodeGenerator {
         Ok(files)
     }
 
-    fn generate_project_files_phase(
-        &self,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_project_files_phase(&self) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let module_path = self.get_module_path();
 
         let template_context = context! {
