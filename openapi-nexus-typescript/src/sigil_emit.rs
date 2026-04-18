@@ -9,7 +9,9 @@
 //! - `Object` — `export interface`
 //! - `Enum` — string-literal union alias (string/integer/number/mixed values)
 //! - `Alias` — `export type X = Y;`
-//! - Remaining kinds (`Union`, `Intersection`, `TaggedUnion`) land in Stage B/C.
+//! - `Union` — `export type X = A | B | C [| null];` (untagged oneOf/anyOf)
+//! - `Intersection` — `export type X = A & B & C;` (allOf)
+//! - Remaining kind (`TaggedUnion`) lands in Stage C.
 //!
 //! Not yet wired into [`crate::codegen::TypeScriptFetchCodeGenerator`]. This
 //! lives in the public surface so integration tests can exercise it directly.
@@ -24,8 +26,8 @@
 use heck::ToLowerCamelCase;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 use openapi_nexus_ir::types::{
-    IrEnum, IrEnumValueType, IrInfo, IrObject, IrPrimitive, IrProperty, IrSchema, IrSchemaKind,
-    IrSpec, IrTypeExpr,
+    IrEnum, IrEnumValueType, IrInfo, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
+    IrSchemaKind, IrSpec, IrTypeExpr, IrUnion,
 };
 use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
@@ -43,9 +45,9 @@ pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
         IrSchemaKind::Object(obj) => Some(emit_object_file(schema, obj)),
         IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en),
         IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr),
-        IrSchemaKind::Union(_)
-        | IrSchemaKind::Intersection(_)
-        | IrSchemaKind::TaggedUnion(_) => None,
+        IrSchemaKind::Union(u) => emit_union_file(schema, u),
+        IrSchemaKind::Intersection(i) => emit_intersection_file(schema, i),
+        IrSchemaKind::TaggedUnion(_) => None,
     }
 }
 
@@ -120,6 +122,66 @@ fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec<Type
     fb.build().ok()
 }
 
+/// Union file: `export type Name = A | B | C [| null];`
+///
+/// `nullable` appends a `null` member. Imports for each `IrTypeExpr::Named`
+/// member are tracked via `TypeName::Importable` inside `TypeName::union`.
+fn emit_union_file(schema: &IrSchema, union: &IrUnion) -> Option<FileSpec<TypeScript>> {
+    let name = schema.name.clone();
+    let mut members: Vec<TypeName<TypeScript>> =
+        union.members.iter().map(type_expr_to_typename).collect();
+    if union.nullable {
+        members.push(TypeName::primitive("null"));
+    }
+    let union_ty = TypeName::union(members);
+
+    let type_alias = sigil_quote!(TypeScript {
+        export type $N(name.as_str()) = $T(union_ty);
+    })
+    .ok()?;
+
+    let filename = format!("{}.ts", schema.name);
+    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    if let Some(doc) = &schema.description {
+        fb.add_raw(&format!("/** {doc} */\n"));
+    }
+    fb.add_code(type_alias);
+    fb.build().ok()
+}
+
+/// Intersection file: `export type Name = A & B & C;`
+///
+/// Empty `members` is degenerate — skip by returning `None` so the caller
+/// reports it as unsupported rather than emitting `export type Name = ;`.
+fn emit_intersection_file(
+    schema: &IrSchema,
+    intersection: &IrIntersection,
+) -> Option<FileSpec<TypeScript>> {
+    if intersection.members.is_empty() {
+        return None;
+    }
+    let name = schema.name.clone();
+    let members: Vec<TypeName<TypeScript>> = intersection
+        .members
+        .iter()
+        .map(type_expr_to_typename)
+        .collect();
+    let inter_ty = TypeName::intersection(members);
+
+    let type_alias = sigil_quote!(TypeScript {
+        export type $N(name.as_str()) = $T(inter_ty);
+    })
+    .ok()?;
+
+    let filename = format!("{}.ts", schema.name);
+    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    if let Some(doc) = &schema.description {
+        fb.add_raw(&format!("/** {doc} */\n"));
+    }
+    fb.add_code(type_alias);
+    fb.build().ok()
+}
+
 /// Build the pipe-joined literal body for an enum: `'a' | 1 | true | null`.
 /// Returns `None` if any value can't be represented as a TS literal.
 fn enum_union_body(en: &IrEnum) -> Option<String> {
@@ -179,9 +241,17 @@ fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName<TypeScript> {
         IrTypeExpr::Primitive(p) => TypeName::primitive(primitive_to_ts(p)),
         IrTypeExpr::Array(inner) => TypeName::readonly_array(type_expr_to_typename(inner)),
         IrTypeExpr::Nullable(inner) => TypeName::optional(type_expr_to_typename(inner)),
-        // Out of current stage scope: fall back to `unknown`. Inline unions /
-        // string enums / maps / any get real handling in Stage B and later.
-        _ => TypeName::primitive("unknown"),
+        IrTypeExpr::StringLiteral(s) => TypeName::raw(&format!("'{s}'")),
+        IrTypeExpr::StringEnum(values) => {
+            TypeName::union(values.iter().map(|v| TypeName::raw(&format!("'{v}'"))).collect())
+        }
+        IrTypeExpr::Map(inner) => {
+            TypeName::map(TypeName::primitive("string"), type_expr_to_typename(inner))
+        }
+        IrTypeExpr::Union(members) => {
+            TypeName::union(members.iter().map(type_expr_to_typename).collect())
+        }
+        IrTypeExpr::Any => TypeName::primitive("unknown"),
     }
 }
 
