@@ -183,10 +183,7 @@ fn build_api_interface_block(
         let method_base = op.operation_id.to_lower_camel_case();
         let raw_name = format!("{}Raw", method_base);
 
-        cb.add(
-            &format!("  {}: ", raw_name),
-            vec![],
-        );
+        cb.add(&format!("  {}: ", raw_name), vec![]);
         emit_arrow_signature(&mut cb, op, raw_return_type(op));
         cb.add(";\n", vec![]);
 
@@ -388,12 +385,12 @@ fn emit_query_params(
     }
 }
 
-fn emit_headers(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
-    op: &IrOperation,
-) {
+fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>, op: &IrOperation) {
     cb.add("// Build headers\n", vec![]);
-    cb.add("const headerParameters: Record<string, string> = {\n", vec![]);
+    cb.add(
+        "const headerParameters: Record<string, string> = {\n",
+        vec![],
+    );
     if op.request_body.is_some() {
         cb.add("  'Content-Type': 'application/json',\n", vec![]);
     }
@@ -479,10 +476,7 @@ fn emit_response_handler(
     } else {
         for (i, (_, resp)) in conditional.iter().enumerate() {
             let keyword = if i == 0 { "if" } else { "else if" };
-            let status_code: u16 = resp
-                .status
-                .parse()
-                .unwrap_or(0);
+            let status_code: u16 = resp.status.parse().unwrap_or(0);
             cb.add(
                 &format!("{} (response.status === {}) {{\n  ", keyword, status_code),
                 vec![],
@@ -529,7 +523,10 @@ fn emit_response_return(
     };
 
     cb.add(
-        &format!("return new %T(response) as %T & {{ status: {} }};\n", status_ty),
+        &format!(
+            "return new %T(response) as %T & {{ status: {} }};\n",
+            status_ty
+        ),
         vec![Arg::TypeName(wrapper_value), Arg::TypeName(wrapper_type)],
     );
 }
@@ -604,12 +601,9 @@ fn method_param_specs(op: &IrOperation) -> Vec<ParameterSpec<TypeScript>> {
             op.operation_id.to_lower_camel_case().to_pascal_case()
         );
         out.push(
-            ParameterSpec::<TypeScript>::builder(
-                "requestParameters",
-                TypeName::raw(&iface_name),
-            )
-            .build()
-            .expect("ParameterSpec builds"),
+            ParameterSpec::<TypeScript>::builder("requestParameters", TypeName::raw(&iface_name))
+                .build()
+                .expect("ParameterSpec builds"),
         );
     }
     out.push(init_overrides_param());
@@ -702,7 +696,10 @@ fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName<TypeS
 
 fn fallback_member(any_body: bool) -> TypeName<TypeScript> {
     let wrapper = if any_body {
-        TypeName::generic(rt_value("JSONApiResponse"), vec![TypeName::primitive("any")])
+        TypeName::generic(
+            rt_value("JSONApiResponse"),
+            vec![TypeName::primitive("any")],
+        )
     } else {
         rt_value("VoidApiResponse")
     };

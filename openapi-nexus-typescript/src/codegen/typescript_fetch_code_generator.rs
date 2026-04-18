@@ -209,7 +209,8 @@ impl TypeScriptFetchCodeGenerator {
                 let tag = f.filename.trim_end_matches("Api.ts").to_string();
                 api_classes_map.insert(tag, f.clone());
             }
-            files.push(self.generate_apis_index_file_from_ir(common_file_header, &api_classes_map)?);
+            files
+                .push(self.generate_apis_index_file_from_ir(common_file_header, &api_classes_map)?);
         }
 
         Ok(files)
