@@ -6,33 +6,6 @@ use snafu::Snafu;
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum GeneratorError {
-    /// Template rendering error
-    #[snafu(display("Failed to render template '{}': {}", template_path, source))]
-    TemplateRender {
-        template_path: String,
-        source: minijinja::Error,
-    },
-
-    /// Template not found error
-    #[snafu(display("Template '{}' not found: {}", template_path, source))]
-    TemplateNotFound {
-        template_path: String,
-        source: minijinja::Error,
-    },
-
-    /// Runtime template generation error
-    #[snafu(display("Failed to render runtime template: {}", source))]
-    RuntimeTemplate {
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
-    /// Index file generation error
-    #[snafu(display("Failed to render index file '{}': {}", file_path, source))]
-    IndexFileGeneration {
-        file_path: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
     /// File I/O error
     #[snafu(display("File I/O error: {}", source))]
     Io { source: std::io::Error },
@@ -44,14 +17,6 @@ pub enum GeneratorError {
     /// Generic error for cases that don't fit other categories
     #[snafu(display("Generator error: {}", message))]
     Generic { message: String },
-}
-
-impl From<minijinja::Error> for GeneratorError {
-    fn from(err: minijinja::Error) -> Self {
-        GeneratorError::Generic {
-            message: err.to_string(),
-        }
-    }
 }
 
 impl From<std::io::Error> for GeneratorError {

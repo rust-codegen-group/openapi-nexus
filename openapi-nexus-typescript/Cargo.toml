@@ -10,14 +10,10 @@ license.workspace = true
 publish = true
 
 [dependencies]
-chrono.workspace = true
 heck.workspace = true
-minijinja-embed.workspace = true
-minijinja.workspace = true
 serde.workspace = true
 sigil-stitch.workspace = true
 serde_json.workspace = true
-serde_plain.workspace = true
 snafu.workspace = true
 toml.workspace = true
 tracing.workspace = true
@@ -26,9 +22,6 @@ openapi-nexus-common.workspace = true
 openapi-nexus-core.workspace = true
 openapi-nexus-ir.workspace = true
 openapi-nexus-spec.workspace = true
-
-[build-dependencies]
-minijinja-embed.workspace = true
 
 [dev-dependencies]
 serde_norway.workspace = true
