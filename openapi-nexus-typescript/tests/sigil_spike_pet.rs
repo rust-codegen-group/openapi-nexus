@@ -51,14 +51,12 @@ fn pet_model_renders_expected_shape() {
         "readonly id?: number | null",
         // required primitive (no ? no | null)
         "readonly name: string",
-        // required array of primitives
-        "readonly photoUrls",
-        "string[]",
+        // required array of primitives, with element-level readonly
+        "readonly photoUrls: readonly string[]",
         // nullable optional ref (enum)
         "readonly status?: PetStatus | null",
-        // nullable optional array of refs
-        "readonly tags?",
-        "Tag[]",
+        // nullable optional array of refs, with element-level readonly
+        "readonly tags?: readonly Tag[] | null",
     ];
     for frag in required_fragments {
         assert!(
