@@ -2,7 +2,6 @@
 
 use minijinja::Environment;
 
-use super::filters::fmt_filter;
 use super::functions::file_header;
 
 /// Create a new template environment with all filters and functions
@@ -14,9 +13,6 @@ pub fn create_template_environment() -> Environment<'static> {
 
     // Load all embedded templates
     minijinja_embed::load_templates!(&mut env);
-
-    // Format filters
-    env.add_filter("fmt", fmt_filter);
 
     // Add custom functions
     env.add_function("file_header", file_header);
