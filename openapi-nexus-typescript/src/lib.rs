@@ -6,9 +6,9 @@
 pub mod codegen;
 pub mod config;
 pub mod errors;
+pub mod project_files;
 pub mod sigil_emit;
 pub mod sigil_emit_api;
-pub mod templating;
 
 // Re-export main types for convenience
 pub use codegen::TypeScriptFetchCodeGenerator;

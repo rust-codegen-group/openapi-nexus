@@ -1,6 +1,4 @@
-{% include "common/file_header.j2" with context %}
-
-export const BASE_PATH = "{{ runtime_runtime.base_path }}".replace(/\/+$/, "");
+export const BASE_PATH = "{{BASE_PATH}}".replace(/\/+$/, "");
 
 export interface ConfigurationParameters {
     basePath?: string; // override base path

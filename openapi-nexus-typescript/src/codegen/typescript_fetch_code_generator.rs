@@ -6,12 +6,9 @@ use std::error::Error;
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 
 use crate::config::TypeScriptFetchConfig;
-use crate::errors::GeneratorError;
-use crate::templating::data::{CommonFileHeaderData, ProjectIndexData, RuntimeRuntimeData};
-use crate::templating::{TemplateName, Templates};
+use crate::project_files::{render_index_file, render_readme_file, render_runtime_file};
 use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::NamingConvention;
-use openapi_nexus_core::data::{ReadmeData, RuntimeData};
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
 use openapi_nexus_spec::OpenApiV31Spec;
@@ -20,7 +17,6 @@ use openapi_nexus_spec::OpenApiV31Spec;
 #[derive(Debug, Clone)]
 pub struct TypeScriptFetchCodeGenerator {
     config: TypeScriptFetchConfig,
-    templating: Templates,
 }
 
 impl TypeScriptFetchCodeGenerator {
@@ -29,14 +25,10 @@ impl TypeScriptFetchCodeGenerator {
     /// # Arguments
     /// * `config` - TOML config table
     pub fn new(config: toml::value::Table) -> Self {
-        let parsed_config = TypeScriptFetchConfig::from(config);
         Self {
-            config: parsed_config,
-            templating: Templates::new(GeneratorType::TypeScriptFetch),
+            config: TypeScriptFetchConfig::from(config),
         }
     }
-
-    // Helper methods
 
     /// Generate filename based on naming convention
     fn generate_filename(&self, name: &str) -> String {
@@ -50,16 +42,10 @@ impl TypeScriptFetchCodeGenerator {
         format!("{}.ts", base_name)
     }
 
-    // =========================================================================
-    // IR-based generation
-    // =========================================================================
-
     /// Generate all model files from a version-agnostic IR spec.
     ///
-    /// Model bodies come from `sigil_emit` (sigil-stitch), not minijinja.
-    /// The `models/index.ts` aggregator still uses the minijinja template
-    /// so it stays in sync with `apis/index.ts` / top-level `index.ts` until
-    /// those migrate too.
+    /// Model bodies come from `sigil_emit` (sigil-stitch). The `models/index.ts`
+    /// aggregator is assembled here from the IR schema names.
     pub fn generate_models_from_ir(
         &self,
         ir: &openapi_nexus_ir::types::IrSpec,
@@ -69,135 +55,54 @@ impl TypeScriptFetchCodeGenerator {
         })?;
 
         if !ir.schemas.is_empty() {
-            let common_file_header = CommonFileHeaderData::new(
-                ir.info.title.clone(),
-                ir.info.description.clone(),
-                ir.info.version.clone(),
-            );
-            files.push(self.generate_models_index_file(&common_file_header, ir)?);
+            let mut names: Vec<String> = ir.schemas.keys().cloned().collect();
+            names.sort();
+            let exports: Vec<String> = names
+                .iter()
+                .map(|name| {
+                    let filename = self.generate_filename(name);
+                    format!("export * from './{}';", filename.trim_end_matches(".ts"))
+                })
+                .collect();
+            files.push(render_index_file(&ir.info, "models/index.ts", &exports));
         }
 
         Ok(files)
     }
 
-    /// Generate `models/index.ts` from IR schema names.
-    fn generate_models_index_file(
-        &self,
-        common_file_header: &CommonFileHeaderData,
-        ir: &openapi_nexus_ir::types::IrSpec,
-    ) -> Result<FileInfo, GeneratorError> {
-        let mut type_names: Vec<String> = ir.schemas.keys().cloned().collect();
-        type_names.sort();
-
-        let exports: Vec<String> = type_names
-            .iter()
-            .map(|name| {
-                let filename = self.generate_filename(name);
-                let import_name = filename.trim_end_matches(".ts");
-                format!("export * from './{}';", import_name)
-            })
-            .collect();
-
-        let project_index = ProjectIndexData { exports };
-        let template_context = minijinja::context! {
-            common_file_header,
-            project_index,
-        };
-
-        self.templating
-            .render_template(
-                TemplateName::ProjectIndex,
-                "models/index.ts",
-                template_context,
-            )
-            .map_err(|e| GeneratorError::IndexFileGeneration {
-                file_path: "models/index.ts".to_string(),
-                source: Box::new(e),
-            })
-    }
-
     /// Generate ALL files from the IR spec.
-    ///
-    /// This is the main entry point for the IR pipeline. It produces:
-    /// - Model files from `IrSpec.schemas` (via `IrSchemaGenerator`)
-    /// - API files from `IrSpec.operations` (via `ApiOperationGenerator`)
-    /// - Runtime, project, readme files from `IrSpec.info`/`IrSpec.servers`
     pub fn generate_from_ir(
         &self,
         ir: &openapi_nexus_ir::types::IrSpec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let mut files = Vec::new();
 
-        let common_file_header = CommonFileHeaderData::new(
-            ir.info.title.clone(),
-            ir.info.description.clone(),
-            ir.info.version.clone(),
-        );
-
-        // --- APIs (IR path) ---
-        files.extend(self.generate_apis_from_ir(ir, &common_file_header)?);
-
-        // --- Models (IR path) ---
+        files.extend(self.generate_apis_from_ir(ir)?);
         files.extend(self.generate_models_from_ir(ir)?);
 
-        // --- Runtime (IR path) ---
         let base_path = ir
             .servers
             .first()
             .map(|s| s.url.clone())
             .unwrap_or_else(|| "http://localhost".to_string());
-        let runtime_data = RuntimeData { base_path };
-        let runtime_runtime = RuntimeRuntimeData::from(runtime_data);
-        let template_context = minijinja::context! {
-            common_file_header,
-            runtime_runtime,
-        };
-        let runtime_file = self
-            .templating
-            .render_template(TemplateName::Runtime, "runtime.ts", template_context)
-            .map_err(|e| GeneratorError::RuntimeTemplate {
-                source: Box::new(e),
-            })?;
-        files.push(runtime_file);
+        files.push(render_runtime_file(&ir.info, &base_path));
 
-        // --- Readme (IR path) ---
-        let readme_data = ReadmeData {
-            package_name: ir.info.title.to_kebab_case(),
-            title: ir.info.title.clone(),
-            version: ir.info.version.clone(),
-            description: ir
-                .info
-                .description
-                .clone()
-                .unwrap_or_else(|| "Generated API client".to_string()),
-            example_api_class: "DefaultApi".to_string(),
-            generated_date: chrono::Utc::now().format("%Y-%m-%d").to_string(),
-        };
-        let readme_file = self.templating.render_template(
-            TemplateName::Readme,
-            "README.md",
-            minijinja::Value::from_serialize(readme_data),
-        )?;
-        files.push(readme_file);
+        files.push(render_readme_file(ir));
 
-        // --- Project files (IR path) ---
         let has_apis = !ir.operations.is_empty();
         let has_models = ir.schemas.values().any(|s| s.is_component);
-        files.extend(self.generate_project_files_from_ir(ir, has_apis, has_models)?);
+        files.extend(self.generate_project_files_from_ir(ir, has_apis, has_models));
 
         Ok(files)
     }
 
     /// Generate API files from IR operations via the sigil-stitch path.
     ///
-    /// `sigil_emit_api::generate_api_files` produces one `{Tag}Api.ts` per tag
-    /// (grouping + naming handled inside sigil). This wrapper adds the
-    /// `apis/index.ts` aggregator, still rendered via minijinja so it stays in
-    /// sync with `models/index.ts` until that path migrates too.
+    /// `sigil_emit_api::generate_api_files` produces one `{Tag}Api.ts` per tag.
+    /// This wrapper adds the `apis/index.ts` aggregator.
     fn generate_apis_from_ir(
         &self,
         ir: &openapi_nexus_ir::types::IrSpec,
-        common_file_header: &CommonFileHeaderData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let mut files = crate::sigil_emit_api::generate_api_files(ir).map_err(|msg| {
             Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api generation: {msg}"))
@@ -209,44 +114,21 @@ impl TypeScriptFetchCodeGenerator {
                 let tag = f.filename.trim_end_matches("Api.ts").to_string();
                 api_classes_map.insert(tag, f.clone());
             }
-            files
-                .push(self.generate_apis_index_file_from_ir(common_file_header, &api_classes_map)?);
+            let mut sorted: Vec<(&String, &FileInfo)> = api_classes_map.iter().collect();
+            sorted.sort_by(|a, b| a.0.cmp(b.0));
+            let exports: Vec<String> = sorted
+                .into_iter()
+                .map(|(_, file_info)| {
+                    format!(
+                        "export * from './{}';",
+                        file_info.filename.trim_end_matches(".ts")
+                    )
+                })
+                .collect();
+            files.push(render_index_file(&ir.info, "apis/index.ts", &exports));
         }
 
         Ok(files)
-    }
-
-    /// Generate apis/index.ts from IR (no raw spec dependency).
-    fn generate_apis_index_file_from_ir(
-        &self,
-        common_file_header: &CommonFileHeaderData,
-        api_classes: &HashMap<String, FileInfo>,
-    ) -> Result<FileInfo, GeneratorError> {
-        let mut exports = Vec::new();
-
-        let mut sorted_api_vec: Vec<(&String, &FileInfo)> = api_classes.iter().collect();
-        sorted_api_vec.sort_by(|a, b| a.0.cmp(b.0));
-        for (_, file_info) in sorted_api_vec {
-            let import_name = file_info.filename.trim_end_matches(".ts");
-            exports.push(format!("export * from './{}';", import_name));
-        }
-
-        let project_index = ProjectIndexData { exports };
-        let template_context = minijinja::context! {
-            common_file_header,
-            project_index,
-        };
-
-        self.templating
-            .render_template(
-                TemplateName::ProjectIndex,
-                "apis/index.ts",
-                template_context,
-            )
-            .map_err(|e| GeneratorError::IndexFileGeneration {
-                file_path: "apis/index.ts".to_string(),
-                source: Box::new(e),
-            })
     }
 
     /// Generate project files (package.json, tsconfig, main index) from IR.
@@ -255,10 +137,9 @@ impl TypeScriptFetchCodeGenerator {
         ir: &openapi_nexus_ir::types::IrSpec,
         has_apis: bool,
         has_models: bool,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    ) -> Vec<FileInfo> {
         let mut files = Vec::new();
 
-        // Package files (package.json, tsconfig)
         if self.config.generate_package {
             files.push(self.generate_package_json_from_ir(ir));
             files.push(self.generate_tsconfig_from_config());
@@ -267,10 +148,9 @@ impl TypeScriptFetchCodeGenerator {
             }
         }
 
-        // Main index.ts
-        files.push(self.generate_main_index_from_ir(ir, has_apis, has_models)?);
+        files.push(self.generate_main_index_from_ir(ir, has_apis, has_models));
 
-        Ok(files)
+        files
     }
 
     /// Generate package.json from IR info.
@@ -387,34 +267,16 @@ impl TypeScriptFetchCodeGenerator {
         ir: &openapi_nexus_ir::types::IrSpec,
         has_apis: bool,
         has_models: bool,
-    ) -> Result<FileInfo, GeneratorError> {
+    ) -> FileInfo {
         let mut exports = vec!["export * from './runtime/runtime';".to_string()];
-
         if has_apis {
             exports.push("export * from './apis';".to_string());
         }
-
         if has_models {
             exports.push("export * from './models';".to_string());
         }
 
-        let common_file_header = CommonFileHeaderData::new(
-            ir.info.title.clone(),
-            ir.info.description.clone(),
-            ir.info.version.clone(),
-        );
-        let project_index = ProjectIndexData { exports };
-        let template_context = minijinja::context! {
-            common_file_header,
-            project_index,
-        };
-
-        self.templating
-            .render_template(TemplateName::ProjectIndex, "index.ts", template_context)
-            .map_err(|e| GeneratorError::IndexFileGeneration {
-                file_path: "index.ts".to_string(),
-                source: Box::new(e),
-            })
+        render_index_file(&ir.info, "index.ts", &exports)
     }
 }
 
