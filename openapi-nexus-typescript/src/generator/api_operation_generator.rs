@@ -13,9 +13,7 @@ use crate::ast::{
     TsPrimitive, TsProperty,
 };
 use crate::errors::GeneratorError;
-use crate::generator::{
-    api_interface_builder::ApiInterfaceBuilder, ir_schema_generator::IrSchemaGenerator,
-};
+use crate::generator::{api_interface_builder::ApiInterfaceBuilder, ir_type_expr::type_expr_to_ts};
 use crate::templating::data::{ApiClassData, ApiClassSignature, ApiImportStatement, ApiMethodData};
 use crate::templating::data::{
     ApiOperationData, CommonFileHeaderData, HttpParamData, MethodTemplateData, ResponseTemplateData,
@@ -485,7 +483,7 @@ impl ApiOperationGenerator {
         let make_ts_param = |info: &ParameterInfo, ir_types: &HashMap<String, IrTypeExpr>| {
             let type_expr = ir_types
                 .get(&info.original_name)
-                .map(IrSchemaGenerator::type_expr_to_ts)
+                .map(type_expr_to_ts)
                 .unwrap_or(TsExpression::Primitive(TsPrimitive::String));
 
             TsParameter {
@@ -654,7 +652,7 @@ impl ApiOperationGenerator {
 
         let response_expr = match Self::classify_ir_response_body(response) {
             IrResponseBodyKind::Json(Some(type_expr)) => {
-                let ts_type = IrSchemaGenerator::type_expr_to_ts(&type_expr);
+                let ts_type = type_expr_to_ts(&type_expr);
                 let type_str = ts_type.to_string_formatted();
                 format!(
                     "JSONApiResponse<{}> & {{ status: {} }}",
@@ -729,7 +727,7 @@ impl ApiOperationGenerator {
             |response: &IrResponseWithContent, body_types: &mut BTreeSet<TsExpression>| {
                 match Self::classify_ir_response_body(response) {
                     IrResponseBodyKind::Json(Some(type_expr)) => {
-                        body_types.insert(IrSchemaGenerator::type_expr_to_ts(&type_expr));
+                        body_types.insert(type_expr_to_ts(&type_expr));
                     }
                     IrResponseBodyKind::Json(None) => {
                         body_types.insert(TsExpression::Primitive(TsPrimitive::Any));
@@ -868,7 +866,7 @@ impl ApiOperationGenerator {
         let body_type = response
             .content
             .get("application/json")
-            .map(IrSchemaGenerator::type_expr_to_ts);
+            .map(type_expr_to_ts);
 
         ResponseTemplateData {
             status_code: response.status.raw().to_string(),

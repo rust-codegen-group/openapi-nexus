@@ -34,27 +34,6 @@ pub enum GeneratorError {
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
-    /// Model interface generation error
-    #[snafu(display("Failed to generate interface model '{}': {}", model_name, source))]
-    ModelInterfaceGeneration {
-        model_name: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
-    /// Model type alias generation error
-    #[snafu(display("Failed to generate type alias model '{}': {}", model_name, source))]
-    ModelTypeAliasGeneration {
-        model_name: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
-    /// Model enum generation error
-    #[snafu(display("Failed to generate enum model '{}': {}", model_name, source))]
-    ModelEnumGeneration {
-        model_name: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
     /// Runtime template generation error
     #[snafu(display("Failed to render runtime template: {}", source))]
     RuntimeTemplate {

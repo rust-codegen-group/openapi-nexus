@@ -25,17 +25,6 @@ pub enum TemplateName {
     #[serde(rename = "api/operation.j2")]
     ApiOperation,
 
-    // FileCategory::Models
-    /// Interface model template
-    #[serde(rename = "model/interface.j2")]
-    ModelInterface,
-    /// Type alias model template
-    #[serde(rename = "model/type_alias.j2")]
-    ModelTypeAlias,
-    /// Enum model template
-    #[serde(rename = "model/enum.j2")]
-    ModelEnum,
-
     // FileCategory::Runtime
     /// Runtime utilities template
     #[serde(rename = "runtime/runtime.j2")]
@@ -81,9 +70,6 @@ pub enum TemplateName {
     /// Partial: Make HTTP request snippet
     #[serde(rename = "api/snippets/make_request.j2")]
     ApiMakeRequest,
-    /// Model helper functions template (instanceOf/FromJSON/ToJSON/validation)
-    #[serde(rename = "model/snippets/interface_helpers.j2")]
-    ModelInferenceHelpers,
 }
 
 impl TemplateName {
@@ -114,11 +100,6 @@ impl TemplateName {
             // FileCategory::Apis
             Self::ApiOperation => FileCategory::Apis,
 
-            // FileCategory::Models
-            Self::ModelInterface => FileCategory::Models,
-            Self::ModelTypeAlias => FileCategory::Models,
-            Self::ModelEnum => FileCategory::Models,
-
             // FileCategory::Runtime
             Self::Runtime => FileCategory::Runtime,
 
@@ -137,8 +118,7 @@ impl TemplateName {
             | Self::ApiBuildQueryParams
             | Self::ApiBuildHeaders
             | Self::ApiBuildRequestBody
-            | Self::ApiMakeRequest
-            | Self::ModelInferenceHelpers => FileCategory::None,
+            | Self::ApiMakeRequest => FileCategory::None,
         }
     }
 }
@@ -150,10 +130,6 @@ pub const TEMPLATE_PATHS: &[TemplateName] = &[
     TemplateName::Readme,
     // FileCategory::Apis
     TemplateName::ApiOperation,
-    // FileCategory::Models
-    TemplateName::ModelEnum,
-    TemplateName::ModelInterface,
-    TemplateName::ModelTypeAlias,
     // FileCategory::Runtime
     TemplateName::Runtime,
     // FileCategory::ProjectFiles
@@ -170,7 +146,6 @@ pub const TEMPLATE_PATHS: &[TemplateName] = &[
     TemplateName::ApiMethodGet,
     TemplateName::ApiMethodPostPutPatch,
     TemplateName::CommonFileHeader,
-    TemplateName::ModelInferenceHelpers,
 ];
 
 /// Template-based TypeScript code emitter and template handler
