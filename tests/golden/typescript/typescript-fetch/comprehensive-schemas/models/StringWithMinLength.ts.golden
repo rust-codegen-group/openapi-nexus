@@ -13,25 +13,3 @@
 
 /** String with minimum length */
 export type StringWithMinLength = string
-
-export function StringWithMinLengthFromJSON(json: any): StringWithMinLength {
-  return StringWithMinLengthFromJSONTyped(json, false);
-}
-
-export function StringWithMinLengthFromJSONTyped(json: any, ignoreDiscriminator: boolean): StringWithMinLength {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function StringWithMinLengthToJSON(value?: StringWithMinLength | null): any {
-  return StringWithMinLengthToJSONTyped(value, false);
-}
-
-export function StringWithMinLengthToJSONTyped(value?: StringWithMinLength | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

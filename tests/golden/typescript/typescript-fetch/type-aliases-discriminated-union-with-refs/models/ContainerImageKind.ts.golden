@@ -15,25 +15,3 @@
 
 /** Kind type for ContainerImage discriminator union */
 export type ContainerImageKind = "CONTAINER_IMAGE_CUSTOM" | "CONTAINER_IMAGE_MANAGED"
-
-export function ContainerImageKindFromJSON(json: any): ContainerImageKind {
-  return ContainerImageKindFromJSONTyped(json, false);
-}
-
-export function ContainerImageKindFromJSONTyped(json: any, ignoreDiscriminator: boolean): ContainerImageKind {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function ContainerImageKindToJSON(value?: ContainerImageKind | null): any {
-  return ContainerImageKindToJSONTyped(value, false);
-}
-
-export function ContainerImageKindToJSONTyped(value?: ContainerImageKind | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

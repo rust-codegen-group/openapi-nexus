@@ -13,25 +13,3 @@
 
 /** Kind type for InternallyTaggedEnum discriminator union */
 export type InternallyTaggedEnumKind = "INTERNALLY_TAGGED_ENUM_VARIANT_A" | "INTERNALLY_TAGGED_ENUM_VARIANT_B"
-
-export function InternallyTaggedEnumKindFromJSON(json: any): InternallyTaggedEnumKind {
-  return InternallyTaggedEnumKindFromJSONTyped(json, false);
-}
-
-export function InternallyTaggedEnumKindFromJSONTyped(json: any, ignoreDiscriminator: boolean): InternallyTaggedEnumKind {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function InternallyTaggedEnumKindToJSON(value?: InternallyTaggedEnumKind | null): any {
-  return InternallyTaggedEnumKindToJSONTyped(value, false);
-}
-
-export function InternallyTaggedEnumKindToJSONTyped(value?: InternallyTaggedEnumKind | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

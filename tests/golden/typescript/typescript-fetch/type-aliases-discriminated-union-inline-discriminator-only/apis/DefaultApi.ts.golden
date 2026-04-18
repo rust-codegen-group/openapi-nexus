@@ -21,7 +21,7 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type Event, EventFromJSON } from '../models/Event';
+import type { Event } from '../models/Event';
 
 export interface ApiCreateEventRequest {
     body: Event;
@@ -93,7 +93,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => EventFromJSON(jsonValue)) as JSONApiResponse<Event> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<Event> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };

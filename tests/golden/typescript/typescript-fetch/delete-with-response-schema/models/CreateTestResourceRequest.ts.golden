@@ -13,25 +13,3 @@
 
 /** Request to create a new test resource (type alias - no properties) */
 export type CreateTestResourceRequest = any
-
-export function CreateTestResourceRequestFromJSON(json: any): CreateTestResourceRequest {
-  return CreateTestResourceRequestFromJSONTyped(json, false);
-}
-
-export function CreateTestResourceRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): CreateTestResourceRequest {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function CreateTestResourceRequestToJSON(value?: CreateTestResourceRequest | null): any {
-  return CreateTestResourceRequestToJSONTyped(value, false);
-}
-
-export function CreateTestResourceRequestToJSONTyped(value?: CreateTestResourceRequest | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

@@ -13,25 +13,3 @@
 
 /** A simple number type alias */
 export type Bar = number
-
-export function BarFromJSON(json: any): Bar {
-  return BarFromJSONTyped(json, false);
-}
-
-export function BarFromJSONTyped(json: any, ignoreDiscriminator: boolean): Bar {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function BarToJSON(value?: Bar | null): any {
-  return BarToJSONTyped(value, false);
-}
-
-export function BarToJSONTyped(value?: Bar | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

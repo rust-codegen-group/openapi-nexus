@@ -59,194 +59,18 @@ impl TypeScriptFetchCodeGenerator {
         format!("{}.ts", base_name)
     }
 
-    /// Create ModelTypeAliasData with imports and instanceOf function imports for union members
+    /// Build `ModelTypeAliasData` with the provided imports.
+    ///
+    /// Union/intersection members used to pull in `instanceOfX`,
+    /// `XFromJSONTyped`, `XToJSON`, etc., because templates emitted helper
+    /// functions that referenced them. Those helpers are gone; models ship
+    /// types only. Type-name imports come from the IR dependency pass upstream.
     fn create_model_type_alias_data(
         &self,
         type_alias: &TsTypeAliasDefinition,
         imports: ApiImportStatements,
-        schemas: &HashMap<String, TsTypeDefinition>,
-    ) -> Result<ModelTypeAliasData, GeneratorError> {
-        let mut model_type_alias =
-            ModelTypeAliasData::new(type_alias.clone()).with_imports(imports);
-
-        // Add imports for instanceOf and FromJSONTyped functions for union members that are interfaces
-        let union_members: Vec<_> = model_type_alias
-            .union_members()
-            .map(|members| members.to_vec())
-            .unwrap_or_default();
-
-        for member in &union_members {
-            // Skip Kind types - they're string unions, not interfaces, so instanceOf doesn't make sense
-            // This also avoids importing from Kind files which don't export instanceOf functions
-            if member.is_interface && !member.ts_name.ends_with("Kind") {
-                // Find the file for this member type
-                let member_type_def = schemas
-                    .values()
-                    .find(|type_def| type_def.ts_name() == member.ts_name);
-
-                if let Some(member_type_def) = member_type_def {
-                    let member_filename = self.generate_filename(member_type_def.ts_name());
-                    let import_path = format!("./{}", member_filename.trim_end_matches(".ts"));
-
-                    // Find or create the import statement for this file
-                    if let Some(existing_import) = model_type_alias.imports.get_mut(&import_path) {
-                        // Add type import for the interface
-                        existing_import.imports.insert(ApiImportSpecifier {
-                            name: member.ts_name.clone(),
-                            alias: None,
-                            is_type: true,
-                        });
-                        // Add instanceOf, FromJSONTyped, and ToJSON functions to existing import
-                        // ApiImportStatements automatically handles deduplication and sorting
-                        existing_import.imports.insert(ApiImportSpecifier {
-                            name: format!("instanceOf{}", member.ts_name),
-                            alias: None,
-                            is_type: false,
-                        });
-                        existing_import.imports.insert(ApiImportSpecifier {
-                            name: format!("{}FromJSONTyped", member.ts_name),
-                            alias: None,
-                            is_type: false,
-                        });
-                        existing_import.imports.insert(ApiImportSpecifier {
-                            name: format!("{}ToJSON", member.ts_name),
-                            alias: None,
-                            is_type: false,
-                        });
-                    } else {
-                        // Create new import for type, instanceOf, FromJSONTyped, and ToJSON functions
-                        let func_import = ApiImportStatement::new(import_path.clone())
-                            .with_type_import(member.ts_name.clone(), None)
-                            .with_import(format!("instanceOf{}", member.ts_name), None)
-                            .with_import(format!("{}FromJSONTyped", member.ts_name), None)
-                            .with_import(format!("{}ToJSON", member.ts_name), None);
-                        model_type_alias.imports.insert(import_path, func_import);
-                    }
-                }
-            }
-        }
-
-        // Add imports for FromJSONTyped and ToJSONTyped functions for intersection members
-        let intersection_members: Vec<_> = model_type_alias
-            .intersection_members()
-            .map(|members| members.to_vec())
-            .unwrap_or_default();
-
-        for member in &intersection_members {
-            if member.is_reference {
-                // Find the file for this reference member type
-                let member_type_def = schemas
-                    .values()
-                    .find(|type_def| type_def.ts_name() == member.ts_name);
-
-                if let Some(member_type_def) = member_type_def {
-                    let member_filename = self.generate_filename(member_type_def.ts_name());
-                    let import_path = format!("./{}", member_filename.trim_end_matches(".ts"));
-
-                    // Find or create the import statement for this file
-                    if let Some(existing_import) = model_type_alias.imports.get_mut(&import_path) {
-                        // Add type import for the reference
-                        existing_import.imports.insert(ApiImportSpecifier {
-                            name: member.ts_name.clone(),
-                            alias: None,
-                            is_type: true,
-                        });
-                        // Add FromJSONTyped and ToJSONTyped functions to existing import
-                        existing_import.imports.insert(ApiImportSpecifier {
-                            name: format!("{}FromJSONTyped", member.ts_name),
-                            alias: None,
-                            is_type: false,
-                        });
-                        existing_import.imports.insert(ApiImportSpecifier {
-                            name: format!("{}ToJSONTyped", member.ts_name),
-                            alias: None,
-                            is_type: false,
-                        });
-                    } else {
-                        // Create new import for type, FromJSONTyped, and ToJSONTyped functions
-                        let func_import = ApiImportStatement::new(import_path.clone())
-                            .with_type_import(member.ts_name.clone(), None)
-                            .with_import(format!("{}FromJSONTyped", member.ts_name), None)
-                            .with_import(format!("{}ToJSONTyped", member.ts_name), None);
-                        model_type_alias.imports.insert(import_path, func_import);
-                    }
-                }
-            } else if member.is_object {
-                // For object members, extract reference types from properties
-                if let Some(properties) = &member.object_properties {
-                    for prop in properties {
-                        // Add imports for nullable reference
-                        if let Some(ref_name) = &prop.nullable_reference_name {
-                            let member_type_def = schemas
-                                .values()
-                                .find(|type_def| type_def.ts_name() == ref_name);
-
-                            if let Some(member_type_def) = member_type_def {
-                                let member_filename =
-                                    self.generate_filename(member_type_def.ts_name());
-                                let import_path =
-                                    format!("./{}", member_filename.trim_end_matches(".ts"));
-
-                                if let Some(existing_import) =
-                                    model_type_alias.imports.get_mut(&import_path)
-                                {
-                                    existing_import.imports.insert(ApiImportSpecifier {
-                                        name: format!("{}FromJSON", ref_name),
-                                        alias: None,
-                                        is_type: false,
-                                    });
-                                    existing_import.imports.insert(ApiImportSpecifier {
-                                        name: format!("{}ToJSON", ref_name),
-                                        alias: None,
-                                        is_type: false,
-                                    });
-                                } else {
-                                    let func_import = ApiImportStatement::new(import_path.clone())
-                                        .with_import(format!("{}FromJSON", ref_name), None)
-                                        .with_import(format!("{}ToJSON", ref_name), None);
-                                    model_type_alias.imports.insert(import_path, func_import);
-                                }
-                            }
-                        }
-                        // Add imports for non-nullable reference
-                        if let Some(ref_name) = &prop.reference_name {
-                            let member_type_def = schemas
-                                .values()
-                                .find(|type_def| type_def.ts_name() == ref_name);
-
-                            if let Some(member_type_def) = member_type_def {
-                                let member_filename =
-                                    self.generate_filename(member_type_def.ts_name());
-                                let import_path =
-                                    format!("./{}", member_filename.trim_end_matches(".ts"));
-
-                                if let Some(existing_import) =
-                                    model_type_alias.imports.get_mut(&import_path)
-                                {
-                                    existing_import.imports.insert(ApiImportSpecifier {
-                                        name: format!("{}FromJSON", ref_name),
-                                        alias: None,
-                                        is_type: false,
-                                    });
-                                    existing_import.imports.insert(ApiImportSpecifier {
-                                        name: format!("{}ToJSON", ref_name),
-                                        alias: None,
-                                        is_type: false,
-                                    });
-                                } else {
-                                    let func_import = ApiImportStatement::new(import_path.clone())
-                                        .with_import(format!("{}FromJSON", ref_name), None)
-                                        .with_import(format!("{}ToJSON", ref_name), None);
-                                    model_type_alias.imports.insert(import_path, func_import);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(model_type_alias)
+    ) -> ModelTypeAliasData {
+        ModelTypeAliasData::new(type_alias.clone()).with_imports(imports)
     }
 
     // =========================================================================
@@ -282,9 +106,9 @@ impl TypeScriptFetchCodeGenerator {
             // Collect referenced types for this model
             let referenced_types = type_def.referenced_types();
 
-            // Build import statements for referenced types
+            // Build import statements for referenced types.
+            // Models ship types only — no FromJSON/ToJSON/instanceOf helpers.
             let mut imports = ApiImportStatements::new();
-            let is_intersection_type = type_def.is_intersection_type();
 
             for ref_type_name in &referenced_types {
                 if ref_type_name == name {
@@ -307,28 +131,6 @@ impl TypeScriptFetchCodeGenerator {
                         alias: None,
                         is_type: true,
                     });
-
-                    if !is_intersection_type {
-                        for func_name in &[
-                            format!("{}FromJSON", actual_type_name),
-                            format!("{}FromJSONTyped", actual_type_name),
-                            format!("{}ToJSON", actual_type_name),
-                        ] {
-                            import_stmt.imports.insert(ApiImportSpecifier {
-                                name: func_name.clone(),
-                                alias: None,
-                                is_type: false,
-                            });
-                        }
-
-                        if let TsTypeDefinition::Interface(_) = ref_type_def {
-                            import_stmt.imports.insert(ApiImportSpecifier {
-                                name: format!("instanceOf{}", actual_type_name),
-                                alias: None,
-                                is_type: false,
-                            });
-                        }
-                    }
                 }
             }
 
@@ -352,8 +154,7 @@ impl TypeScriptFetchCodeGenerator {
                         })?
                 }
                 TsTypeDefinition::TypeAlias(type_alias) => {
-                    let model_type_alias =
-                        self.create_model_type_alias_data(type_alias, imports, &schemas)?;
+                    let model_type_alias = self.create_model_type_alias_data(type_alias, imports);
                     let template_context = minijinja::context! {
                         common_file_header,
                         model_type_alias,

@@ -13,25 +13,3 @@
 
 /** Number with minimum value */
 export type NumberWithMinimum = number
-
-export function NumberWithMinimumFromJSON(json: any): NumberWithMinimum {
-  return NumberWithMinimumFromJSONTyped(json, false);
-}
-
-export function NumberWithMinimumFromJSONTyped(json: any, ignoreDiscriminator: boolean): NumberWithMinimum {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function NumberWithMinimumToJSON(value?: NumberWithMinimum | null): any {
-  return NumberWithMinimumToJSONTyped(value, false);
-}
-
-export function NumberWithMinimumToJSONTyped(value?: NumberWithMinimum | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

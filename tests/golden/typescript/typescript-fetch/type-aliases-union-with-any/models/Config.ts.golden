@@ -12,25 +12,3 @@
  */
 
 export type Config = string | number | any
-
-export function ConfigFromJSON(json: any): Config {
-  return ConfigFromJSONTyped(json, false);
-}
-
-export function ConfigFromJSONTyped(json: any, ignoreDiscriminator: boolean): Config {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function ConfigToJSON(value?: Config | null): any {
-  return ConfigToJSONTyped(value, false);
-}
-
-export function ConfigToJSONTyped(value?: Config | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

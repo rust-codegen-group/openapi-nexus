@@ -13,25 +13,3 @@
 
 /** Object without properties */
 export type EmptyObject = any
-
-export function EmptyObjectFromJSON(json: any): EmptyObject {
-  return EmptyObjectFromJSONTyped(json, false);
-}
-
-export function EmptyObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean): EmptyObject {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function EmptyObjectToJSON(value?: EmptyObject | null): any {
-  return EmptyObjectToJSONTyped(value, false);
-}
-
-export function EmptyObjectToJSONTyped(value?: EmptyObject | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

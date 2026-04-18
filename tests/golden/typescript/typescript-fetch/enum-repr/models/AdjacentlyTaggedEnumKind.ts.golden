@@ -13,25 +13,3 @@
 
 /** Kind type for AdjacentlyTaggedEnum discriminator union */
 export type AdjacentlyTaggedEnumKind = "ADJACENTLY_TAGGED_ENUM_VARIANT_A" | "ADJACENTLY_TAGGED_ENUM_VARIANT_B"
-
-export function AdjacentlyTaggedEnumKindFromJSON(json: any): AdjacentlyTaggedEnumKind {
-  return AdjacentlyTaggedEnumKindFromJSONTyped(json, false);
-}
-
-export function AdjacentlyTaggedEnumKindFromJSONTyped(json: any, ignoreDiscriminator: boolean): AdjacentlyTaggedEnumKind {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function AdjacentlyTaggedEnumKindToJSON(value?: AdjacentlyTaggedEnumKind | null): any {
-  return AdjacentlyTaggedEnumKindToJSONTyped(value, false);
-}
-
-export function AdjacentlyTaggedEnumKindToJSONTyped(value?: AdjacentlyTaggedEnumKind | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

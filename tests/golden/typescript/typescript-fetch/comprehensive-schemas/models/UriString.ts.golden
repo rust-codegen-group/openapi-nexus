@@ -13,25 +13,3 @@
 
 /** String with URI format */
 export type UriString = string
-
-export function UriStringFromJSON(json: any): UriString {
-  return UriStringFromJSONTyped(json, false);
-}
-
-export function UriStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): UriString {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function UriStringToJSON(value?: UriString | null): any {
-  return UriStringToJSONTyped(value, false);
-}
-
-export function UriStringToJSONTyped(value?: UriString | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

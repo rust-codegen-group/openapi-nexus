@@ -13,25 +13,3 @@
 
 /** 64-bit integer */
 export type Integer64 = number
-
-export function Integer64FromJSON(json: any): Integer64 {
-  return Integer64FromJSONTyped(json, false);
-}
-
-export function Integer64FromJSONTyped(json: any, ignoreDiscriminator: boolean): Integer64 {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function Integer64ToJSON(value?: Integer64 | null): any {
-  return Integer64ToJSONTyped(value, false);
-}
-
-export function Integer64ToJSONTyped(value?: Integer64 | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

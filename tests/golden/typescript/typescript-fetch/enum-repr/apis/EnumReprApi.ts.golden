@@ -11,11 +11,11 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type AdjacentlyTaggedEnum, AdjacentlyTaggedEnumFromJSON, AdjacentlyTaggedEnumToJSON } from '../models/AdjacentlyTaggedEnum';
-import { type ExternallyTaggedEnum, ExternallyTaggedEnumFromJSON, ExternallyTaggedEnumToJSON } from '../models/ExternallyTaggedEnum';
-import { type InternallyTaggedEnum, InternallyTaggedEnumFromJSON, InternallyTaggedEnumToJSON } from '../models/InternallyTaggedEnum';
-import { type MixedEnum, MixedEnumFromJSON } from '../models/MixedEnum';
-import { type UntaggedEnum, UntaggedEnumFromJSON } from '../models/UntaggedEnum';
+import type { AdjacentlyTaggedEnum } from '../models/AdjacentlyTaggedEnum';
+import type { ExternallyTaggedEnum } from '../models/ExternallyTaggedEnum';
+import type { InternallyTaggedEnum } from '../models/InternallyTaggedEnum';
+import type { MixedEnum } from '../models/MixedEnum';
+import type { UntaggedEnum } from '../models/UntaggedEnum';
 
 export interface ApiHandleAdjacentlyTaggedRequest {
     body: AdjacentlyTaggedEnum;
@@ -155,7 +155,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = AdjacentlyTaggedEnumToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -167,7 +167,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => AdjacentlyTaggedEnumFromJSON(jsonValue)) as JSONApiResponse<AdjacentlyTaggedEnum> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<AdjacentlyTaggedEnum> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -216,7 +216,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = ExternallyTaggedEnumToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -228,7 +228,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => ExternallyTaggedEnumFromJSON(jsonValue)) as JSONApiResponse<ExternallyTaggedEnum> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<ExternallyTaggedEnum> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -277,7 +277,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = InternallyTaggedEnumToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -289,7 +289,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => InternallyTaggedEnumFromJSON(jsonValue)) as JSONApiResponse<InternallyTaggedEnum> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<InternallyTaggedEnum> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -350,7 +350,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => MixedEnumFromJSON(jsonValue)) as JSONApiResponse<MixedEnum> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<MixedEnum> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -411,7 +411,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => UntaggedEnumFromJSON(jsonValue)) as JSONApiResponse<UntaggedEnum> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<UntaggedEnum> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };

@@ -678,27 +678,16 @@ impl ApiOperationGenerator {
         TsExpression::Reference(response_expr)
     }
 
-    /// Compute a schema transformer string for an IR response type
-    fn ir_compute_schema_transformer(type_expr: &IrTypeExpr) -> Option<String> {
-        match type_expr {
-            IrTypeExpr::Named(name) => {
-                let pascal_name = name.to_pascal_case();
-                Some(format!("(jsonValue) => {}FromJSON(jsonValue)", pascal_name))
-            }
-            IrTypeExpr::Array(inner) => {
-                if let IrTypeExpr::Named(name) = inner.as_ref() {
-                    let pascal_name = name.to_pascal_case();
-                    Some(format!(
-                        "(jsonValue) => (jsonValue as Array<any>).map({}FromJSON)",
-                        pascal_name
-                    ))
-                } else {
-                    None
-                }
-            }
-            IrTypeExpr::Nullable(inner) => Self::ir_compute_schema_transformer(inner),
-            _ => None,
-        }
+    /// Compute a schema transformer string for an IR response type.
+    ///
+    /// Previously returned `(jsonValue) => TypeFromJSON(jsonValue)` to wrap the
+    /// JSON response through per-type converters. Those converters no longer
+    /// exist — generated models ship types only, and response bodies cast via
+    /// `as Type` at the callsite. Kept as `fn` rather than deleted because it's
+    /// called from `classify_ir_response_body` / `ir_response_expression`;
+    /// callers receive `None` and fall through to the no-transformer branch.
+    fn ir_compute_schema_transformer(_type_expr: &IrTypeExpr) -> Option<String> {
+        None
     }
 
     /// Generate raw return type from IR responses
@@ -931,69 +920,47 @@ impl ApiOperationGenerator {
         )
     }
 
-    /// Collect model dependencies from a single IR operation
+    /// Collect model dependencies from a single IR operation.
+    ///
+    /// Tracks type names for import. Generated models ship types only —
+    /// response bodies are cast via `as Type` at the callsite and request
+    /// bodies pass through unchanged.
     fn collect_ir_operation_dependencies(
         ir_op: &IrOperation,
-        schemas: &IndexMap<String, IrSchema>,
+        _schemas: &IndexMap<String, IrSchema>,
         deps: &mut IrModelDependencies,
     ) {
-        // Collect from responses
         for ir_response in &ir_op.responses {
             for type_expr in ir_response.content.values() {
-                Self::collect_ir_type_refs(type_expr, deps, true);
+                Self::collect_ir_type_refs(type_expr, deps);
             }
         }
 
-        // Collect from parameters
         for ir_param in &ir_op.parameters {
-            Self::collect_ir_type_refs(&ir_param.type_expr, deps, false);
+            Self::collect_ir_type_refs(&ir_param.type_expr, deps);
         }
 
-        // Collect from request body
         if let Some(rb) = &ir_op.request_body {
             for type_expr in rb.content.values() {
-                let names = Self::collect_ir_named_refs(type_expr);
-                for name in &names {
-                    let pascal_name = name.to_pascal_case();
-                    deps.type_names.insert(pascal_name.clone());
-                    // Request body models need ToJSON if they're interfaces
-                    if let Some(schema) = schemas.get(name.as_str())
-                        && Self::ir_schema_is_interface(schema)
-                    {
-                        deps.function_names.insert(format!("{}ToJSON", pascal_name));
-                    }
-                }
+                Self::collect_ir_type_refs(type_expr, deps);
             }
         }
     }
 
-    /// Collect type references from an IrTypeExpr, adding FromJSON for response types
-    fn collect_ir_type_refs(
-        type_expr: &IrTypeExpr,
-        deps: &mut IrModelDependencies,
-        add_from_json: bool,
-    ) {
+    /// Collect type-name references from an IrTypeExpr.
+    fn collect_ir_type_refs(type_expr: &IrTypeExpr, deps: &mut IrModelDependencies) {
         match type_expr {
             IrTypeExpr::Named(name) => {
-                let pascal_name = name.to_pascal_case();
-                deps.type_names.insert(pascal_name.clone());
-                if add_from_json {
-                    deps.function_names
-                        .insert(format!("{}FromJSON", pascal_name));
-                }
+                deps.type_names.insert(name.to_pascal_case());
             }
-            IrTypeExpr::Array(inner) => {
-                Self::collect_ir_type_refs(inner, deps, add_from_json);
-            }
-            IrTypeExpr::Nullable(inner) => {
-                Self::collect_ir_type_refs(inner, deps, add_from_json);
-            }
-            IrTypeExpr::Map(inner) => {
-                Self::collect_ir_type_refs(inner, deps, add_from_json);
+            IrTypeExpr::Array(inner)
+            | IrTypeExpr::Nullable(inner)
+            | IrTypeExpr::Map(inner) => {
+                Self::collect_ir_type_refs(inner, deps);
             }
             IrTypeExpr::Union(members) => {
                 for member in members {
-                    Self::collect_ir_type_refs(member, deps, add_from_json);
+                    Self::collect_ir_type_refs(member, deps);
                 }
             }
             IrTypeExpr::Primitive(_)
@@ -1001,89 +968,17 @@ impl ApiOperationGenerator {
             | IrTypeExpr::StringEnum(_)
             | IrTypeExpr::Any => {}
         }
-    }
-
-    /// Collect all Named references from an IrTypeExpr
-    fn collect_ir_named_refs(type_expr: &IrTypeExpr) -> Vec<String> {
-        let mut refs = Vec::new();
-        match type_expr {
-            IrTypeExpr::Named(name) => refs.push(name.clone()),
-            IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
-                refs.extend(Self::collect_ir_named_refs(inner));
-            }
-            IrTypeExpr::Union(members) => {
-                for member in members {
-                    refs.extend(Self::collect_ir_named_refs(member));
-                }
-            }
-            IrTypeExpr::Primitive(_)
-            | IrTypeExpr::StringLiteral(_)
-            | IrTypeExpr::StringEnum(_)
-            | IrTypeExpr::Any => {}
-        }
-        refs
     }
 
     /// Build import statements from IR model dependencies
     fn build_ir_model_imports(deps: &IrModelDependencies) -> Vec<ApiImportStatement> {
-        let mut models_by_file: BTreeMap<String, (Vec<String>, Vec<String>)> = BTreeMap::new();
-
-        for pascal_name in &deps.type_names {
-            let filename = format!("../models/{}", pascal_name);
-            let entry = models_by_file
-                .entry(filename)
-                .or_insert_with(|| (Vec::new(), Vec::new()));
-            entry.0.push(pascal_name.clone());
-        }
-
-        for func_name in &deps.function_names {
-            if let Some(model_name) = func_name
-                .strip_suffix("FromJSON")
-                .or_else(|| func_name.strip_suffix("ToJSON"))
-            {
-                let filename = format!("../models/{}", model_name);
-                if let Some(entry) = models_by_file.get_mut(&filename) {
-                    entry.1.push(func_name.clone());
-                }
-            }
-        }
-
-        let mut imports = Vec::new();
-        let mut processed_files = BTreeSet::new();
-
-        for (file_path, (type_names, func_names)) in &models_by_file {
-            processed_files.insert(file_path.clone());
-            let mut import_stmt = ApiImportStatement::new(file_path.clone());
-
-            for pascal_type_name in type_names {
-                import_stmt = import_stmt.with_type_import(pascal_type_name.clone(), None);
-            }
-
-            for func_name in func_names {
-                import_stmt = import_stmt.with_import(func_name.clone(), None);
-            }
-
-            if !import_stmt.imports.is_empty() {
-                imports.push(import_stmt);
-            }
-        }
-
-        // Handle functions without corresponding type imports
-        for func_name in &deps.function_names {
-            if let Some(model_name) = func_name
-                .strip_suffix("FromJSON")
-                .or_else(|| func_name.strip_suffix("ToJSON"))
-            {
-                let filename = format!("../models/{}", model_name);
-                if !processed_files.contains(&filename) {
-                    imports.push(
-                        ApiImportStatement::new(filename).with_import(func_name.clone(), None),
-                    );
-                }
-            }
-        }
-
-        imports
+        deps.type_names
+            .iter()
+            .map(|pascal_name| {
+                ApiImportStatement::new(format!("../models/{}", pascal_name))
+                    .with_type_import(pascal_name.clone(), None)
+            })
+            .collect()
     }
 
     /// Build method documentation from IR operation
@@ -1223,14 +1118,12 @@ struct IrExtractedParameters {
 /// Collected model dependencies for IR-based API generation
 struct IrModelDependencies {
     type_names: BTreeSet<String>,
-    function_names: BTreeSet<String>,
 }
 
 impl IrModelDependencies {
     fn new() -> Self {
         Self {
             type_names: BTreeSet::new(),
-            function_names: BTreeSet::new(),
         }
     }
 }

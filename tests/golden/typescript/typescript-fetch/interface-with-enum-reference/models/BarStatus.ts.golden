@@ -17,25 +17,3 @@ export enum BarStatus {
   Bar = "bar",
   Baz = "baz"
 }
-
-export function BarStatusFromJSON(json: any): BarStatus {
-  return BarStatusFromJSONTyped(json, false);
-}
-
-export function BarStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): BarStatus {
-  if (json == null) {
-    return json;
-  }
-  return json as BarStatus;
-}
-
-export function BarStatusToJSON(value?: BarStatus | null): any {
-  return BarStatusToJSONTyped(value, false);
-}
-
-export function BarStatusToJSONTyped(value?: BarStatus | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

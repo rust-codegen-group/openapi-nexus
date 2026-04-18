@@ -11,8 +11,8 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type CreateItemWithBodyConflictRequest, CreateItemWithBodyConflictRequestToJSON } from '../models/CreateItemWithBodyConflictRequest';
-import { type CreateItemWithBodyConflictResponse200, CreateItemWithBodyConflictResponse200FromJSON } from '../models/CreateItemWithBodyConflictResponse200';
+import type { CreateItemWithBodyConflictRequest } from '../models/CreateItemWithBodyConflictRequest';
+import type { CreateItemWithBodyConflictResponse200 } from '../models/CreateItemWithBodyConflictResponse200';
 
 export interface ApiCreateItemWithBodyConflictRequest {
     itemId: string;
@@ -90,7 +90,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = CreateItemWithBodyConflictRequestToJSON(requestParameters['bodyBody']);
+    const requestBody = requestParameters['bodyBody'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -102,7 +102,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => CreateItemWithBodyConflictResponse200FromJSON(jsonValue)) as JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };

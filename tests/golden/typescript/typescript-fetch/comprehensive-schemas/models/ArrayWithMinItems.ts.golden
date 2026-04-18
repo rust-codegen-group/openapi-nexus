@@ -13,25 +13,3 @@
 
 /** Array with minimum items constraint */
 export type ArrayWithMinItems = Array<string>
-
-export function ArrayWithMinItemsFromJSON(json: any): ArrayWithMinItems {
-  return ArrayWithMinItemsFromJSONTyped(json, false);
-}
-
-export function ArrayWithMinItemsFromJSONTyped(json: any, ignoreDiscriminator: boolean): ArrayWithMinItems {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function ArrayWithMinItemsToJSON(value?: ArrayWithMinItems | null): any {
-  return ArrayWithMinItemsToJSONTyped(value, false);
-}
-
-export function ArrayWithMinItemsToJSONTyped(value?: ArrayWithMinItems | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

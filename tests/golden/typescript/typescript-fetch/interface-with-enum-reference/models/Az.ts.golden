@@ -17,25 +17,3 @@ export enum Az {
   Bar = "bar",
   Baz = "baz"
 }
-
-export function AzFromJSON(json: any): Az {
-  return AzFromJSONTyped(json, false);
-}
-
-export function AzFromJSONTyped(json: any, ignoreDiscriminator: boolean): Az {
-  if (json == null) {
-    return json;
-  }
-  return json as Az;
-}
-
-export function AzToJSON(value?: Az | null): any {
-  return AzToJSONTyped(value, false);
-}
-
-export function AzToJSONTyped(value?: Az | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}
