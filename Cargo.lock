@@ -1059,7 +1059,7 @@ dependencies = [
  "openapi-nexus-go",
  "openapi-nexus-parser",
  "openapi-nexus-typescript",
- "snafu",
+ "snafu 0.8.9",
  "toml",
  "tracing",
  "tracing-subscriber",
@@ -1072,7 +1072,7 @@ dependencies = [
  "clap",
  "serde",
  "serde_plain",
- "snafu",
+ "snafu 0.8.9",
 ]
 
 [[package]]
@@ -1103,7 +1103,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "snafu",
+ "snafu 0.8.9",
  "tracing",
 ]
 
@@ -1126,7 +1126,7 @@ dependencies = [
  "serde_json",
  "serde_norway",
  "similar",
- "snafu",
+ "snafu 0.8.9",
  "tempfile",
  "toml",
  "tracing",
@@ -1146,7 +1146,7 @@ dependencies = [
  "openapi-nexus-spec",
  "serde",
  "serde_json",
- "snafu",
+ "snafu 0.8.9",
  "tempfile",
  "tracing",
  "utoipa",
@@ -1160,7 +1160,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "snafu",
+ "snafu 0.8.9",
  "tracing",
  "utoipa",
 ]
@@ -1172,7 +1172,7 @@ dependencies = [
  "openapi-nexus-spec",
  "serde",
  "serde_json",
- "snafu",
+ "snafu 0.8.9",
  "utoipa",
 ]
 
@@ -1186,7 +1186,7 @@ dependencies = [
  "openapi-nexus-spec",
  "pretty",
  "serde",
- "snafu",
+ "snafu 0.8.9",
  "tracing",
  "utoipa",
 ]
@@ -1202,7 +1202,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "snafu",
+ "snafu 0.8.9",
  "url",
 ]
 
@@ -1217,7 +1217,7 @@ dependencies = [
  "openapi-nexus-parser",
  "openapi-nexus-spec",
  "serde_json",
- "snafu",
+ "snafu 0.8.9",
  "tracing",
 ]
 
@@ -1243,8 +1243,9 @@ dependencies = [
  "serde_json",
  "serde_norway",
  "serde_plain",
+ "sigil-stitch",
  "similar",
- "snafu",
+ "snafu 0.8.9",
  "tempfile",
  "toml",
  "tracing",
@@ -1622,6 +1623,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
+name = "sigil-stitch"
+version = "0.2.0"
+dependencies = [
+ "pretty",
+ "serde",
+ "sigil-stitch-macros",
+ "snafu 0.9.0",
+]
+
+[[package]]
+name = "sigil-stitch-macros"
+version = "0.2.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
 name = "signal-hook-registry"
 version = "1.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1654,7 +1673,16 @@ version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e84b3f4eacbf3a1ce05eac6763b4d629d60cbc94d632e4092c54ade71f1e1a2"
 dependencies = [
- "snafu-derive",
+ "snafu-derive 0.8.9",
+]
+
+[[package]]
+name = "snafu"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1d4bced6a69f90b2056c03dcff2c4737f98d6fb9e0853493996e1d253ca29c6"
+dependencies = [
+ "snafu-derive 0.9.0",
 ]
 
 [[package]]
@@ -1662,6 +1690,18 @@ name = "snafu-derive"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1c97747dbf44bb1ca44a561ece23508e99cb592e862f22222dcf42f51d1e451"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "snafu-derive"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54254b8531cafa275c5e096f62d48c81435d1015405a91198ddb11e967301d40"
 dependencies = [
  "heck",
  "proc-macro2",

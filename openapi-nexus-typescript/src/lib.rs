@@ -10,6 +10,7 @@ pub mod consts;
 pub mod emission;
 pub mod errors;
 pub mod generator;
+pub mod sigil_emit;
 pub mod templating;
 pub mod utils;
 
