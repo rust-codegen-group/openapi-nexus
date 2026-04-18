@@ -1226,19 +1226,14 @@ name = "openapi-nexus-typescript"
 version = "0.0.5"
 dependencies = [
  "chrono",
- "clap",
  "heck",
- "http",
- "indexmap",
  "minijinja",
  "minijinja-embed",
  "openapi-nexus-common",
- "openapi-nexus-config",
  "openapi-nexus-core",
  "openapi-nexus-ir",
  "openapi-nexus-parser",
  "openapi-nexus-spec",
- "pretty",
  "serde",
  "serde_json",
  "serde_norway",
@@ -1246,10 +1241,8 @@ dependencies = [
  "sigil-stitch",
  "similar",
  "snafu 0.8.9",
- "tempfile",
  "toml",
  "tracing",
- "tracing-subscriber",
  "tracing-test",
 ]
 
@@ -1624,7 +1617,9 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sigil-stitch"
-version = "0.2.0"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95478a48a293082334895f076ef1e436738e5c9a0adfeb36b57cb9e70e137643"
 dependencies = [
  "pretty",
  "serde",
@@ -1634,7 +1629,9 @@ dependencies = [
 
 [[package]]
 name = "sigil-stitch-macros"
-version = "0.2.0"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45a96d674a3e63864720ebcdeab00c354bbebf35943056eabd652667d1c4985e"
 dependencies = [
  "proc-macro2",
  "quote",
