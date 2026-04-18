@@ -7,7 +7,6 @@ use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCa
 
 use crate::config::TypeScriptFetchConfig;
 use crate::errors::GeneratorError;
-use crate::generator::api_operation_generator::ApiOperationGenerator;
 use crate::templating::data::{CommonFileHeaderData, ProjectIndexData, RuntimeRuntimeData};
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_common::{GeneratorType, Language};
@@ -20,7 +19,6 @@ use openapi_nexus_spec::OpenApiV31Spec;
 /// TypeScript Fetch code generator
 #[derive(Debug, Clone)]
 pub struct TypeScriptFetchCodeGenerator {
-    api_operation_generator: ApiOperationGenerator,
     config: TypeScriptFetchConfig,
     templating: Templates,
 }
@@ -33,7 +31,6 @@ impl TypeScriptFetchCodeGenerator {
     pub fn new(config: toml::value::Table) -> Self {
         let parsed_config = TypeScriptFetchConfig::from(config);
         Self {
-            api_operation_generator: ApiOperationGenerator::new(),
             config: parsed_config,
             templating: Templates::new(GeneratorType::TypeScriptFetch),
         }
@@ -191,54 +188,28 @@ impl TypeScriptFetchCodeGenerator {
         Ok(files)
     }
 
-    /// Generate API files from IR operations, grouped by tag.
+    /// Generate API files from IR operations via the sigil-stitch path.
+    ///
+    /// `sigil_emit_api::generate_api_files` produces one `{Tag}Api.ts` per tag
+    /// (grouping + naming handled inside sigil). This wrapper adds the
+    /// `apis/index.ts` aggregator, still rendered via minijinja so it stays in
+    /// sync with `models/index.ts` until that path migrates too.
     fn generate_apis_from_ir(
         &self,
         ir: &openapi_nexus_ir::types::IrSpec,
         common_file_header: &CommonFileHeaderData,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        // Group operations by all tags (or "default" if no tags)
-        let mut operations_by_tag: HashMap<String, Vec<&openapi_nexus_ir::types::IrOperation>> =
-            HashMap::new();
-        for op in &ir.operations {
-            let tags = if op.tags.is_empty() {
-                vec!["default".to_string()]
-            } else {
-                op.tags.clone()
-            };
-            for tag in tags {
-                operations_by_tag.entry(tag).or_default().push(op);
+        let mut files = crate::sigil_emit_api::generate_api_files(ir).map_err(|msg| {
+            Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api generation: {msg}"))
+        })?;
+
+        if !files.is_empty() {
+            let mut api_classes_map: HashMap<String, FileInfo> = HashMap::new();
+            for f in &files {
+                let tag = f.filename.trim_end_matches("Api.ts").to_string();
+                api_classes_map.insert(tag, f.clone());
             }
-        }
-
-        let mut api_classes_map = HashMap::new();
-        let mut files = Vec::new();
-
-        for (tag, operations) in &operations_by_tag {
-            if !operations.is_empty() {
-                let file_info = self
-                    .api_operation_generator
-                    .generate_api_class_from_ir(
-                        tag,
-                        operations,
-                        &ir.schemas,
-                        &self.templating,
-                        common_file_header,
-                    )
-                    .map_err(|e| GeneratorError::ApiClassGenerationForTag {
-                        tag: tag.clone(),
-                        source: Box::new(e),
-                    })?;
-                api_classes_map.insert(tag.clone(), file_info);
-            }
-        }
-
-        files.extend(api_classes_map.values().cloned());
-
-        // Generate apis/index.ts file
-        if !api_classes_map.is_empty() {
-            files
-                .push(self.generate_apis_index_file_from_ir(common_file_header, &api_classes_map)?);
+            files.push(self.generate_apis_index_file_from_ir(common_file_header, &api_classes_map)?);
         }
 
         Ok(files)
