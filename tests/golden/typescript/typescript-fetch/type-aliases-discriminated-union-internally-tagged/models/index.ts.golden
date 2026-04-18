@@ -15,9 +15,5 @@
  */
 export * from './Resource';
 export * from './ResourceCustom';
-export * from './ResourceKind';
 export * from './ResourceQuick';
-export * from './ResourceResourceCustom';
-export * from './ResourceResourceQuick';
-export * from './ResourceResourceUnspecified';
 export * from './ResourceUnspecified';

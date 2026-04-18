@@ -7,7 +7,7 @@
 /**
  * TypeA resource
  */
-export interface Resource_TypeA {
+export interface ResourceTypeA {
   readonly id?: string;
   readonly name?: string;
 }

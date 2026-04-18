@@ -13,8 +13,5 @@
  * Do not edit the file manually.
  */
 export * from './ContainerImage';
-export * from './ContainerImageContainerImageCustom';
-export * from './ContainerImageContainerImageManaged';
 export * from './ContainerImageCustom';
-export * from './ContainerImageKind';
 export * from './ContainerImageManaged';

@@ -953,9 +953,7 @@ impl ApiOperationGenerator {
             IrTypeExpr::Named(name) => {
                 deps.type_names.insert(name.to_pascal_case());
             }
-            IrTypeExpr::Array(inner)
-            | IrTypeExpr::Nullable(inner)
-            | IrTypeExpr::Map(inner) => {
+            IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
                 Self::collect_ir_type_refs(inner, deps);
             }
             IrTypeExpr::Union(members) => {

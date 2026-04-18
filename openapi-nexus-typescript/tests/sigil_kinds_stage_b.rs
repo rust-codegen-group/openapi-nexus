@@ -9,7 +9,11 @@ use std::path::Path;
 use openapi_nexus_typescript::sigil_emit;
 
 fn read_fixture(rel: &str) -> String {
-    for base in ["tests/fixtures", "../tests/fixtures", "../../tests/fixtures"] {
+    for base in [
+        "tests/fixtures",
+        "../tests/fixtures",
+        "../../tests/fixtures",
+    ] {
         let p = Path::new(base).join(rel);
         if p.exists() {
             return fs::read_to_string(p).unwrap();
@@ -67,10 +71,7 @@ fn union_of_named_interfaces_imports_each_member() {
     );
     for member in ["Bar", "Baz", "Qux"] {
         let want = format!("import type {{ {member} }} from './{member}';");
-        assert!(
-            foo.contains(&want),
-            "expected `{want}` in:\n{foo}"
-        );
+        assert!(foo.contains(&want), "expected `{want}` in:\n{foo}");
     }
 }
 

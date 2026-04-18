@@ -15,14 +15,8 @@
  * Do not edit the file manually.
  */
 export * from './ContainerKind';
-export * from './ContainerKindContainerKindCustom';
-export * from './ContainerKindContainerKindManaged';
 export * from './ContainerKindCustom';
-export * from './ContainerKindKind';
 export * from './ContainerKindManaged';
 export * from './VolumeKind';
-export * from './VolumeKindKind';
 export * from './VolumeKindLocal';
 export * from './VolumeKindRemote';
-export * from './VolumeKindVolumeKindLocal';
-export * from './VolumeKindVolumeKindRemote';

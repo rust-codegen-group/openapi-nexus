@@ -5,16 +5,10 @@ use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 
-use crate::ast::{TsTypeAliasDefinition, TsTypeDefinition};
 use crate::config::TypeScriptFetchConfig;
 use crate::errors::GeneratorError;
-use crate::generator::{
-    api_operation_generator::ApiOperationGenerator, ir_schema_generator::IrSchemaGenerator,
-};
-use crate::templating::data::{
-    ApiImportSpecifier, ApiImportStatement, ApiImportStatements, CommonFileHeaderData,
-    ModelEnumData, ModelInterfaceData, ModelTypeAliasData, ProjectIndexData, RuntimeRuntimeData,
-};
+use crate::generator::api_operation_generator::ApiOperationGenerator;
+use crate::templating::data::{CommonFileHeaderData, ProjectIndexData, RuntimeRuntimeData};
 use crate::templating::{TemplateName, Templates};
 use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::NamingConvention;
@@ -59,160 +53,53 @@ impl TypeScriptFetchCodeGenerator {
         format!("{}.ts", base_name)
     }
 
-    /// Build `ModelTypeAliasData` with the provided imports.
-    ///
-    /// Union/intersection members used to pull in `instanceOfX`,
-    /// `XFromJSONTyped`, `XToJSON`, etc., because templates emitted helper
-    /// functions that referenced them. Those helpers are gone; models ship
-    /// types only. Type-name imports come from the IR dependency pass upstream.
-    fn create_model_type_alias_data(
-        &self,
-        type_alias: &TsTypeAliasDefinition,
-        imports: ApiImportStatements,
-    ) -> ModelTypeAliasData {
-        ModelTypeAliasData::new(type_alias.clone()).with_imports(imports)
-    }
-
     // =========================================================================
     // IR-based generation
     // =========================================================================
 
-    /// Generate all files from a version-agnostic IR spec.
+    /// Generate all model files from a version-agnostic IR spec.
     ///
-    /// This is the new entry point that replaces `CodeGenerator::generate()`.
-    /// Currently handles model generation via the IR pipeline; API generation
-    /// still falls through to the legacy path (takes `&OpenApiV31Spec`).
+    /// Model bodies come from `sigil_emit` (sigil-stitch), not minijinja.
+    /// The `models/index.ts` aggregator still uses the minijinja template
+    /// so it stays in sync with `apis/index.ts` / top-level `index.ts` until
+    /// those migrate too.
     pub fn generate_models_from_ir(
         &self,
         ir: &openapi_nexus_ir::types::IrSpec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let output = IrSchemaGenerator::generate(&ir.schemas);
-        let schemas = output.type_definitions;
-        let enum_discriminators = output.enum_discriminators;
+        let mut files = crate::sigil_emit::generate_model_files(ir).map_err(|msg| {
+            Box::<dyn Error + Send + Sync>::from(format!("sigil_emit model generation: {msg}"))
+        })?;
 
-        let common_file_header = CommonFileHeaderData::new(
-            ir.info.title.clone(),
-            ir.info.description.clone(),
-            ir.info.version.clone(),
-        );
-
-        let mut files = Vec::new();
-
-        // Generate model files (same rendering logic as legacy generate_models)
-        for (name, type_def) in &schemas {
-            let common_file_header = common_file_header.clone();
-            let filename = self.generate_filename(type_def.ts_name());
-
-            // Collect referenced types for this model
-            let referenced_types = type_def.referenced_types();
-
-            // Build import statements for referenced types.
-            // Models ship types only — no FromJSON/ToJSON/instanceOf helpers.
-            let mut imports = ApiImportStatements::new();
-
-            for ref_type_name in &referenced_types {
-                if ref_type_name == name {
-                    continue;
-                }
-
-                let ref_type_def = schemas.values().find(|td| td.ts_name() == ref_type_name);
-
-                if let Some(ref_type_def) = ref_type_def {
-                    let actual_type_name = ref_type_def.ts_name();
-                    let ref_filename = self.generate_filename(actual_type_name);
-                    let import_path = format!("./{}", ref_filename.trim_end_matches(".ts"));
-
-                    let import_stmt = imports
-                        .entry(import_path.clone())
-                        .or_insert_with(|| ApiImportStatement::new(import_path.clone()));
-
-                    import_stmt.imports.insert(ApiImportSpecifier {
-                        name: actual_type_name.to_string(),
-                        alias: None,
-                        is_type: true,
-                    });
-                }
-            }
-
-            // Render model file
-            let file = match type_def {
-                TsTypeDefinition::Interface(interface) => {
-                    let mut model_interface_data = ModelInterfaceData::from_interface(interface);
-                    model_interface_data.imports = imports;
-                    let ts_name = type_def.ts_name();
-                    model_interface_data.update_enum_discriminators(ts_name, &enum_discriminators);
-
-                    let template_context = minijinja::context! {
-                        common_file_header,
-                        model_interface => model_interface_data,
-                    };
-                    self.templating
-                        .render_template(TemplateName::ModelInterface, &filename, template_context)
-                        .map_err(|e| GeneratorError::ModelInterfaceGeneration {
-                            model_name: name.clone(),
-                            source: Box::new(e),
-                        })?
-                }
-                TsTypeDefinition::TypeAlias(type_alias) => {
-                    let model_type_alias = self.create_model_type_alias_data(type_alias, imports);
-                    let template_context = minijinja::context! {
-                        common_file_header,
-                        model_type_alias,
-                    };
-                    self.templating
-                        .render_template(TemplateName::ModelTypeAlias, &filename, template_context)
-                        .map_err(|e| GeneratorError::ModelTypeAliasGeneration {
-                            model_name: name.clone(),
-                            source: Box::new(e),
-                        })?
-                }
-                TsTypeDefinition::Enum(enum_def) => {
-                    let model_enum = ModelEnumData {
-                        enum_definition: enum_def.clone(),
-                        imports: Vec::new(),
-                    };
-                    let template_context = minijinja::context! {
-                        common_file_header,
-                        model_enum,
-                    };
-                    self.templating
-                        .render_template(TemplateName::ModelEnum, &filename, template_context)
-                        .map_err(|e| GeneratorError::ModelEnumGeneration {
-                            model_name: name.clone(),
-                            source: Box::new(e),
-                        })?
-                }
-            };
-
-            files.push(file);
-        }
-
-        // Generate models/index.ts
-        if !schemas.is_empty() {
-            files.push(self.generate_models_index_file_standalone(&common_file_header, &schemas)?);
+        if !ir.schemas.is_empty() {
+            let common_file_header = CommonFileHeaderData::new(
+                ir.info.title.clone(),
+                ir.info.description.clone(),
+                ir.info.version.clone(),
+            );
+            files.push(self.generate_models_index_file(&common_file_header, ir)?);
         }
 
         Ok(files)
     }
 
-    /// Generate models/index.ts without needing &OpenApiV31Spec.
-    fn generate_models_index_file_standalone(
+    /// Generate `models/index.ts` from IR schema names.
+    fn generate_models_index_file(
         &self,
         common_file_header: &CommonFileHeaderData,
-        schemas: &HashMap<String, TsTypeDefinition>,
+        ir: &openapi_nexus_ir::types::IrSpec,
     ) -> Result<FileInfo, GeneratorError> {
-        let mut exports = Vec::new();
-
-        let mut type_names: Vec<String> = schemas
-            .values()
-            .map(|def| def.ts_name().to_string())
-            .collect();
+        let mut type_names: Vec<String> = ir.schemas.keys().cloned().collect();
         type_names.sort();
-        for type_name in type_names {
-            let filename = self.generate_filename(&type_name);
-            let import_name = filename.trim_end_matches(".ts");
-            exports.push(format!("export * from './{}';", import_name));
-        }
+
+        let exports: Vec<String> = type_names
+            .iter()
+            .map(|name| {
+                let filename = self.generate_filename(name);
+                let import_name = filename.trim_end_matches(".ts");
+                format!("export * from './{}';", import_name)
+            })
+            .collect();
 
         let project_index = ProjectIndexData { exports };
         let template_context = minijinja::context! {
