@@ -11,7 +11,8 @@
 //! - `Alias` — `export type X = Y;`
 //! - `Union` — `export type X = A | B | C [| null];` (untagged oneOf/anyOf)
 //! - `Intersection` — `export type X = A & B & C;` (allOf)
-//! - Remaining kind (`TaggedUnion`) lands in Stage C.
+//! - `TaggedUnion` — discriminated union across Internal / Adjacent / External
+//!   tagging styles, each variant narrows on the discriminator literal.
 //!
 //! Not yet wired into [`crate::codegen::TypeScriptFetchCodeGenerator`]. This
 //! lives in the public surface so integration tests can exercise it directly.
@@ -27,8 +28,9 @@ use heck::ToLowerCamelCase;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 use openapi_nexus_ir::types::{
     IrEnum, IrEnumValueType, IrInfo, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
-    IrSchemaKind, IrSpec, IrTypeExpr, IrUnion,
+    IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
+use sigil_stitch::code_block::{Arg, CodeBlock};
 use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
@@ -47,7 +49,7 @@ pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
         IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr),
         IrSchemaKind::Union(u) => emit_union_file(schema, u),
         IrSchemaKind::Intersection(i) => emit_intersection_file(schema, i),
-        IrSchemaKind::TaggedUnion(_) => None,
+        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union_file(schema, tu),
     }
 }
 
@@ -180,6 +182,89 @@ fn emit_intersection_file(
     }
     fb.add_code(type_alias);
     fb.build().ok()
+}
+
+/// Tagged union file: discriminated `export type` across three tagging styles.
+///
+/// - `Internal`:  `({ tag: 'VAL' } & Content) | ...`
+/// - `Adjacent`:  `{ tag: 'VAL'; content: Content } | ...`
+/// - `External`:  `{ VAL: Content } | ...`
+///
+/// Each variant's `content_type` flows through `type_expr_to_typename`, so
+/// imports track like any other named ref. An empty variants list is treated
+/// as unsupported (degenerate — skip rather than emit `export type X = ;`).
+fn emit_tagged_union_file(
+    schema: &IrSchema,
+    tu: &IrTaggedUnion,
+) -> Option<FileSpec<TypeScript>> {
+    if tu.variants.is_empty() {
+        return None;
+    }
+
+    // Build `export type Name = <piece> | <piece>;` where each piece
+    // carries `%T` slots for the variant's content type. Adjacent / External
+    // shapes don't fit TypeName's structural variants, so the tag wrapping
+    // goes into the literal format fragment and the content rides on %T.
+    let mut format = format!("export type {} = ", schema.name);
+    let mut pieces: Vec<String> = Vec::with_capacity(tu.variants.len());
+    let mut args: Vec<Arg<TypeScript>> = Vec::with_capacity(tu.variants.len() * 2);
+
+    for variant in &tu.variants {
+        let content_ty = type_expr_to_typename(&variant.content_type);
+        let (piece, piece_args) = render_variant_piece(
+            &tu.tagging,
+            &tu.discriminator_field,
+            &variant.discriminator_value,
+            content_ty,
+        );
+        pieces.push(piece);
+        args.extend(piece_args);
+    }
+
+    format.push_str(&pieces.join(" | "));
+    format.push(';');
+
+    // sigil_quote! needs compile-time format; fall back to CodeBlock builder
+    // for the dynamic variant count.
+    let mut cb = CodeBlock::<TypeScript>::builder();
+    cb.add(&format, args);
+    let code = cb.build().ok()?;
+
+    let filename = format!("{}.ts", schema.name);
+    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    if let Some(doc) = &schema.description {
+        fb.add_raw(&format!("/** {doc} */\n"));
+    }
+    fb.add_code(code);
+    fb.build().ok()
+}
+
+/// Render one variant of a tagged union as a format fragment + its args.
+///
+/// Returns `(format_piece, args)` where `format_piece` contains `%T` slots
+/// in the same order as `args`. Caller joins pieces with ` | `.
+fn render_variant_piece(
+    tagging: &TaggingStyle,
+    discriminator_field: &str,
+    discriminator_value: &str,
+    content_ty: TypeName<TypeScript>,
+) -> (String, Vec<Arg<TypeScript>>) {
+    match tagging {
+        TaggingStyle::Internal => (
+            format!("({{ {discriminator_field}: '{discriminator_value}' }} & %T)"),
+            vec![Arg::TypeName(content_ty)],
+        ),
+        TaggingStyle::Adjacent { content_field } => (
+            format!(
+                "{{ {discriminator_field}: '{discriminator_value}'; {content_field}: %T }}"
+            ),
+            vec![Arg::TypeName(content_ty)],
+        ),
+        TaggingStyle::External => (
+            format!("{{ '{discriminator_value}': %T }}"),
+            vec![Arg::TypeName(content_ty)],
+        ),
+    }
 }
 
 /// Build the pipe-joined literal body for an enum: `'a' | 1 | true | null`.
