@@ -1,32 +1,31 @@
-//! Phase 2 spike: sigil-stitch emit for IR object schemas.
+//! Phase 3: sigil-stitch emit for IR schemas.
 //!
-//! Scope (intentionally narrow):
-//! - `IrSchemaKind::Object` only
-//! - `IrTypeExpr::Named`, `Primitive`, `Array` of named/primitive
-//! - `IrProperty` `required` + `nullable` bits
+//! Dispatches on `IrSchemaKind` and produces a `FileSpec<TypeScript>` per
+//! schema. Each model file carries a `@generated` header and the declaration
+//! (interface / type alias / union / etc.) matching
+//! `docs/target-output-spec.md`.
 //!
-//! Not yet supported (Phase 3+): unions, enums, tagged unions, intersections,
-//! aliases, maps, inline string enums, inline unions, validation, `any`.
+//! Coverage:
+//! - `Object` — `export interface`
+//! - `Enum` — string-literal union alias (string/integer/number/mixed values)
+//! - `Alias` — `export type X = Y;`
+//! - Remaining kinds (`Union`, `Intersection`, `TaggedUnion`) land in Stage B/C.
 //!
 //! Not yet wired into [`crate::codegen::TypeScriptFetchCodeGenerator`]. This
 //! lives in the public surface so integration tests can exercise it directly.
 //!
-//! # Gaps vs. `docs/target-output-spec.md`
+//! # Known upstream gaps
 //!
-//! 1. ~~No element-level `readonly` on array types.~~ Fixed upstream by adding
-//!    `TypeName::ReadonlyArray`; this module uses `readonly_array(inner)`.
-//! 2. **Field-level doc comment indentation is broken.** Inner `*` lines sit
-//!    flush-left instead of aligning with the field indent. Cosmetic but ugly.
-//!    Upstream sigil-stitch fix required.
-//! 3. **`Visibility::Public` on interface fields leaks `public` keyword.** TS
-//!    interfaces don't accept `public` — we leave field visibility unset as a
-//!    workaround. Setting it on the `TypeSpec` correctly produces `export`.
+//! 1. **Field-level doc comment indentation is broken.** Inner `*` lines sit
+//!    flush-left instead of aligning with the field indent. Cosmetic.
+//! 2. **`Visibility::Public` on interface fields leaks `public` keyword.** TS
+//!    interfaces don't accept `public` — field visibility is left unset.
 
 use heck::ToLowerCamelCase;
 use openapi_nexus_core::traits::file_writer::FileInfo;
 use openapi_nexus_ir::types::{
-    IrEnum, IrEnumValueType, IrInfo, IrPrimitive, IrProperty, IrSchema, IrSchemaKind, IrSpec,
-    IrTypeExpr,
+    IrEnum, IrEnumValueType, IrInfo, IrObject, IrPrimitive, IrProperty, IrSchema, IrSchemaKind,
+    IrSpec, IrTypeExpr,
 };
 use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
@@ -36,19 +35,33 @@ use sigil_stitch::spec::modifiers::{TypeKind, Visibility};
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
-/// Emit a TypeScript model file for an `IrSchema::Object`.
+/// Emit a TypeScript model file for an IR schema. Dispatches on `schema.kind`.
 ///
-/// Returns `None` for schema kinds the spike does not cover yet; callers can
-/// fall back to the legacy template path for those.
+/// Returns `None` only for kinds not yet implemented (Stage B/C).
 pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
-    let IrSchemaKind::Object(obj) = &schema.kind else {
+    match &schema.kind {
+        IrSchemaKind::Object(obj) => Some(emit_object_file(schema, obj)),
+        IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en),
+        IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr),
+        IrSchemaKind::Union(_)
+        | IrSchemaKind::Intersection(_)
+        | IrSchemaKind::TaggedUnion(_) => None,
+    }
+}
+
+/// Back-compat alias used by the enum prototype test. Prefer `emit_model_file`.
+pub fn emit_enum_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
+    let IrSchemaKind::Enum(en) = &schema.kind else {
         return None;
     };
+    emit_enum_file_from(schema, en)
+}
 
+fn emit_object_file(schema: &IrSchema, obj: &IrObject) -> FileSpec<TypeScript> {
     let mut tb = TypeSpec::<TypeScript>::builder(&schema.name, TypeKind::Interface);
-    // Visibility::Public on the TypeSpec emits the `export` keyword; on an
-    // interface FieldSpec it leaks a stray `public` keyword, so field
-    // visibility is left unset.
+    // `Visibility::Public` on the TypeSpec emits `export`; on an interface
+    // FieldSpec it leaks a stray `public` keyword, so field visibility stays
+    // unset.
     tb.visibility(Visibility::Public);
     if let Some(doc) = &schema.description {
         tb.doc(doc);
@@ -61,29 +74,16 @@ pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
     let filename = format!("{}.ts", schema.name);
     let mut fb = FileSpec::<TypeScript>::builder(&filename);
     fb.add_type(tb.build().expect("TypeSpec builds"));
-    Some(fb.build().expect("FileSpec builds"))
+    fb.build().expect("FileSpec builds")
 }
 
-/// Emit a TypeScript enum file as a string-literal union type alias.
+/// Enum file: `export type Name = 'a' | 'b' | 1 | 2 | null;`
 ///
-/// Shape:
-/// ```ts
-/// export type PetStatus = 'available' | 'pending' | 'sold';
-/// ```
-///
-/// String-valued enums only. Returns `None` for int/mixed until we decide
-/// their shape. Sigil-quote sweet spot: single-line declaration with `$N`
-/// (name identifier) and `$L` (prebuilt union body).
-pub fn emit_enum_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
-    let IrSchemaKind::Enum(en) = &schema.kind else {
-        return None;
-    };
-    if en.value_type != IrEnumValueType::String {
-        return None;
-    }
-
+/// Handles string / integer / number / mixed value types. Returns `None` if
+/// any enum value can't be rendered as a TS literal.
+fn emit_enum_file_from(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec<TypeScript>> {
     let name = schema.name.clone();
-    let union_body = string_enum_union_body(en)?;
+    let union_body = enum_union_body(en)?;
 
     let type_alias = sigil_quote!(TypeScript {
         export type $N(name.as_str()) = $L(union_body.as_str());
@@ -93,27 +93,61 @@ pub fn emit_enum_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
     let filename = format!("{}.ts", schema.name);
     let mut fb = FileSpec::<TypeScript>::builder(&filename);
     if let Some(doc) = &schema.description {
-        // FileSpec has no standalone doc slot; a raw line works for a prelude
-        // comment. Structural builders ship docs attached to types/fields,
-        // which is what we use elsewhere — this is the one spot we don't have
-        // a structural target.
+        // FileSpec has no structural doc slot — use a raw prelude comment.
         fb.add_raw(&format!("/** {doc} */\n"));
     }
     fb.add_code(type_alias);
     fb.build().ok()
 }
 
-/// Build the string-literal union body: `'available' | 'pending' | 'sold'`.
-fn string_enum_union_body(en: &IrEnum) -> Option<String> {
-    let parts: Vec<String> = en
+/// Alias file: `export type Name = Inner;` — where `Inner` may be a named ref
+/// (import auto-emitted), a primitive, a readonly array, etc.
+fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec<TypeScript>> {
+    let name = schema.name.clone();
+    let rhs = type_expr_to_typename(expr);
+
+    let type_alias = sigil_quote!(TypeScript {
+        export type $N(name.as_str()) = $T(rhs);
+    })
+    .ok()?;
+
+    let filename = format!("{}.ts", schema.name);
+    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    if let Some(doc) = &schema.description {
+        fb.add_raw(&format!("/** {doc} */\n"));
+    }
+    fb.add_code(type_alias);
+    fb.build().ok()
+}
+
+/// Build the pipe-joined literal body for an enum: `'a' | 1 | true | null`.
+/// Returns `None` if any value can't be represented as a TS literal.
+fn enum_union_body(en: &IrEnum) -> Option<String> {
+    let parts: Option<Vec<String>> = en
         .values
         .iter()
-        .filter_map(|v| v.value.as_str().map(|s| format!("'{s}'")))
+        .map(|v| match en.value_type {
+            IrEnumValueType::String => v.value.as_str().map(|s| format!("'{s}'")),
+            IrEnumValueType::Integer | IrEnumValueType::Number => {
+                v.value.as_number().map(|n| n.to_string())
+            }
+            IrEnumValueType::Mixed => json_value_to_ts_literal(&v.value),
+        })
         .collect();
-    if parts.len() != en.values.len() {
-        return None;
-    }
+    let parts = parts?;
     Some(parts.join(" | "))
+}
+
+/// Render a JSON value as a TS literal. Used for mixed-type enums.
+fn json_value_to_ts_literal(v: &serde_json::Value) -> Option<String> {
+    use serde_json::Value;
+    match v {
+        Value::Null => Some("null".to_string()),
+        Value::Bool(b) => Some(b.to_string()),
+        Value::Number(n) => Some(n.to_string()),
+        Value::String(s) => Some(format!("'{s}'")),
+        Value::Array(_) | Value::Object(_) => None,
+    }
 }
 
 fn build_field(prop: &IrProperty) -> FieldSpec<TypeScript> {
@@ -145,48 +179,38 @@ fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName<TypeScript> {
         IrTypeExpr::Primitive(p) => TypeName::primitive(primitive_to_ts(p)),
         IrTypeExpr::Array(inner) => TypeName::readonly_array(type_expr_to_typename(inner)),
         IrTypeExpr::Nullable(inner) => TypeName::optional(type_expr_to_typename(inner)),
-        // Out of spike scope: fall back to `unknown` so the test surfaces the gap.
+        // Out of current stage scope: fall back to `unknown`. Inline unions /
+        // string enums / maps / any get real handling in Stage B and later.
         _ => TypeName::primitive("unknown"),
     }
 }
 
-/// Slice C entry point: lower every `IrSchemaKind::Object` in the spec into a
-/// sigil-rendered `FileInfo` matching `docs/target-output-spec.md`.
-///
-/// Fails if the spec contains a non-Object schema kind (unions, enums,
-/// intersections, tagged unions, aliases). Slice C fixtures must be Object-only.
-/// Does not emit `models/index.ts` — the target spec drops the barrel.
+/// Lower every supported `IrSchema` in the spec into a sigil-rendered
+/// `FileInfo`. Fails if a schema kind isn't yet implemented — Stage B/C close
+/// that gap.
 pub fn generate_model_files(ir: &IrSpec) -> Result<Vec<FileInfo>, String> {
     let header = render_file_header(&ir.info);
     let mut files = Vec::with_capacity(ir.schemas.len());
 
     for (name, schema) in &ir.schemas {
-        match &schema.kind {
-            IrSchemaKind::Object(_) => {
-                let file_spec = emit_model_file(schema)
-                    .ok_or_else(|| format!("sigil_emit: {name} is not an Object schema"))?;
-                let body = file_spec
-                    .render(100)
-                    .map_err(|e| format!("sigil_emit: render {name}: {e}"))?;
-                let content = format!("{header}{body}");
-                let filename = format!("{}.ts", schema.name);
-                files.push(FileInfo::model(filename, content));
-            }
-            other => {
-                return Err(format!(
-                    "sigil_emit Slice C: unsupported schema kind for {name}: {other:?}"
-                ));
-            }
-        }
+        let file_spec = emit_model_file(schema).ok_or_else(|| {
+            format!(
+                "sigil_emit: unsupported schema kind for {name}: {:?}",
+                schema.kind
+            )
+        })?;
+        let body = file_spec
+            .render(100)
+            .map_err(|e| format!("sigil_emit: render {name}: {e}"))?;
+        let content = format!("{header}{body}");
+        let filename = format!("{}.ts", schema.name);
+        files.push(FileInfo::model(filename, content));
     }
 
     Ok(files)
 }
 
 /// Render the `@generated` file header matching `docs/target-output-spec.md`.
-///
-/// Lines: `@generated …` marker, blank line, `{title} — {version}`, and (if
-/// present) the description on a following line.
 fn render_file_header(info: &IrInfo) -> String {
     let mut out = String::new();
     out.push_str("/**\n");
