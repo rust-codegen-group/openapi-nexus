@@ -1,5 +1,7 @@
 # Code generation commands
 
+set working-directory := '..'
+
 # Generate TypeScript from a spec file
 @typescript INPUT OUTPUT:
     cargo run --bin openapi-nexus -- generate --input {{ INPUT }} --output {{ OUTPUT }} --generators typescript-fetch

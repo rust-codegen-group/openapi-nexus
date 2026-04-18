@@ -1,5 +1,7 @@
 # Linting and formatting commands
 
+set working-directory := '..'
+
 # Run cargo fmt
 @fmt:
     cargo fmt

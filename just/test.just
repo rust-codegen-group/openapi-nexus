@@ -1,5 +1,7 @@
 # Testing commands
 
+set working-directory := '..'
+
 # Run all tests
 @test-all:
     cargo test

@@ -1,5 +1,7 @@
 # Build commands
 
+set working-directory := '..'
+
 # Build all crates
 @build-all:
     cargo build
