@@ -102,7 +102,7 @@ export interface Pet {
 
 **Before (40 lines)** — enum + `FromJSON`/`FromJSONTyped`/`ToJSON`/`ToJSONTyped`.
 
-**After (~10 lines):**
+**After (~5 lines):**
 
 ```ts
 /**
@@ -111,17 +111,12 @@ export interface Pet {
 
 /** Pet status in the store */
 export type PetStatus = 'available' | 'pending' | 'sold';
-
-export const PetStatus = {
-  Available: 'available',
-  Pending: 'pending',
-  Sold: 'sold',
-} as const;
 ```
 
-`as const` object + string-literal union. Idiomatic modern TS — no `enum` (which
-is a TS-only runtime construct). Callers get `PetStatus.Available` for authoring
-and `PetStatus` as the type.
+String-literal union type alias. No `enum` (TS-only runtime construct, not
+erasable-syntax compatible), no `as const` companion object (callers who want
+`PetStatus.Available` can wrap it themselves; generated clients ship types,
+not conveniences). Minimal surface, cleaner diffs, better tree-shaking.
 
 ---
 
