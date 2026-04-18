@@ -1,8 +1,0 @@
-{% set data = method_data.http_params %}
-{% include "api/snippets/validate_required_params.j2" with context %}
-{% include "api/snippets/build_url_path.j2" with context %}
-{% include "api/snippets/build_query_params.j2" with context %}
-{% include "api/snippets/build_headers.j2" with context %}
-{% include "api/snippets/build_request_body.j2" with context %}
-{% include "api/snippets/make_request.j2" with context %}
-{% include "api/snippets/return_response.j2" with context %}

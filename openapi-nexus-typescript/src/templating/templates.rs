@@ -20,11 +20,6 @@ pub enum TemplateName {
     #[serde(rename = "README.md.j2")]
     Readme,
 
-    // FileCategory::Apis
-    /// Main API class template (generates complete API class files)
-    #[serde(rename = "api/operation.j2")]
-    ApiOperation,
-
     // FileCategory::Runtime
     /// Runtime utilities template
     #[serde(rename = "runtime/runtime.j2")]
@@ -40,36 +35,6 @@ pub enum TemplateName {
     /// File header template (used across all file types, included by other templates)
     #[serde(rename = "common/file_header.j2")]
     CommonFileHeader,
-    /// API method body: Constructor for base API class
-    #[serde(rename = "api/snippets/constructor_base_api.j2")]
-    ApiConstructorBaseApi,
-    /// API method body: GET request handler
-    #[serde(rename = "api/snippets/method_get.j2")]
-    ApiMethodGet,
-    /// API method body: POST/PUT/PATCH request handler
-    #[serde(rename = "api/snippets/method_post_put_patch.j2")]
-    ApiMethodPostPutPatch,
-    /// API method body: DELETE request handler
-    #[serde(rename = "api/snippets/method_delete.j2")]
-    ApiMethodDelete,
-    /// API method body: Convenience wrapper method
-    #[serde(rename = "api/snippets/method_convenience.j2")]
-    ApiMethodConvenience,
-    /// Partial: Build URL path snippet
-    #[serde(rename = "api/snippets/build_url_path.j2")]
-    ApiBuildUrlPath,
-    /// Partial: Build query parameters snippet
-    #[serde(rename = "api/snippets/build_query_params.j2")]
-    ApiBuildQueryParams,
-    /// Partial: Build request headers snippet
-    #[serde(rename = "api/snippets/build_headers.j2")]
-    ApiBuildHeaders,
-    /// Partial: Build request body snippet
-    #[serde(rename = "api/snippets/build_request_body.j2")]
-    ApiBuildRequestBody,
-    /// Partial: Make HTTP request snippet
-    #[serde(rename = "api/snippets/make_request.j2")]
-    ApiMakeRequest,
 }
 
 impl TemplateName {
@@ -97,9 +62,6 @@ impl TemplateName {
             // FileCategory::Readme
             Self::Readme => FileCategory::Readme,
 
-            // FileCategory::Apis
-            Self::ApiOperation => FileCategory::Apis,
-
             // FileCategory::Runtime
             Self::Runtime => FileCategory::Runtime,
 
@@ -108,17 +70,7 @@ impl TemplateName {
 
             // FileCategory::None (Snippets/Partials)
             // These are included by other templates and not rendered directly
-            Self::CommonFileHeader
-            | Self::ApiConstructorBaseApi
-            | Self::ApiMethodGet
-            | Self::ApiMethodPostPutPatch
-            | Self::ApiMethodDelete
-            | Self::ApiMethodConvenience
-            | Self::ApiBuildUrlPath
-            | Self::ApiBuildQueryParams
-            | Self::ApiBuildHeaders
-            | Self::ApiBuildRequestBody
-            | Self::ApiMakeRequest => FileCategory::None,
+            Self::CommonFileHeader => FileCategory::None,
         }
     }
 }
@@ -128,23 +80,11 @@ impl TemplateName {
 pub const TEMPLATE_PATHS: &[TemplateName] = &[
     // FileCategory::Readme
     TemplateName::Readme,
-    // FileCategory::Apis
-    TemplateName::ApiOperation,
     // FileCategory::Runtime
     TemplateName::Runtime,
     // FileCategory::ProjectFiles
     TemplateName::ProjectIndex,
     // FileCategory::None (Snippets/Partials)
-    TemplateName::ApiBuildHeaders,
-    TemplateName::ApiBuildQueryParams,
-    TemplateName::ApiBuildRequestBody,
-    TemplateName::ApiBuildUrlPath,
-    TemplateName::ApiConstructorBaseApi,
-    TemplateName::ApiMakeRequest,
-    TemplateName::ApiMethodConvenience,
-    TemplateName::ApiMethodDelete,
-    TemplateName::ApiMethodGet,
-    TemplateName::ApiMethodPostPutPatch,
     TemplateName::CommonFileHeader,
 ];
 

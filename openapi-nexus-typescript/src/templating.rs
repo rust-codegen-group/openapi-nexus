@@ -2,7 +2,6 @@
 
 pub mod data;
 pub mod environment;
-pub mod filters;
 pub mod functions;
 pub mod templates;
 
