@@ -121,6 +121,7 @@ fn build_request_interface(op: &IrOperation) -> Option<TypeSpec<TypeScript>> {
 
     let method_base = op.operation_id.to_lower_camel_case();
     let interface_name = format!("Api{}Request", method_base.to_pascal_case());
+    let names = resolve_param_names(op);
 
     let mut tb = TypeSpec::<TypeScript>::builder(&interface_name, TypeKind::Interface);
     tb.visibility(Visibility::Public);
@@ -129,19 +130,18 @@ fn build_request_interface(op: &IrOperation) -> Option<TypeSpec<TypeScript>> {
         if matches!(param.location, IrParameterLocation::Cookie) {
             continue;
         }
-        tb.add_field(build_param_field(param));
+        tb.add_field(build_param_field(param, &resolved_param(&names, param)));
     }
     if let Some(rb) = &op.request_body {
-        tb.add_field(build_body_field(rb));
+        tb.add_field(build_body_field(rb, &resolved_body(&names)));
     }
 
     tb.build().ok()
 }
 
-fn build_param_field(param: &IrParameter) -> FieldSpec<TypeScript> {
-    let name = param.name.to_lower_camel_case();
+fn build_param_field(param: &IrParameter, name: &str) -> FieldSpec<TypeScript> {
     let ty = type_expr_to_typename(&param.type_expr);
-    let mut fb = FieldSpec::<TypeScript>::builder(&name, ty);
+    let mut fb = FieldSpec::<TypeScript>::builder(name, ty);
     if !param.required {
         fb.is_optional();
     }
@@ -151,14 +151,14 @@ fn build_param_field(param: &IrParameter) -> FieldSpec<TypeScript> {
     fb.build().expect("FieldSpec builds")
 }
 
-fn build_body_field(rb: &IrRequestBody) -> FieldSpec<TypeScript> {
+fn build_body_field(rb: &IrRequestBody, name: &str) -> FieldSpec<TypeScript> {
     let ty = rb
         .content
         .get("application/json")
         .or_else(|| rb.content.values().next())
         .map(type_expr_to_typename)
         .unwrap_or_else(|| TypeName::primitive("unknown"));
-    let mut fb = FieldSpec::<TypeScript>::builder("body", ty);
+    let mut fb = FieldSpec::<TypeScript>::builder(name, ty);
     if !rb.required {
         fb.is_optional();
     }
@@ -314,17 +314,18 @@ fn emit_required_param_checks(
     op: &IrOperation,
     method_name: &str,
 ) {
+    let names = resolve_param_names(op);
     let required_named = op
         .parameters
         .iter()
         .filter(|p| p.required && !matches!(p.location, IrParameterLocation::Cookie))
-        .map(|p| p.name.to_lower_camel_case())
+        .map(|p| resolved_param(&names, p))
         .collect::<Vec<_>>();
     let mut all_required = required_named;
     if let Some(rb) = &op.request_body
         && rb.required
     {
-        all_required.push("body".to_string());
+        all_required.push(resolved_body(&names));
     }
 
     for pname in all_required {
@@ -345,12 +346,13 @@ fn emit_url_path(
     cb.add("// Build path with path parameters\n", vec![]);
     cb.add(&format!("let urlPath = `{}`;\n", op.path), vec![]);
 
+    let names = resolve_param_names(op);
     for p in op
         .parameters
         .iter()
         .filter(|p| matches!(p.location, IrParameterLocation::Path))
     {
-        let resolved = p.name.to_lower_camel_case();
+        let resolved = resolved_param(&names, p);
         let original = &p.name;
         // The backtick template and the ${...} must both survive into TS output.
         cb.add(
@@ -369,12 +371,13 @@ fn emit_query_params(
 ) {
     cb.add("// Build query parameters\n", vec![]);
     cb.add("const queryParameters: any = {};\n", vec![]);
+    let names = resolve_param_names(op);
     for p in op
         .parameters
         .iter()
         .filter(|p| matches!(p.location, IrParameterLocation::Query))
     {
-        let resolved = p.name.to_lower_camel_case();
+        let resolved = resolved_param(&names, p);
         cb.add(
             &format!(
                 "if (requestParameters['{0}'] !== undefined) {{\n  queryParameters['{1}'] = requestParameters['{0}'];\n}}\n",
@@ -397,12 +400,13 @@ fn emit_headers(
     cb.add("  ...this.configuration?.headers,\n", vec![]);
     cb.add("};\n\n", vec![]);
     cb.add("// Add header parameters\n", vec![]);
+    let names = resolve_param_names(op);
     for p in op
         .parameters
         .iter()
         .filter(|p| matches!(p.location, IrParameterLocation::Header))
     {
-        let resolved = p.name.to_lower_camel_case();
+        let resolved = resolved_param(&names, p);
         cb.add(
             &format!(
                 "if (requestParameters['{0}'] !== undefined) {{\n  headerParameters['{1}'] = String(requestParameters['{0}']);\n}}\n",
@@ -419,7 +423,12 @@ fn emit_request_body(
 ) {
     cb.add("// Prepare request body\n", vec![]);
     if op.request_body.is_some() {
-        cb.add("const requestBody = requestParameters['body'];\n", vec![]);
+        let names = resolve_param_names(op);
+        let body_name = resolved_body(&names);
+        cb.add(
+            &format!("const requestBody = requestParameters['{}'];\n", body_name),
+            vec![],
+        );
     } else {
         cb.add("const requestBody = undefined;\n", vec![]);
     }
@@ -790,6 +799,92 @@ fn classify_response(resp: &IrResponse) -> ResponseKind {
         return ResponseKind::Blob;
     }
     ResponseKind::None
+}
+
+// ============================================================================
+// Parameter-name resolution (collision disambiguation)
+// ============================================================================
+
+/// Key used for collision detection — tracks both params (by location tag)
+/// and the synthetic "body" field from the request body.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct ParamKey {
+    location_tag: &'static str,
+    original_name: String,
+}
+
+impl ParamKey {
+    fn body() -> Self {
+        Self {
+            location_tag: "body",
+            original_name: String::new(),
+        }
+    }
+
+    fn param(loc: &IrParameterLocation, name: &str) -> Self {
+        Self {
+            location_tag: location_tag(loc),
+            original_name: name.to_string(),
+        }
+    }
+}
+
+fn location_tag(loc: &IrParameterLocation) -> &'static str {
+    match loc {
+        IrParameterLocation::Path => "path",
+        IrParameterLocation::Query => "query",
+        IrParameterLocation::Header => "header",
+        IrParameterLocation::Cookie => "cookie",
+    }
+}
+
+/// Resolve the TypeScript field name for every param + optional request body
+/// on an operation. When two or more entries camelCase to the same name we
+/// prefix each colliding entry with its location (`pathId`, `queryId`,
+/// `headerId`, `queryBody`, `bodyBody`, ...). Single occurrences keep the
+/// camelCased original.
+fn resolve_param_names(op: &IrOperation) -> BTreeMap<ParamKey, String> {
+    let mut entries: Vec<(ParamKey, String)> = Vec::new();
+    for p in &op.parameters {
+        if matches!(p.location, IrParameterLocation::Cookie) {
+            continue;
+        }
+        let cc = p.name.to_lower_camel_case();
+        entries.push((ParamKey::param(&p.location, &p.name), cc));
+    }
+    if op.request_body.is_some() {
+        entries.push((ParamKey::body(), "body".to_string()));
+    }
+
+    let mut counts: BTreeMap<String, usize> = BTreeMap::new();
+    for (_, cc) in &entries {
+        *counts.entry(cc.clone()).or_insert(0) += 1;
+    }
+
+    let mut out = BTreeMap::new();
+    for (key, cc) in entries {
+        let final_name = if counts.get(&cc).copied().unwrap_or(0) > 1 {
+            format!("{}{}", key.location_tag, cc.to_pascal_case())
+        } else {
+            cc
+        };
+        out.insert(key, final_name);
+    }
+    out
+}
+
+fn resolved_param(names: &BTreeMap<ParamKey, String>, p: &IrParameter) -> String {
+    names
+        .get(&ParamKey::param(&p.location, &p.name))
+        .cloned()
+        .unwrap_or_else(|| p.name.to_lower_camel_case())
+}
+
+fn resolved_body(names: &BTreeMap<ParamKey, String>) -> String {
+    names
+        .get(&ParamKey::body())
+        .cloned()
+        .unwrap_or_else(|| "body".to_string())
 }
 
 // ============================================================================
