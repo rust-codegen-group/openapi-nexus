@@ -44,10 +44,7 @@ impl GoHttpCodeGenerator {
     }
 
     /// Orchestrate emission from the lowered IR.
-    fn generate_from_ir(
-        &self,
-        ir: &IrSpec,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_from_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let module_path = self.module_path();
         let header = render_file_header(&ir.info);
 

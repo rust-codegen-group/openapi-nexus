@@ -65,7 +65,10 @@ fn petstore_api_scaffold_emits_one_file_per_tag() {
     }
 
     // Handy for eyeballing the shape with `cargo test … -- --nocapture`.
-    eprintln!("--- PetApi.ts (scaffold) ---\n{}\n--- end ---", pet_api.content);
+    eprintln!(
+        "--- PetApi.ts (scaffold) ---\n{}\n--- end ---",
+        pet_api.content
+    );
 }
 
 #[test]
