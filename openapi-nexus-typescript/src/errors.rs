@@ -20,20 +20,6 @@ pub enum GeneratorError {
         source: minijinja::Error,
     },
 
-    /// API class generation error
-    #[snafu(display("Failed to generate API class '{}': {}", class_name, source))]
-    ApiClassGeneration {
-        class_name: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
-    /// API class generation error for tag
-    #[snafu(display("Failed to generate API class for tag '{}': {}", tag, source))]
-    ApiClassGenerationForTag {
-        tag: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
     /// Runtime template generation error
     #[snafu(display("Failed to render runtime template: {}", source))]
     RuntimeTemplate {
@@ -44,25 +30,6 @@ pub enum GeneratorError {
     #[snafu(display("Failed to render index file '{}': {}", file_path, source))]
     IndexFileGeneration {
         file_path: String,
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
-    /// Unsupported HTTP method error
-    #[snafu(display(
-        "Unsupported HTTP method: {:?}. Only GET, POST, PUT, PATCH, and DELETE are supported.",
-        method
-    ))]
-    UnsupportedHttpMethod { method: http::Method },
-
-    /// Parameter extraction error
-    #[snafu(display("Failed to extract parameters: {}", source))]
-    ParameterExtraction {
-        source: Box<dyn std::error::Error + Send + Sync>,
-    },
-
-    /// Return type generation error
-    #[snafu(display("Failed to generate return type: {}", source))]
-    ReturnTypeGeneration {
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
