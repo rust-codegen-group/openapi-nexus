@@ -1,5 +1,7 @@
 # Golden test commands (update .golden files, run comparison tests, compile-check generated code)
 
+set working-directory := '..'
+
 # Run Rust golden tests (verify generated output matches .golden files)
 @check:
     cargo test --test golden_tests_typescript_fetch
