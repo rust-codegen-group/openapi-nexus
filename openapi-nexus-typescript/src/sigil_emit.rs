@@ -11,14 +11,10 @@
 //! Not yet wired into [`crate::codegen::TypeScriptFetchCodeGenerator`]. This
 //! lives in the public surface so integration tests can exercise it directly.
 //!
-//! # Gaps discovered vs. `docs/target-output-spec.md`
+//! # Gaps vs. `docs/target-output-spec.md`
 //!
-//! 1. **No element-level `readonly` on array types.** `TypeName::Array(T)` only
-//!    renders as `T[]`; sigil-stitch has no `ReadonlyArray` variant. The target
-//!    spec wants `readonly T[]`. Workaround options:
-//!      - Emit `TypeName::generic(primitive("ReadonlyArray"), vec![T])` →
-//!        `ReadonlyArray<T>` (semantically equivalent, syntactically different).
-//!      - Upstream: add a `TypeName::ReadonlyArray` variant.
+//! 1. ~~No element-level `readonly` on array types.~~ Fixed upstream by adding
+//!    `TypeName::ReadonlyArray`; this module uses `readonly_array(inner)`.
 //! 2. **Field-level doc comment indentation is broken.** Inner `*` lines sit
 //!    flush-left instead of aligning with the field indent. Cosmetic but ugly.
 //!    Upstream sigil-stitch fix required.
@@ -90,7 +86,7 @@ fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName<TypeScript> {
             TypeName::importable_type(&module, name)
         }
         IrTypeExpr::Primitive(p) => TypeName::primitive(primitive_to_ts(p)),
-        IrTypeExpr::Array(inner) => TypeName::array(type_expr_to_typename(inner)),
+        IrTypeExpr::Array(inner) => TypeName::readonly_array(type_expr_to_typename(inner)),
         IrTypeExpr::Nullable(inner) => TypeName::optional(type_expr_to_typename(inner)),
         // Out of spike scope: fall back to `unknown` so the test surfaces the gap.
         _ => TypeName::primitive("unknown"),
