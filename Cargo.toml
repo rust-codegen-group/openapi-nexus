@@ -81,6 +81,9 @@ openapi-nexus-transforms = { version = "0.0.5", path = "openapi-nexus-transforms
 openapi-nexus-spec = { version = "0.0.5", path = "openapi-nexus-spec" }
 openapi-nexus-typescript = { version = "0.0.5", path = "openapi-nexus-typescript" }
 
+# External (path-based during spike; swap to crates.io once 0.2.0 is published)
+sigil-stitch = { path = "/Volumes/files/repo/adamcavendish/sigil-stitch", version = "0.2.0" }
+
 [workspace.metadata.publish]
 order = [
     "openapi-nexus-common",
