@@ -11,7 +11,7 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type Foo, FooFromJSON } from '../models/Foo';
+import type { Foo } from '../models/Foo';
 
 export interface ApiTestNestedUnionRequest {
     body: Foo;
@@ -83,7 +83,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => FooFromJSON(jsonValue)) as JSONApiResponse<Foo> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<Foo> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };

@@ -13,25 +13,3 @@
 
 /** A simple array type alias */
 export type Baz = Array<string>
-
-export function BazFromJSON(json: any): Baz {
-  return BazFromJSONTyped(json, false);
-}
-
-export function BazFromJSONTyped(json: any, ignoreDiscriminator: boolean): Baz {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function BazToJSON(value?: Baz | null): any {
-  return BazToJSONTyped(value, false);
-}
-
-export function BazToJSONTyped(value?: Baz | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

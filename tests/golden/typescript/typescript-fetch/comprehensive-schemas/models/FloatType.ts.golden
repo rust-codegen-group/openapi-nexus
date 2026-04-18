@@ -13,25 +13,3 @@
 
 /** Floating point number */
 export type FloatType = number
-
-export function FloatTypeFromJSON(json: any): FloatType {
-  return FloatTypeFromJSONTyped(json, false);
-}
-
-export function FloatTypeFromJSONTyped(json: any, ignoreDiscriminator: boolean): FloatType {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function FloatTypeToJSON(value?: FloatType | null): any {
-  return FloatTypeToJSONTyped(value, false);
-}
-
-export function FloatTypeToJSONTyped(value?: FloatType | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

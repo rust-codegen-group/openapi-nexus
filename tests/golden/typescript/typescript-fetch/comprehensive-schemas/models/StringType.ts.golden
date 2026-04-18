@@ -13,25 +13,3 @@
 
 /** Basic string type */
 export type StringType = string
-
-export function StringTypeFromJSON(json: any): StringType {
-  return StringTypeFromJSONTyped(json, false);
-}
-
-export function StringTypeFromJSONTyped(json: any, ignoreDiscriminator: boolean): StringType {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function StringTypeToJSON(value?: StringType | null): any {
-  return StringTypeToJSONTyped(value, false);
-}
-
-export function StringTypeToJSONTyped(value?: StringType | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

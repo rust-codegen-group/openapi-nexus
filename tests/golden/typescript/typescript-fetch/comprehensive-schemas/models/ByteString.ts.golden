@@ -13,25 +13,3 @@
 
 /** String with byte format (base64) */
 export type ByteString = string
-
-export function ByteStringFromJSON(json: any): ByteString {
-  return ByteStringFromJSONTyped(json, false);
-}
-
-export function ByteStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): ByteString {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function ByteStringToJSON(value?: ByteString | null): any {
-  return ByteStringToJSONTyped(value, false);
-}
-
-export function ByteStringToJSONTyped(value?: ByteString | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

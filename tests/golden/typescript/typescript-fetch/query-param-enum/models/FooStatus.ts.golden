@@ -17,25 +17,3 @@ export enum FooStatus {
   Bar = "bar",
   Baz = "baz"
 }
-
-export function FooStatusFromJSON(json: any): FooStatus {
-  return FooStatusFromJSONTyped(json, false);
-}
-
-export function FooStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): FooStatus {
-  if (json == null) {
-    return json;
-  }
-  return json as FooStatus;
-}
-
-export function FooStatusToJSON(value?: FooStatus | null): any {
-  return FooStatusToJSONTyped(value, false);
-}
-
-export function FooStatusToJSONTyped(value?: FooStatus | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

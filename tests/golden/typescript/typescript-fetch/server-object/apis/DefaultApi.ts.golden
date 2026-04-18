@@ -11,9 +11,9 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type GetAllUsersResponse200Item, GetAllUsersResponse200ItemFromJSON } from '../models/GetAllUsersResponse200Item';
-import { type GetUserByIdResponse200, GetUserByIdResponse200FromJSON } from '../models/GetUserByIdResponse200';
-import { type GetUserByIdResponse404, GetUserByIdResponse404FromJSON } from '../models/GetUserByIdResponse404';
+import type { GetAllUsersResponse200Item } from '../models/GetAllUsersResponse200Item';
+import type { GetUserByIdResponse200 } from '../models/GetUserByIdResponse200';
+import type { GetUserByIdResponse404 } from '../models/GetUserByIdResponse404';
 
 export interface ApiGetUserByIdRequest {
     id: number;
@@ -75,7 +75,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => (jsonValue as Array<any>).map(GetAllUsersResponse200ItemFromJSON)) as JSONApiResponse<Array<GetAllUsersResponse200Item>> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<Array<GetAllUsersResponse200Item>> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
@@ -126,10 +126,10 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => GetUserByIdResponse200FromJSON(jsonValue)) as JSONApiResponse<GetUserByIdResponse200> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<GetUserByIdResponse200> & { status: 200 };
     }
     else if (response.status === 404) {
-      return new JSONApiResponse(response, (jsonValue) => GetUserByIdResponse404FromJSON(jsonValue)) as JSONApiResponse<GetUserByIdResponse404> & { status: 404 };
+      return new JSONApiResponse(response) as JSONApiResponse<GetUserByIdResponse404> & { status: 404 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };

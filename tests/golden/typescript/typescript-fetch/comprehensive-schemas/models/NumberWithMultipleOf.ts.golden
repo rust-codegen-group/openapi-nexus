@@ -13,25 +13,3 @@
 
 /** Number divisible by multipleOf */
 export type NumberWithMultipleOf = number
-
-export function NumberWithMultipleOfFromJSON(json: any): NumberWithMultipleOf {
-  return NumberWithMultipleOfFromJSONTyped(json, false);
-}
-
-export function NumberWithMultipleOfFromJSONTyped(json: any, ignoreDiscriminator: boolean): NumberWithMultipleOf {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function NumberWithMultipleOfToJSON(value?: NumberWithMultipleOf | null): any {
-  return NumberWithMultipleOfToJSONTyped(value, false);
-}
-
-export function NumberWithMultipleOfToJSONTyped(value?: NumberWithMultipleOf | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

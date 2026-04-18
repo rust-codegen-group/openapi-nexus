@@ -17,25 +17,3 @@
 
 /** Kind type for VolumeKind discriminator union */
 export type VolumeKindKind = "VOLUME_KIND_LOCAL" | "VOLUME_KIND_REMOTE"
-
-export function VolumeKindKindFromJSON(json: any): VolumeKindKind {
-  return VolumeKindKindFromJSONTyped(json, false);
-}
-
-export function VolumeKindKindFromJSONTyped(json: any, ignoreDiscriminator: boolean): VolumeKindKind {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function VolumeKindKindToJSON(value?: VolumeKindKind | null): any {
-  return VolumeKindKindToJSONTyped(value, false);
-}
-
-export function VolumeKindKindToJSONTyped(value?: VolumeKindKind | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

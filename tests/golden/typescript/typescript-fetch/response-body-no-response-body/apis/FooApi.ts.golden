@@ -9,8 +9,8 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type ErrorResponse, ErrorResponseFromJSON } from '../models/ErrorResponse';
-import { type FooRequest, FooRequestToJSON } from '../models/FooRequest';
+import type { ErrorResponse } from '../models/ErrorResponse';
+import type { FooRequest } from '../models/FooRequest';
 
 export interface ApiUpdateFooBarRequest {
     fooId: string;
@@ -75,7 +75,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = FooRequestToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -90,10 +90,10 @@ export class FooApi extends BaseAPI implements FooApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
     }
     else if (response.status === 400) {
-      return new JSONApiResponse(response, (jsonValue) => ErrorResponseFromJSON(jsonValue)) as JSONApiResponse<ErrorResponse> & { status: 400 };
+      return new JSONApiResponse(response) as JSONApiResponse<ErrorResponse> & { status: 400 };
     }
     else if (response.status === 500) {
-      return new JSONApiResponse(response, (jsonValue) => ErrorResponseFromJSON(jsonValue)) as JSONApiResponse<ErrorResponse> & { status: 500 };
+      return new JSONApiResponse(response) as JSONApiResponse<ErrorResponse> & { status: 500 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };

@@ -16,25 +16,3 @@
 
 /** Kind type for Resource discriminator union */
 export type ResourceKind = "RESOURCE_CUSTOM" | "RESOURCE_QUICK" | "RESOURCE_UNSPECIFIED"
-
-export function ResourceKindFromJSON(json: any): ResourceKind {
-  return ResourceKindFromJSONTyped(json, false);
-}
-
-export function ResourceKindFromJSONTyped(json: any, ignoreDiscriminator: boolean): ResourceKind {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function ResourceKindToJSON(value?: ResourceKind | null): any {
-  return ResourceKindToJSONTyped(value, false);
-}
-
-export function ResourceKindToJSONTyped(value?: ResourceKind | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

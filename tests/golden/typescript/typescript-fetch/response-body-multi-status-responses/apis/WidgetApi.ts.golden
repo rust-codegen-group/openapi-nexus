@@ -9,9 +9,9 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type ErrorResponse, ErrorResponseFromJSON } from '../models/ErrorResponse';
-import { type Widget, WidgetFromJSON } from '../models/Widget';
-import { type WidgetListPartial, WidgetListPartialFromJSON } from '../models/WidgetListPartial';
+import type { ErrorResponse } from '../models/ErrorResponse';
+import type { Widget } from '../models/Widget';
+import type { WidgetListPartial } from '../models/WidgetListPartial';
 
 /** API client for Widget operations */
 
@@ -50,13 +50,13 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => (jsonValue as Array<any>).map(WidgetFromJSON)) as JSONApiResponse<Array<Widget>> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<Array<Widget>> & { status: 200 };
     }
     else if (response.status === 206) {
-      return new JSONApiResponse(response, (jsonValue) => WidgetListPartialFromJSON(jsonValue)) as JSONApiResponse<WidgetListPartial> & { status: 206 };
+      return new JSONApiResponse(response) as JSONApiResponse<WidgetListPartial> & { status: 206 };
     }
     else if (response.status === 404) {
-      return new JSONApiResponse(response, (jsonValue) => ErrorResponseFromJSON(jsonValue)) as JSONApiResponse<ErrorResponse> & { status: 404 };
+      return new JSONApiResponse(response) as JSONApiResponse<ErrorResponse> & { status: 404 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };

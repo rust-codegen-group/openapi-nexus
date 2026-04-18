@@ -17,25 +17,3 @@
 
 /** Kind type for ContainerKind discriminator union */
 export type ContainerKindKind = "CONTAINER_KIND_CUSTOM" | "CONTAINER_KIND_MANAGED"
-
-export function ContainerKindKindFromJSON(json: any): ContainerKindKind {
-  return ContainerKindKindFromJSONTyped(json, false);
-}
-
-export function ContainerKindKindFromJSONTyped(json: any, ignoreDiscriminator: boolean): ContainerKindKind {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function ContainerKindKindToJSON(value?: ContainerKindKind | null): any {
-  return ContainerKindKindToJSONTyped(value, false);
-}
-
-export function ContainerKindKindToJSONTyped(value?: ContainerKindKind | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

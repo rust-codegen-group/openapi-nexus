@@ -12,9 +12,9 @@
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
 import type { CreateTestResourceRequest } from '../models/CreateTestResourceRequest';
-import { type CreateTestResourceResponse, CreateTestResourceResponseFromJSON } from '../models/CreateTestResourceResponse';
-import { type DeleteTestResourceResponse, DeleteTestResourceResponseFromJSON } from '../models/DeleteTestResourceResponse';
-import { type HttpErrorResponse, HttpErrorResponseFromJSON } from '../models/HttpErrorResponse';
+import type { CreateTestResourceResponse } from '../models/CreateTestResourceResponse';
+import type { DeleteTestResourceResponse } from '../models/DeleteTestResourceResponse';
+import type { HttpErrorResponse } from '../models/HttpErrorResponse';
 
 export interface ApiCreateTestResourceRequest {
     body: CreateTestResourceRequest;
@@ -96,7 +96,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => CreateTestResourceResponseFromJSON(jsonValue)) as JSONApiResponse<CreateTestResourceResponse> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<CreateTestResourceResponse> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
@@ -150,13 +150,13 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => DeleteTestResourceResponseFromJSON(jsonValue)) as JSONApiResponse<DeleteTestResourceResponse> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<DeleteTestResourceResponse> & { status: 200 };
     }
     else if (response.status >= 400 && response.status < 500) {
-      return new JSONApiResponse(response, (jsonValue) => HttpErrorResponseFromJSON(jsonValue)) as JSONApiResponse<HttpErrorResponse> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<HttpErrorResponse> & { status: number };
     }
     else if (response.status >= 500 && response.status < 600) {
-      return new JSONApiResponse(response, (jsonValue) => HttpErrorResponseFromJSON(jsonValue)) as JSONApiResponse<HttpErrorResponse> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<HttpErrorResponse> & { status: number };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };

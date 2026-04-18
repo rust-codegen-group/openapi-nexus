@@ -11,10 +11,10 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type CreateRequestTypeA, CreateRequestTypeAToJSON } from '../models/CreateRequestTypeA';
-import { type CreateRequestTypeB, CreateRequestTypeBToJSON } from '../models/CreateRequestTypeB';
-import { type ResourceTypeA, ResourceTypeAFromJSON } from '../models/ResourceTypeA';
-import { type ResourceTypeB, ResourceTypeBFromJSON } from '../models/ResourceTypeB';
+import type { CreateRequestTypeA } from '../models/CreateRequestTypeA';
+import type { CreateRequestTypeB } from '../models/CreateRequestTypeB';
+import type { ResourceTypeA } from '../models/ResourceTypeA';
+import type { ResourceTypeB } from '../models/ResourceTypeB';
 
 export interface ApiCreateTypeARequest {
     body: CreateRequestTypeA;
@@ -94,7 +94,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = CreateRequestTypeAToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -106,7 +106,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => ResourceTypeAFromJSON(jsonValue)) as JSONApiResponse<ResourceTypeA> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<ResourceTypeA> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
@@ -152,7 +152,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Add header parameters
     // Prepare request body
-    const requestBody = CreateRequestTypeBToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -164,7 +164,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => ResourceTypeBFromJSON(jsonValue)) as JSONApiResponse<ResourceTypeB> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<ResourceTypeB> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };

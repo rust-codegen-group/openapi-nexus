@@ -12,7 +12,7 @@
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
 import type { FooStatus } from '../models/FooStatus';
-import { type GetItemsResponse200, GetItemsResponse200FromJSON } from '../models/GetItemsResponse200';
+import type { GetItemsResponse200 } from '../models/GetItemsResponse200';
 
 export interface ApiGetItemsRequest {
     status?: FooStatus;
@@ -73,7 +73,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => GetItemsResponse200FromJSON(jsonValue)) as JSONApiResponse<GetItemsResponse200> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<GetItemsResponse200> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };

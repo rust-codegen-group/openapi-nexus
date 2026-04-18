@@ -13,25 +13,3 @@
 
 /** Nullable string type (OpenAPI 3.1.2 style) */
 export type NullableString = string | null
-
-export function NullableStringFromJSON(json: any): NullableString {
-  return NullableStringFromJSONTyped(json, false);
-}
-
-export function NullableStringFromJSONTyped(json: any, ignoreDiscriminator: boolean): NullableString {
-  if (json == null) {
-    return json;
-  }
-  return json;
-}
-
-export function NullableStringToJSON(value?: NullableString | null): any {
-  return NullableStringToJSONTyped(value, false);
-}
-
-export function NullableStringToJSONTyped(value?: NullableString | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

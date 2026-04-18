@@ -17,25 +17,3 @@ export enum PetStatus {
   Pending = "pending",
   Sold = "sold"
 }
-
-export function PetStatusFromJSON(json: any): PetStatus {
-  return PetStatusFromJSONTyped(json, false);
-}
-
-export function PetStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): PetStatus {
-  if (json == null) {
-    return json;
-  }
-  return json as PetStatus;
-}
-
-export function PetStatusToJSON(value?: PetStatus | null): any {
-  return PetStatusToJSONTyped(value, false);
-}
-
-export function PetStatusToJSONTyped(value?: PetStatus | null, ignoreDiscriminator: boolean = false): any {
-  if (value == null) {
-    return value;
-  }
-  return value;
-}

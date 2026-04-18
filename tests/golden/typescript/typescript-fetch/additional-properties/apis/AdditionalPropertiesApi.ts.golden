@@ -11,9 +11,9 @@
  * Do not edit the file manually.
  */
 import { BaseAPI, BlobApiResponse, type Configuration, DefaultConfig, type InitOverrideFunction, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
-import { type LeafValue, LeafValueFromJSON, LeafValueToJSON } from '../models/LeafValue';
-import { type MiddleLevel, MiddleLevelFromJSON, MiddleLevelToJSON } from '../models/MiddleLevel';
-import { type RootLevel, RootLevelFromJSON, RootLevelToJSON } from '../models/RootLevel';
+import type { LeafValue } from '../models/LeafValue';
+import type { MiddleLevel } from '../models/MiddleLevel';
+import type { RootLevel } from '../models/RootLevel';
 
 export interface ApiPostLeafRequest {
     body: LeafValue;
@@ -113,7 +113,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
 
     // Add header parameters
     // Prepare request body
-    const requestBody = LeafValueToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -125,7 +125,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => LeafValueFromJSON(jsonValue)) as JSONApiResponse<LeafValue> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<LeafValue> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -174,7 +174,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
 
     // Add header parameters
     // Prepare request body
-    const requestBody = MiddleLevelToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -186,7 +186,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => MiddleLevelFromJSON(jsonValue)) as JSONApiResponse<MiddleLevel> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<MiddleLevel> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
@@ -235,7 +235,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
 
     // Add header parameters
     // Prepare request body
-    const requestBody = RootLevelToJSON(requestParameters['body']);
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -247,7 +247,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
 
     // Handle responses
     if (response.status === 200) {
-      return new JSONApiResponse(response, (jsonValue) => RootLevelFromJSON(jsonValue)) as JSONApiResponse<RootLevel> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<RootLevel> & { status: 200 };
     }
     else if (response.status === 400) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
