@@ -4,17 +4,17 @@ members = [
     "fixture-generators/additional-properties",
     "fixture-generators/enum-repr",
     "fixture-generators/petstore",
-    "openapi-nexus",
-    "openapi-nexus-common",
-    "openapi-nexus-config",
-    "openapi-nexus-core",
+    "crates/openapi-nexus",
+    "crates/openapi-nexus-common",
+    "crates/openapi-nexus-config",
+    "crates/openapi-nexus-core",
+    "crates/openapi-nexus-ir",
+    "crates/openapi-nexus-parser",
+    "crates/openapi-nexus-plugin",
+    "crates/openapi-nexus-spec",
+    "crates/openapi-nexus-transforms",
     "openapi-nexus-go",
-    "openapi-nexus-ir",
-    "openapi-nexus-parser",
-    "openapi-nexus-plugin",
     "openapi-nexus-rust",
-    "openapi-nexus-spec",
-    "openapi-nexus-transforms",
     "openapi-nexus-typescript",
 ]
 
@@ -67,18 +67,17 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "cache", "vendored"
 uuid = { version = "1.19.0", features = ["v4", "v7", "serde"] }
 
 # Workspace Projects
-openapi-nexus = { version = "0.0.5", path = "openapi-nexus" }
-openapi-nexus-common = { version = "0.0.5", path = "openapi-nexus-common" }
-openapi-nexus-config = { version = "0.0.5", path = "openapi-nexus-config" }
-openapi-nexus-core = { version = "0.0.5", path = "openapi-nexus-core" }
+openapi-nexus = { version = "0.0.5", path = "crates/openapi-nexus" }
+openapi-nexus-common = { version = "0.0.5", path = "crates/openapi-nexus-common" }
+openapi-nexus-config = { version = "0.0.5", path = "crates/openapi-nexus-config" }
+openapi-nexus-core = { version = "0.0.5", path = "crates/openapi-nexus-core" }
 openapi-nexus-go = { version = "0.0.5", path = "openapi-nexus-go" }
-openapi-nexus-ir = { version = "0.0.5", path = "openapi-nexus-ir" }
-openapi-nexus-parser = { version = "0.0.5", path = "openapi-nexus-parser" }
-openapi-nexus-petstore-example = { version = "0.0.5", path = "openapi-nexus-petstore-example" }
-openapi-nexus-plugin = { version = "0.0.5", path = "openapi-nexus-plugin" }
+openapi-nexus-ir = { version = "0.0.5", path = "crates/openapi-nexus-ir" }
+openapi-nexus-parser = { version = "0.0.5", path = "crates/openapi-nexus-parser" }
+openapi-nexus-plugin = { version = "0.0.5", path = "crates/openapi-nexus-plugin" }
 openapi-nexus-rust = { version = "0.0.5", path = "openapi-nexus-rust" }
-openapi-nexus-transforms = { version = "0.0.5", path = "openapi-nexus-transforms" }
-openapi-nexus-spec = { version = "0.0.5", path = "openapi-nexus-spec" }
+openapi-nexus-transforms = { version = "0.0.5", path = "crates/openapi-nexus-transforms" }
+openapi-nexus-spec = { version = "0.0.5", path = "crates/openapi-nexus-spec" }
 openapi-nexus-typescript = { version = "0.0.5", path = "openapi-nexus-typescript" }
 
 sigil-stitch = "0.2.1"
