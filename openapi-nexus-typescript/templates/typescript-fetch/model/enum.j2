@@ -1,7 +1,0 @@
-{% include "common/file_header.j2" with context %}
-
-{% for import in model_enum.imports %}
-{{ import | fmt }}
-{% endfor %}
-
-{{ model_enum.enum_definition | fmt }}
