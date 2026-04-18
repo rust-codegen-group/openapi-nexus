@@ -11,30 +11,21 @@ publish = true
 
 [dependencies]
 heck.workspace = true
-http.workspace = true
-minijinja.workspace = true
-minijinja-embed.workspace = true
-pretty.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sigil-stitch.workspace = true
 snafu.workspace = true
 toml.workspace = true
 tracing.workspace = true
 
 openapi-nexus-common.workspace = true
-openapi-nexus-config.workspace = true
 openapi-nexus-core.workspace = true
 openapi-nexus-ir.workspace = true
 openapi-nexus-spec.workspace = true
 
-[build-dependencies]
-minijinja-embed.workspace = true
-
 [dev-dependencies]
 serde_norway.workspace = true
 similar.workspace = true
-tempfile.workspace = true
-tracing-subscriber.workspace = true
 tracing-test.workspace = true
 
 openapi-nexus-parser.workspace = true

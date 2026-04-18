@@ -1,15 +1,17 @@
-//! Go code generation for OpenAPI specifications
+//! Go HTTP code generator for OpenAPI specifications.
 //!
-//! This crate provides Go code generation capabilities for OpenAPI 3.1 specifications.
+//! This crate lowers an `OpenApiV31Spec` through `openapi-nexus-ir` and emits
+//! idiomatic Go using `sigil-stitch`. The surface area is intentionally small:
+//! one `sdk` package with functional-option construction, an `Authenticator`
+//! interface for auth plumbing, typed response structs per operation, and plain
+//! struct models with `json:` tags.
 
-pub mod ast;
+pub mod codegen;
 pub mod config;
-pub mod consts;
 pub mod errors;
-pub mod generator;
-pub mod templating;
-pub mod type_mapping;
+pub mod runtime;
+pub mod sigil_emit;
+pub mod sigil_emit_api;
 
-// Re-export main types for convenience
+pub use codegen::GoHttpCodeGenerator;
 pub use config::GoHttpConfig;
-pub use generator::GoHttpCodeGenerator;

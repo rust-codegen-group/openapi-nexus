@@ -1112,25 +1112,19 @@ name = "openapi-nexus-go"
 version = "0.0.5"
 dependencies = [
  "heck",
- "http",
- "minijinja",
- "minijinja-embed",
  "openapi-nexus-common",
- "openapi-nexus-config",
  "openapi-nexus-core",
  "openapi-nexus-ir",
  "openapi-nexus-parser",
  "openapi-nexus-spec",
- "pretty",
  "serde",
  "serde_json",
  "serde_norway",
+ "sigil-stitch",
  "similar",
  "snafu 0.8.9",
- "tempfile",
  "toml",
  "tracing",
- "tracing-subscriber",
  "tracing-test",
 ]
 
