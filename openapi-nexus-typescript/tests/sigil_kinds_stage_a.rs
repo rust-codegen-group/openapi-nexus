@@ -10,7 +10,11 @@ use std::path::Path;
 use openapi_nexus_typescript::sigil_emit;
 
 fn read_fixture(rel: &str) -> String {
-    for base in ["tests/fixtures", "../tests/fixtures", "../../tests/fixtures"] {
+    for base in [
+        "tests/fixtures",
+        "../tests/fixtures",
+        "../../tests/fixtures",
+    ] {
         let p = Path::new(base).join(rel);
         if p.exists() {
             return fs::read_to_string(p).unwrap();
@@ -35,7 +39,12 @@ fn find<'a>(files: &'a [(String, String)], filename: &str) -> &'a str {
         .iter()
         .find(|(n, _)| n == filename)
         .map(|(_, c)| c.as_str())
-        .unwrap_or_else(|| panic!("expected file {filename} in: {:?}", files.iter().map(|(n, _)| n).collect::<Vec<_>>()))
+        .unwrap_or_else(|| {
+            panic!(
+                "expected file {filename} in: {:?}",
+                files.iter().map(|(n, _)| n).collect::<Vec<_>>()
+            )
+        })
 }
 
 #[test]

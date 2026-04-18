@@ -4,10 +4,11 @@
  * Multiple Similar Request Schemas API — 1.0.0
  * Test API with multiple operations having similar request body schema names
  */
+import type { ResourceTypeA } from './ResourceTypeA';
+
 /**
- * TypeB resource
+ * Request to create TypeA resource
  */
-export interface Resource_TypeB {
-  readonly id?: string;
-  readonly name?: string;
+export interface CreateRequestTypeA {
+  readonly resource: ResourceTypeA;
 }
