@@ -1055,10 +1055,8 @@ dependencies = [
 name = "openapi-nexus-core"
 version = "0.0.5"
 dependencies = [
- "heck",
  "openapi-nexus-spec",
  "serde",
- "serde_json",
  "serde_plain",
 ]
 
