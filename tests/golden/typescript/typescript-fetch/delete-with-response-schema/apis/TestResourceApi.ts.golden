@@ -57,7 +57,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
       );
     }
     // Build path with path parameters
-    let urlPath = `/v1/api/test-resource`;
+    const urlPath = `/v1/api/test-resource`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

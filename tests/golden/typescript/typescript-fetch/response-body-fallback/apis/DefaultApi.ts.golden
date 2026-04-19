@@ -39,7 +39,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       | VoidApiResponse
       & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/fallback/no-body`;
+    const urlPath = `/fallback/no-body`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -80,7 +80,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       | JSONApiResponse<any>
       & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/fallback/with-body`;
+    const urlPath = `/fallback/with-body`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
