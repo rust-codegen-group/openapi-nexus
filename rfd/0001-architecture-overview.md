@@ -83,16 +83,15 @@ graph TD
   - Handle references and external documents
   - Provide error reporting with source locations
 
-### 2. Transform Stage
+### 2. Lower to IR Stage
 
 - **Input**: utoipa `OpenApi` structure
-- **Output**: Transformed `OpenApi` structure
-- **Component**: `openapi-nexus-transforms`
+- **Output**: Language-agnostic intermediate representation
+- **Component**: `openapi-nexus-ir` (see `lower/v31.rs`)
 - **Responsibilities**:
-  - Apply normalization passes
   - Resolve references and dependencies
-  - Apply semantic analysis
-  - Optimize for code generation
+  - Normalize schemas and classify tagged-enum patterns
+  - Produce an IR ready for language-specific generation
 
 ### 3. Generate AST Stage
 
@@ -120,10 +119,10 @@ graph TD
 
 ### Core Crates
 
-- **`openapi-nexus-core`**: Common types, configuration, and error handling
+- **`openapi-nexus-core`**: Shared traits (`CodeGenerator`, `FileWriter`), common enums (`Language`, `GeneratorType`, `NamingConvention`)
+- **`openapi-nexus-spec`**: OpenAPI specification types (OAS 3.0 / 3.1 / 3.2)
 - **`openapi-nexus-parser`**: OpenAPI specification parsing using utoipa
-- **`openapi-nexus-ir`**: Intermediate representation utilities and helpers
-- **`openapi-nexus-transforms`**: Transformation pass framework and built-in passes
+- **`openapi-nexus-ir`**: Intermediate representation, lowering, tagged-enum pattern classification
 
 ### Language-Specific Crates
 
@@ -271,13 +270,6 @@ Each language generator can define its own configuration options:
 4. Implement type mapping from OpenAPI to language types
 5. Create pretty printer for the language
 6. Register with plugin system
-
-### Adding New Transform Passes
-
-1. Implement `TransformPass` trait
-2. Define pass-specific configuration
-3. Add to built-in passes or create plugin
-4. Register with transform pipeline
 
 ### Custom Type Mappings
 
