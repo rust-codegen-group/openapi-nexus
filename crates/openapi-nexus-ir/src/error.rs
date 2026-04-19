@@ -2,7 +2,7 @@
 
 use snafu::Snafu;
 
-use openapi_nexus_common::SourceLocation;
+use crate::SourceLocation;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
@@ -42,8 +42,8 @@ pub enum IrError {
 
 #[cfg(test)]
 mod tests {
+    use crate::SourceLocation;
     use crate::error::IrError;
-    use openapi_nexus_common::SourceLocation;
 
     #[test]
     fn test_circular_reference_error() {

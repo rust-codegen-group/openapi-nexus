@@ -1,20 +1,17 @@
 //! Supported generator frameworks for code generation
 
-use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::language::Language;
 
 /// Supported generator frameworks for code generation
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum GeneratorType {
     /// TypeScript client using Fetch API
     #[serde(rename = "typescript-fetch")]
-    #[value(name = "typescript-fetch")]
     TypeScriptFetch,
     /// Go client using HTTP
     #[serde(rename = "go-http")]
-    #[value(name = "go-http")]
     GoHttp,
 }
 

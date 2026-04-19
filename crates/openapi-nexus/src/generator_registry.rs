@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use tracing::error;
 
-use openapi_nexus_common::GeneratorType;
 use openapi_nexus_core::CombinedGenerator;
+use openapi_nexus_core::GeneratorType;
 
 /// Registry for managing code generators
 pub struct GeneratorRegistry {

@@ -331,7 +331,7 @@ impl<'a> SchemaAnalyzer<'a> {
         let components = self.openapi.components.as_ref().ok_or_else(|| {
             let err = IrError::AnalysisError {
                 message: "No components found".to_string(),
-                location: openapi_nexus_common::SourceLocation::new(),
+                location: crate::SourceLocation::new(),
             };
             tracing::error!("{}", err);
             err
@@ -340,7 +340,7 @@ impl<'a> SchemaAnalyzer<'a> {
         let schema = components.schemas.get(schema_name).ok_or_else(|| {
             let err = IrError::AnalysisError {
                 message: format!("Schema '{}' not found", schema_name),
-                location: openapi_nexus_common::SourceLocation::new(),
+                location: crate::SourceLocation::new(),
             };
             tracing::error!("{}", err);
             err

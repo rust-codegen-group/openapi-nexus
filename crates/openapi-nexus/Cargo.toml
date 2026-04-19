@@ -16,7 +16,6 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 toml.workspace = true
 
-openapi-nexus-common.workspace = true
 openapi-nexus-config.workspace = true
 openapi-nexus-core.workspace = true
 openapi-nexus-go-http.workspace = true

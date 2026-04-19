@@ -5,14 +5,12 @@ members = [
     "fixture-generators/enum-repr",
     "fixture-generators/petstore",
     "crates/openapi-nexus",
-    "crates/openapi-nexus-common",
     "crates/openapi-nexus-config",
     "crates/openapi-nexus-core",
     "crates/openapi-nexus-ir",
     "crates/openapi-nexus-parser",
     "crates/openapi-nexus-plugin",
     "crates/openapi-nexus-spec",
-    "crates/openapi-nexus-transforms",
     "crates/generators/openapi-nexus-go-http",
     "crates/generators/openapi-nexus-rust-reqwest",
     "crates/generators/openapi-nexus-typescript-fetch",
@@ -68,7 +66,6 @@ uuid = { version = "1.19.0", features = ["v4", "v7", "serde"] }
 
 # Workspace Projects
 openapi-nexus = { version = "0.0.5", path = "crates/openapi-nexus" }
-openapi-nexus-common = { version = "0.0.5", path = "crates/openapi-nexus-common" }
 openapi-nexus-config = { version = "0.0.5", path = "crates/openapi-nexus-config" }
 openapi-nexus-core = { version = "0.0.5", path = "crates/openapi-nexus-core" }
 openapi-nexus-go-http = { version = "0.0.5", path = "crates/generators/openapi-nexus-go-http" }
@@ -76,7 +73,6 @@ openapi-nexus-ir = { version = "0.0.5", path = "crates/openapi-nexus-ir" }
 openapi-nexus-parser = { version = "0.0.5", path = "crates/openapi-nexus-parser" }
 openapi-nexus-plugin = { version = "0.0.5", path = "crates/openapi-nexus-plugin" }
 openapi-nexus-rust-reqwest = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-reqwest" }
-openapi-nexus-transforms = { version = "0.0.5", path = "crates/openapi-nexus-transforms" }
 openapi-nexus-spec = { version = "0.0.5", path = "crates/openapi-nexus-spec" }
 openapi-nexus-typescript-fetch = { version = "0.0.5", path = "crates/generators/openapi-nexus-typescript-fetch" }
 
@@ -84,11 +80,10 @@ sigil-stitch = "0.2.1"
 
 [workspace.metadata.publish]
 order = [
-    "openapi-nexus-common",
     "openapi-nexus-spec",
     "openapi-nexus-parser",
-    "openapi-nexus-config",
     "openapi-nexus-core",
+    "openapi-nexus-config",
     "openapi-nexus-typescript-fetch",
     "openapi-nexus-go-http",
     "openapi-nexus",

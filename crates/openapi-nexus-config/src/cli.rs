@@ -7,7 +7,7 @@ use clap::Parser;
 
 use crate::errors::ConfigError;
 use crate::global_config::GlobalConfig;
-use openapi_nexus_common::GeneratorType;
+use openapi_nexus_core::GeneratorType;
 
 /// Command-line arguments with environment variable support
 #[derive(Debug, Parser)]
