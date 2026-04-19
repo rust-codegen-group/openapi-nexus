@@ -340,7 +340,12 @@ fn emit_url_path(
     op: &IrOperation,
 ) {
     cb.add("// Build path with path parameters\n", vec![]);
-    cb.add(&format!("let urlPath = `{}`;\n", op.path), vec![]);
+    let has_path_params = op
+        .parameters
+        .iter()
+        .any(|p| matches!(p.location, IrParameterLocation::Path));
+    let binding = if has_path_params { "let" } else { "const" };
+    cb.add(&format!("{} urlPath = `{}`;\n", binding, op.path), vec![]);
 
     let names = resolve_param_names(op);
     for p in op

@@ -40,7 +40,7 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
       | JSONApiResponse<any>
       & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/widgets`;
+    const urlPath = `/widgets`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

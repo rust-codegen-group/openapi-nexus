@@ -28,7 +28,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       | VoidApiResponse
       & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/test`;
+    const urlPath = `/test`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

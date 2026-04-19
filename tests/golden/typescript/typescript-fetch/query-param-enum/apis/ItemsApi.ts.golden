@@ -39,7 +39,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
       | VoidApiResponse & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/items`;
+    const urlPath = `/items`;
     // Build query parameters
     const queryParameters: any = {};
     if (requestParameters['status'] !== undefined) {

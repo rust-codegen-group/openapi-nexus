@@ -90,7 +90,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/adjacently-tagged`;
+    const urlPath = `/adjacently-tagged`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -140,7 +140,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/externally-tagged`;
+    const urlPath = `/externally-tagged`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -190,7 +190,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/internally-tagged`;
+    const urlPath = `/internally-tagged`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -238,7 +238,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/mixed`;
+    const urlPath = `/mixed`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -286,7 +286,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/untagged`;
+    const urlPath = `/untagged`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

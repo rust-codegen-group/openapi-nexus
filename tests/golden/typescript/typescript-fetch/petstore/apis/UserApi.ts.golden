@@ -119,7 +119,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/user`;
+    const urlPath = `/user`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -165,7 +165,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/user/createWithList`;
+    const urlPath = `/user/createWithList`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -204,7 +204,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/user/login`;
+    const urlPath = `/user/login`;
     // Build query parameters
     const queryParameters: any = {};
     if (requestParameters['username'] !== undefined) {
@@ -250,7 +250,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
       | VoidApiResponse
       & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/user/logout`;
+    const urlPath = `/user/logout`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

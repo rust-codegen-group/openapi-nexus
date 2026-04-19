@@ -74,7 +74,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/form`;
+    const urlPath = `/form`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -119,7 +119,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/json`;
+    const urlPath = `/json`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -164,7 +164,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/json-or-xml`;
+    const urlPath = `/json-or-xml`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -209,7 +209,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/text`;
+    const urlPath = `/text`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -254,7 +254,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/xml`;
+    const urlPath = `/xml`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
