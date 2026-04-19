@@ -1050,9 +1050,9 @@ dependencies = [
  "openapi-nexus-common",
  "openapi-nexus-config",
  "openapi-nexus-core",
- "openapi-nexus-go",
+ "openapi-nexus-go-http",
  "openapi-nexus-parser",
- "openapi-nexus-typescript",
+ "openapi-nexus-typescript-fetch",
  "snafu 0.8.9",
  "toml",
  "tracing",
@@ -1102,7 +1102,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openapi-nexus-go"
+name = "openapi-nexus-go-http"
 version = "0.0.5"
 dependencies = [
  "heck",
@@ -1165,7 +1165,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openapi-nexus-rust"
+name = "openapi-nexus-rust-reqwest"
 version = "0.0.5"
 dependencies = [
  "heck",
@@ -1210,7 +1210,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openapi-nexus-typescript"
+name = "openapi-nexus-typescript-fetch"
 version = "0.0.5"
 dependencies = [
  "heck",

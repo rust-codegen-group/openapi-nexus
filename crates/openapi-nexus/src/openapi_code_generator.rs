@@ -8,9 +8,9 @@ use crate::generator_registry::GeneratorRegistry;
 use openapi_nexus_common::GeneratorType;
 use openapi_nexus_config::Config;
 use openapi_nexus_core::traits::{CodeGenerator, FileWriter};
-use openapi_nexus_go::GoHttpCodeGenerator;
+use openapi_nexus_go_http::GoHttpCodeGenerator;
 use openapi_nexus_parser::parse_file;
-use openapi_nexus_typescript::TypeScriptFetchCodeGenerator;
+use openapi_nexus_typescript_fetch::TypeScriptFetchCodeGenerator;
 
 /// Main code generation orchestrator
 pub struct OpenApiCodeGenerator {

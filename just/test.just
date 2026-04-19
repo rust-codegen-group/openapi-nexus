@@ -8,12 +8,12 @@ set working-directory := '..'
 
 # Run TypeScript generator tests
 @test-typescript:
-    cargo test -p openapi-nexus-typescript
+    cargo test -p openapi-nexus-typescript-fetch
 
 # Run Go generator tests
 @test-go:
-    cargo test -p openapi-nexus-go
+    cargo test -p openapi-nexus-go-http
 
 # Run specific test
 @test-specific TEST_NAME:
-    cargo test -p openapi-nexus-typescript {{ TEST_NAME }}
+    cargo test -p openapi-nexus-typescript-fetch {{ TEST_NAME }}

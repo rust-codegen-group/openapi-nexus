@@ -9,7 +9,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use openapi_nexus_typescript::sigil_emit;
+use openapi_nexus_typescript_fetch::sigil_emit;
 use similar::TextDiff;
 
 fn read_fixture(rel: &str) -> String {
@@ -17,6 +17,7 @@ fn read_fixture(rel: &str) -> String {
         "tests/fixtures",
         "../tests/fixtures",
         "../../tests/fixtures",
+        "../../../tests/fixtures",
     ] {
         let p = Path::new(base).join(rel);
         if p.exists() {
@@ -31,6 +32,7 @@ fn golden_dir() -> PathBuf {
         "tests/golden/typescript/typescript-fetch-sigil",
         "../tests/golden/typescript/typescript-fetch-sigil",
         "../../tests/golden/typescript/typescript-fetch-sigil",
+        "../../../tests/golden/typescript/typescript-fetch-sigil",
     ] {
         let p = Path::new(base);
         if p.parent().map(|pp| pp.exists()).unwrap_or(false) {
