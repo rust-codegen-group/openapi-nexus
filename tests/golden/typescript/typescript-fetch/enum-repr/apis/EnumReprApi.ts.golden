@@ -96,7 +96,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
@@ -147,7 +146,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
@@ -198,7 +196,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
@@ -247,7 +244,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
@@ -296,7 +292,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
