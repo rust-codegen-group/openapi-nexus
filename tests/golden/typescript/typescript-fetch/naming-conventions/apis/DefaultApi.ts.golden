@@ -51,7 +51,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async getWithQueryParamsRaw(requestParameters: ApiGetWithQueryParamsRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 }
       | VoidApiResponse & { status: number }> {
-    if (requestParameters['snakeCaseParam'] == null) {
+    if (requestParameters['snakeCaseParam'] === undefined || requestParameters['snakeCaseParam'] === null) {
       throw new RequiredError(
         'snakeCaseParam',
         'Required parameter "snakeCaseParam" was null or undefined when calling getWithQueryParamsRaw().'
@@ -131,7 +131,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<NamingConventionTest>
       & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling testNamingConventionsRaw().'

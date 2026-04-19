@@ -83,7 +83,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleAdjacentlyTaggedRaw().'
@@ -134,7 +134,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleExternallyTaggedRaw().'
@@ -185,7 +185,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleInternallyTaggedRaw().'
@@ -234,7 +234,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   async handleMixedRaw(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<MixedEnum> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleMixedRaw().'
@@ -283,7 +283,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   async handleUntaggedRaw(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<UntaggedEnum> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleUntaggedRaw().'

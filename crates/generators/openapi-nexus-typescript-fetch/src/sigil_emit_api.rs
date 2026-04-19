@@ -327,7 +327,7 @@ fn emit_required_param_checks(
     for pname in all_required {
         cb.add(
             &format!(
-                "if (requestParameters['{0}'] == null) {{\n  throw new %T(\n    '{0}',\n    'Required parameter \"{0}\" was null or undefined when calling {1}().'\n  );\n}}\n",
+                "if (requestParameters['{0}'] === undefined || requestParameters['{0}'] === null) {{\n  throw new %T(\n    '{0}',\n    'Required parameter \"{0}\" was null or undefined when calling {1}().'\n  );\n}}\n",
                 pname, method_name
             ),
             vec![Arg::TypeName(rt_value("RequiredError"))],

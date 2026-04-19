@@ -49,7 +49,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
       & { status: 400 } | VoidApiResponse
       & { status: 404 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['pathId'] == null) {
+    if (requestParameters['pathId'] === undefined || requestParameters['pathId'] === null) {
       throw new RequiredError(
         'pathId',
         'Required parameter "pathId" was null or undefined when calling getUserByIdDuplicateRaw().'

@@ -111,7 +111,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   async placeOrderRaw(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<Order> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling placeOrderRaw().'
@@ -161,7 +161,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<Order> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['orderId'] == null) {
+    if (requestParameters['orderId'] === undefined || requestParameters['orderId'] === null) {
       throw new RequiredError(
         'orderId',
         'Required parameter "orderId" was null or undefined when calling getOrderByIdRaw().'
@@ -212,7 +212,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
       & { status: number }> {
-    if (requestParameters['orderId'] == null) {
+    if (requestParameters['orderId'] === undefined || requestParameters['orderId'] === null) {
       throw new RequiredError(
         'orderId',
         'Required parameter "orderId" was null or undefined when calling deleteOrderRaw().'

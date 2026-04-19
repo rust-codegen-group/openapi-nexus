@@ -40,7 +40,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createTestRaw(requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<Baz> & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTestRaw().'
@@ -86,7 +86,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async getTestRaw(requestParameters: ApiGetTestRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<Baz> & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['id'] == null) {
+    if (requestParameters['id'] === undefined || requestParameters['id'] === null) {
       throw new RequiredError(
         'id',
         'Required parameter "id" was null or undefined when calling getTestRaw().'

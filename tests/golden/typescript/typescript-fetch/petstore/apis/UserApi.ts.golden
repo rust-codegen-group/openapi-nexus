@@ -112,7 +112,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   async createUserRaw(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<User> & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createUserRaw().'
@@ -159,7 +159,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<User>
       & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createUsersWithListInputRaw().'
@@ -289,7 +289,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<User> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['username'] == null) {
+    if (requestParameters['username'] === undefined || requestParameters['username'] === null) {
       throw new RequiredError(
         'username',
         'Required parameter "username" was null or undefined when calling getUserByNameRaw().'
@@ -340,13 +340,13 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
       & { status: number }> {
-    if (requestParameters['username'] == null) {
+    if (requestParameters['username'] === undefined || requestParameters['username'] === null) {
       throw new RequiredError(
         'username',
         'Required parameter "username" was null or undefined when calling updateUserRaw().'
       );
     }
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling updateUserRaw().'
@@ -400,7 +400,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
       & { status: number }> {
-    if (requestParameters['username'] == null) {
+    if (requestParameters['username'] === undefined || requestParameters['username'] === null) {
       throw new RequiredError(
         'username',
         'Required parameter "username" was null or undefined when calling deleteUserRaw().'
