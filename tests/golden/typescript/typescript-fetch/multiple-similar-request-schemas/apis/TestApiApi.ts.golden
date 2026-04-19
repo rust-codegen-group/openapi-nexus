@@ -50,7 +50,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/api/v1/type-a/resources`;
+    const urlPath = `/api/v1/type-a/resources`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -95,7 +95,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/api/v1/type-b/resources`;
+    const urlPath = `/api/v1/type-b/resources`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

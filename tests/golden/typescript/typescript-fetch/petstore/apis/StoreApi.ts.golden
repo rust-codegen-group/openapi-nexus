@@ -75,7 +75,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
       | JSONApiResponse<any>
       & { status: number }> {
     // Build path with path parameters
-    let urlPath = `/store/inventory`;
+    const urlPath = `/store/inventory`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -117,7 +117,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/store/order`;
+    const urlPath = `/store/order`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

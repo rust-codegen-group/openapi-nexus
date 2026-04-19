@@ -51,7 +51,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/container`;
+    const urlPath = `/container`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -96,7 +96,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/volume`;
+    const urlPath = `/volume`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

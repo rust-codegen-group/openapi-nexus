@@ -64,7 +64,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
       );
     }
     // Build path with path parameters
-    let urlPath = `/leaf`;
+    const urlPath = `/leaf`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -112,7 +112,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
       );
     }
     // Build path with path parameters
-    let urlPath = `/middle`;
+    const urlPath = `/middle`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -160,7 +160,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
       );
     }
     // Build path with path parameters
-    let urlPath = `/root`;
+    const urlPath = `/root`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers

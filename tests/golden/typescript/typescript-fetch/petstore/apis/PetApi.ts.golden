@@ -155,7 +155,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/pet`;
+    const urlPath = `/pet`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -210,7 +210,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/pet`;
+    const urlPath = `/pet`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -263,7 +263,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/pet/findByStatus`;
+    const urlPath = `/pet/findByStatus`;
     // Build query parameters
     const queryParameters: any = {};
     if (requestParameters['status'] !== undefined) {
@@ -311,7 +311,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/pet/findByTags`;
+    const urlPath = `/pet/findByTags`;
     // Build query parameters
     const queryParameters: any = {};
     if (requestParameters['tags'] !== undefined) {

@@ -47,7 +47,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       );
     }
     // Build path with path parameters
-    let urlPath = `/event`;
+    const urlPath = `/event`;
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
