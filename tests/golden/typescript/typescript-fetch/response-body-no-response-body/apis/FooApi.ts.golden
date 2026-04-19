@@ -61,7 +61,6 @@ export class FooApi extends BaseAPI implements FooApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
     // Prepare request body
     const requestBody = requestParameters['body'];
     // Make request

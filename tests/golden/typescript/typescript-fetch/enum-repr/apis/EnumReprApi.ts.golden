@@ -99,7 +99,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
     // Prepare request body
     const requestBody = requestParameters['body'];
     // Make request
@@ -151,7 +150,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
     // Prepare request body
     const requestBody = requestParameters['body'];
     // Make request
@@ -203,7 +201,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
     // Prepare request body
     const requestBody = requestParameters['body'];
     // Make request
@@ -253,7 +250,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
     // Prepare request body
     const requestBody = requestParameters['body'];
     // Make request
@@ -303,7 +299,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
     // Prepare request body
     const requestBody = requestParameters['body'];
     // Make request
