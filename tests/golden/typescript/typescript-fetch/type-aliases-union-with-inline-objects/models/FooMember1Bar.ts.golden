@@ -9,11 +9,11 @@
  */
 export interface FooMember1Bar {
   /**
- * First property
- */
+   * First property
+   */
   readonly baz: string;
   /**
- * Second property
- */
+   * Second property
+   */
   readonly qux: string;
 }

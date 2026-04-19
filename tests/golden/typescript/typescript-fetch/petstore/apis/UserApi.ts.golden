@@ -18,34 +18,34 @@ export interface ApiCreateUsersWithListInputRequest {
 
 export interface ApiLoginUserRequest {
   /**
- * The user name for login
- */
+   * The user name for login
+   */
   username?: string;
   /**
- * The password for login in clear text
- */
+   * The password for login in clear text
+   */
   password?: string;
 }
 
 export interface ApiGetUserByNameRequest {
   /**
- * The name that needs to be fetched. Use user1 for testing
- */
+   * The name that needs to be fetched. Use user1 for testing
+   */
   username: string;
 }
 
 export interface ApiUpdateUserRequest {
   /**
- * name that need to be deleted
- */
+   * name that need to be deleted
+   */
   username: string;
   body: User;
 }
 
 export interface ApiDeleteUserRequest {
   /**
- * The name that needs to be deleted
- */
+   * The name that needs to be deleted
+   */
   username: string;
 }
 
@@ -103,8 +103,8 @@ export interface UserApiInterface {
 
 export class UserApi extends BaseAPI implements UserApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

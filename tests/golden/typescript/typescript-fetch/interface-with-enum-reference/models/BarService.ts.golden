@@ -8,8 +8,8 @@ import type { BarStatus } from './BarStatus';
 
 export interface BarService {
   /**
- * DIY name ASAP
- */
+   * DIY name ASAP
+   */
   readonly diYnameAsap?: string;
   readonly status: BarStatus;
 }

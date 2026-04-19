@@ -9,15 +9,15 @@
  */
 export interface ObjectWithDefaults {
   /**
- * Whether the person is currently active
- */
+   * Whether the person is currently active
+   */
   readonly active?: boolean;
   /**
- * Age in years
- */
+   * Age in years
+   */
   readonly age?: number;
   /**
- * Full name of the person
- */
+   * Full name of the person
+   */
   readonly name?: string;
 }

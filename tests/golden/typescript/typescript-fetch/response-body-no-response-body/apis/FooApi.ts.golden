@@ -27,8 +27,8 @@ export interface FooApiInterface {
 
 export class FooApi extends BaseAPI implements FooApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

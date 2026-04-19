@@ -76,7 +76,7 @@ openapi-nexus-rust-reqwest = { version = "0.0.5", path = "crates/generators/open
 openapi-nexus-spec = { version = "0.0.5", path = "crates/openapi-nexus-spec" }
 openapi-nexus-typescript-fetch = { version = "0.0.5", path = "crates/generators/openapi-nexus-typescript-fetch" }
 
-sigil-stitch = "0.2.1"
+sigil-stitch = "0.2.2"
 
 [workspace.metadata.publish]
 order = [

@@ -11,24 +11,24 @@ import type { OrderStatus } from './OrderStatus';
  */
 export interface Order {
   /**
- * Complete flag
- */
+   * Complete flag
+   */
   readonly complete?: boolean | null;
   /**
- * Order ID
- */
+   * Order ID
+   */
   readonly id?: number | null;
   /**
- * Pet ID
- */
+   * Pet ID
+   */
   readonly petId?: number | null;
   /**
- * Quantity
- */
+   * Quantity
+   */
   readonly quantity?: number | null;
   /**
- * Ship date
- */
+   * Ship date
+   */
   readonly shipDate?: string | null;
   readonly status?: OrderStatus | null;
 }

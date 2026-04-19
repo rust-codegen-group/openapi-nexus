@@ -17,8 +17,8 @@ export interface ApiCreateTestResourceRequest {
 
 export interface ApiDeleteTestResourceRequest {
   /**
- * Unique identifier of the test resource
- */
+   * Unique identifier of the test resource
+   */
   resourceId: string;
 }
 
@@ -40,8 +40,8 @@ export interface TestResourceApiInterface {
 
 export class TestResourceApi extends BaseAPI implements TestResourceApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

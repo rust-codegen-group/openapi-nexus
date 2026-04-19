@@ -34,8 +34,8 @@ export interface TestApiApiInterface {
 
 export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

@@ -6,23 +6,23 @@
  */
 export interface User {
   /**
- * When the user was created
- */
+   * When the user was created
+   */
   readonly createdAt?: string;
   /**
- * User's email address
- */
+   * User's email address
+   */
   readonly email: string;
   /**
- * Unique identifier for the user
- */
+   * Unique identifier for the user
+   */
   readonly id: number;
   /**
- * User's full name
- */
+   * User's full name
+   */
   readonly name: string;
   /**
- * When the user was last updated
- */
+   * When the user was last updated
+   */
   readonly updatedAt?: string;
 }

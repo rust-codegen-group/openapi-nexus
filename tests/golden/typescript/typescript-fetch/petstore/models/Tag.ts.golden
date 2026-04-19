@@ -9,11 +9,11 @@
  */
 export interface Tag {
   /**
- * Tag ID
- */
+   * Tag ID
+   */
   readonly id?: number | null;
   /**
- * Tag name
- */
+   * Tag name
+   */
   readonly name?: string | null;
 }

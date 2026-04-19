@@ -24,8 +24,8 @@ export interface DefaultApiInterface {
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }
