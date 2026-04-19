@@ -38,13 +38,13 @@ export class FooApi extends BaseAPI implements FooApiInterface {
       | JSONApiResponse<ErrorResponse> & { status: 400 }
       | JSONApiResponse<ErrorResponse> & { status: 500 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['fooId'] == null) {
+    if (requestParameters['fooId'] === undefined || requestParameters['fooId'] === null) {
       throw new RequiredError(
         'fooId',
         'Required parameter "fooId" was null or undefined when calling updateFooBarRaw().'
       );
     }
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling updateFooBarRaw().'
