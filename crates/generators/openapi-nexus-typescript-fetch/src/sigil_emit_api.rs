@@ -265,7 +265,7 @@ fn build_constructor() -> FunSpec<TypeScript> {
 }
 
 // ============================================================================
-// Raw method — full body matching the minijinja snippets
+// Raw method — full request body with parameter handling and response dispatch
 // ============================================================================
 
 fn build_raw_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, String> {
