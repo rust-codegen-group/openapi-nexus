@@ -45,7 +45,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body

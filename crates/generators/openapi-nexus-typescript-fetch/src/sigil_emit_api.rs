@@ -395,7 +395,6 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
     {
         cb.add(&format!("  'Content-Type': '{}',\n", media_type), vec![]);
     }
-    cb.add("  ...this.configuration?.headers,\n", vec![]);
     cb.add("};\n\n", vec![]);
     let names = resolve_param_names(op);
     for p in op
