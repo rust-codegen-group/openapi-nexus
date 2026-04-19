@@ -98,7 +98,7 @@ graph TD
 
 - **Input**: Transformed `OpenApi` structure
 - **Output**: Language-specific AST
-- **Components**: `openapi-nexus-typescript`, `openapi-nexus-rust`
+- **Components**: `openapi-nexus-typescript-fetch`, `openapi-nexus-go-http`, `openapi-nexus-rust-reqwest`
 - **Responsibilities**:
   - Convert OpenAPI schemas to language types
   - Generate API client structures
@@ -127,9 +127,10 @@ graph TD
 
 ### Language-Specific Crates
 
-- **`openapi-nexus-typescript`**: TypeScript AST and code generation
-- **`openapi-nexus-rust`**: Rust AST and code generation
-- **Future**: `openapi-nexus-python`, `openapi-nexus-go`, etc.
+- **`openapi-nexus-typescript-fetch`**: TypeScript fetch API client generation
+- **`openapi-nexus-go-http`**: Go HTTP client generation
+- **`openapi-nexus-rust-reqwest`**: Rust reqwest client generation (in development)
+- **Future**: additional flavors per language (e.g. `openapi-nexus-typescript-axios`, `openapi-nexus-python-*`)
 
 ### Plugin and Extension Crates
 

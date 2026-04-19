@@ -524,7 +524,7 @@ export type { PetStatus } from './models/PetStatus';
 Go keeps its current overall shape — per-tag client structs, positional params,
 struct + method receiver idiom. Scope here is:
 
-- Drop the `openapi-nexus-go/templates/` Jinja files; move to sigil-stitch
+- Drop the `openapi-nexus-go-http/templates/` Jinja files; move to sigil-stitch
 - Keep `encoding/json` based marshaling (no validator story — Go users have `validator/v10`, `ozzo-validation`, etc.; not our job)
 - Slim the runtime similarly (drop any unused abstractions)
 - Same `info.title`-derived client naming

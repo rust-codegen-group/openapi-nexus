@@ -15,12 +15,19 @@ const OAS31_PREFIX: &str = "oas31/";
 fn fixture_base_candidates() -> Vec<PathBuf> {
     let mut candidates = Vec::new();
     if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+        candidates.push(
+            Path::new(&manifest_dir)
+                .join("..")
+                .join("..")
+                .join(FIXTURES_SUBDIR),
+        );
         candidates.push(Path::new(&manifest_dir).join("..").join(FIXTURES_SUBDIR));
     }
     candidates.extend([
         Path::new(FIXTURES_SUBDIR).to_path_buf(),
         Path::new("../").join(FIXTURES_SUBDIR),
         Path::new("../../").join(FIXTURES_SUBDIR),
+        Path::new("../../../").join(FIXTURES_SUBDIR),
     ]);
     candidates
 }

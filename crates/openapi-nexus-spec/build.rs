@@ -106,7 +106,7 @@ fn main() {
     let out_dir = env::var("OUT_DIR").expect("OUT_DIR");
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
     let manifest_dir = PathBuf::from(&manifest_dir);
-    let fixtures_base = manifest_dir.join("..").join(FIXTURES_SUBDIR);
+    let fixtures_base = manifest_dir.join("..").join("..").join(FIXTURES_SUBDIR);
 
     println!("cargo::rerun-if-changed={}", fixtures_base.display());
     println!(

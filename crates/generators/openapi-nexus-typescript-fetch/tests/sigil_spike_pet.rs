@@ -8,13 +8,14 @@ use std::fs;
 use std::path::Path;
 
 use openapi_nexus_ir::types::IrSchemaKind;
-use openapi_nexus_typescript::sigil_emit::emit_model_file;
+use openapi_nexus_typescript_fetch::sigil_emit::emit_model_file;
 
 fn read_fixture(rel: &str) -> String {
     for base in [
         "tests/fixtures",
         "../tests/fixtures",
         "../../tests/fixtures",
+        "../../../tests/fixtures",
     ] {
         let p = Path::new(base).join(rel);
         if p.exists() {

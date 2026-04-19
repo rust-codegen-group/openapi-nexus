@@ -6,13 +6,14 @@
 use std::fs;
 use std::path::Path;
 
-use openapi_nexus_typescript::sigil_emit;
+use openapi_nexus_typescript_fetch::sigil_emit;
 
 fn read_fixture(rel: &str) -> String {
     for base in [
         "tests/fixtures",
         "../tests/fixtures",
         "../../tests/fixtures",
+        "../../../tests/fixtures",
     ] {
         let p = Path::new(base).join(rel);
         if p.exists() {
