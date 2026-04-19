@@ -1,0 +1,81 @@
+openapi: 3.1.0
+info:
+  title: Request Body Content Types
+  version: 1.0.0
+  description: Covers non-JSON request body media types to pin Content-Type emission.
+paths:
+  /json:
+    post:
+      operationId: postJson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '200':
+          description: OK
+  /form:
+    post:
+      operationId: postForm
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '200':
+          description: OK
+  /xml:
+    post:
+      operationId: postXml
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '200':
+          description: OK
+  /text:
+    post:
+      operationId: postText
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: OK
+  /json-or-xml:
+    post:
+      operationId: postJsonOrXml
+      description: Multiple media types declared — JSON should be preferred.
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Payload'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Payload:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        value:
+          type: integer

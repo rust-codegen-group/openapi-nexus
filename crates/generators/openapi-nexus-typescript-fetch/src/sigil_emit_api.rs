@@ -140,11 +140,21 @@ fn build_param_field(param: &IrParameter, name: &str) -> FieldSpec<TypeScript> {
     fb.build().expect("FieldSpec builds")
 }
 
+/// Choose the preferred media type from a request body, matching
+/// `build_body_field`'s type-selection logic so the emitted `Content-Type`
+/// agrees with the schema we typed the body as. Prefers `application/json`
+/// if declared, otherwise the first media type in spec order.
+fn preferred_request_media_type(rb: &IrRequestBody) -> Option<&str> {
+    if rb.content.contains_key("application/json") {
+        Some("application/json")
+    } else {
+        rb.content.keys().next().map(String::as_str)
+    }
+}
+
 fn build_body_field(rb: &IrRequestBody, name: &str) -> FieldSpec<TypeScript> {
-    let ty = rb
-        .content
-        .get("application/json")
-        .or_else(|| rb.content.values().next())
+    let ty = preferred_request_media_type(rb)
+        .and_then(|mt| rb.content.get(mt))
         .map(type_expr_to_typename)
         .unwrap_or_else(|| TypeName::primitive("unknown"));
     let mut fb = FieldSpec::<TypeScript>::builder(name, ty);
@@ -380,8 +390,10 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
         "const headerParameters: Record<string, string> = {\n",
         vec![],
     );
-    if op.request_body.is_some() {
-        cb.add("  'Content-Type': 'application/json',\n", vec![]);
+    if let Some(rb) = &op.request_body
+        && let Some(media_type) = preferred_request_media_type(rb)
+    {
+        cb.add(&format!("  'Content-Type': '{}',\n", media_type), vec![]);
     }
     cb.add("  ...this.configuration?.headers,\n", vec![]);
     cb.add("};\n\n", vec![]);
