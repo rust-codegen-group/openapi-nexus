@@ -11,23 +11,23 @@ import type { LeafValue } from './LeafValue';
  */
 export interface MiddleLevel {
   /**
- * Count.
- */
+   * Count.
+   */
   readonly count: number;
   /**
- * Free-form additional properties (additionalProperties: true).
- */
+   * Free-form additional properties (additionalProperties: true).
+   */
   readonly extras?: Record<string, unknown>;
   /**
- * Flags by name (additionalProperties: boolean).
- */
+   * Flags by name (additionalProperties: boolean).
+   */
   readonly flags?: Record<string, boolean>;
   /**
- * Key identifying this middle node.
- */
+   * Key identifying this middle node.
+   */
   readonly key: string;
   /**
- * Nested leaf objects by name (additionalProperties: LeafValue).
- */
+   * Nested leaf objects by name (additionalProperties: LeafValue).
+   */
   readonly nested: Record<string, LeafValue>;
 }

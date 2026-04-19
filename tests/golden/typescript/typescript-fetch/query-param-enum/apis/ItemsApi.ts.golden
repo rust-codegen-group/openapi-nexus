@@ -11,8 +11,8 @@ import { BaseAPI, DefaultConfig, JSONApiResponse, VoidApiResponse } from '../run
 
 export interface ApiGetItemsRequest {
   /**
- * Optional. The status to filter items by.
- */
+   * Optional. The status to filter items by.
+   */
   status?: FooStatus;
 }
 
@@ -28,8 +28,8 @@ export interface ItemsApiInterface {
 
 export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

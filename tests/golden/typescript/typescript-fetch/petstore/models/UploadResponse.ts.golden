@@ -9,15 +9,15 @@
  */
 export interface UploadResponse {
   /**
- * Response code
- */
+   * Response code
+   */
   readonly code?: number | null;
   /**
- * Response message
- */
+   * Response message
+   */
   readonly message?: string | null;
   /**
- * Response type
- */
+   * Response type
+   */
   readonly type_?: string | null;
 }

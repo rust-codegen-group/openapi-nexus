@@ -8,7 +8,7 @@ import type { Bar } from './Bar';
 
 export interface BazAllOf2 {
   /**
- * Metadata (nullable)
- */
+   * Metadata (nullable)
+   */
   readonly metaData?: Bar | null;
 }

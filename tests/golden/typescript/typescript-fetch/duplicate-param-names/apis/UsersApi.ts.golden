@@ -10,16 +10,16 @@ import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse
 
 export interface ApiGetUserByIdDuplicateRequest {
   /**
- * User ID in path
- */
+   * User ID in path
+   */
   pathId: number;
   /**
- * User ID in query (filter)
- */
+   * User ID in query (filter)
+   */
   queryId?: number;
   /**
- * User ID in header
- */
+   * User ID in header
+   */
   headerId?: string;
 }
 
@@ -37,8 +37,8 @@ export interface UsersApiInterface {
 
 export class UsersApi extends BaseAPI implements UsersApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

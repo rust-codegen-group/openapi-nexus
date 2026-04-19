@@ -9,7 +9,7 @@
  */
 export interface FooMember3Grault {
   /**
- * Property in third type
- */
+   * Property in third type
+   */
   readonly garply: string;
 }

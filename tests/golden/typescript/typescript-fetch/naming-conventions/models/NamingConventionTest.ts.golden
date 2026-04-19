@@ -10,50 +10,50 @@ import type { NamingConventionTestPascalCaseObject } from './NamingConventionTes
 
 export interface NamingConventionTest {
   /**
- * A field in PascalCase
- */
+   * A field in PascalCase
+   */
   readonly pascalCaseField?: string;
   readonly pascalCaseObject?: NamingConventionTestPascalCaseObject;
   /**
- * A number in SCREAMING_SNAKE_CASE
- */
+   * A number in SCREAMING_SNAKE_CASE
+   */
   readonly screamingNumber?: number;
   /**
- * A field in SCREAMING_SNAKE_CASE
- */
+   * A field in SCREAMING_SNAKE_CASE
+   */
   readonly screamingSnakeCase?: string;
   /**
- * A field in camelCase
- */
+   * A field in camelCase
+   */
   readonly camelCaseField: string;
   /**
- * A number in camelCase
- */
+   * A number in camelCase
+   */
   readonly camelCaseNumber?: number;
   /**
- * A single letter abbreviation
- */
+   * A single letter abbreviation
+   */
   readonly id?: number;
   readonly itemsArray?: readonly NamingConventionTestItemsArrayItem[];
   /**
- * An array field in kebab-case
- */
+   * An array field in kebab-case
+   */
   readonly kebabCaseArray?: readonly string[];
   /**
- * A field in kebab-case
- */
+   * A field in kebab-case
+   */
   readonly kebabCaseField?: string;
   readonly nestedObject?: NamingConventionTestNestedObject;
   /**
- * A single word field
- */
+   * A single word field
+   */
   readonly singleword: string;
   /**
- * A field in snake_case
- */
+   * A field in snake_case
+   */
   readonly snakeCaseField: string;
   /**
- * A number field in snake_case
- */
+   * A number field in snake_case
+   */
   readonly snakeCaseNumber?: number;
 }

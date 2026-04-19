@@ -9,11 +9,11 @@
  */
 export interface Category {
   /**
- * Category ID
- */
+   * Category ID
+   */
   readonly id?: number | null;
   /**
- * Category name
- */
+   * Category name
+   */
   readonly name?: string | null;
 }

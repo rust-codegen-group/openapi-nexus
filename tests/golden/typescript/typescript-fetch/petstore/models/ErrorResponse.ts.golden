@@ -9,11 +9,11 @@
  */
 export interface ErrorResponse {
   /**
- * Error code
- */
+   * Error code
+   */
   readonly code: number;
   /**
- * Error message
- */
+   * Error message
+   */
   readonly message: string;
 }

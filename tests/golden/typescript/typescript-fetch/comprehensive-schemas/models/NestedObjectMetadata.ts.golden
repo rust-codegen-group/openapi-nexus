@@ -9,7 +9,7 @@
  */
 export interface NestedObjectMetadata {
   /**
- * Timestamp when the object was created
- */
+   * Timestamp when the object was created
+   */
   readonly created?: string;
 }

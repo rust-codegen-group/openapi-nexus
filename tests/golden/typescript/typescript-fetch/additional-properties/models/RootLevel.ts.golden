@@ -11,23 +11,23 @@ import type { MiddleLevel } from './MiddleLevel';
  */
 export interface RootLevel {
   /**
- * Child nodes by name (additionalProperties: MiddleLevel).
- */
+   * Child nodes by name (additionalProperties: MiddleLevel).
+   */
   readonly children: Record<string, MiddleLevel>;
   /**
- * Free-form additional properties (additionalProperties: true).
- */
+   * Free-form additional properties (additionalProperties: true).
+   */
   readonly extras?: Record<string, unknown>;
   /**
- * Root id.
- */
+   * Root id.
+   */
   readonly id: number;
   /**
- * Labels by key (additionalProperties: array of string).
- */
+   * Labels by key (additionalProperties: array of string).
+   */
   readonly labels?: Record<string, readonly string[]>;
   /**
- * Root name.
- */
+   * Root name.
+   */
   readonly name: string;
 }

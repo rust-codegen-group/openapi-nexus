@@ -11,7 +11,7 @@ import type { FooMember3Grault } from './FooMember3Grault';
  */
 export interface FooMember3 {
   /**
- * Nested object in third type
- */
+   * Nested object in third type
+   */
   readonly grault: FooMember3Grault;
 }

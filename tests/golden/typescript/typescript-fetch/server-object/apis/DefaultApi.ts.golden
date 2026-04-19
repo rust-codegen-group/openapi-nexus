@@ -12,8 +12,8 @@ import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runti
 
 export interface ApiGetUserByIdRequest {
   /**
- * User ID
- */
+   * User ID
+   */
   id: number;
 }
 
@@ -35,8 +35,8 @@ export interface DefaultApiInterface {
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

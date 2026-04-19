@@ -11,7 +11,7 @@ import type { FooMember1Bar } from './FooMember1Bar';
  */
 export interface FooMember1 {
   /**
- * Nested object in first type
- */
+   * Nested object in first type
+   */
   readonly bar: FooMember1Bar;
 }

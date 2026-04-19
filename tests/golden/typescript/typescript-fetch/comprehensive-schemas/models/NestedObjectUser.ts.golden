@@ -9,11 +9,11 @@
  */
 export interface NestedObjectUser {
   /**
- * User's unique identifier
- */
+   * User's unique identifier
+   */
   readonly id: number;
   /**
- * User's display name
- */
+   * User's display name
+   */
   readonly name?: string;
 }

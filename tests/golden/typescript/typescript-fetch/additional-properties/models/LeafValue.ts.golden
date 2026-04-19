@@ -9,23 +9,23 @@
  */
 export interface LeafValue {
   /**
- * Additional string attributes (additionalProperties: string).
- */
+   * Additional string attributes (additionalProperties: string).
+   */
   readonly attributes: Record<string, string>;
   /**
- * Free-form additional properties (additionalProperties: true).
- */
+   * Free-form additional properties (additionalProperties: true).
+   */
   readonly extras?: Record<string, unknown>;
   /**
- * Optional label.
- */
+   * Optional label.
+   */
   readonly label?: string | null;
   /**
- * Scores by name (additionalProperties: integer).
- */
+   * Scores by name (additionalProperties: integer).
+   */
   readonly scores?: Record<string, number>;
   /**
- * Numeric value.
- */
+   * Numeric value.
+   */
   readonly value: number;
 }
