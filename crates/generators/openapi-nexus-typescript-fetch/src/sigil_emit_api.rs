@@ -1,4 +1,4 @@
-//! Phase 3 / Slice D: sigil-stitch emit for TypeScript API class files.
+//! Sigil-stitch emit for TypeScript API class files.
 //!
 //! Produces one `FileSpec<TypeScript>` per tag containing:
 //! - request interfaces (one per operation that has parameters)
@@ -6,17 +6,6 @@
 //!   `CodeBlock` so `%T` slots can carry import tracking for every type ref)
 //! - `{Tag}Api` class extending `BaseAPI` with constructor + real Raw +
 //!   convenience methods
-//!
-//! # Status
-//!
-//! - D-stage 1 (scaffold structure) ✅
-//! - D-stage 2 (real bodies + import tracking) ✅ (this stage)
-//! - D-stage 3: cut over `TypeScriptFetchCodeGenerator` to call this path ⧖
-//! - D-stage 4: delete `api/operation.j2`, all snippets, and `ApiOperationGenerator` ⧖
-//!
-//! Not wired into [`crate::codegen::TypeScriptFetchCodeGenerator`] yet — the
-//! minijinja path in `crate::generator::api_operation_generator` is still
-//! authoritative.
 //!
 //! # Import tracking
 //!
