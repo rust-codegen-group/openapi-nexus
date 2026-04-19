@@ -15,7 +15,7 @@
 //! - D-stage 4: delete `api/operation.j2`, all snippets, and `ApiOperationGenerator` ⧖
 //!
 //! Not wired into [`crate::codegen::TypeScriptFetchCodeGenerator`] yet — the
-//! minijinja path in [`crate::generator::api_operation_generator`] is still
+//! minijinja path in `crate::generator::api_operation_generator` is still
 //! authoritative.
 //!
 //! # Import tracking
