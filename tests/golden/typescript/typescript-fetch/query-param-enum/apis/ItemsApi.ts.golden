@@ -50,16 +50,13 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
-    // Prepare request body
-    const requestBody = undefined;
     // Make request
     const response = await this.request({
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
-        body: requestBody,
+        body: undefined,
     }, initOverrides);
 
     // Handle responses

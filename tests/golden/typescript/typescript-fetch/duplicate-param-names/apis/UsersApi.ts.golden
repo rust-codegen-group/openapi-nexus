@@ -68,19 +68,16 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
     if (requestParameters['headerId'] !== undefined) {
       headerParameters['id'] = String(requestParameters['headerId']);
     }
-    // Prepare request body
-    const requestBody = undefined;
     // Make request
     const response = await this.request({
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
-        body: requestBody,
+        body: undefined,
     }, initOverrides);
 
     // Handle responses

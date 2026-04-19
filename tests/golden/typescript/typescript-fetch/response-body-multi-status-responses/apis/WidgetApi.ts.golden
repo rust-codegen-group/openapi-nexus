@@ -48,16 +48,13 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
       ...this.configuration?.headers,
     };
 
-    // Add header parameters
-    // Prepare request body
-    const requestBody = undefined;
     // Make request
     const response = await this.request({
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
-        body: requestBody,
+        body: undefined,
     }, initOverrides);
 
     // Handle responses

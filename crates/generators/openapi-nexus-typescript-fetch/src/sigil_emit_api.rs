@@ -286,7 +286,7 @@ fn build_raw_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, String> {
     emit_query_params(&mut body, op);
     emit_headers(&mut body, op);
     emit_request_body(&mut body, op);
-    emit_make_request(&mut body, op);
+    emit_make_request(&mut body, op, op.request_body.is_some());
     emit_response_handler(&mut body, op);
 
     fb.body(body.build().map_err(|e| format!("body build: {e}"))?);
@@ -385,7 +385,6 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
     }
     cb.add("  ...this.configuration?.headers,\n", vec![]);
     cb.add("};\n\n", vec![]);
-    cb.add("// Add header parameters\n", vec![]);
     let names = resolve_param_names(op);
     for p in op
         .parameters
@@ -407,29 +406,29 @@ fn emit_request_body(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
     op: &IrOperation,
 ) {
-    cb.add("// Prepare request body\n", vec![]);
     if op.request_body.is_some() {
+        cb.add("// Prepare request body\n", vec![]);
         let names = resolve_param_names(op);
         let body_name = resolved_body(&names);
         cb.add(
             &format!("const requestBody = requestParameters['{}'];\n", body_name),
             vec![],
         );
-    } else {
-        cb.add("const requestBody = undefined;\n", vec![]);
     }
 }
 
 fn emit_make_request(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
     op: &IrOperation,
+    has_body: bool,
 ) {
     let method = op.method.to_uppercase();
+    let body_expr = if has_body { "requestBody" } else { "undefined" };
     cb.add("// Make request\n", vec![]);
     cb.add(
         &format!(
-            "const response = await this.request({{\n    path: urlPath,\n    method: '{}',\n    headers: headerParameters,\n    query: queryParameters,\n    body: requestBody,\n}}, initOverrides);\n\n",
-            method
+            "const response = await this.request({{\n    path: urlPath,\n    method: '{}',\n    headers: headerParameters,\n    query: queryParameters,\n    body: {},\n}}, initOverrides);\n\n",
+            method, body_expr
         ),
         vec![],
     );
