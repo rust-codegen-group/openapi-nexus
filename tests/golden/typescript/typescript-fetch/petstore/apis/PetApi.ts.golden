@@ -148,7 +148,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
       & { status: 422 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling updatePetRaw().'
@@ -204,7 +204,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 422 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling addPetRaw().'
@@ -258,7 +258,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['status'] == null) {
+    if (requestParameters['status'] === undefined || requestParameters['status'] === null) {
       throw new RequiredError(
         'status',
         'Required parameter "status" was null or undefined when calling findPetsByStatusRaw().'
@@ -307,7 +307,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async findPetsByTagsRaw(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<Pet[]> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['tags'] == null) {
+    if (requestParameters['tags'] === undefined || requestParameters['tags'] === null) {
       throw new RequiredError(
         'tags',
         'Required parameter "tags" was null or undefined when calling findPetsByTagsRaw().'
@@ -357,7 +357,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['petId'] == null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling getPetByIdRaw().'
@@ -409,7 +409,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['petId'] == null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling updatePetWithFormRaw().'
@@ -462,7 +462,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async deletePetRaw(requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: number }> {
-    if (requestParameters['petId'] == null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling deletePetRaw().'
@@ -509,7 +509,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async uploadFileRaw(requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<UploadResponse> & { status: 200 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['petId'] == null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling uploadFileRaw().'

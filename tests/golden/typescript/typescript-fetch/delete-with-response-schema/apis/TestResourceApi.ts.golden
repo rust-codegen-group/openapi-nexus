@@ -50,7 +50,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<CreateTestResourceResponse>
       & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTestResourceRaw().'
@@ -99,7 +99,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
       | JSONApiResponse<HttpErrorResponse>
       & { status: number } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['resourceId'] == null) {
+    if (requestParameters['resourceId'] === undefined || requestParameters['resourceId'] === null) {
       throw new RequiredError(
         'resourceId',
         'Required parameter "resourceId" was null or undefined when calling deleteTestResourceRaw().'

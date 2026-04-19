@@ -57,7 +57,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   async postLeafRaw(requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<LeafValue> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postLeafRaw().'
@@ -106,7 +106,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   async postMiddleRaw(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<MiddleLevel> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postMiddleRaw().'
@@ -155,7 +155,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   async postRootRaw(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<RootLevel> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] == null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postRootRaw().'

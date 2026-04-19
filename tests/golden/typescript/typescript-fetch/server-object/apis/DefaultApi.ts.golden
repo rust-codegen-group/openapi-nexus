@@ -82,7 +82,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<GetUserByIdResponse200> & { status: 200 }
       | JSONApiResponse<GetUserByIdResponse404> & { status: 404 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['id'] == null) {
+    if (requestParameters['id'] === undefined || requestParameters['id'] === null) {
       throw new RequiredError(
         'id',
         'Required parameter "id" was null or undefined when calling getUserByIdRaw().'
