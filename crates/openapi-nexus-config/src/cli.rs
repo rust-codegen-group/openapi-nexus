@@ -40,8 +40,10 @@ pub enum Commands {
         global: GlobalConfig,
 
         /// Override generator-specific config values
-        /// Format: <generator>.<key>=<value>
-        /// Example: --generator-config typescript-fetch.file_naming_convention=PascalCase
+        ///
+        /// Format: `<generator>.<key>=<value>`
+        ///
+        /// Example: `--generator-config typescript-fetch.file_naming_convention=PascalCase`
         #[arg(long = "generator-config", value_name = "GENERATOR.KEY=VALUE")]
         generator_config: Vec<String>,
     },

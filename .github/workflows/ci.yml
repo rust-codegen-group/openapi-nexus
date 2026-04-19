@@ -2,13 +2,88 @@ name: CI
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+env:
+  RUSTFLAGS: -Dwarnings
+  RUST_BACKTRACE: 1
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  build:
-    name: Build ${{ matrix.target }}
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  doc:
+    name: Documentation
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -Dwarnings
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo doc --workspace --no-deps
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: taiki-e/install-action@nextest
+      - run: cargo nextest run --workspace
+      - run: cargo test --doc --workspace
+
+  golden-build:
+    name: Golden Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: extractions/setup-just@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+      - run: npm install -g typescript
+      - uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+      - run: just golden::build-all
+
+  basics:
+    name: Basics
+    runs-on: ubuntu-latest
+    needs: [fmt, clippy, doc, test, golden-build]
+    steps:
+      - run: exit 0
+
+  release:
+    name: Release ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    needs: [basics]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     strategy:
       fail-fast: false
       matrix:
@@ -28,37 +103,18 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact_name: openapi-nexus-macos-aarch64
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run clippy
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: clippy
-          target: ${{ matrix.target }}
-          toolchain: 1.90
-          args: "--all-targets -- -D warnings"
-
-      - name: Run tests
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: test
-          target: ${{ matrix.target }}
-          toolchain: 1.90
-          args: "--workspace"
+      - uses: actions/checkout@v6
 
       - name: Build release binary
         uses: houseabsolute/actions-rust-cross@v1
         with:
           command: build
           target: ${{ matrix.target }}
-          toolchain: 1.90
+          toolchain: "1.90"
           args: "--release --bin openapi-nexus"
 
       - name: Prepare artifact
-        shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             chmod +x target/${{ matrix.target }}/release/openapi-nexus
@@ -66,8 +122,7 @@ jobs:
           mkdir -p artifacts
           cp target/${{ matrix.target }}/release/openapi-nexus artifacts/${{ matrix.artifact_name }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: artifacts/${{ matrix.artifact_name }}
