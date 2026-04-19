@@ -1,5 +1,14 @@
 # RFD 0004: Multi-Level Transformation Passes
 
+> **Status: Superseded.** This RFD described a standalone `openapi-nexus-transforms`
+> crate with `OpenApiTransformPass` / `IrTransformPass` / `AstTransformPass` traits
+> and a `TransformPipeline`. That crate and those traits no longer exist — the
+> transform pipeline was replaced by direct lowering from the parsed OpenAPI spec
+> into an IR (see `openapi-nexus-ir::lower`). Schema analysis, reference resolution,
+> and tagged-enum classification are now IR-internal operations rather than
+> independently-registered passes. This document is retained for historical context
+> only. A future RFD should formalize the current IR-based pipeline.
+
 ## Summary
 
 This RFD defines the multi-level transformation pass architecture that operates on OpenAPI specifications, intermediate representations, and language-specific ASTs. The system enables powerful code generation optimizations and customizations through a composable pipeline of transformation passes.

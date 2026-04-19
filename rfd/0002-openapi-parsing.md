@@ -221,39 +221,6 @@ pub struct ParserConfig {
 }
 ```
 
-## Integration with Transform Pipeline
-
-### Parser as Transform Input
-
-The parser produces a `ParseResult` that can be fed into the transform pipeline:
-
-```rust
-// openapi-nexus-transforms/src/pipeline.rs
-impl TransformPipeline {
-    pub fn process_parse_result(&self, result: ParseResult) -> Result<OpenApi, TransformError> {
-        if !result.errors.is_empty() {
-            return Err(TransformError::ParseErrors(result.errors));
-        }
-        
-        let mut openapi = result.openapi;
-        self.transform(&mut openapi)?;
-        Ok(openapi)
-    }
-}
-```
-
-### Error Propagation
-
-Parse errors are propagated through the pipeline:
-
-```rust
-pub enum TransformError {
-    ParseErrors(Vec<ParseError>),
-    TransformFailed { pass: String, error: String },
-    // ... other error types
-}
-```
-
 ## Performance Considerations
 
 ### Lazy Loading
