@@ -161,7 +161,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
@@ -217,7 +216,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
@@ -273,7 +271,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build headers
     const headerParameters: Record<string, string> = {
-      ...this.configuration?.headers,
     };
 
     // Make request
@@ -322,7 +319,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build headers
     const headerParameters: Record<string, string> = {
-      ...this.configuration?.headers,
     };
 
     // Make request
@@ -370,7 +366,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     const queryParameters: any = {};
     // Build headers
     const headerParameters: Record<string, string> = {
-      ...this.configuration?.headers,
     };
 
     // Make request
@@ -428,7 +423,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build headers
     const headerParameters: Record<string, string> = {
-      ...this.configuration?.headers,
     };
 
     // Make request
@@ -475,7 +469,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     const queryParameters: any = {};
     // Build headers
     const headerParameters: Record<string, string> = {
-      ...this.configuration?.headers,
     };
 
     // Make request
@@ -525,7 +518,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build headers
     const headerParameters: Record<string, string> = {
-      ...this.configuration?.headers,
     };
 
     // Make request

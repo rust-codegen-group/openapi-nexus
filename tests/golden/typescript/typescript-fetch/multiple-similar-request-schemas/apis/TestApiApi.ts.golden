@@ -56,7 +56,6 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
@@ -102,7 +101,6 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.configuration?.headers,
     };
 
     // Prepare request body
