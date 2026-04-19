@@ -7,7 +7,7 @@ use std::str::FromStr;
 use serde::Deserialize;
 
 use crate::global_config::GlobalConfig;
-use openapi_nexus_common::GeneratorType;
+use openapi_nexus_core::GeneratorType;
 
 /// Configuration file structure (for deserialization from TOML)
 #[derive(Debug, Clone, Default)]

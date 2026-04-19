@@ -1,8 +1,8 @@
 //! Utility functions for working with OpenAPI specifications
 
+use crate::SourceLocation;
 use crate::error::IrError;
 use crate::{ObjectOrReference, ObjectSchema, OpenApi, Parameter, RefOr, Response, Schema};
-use openapi_nexus_common::SourceLocation;
 
 /// Utility functions for OpenAPI processing
 pub struct Utils;

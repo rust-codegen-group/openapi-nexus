@@ -5,8 +5,8 @@ use std::path::Path;
 use tracing::{error, info};
 
 use crate::generator_registry::GeneratorRegistry;
-use openapi_nexus_common::GeneratorType;
 use openapi_nexus_config::Config;
+use openapi_nexus_core::GeneratorType;
 use openapi_nexus_core::traits::{CodeGenerator, FileWriter};
 use openapi_nexus_go_http::GoHttpCodeGenerator;
 use openapi_nexus_parser::parse_file;

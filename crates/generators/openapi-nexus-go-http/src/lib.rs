@@ -8,7 +8,6 @@
 
 pub mod codegen;
 pub mod config;
-pub mod errors;
 pub mod runtime;
 pub mod sigil_emit;
 pub mod sigil_emit_api;

@@ -3,7 +3,7 @@
 use std::error::Error;
 
 use crate::traits::file_writer::FileInfo;
-use openapi_nexus_common::{GeneratorType, Language};
+use crate::{GeneratorType, Language};
 use openapi_nexus_spec::OpenApiV31Spec;
 
 /// Trait for code generators.
