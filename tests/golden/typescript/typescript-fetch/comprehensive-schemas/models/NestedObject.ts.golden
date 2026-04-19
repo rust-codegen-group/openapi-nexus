@@ -12,11 +12,11 @@ import type { NestedObjectUser } from './NestedObjectUser';
  */
 export interface NestedObject {
   /**
- * Additional metadata about the object
- */
+   * Additional metadata about the object
+   */
   readonly metadata?: NestedObjectMetadata;
   /**
- * User information object
- */
+   * User information object
+   */
   readonly user?: NestedObjectUser;
 }

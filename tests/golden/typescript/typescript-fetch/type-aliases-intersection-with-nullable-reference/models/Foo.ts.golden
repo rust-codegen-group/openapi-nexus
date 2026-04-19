@@ -9,23 +9,23 @@
  */
 export interface Foo {
   /**
- * First count
- */
+   * First count
+   */
   readonly count1: number;
   /**
- * Second count
- */
+   * Second count
+   */
   readonly count2: number;
   /**
- * Creation timestamp
- */
+   * Creation timestamp
+   */
   readonly createdAt: string;
   /**
- * Unique identifier
- */
+   * Unique identifier
+   */
   readonly id: string;
   /**
- * Status
- */
+   * Status
+   */
   readonly status: 'active' | 'inactive' | 'pending';
 }

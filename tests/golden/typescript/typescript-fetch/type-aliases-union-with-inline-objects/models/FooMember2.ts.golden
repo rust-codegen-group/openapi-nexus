@@ -11,7 +11,7 @@ import type { FooMember2Quux } from './FooMember2Quux';
  */
 export interface FooMember2 {
   /**
- * Nested object in second type
- */
+   * Nested object in second type
+   */
   readonly quux: FooMember2Quux;
 }

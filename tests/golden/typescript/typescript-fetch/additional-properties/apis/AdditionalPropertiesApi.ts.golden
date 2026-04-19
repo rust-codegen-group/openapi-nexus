@@ -48,8 +48,8 @@ export interface AdditionalPropertiesApiInterface {
 
 export class AdditionalPropertiesApi extends BaseAPI implements AdditionalPropertiesApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

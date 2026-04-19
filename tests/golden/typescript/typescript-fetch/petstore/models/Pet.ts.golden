@@ -14,20 +14,20 @@ import type { Tag } from './Tag';
 export interface Pet {
   readonly category?: Category | null;
   /**
- * Pet ID
- */
+   * Pet ID
+   */
   readonly id?: number | null;
   /**
- * Pet name
- */
+   * Pet name
+   */
   readonly name: string;
   /**
- * Photo URLs
- */
+   * Photo URLs
+   */
   readonly photoUrls: readonly string[];
   readonly status?: PetStatus | null;
   /**
- * Pet tags
- */
+   * Pet tags
+   */
   readonly tags?: readonly Tag[] | null;
 }

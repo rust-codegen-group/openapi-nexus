@@ -9,35 +9,35 @@
  */
 export interface User {
   /**
- * Email
- */
+   * Email
+   */
   readonly email?: string | null;
   /**
- * First name
- */
+   * First name
+   */
   readonly firstName?: string | null;
   /**
- * User ID
- */
+   * User ID
+   */
   readonly id?: number | null;
   /**
- * Last name
- */
+   * Last name
+   */
   readonly lastName?: string | null;
   /**
- * Password
- */
+   * Password
+   */
   readonly password?: string | null;
   /**
- * Phone
- */
+   * Phone
+   */
   readonly phone?: string | null;
   /**
- * User status
- */
+   * User status
+   */
   readonly userStatus?: number | null;
   /**
- * Username
- */
+   * Username
+   */
   readonly username?: string | null;
 }

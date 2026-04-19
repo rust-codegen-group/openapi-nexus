@@ -19,7 +19,7 @@
 export interface EventMember2 {
   readonly kind: 'EVENT_CREATED';
   /**
- * When the event was created
- */
+   * When the event was created
+   */
   readonly timestamp: string;
 }

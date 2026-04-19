@@ -9,19 +9,19 @@
  */
 export interface Bar {
   /**
- * First field
- */
+   * First field
+   */
   readonly field1?: string;
   /**
- * Second field
- */
+   * Second field
+   */
   readonly field2?: string;
   /**
- * Third field
- */
+   * Third field
+   */
   readonly field3?: string;
   /**
- * Fourth field
- */
+   * Fourth field
+   */
   readonly field4?: string;
 }

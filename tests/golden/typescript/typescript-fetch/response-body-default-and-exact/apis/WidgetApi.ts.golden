@@ -18,8 +18,8 @@ export interface WidgetApiInterface {
 
 export class WidgetApi extends BaseAPI implements WidgetApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

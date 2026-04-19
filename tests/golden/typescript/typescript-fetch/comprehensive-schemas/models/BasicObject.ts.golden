@@ -9,15 +9,15 @@
  */
 export interface BasicObject {
   /**
- * Whether the object is currently active
- */
+   * Whether the object is currently active
+   */
   readonly active?: boolean;
   /**
- * Unique identifier for the object
- */
+   * Unique identifier for the object
+   */
   readonly id: number;
   /**
- * Human-readable name of the object
- */
+   * Human-readable name of the object
+   */
   readonly name: string;
 }

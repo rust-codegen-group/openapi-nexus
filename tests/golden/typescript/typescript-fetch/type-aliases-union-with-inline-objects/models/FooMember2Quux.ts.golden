@@ -9,7 +9,7 @@
  */
 export interface FooMember2Quux {
   /**
- * Property in second type
- */
+   * Property in second type
+   */
   readonly corge: string;
 }

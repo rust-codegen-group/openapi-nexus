@@ -9,11 +9,11 @@
  */
 export interface VariantB {
   /**
- * First field of variant B
- */
+   * First field of variant B
+   */
   readonly field3: boolean;
   /**
- * Second field of variant B
- */
+   * Second field of variant B
+   */
   readonly field4: number;
 }

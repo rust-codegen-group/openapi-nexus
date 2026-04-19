@@ -14,15 +14,15 @@ export interface ApiPlaceOrderRequest {
 
 export interface ApiGetOrderByIdRequest {
   /**
- * ID of order that needs to be fetched
- */
+   * ID of order that needs to be fetched
+   */
   orderId: number;
 }
 
 export interface ApiDeleteOrderRequest {
   /**
- * ID of the order that needs to be deleted
- */
+   * ID of the order that needs to be deleted
+   */
   orderId: number;
 }
 
@@ -63,8 +63,8 @@ export interface StoreApiInterface {
 
 export class StoreApi extends BaseAPI implements StoreApiInterface {
   /**
- * Initialize the API client
- */
+   * Initialize the API client
+   */
   constructor(configuration?: Configuration) {
     super(configuration ?? DefaultConfig);
   }

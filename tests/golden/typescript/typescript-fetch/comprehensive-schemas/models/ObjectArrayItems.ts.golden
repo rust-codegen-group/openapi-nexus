@@ -6,7 +6,7 @@
  */
 export interface ObjectArrayItems {
   /**
- * Name of the item in the array
- */
+   * Name of the item in the array
+   */
   readonly name?: string;
 }
