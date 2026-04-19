@@ -7,7 +7,7 @@ use crate::config_file::ConfigFile;
 use crate::errors::ConfigError;
 use crate::global_config::GlobalConfig;
 use crate::loader::ConfigLoader;
-use openapi_nexus_common::GeneratorType;
+use openapi_nexus_core::GeneratorType;
 
 /// Unified configuration structure that works for both file and CLI configs
 #[derive(Debug, Clone)]

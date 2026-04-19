@@ -3,7 +3,7 @@
 use clap::Args;
 use serde::{Deserialize, Serialize};
 
-use openapi_nexus_common::GeneratorType;
+use openapi_nexus_core::GeneratorType;
 
 /// Global configuration settings (supports CLI args, env vars, and config files)
 #[derive(Debug, Clone, Args, Serialize, Deserialize)]

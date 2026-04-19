@@ -13,7 +13,8 @@
 //! # Example
 //!
 //! ```rust
-//! use openapi_nexus_ir::{SchemaAnalyzer, ReferenceResolver, OpenApiTraverser, OpenApi};
+//! use openapi_nexus_ir::{SchemaAnalyzer, ReferenceResolver, OpenApiTraverser};
+//! use openapi_nexus_spec::OpenApiV31Spec;
 //!
 //! // Parse an OpenAPI specification (e.g. from YAML or JSON)
 //! let yaml = r#"
@@ -26,7 +27,7 @@
 //!     User:
 //!       type: object
 //! "#;
-//! let openapi: OpenApi = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
+//! let openapi: OpenApiV31Spec = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
 //!
 //! // Analyze an OpenAPI specification
 //! let analyzer = SchemaAnalyzer::new(&openapi);
@@ -48,26 +49,26 @@
 
 pub mod analysis;
 pub mod error;
+pub mod location;
 pub mod lower;
+pub mod tagged_enum_pattern;
 pub mod traversal;
 pub mod types;
 pub mod utils;
 
-// Re-export key OpenAPI spec types for convenience
-pub use openapi_nexus_spec::OpenApiV31Spec;
-pub use openapi_nexus_spec::oas31::spec::{
-    Components, ExternalDoc, Info, ObjectOrReference, ObjectSchema, Operation, Parameter, PathItem,
-    RequestBody, Response, Schema, SecurityRequirement, SecurityScheme, Server, Tag,
+pub use location::SourceLocation;
+
+// Crate-private aliases for ergonomic internal use; downstream crates should
+// import the spec types directly from `openapi_nexus_spec`.
+use openapi_nexus_spec::OpenApiV31Spec;
+use openapi_nexus_spec::oas31::spec::{
+    ObjectOrReference, ObjectSchema, Operation, Parameter, PathItem, RequestBody, Response, Schema,
+    SecurityScheme,
 };
 
-// Type aliases for compatibility with utoipa API
-pub type OpenApi = OpenApiV31Spec;
-pub type Paths = std::collections::BTreeMap<String, PathItem>;
-pub type RefOr<T> = ObjectOrReference<T>;
-pub type ExternalDocs = ExternalDoc;
-
-// ObjectOrReference uses ObjectOrReference::Object(T) for inline values
-// and ObjectOrReference::Ref { ref_path, ... } instead of RefOr::Ref(Ref { ref_location, ... })
+type OpenApi = OpenApiV31Spec;
+type Paths = std::collections::BTreeMap<String, PathItem>;
+type RefOr<T> = ObjectOrReference<T>;
 
 // Re-export IR types
 pub use analysis::{Analyzer, CircularRef, SchemaAnalyzer};

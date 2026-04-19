@@ -7,10 +7,10 @@ use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCa
 
 use crate::config::TypeScriptFetchConfig;
 use crate::project_files::{render_index_file, render_readme_file, render_runtime_file};
-use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
+use openapi_nexus_core::{GeneratorType, Language};
 use openapi_nexus_spec::OpenApiV31Spec;
 
 /// TypeScript Fetch code generator

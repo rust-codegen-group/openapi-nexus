@@ -14,9 +14,9 @@ use heck::ToKebabCase as _;
 use crate::config::GoHttpConfig;
 use crate::runtime::runtime_files;
 use crate::{sigil_emit, sigil_emit_api};
-use openapi_nexus_common::{GeneratorType, Language};
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
+use openapi_nexus_core::{GeneratorType, Language};
 use openapi_nexus_ir::types::{IrInfo, IrSpec};
 use openapi_nexus_spec::OpenApiV31Spec;
 

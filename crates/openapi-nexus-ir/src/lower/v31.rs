@@ -270,7 +270,7 @@ impl<'a> LowerCtx<'a> {
         }
 
         // Then check tagged enum patterns
-        use openapi_nexus_core::tagged_enum_pattern::TaggedEnumPattern;
+        use crate::tagged_enum_pattern::TaggedEnumPattern;
         let patterns: Vec<Option<TaggedEnumPattern>> = obj
             .one_of
             .iter()
@@ -410,9 +410,9 @@ impl<'a> LowerCtx<'a> {
         &mut self,
         parent_name: &str,
         member: &ObjectOrReference<ObjectSchema>,
-        pattern: &openapi_nexus_core::tagged_enum_pattern::TaggedEnumPattern,
+        pattern: &crate::tagged_enum_pattern::TaggedEnumPattern,
     ) -> Result<(String, IrTypeExpr), LowerError> {
-        use openapi_nexus_core::tagged_enum_pattern::TaggedEnumPattern;
+        use crate::tagged_enum_pattern::TaggedEnumPattern;
 
         match pattern {
             TaggedEnumPattern::InternallyTagged { tag_field, .. } => {
@@ -1238,9 +1238,9 @@ fn is_array_with_promotable_items(obj: &ObjectSchema) -> bool {
 }
 
 fn classify_tagging_style(
-    patterns: &[Option<openapi_nexus_core::tagged_enum_pattern::TaggedEnumPattern>],
+    patterns: &[Option<crate::tagged_enum_pattern::TaggedEnumPattern>],
 ) -> TaggingStyle {
-    use openapi_nexus_core::tagged_enum_pattern::TaggedEnumPattern;
+    use crate::tagged_enum_pattern::TaggedEnumPattern;
     for p in patterns.iter().flatten() {
         match p {
             TaggedEnumPattern::AdjacentlyTagged { content_field, .. } => {

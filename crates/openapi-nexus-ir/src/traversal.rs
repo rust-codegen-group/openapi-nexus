@@ -193,7 +193,7 @@ components:
             ) -> Result<(), Self::Error> {
                 Err(crate::error::IrError::AnalysisError {
                     message: "Test error".to_string(),
-                    location: openapi_nexus_common::SourceLocation::new(),
+                    location: crate::SourceLocation::new(),
                 })
             }
         }
