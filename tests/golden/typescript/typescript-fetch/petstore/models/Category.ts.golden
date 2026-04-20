@@ -11,9 +11,9 @@ export interface Category {
   /**
    * Category ID
    */
-  readonly id?: number | null;
+  readonly id?: number;
   /**
    * Category name
    */
-  readonly name?: string | null;
+  readonly name?: string;
 }
