@@ -22,27 +22,28 @@ export interface ApiPostRootRequest {
   body: RootLevel;
 }
 
+export type PostLeafRawResponse =
+  | JSONApiResponse<LeafValue> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type PostMiddleRawResponse =
+  | JSONApiResponse<MiddleLevel> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type PostRootRawResponse =
+  | JSONApiResponse<RootLevel> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface AdditionalPropertiesApiInterface {
-  postLeafRaw: (requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<LeafValue>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  postLeafRaw: (requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostLeafRawResponse>;
   postLeaf: (requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<LeafValue>;
-  postMiddleRaw: (requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<MiddleLevel>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  postMiddleRaw: (requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostMiddleRawResponse>;
   postMiddle: (requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<MiddleLevel>;
-  postRootRaw: (requestParameters: ApiPostRootRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<RootLevel>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  postRootRaw: (requestParameters: ApiPostRootRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostRootRawResponse>;
   postRoot: (requestParameters: ApiPostRootRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<RootLevel>;
 }
 
@@ -55,8 +56,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   }
 
   async postLeafRaw(requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<LeafValue> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<PostLeafRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -103,8 +103,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   }
 
   async postMiddleRaw(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<MiddleLevel> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<PostMiddleRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -151,8 +150,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   }
 
   async postRootRaw(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<RootLevel> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<PostRootRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

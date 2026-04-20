@@ -23,15 +23,15 @@ export interface ApiGetUserByIdDuplicateRequest {
   headerId?: string;
 }
 
+export type GetUserByIdDuplicateRawResponse =
+  | JSONApiResponse<GetUserByIdDuplicateResponse200> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface UsersApiInterface {
-  getUserByIdDuplicateRaw: (requestParameters: ApiGetUserByIdDuplicateRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<GetUserByIdDuplicateResponse200>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getUserByIdDuplicateRaw: (requestParameters: ApiGetUserByIdDuplicateRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateRawResponse>;
   getUserByIdDuplicate: (requestParameters: ApiGetUserByIdDuplicateRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateResponse200>;
 }
 
@@ -44,11 +44,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
   }
 
   async getUserByIdDuplicateRaw(requestParameters: ApiGetUserByIdDuplicateRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<GetUserByIdDuplicateResponse200>
-      & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse
-      & { status: 404 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateRawResponse> {
     if (requestParameters.pathId === undefined || requestParameters.pathId === null) {
       throw new RequiredError(
         'pathId',

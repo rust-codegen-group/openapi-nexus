@@ -13,15 +13,15 @@ export interface ApiUpdateFooBarRequest {
   body: FooRequest;
 }
 
+export type UpdateFooBarRawResponse =
+  | VoidApiResponse & { status: 204 }
+  | JSONApiResponse<ErrorResponse> & { status: 400 }
+  | JSONApiResponse<ErrorResponse> & { status: 500 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface FooApiInterface {
-  updateFooBarRaw: (requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 204 }
-  | JSONApiResponse<ErrorResponse>
-  & { status: 400 }
-  | JSONApiResponse<ErrorResponse>
-  & { status: 500 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  updateFooBarRaw: (requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateFooBarRawResponse>;
   updateFooBar: (requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ErrorResponse>;
 }
 
@@ -34,10 +34,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
   }
 
   async updateFooBarRaw(requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 204 }
-      | JSONApiResponse<ErrorResponse> & { status: 400 }
-      | JSONApiResponse<ErrorResponse> & { status: 500 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<UpdateFooBarRawResponse> {
     if (requestParameters.fooId === undefined || requestParameters.fooId === null) {
       throw new RequiredError(
         'fooId',

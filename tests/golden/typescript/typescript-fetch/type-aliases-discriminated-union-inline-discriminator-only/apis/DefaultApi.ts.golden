@@ -21,11 +21,13 @@ export interface ApiCreateEventRequest {
   body: Event;
 }
 
+export type CreateEventRawResponse =
+  | JSONApiResponse<Event> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  createEventRaw: (requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Event>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createEventRaw: (requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateEventRawResponse>;
   createEvent: (requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Event>;
 }
 
@@ -38,8 +40,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createEventRaw(requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Event> & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<CreateEventRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

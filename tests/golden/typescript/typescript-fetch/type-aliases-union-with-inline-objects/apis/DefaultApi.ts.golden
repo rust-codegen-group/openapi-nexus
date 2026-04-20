@@ -12,11 +12,13 @@ export interface ApiTestUnionWithInlineObjectsRequest {
   body: Foo;
 }
 
+export type TestUnionWithInlineObjectsRawResponse =
+  | JSONApiResponse<Foo> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  testUnionWithInlineObjectsRaw: (requestParameters: ApiTestUnionWithInlineObjectsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Foo>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  testUnionWithInlineObjectsRaw: (requestParameters: ApiTestUnionWithInlineObjectsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestUnionWithInlineObjectsRawResponse>;
   testUnionWithInlineObjects: (requestParameters: ApiTestUnionWithInlineObjectsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
@@ -29,9 +31,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testUnionWithInlineObjectsRaw(requestParameters: ApiTestUnionWithInlineObjectsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<Foo>
-      & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<TestUnionWithInlineObjectsRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

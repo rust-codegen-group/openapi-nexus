@@ -19,16 +19,19 @@ export interface ApiCreateTypeBRequest {
   body: CreateRequestTypeB;
 }
 
+export type CreateTypeARawResponse =
+  | JSONApiResponse<ResourceTypeA> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type CreateTypeBRawResponse =
+  | JSONApiResponse<ResourceTypeB> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface TestApiApiInterface {
-  createTypeARaw: (requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<ResourceTypeA>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createTypeARaw: (requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeARawResponse>;
   createTypeA: (requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeA>;
-  createTypeBRaw: (requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<ResourceTypeB>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createTypeBRaw: (requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeBRawResponse>;
   createTypeB: (requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeB>;
 }
 
@@ -41,8 +44,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   }
 
   async createTypeARaw(requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<ResourceTypeA> & { status: 200 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<CreateTypeARawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -86,8 +88,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   }
 
   async createTypeBRaw(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<ResourceTypeB> & { status: 200 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<CreateTypeBRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

@@ -14,11 +14,13 @@ export interface ApiCreateResourceRequest {
   body: Resource;
 }
 
+export type CreateResourceRawResponse =
+  | JSONApiResponse<Resource> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  createResourceRaw: (requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Resource>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createResourceRaw: (requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateResourceRawResponse>;
   createResource: (requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Resource>;
 }
 
@@ -31,8 +33,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createResourceRaw(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Resource> & { status: 200 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<CreateResourceRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

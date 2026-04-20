@@ -12,11 +12,13 @@ export interface ApiTestMixedUnionRequest {
   body: Foo;
 }
 
+export type TestMixedUnionRawResponse =
+  | JSONApiResponse<Foo> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  testMixedUnionRaw: (requestParameters: ApiTestMixedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Foo>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  testMixedUnionRaw: (requestParameters: ApiTestMixedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestMixedUnionRawResponse>;
   testMixedUnion: (requestParameters: ApiTestMixedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
@@ -29,8 +31,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testMixedUnionRaw(requestParameters: ApiTestMixedUnionRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Foo> & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<TestMixedUnionRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

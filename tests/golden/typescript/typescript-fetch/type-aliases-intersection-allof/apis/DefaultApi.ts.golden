@@ -12,11 +12,13 @@ export interface ApiTestIntersectionRequest {
   body: Foo;
 }
 
+export type TestIntersectionRawResponse =
+  | JSONApiResponse<Foo> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  testIntersectionRaw: (requestParameters: ApiTestIntersectionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Foo>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  testIntersectionRaw: (requestParameters: ApiTestIntersectionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestIntersectionRawResponse>;
   testIntersection: (requestParameters: ApiTestIntersectionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
@@ -29,9 +31,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testIntersectionRaw(requestParameters: ApiTestIntersectionRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<Foo>
-      & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<TestIntersectionRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
