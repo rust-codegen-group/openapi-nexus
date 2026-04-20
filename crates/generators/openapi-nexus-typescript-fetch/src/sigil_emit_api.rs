@@ -55,6 +55,50 @@ pub fn generate_api_files(ir: &IrSpec) -> Result<Vec<FileInfo>, String> {
     Ok(files)
 }
 
+/// Exported symbols from a single `{Tag}Api.ts` file, split into type-only
+/// and value entries so the `apis/index.ts` barrel can emit
+/// `export type { ... }` and `export { ClassName }` separately.
+#[derive(Debug, Clone)]
+pub struct ApiFileExports {
+    pub filename_base: String,
+    pub type_names: Vec<String>,
+    pub value_names: Vec<String>,
+}
+
+/// Enumerate, per tag, the symbols that [`generate_api_files`] emits so
+/// callers can build a named-export barrel instead of `export *`.
+///
+/// The ordering mirrors emission: per-op request interface (when present),
+/// per-op raw-response alias, then `{Tag}ApiInterface`; the class goes into
+/// `value_names`.
+pub fn collect_api_file_exports(ir: &IrSpec) -> Vec<ApiFileExports> {
+    let by_tag = group_by_tag(&ir.operations);
+    let mut out = Vec::with_capacity(by_tag.len());
+    for (tag, ops) in &by_tag {
+        let class_name = format!("{}Api", tag.to_pascal_case());
+        let interface_name = format!("{}Interface", class_name);
+
+        let mut type_names = Vec::new();
+        for op in ops {
+            if !op.parameters.is_empty() || op.request_body.is_some() {
+                type_names.push(format!(
+                    "Api{}Request",
+                    op.operation_id.to_lower_camel_case().to_pascal_case()
+                ));
+            }
+            type_names.push(raw_response_alias_name(op));
+        }
+        type_names.push(interface_name);
+
+        out.push(ApiFileExports {
+            filename_base: class_name.clone(),
+            type_names,
+            value_names: vec![class_name],
+        });
+    }
+    out
+}
+
 fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation>> {
     let mut out: BTreeMap<String, Vec<&IrOperation>> = BTreeMap::new();
     for op in operations {

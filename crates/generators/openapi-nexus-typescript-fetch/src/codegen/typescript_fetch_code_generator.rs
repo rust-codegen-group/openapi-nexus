@@ -1,6 +1,5 @@
 //! TypeScript Fetch code generator
 
-use std::collections::HashMap;
 use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
@@ -60,8 +59,13 @@ impl TypeScriptFetchCodeGenerator {
             let exports: Vec<String> = names
                 .iter()
                 .map(|name| {
+                    let type_name = name.to_pascal_case();
                     let filename = self.generate_filename(name);
-                    format!("export * from './{}';", filename.trim_end_matches(".ts"))
+                    format!(
+                        "export type {{ {} }} from './{}';",
+                        type_name,
+                        filename.trim_end_matches(".ts")
+                    )
                 })
                 .collect();
             files.push(render_index_file(&ir.info, "models/index.ts", &exports));
@@ -109,22 +113,25 @@ impl TypeScriptFetchCodeGenerator {
         })?;
 
         if !files.is_empty() {
-            let mut api_classes_map: HashMap<String, FileInfo> = HashMap::new();
-            for f in &files {
-                let tag = f.filename.trim_end_matches("Api.ts").to_string();
-                api_classes_map.insert(tag, f.clone());
+            let mut plans = crate::sigil_emit_api::collect_api_file_exports(ir);
+            plans.sort_by(|a, b| a.filename_base.cmp(&b.filename_base));
+            let mut exports: Vec<String> = Vec::new();
+            for plan in plans {
+                if !plan.type_names.is_empty() {
+                    exports.push(format_named_reexport(
+                        "export type",
+                        &plan.type_names,
+                        &plan.filename_base,
+                    ));
+                }
+                if !plan.value_names.is_empty() {
+                    exports.push(format_named_reexport(
+                        "export",
+                        &plan.value_names,
+                        &plan.filename_base,
+                    ));
+                }
             }
-            let mut sorted: Vec<(&String, &FileInfo)> = api_classes_map.iter().collect();
-            sorted.sort_by(|a, b| a.0.cmp(b.0));
-            let exports: Vec<String> = sorted
-                .into_iter()
-                .map(|(_, file_info)| {
-                    format!(
-                        "export * from './{}';",
-                        file_info.filename.trim_end_matches(".ts")
-                    )
-                })
-                .collect();
             files.push(render_index_file(&ir.info, "apis/index.ts", &exports));
         }
 
@@ -304,3 +311,24 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
 }
 
 impl FileWriter for TypeScriptFetchCodeGenerator {}
+
+/// Format `<kind> { N1, N2, ... } from './<file>';` on one line when the
+/// single-line form fits within ~100 cols, else break each name onto its own
+/// line. Keeps short barrels dense and long ones scannable.
+fn format_named_reexport(kind: &str, names: &[String], filename_base: &str) -> String {
+    let one_line = format!(
+        "{} {{ {} }} from './{}';",
+        kind,
+        names.join(", "),
+        filename_base
+    );
+    if names.len() <= 1 || one_line.len() <= 100 {
+        return one_line;
+    }
+    let mut out = format!("{} {{\n", kind);
+    for name in names {
+        out.push_str(&format!("  {},\n", name));
+    }
+    out.push_str(&format!("}} from './{}';", filename_base));
+    out
+}
