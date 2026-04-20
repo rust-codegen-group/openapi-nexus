@@ -16,16 +16,19 @@ export interface ApiGetTestRequest {
   id: string;
 }
 
+export type CreateTestRawResponse =
+  | JSONApiResponse<Baz> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type GetTestRawResponse =
+  | JSONApiResponse<Baz> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  createTestRaw: (requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Baz>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createTestRaw: (requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestRawResponse>;
   createTest: (requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
-  getTestRaw: (requestParameters: ApiGetTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Baz>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getTestRaw: (requestParameters: ApiGetTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetTestRawResponse>;
   getTest: (requestParameters: ApiGetTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
 }
 
@@ -38,8 +41,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createTestRaw(requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Baz> & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<CreateTestRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -83,8 +85,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getTestRaw(requestParameters: ApiGetTestRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Baz> & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<GetTestRawResponse> {
     if (requestParameters.id === undefined || requestParameters.id === null) {
       throw new RequiredError(
         'id',

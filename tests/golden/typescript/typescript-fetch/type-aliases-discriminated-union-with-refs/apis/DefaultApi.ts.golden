@@ -13,11 +13,13 @@ export interface ApiCreateContainerRequest {
   body: ContainerImage;
 }
 
+export type CreateContainerRawResponse =
+  | JSONApiResponse<ContainerImage> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  createContainerRaw: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<ContainerImage>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createContainerRaw: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateContainerRawResponse>;
   createContainer: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ContainerImage>;
 }
 
@@ -30,8 +32,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createContainerRaw(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<ContainerImage> & { status: 200 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<CreateContainerRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

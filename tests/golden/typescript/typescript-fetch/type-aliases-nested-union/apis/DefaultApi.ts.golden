@@ -12,11 +12,13 @@ export interface ApiTestNestedUnionRequest {
   body: Foo;
 }
 
+export type TestNestedUnionRawResponse =
+  | JSONApiResponse<Foo> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  testNestedUnionRaw: (requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Foo>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  testNestedUnionRaw: (requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestNestedUnionRawResponse>;
   testNestedUnion: (requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
@@ -29,8 +31,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testNestedUnionRaw(requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Foo> & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<TestNestedUnionRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

@@ -16,13 +16,14 @@ export interface ApiGetItemsRequest {
   status?: FooStatus;
 }
 
+export type GetItemsRawResponse =
+  | JSONApiResponse<GetItemsResponse200> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface ItemsApiInterface {
-  getItemsRaw: (requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<GetItemsResponse200>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getItemsRaw: (requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetItemsRawResponse>;
   getItems: (requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetItemsResponse200>;
 }
 
@@ -35,9 +36,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   }
 
   async getItemsRaw(requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<GetItemsResponse200> & { status: 200 }
-      | VoidApiResponse & { status: 400 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<GetItemsRawResponse> {
     // Build path with path parameters
     const urlPath = `/items`;
     // Build query parameters

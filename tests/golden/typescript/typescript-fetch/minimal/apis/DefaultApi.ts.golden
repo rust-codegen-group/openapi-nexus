@@ -6,11 +6,13 @@
 import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, VoidApiResponse } from '../runtime/runtime';
 
+export type GetTestRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: number };
+
+
 export interface DefaultApiInterface {
-  getTestRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: number }>;
+  getTestRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetTestRawResponse>;
   getTest: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
@@ -22,10 +24,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getTestRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<VoidApiResponse
-      & { status: 200 }
-      | VoidApiResponse
-      & { status: number }> {
+  async getTestRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetTestRawResponse> {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters

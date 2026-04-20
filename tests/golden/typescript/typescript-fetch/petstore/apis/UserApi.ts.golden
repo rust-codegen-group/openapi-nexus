@@ -49,55 +49,56 @@ export interface ApiDeleteUserRequest {
   username: string;
 }
 
+export type CreateUserRawResponse =
+  | JSONApiResponse<User> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type CreateUsersWithListInputRawResponse =
+  | JSONApiResponse<User> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type LoginUserRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: number };
+
+export type LogoutUserRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: number };
+
+export type GetUserByNameRawResponse =
+  | JSONApiResponse<User> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | JSONApiResponse<any> & { status: number };
+
+export type UpdateUserRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | VoidApiResponse & { status: number };
+
+export type DeleteUserRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | VoidApiResponse & { status: number };
+
+
 export interface UserApiInterface {
-  createUserRaw: (requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<User>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createUserRaw: (requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateUserRawResponse>;
   createUser: (requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  createUsersWithListInputRaw: (requestParameters: ApiCreateUsersWithListInputRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<User>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createUsersWithListInputRaw: (requestParameters: ApiCreateUsersWithListInputRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateUsersWithListInputRawResponse>;
   createUsersWithListInput: (requestParameters: ApiCreateUsersWithListInputRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  loginUserRaw: (requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: number }>;
+  loginUserRaw: (requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<LoginUserRawResponse>;
   loginUser: (requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  logoutUserRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: number }>;
+  logoutUserRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<LogoutUserRawResponse>;
   logoutUser: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getUserByNameRaw: (requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<User>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getUserByNameRaw: (requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByNameRawResponse>;
   getUserByName: (requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  updateUserRaw: (requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | VoidApiResponse
-  & { status: number }>;
+  updateUserRaw: (requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateUserRawResponse>;
   updateUser: (requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  deleteUserRaw: (requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | VoidApiResponse
-  & { status: number }>;
+  deleteUserRaw: (requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteUserRawResponse>;
   deleteUser: (requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
@@ -110,8 +111,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async createUserRaw(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<User> & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<CreateUserRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -155,9 +155,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async createUsersWithListInputRaw(requestParameters: ApiCreateUsersWithListInputRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<User>
-      & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateUsersWithListInputRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -201,8 +199,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async loginUserRaw(requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: number }> {
+  | InitOverrideFunction): Promise<LoginUserRawResponse> {
     // Build path with path parameters
     const urlPath = `/user/login`;
     // Build query parameters
@@ -245,10 +242,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return await response.value();
   }
 
-  async logoutUserRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<VoidApiResponse
-      & { status: 200 }
-      | VoidApiResponse
-      & { status: number }> {
+  async logoutUserRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<LogoutUserRawResponse> {
     // Build path with path parameters
     const urlPath = `/user/logout`;
     // Build query parameters
@@ -282,9 +276,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async getUserByNameRaw(requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<User> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 404 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<GetUserByNameRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
@@ -332,9 +324,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async updateUserRaw(requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<UpdateUserRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
@@ -391,9 +381,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async deleteUserRaw(requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<DeleteUserRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',

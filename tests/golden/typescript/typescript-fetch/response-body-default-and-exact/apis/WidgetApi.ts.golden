@@ -8,11 +8,13 @@ import type { Widget } from '../models/Widget';
 import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse } from '../runtime/runtime';
 
+export type GetWidgetRawResponse =
+  | JSONApiResponse<Widget> & { status: 200 }
+  | JSONApiResponse<ErrorResponse> & { status: number };
+
+
 export interface WidgetApiInterface {
-  getWidgetRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Widget>
-  & { status: 200 }
-  | JSONApiResponse<ErrorResponse>
-  & { status: number }>;
+  getWidgetRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetWidgetRawResponse>;
   getWidget: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Widget | ErrorResponse>;
 }
 
@@ -24,10 +26,7 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getWidgetRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<Widget>
-      & { status: 200 }
-      | JSONApiResponse<ErrorResponse>
-      & { status: number }> {
+  async getWidgetRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetWidgetRawResponse> {
     // Build path with path parameters
     const urlPath = `/widgets`;
     // Build query parameters

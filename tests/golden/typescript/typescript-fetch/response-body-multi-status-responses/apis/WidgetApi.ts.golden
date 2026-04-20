@@ -9,15 +9,15 @@ import type { WidgetListPartial } from '../models/WidgetListPartial';
 import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse } from '../runtime/runtime';
 
+export type ListWidgetsRawResponse =
+  | JSONApiResponse<Widget[]> & { status: 200 }
+  | JSONApiResponse<WidgetListPartial> & { status: 206 }
+  | JSONApiResponse<ErrorResponse> & { status: 404 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface WidgetApiInterface {
-  listWidgetsRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Widget[]>
-  & { status: 200 }
-  | JSONApiResponse<WidgetListPartial>
-  & { status: 206 }
-  | JSONApiResponse<ErrorResponse>
-  & { status: 404 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  listWidgetsRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ListWidgetsRawResponse>;
   listWidgets: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Widget[]
   | WidgetListPartial
   | ErrorResponse>;
@@ -31,14 +31,7 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async listWidgetsRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<Widget[]>
-      & { status: 200 }
-      | JSONApiResponse<WidgetListPartial>
-      & { status: 206 }
-      | JSONApiResponse<ErrorResponse>
-      & { status: 404 }
-      | JSONApiResponse<any>
-      & { status: number }> {
+  async listWidgetsRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<ListWidgetsRawResponse> {
     // Build path with path parameters
     const urlPath = `/widgets`;
     // Build query parameters

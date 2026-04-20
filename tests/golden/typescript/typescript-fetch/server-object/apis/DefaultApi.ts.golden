@@ -17,18 +17,20 @@ export interface ApiGetUserByIdRequest {
   id: number;
 }
 
+export type GetAllUsersRawResponse =
+  | JSONApiResponse<GetAllUsersResponse200Item[]> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type GetUserByIdRawResponse =
+  | JSONApiResponse<GetUserByIdResponse200> & { status: 200 }
+  | JSONApiResponse<GetUserByIdResponse404> & { status: 404 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  getAllUsersRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<GetAllUsersResponse200Item[]>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getAllUsersRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetAllUsersRawResponse>;
   getAllUsers: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetAllUsersResponse200Item[]>;
-  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<GetUserByIdResponse200>
-  & { status: 200 }
-  | JSONApiResponse<GetUserByIdResponse404>
-  & { status: 404 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdRawResponse>;
   getUserById: (requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdResponse200
   | GetUserByIdResponse404>;
 }
@@ -41,10 +43,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getAllUsersRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<GetAllUsersResponse200Item[]>
-      & { status: 200 }
-      | JSONApiResponse<any>
-      & { status: number }> {
+  async getAllUsersRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetAllUsersRawResponse> {
     // Build path with path parameters
     const urlPath = `/users`;
     // Build query parameters
@@ -78,9 +77,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getUserByIdRaw(requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<GetUserByIdResponse200> & { status: 200 }
-      | JSONApiResponse<GetUserByIdResponse404> & { status: 404 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<GetUserByIdRawResponse> {
     if (requestParameters.id === undefined || requestParameters.id === null) {
       throw new RequiredError(
         'id',
