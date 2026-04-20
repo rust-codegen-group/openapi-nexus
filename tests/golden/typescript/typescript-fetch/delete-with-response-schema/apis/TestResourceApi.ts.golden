@@ -50,7 +50,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<CreateTestResourceResponse>
       & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTestResourceRaw().'
@@ -66,7 +66,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -98,7 +98,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
       | JSONApiResponse<HttpErrorResponse>
       & { status: number } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['resourceId'] === undefined || requestParameters['resourceId'] === null) {
+    if (requestParameters.resourceId === undefined || requestParameters.resourceId === null) {
       throw new RequiredError(
         'resourceId',
         'Required parameter "resourceId" was null or undefined when calling deleteTestResourceRaw().'
@@ -106,7 +106,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     }
     // Build path with path parameters
     let urlPath = `/v1/api/test-resource/{resource_id}`;
-    urlPath = urlPath.replace(`{resource_id}`, encodeURIComponent(String(requestParameters['resourceId'])));
+    urlPath = urlPath.replace(`{resource_id}`, encodeURIComponent(String(requestParameters.resourceId)));
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
