@@ -305,6 +305,30 @@ fn build_raw_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, String> {
         .map_err(|e| format!("sigil_emit_api: raw method {method_name}: {e}"))
 }
 
+/// True if `s` is shaped like a JS identifier — safe to use with dot access.
+/// ES5+ permits reserved words (`class`, `if`, ...) after a dot as property
+/// names, and ESLint `dot-notation` accepts them, so shape is sufficient.
+fn is_js_identifier(s: &str) -> bool {
+    let mut chars = s.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    if !(first.is_ascii_alphabetic() || first == '_' || first == '$') {
+        return false;
+    }
+    chars.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$')
+}
+
+/// Render `requestParameters.{key}` when `key` is a valid identifier,
+/// otherwise `requestParameters['{key}']`.
+fn request_parameters_access(key: &str) -> String {
+    if is_js_identifier(key) {
+        format!("requestParameters.{key}")
+    } else {
+        format!("requestParameters['{key}']")
+    }
+}
+
 fn emit_required_param_checks(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
     op: &IrOperation,
@@ -325,10 +349,11 @@ fn emit_required_param_checks(
     }
 
     for pname in all_required {
+        let access = request_parameters_access(&pname);
         cb.add(
             &format!(
-                "if (requestParameters['{0}'] === undefined || requestParameters['{0}'] === null) {{\n  throw new %T(\n    '{0}',\n    'Required parameter \"{0}\" was null or undefined when calling {1}().'\n  );\n}}\n",
-                pname, method_name
+                "if ({0} === undefined || {0} === null) {{\n  throw new %T(\n    '{1}',\n    'Required parameter \"{1}\" was null or undefined when calling {2}().'\n  );\n}}\n",
+                access, pname, method_name
             ),
             vec![Arg::TypeName(rt_value("RequiredError"))],
         );
@@ -355,11 +380,12 @@ fn emit_url_path(
     {
         let resolved = resolved_param(&names, p);
         let original = &p.name;
+        let access = request_parameters_access(&resolved);
         // The backtick template and the ${...} must both survive into TS output.
         cb.add(
             &format!(
-                "urlPath = urlPath.replace(`{{{}}}`, encodeURIComponent(String(requestParameters['{}'])));\n",
-                original, resolved
+                "urlPath = urlPath.replace(`{{{}}}`, encodeURIComponent(String({})));\n",
+                original, access
             ),
             vec![],
         );
@@ -379,10 +405,11 @@ fn emit_query_params(
         .filter(|p| matches!(p.location, IrParameterLocation::Query))
     {
         let resolved = resolved_param(&names, p);
+        let access = request_parameters_access(&resolved);
         cb.add(
             &format!(
-                "if (requestParameters['{0}'] !== undefined) {{\n  queryParameters['{1}'] = requestParameters['{0}'];\n}}\n",
-                resolved, p.name
+                "if ({0} !== undefined) {{\n  queryParameters['{1}'] = {0};\n}}\n",
+                access, p.name
             ),
             vec![],
         );
@@ -408,10 +435,11 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
         .filter(|p| matches!(p.location, IrParameterLocation::Header))
     {
         let resolved = resolved_param(&names, p);
+        let access = request_parameters_access(&resolved);
         cb.add(
             &format!(
-                "if (requestParameters['{0}'] !== undefined) {{\n  headerParameters['{1}'] = String(requestParameters['{0}']);\n}}\n",
-                resolved, p.name
+                "if ({0} !== undefined) {{\n  headerParameters['{1}'] = String({0});\n}}\n",
+                access, p.name
             ),
             vec![],
         );
@@ -426,10 +454,8 @@ fn emit_request_body(
         cb.add("// Prepare request body\n", vec![]);
         let names = resolve_param_names(op);
         let body_name = resolved_body(&names);
-        cb.add(
-            &format!("const requestBody = requestParameters['{}'];\n", body_name),
-            vec![],
-        );
+        let access = request_parameters_access(&body_name);
+        cb.add(&format!("const requestBody = {};\n", access), vec![]);
     }
 }
 

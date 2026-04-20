@@ -38,13 +38,13 @@ export class FooApi extends BaseAPI implements FooApiInterface {
       | JSONApiResponse<ErrorResponse> & { status: 400 }
       | JSONApiResponse<ErrorResponse> & { status: 500 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['fooId'] === undefined || requestParameters['fooId'] === null) {
+    if (requestParameters.fooId === undefined || requestParameters.fooId === null) {
       throw new RequiredError(
         'fooId',
         'Required parameter "fooId" was null or undefined when calling updateFooBarRaw().'
       );
     }
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling updateFooBarRaw().'
@@ -52,7 +52,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/foo/bar`;
-    urlPath = urlPath.replace(`{foo_id}`, encodeURIComponent(String(requestParameters['fooId'])));
+    urlPath = urlPath.replace(`{foo_id}`, encodeURIComponent(String(requestParameters.fooId)));
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -61,7 +61,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,

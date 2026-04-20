@@ -49,7 +49,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
       & { status: 400 } | VoidApiResponse
       & { status: 404 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['pathId'] === undefined || requestParameters['pathId'] === null) {
+    if (requestParameters.pathId === undefined || requestParameters.pathId === null) {
       throw new RequiredError(
         'pathId',
         'Required parameter "pathId" was null or undefined when calling getUserByIdDuplicateRaw().'
@@ -57,18 +57,18 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/users/{id}`;
-    urlPath = urlPath.replace(`{id}`, encodeURIComponent(String(requestParameters['pathId'])));
+    urlPath = urlPath.replace(`{id}`, encodeURIComponent(String(requestParameters.pathId)));
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['queryId'] !== undefined) {
-      queryParameters['id'] = requestParameters['queryId'];
+    if (requestParameters.queryId !== undefined) {
+      queryParameters['id'] = requestParameters.queryId;
     }
     // Build headers
     const headerParameters: Record<string, string> = {
     };
 
-    if (requestParameters['headerId'] !== undefined) {
-      headerParameters['id'] = String(requestParameters['headerId']);
+    if (requestParameters.headerId !== undefined) {
+      headerParameters['id'] = String(requestParameters.headerId);
     }
     // Make request
     const response = await this.request({
