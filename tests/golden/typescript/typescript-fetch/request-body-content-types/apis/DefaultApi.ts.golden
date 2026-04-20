@@ -5,7 +5,7 @@
  * Covers non-JSON request body media types to pin Content-Type emission.
  */
 import type { Payload } from '../models/Payload';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiPostFormRequest {
@@ -81,7 +81,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/form`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -125,7 +125,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/json`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -169,7 +169,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/json-or-xml`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -213,7 +213,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/text`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'text/plain',
@@ -257,7 +257,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/xml`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/xml',

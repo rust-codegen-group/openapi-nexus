@@ -5,7 +5,7 @@
  * Test API with duplicate parameter names across different locations
  */
 import type { GetUserByIdDuplicateResponse200 } from '../models/GetUserByIdDuplicateResponse200';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiGetUserByIdDuplicateRequest {
@@ -27,7 +27,7 @@ export type GetUserByIdDuplicateRawResponse =
   | JSONApiResponse<GetUserByIdDuplicateResponse200> & { status: 200 }
   | VoidApiResponse & { status: 400 }
   | VoidApiResponse & { status: 404 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface UsersApiInterface {
@@ -55,7 +55,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
     let urlPath = `/users/{id}`;
     urlPath = urlPath.replace(`{id}`, encodeURIComponent(String(requestParameters.pathId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.queryId !== undefined) {
       queryParameters['id'] = requestParameters.queryId;
     }
@@ -86,7 +86,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 404 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -94,6 +94,6 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
   async getUserByIdDuplicate(requestParameters: ApiGetUserByIdDuplicateRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateResponse200> {
     const response = await this.getUserByIdDuplicateRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as GetUserByIdDuplicateResponse200;
   }
 }

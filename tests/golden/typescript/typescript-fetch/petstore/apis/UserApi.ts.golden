@@ -5,7 +5,7 @@
  * This is a sample Pet Store Server based on the OpenAPI 3.1 specification
  */
 import type { User } from '../models/User';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiCreateUserRequest {
@@ -51,11 +51,11 @@ export interface ApiDeleteUserRequest {
 
 export type CreateUserRawResponse =
   | JSONApiResponse<User> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type CreateUsersWithListInputRawResponse =
   | JSONApiResponse<User> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type LoginUserRawResponse =
   | VoidApiResponse & { status: 200 }
@@ -70,7 +70,7 @@ export type GetUserByNameRawResponse =
   | JSONApiResponse<User> & { status: 200 }
   | VoidApiResponse & { status: 400 }
   | VoidApiResponse & { status: 404 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type UpdateUserRawResponse =
   | VoidApiResponse & { status: 200 }
@@ -121,7 +121,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Build path with path parameters
     const urlPath = `/user`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<User> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -151,7 +151,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   async createUser(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<User> {
     const response = await this.createUserRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as User;
   }
 
   async createUsersWithListInputRaw(requestParameters: ApiCreateUsersWithListInputRequest,
@@ -165,7 +165,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Build path with path parameters
     const urlPath = `/user/createWithList`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -187,7 +187,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<User> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -195,7 +195,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   async createUsersWithListInput(requestParameters: ApiCreateUsersWithListInputRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<User> {
     const response = await this.createUsersWithListInputRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as User;
   }
 
   async loginUserRaw(requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit
@@ -203,7 +203,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Build path with path parameters
     const urlPath = `/user/login`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.username !== undefined) {
       queryParameters['username'] = requestParameters.username;
     }
@@ -246,7 +246,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Build path with path parameters
     const urlPath = `/user/logout`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -287,7 +287,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     let urlPath = `/user/{username}`;
     urlPath = urlPath.replace(`{username}`, encodeURIComponent(String(requestParameters.username)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -312,7 +312,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 404 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -320,7 +320,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   async getUserByName(requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<User> {
     const response = await this.getUserByNameRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as User;
   }
 
   async updateUserRaw(requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit
@@ -341,7 +341,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     let urlPath = `/user/{username}`;
     urlPath = urlPath.replace(`{username}`, encodeURIComponent(String(requestParameters.username)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -392,7 +392,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     let urlPath = `/user/{username}`;
     urlPath = urlPath.replace(`{username}`, encodeURIComponent(String(requestParameters.username)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };

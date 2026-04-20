@@ -9,7 +9,7 @@
  */
 import type { ContainerKind } from '../models/ContainerKind';
 import type { VolumeKind } from '../models/VolumeKind';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiCreateContainerRequest {
@@ -22,11 +22,11 @@ export interface ApiCreateVolumeRequest {
 
 export type CreateContainerRawResponse =
   | JSONApiResponse<ContainerKind> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type CreateVolumeRawResponse =
   | JSONApiResponse<VolumeKind> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -55,7 +55,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/container`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<ContainerKind> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -85,7 +85,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createContainer(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<ContainerKind> {
     const response = await this.createContainerRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as ContainerKind;
   }
 
   async createVolumeRaw(requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit
@@ -99,7 +99,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/volume`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<VolumeKind> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -129,6 +129,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createVolume(requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<VolumeKind> {
     const response = await this.createVolumeRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as VolumeKind;
   }
 }

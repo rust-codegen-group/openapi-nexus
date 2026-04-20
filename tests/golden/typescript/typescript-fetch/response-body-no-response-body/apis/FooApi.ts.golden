@@ -5,7 +5,7 @@
  */
 import type { ErrorResponse } from '../models/ErrorResponse';
 import type { FooRequest } from '../models/FooRequest';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiUpdateFooBarRequest {
@@ -17,7 +17,7 @@ export type UpdateFooBarRawResponse =
   | VoidApiResponse & { status: 204 }
   | JSONApiResponse<ErrorResponse> & { status: 400 }
   | JSONApiResponse<ErrorResponse> & { status: 500 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface FooApiInterface {
@@ -51,7 +51,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
     let urlPath = `/foo/bar`;
     urlPath = urlPath.replace(`{foo_id}`, encodeURIComponent(String(requestParameters.fooId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<ErrorResponse> & { status: 500 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -87,6 +87,6 @@ export class FooApi extends BaseAPI implements FooApiInterface {
   async updateFooBar(requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<ErrorResponse> {
     const response = await this.updateFooBarRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as ErrorResponse;
   }
 }

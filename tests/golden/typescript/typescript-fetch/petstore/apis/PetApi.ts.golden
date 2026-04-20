@@ -6,7 +6,7 @@
  */
 import type { Pet } from '../models/Pet';
 import type { UploadResponse } from '../models/UploadResponse';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiUpdatePetRequest {
@@ -76,34 +76,34 @@ export type UpdatePetRawResponse =
   | VoidApiResponse & { status: 400 }
   | VoidApiResponse & { status: 404 }
   | VoidApiResponse & { status: 422 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type AddPetRawResponse =
   | JSONApiResponse<Pet> & { status: 200 }
   | VoidApiResponse & { status: 400 }
   | VoidApiResponse & { status: 422 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type FindPetsByStatusRawResponse =
   | JSONApiResponse<Pet[]> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type FindPetsByTagsRawResponse =
   | JSONApiResponse<Pet[]> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type GetPetByIdRawResponse =
   | JSONApiResponse<Pet> & { status: 200 }
   | VoidApiResponse & { status: 400 }
   | VoidApiResponse & { status: 404 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type UpdatePetWithFormRawResponse =
   | JSONApiResponse<Pet> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type DeletePetRawResponse =
   | VoidApiResponse & { status: 200 }
@@ -112,7 +112,7 @@ export type DeletePetRawResponse =
 
 export type UploadFileRawResponse =
   | JSONApiResponse<UploadResponse> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface PetApiInterface {
@@ -153,7 +153,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     // Build path with path parameters
     const urlPath = `/pet`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -184,7 +184,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 422 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -192,7 +192,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async updatePet(requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Pet> {
     const response = await this.updatePetRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Pet;
   }
 
   async addPetRaw(requestParameters: ApiAddPetRequest, initOverrides?: RequestInit
@@ -206,7 +206,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     // Build path with path parameters
     const urlPath = `/pet`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -234,7 +234,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 422 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -242,7 +242,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async addPet(requestParameters: ApiAddPetRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Pet> {
     const response = await this.addPetRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Pet;
   }
 
   async findPetsByStatusRaw(requestParameters: ApiFindPetsByStatusRequest,
@@ -256,7 +256,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     // Build path with path parameters
     const urlPath = `/pet/findByStatus`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.status !== undefined) {
       queryParameters['status'] = requestParameters.status;
     }
@@ -281,7 +281,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -289,7 +289,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async findPetsByStatus(requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Pet[]> {
     const response = await this.findPetsByStatusRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Pet[];
   }
 
   async findPetsByTagsRaw(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
@@ -303,7 +303,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     // Build path with path parameters
     const urlPath = `/pet/findByTags`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.tags !== undefined) {
       queryParameters['tags'] = requestParameters.tags;
     }
@@ -328,7 +328,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -336,7 +336,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async findPetsByTags(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Pet[]> {
     const response = await this.findPetsByTagsRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Pet[];
   }
 
   async getPetByIdRaw(requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit
@@ -351,7 +351,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     let urlPath = `/pet/{petId}`;
     urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -376,7 +376,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 404 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -384,7 +384,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async getPetById(requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Pet> {
     const response = await this.getPetByIdRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Pet;
   }
 
   async updatePetWithFormRaw(requestParameters: ApiUpdatePetWithFormRequest,
@@ -399,7 +399,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     let urlPath = `/pet/{petId}`;
     urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.name !== undefined) {
       queryParameters['name'] = requestParameters.name;
     }
@@ -427,7 +427,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -435,7 +435,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async updatePetWithForm(requestParameters: ApiUpdatePetWithFormRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<Pet> {
     const response = await this.updatePetWithFormRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Pet;
   }
 
   async deletePetRaw(requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit
@@ -450,7 +450,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     let urlPath = `/pet/{petId}`;
     urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -495,7 +495,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     let urlPath = `/pet/{petId}/uploadImage`;
     urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.additionalMetadata !== undefined) {
       queryParameters['additionalMetadata'] = requestParameters.additionalMetadata;
     }
@@ -517,7 +517,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<UploadResponse> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -525,6 +525,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async uploadFile(requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<UploadResponse> {
     const response = await this.uploadFileRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as UploadResponse;
   }
 }
