@@ -83,6 +83,11 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation]) -> Result<FileSpec<TypeScript>
         }
     }
 
+    // Per-operation raw response type aliases — emit each union member on its
+    // own line so readers can scan each `Wrapper & { status: N }` pair without
+    // the pretty printer splitting intersections across lines.
+    fb.add_code(build_response_aliases_block(ops)?);
+
     // ApiInterface — emit as a raw CodeBlock so `%T` slots propagate imports
     // for every arrow-function parameter and return type. (TypeSpec with
     // FieldSpec arrow-function fields can't carry structural TypeName for the
@@ -96,6 +101,69 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation]) -> Result<FileSpec<TypeScript>
 
     fb.build()
         .map_err(|e| format!("sigil_emit_api: FileSpec build {tag}: {e}"))
+}
+
+/// Name of the exported type alias holding the raw (wrapped) response union
+/// for a given operation. E.g. `updatePet` → `UpdatePetRawResponse`.
+fn raw_response_alias_name(op: &IrOperation) -> String {
+    format!(
+        "{}RawResponse",
+        op.operation_id.to_lower_camel_case().to_pascal_case()
+    )
+}
+
+/// Emit one `export type {OpId}RawResponse = | A | B | C;` block per op.
+/// Each member is a `%T` slot so imports still flow through the collector,
+/// and each sits on its own line so intersections (`Wrapper & { status: N }`)
+/// stay intact.
+fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock<TypeScript>, String> {
+    let mut cb = CodeBlock::<TypeScript>::builder();
+    for op in ops {
+        let alias = raw_response_alias_name(op);
+        let members = raw_response_members(op);
+        if members.len() == 1 {
+            cb.add(
+                &format!("export type {alias} = %T;\n\n"),
+                vec![Arg::TypeName(members.into_iter().next().unwrap())],
+            );
+        } else {
+            cb.add(&format!("export type {alias} =\n"), vec![]);
+            for (i, member) in members.into_iter().enumerate() {
+                let sep = if i == 0 { "  | " } else { "\n  | " };
+                cb.add(&format!("{sep}%T"), vec![Arg::TypeName(member)]);
+            }
+            cb.add(";\n\n", vec![]);
+        }
+    }
+    cb.build()
+        .map_err(|e| format!("sigil_emit_api: response aliases block: {e}"))
+}
+
+/// Compute the deduplicated list of union members for an operation's raw
+/// response type (wrapper intersected with status literal).
+fn raw_response_members(op: &IrOperation) -> Vec<TypeName<TypeScript>> {
+    let mut members: Vec<TypeName<TypeScript>> = Vec::new();
+    let mut any_body = false;
+    let mut has_default = false;
+
+    for resp in &op.responses {
+        if resp.status.eq_ignore_ascii_case("default") {
+            has_default = true;
+        }
+        let kind = classify_response(resp);
+        if !matches!(kind, ResponseKind::None) {
+            any_body = true;
+        }
+        members.push(raw_response_member(resp, &kind));
+    }
+    if !has_default {
+        members.push(fallback_member(any_body));
+    }
+
+    if members.is_empty() {
+        return vec![rt_value("VoidApiResponse")];
+    }
+    dedup_union_members(members)
 }
 
 // ============================================================================
@@ -674,35 +742,12 @@ fn raw_call_args(op: &IrOperation) -> String {
 // ============================================================================
 
 fn raw_return_type(op: &IrOperation) -> TypeName<TypeScript> {
-    let mut members: Vec<TypeName<TypeScript>> = Vec::new();
-    let mut any_body = false;
-    let mut has_default = false;
-
-    for resp in &op.responses {
-        if resp.status.eq_ignore_ascii_case("default") {
-            has_default = true;
-        }
-        let kind = classify_response(resp);
-        if !matches!(kind, ResponseKind::None) {
-            any_body = true;
-        }
-        members.push(raw_response_member(resp, &kind));
-    }
-    if !has_default {
-        // Synthesize fallback matching `emit_fallback_return`.
-        members.push(fallback_member(any_body));
-    }
-
-    let body = if members.is_empty() {
-        rt_value("VoidApiResponse")
-    } else if members.len() == 1 {
-        members.pop().unwrap()
-    } else {
-        // Deduplicate equivalent members by rendered form. Sigil's union
-        // renders each member as-is and order is preserved.
-        dedup_union(members)
-    };
-    TypeName::generic(TypeName::primitive("Promise"), vec![body])
+    // Returns `Promise<{OpId}RawResponse>` — the alias itself lives in the
+    // same file (see `build_response_aliases_block`) so no import is needed.
+    TypeName::generic(
+        TypeName::primitive("Promise"),
+        vec![TypeName::raw(&raw_response_alias_name(op))],
+    )
 }
 
 fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName<TypeScript> {
@@ -770,9 +815,9 @@ fn convenience_return_type(op: &IrOperation) -> TypeName<TypeScript> {
     TypeName::generic(TypeName::primitive("Promise"), vec![body])
 }
 
-/// Stable de-dup of union members. Cheap-and-correct: dedup by `Debug`
-/// representation — sigil's TypeName derives `Debug` for all variants.
-fn dedup_union(members: Vec<TypeName<TypeScript>>) -> TypeName<TypeScript> {
+/// Stable de-dup of union members by `Debug` representation (cheap, correct
+/// for sigil's `TypeName` variants).
+fn dedup_union_members(members: Vec<TypeName<TypeScript>>) -> Vec<TypeName<TypeScript>> {
     let mut seen: BTreeSet<String> = BTreeSet::new();
     let mut out: Vec<TypeName<TypeScript>> = Vec::new();
     for m in members {
@@ -781,6 +826,11 @@ fn dedup_union(members: Vec<TypeName<TypeScript>>) -> TypeName<TypeScript> {
             out.push(m);
         }
     }
+    out
+}
+
+fn dedup_union(members: Vec<TypeName<TypeScript>>) -> TypeName<TypeScript> {
+    let mut out = dedup_union_members(members);
     if out.len() == 1 {
         out.pop().unwrap()
     } else {

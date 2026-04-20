@@ -22,18 +22,20 @@ export interface ApiDeleteTestResourceRequest {
   resourceId: string;
 }
 
+export type CreateTestResourceRawResponse =
+  | JSONApiResponse<CreateTestResourceResponse> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type DeleteTestResourceRawResponse =
+  | JSONApiResponse<DeleteTestResourceResponse> & { status: 200 }
+  | JSONApiResponse<HttpErrorResponse> & { status: number }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface TestResourceApiInterface {
-  createTestResourceRaw: (requestParameters: ApiCreateTestResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<CreateTestResourceResponse>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createTestResourceRaw: (requestParameters: ApiCreateTestResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestResourceRawResponse>;
   createTestResource: (requestParameters: ApiCreateTestResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestResourceResponse>;
-  deleteTestResourceRaw: (requestParameters: ApiDeleteTestResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<DeleteTestResourceResponse>
-  & { status: 200 }
-  | JSONApiResponse<HttpErrorResponse>
-  & { status: number }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  deleteTestResourceRaw: (requestParameters: ApiDeleteTestResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteTestResourceRawResponse>;
   deleteTestResource: (requestParameters: ApiDeleteTestResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteTestResourceResponse
   | HttpErrorResponse>;
 }
@@ -47,9 +49,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   }
 
   async createTestResourceRaw(requestParameters: ApiCreateTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<CreateTestResourceResponse>
-      & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -93,11 +93,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   }
 
   async deleteTestResourceRaw(requestParameters: ApiDeleteTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<DeleteTestResourceResponse>
-      & { status: 200 }
-      | JSONApiResponse<HttpErrorResponse>
-      & { status: number } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceRawResponse> {
     if (requestParameters.resourceId === undefined || requestParameters.resourceId === null) {
       throw new RequiredError(
         'resourceId',

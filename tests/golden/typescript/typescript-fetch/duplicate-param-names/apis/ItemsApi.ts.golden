@@ -21,13 +21,14 @@ export interface ApiCreateItemWithBodyConflictRequest {
   bodyBody: CreateItemWithBodyConflictRequest;
 }
 
+export type CreateItemWithBodyConflictRawResponse =
+  | JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface ItemsApiInterface {
-  createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<CreateItemWithBodyConflictResponse200>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateItemWithBodyConflictRawResponse>;
   createItemWithBodyConflict: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateItemWithBodyConflictResponse200>;
 }
 
@@ -40,10 +41,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   }
 
   async createItemWithBodyConflictRaw(requestParameters: ApiCreateItemWithBodyConflictRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<CreateItemWithBodyConflictResponse200>
-      & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateItemWithBodyConflictRawResponse> {
     if (requestParameters.itemId === undefined || requestParameters.itemId === null) {
       throw new RequiredError(
         'itemId',

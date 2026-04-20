@@ -12,11 +12,13 @@ export interface ApiTestSimpleAliasRequest {
   body: Foo;
 }
 
+export type TestSimpleAliasRawResponse =
+  | JSONApiResponse<Foo> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  testSimpleAliasRaw: (requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Foo>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  testSimpleAliasRaw: (requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestSimpleAliasRawResponse>;
   testSimpleAlias: (requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
@@ -29,8 +31,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testSimpleAliasRaw(requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Foo> & { status: 200 } | JSONApiResponse<any>
-      & { status: number }> {
+  | InitOverrideFunction): Promise<TestSimpleAliasRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

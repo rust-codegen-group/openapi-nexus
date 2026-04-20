@@ -71,68 +71,66 @@ export interface ApiUploadFileRequest {
   additionalMetadata?: string;
 }
 
+export type UpdatePetRawResponse =
+  | JSONApiResponse<Pet> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | VoidApiResponse & { status: 422 }
+  | JSONApiResponse<any> & { status: number };
+
+export type AddPetRawResponse =
+  | JSONApiResponse<Pet> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 422 }
+  | JSONApiResponse<any> & { status: number };
+
+export type FindPetsByStatusRawResponse =
+  | JSONApiResponse<Pet[]> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type FindPetsByTagsRawResponse =
+  | JSONApiResponse<Pet[]> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type GetPetByIdRawResponse =
+  | JSONApiResponse<Pet> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | JSONApiResponse<any> & { status: number };
+
+export type UpdatePetWithFormRawResponse =
+  | JSONApiResponse<Pet> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type DeletePetRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: number };
+
+export type UploadFileRawResponse =
+  | JSONApiResponse<UploadResponse> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface PetApiInterface {
-  updatePetRaw: (requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Pet>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | VoidApiResponse
-  & { status: 422 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  updatePetRaw: (requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdatePetRawResponse>;
   updatePet: (requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  addPetRaw: (requestParameters: ApiAddPetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Pet>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 422 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  addPetRaw: (requestParameters: ApiAddPetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<AddPetRawResponse>;
   addPet: (requestParameters: ApiAddPetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  findPetsByStatusRaw: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Pet[]>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  findPetsByStatusRaw: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<FindPetsByStatusRawResponse>;
   findPetsByStatus: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet[]>;
-  findPetsByTagsRaw: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Pet[]>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  findPetsByTagsRaw: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<FindPetsByTagsRawResponse>;
   findPetsByTags: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet[]>;
-  getPetByIdRaw: (requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Pet>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getPetByIdRaw: (requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetPetByIdRawResponse>;
   getPetById: (requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  updatePetWithFormRaw: (requestParameters: ApiUpdatePetWithFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Pet>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  updatePetWithFormRaw: (requestParameters: ApiUpdatePetWithFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdatePetWithFormRawResponse>;
   updatePetWithForm: (requestParameters: ApiUpdatePetWithFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  deletePetRaw: (requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: number }>;
+  deletePetRaw: (requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeletePetRawResponse>;
   deletePet: (requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  uploadFileRaw: (requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<UploadResponse>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  uploadFileRaw: (requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadFileRawResponse>;
   uploadFile: (requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadResponse>;
 }
 
@@ -145,9 +143,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async updatePetRaw(requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
-      & { status: 422 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<UpdatePetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -200,9 +196,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async addPetRaw(requestParameters: ApiAddPetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 422 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<AddPetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -252,10 +246,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async findPetsByStatusRaw(requestParameters: ApiFindPetsByStatusRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<Pet[]>
-      & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<FindPetsByStatusRawResponse> {
     if (requestParameters.status === undefined || requestParameters.status === null) {
       throw new RequiredError(
         'status',
@@ -302,8 +293,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async findPetsByTagsRaw(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Pet[]> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<FindPetsByTagsRawResponse> {
     if (requestParameters.tags === undefined || requestParameters.tags === null) {
       throw new RequiredError(
         'tags',
@@ -350,9 +340,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async getPetByIdRaw(requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 404 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<GetPetByIdRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
@@ -400,10 +388,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async updatePetWithFormRaw(requestParameters: ApiUpdatePetWithFormRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<Pet>
-      & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<UpdatePetWithFormRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
@@ -454,8 +439,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async deletePetRaw(requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: number }> {
+  | InitOverrideFunction): Promise<DeletePetRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
@@ -500,8 +484,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async uploadFileRaw(requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<UploadResponse> & { status: 200 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<UploadFileRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',

@@ -32,41 +32,42 @@ export interface ApiHandleUntaggedRequest {
   body: UntaggedEnum;
 }
 
+export type HandleAdjacentlyTaggedRawResponse =
+  | JSONApiResponse<AdjacentlyTaggedEnum> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type HandleExternallyTaggedRawResponse =
+  | JSONApiResponse<ExternallyTaggedEnum> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type HandleInternallyTaggedRawResponse =
+  | JSONApiResponse<InternallyTaggedEnum> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type HandleMixedRawResponse =
+  | JSONApiResponse<MixedEnum> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type HandleUntaggedRawResponse =
+  | JSONApiResponse<UntaggedEnum> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface EnumReprApiInterface {
-  handleAdjacentlyTaggedRaw: (requestParameters: ApiHandleAdjacentlyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<AdjacentlyTaggedEnum>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  handleAdjacentlyTaggedRaw: (requestParameters: ApiHandleAdjacentlyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleAdjacentlyTaggedRawResponse>;
   handleAdjacentlyTagged: (requestParameters: ApiHandleAdjacentlyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<AdjacentlyTaggedEnum>;
-  handleExternallyTaggedRaw: (requestParameters: ApiHandleExternallyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<ExternallyTaggedEnum>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  handleExternallyTaggedRaw: (requestParameters: ApiHandleExternallyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleExternallyTaggedRawResponse>;
   handleExternallyTagged: (requestParameters: ApiHandleExternallyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ExternallyTaggedEnum>;
-  handleInternallyTaggedRaw: (requestParameters: ApiHandleInternallyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<InternallyTaggedEnum>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  handleInternallyTaggedRaw: (requestParameters: ApiHandleInternallyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleInternallyTaggedRawResponse>;
   handleInternallyTagged: (requestParameters: ApiHandleInternallyTaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<InternallyTaggedEnum>;
-  handleMixedRaw: (requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<MixedEnum>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  handleMixedRaw: (requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleMixedRawResponse>;
   handleMixed: (requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<MixedEnum>;
-  handleUntaggedRaw: (requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<UntaggedEnum>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  handleUntaggedRaw: (requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleUntaggedRawResponse>;
   handleUntagged: (requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UntaggedEnum>;
 }
 
@@ -79,10 +80,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleAdjacentlyTaggedRaw(requestParameters: ApiHandleAdjacentlyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<AdjacentlyTaggedEnum>
-      & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<HandleAdjacentlyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -129,10 +127,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleExternallyTaggedRaw(requestParameters: ApiHandleExternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<ExternallyTaggedEnum>
-      & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<HandleExternallyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -179,10 +174,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleInternallyTaggedRaw(requestParameters: ApiHandleInternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<InternallyTaggedEnum>
-      & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any>
-      & { status: number }> {
+  initOverrides?: RequestInit | InitOverrideFunction): Promise<HandleInternallyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -229,8 +221,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleMixedRaw(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<MixedEnum> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<HandleMixedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -277,8 +268,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleUntaggedRaw(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<UntaggedEnum> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<HandleUntaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

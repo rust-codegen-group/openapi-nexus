@@ -26,38 +26,37 @@ export interface ApiDeleteOrderRequest {
   orderId: number;
 }
 
+export type GetInventoryRawResponse =
+  | JSONApiResponse<Record<string, number>> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type PlaceOrderRawResponse =
+  | JSONApiResponse<Order> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | JSONApiResponse<any> & { status: number };
+
+export type GetOrderByIdRawResponse =
+  | JSONApiResponse<Order> & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | JSONApiResponse<any> & { status: number };
+
+export type DeleteOrderRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: 400 }
+  | VoidApiResponse & { status: 404 }
+  | VoidApiResponse & { status: number };
+
+
 export interface StoreApiInterface {
-  getInventoryRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Record<string,
-      number>>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getInventoryRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetInventoryRawResponse>;
   getInventory: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Record<string,
     number>>;
-  placeOrderRaw: (requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Order>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  placeOrderRaw: (requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PlaceOrderRawResponse>;
   placeOrder: (requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
-  getOrderByIdRaw: (requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<Order>
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  getOrderByIdRaw: (requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetOrderByIdRawResponse>;
   getOrderById: (requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
-  deleteOrderRaw: (requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: 400 }
-  | VoidApiResponse
-  & { status: 404 }
-  | VoidApiResponse
-  & { status: number }>;
+  deleteOrderRaw: (requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteOrderRawResponse>;
   deleteOrder: (requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
@@ -69,11 +68,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getInventoryRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<Record<string,
-          number>>
-      & { status: 200 }
-      | JSONApiResponse<any>
-      & { status: number }> {
+  async getInventoryRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetInventoryRawResponse> {
     // Build path with path parameters
     const urlPath = `/store/inventory`;
     // Build query parameters
@@ -108,8 +103,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   }
 
   async placeOrderRaw(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Order> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<PlaceOrderRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -156,9 +150,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   }
 
   async getOrderByIdRaw(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<Order> & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 404 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<GetOrderByIdRawResponse> {
     if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
       throw new RequiredError(
         'orderId',
@@ -206,9 +198,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   }
 
   async deleteOrderRaw(requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<DeleteOrderRawResponse> {
     if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
       throw new RequiredError(
         'orderId',

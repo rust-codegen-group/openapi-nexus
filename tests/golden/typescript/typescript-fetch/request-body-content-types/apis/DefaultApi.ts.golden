@@ -28,31 +28,37 @@ export interface ApiPostXmlRequest {
   body: Payload;
 }
 
+export type PostFormRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: number };
+
+export type PostJsonRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: number };
+
+export type PostJsonOrXmlRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: number };
+
+export type PostTextRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: number };
+
+export type PostXmlRawResponse =
+  | VoidApiResponse & { status: 200 }
+  | VoidApiResponse & { status: number };
+
+
 export interface DefaultApiInterface {
-  postFormRaw: (requestParameters: ApiPostFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: number }>;
+  postFormRaw: (requestParameters: ApiPostFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostFormRawResponse>;
   postForm: (requestParameters: ApiPostFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postJsonRaw: (requestParameters: ApiPostJsonRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: number }>;
+  postJsonRaw: (requestParameters: ApiPostJsonRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostJsonRawResponse>;
   postJson: (requestParameters: ApiPostJsonRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postJsonOrXmlRaw: (requestParameters: ApiPostJsonOrXmlRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: number }>;
+  postJsonOrXmlRaw: (requestParameters: ApiPostJsonOrXmlRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostJsonOrXmlRawResponse>;
   postJsonOrXml: (requestParameters: ApiPostJsonOrXmlRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postTextRaw: (requestParameters: ApiPostTextRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: number }>;
+  postTextRaw: (requestParameters: ApiPostTextRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostTextRawResponse>;
   postText: (requestParameters: ApiPostTextRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postXmlRaw: (requestParameters: ApiPostXmlRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VoidApiResponse
-  & { status: 200 }
-  | VoidApiResponse
-  & { status: number }>;
+  postXmlRaw: (requestParameters: ApiPostXmlRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostXmlRawResponse>;
   postXml: (requestParameters: ApiPostXmlRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
@@ -65,8 +71,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async postFormRaw(requestParameters: ApiPostFormRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<PostFormRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -110,8 +115,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async postJsonRaw(requestParameters: ApiPostJsonRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<PostJsonRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -155,8 +159,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async postJsonOrXmlRaw(requestParameters: ApiPostJsonOrXmlRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<PostJsonOrXmlRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -200,8 +203,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async postTextRaw(requestParameters: ApiPostTextRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<PostTextRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -245,8 +247,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async postXmlRaw(requestParameters: ApiPostXmlRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
-      & { status: number }> {
+  | InitOverrideFunction): Promise<PostXmlRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',

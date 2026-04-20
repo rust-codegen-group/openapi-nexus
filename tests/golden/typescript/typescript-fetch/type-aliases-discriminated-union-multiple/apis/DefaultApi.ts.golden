@@ -20,16 +20,19 @@ export interface ApiCreateVolumeRequest {
   body: VolumeKind;
 }
 
+export type CreateContainerRawResponse =
+  | JSONApiResponse<ContainerKind> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+export type CreateVolumeRawResponse =
+  | JSONApiResponse<VolumeKind> & { status: 200 }
+  | JSONApiResponse<any> & { status: number };
+
+
 export interface DefaultApiInterface {
-  createContainerRaw: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<ContainerKind>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createContainerRaw: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateContainerRawResponse>;
   createContainer: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ContainerKind>;
-  createVolumeRaw: (requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<JSONApiResponse<VolumeKind>
-  & { status: 200 }
-  | JSONApiResponse<any>
-  & { status: number }>;
+  createVolumeRaw: (requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateVolumeRawResponse>;
   createVolume: (requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VolumeKind>;
 }
 
@@ -42,8 +45,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createContainerRaw(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<ContainerKind> & { status: 200 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<CreateContainerRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -87,8 +89,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createVolumeRaw(requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<JSONApiResponse<VolumeKind> & { status: 200 }
-      | JSONApiResponse<any> & { status: number }> {
+  | InitOverrideFunction): Promise<CreateVolumeRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
