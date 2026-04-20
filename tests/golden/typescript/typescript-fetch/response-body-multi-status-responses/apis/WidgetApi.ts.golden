@@ -6,14 +6,14 @@
 import type { ErrorResponse } from '../models/ErrorResponse';
 import type { Widget } from '../models/Widget';
 import type { WidgetListPartial } from '../models/WidgetListPartial';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse } from '../runtime/runtime';
 
 export type ListWidgetsRawResponse =
   | JSONApiResponse<Widget[]> & { status: 200 }
   | JSONApiResponse<WidgetListPartial> & { status: 206 }
   | JSONApiResponse<ErrorResponse> & { status: 404 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface WidgetApiInterface {
@@ -35,7 +35,7 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
     // Build path with path parameters
     const urlPath = `/widgets`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -60,7 +60,7 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<ErrorResponse> & { status: 404 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -69,6 +69,6 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
       | WidgetListPartial
       | ErrorResponse> {
     const response = await this.listWidgetsRaw(initOverrides);
-    return await response.value();
+    return await response.value() as Widget[] | WidgetListPartial | ErrorResponse;
   }
 }

@@ -5,7 +5,7 @@
  * Test fixture to verify language property naming conventions
  */
 import type { NamingConventionTest } from '../models/NamingConventionTest';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiGetWithQueryParamsRequest {
@@ -33,7 +33,7 @@ export type GetWithQueryParamsRawResponse =
 
 export type TestNamingConventionsRawResponse =
   | JSONApiResponse<NamingConventionTest> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -62,7 +62,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.snakeCaseParam !== undefined) {
       queryParameters['snake_case_param'] = requestParameters.snakeCaseParam;
     }
@@ -139,7 +139,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<NamingConventionTest> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -169,6 +169,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async testNamingConventions(requestParameters: ApiTestNamingConventionsRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<NamingConventionTest> {
     const response = await this.testNamingConventionsRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as NamingConventionTest;
   }
 }

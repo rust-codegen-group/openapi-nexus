@@ -14,7 +14,7 @@
  * "EventKindUnspecified" instead of generic "Kind".
  */
 import type { Event } from '../models/Event';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiCreateEventRequest {
@@ -23,7 +23,7 @@ export interface ApiCreateEventRequest {
 
 export type CreateEventRawResponse =
   | JSONApiResponse<Event> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -50,7 +50,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/event`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<Event> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -80,6 +80,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createEvent(requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Event> {
     const response = await this.createEventRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Event;
   }
 }

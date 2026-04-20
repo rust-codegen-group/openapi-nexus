@@ -7,7 +7,7 @@
 import type { GetAllUsersResponse200Item } from '../models/GetAllUsersResponse200Item';
 import type { GetUserByIdResponse200 } from '../models/GetUserByIdResponse200';
 import type { GetUserByIdResponse404 } from '../models/GetUserByIdResponse404';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiGetUserByIdRequest {
@@ -19,12 +19,12 @@ export interface ApiGetUserByIdRequest {
 
 export type GetAllUsersRawResponse =
   | JSONApiResponse<GetAllUsersResponse200Item[]> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type GetUserByIdRawResponse =
   | JSONApiResponse<GetUserByIdResponse200> & { status: 200 }
   | JSONApiResponse<GetUserByIdResponse404> & { status: 404 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -47,7 +47,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/users`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -66,14 +66,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<GetAllUsersResponse200Item[]> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
 
   async getAllUsers(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetAllUsersResponse200Item[]> {
     const response = await this.getAllUsersRaw(initOverrides);
-    return await response.value();
+    return await response.value() as GetAllUsersResponse200Item[];
   }
 
   async getUserByIdRaw(requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit
@@ -88,7 +88,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     let urlPath = `/users/{id}`;
     urlPath = urlPath.replace(`{id}`, encodeURIComponent(String(requestParameters.id)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -110,7 +110,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<GetUserByIdResponse404> & { status: 404 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -118,6 +118,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async getUserById(requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<GetUserByIdResponse200 | GetUserByIdResponse404> {
     const response = await this.getUserByIdRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as GetUserByIdResponse200 | GetUserByIdResponse404;
   }
 }

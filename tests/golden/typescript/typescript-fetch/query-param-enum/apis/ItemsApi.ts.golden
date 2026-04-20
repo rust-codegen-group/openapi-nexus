@@ -6,7 +6,7 @@
  */
 import type { FooStatus } from '../models/FooStatus';
 import type { GetItemsResponse200 } from '../models/GetItemsResponse200';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiGetItemsRequest {
@@ -19,7 +19,7 @@ export interface ApiGetItemsRequest {
 export type GetItemsRawResponse =
   | JSONApiResponse<GetItemsResponse200> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface ItemsApiInterface {
@@ -40,7 +40,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     // Build path with path parameters
     const urlPath = `/items`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.status !== undefined) {
       queryParameters['status'] = requestParameters.status;
     }
@@ -65,7 +65,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -73,6 +73,6 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   async getItems(requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<GetItemsResponse200> {
     const response = await this.getItemsRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as GetItemsResponse200;
   }
 }

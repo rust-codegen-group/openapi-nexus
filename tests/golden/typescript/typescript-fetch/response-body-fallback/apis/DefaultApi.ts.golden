@@ -4,7 +4,7 @@
  * Response Fallback Test API — 1.0.0
  */
 import type { GetFallbackWithBodyResponse200 } from '../models/GetFallbackWithBodyResponse200';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, VoidApiResponse } from '../runtime/runtime';
 
 export type GetFallbackNoBodyRawResponse =
@@ -15,7 +15,7 @@ export type GetFallbackNoBodyRawResponse =
 export type GetFallbackWithBodyRawResponse =
   | JSONApiResponse<GetFallbackWithBodyResponse200> & { status: 200 }
   | VoidApiResponse & { status: 404 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -37,7 +37,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/fallback/no-body`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -73,7 +73,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/fallback/with-body`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -95,13 +95,13 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 404 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
 
   async getFallbackWithBody(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetFallbackWithBodyResponse200> {
     const response = await this.getFallbackWithBodyRaw(initOverrides);
-    return await response.value();
+    return await response.value() as GetFallbackWithBodyResponse200;
   }
 }

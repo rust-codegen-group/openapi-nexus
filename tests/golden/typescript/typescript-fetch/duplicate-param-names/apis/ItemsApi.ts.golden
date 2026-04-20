@@ -6,7 +6,7 @@
  */
 import type { CreateItemWithBodyConflictRequest } from '../models/CreateItemWithBodyConflictRequest';
 import type { CreateItemWithBodyConflictResponse200 } from '../models/CreateItemWithBodyConflictResponse200';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiCreateItemWithBodyConflictRequest {
@@ -24,7 +24,7 @@ export interface ApiCreateItemWithBodyConflictRequest {
 export type CreateItemWithBodyConflictRawResponse =
   | JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface ItemsApiInterface {
@@ -58,7 +58,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     let urlPath = `/items/{itemId}`;
     urlPath = urlPath.replace(`{itemId}`, encodeURIComponent(String(requestParameters.itemId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     if (requestParameters.queryBody !== undefined) {
       queryParameters['body'] = requestParameters.queryBody;
     }
@@ -86,7 +86,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -94,6 +94,6 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   async createItemWithBodyConflict(requestParameters: ApiCreateItemWithBodyConflictRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateItemWithBodyConflictResponse200> {
     const response = await this.createItemWithBodyConflictRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as CreateItemWithBodyConflictResponse200;
   }
 }

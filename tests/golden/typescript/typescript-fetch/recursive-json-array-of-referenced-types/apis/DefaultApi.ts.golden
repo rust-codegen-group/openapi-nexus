@@ -4,7 +4,7 @@
  * Array of Referenced Types Test — 1.0.0
  * Test case for array of referenced model types with recursive FromJSON calls
  */
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, VoidApiResponse } from '../runtime/runtime';
 
 export type TestRawResponse =
@@ -29,7 +29,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };

@@ -5,7 +5,7 @@
  */
 import type { ErrorResponse } from '../models/ErrorResponse';
 import type { Widget } from '../models/Widget';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse } from '../runtime/runtime';
 
 export type GetWidgetRawResponse =
@@ -30,7 +30,7 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
     // Build path with path parameters
     const urlPath = `/widgets`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -57,6 +57,6 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
   async getWidget(initOverrides?: RequestInit | InitOverrideFunction): Promise<Widget
       | ErrorResponse> {
     const response = await this.getWidgetRaw(initOverrides);
-    return await response.value();
+    return await response.value() as Widget | ErrorResponse;
   }
 }

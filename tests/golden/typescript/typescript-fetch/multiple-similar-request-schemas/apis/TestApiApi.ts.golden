@@ -8,7 +8,7 @@ import type { CreateRequestTypeA } from '../models/CreateRequestTypeA';
 import type { CreateRequestTypeB } from '../models/CreateRequestTypeB';
 import type { ResourceTypeA } from '../models/ResourceTypeA';
 import type { ResourceTypeB } from '../models/ResourceTypeB';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiCreateTypeARequest {
@@ -21,11 +21,11 @@ export interface ApiCreateTypeBRequest {
 
 export type CreateTypeARawResponse =
   | JSONApiResponse<ResourceTypeA> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type CreateTypeBRawResponse =
   | JSONApiResponse<ResourceTypeB> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface TestApiApiInterface {
@@ -54,7 +54,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     // Build path with path parameters
     const urlPath = `/api/v1/type-a/resources`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<ResourceTypeA> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -84,7 +84,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   async createTypeA(requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<ResourceTypeA> {
     const response = await this.createTypeARaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as ResourceTypeA;
   }
 
   async createTypeBRaw(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
@@ -98,7 +98,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     // Build path with path parameters
     const urlPath = `/api/v1/type-b/resources`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<ResourceTypeB> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -128,6 +128,6 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   async createTypeB(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<ResourceTypeB> {
     const response = await this.createTypeBRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as ResourceTypeB;
   }
 }

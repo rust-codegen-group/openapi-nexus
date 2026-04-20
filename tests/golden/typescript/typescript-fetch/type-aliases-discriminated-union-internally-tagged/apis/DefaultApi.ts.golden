@@ -7,7 +7,7 @@
  * See: https://www.openapis.org/understanding-openapi/specification/models/
  */
 import type { Resource } from '../models/Resource';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiCreateResourceRequest {
@@ -16,7 +16,7 @@ export interface ApiCreateResourceRequest {
 
 export type CreateResourceRawResponse =
   | JSONApiResponse<Resource> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -43,7 +43,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/resource`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<Resource> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -73,6 +73,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createResource(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Resource> {
     const response = await this.createResourceRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Resource;
   }
 }
