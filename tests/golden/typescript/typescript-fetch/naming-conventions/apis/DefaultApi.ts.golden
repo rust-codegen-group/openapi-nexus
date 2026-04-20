@@ -51,7 +51,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async getWithQueryParamsRaw(requestParameters: ApiGetWithQueryParamsRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 }
       | VoidApiResponse & { status: number }> {
-    if (requestParameters['snakeCaseParam'] === undefined || requestParameters['snakeCaseParam'] === null) {
+    if (requestParameters.snakeCaseParam === undefined || requestParameters.snakeCaseParam === null) {
       throw new RequiredError(
         'snakeCaseParam',
         'Required parameter "snakeCaseParam" was null or undefined when calling getWithQueryParamsRaw().'
@@ -61,41 +61,41 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     const urlPath = `/test`;
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['snakeCaseParam'] !== undefined) {
-      queryParameters['snake_case_param'] = requestParameters['snakeCaseParam'];
+    if (requestParameters.snakeCaseParam !== undefined) {
+      queryParameters['snake_case_param'] = requestParameters.snakeCaseParam;
     }
-    if (requestParameters['snakeCaseNumber'] !== undefined) {
-      queryParameters['snake_case_number'] = requestParameters['snakeCaseNumber'];
+    if (requestParameters.snakeCaseNumber !== undefined) {
+      queryParameters['snake_case_number'] = requestParameters.snakeCaseNumber;
     }
-    if (requestParameters['kebabCaseParam'] !== undefined) {
-      queryParameters['kebab-case-param'] = requestParameters['kebabCaseParam'];
+    if (requestParameters.kebabCaseParam !== undefined) {
+      queryParameters['kebab-case-param'] = requestParameters.kebabCaseParam;
     }
-    if (requestParameters['kebabCaseArray'] !== undefined) {
-      queryParameters['kebab-case-array'] = requestParameters['kebabCaseArray'];
+    if (requestParameters.kebabCaseArray !== undefined) {
+      queryParameters['kebab-case-array'] = requestParameters.kebabCaseArray;
     }
-    if (requestParameters['pascalCaseParam'] !== undefined) {
-      queryParameters['PascalCaseParam'] = requestParameters['pascalCaseParam'];
+    if (requestParameters.pascalCaseParam !== undefined) {
+      queryParameters['PascalCaseParam'] = requestParameters.pascalCaseParam;
     }
-    if (requestParameters['pascalCaseNumber'] !== undefined) {
-      queryParameters['PascalCaseNumber'] = requestParameters['pascalCaseNumber'];
+    if (requestParameters.pascalCaseNumber !== undefined) {
+      queryParameters['PascalCaseNumber'] = requestParameters.pascalCaseNumber;
     }
-    if (requestParameters['screamingSnakeCase'] !== undefined) {
-      queryParameters['SCREAMING_SNAKE_CASE'] = requestParameters['screamingSnakeCase'];
+    if (requestParameters.screamingSnakeCase !== undefined) {
+      queryParameters['SCREAMING_SNAKE_CASE'] = requestParameters.screamingSnakeCase;
     }
-    if (requestParameters['screamingNumber'] !== undefined) {
-      queryParameters['SCREAMING_NUMBER'] = requestParameters['screamingNumber'];
+    if (requestParameters.screamingNumber !== undefined) {
+      queryParameters['SCREAMING_NUMBER'] = requestParameters.screamingNumber;
     }
-    if (requestParameters['camelCaseParam'] !== undefined) {
-      queryParameters['camelCaseParam'] = requestParameters['camelCaseParam'];
+    if (requestParameters.camelCaseParam !== undefined) {
+      queryParameters['camelCaseParam'] = requestParameters.camelCaseParam;
     }
-    if (requestParameters['camelCaseNumber'] !== undefined) {
-      queryParameters['camelCaseNumber'] = requestParameters['camelCaseNumber'];
+    if (requestParameters.camelCaseNumber !== undefined) {
+      queryParameters['camelCaseNumber'] = requestParameters.camelCaseNumber;
     }
-    if (requestParameters['singleword'] !== undefined) {
-      queryParameters['singleword'] = requestParameters['singleword'];
+    if (requestParameters.singleword !== undefined) {
+      queryParameters['singleword'] = requestParameters.singleword;
     }
-    if (requestParameters['id'] !== undefined) {
-      queryParameters['id'] = requestParameters['id'];
+    if (requestParameters.id !== undefined) {
+      queryParameters['id'] = requestParameters.id;
     }
     // Build headers
     const headerParameters: Record<string, string> = {
@@ -130,7 +130,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   initOverrides?: RequestInit | InitOverrideFunction): Promise<JSONApiResponse<NamingConventionTest>
       & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling testNamingConventionsRaw().'
@@ -146,7 +146,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,

@@ -44,13 +44,13 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['itemId'] === undefined || requestParameters['itemId'] === null) {
+    if (requestParameters.itemId === undefined || requestParameters.itemId === null) {
       throw new RequiredError(
         'itemId',
         'Required parameter "itemId" was null or undefined when calling createItemWithBodyConflictRaw().'
       );
     }
-    if (requestParameters['bodyBody'] === undefined || requestParameters['bodyBody'] === null) {
+    if (requestParameters.bodyBody === undefined || requestParameters.bodyBody === null) {
       throw new RequiredError(
         'bodyBody',
         'Required parameter "bodyBody" was null or undefined when calling createItemWithBodyConflictRaw().'
@@ -58,11 +58,11 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/items/{itemId}`;
-    urlPath = urlPath.replace(`{itemId}`, encodeURIComponent(String(requestParameters['itemId'])));
+    urlPath = urlPath.replace(`{itemId}`, encodeURIComponent(String(requestParameters.itemId)));
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['queryBody'] !== undefined) {
-      queryParameters['body'] = requestParameters['queryBody'];
+    if (requestParameters.queryBody !== undefined) {
+      queryParameters['body'] = requestParameters.queryBody;
     }
     // Build headers
     const headerParameters: Record<string, string> = {
@@ -70,7 +70,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['bodyBody'];
+    const requestBody = requestParameters.bodyBody;
     // Make request
     const response = await this.request({
         path: urlPath,

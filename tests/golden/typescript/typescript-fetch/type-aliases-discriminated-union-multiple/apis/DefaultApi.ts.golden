@@ -44,7 +44,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createContainerRaw(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<ContainerKind> & { status: 200 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createContainerRaw().'
@@ -60,7 +60,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -89,7 +89,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createVolumeRaw(requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<VolumeKind> & { status: 200 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createVolumeRaw().'
@@ -105,7 +105,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,

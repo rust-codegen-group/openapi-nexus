@@ -148,7 +148,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 } | VoidApiResponse
       & { status: 422 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling updatePetRaw().'
@@ -164,7 +164,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -203,7 +203,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 422 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling addPetRaw().'
@@ -219,7 +219,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -256,7 +256,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['status'] === undefined || requestParameters['status'] === null) {
+    if (requestParameters.status === undefined || requestParameters.status === null) {
       throw new RequiredError(
         'status',
         'Required parameter "status" was null or undefined when calling findPetsByStatusRaw().'
@@ -266,8 +266,8 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     const urlPath = `/pet/findByStatus`;
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['status'] !== undefined) {
-      queryParameters['status'] = requestParameters['status'];
+    if (requestParameters.status !== undefined) {
+      queryParameters['status'] = requestParameters.status;
     }
     // Build headers
     const headerParameters: Record<string, string> = {
@@ -304,7 +304,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async findPetsByTagsRaw(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<Pet[]> & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['tags'] === undefined || requestParameters['tags'] === null) {
+    if (requestParameters.tags === undefined || requestParameters.tags === null) {
       throw new RequiredError(
         'tags',
         'Required parameter "tags" was null or undefined when calling findPetsByTagsRaw().'
@@ -314,8 +314,8 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     const urlPath = `/pet/findByTags`;
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['tags'] !== undefined) {
-      queryParameters['tags'] = requestParameters['tags'];
+    if (requestParameters.tags !== undefined) {
+      queryParameters['tags'] = requestParameters.tags;
     }
     // Build headers
     const headerParameters: Record<string, string> = {
@@ -353,7 +353,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   | InitOverrideFunction): Promise<JSONApiResponse<Pet> & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: 404 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
+    if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling getPetByIdRaw().'
@@ -361,7 +361,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/pet/{petId}`;
-    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters['petId'])));
+    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -404,7 +404,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
       & { status: 200 } | VoidApiResponse
       & { status: 400 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
+    if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling updatePetWithFormRaw().'
@@ -412,14 +412,14 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/pet/{petId}`;
-    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters['petId'])));
+    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['name'] !== undefined) {
-      queryParameters['name'] = requestParameters['name'];
+    if (requestParameters.name !== undefined) {
+      queryParameters['name'] = requestParameters.name;
     }
-    if (requestParameters['status'] !== undefined) {
-      queryParameters['status'] = requestParameters['status'];
+    if (requestParameters.status !== undefined) {
+      queryParameters['status'] = requestParameters.status;
     }
     // Build headers
     const headerParameters: Record<string, string> = {
@@ -456,7 +456,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async deletePetRaw(requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<VoidApiResponse & { status: 200 } | VoidApiResponse
       & { status: 400 } | VoidApiResponse & { status: number }> {
-    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
+    if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling deletePetRaw().'
@@ -464,7 +464,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/pet/{petId}`;
-    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters['petId'])));
+    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
     const queryParameters: any = {};
     // Build headers
@@ -502,7 +502,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   async uploadFileRaw(requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<UploadResponse> & { status: 200 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
+    if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling uploadFileRaw().'
@@ -510,11 +510,11 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     }
     // Build path with path parameters
     let urlPath = `/pet/{petId}/uploadImage`;
-    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters['petId'])));
+    urlPath = urlPath.replace(`{petId}`, encodeURIComponent(String(requestParameters.petId)));
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['additionalMetadata'] !== undefined) {
-      queryParameters['additionalMetadata'] = requestParameters['additionalMetadata'];
+    if (requestParameters.additionalMetadata !== undefined) {
+      queryParameters['additionalMetadata'] = requestParameters.additionalMetadata;
     }
     // Build headers
     const headerParameters: Record<string, string> = {

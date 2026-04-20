@@ -31,7 +31,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async testSimpleAliasRaw(requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<Foo> & { status: 200 } | JSONApiResponse<any>
       & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling testSimpleAliasRaw().'
@@ -47,7 +47,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,

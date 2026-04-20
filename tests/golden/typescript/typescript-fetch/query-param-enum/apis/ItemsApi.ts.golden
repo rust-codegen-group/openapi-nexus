@@ -42,8 +42,8 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     const urlPath = `/items`;
     // Build query parameters
     const queryParameters: any = {};
-    if (requestParameters['status'] !== undefined) {
-      queryParameters['status'] = requestParameters['status'];
+    if (requestParameters.status !== undefined) {
+      queryParameters['status'] = requestParameters.status;
     }
     // Build headers
     const headerParameters: Record<string, string> = {

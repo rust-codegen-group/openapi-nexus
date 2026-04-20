@@ -43,7 +43,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   async createTypeARaw(requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<ResourceTypeA> & { status: 200 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTypeARaw().'
@@ -59,7 +59,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -88,7 +88,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   async createTypeBRaw(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<JSONApiResponse<ResourceTypeB> & { status: 200 }
       | JSONApiResponse<any> & { status: number }> {
-    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
+    if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTypeBRaw().'
@@ -104,7 +104,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters['body'];
+    const requestBody = requestParameters.body;
     // Make request
     const response = await this.request({
         path: urlPath,
