@@ -12,11 +12,11 @@ import type { Tag } from './Tag';
  * Pet model
  */
 export interface Pet {
-  readonly category?: Category | null;
+  readonly category?: Category;
   /**
    * Pet ID
    */
-  readonly id?: number | null;
+  readonly id?: number;
   /**
    * Pet name
    */
@@ -25,9 +25,9 @@ export interface Pet {
    * Photo URLs
    */
   readonly photoUrls: readonly string[];
-  readonly status?: PetStatus | null;
+  readonly status?: PetStatus;
   /**
    * Pet tags
    */
-  readonly tags?: readonly Tag[] | null;
+  readonly tags?: readonly Tag[];
 }

@@ -297,7 +297,7 @@ fn json_value_to_ts_literal(v: &serde_json::Value) -> Option<String> {
 fn build_field(prop: &IrProperty) -> FieldSpec<TypeScript> {
     let ts_field_name = prop.name.to_lower_camel_case();
     let inner_ty = type_expr_to_typename(&prop.type_expr);
-    let field_ty = if prop.nullable {
+    let field_ty = if prop.nullable && prop.required {
         TypeName::optional(inner_ty)
     } else {
         inner_ty
