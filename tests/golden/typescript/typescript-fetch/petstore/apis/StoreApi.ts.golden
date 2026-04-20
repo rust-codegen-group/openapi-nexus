@@ -5,7 +5,7 @@
  * This is a sample Pet Store Server based on the OpenAPI 3.1 specification
  */
 import type { Order } from '../models/Order';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiPlaceOrderRequest {
@@ -28,18 +28,18 @@ export interface ApiDeleteOrderRequest {
 
 export type GetInventoryRawResponse =
   | JSONApiResponse<Record<string, number>> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type PlaceOrderRawResponse =
   | JSONApiResponse<Order> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type GetOrderByIdRawResponse =
   | JSONApiResponse<Order> & { status: 200 }
   | VoidApiResponse & { status: 400 }
   | VoidApiResponse & { status: 404 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type DeleteOrderRawResponse =
   | VoidApiResponse & { status: 200 }
@@ -72,7 +72,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     // Build path with path parameters
     const urlPath = `/store/inventory`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -91,7 +91,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<Record<string, number>> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -99,7 +99,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   async getInventory(initOverrides?: RequestInit | InitOverrideFunction): Promise<Record<string,
         number>> {
     const response = await this.getInventoryRaw(initOverrides);
-    return await response.value();
+    return await response.value() as Record<string, number>;
   }
 
   async placeOrderRaw(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
@@ -113,7 +113,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     // Build path with path parameters
     const urlPath = `/store/order`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -146,7 +146,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   async placeOrder(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Order> {
     const response = await this.placeOrderRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Order;
   }
 
   async getOrderByIdRaw(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
@@ -161,7 +161,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     let urlPath = `/store/order/{orderId}`;
     urlPath = urlPath.replace(`{orderId}`, encodeURIComponent(String(requestParameters.orderId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -186,7 +186,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 404 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -194,7 +194,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   async getOrderById(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Order> {
     const response = await this.getOrderByIdRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Order;
   }
 
   async deleteOrderRaw(requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit
@@ -209,7 +209,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     let urlPath = `/store/order/{orderId}`;
     urlPath = urlPath.replace(`{orderId}`, encodeURIComponent(String(requestParameters.orderId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };

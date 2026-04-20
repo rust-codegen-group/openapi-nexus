@@ -8,7 +8,7 @@ import type { CreateTestResourceRequest } from '../models/CreateTestResourceRequ
 import type { CreateTestResourceResponse } from '../models/CreateTestResourceResponse';
 import type { DeleteTestResourceResponse } from '../models/DeleteTestResourceResponse';
 import type { HttpErrorResponse } from '../models/HttpErrorResponse';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiCreateTestResourceRequest {
@@ -24,12 +24,12 @@ export interface ApiDeleteTestResourceRequest {
 
 export type CreateTestResourceRawResponse =
   | JSONApiResponse<CreateTestResourceResponse> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type DeleteTestResourceRawResponse =
   | JSONApiResponse<DeleteTestResourceResponse> & { status: 200 }
   | JSONApiResponse<HttpErrorResponse> & { status: number }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface TestResourceApiInterface {
@@ -59,7 +59,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     // Build path with path parameters
     const urlPath = `/v1/api/test-resource`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
       return new JSONApiResponse(response) as JSONApiResponse<CreateTestResourceResponse> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -89,7 +89,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   async createTestResource(requestParameters: ApiCreateTestResourceRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceResponse> {
     const response = await this.createTestResourceRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as CreateTestResourceResponse;
   }
 
   async deleteTestResourceRaw(requestParameters: ApiDeleteTestResourceRequest,
@@ -104,7 +104,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     let urlPath = `/v1/api/test-resource/{resource_id}`;
     urlPath = urlPath.replace(`{resource_id}`, encodeURIComponent(String(requestParameters.resourceId)));
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };
@@ -129,7 +129,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
       return new JSONApiResponse(response) as JSONApiResponse<HttpErrorResponse> & { status: number };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -138,6 +138,6 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceResponse
       | HttpErrorResponse> {
     const response = await this.deleteTestResourceRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as DeleteTestResourceResponse | HttpErrorResponse;
   }
 }

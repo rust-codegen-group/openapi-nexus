@@ -7,7 +7,7 @@
 import type { LeafValue } from '../models/LeafValue';
 import type { MiddleLevel } from '../models/MiddleLevel';
 import type { RootLevel } from '../models/RootLevel';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiPostLeafRequest {
@@ -25,17 +25,17 @@ export interface ApiPostRootRequest {
 export type PostLeafRawResponse =
   | JSONApiResponse<LeafValue> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type PostMiddleRawResponse =
   | JSONApiResponse<MiddleLevel> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type PostRootRawResponse =
   | JSONApiResponse<RootLevel> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface AdditionalPropertiesApiInterface {
@@ -66,7 +66,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     // Build path with path parameters
     const urlPath = `/leaf`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -99,7 +99,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   async postLeaf(requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<LeafValue> {
     const response = await this.postLeafRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as LeafValue;
   }
 
   async postMiddleRaw(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
@@ -113,7 +113,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     // Build path with path parameters
     const urlPath = `/middle`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -146,7 +146,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   async postMiddle(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<MiddleLevel> {
     const response = await this.postMiddleRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as MiddleLevel;
   }
 
   async postRootRaw(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
@@ -160,7 +160,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     // Build path with path parameters
     const urlPath = `/root`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -193,6 +193,6 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   async postRoot(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<RootLevel> {
     const response = await this.postRootRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as RootLevel;
   }
 }

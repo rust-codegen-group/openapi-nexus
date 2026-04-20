@@ -4,7 +4,7 @@
  * Optional Inline Object Test — 1.0.0
  * Test case for optional inline objects
  */
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, VoidApiResponse } from '../runtime/runtime';
 
 export type TestRawResponse =
@@ -29,7 +29,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
     };

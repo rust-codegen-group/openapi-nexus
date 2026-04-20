@@ -9,7 +9,7 @@ import type { ExternallyTaggedEnum } from '../models/ExternallyTaggedEnum';
 import type { InternallyTaggedEnum } from '../models/InternallyTaggedEnum';
 import type { MixedEnum } from '../models/MixedEnum';
 import type { UntaggedEnum } from '../models/UntaggedEnum';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiHandleAdjacentlyTaggedRequest {
@@ -35,27 +35,27 @@ export interface ApiHandleUntaggedRequest {
 export type HandleAdjacentlyTaggedRawResponse =
   | JSONApiResponse<AdjacentlyTaggedEnum> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type HandleExternallyTaggedRawResponse =
   | JSONApiResponse<ExternallyTaggedEnum> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type HandleInternallyTaggedRawResponse =
   | JSONApiResponse<InternallyTaggedEnum> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type HandleMixedRawResponse =
   | JSONApiResponse<MixedEnum> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 export type HandleUntaggedRawResponse =
   | JSONApiResponse<UntaggedEnum> & { status: 200 }
   | VoidApiResponse & { status: 400 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface EnumReprApiInterface {
@@ -90,7 +90,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build path with path parameters
     const urlPath = `/adjacently-tagged`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -115,7 +115,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -123,7 +123,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   async handleAdjacentlyTagged(requestParameters: ApiHandleAdjacentlyTaggedRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<AdjacentlyTaggedEnum> {
     const response = await this.handleAdjacentlyTaggedRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as AdjacentlyTaggedEnum;
   }
 
   async handleExternallyTaggedRaw(requestParameters: ApiHandleExternallyTaggedRequest,
@@ -137,7 +137,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build path with path parameters
     const urlPath = `/externally-tagged`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -170,7 +170,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   async handleExternallyTagged(requestParameters: ApiHandleExternallyTaggedRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<ExternallyTaggedEnum> {
     const response = await this.handleExternallyTaggedRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as ExternallyTaggedEnum;
   }
 
   async handleInternallyTaggedRaw(requestParameters: ApiHandleInternallyTaggedRequest,
@@ -184,7 +184,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build path with path parameters
     const urlPath = `/internally-tagged`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -209,7 +209,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -217,7 +217,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   async handleInternallyTagged(requestParameters: ApiHandleInternallyTaggedRequest,
   initOverrides?: RequestInit | InitOverrideFunction): Promise<InternallyTaggedEnum> {
     const response = await this.handleInternallyTaggedRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as InternallyTaggedEnum;
   }
 
   async handleMixedRaw(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
@@ -231,7 +231,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build path with path parameters
     const urlPath = `/mixed`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -256,7 +256,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -264,7 +264,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   async handleMixed(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<MixedEnum> {
     const response = await this.handleMixedRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as MixedEnum;
   }
 
   async handleUntaggedRaw(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
@@ -278,7 +278,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Build path with path parameters
     const urlPath = `/untagged`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -303,7 +303,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 400 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -311,6 +311,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   async handleUntagged(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<UntaggedEnum> {
     const response = await this.handleUntaggedRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as UntaggedEnum;
   }
 }

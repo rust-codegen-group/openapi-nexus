@@ -5,7 +5,7 @@
  * Test fixture for simple type aliases (not unions or intersections)
  */
 import type { Foo } from '../models/Foo';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiTestSimpleAliasRequest {
@@ -14,7 +14,7 @@ export interface ApiTestSimpleAliasRequest {
 
 export type TestSimpleAliasRawResponse =
   | JSONApiResponse<Foo> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -41,7 +41,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<Foo> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -71,6 +71,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async testSimpleAlias(requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<Foo> {
     const response = await this.testSimpleAliasRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as Foo;
   }
 }

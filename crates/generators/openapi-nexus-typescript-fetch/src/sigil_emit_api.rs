@@ -255,7 +255,14 @@ fn build_api_interface_block(
         cb.add(";\n", vec![]);
 
         cb.add(&format!("  {}: ", method_base), vec![]);
-        emit_arrow_signature(&mut cb, op, convenience_return_type(op));
+        emit_arrow_signature(
+            &mut cb,
+            op,
+            TypeName::generic(
+                TypeName::primitive("Promise"),
+                vec![convenience_body_type(op)],
+            ),
+        );
         cb.add(";\n", vec![]);
     }
 
@@ -465,7 +472,10 @@ fn emit_query_params(
     op: &IrOperation,
 ) {
     cb.add("// Build query parameters\n", vec![]);
-    cb.add("const queryParameters: any = {};\n", vec![]);
+    cb.add(
+        "const queryParameters: %T = {};\n",
+        vec![Arg::TypeName(rt_type("HTTPQuery"))],
+    );
     let names = resolve_param_names(op);
     for p in op
         .parameters
@@ -612,7 +622,7 @@ fn emit_response_return(
     };
     let wrapper_type = match kind.clone() {
         ResponseKind::Json(body_ty) => {
-            let body = body_ty.unwrap_or_else(|| TypeName::primitive("any"));
+            let body = body_ty.unwrap_or_else(|| TypeName::primitive("unknown"));
             TypeName::generic(rt_value("JSONApiResponse"), vec![body])
         }
         ResponseKind::Text => rt_value("TextApiResponse"),
@@ -629,7 +639,7 @@ fn emit_response_return(
     );
 }
 
-/// `return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };`
+/// `return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };`
 /// (or VoidApiResponse equivalent when no body appears anywhere).
 fn emit_fallback_return(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
@@ -642,7 +652,7 @@ fn emit_fallback_return(
             vec![
                 Arg::TypeName(rt_value("JSONApiResponse")),
                 Arg::TypeName(rt_value("JSONApiResponse")),
-                Arg::TypeName(TypeName::primitive("any")),
+                Arg::TypeName(TypeName::primitive("unknown")),
             ],
         );
     } else {
@@ -670,21 +680,43 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, Str
     for param in method_param_specs(op) {
         fb.add_param(param);
     }
-    fb.returns(convenience_return_type(op));
+    let body_ty = convenience_body_type(op);
+    fb.returns(TypeName::generic(
+        TypeName::primitive("Promise"),
+        vec![body_ty.clone()],
+    ));
 
     let args_list = raw_call_args(op);
     let mut body = CodeBlock::<TypeScript>::builder();
-    body.add(
-        &format!(
-            "const response = await this.{}({});\nreturn await response.value();",
-            raw_name, args_list
-        ),
-        vec![],
-    );
+    // The raw union may include `JSONApiResponse<unknown>` for the fallback,
+    // so `response.value()` widens to `unknown`. Narrow it with a cast to
+    // the declared body type — this is a "genuine boundary" where the
+    // fallback's runtime shape isn't knowable from the OpenAPI spec.
+    if is_void_type(&body_ty) {
+        body.add(
+            &format!(
+                "const response = await this.{}({});\nreturn await response.value();",
+                raw_name, args_list
+            ),
+            vec![],
+        );
+    } else {
+        body.add(
+            &format!(
+                "const response = await this.{}({});\nreturn await response.value() as %T;",
+                raw_name, args_list
+            ),
+            vec![Arg::TypeName(body_ty)],
+        );
+    }
     fb.body(body.build().expect("CodeBlock builds"));
 
     fb.build()
         .map_err(|e| format!("sigil_emit_api: convenience method {method_base}: {e}"))
+}
+
+fn is_void_type(ty: &TypeName<TypeScript>) -> bool {
+    format!("{:?}", ty) == format!("{:?}", TypeName::<TypeScript>::primitive("void"))
 }
 
 // ============================================================================
@@ -759,7 +791,7 @@ fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName<TypeS
         .unwrap_or_else(|| "{ status: number }".to_string());
     let wrapper_type = match kind.clone() {
         ResponseKind::Json(body_ty) => {
-            let body = body_ty.unwrap_or_else(|| TypeName::primitive("any"));
+            let body = body_ty.unwrap_or_else(|| TypeName::primitive("unknown"));
             TypeName::generic(rt_value("JSONApiResponse"), vec![body])
         }
         ResponseKind::Text => rt_value("TextApiResponse"),
@@ -773,7 +805,7 @@ fn fallback_member(any_body: bool) -> TypeName<TypeScript> {
     let wrapper = if any_body {
         TypeName::generic(
             rt_value("JSONApiResponse"),
-            vec![TypeName::primitive("any")],
+            vec![TypeName::primitive("unknown")],
         )
     } else {
         rt_value("VoidApiResponse")
@@ -781,7 +813,7 @@ fn fallback_member(any_body: bool) -> TypeName<TypeScript> {
     TypeName::intersection(vec![wrapper, TypeName::raw("{ status: number }")])
 }
 
-fn convenience_return_type(op: &IrOperation) -> TypeName<TypeScript> {
+fn convenience_body_type(op: &IrOperation) -> TypeName<TypeScript> {
     let mut members: Vec<TypeName<TypeScript>> = Vec::new();
     let mut any_body = false;
     for resp in &op.responses {
@@ -792,7 +824,7 @@ fn convenience_return_type(op: &IrOperation) -> TypeName<TypeScript> {
             }
             ResponseKind::Json(None) => {
                 any_body = true;
-                members.push(TypeName::primitive("any"));
+                members.push(TypeName::primitive("unknown"));
             }
             ResponseKind::Text => {
                 any_body = true;
@@ -805,14 +837,13 @@ fn convenience_return_type(op: &IrOperation) -> TypeName<TypeScript> {
             ResponseKind::None => {}
         }
     }
-    let body = if !any_body {
+    if !any_body {
         TypeName::primitive("void")
     } else if members.len() == 1 {
         members.pop().unwrap()
     } else {
         dedup_union(members)
-    };
-    TypeName::generic(TypeName::primitive("Promise"), vec![body])
+    }
 }
 
 /// Stable de-dup of union members by `Debug` representation (cheap, correct

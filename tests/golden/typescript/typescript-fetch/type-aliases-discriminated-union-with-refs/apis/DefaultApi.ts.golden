@@ -6,7 +6,7 @@
  * This is similar to the ContainerImage pattern in the infiron API.
  */
 import type { ContainerImage } from '../models/ContainerImage';
-import type { Configuration, InitOverrideFunction } from '../runtime/runtime';
+import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError } from '../runtime/runtime';
 
 export interface ApiCreateContainerRequest {
@@ -15,7 +15,7 @@ export interface ApiCreateContainerRequest {
 
 export type CreateContainerRawResponse =
   | JSONApiResponse<ContainerImage> & { status: 200 }
-  | JSONApiResponse<any> & { status: number };
+  | JSONApiResponse<unknown> & { status: number };
 
 
 export interface DefaultApiInterface {
@@ -42,7 +42,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build path with path parameters
     const urlPath = `/container`;
     // Build query parameters
-    const queryParameters: any = {};
+    const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       return new JSONApiResponse(response) as JSONApiResponse<ContainerImage> & { status: 200 };
     }
     else {
-      return new JSONApiResponse(response) as JSONApiResponse<any> & { status: number };
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
 
   }
@@ -72,6 +72,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   async createContainer(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
   | InitOverrideFunction): Promise<ContainerImage> {
     const response = await this.createContainerRaw(requestParameters, initOverrides);
-    return await response.value();
+    return await response.value() as ContainerImage;
   }
 }
