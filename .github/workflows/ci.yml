@@ -47,6 +47,18 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo doc --workspace --no-deps
 
+  mdbook:
+    name: mdbook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: peaceiris/actions-mdbook@v2
+        with:
+          mdbook-version: 'latest'
+      - run: cargo install mdbook-mermaid-mmdr
+      - run: mdbook build doc
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -58,24 +70,35 @@ jobs:
       - run: cargo test --doc --workspace
 
   golden-build:
-    name: Golden Build
+    name: Golden Build (${{ matrix.generator }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - generator: typescript-fetch
+            cmd: just golden::build-ts
+          - generator: go-http
+            cmd: just golden::build-go
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v4
       - uses: actions/setup-node@v6
+        if: matrix.generator == 'typescript-fetch'
         with:
           node-version: '20'
-      - run: npm install -g typescript
+      - if: matrix.generator == 'typescript-fetch'
+        run: npm install -g typescript
       - uses: actions/setup-go@v6
+        if: matrix.generator == 'go-http'
         with:
           go-version: 'stable'
-      - run: just golden::build-all
+      - run: ${{ matrix.cmd }}
 
   basics:
     name: Basics
     runs-on: ubuntu-latest
-    needs: [fmt, clippy, doc, test, golden-build]
+    needs: [fmt, clippy, doc, mdbook, test, golden-build]
     steps:
       - run: exit 0
 
