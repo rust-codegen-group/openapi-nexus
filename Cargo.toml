@@ -12,6 +12,7 @@ members = [
     "crates/openapi-nexus-spec",
     "crates/openapi-nexus-test-utils",
     "crates/generators/openapi-nexus-go-http",
+    "crates/generators/openapi-nexus-rust-reqwest",
     "crates/generators/openapi-nexus-typescript-fetch",
 ]
 
@@ -62,6 +63,7 @@ openapi-nexus-core = { version = "0.0.5", path = "crates/openapi-nexus-core" }
 openapi-nexus-go-http = { version = "0.0.5", path = "crates/generators/openapi-nexus-go-http" }
 openapi-nexus-ir = { version = "0.0.5", path = "crates/openapi-nexus-ir" }
 openapi-nexus-parser = { version = "0.0.5", path = "crates/openapi-nexus-parser" }
+openapi-nexus-rust-reqwest = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-reqwest" }
 openapi-nexus-spec = { version = "0.0.5", path = "crates/openapi-nexus-spec" }
 openapi-nexus-test-utils = { version = "0.0.5", path = "crates/openapi-nexus-test-utils" }
 openapi-nexus-typescript-fetch = { version = "0.0.5", path = "crates/generators/openapi-nexus-typescript-fetch" }
@@ -77,5 +79,6 @@ order = [
     "openapi-nexus-config",
     "openapi-nexus-typescript-fetch",
     "openapi-nexus-go-http",
+    "openapi-nexus-rust-reqwest",
     "openapi-nexus",
 ]
