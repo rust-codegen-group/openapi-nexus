@@ -4,6 +4,7 @@
 //!
 //! Dispatches to version-specific lowering functions that all produce the same `IrSpec`.
 
+pub mod v30;
 pub mod v31;
 pub mod v32;
 
@@ -20,10 +21,8 @@ pub fn lower(parsed: ParsedSpec) -> Result<IrSpec, LowerError> {
 
 fn lower_impl(parsed: &ParsedSpec) -> Result<IrSpec, LowerError> {
     match parsed {
+        ParsedSpec::V30(spec) => v30::lower_v30(spec),
         ParsedSpec::V31(spec) => v31::lower_v31(spec),
         ParsedSpec::V32(spec) => v32::lower_v32(spec),
-        ParsedSpec::V30(_) => Err(LowerError::UnsupportedVersion {
-            version: "3.0".to_string(),
-        }),
     }
 }
