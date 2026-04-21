@@ -4,6 +4,9 @@
 //! which correspond to Serde's tagged enum representations.
 
 use heck::ToPascalCase as _;
+use openapi_nexus_spec::oas30::spec::{
+    ObjectOrReference as ObjectOrReference30, ObjectSchema as ObjectSchema30,
+};
 use openapi_nexus_spec::oas31::spec::{ObjectOrReference, ObjectSchema};
 use openapi_nexus_spec::oas32::spec::{
     ObjectOrReference as ObjectOrReference32, ObjectSchema as ObjectSchema32,
@@ -285,6 +288,102 @@ impl TaggedEnumPattern {
                 }
             }
             ObjectOrReference32::Ref { ref_path, .. } => {
+                if let Some(schema_name) = ref_path.as_str().strip_prefix("#/components/schemas/") {
+                    return Some(TaggedEnumPattern::Untagged {
+                        variant_name: schema_name.to_pascal_case(),
+                    });
+                }
+            }
+            _ => {}
+        }
+        None
+    }
+
+    /// Same as [`detect_from_schema`] but for OAS 3.0 types.
+    pub fn detect_from_schema_v30(
+        schema_ref: &ObjectOrReference30<ObjectSchema30>,
+    ) -> Option<Self> {
+        match schema_ref {
+            ObjectOrReference30::Object(obj_schema) if obj_schema.properties.len() == 1 => {
+                if let Some((prop_name, prop_schema)) = obj_schema.properties.iter().next()
+                    && obj_schema.required.contains(prop_name)
+                {
+                    let is_externally_tagged = match prop_schema {
+                        ObjectOrReference30::Object(prop_obj) => {
+                            !prop_obj.enum_values.is_empty()
+                                && prop_obj
+                                    .enum_values
+                                    .iter()
+                                    .any(|v| matches!(v, serde_json::Value::String(_)))
+                        }
+                        ObjectOrReference30::Ref { .. } => true,
+                    };
+                    if is_externally_tagged {
+                        let variant_name = prop_name.to_pascal_case();
+                        return Some(TaggedEnumPattern::ExternallyTagged { variant_name });
+                    }
+                }
+            }
+            ObjectOrReference30::Object(obj_schema) if obj_schema.properties.len() == 2 => {
+                let mut tag_field: Option<String> = None;
+                let mut content_field: Option<String> = None;
+                let mut enum_value: Option<String> = None;
+
+                for (prop_name, prop_schema) in &obj_schema.properties {
+                    if let ObjectOrReference30::Object(prop_obj) = prop_schema
+                        && !prop_obj.enum_values.is_empty()
+                        && let Some(serde_json::Value::String(enum_val)) =
+                            prop_obj.enum_values.first()
+                    {
+                        tag_field = Some(prop_name.clone());
+                        enum_value = Some(enum_val.clone());
+                        continue;
+                    }
+                    match prop_schema {
+                        ObjectOrReference30::Object(content_obj) => {
+                            if content_obj.enum_values.is_empty()
+                                && !content_obj.properties.is_empty()
+                            {
+                                content_field = Some(prop_name.clone());
+                            }
+                        }
+                        ObjectOrReference30::Ref { .. } => {
+                            content_field = Some(prop_name.clone());
+                        }
+                    }
+                }
+
+                if let (Some(tag), Some(content)) = (tag_field, content_field)
+                    && let Some(enum_val) = enum_value
+                {
+                    let variant_name = enum_val.to_pascal_case();
+                    return Some(TaggedEnumPattern::AdjacentlyTagged {
+                        variant_name,
+                        tag_field: tag,
+                        content_field: content,
+                    });
+                }
+            }
+            ObjectOrReference30::Object(obj_schema) if !obj_schema.all_of.is_empty() => {
+                for item in &obj_schema.all_of {
+                    if let ObjectOrReference30::Object(item_schema) = item {
+                        for (prop_name, prop_schema) in &item_schema.properties {
+                            if let ObjectOrReference30::Object(prop_obj) = prop_schema
+                                && !prop_obj.enum_values.is_empty()
+                                && let Some(serde_json::Value::String(enum_val)) =
+                                    prop_obj.enum_values.first()
+                            {
+                                let variant_name = enum_val.to_pascal_case();
+                                return Some(TaggedEnumPattern::InternallyTagged {
+                                    variant_name,
+                                    tag_field: prop_name.clone(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            ObjectOrReference30::Ref { ref_path, .. } => {
                 if let Some(schema_name) = ref_path.as_str().strip_prefix("#/components/schemas/") {
                     return Some(TaggedEnumPattern::Untagged {
                         variant_name: schema_name.to_pascal_case(),
