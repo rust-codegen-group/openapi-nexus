@@ -1,0 +1,10 @@
+[package]
+name = "intersection-type-with-nullable-reference-test"
+version = "0.1.0"
+edition = "2024"
+description = "Test fixture for allOf intersection types with nullable reference properties"
+
+[dependencies]
+ureq = { version = "3", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

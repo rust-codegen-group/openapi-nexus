@@ -1,0 +1,20 @@
+[package]
+name = "discriminated-union-with-inline-discriminator-only-test"
+version = "0.1.0"
+edition = "2024"
+description = "Test fixture for discriminated union where variants are inline objects
+with ONLY a discriminator property (no additional fields).
+
+This specifically tests the fix for the bug where inline objects with
+only a discriminator property (like { kind: "UNSPECIFIED" }) were
+generating generic "Kind.ts" files that conflicted across different
+discriminated unions.
+
+After the fix, these should generate properly prefixed names like
+"EventKindUnspecified" instead of generic "Kind".
+"
+
+[dependencies]
+ureq = { version = "3", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

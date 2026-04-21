@@ -13,12 +13,12 @@ publish = true
 heck.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-sigil-stitch.workspace = true
 toml.workspace = true
 tracing.workspace = true
 
 openapi-nexus-core.workspace = true
 openapi-nexus-ir.workspace = true
+openapi-nexus-rust-common.workspace = true
 
 [dev-dependencies]
 tracing-test.workspace = true
