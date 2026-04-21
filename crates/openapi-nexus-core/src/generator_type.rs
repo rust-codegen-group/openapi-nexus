@@ -13,6 +13,9 @@ pub enum GeneratorType {
     /// Go client using HTTP
     #[serde(rename = "go-http")]
     GoHttp,
+    /// Rust client using reqwest
+    #[serde(rename = "rust-reqwest")]
+    RustReqwest,
 }
 
 serde_plain::derive_display_from_serialize!(GeneratorType);
@@ -24,6 +27,7 @@ impl GeneratorType {
         match self {
             GeneratorType::TypeScriptFetch => Language::TypeScript,
             GeneratorType::GoHttp => Language::Go,
+            GeneratorType::RustReqwest => Language::Rust,
         }
     }
 
@@ -32,6 +36,7 @@ impl GeneratorType {
         match self {
             GeneratorType::TypeScriptFetch => "fetch".to_string(),
             GeneratorType::GoHttp => "http".to_string(),
+            GeneratorType::RustReqwest => "reqwest".to_string(),
         }
     }
 }

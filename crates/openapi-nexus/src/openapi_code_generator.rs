@@ -10,6 +10,7 @@ use openapi_nexus_core::GeneratorType;
 use openapi_nexus_core::traits::{CodeGenerator, FileWriter};
 use openapi_nexus_go_http::GoHttpCodeGenerator;
 use openapi_nexus_parser::parse_file;
+use openapi_nexus_rust_reqwest::RustReqwestCodeGenerator;
 use openapi_nexus_typescript_fetch::TypeScriptFetchCodeGenerator;
 
 /// Main code generation orchestrator
@@ -37,6 +38,16 @@ impl OpenApiCodeGenerator {
                 config
                     .generators
                     .get(&GeneratorType::GoHttp)
+                    .cloned()
+                    .unwrap_or_default(),
+            ),
+        );
+        generator_registry.register_generator(
+            GeneratorType::RustReqwest,
+            RustReqwestCodeGenerator::new(
+                config
+                    .generators
+                    .get(&GeneratorType::RustReqwest)
                     .cloned()
                     .unwrap_or_default(),
             ),

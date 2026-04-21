@@ -11,6 +11,9 @@ pub enum Language {
     /// Go
     #[serde(rename = "Go")]
     Go,
+    /// Rust
+    #[serde(rename = "Rust")]
+    Rust,
 }
 
 serde_plain::derive_display_from_serialize!(Language);
