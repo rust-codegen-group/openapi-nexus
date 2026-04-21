@@ -1,11 +1,10 @@
-//! Go HTTP code generator: IR + sigil-stitch, one cut-over from minijinja.
+//! Go HTTP code generator: IR + sigil-stitch.
 //!
-//! Orchestrates the end-to-end pipeline:
-//! 1. Lower the `OpenApiV31Spec` to an `IrSpec` via `openapi-nexus-ir`.
-//! 2. Emit models via `sigil_emit::generate_model_files`.
-//! 3. Emit APIs via `sigil_emit_api::generate_api_files`.
-//! 4. Stamp the hardcoded runtime (`client.go`, `auth.go`, `errors.go`).
-//! 5. Emit `go.mod` and `README.md`.
+//! Receives a lowered `IrSpec` and emits:
+//! 1. Models via `sigil_emit::generate_model_files`.
+//! 2. APIs via `sigil_emit_api::generate_api_files`.
+//! 3. Hardcoded runtime (`client.go`, `auth.go`, `errors.go`).
+//! 4. `go.mod` and `README.md`.
 
 use std::error::Error;
 
@@ -18,7 +17,6 @@ use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
 use openapi_nexus_core::{GeneratorType, Language};
 use openapi_nexus_ir::types::{IrInfo, IrSpec};
-use openapi_nexus_spec::OpenApiV31Spec;
 
 const DEFAULT_MODULE_PATH: &str = "example.com/sdk";
 
@@ -44,7 +42,7 @@ impl GoHttpCodeGenerator {
     }
 
     /// Orchestrate emission from the lowered IR.
-    fn generate_from_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let module_path = self.module_path();
         let header = render_file_header(&ir.info);
 
@@ -84,17 +82,8 @@ impl CodeGenerator for GoHttpCodeGenerator {
         GeneratorType::GoHttp
     }
 
-    fn generate(
-        &self,
-        openapi: &OpenApiV31Spec,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let ir = openapi_nexus_ir::lower::v31::lower_v31(openapi)?;
-        tracing::info!(
-            "Go generator using IR pipeline ({} schemas, {} operations)",
-            ir.schemas.len(),
-            ir.operations.len()
-        );
-        self.generate_from_ir(&ir)
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        self.generate_ir(ir)
     }
 }
 

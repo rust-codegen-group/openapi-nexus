@@ -27,7 +27,7 @@ use openapi_nexus_ir::types::{
 /// Generate every API file from the IR.
 pub fn generate_api_files(
     ir: &IrSpec,
-    _module_path: &str,
+    module_path: &str,
     header: &str,
 ) -> Result<Vec<FileInfo>, String> {
     let by_tag = group_by_tag(&ir.operations);
@@ -40,7 +40,7 @@ pub fn generate_api_files(
         } else {
             format!("{stem}.go")
         };
-        let body = emit_api_file(tag, ops);
+        let body = emit_api_file(tag, ops, module_path);
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -66,7 +66,7 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
 // File assembly
 // ---------------------------------------------------------------------------
 
-fn emit_api_file(tag: &str, ops: &[&IrOperation]) -> String {
+fn emit_api_file(tag: &str, ops: &[&IrOperation], module_path: &str) -> String {
     let struct_name = format!("{}API", tag.to_pascal_case());
 
     // Pre-plan each operation so we can compute imports from actual usage.
@@ -76,7 +76,7 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation]) -> String {
 
     let mut out = String::new();
     out.push_str("package apis\n\n");
-    out.push_str(&render_imports(&imports));
+    out.push_str(&render_imports(&imports, module_path));
     out.push('\n');
 
     out.push_str(&format!(
@@ -341,7 +341,7 @@ fn refs_models(t: &IrTypeExpr) -> bool {
     }
 }
 
-fn render_imports(imp: &Imports) -> String {
+fn render_imports(imp: &Imports, module_path: &str) -> String {
     let mut stdlib = Vec::new();
     if imp.bytes {
         stdlib.push("\"bytes\"");
@@ -373,9 +373,9 @@ fn render_imports(imp: &Imports) -> String {
 
     let mut project = Vec::new();
     if imp.models {
-        project.push("\"example.com/sdk/models\"");
+        project.push(format!("\"{module_path}/models\""));
     }
-    project.push("\"example.com/sdk/runtime\"");
+    project.push(format!("\"{module_path}/runtime\""));
 
     let mut out = String::from("import (\n");
     for s in &stdlib {

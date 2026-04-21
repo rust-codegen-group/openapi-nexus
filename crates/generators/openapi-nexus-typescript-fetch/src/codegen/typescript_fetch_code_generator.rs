@@ -10,7 +10,7 @@ use openapi_nexus_core::NamingConvention;
 use openapi_nexus_core::traits::code_generator::CodeGenerator;
 use openapi_nexus_core::traits::file_writer::{FileInfo, FileWriter};
 use openapi_nexus_core::{GeneratorType, Language};
-use openapi_nexus_spec::OpenApiV31Spec;
+use openapi_nexus_ir::types::IrSpec;
 
 /// TypeScript Fetch code generator
 #[derive(Debug, Clone)]
@@ -75,10 +75,7 @@ impl TypeScriptFetchCodeGenerator {
     }
 
     /// Generate ALL files from the IR spec.
-    pub fn generate_from_ir(
-        &self,
-        ir: &openapi_nexus_ir::types::IrSpec,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let mut files = Vec::new();
 
         files.extend(self.generate_apis_from_ir(ir)?);
@@ -296,17 +293,8 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
         GeneratorType::TypeScriptFetch
     }
 
-    fn generate(
-        &self,
-        openapi: &OpenApiV31Spec,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let ir = openapi_nexus_ir::lower::v31::lower_v31(openapi)?;
-        tracing::info!(
-            "TypeScript generator using IR pipeline ({} schemas, {} operations)",
-            ir.schemas.len(),
-            ir.operations.len()
-        );
-        self.generate_from_ir(&ir)
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        self.generate_ir(ir)
     }
 }
 
