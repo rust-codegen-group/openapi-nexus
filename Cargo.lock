@@ -1011,7 +1011,9 @@ dependencies = [
  "openapi-nexus-go-http",
  "openapi-nexus-ir",
  "openapi-nexus-parser",
+ "openapi-nexus-rust-aioduct",
  "openapi-nexus-rust-reqwest",
+ "openapi-nexus-rust-ureq",
  "openapi-nexus-typescript-fetch",
  "tracing",
  "tracing-subscriber",
@@ -1079,6 +1081,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "openapi-nexus-rust-aioduct"
+version = "0.0.5"
+dependencies = [
+ "heck",
+ "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "openapi-nexus-rust-common",
+ "openapi-nexus-test-utils",
+ "serde",
+ "serde_json",
+ "toml",
+ "tracing",
+ "tracing-test",
+]
+
+[[package]]
+name = "openapi-nexus-rust-common"
+version = "0.0.5"
+dependencies = [
+ "heck",
+ "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "serde",
+ "serde_json",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "openapi-nexus-rust-reqwest"
 version = "0.0.5"
 dependencies = [
@@ -1086,10 +1118,27 @@ dependencies = [
  "openapi-nexus-core",
  "openapi-nexus-ir",
  "openapi-nexus-parser",
+ "openapi-nexus-rust-common",
  "openapi-nexus-test-utils",
  "serde",
  "serde_json",
- "sigil-stitch",
+ "toml",
+ "tracing",
+ "tracing-test",
+]
+
+[[package]]
+name = "openapi-nexus-rust-ureq"
+version = "0.0.5"
+dependencies = [
+ "heck",
+ "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "openapi-nexus-rust-common",
+ "openapi-nexus-test-utils",
+ "serde",
+ "serde_json",
  "toml",
  "tracing",
  "tracing-test",

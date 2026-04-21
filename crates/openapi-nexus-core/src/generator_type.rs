@@ -16,6 +16,12 @@ pub enum GeneratorType {
     /// Rust client using reqwest
     #[serde(rename = "rust-reqwest")]
     RustReqwest,
+    /// Rust client using ureq (synchronous)
+    #[serde(rename = "rust-ureq")]
+    RustUreq,
+    /// Rust client using aioduct (hyper 1.x)
+    #[serde(rename = "rust-aioduct")]
+    RustAioduct,
 }
 
 serde_plain::derive_display_from_serialize!(GeneratorType);
@@ -28,6 +34,8 @@ impl GeneratorType {
             GeneratorType::TypeScriptFetch => Language::TypeScript,
             GeneratorType::GoHttp => Language::Go,
             GeneratorType::RustReqwest => Language::Rust,
+            GeneratorType::RustUreq => Language::Rust,
+            GeneratorType::RustAioduct => Language::Rust,
         }
     }
 
@@ -37,6 +45,8 @@ impl GeneratorType {
             GeneratorType::TypeScriptFetch => "fetch".to_string(),
             GeneratorType::GoHttp => "http".to_string(),
             GeneratorType::RustReqwest => "reqwest".to_string(),
+            GeneratorType::RustUreq => "ureq".to_string(),
+            GeneratorType::RustAioduct => "aioduct".to_string(),
         }
     }
 }

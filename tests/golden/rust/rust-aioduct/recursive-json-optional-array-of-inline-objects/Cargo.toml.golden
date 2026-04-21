@@ -1,0 +1,11 @@
+[package]
+name = "optional-array-of-inline-objects-test"
+version = "0.1.0"
+edition = "2024"
+description = "Test case for optional array of inline objects with snake_case to camelCase conversion"
+
+[dependencies]
+aioduct = { version = "0.1", features = ["tokio", "rustls", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }

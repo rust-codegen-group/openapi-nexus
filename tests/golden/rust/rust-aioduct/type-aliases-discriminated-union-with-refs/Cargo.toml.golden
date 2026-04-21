@@ -1,0 +1,13 @@
+[package]
+name = "discriminated-union-with-references-test"
+version = "0.1.0"
+edition = "2024"
+description = "Test fixture for discriminated union where variants are references to component schemas.
+This is similar to the ContainerImage pattern in the infiron API.
+"
+
+[dependencies]
+aioduct = { version = "0.1", features = ["tokio", "rustls", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
