@@ -72,6 +72,13 @@ impl FileInfo {
 
 /// Trait for language-specific file writing operations
 pub trait FileWriter {
+    /// Optional source directory prefix for languages that use one (e.g. `"src"` for Rust).
+    /// When set, source file categories (`Apis`, `Models`, `Runtime`) are placed
+    /// under `{output_dir}/{source_dir}/` instead of directly under `{output_dir}/`.
+    fn source_dir(&self) -> Option<&str> {
+        None
+    }
+
     /// Write generated files to the output directory
     fn write_files(
         &self,
@@ -87,15 +94,20 @@ pub trait FileWriter {
                 .push(file);
         }
 
+        let source_root = self
+            .source_dir()
+            .map(|d| output_dir.join(d))
+            .unwrap_or_else(|| output_dir.to_path_buf());
+
         // Write files for each category
         for (category, category_files) in files_by_category {
             let category_dir = match category {
                 FileCategory::None => continue,
                 FileCategory::Readme => output_dir.to_path_buf(),
-                FileCategory::Apis => output_dir.join("apis"),
-                FileCategory::Models => output_dir.join("models"),
+                FileCategory::Apis => source_root.join("apis"),
+                FileCategory::Models => source_root.join("models"),
                 FileCategory::ProjectFiles => output_dir.to_path_buf(),
-                FileCategory::Runtime => output_dir.join("runtime"),
+                FileCategory::Runtime => source_root.join("runtime"),
             };
 
             // Create directory if it doesn't exist
