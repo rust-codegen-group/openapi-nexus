@@ -1,0 +1,17 @@
+[book]
+title = "openapi-nexus"
+description = "OpenAPI 3.1 to multi-language code generator"
+authors = ["Adam Cavendish"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[preprocessor.mermaid-mmdr]
+
+[output.html]
+git-repository-url = "https://github.com/adamcavendish/openapi-nexus"
+
+[output.html.search]
+enable = true

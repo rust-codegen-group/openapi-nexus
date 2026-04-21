@@ -1,93 +1,91 @@
-# 🚀 OpenAPI Nexus (Working In Progress)
+# OpenAPI Nexus
 
-> **OpenAPI 3.1 to Code Generator** - Generate type-safe, production-ready code from OpenAPI specifications
+> OpenAPI 3.1 to multi-language code generator
 
+[![CI](https://github.com/adamcavendish/openapi-nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/adamcavendish/openapi-nexus/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 [![Rust](https://img.shields.io/badge/rust-1.90+-orange.svg)](https://www.rust-lang.org/)
 
-OpenAPI Nexus is a modern, modular code generator that transforms OpenAPI 3.1 specifications into client or server libraries. It provides a flexible, extensible architecture for generating high-quality code across multiple languages.
+OpenAPI Nexus transforms OpenAPI 3.1 specifications into type-safe client libraries. Generated output is deterministic, compile-checked in CI, and tested byte-for-byte via golden tests.
 
-## ✨ Features
+## Language Support
 
-- 🎯 **OpenAPI 3.1 Support** - Support for OpenAPI 3.1 specifications
-- 🏗️ **Modular Architecture** - Extensible pipeline design allows easy addition of new languages and transformations
-- 📦 **Multi-file Output** - Organized output structure with separate API, model, and runtime modules
-- 🎨 **Configurable** - Flexible configuration via CLI, environment variables, or config files
-- 🔄 **Transform Pipeline** - Built-in transformation passes for normalization and optimization (Working In Progress)
-- 📝 **Template-based** - Jinja2-style templates for customizable code generation
+| Language | Generator | Status |
+|----------|-----------|--------|
+| TypeScript (fetch) | `typescript-fetch` | Stable |
+| Go (net/http) | `go-http` | Stable |
 
-## 🚦 Quick Start
+## Quick Start
 
-### Installation
+### Install
 
-1. Download the binary from the [releases page](https://github.com/adamcavendish/openapi-nexus/releases).
-
-### Basic Usage
-
-Generate TypeScript code from an OpenAPI specification:
+Download a binary from the [releases page](https://github.com/adamcavendish/openapi-nexus/releases), or build from source:
 
 ```bash
-openapi-nexus generate --input path/to/openapi.yaml --output generated --generator typescript-fetch
+cargo install --path crates/openapi-nexus
 ```
 
-## 📖 Configuration
+Requires Rust 1.90+.
 
-OpenAPI Nexus supports multiple configuration methods with the following precedence (highest to lowest):
-
-1. **Command-line arguments**
-2. **Environment variables**
-3. **Configuration file** (`openapi-nexus-config.toml`)
-4. **Defaults**
-
-### Configuration File (Optional)
-
-Create an `openapi-nexus-config.toml` file in your project root by referencing the [sample configuration file](./openapi-nexus-config.toml.example).
-
-### Environment Variables
-
-All configuration options can also be set via environment variables:
+### Generate
 
 ```bash
+# TypeScript client
+openapi-nexus generate -i spec.yaml -o output -g typescript-fetch
+
+# Go client
+openapi-nexus generate -i spec.yaml -o output -g go-http
+
+# Both at once
+openapi-nexus generate -i spec.yaml -o output -g typescript-fetch,go-http
+```
+
+## Configuration
+
+Configuration resolves in order: CLI args > environment variables (`OPENAPI_NEXUS_*`) > config file (`openapi-nexus-config.toml`) > defaults.
+
+```bash
+# Environment variables
 export OPENAPI_NEXUS_INPUT="spec.yaml"
 export OPENAPI_NEXUS_OUTPUT="generated"
 export OPENAPI_NEXUS_GENERATOR="typescript-fetch"
-export OPENAPI_NEXUS_TS_FILE_NAMING_CONVENTION="PascalCase"
 ```
 
-### CLI Options
+Generator-specific options go in the config file:
+
+```toml
+[generators.go-http]
+module_path = "github.com/myorg/myproject/sdk"
+```
+
+## How It Works
+
+```
+OpenAPI YAML/JSON → parse → lower to IR → CodeGenerator::generate(&IrSpec) → write
+```
+
+Parsing auto-detects OAS version. Lowering produces a version-agnostic `IrSpec`. Each generator receives the pre-lowered IR and uses [sigil-stitch](https://github.com/adamcavendish/sigil-stitch) for type-safe code emission.
+
+## Documentation
+
+Full documentation is available at the [project docs site](https://adamcavendish.github.io/openapi-nexus/).
+
+## Development
 
 ```bash
-openapi-nexus generate --help
+# Run all tests
+cargo test
+
+# Clippy (required before commit)
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Update golden files after intentional output changes
+UPDATE_GOLDEN=1 cargo test
+
+# Compile-check generated output
+just golden::build-all
 ```
 
-## 🗂️ Language Support
+## License
 
-- ✅ TypeScript
-- 🚧 Rust
-- 🚧 Python
-- 🚧 Go
-- ...
-
-## 🏛️ Architecture
-
-OpenAPI Nexus follows a modular, pipeline-based architecture:
-
-```text
-OpenAPI Spec → Parse → Transform → AST → Emit → Generated Code
-```
-
-### Pipeline Stages
-
-1. **Parse** - Converts OpenAPI YAML/JSON to internal representation using utoipa
-2. **Transform** - Applies extra modifications to the OpenAPI specification
-3. **AST Generation** - Converts to language-specific partial Abstract Syntax Trees
-4. **Emission** – Produces formatted source code from ASTs using a hybrid templating approach
-
-## 📄 License
-
-This project is dual-licensed under either:
-
-- MIT License ([LICENSE-MIT](LICENSE-MIT))
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-
-at your option.
+Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
