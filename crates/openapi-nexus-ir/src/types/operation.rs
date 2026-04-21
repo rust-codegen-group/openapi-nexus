@@ -56,6 +56,9 @@ pub struct IrResponse {
     pub status: String,
     pub description: String,
     pub content: IndexMap<String, IrTypeExpr>,
+    /// Streaming item types (from OAS 3.2 `itemSchema`).
+    /// Non-empty when the response is a streaming endpoint (e.g. text/event-stream).
+    pub item_content: IndexMap<String, IrTypeExpr>,
     pub headers: IndexMap<String, IrHeader>,
 }
 

@@ -1,9 +1,9 @@
-//! OpenAPI v3.1 → IR lowering.
+//! OpenAPI v3.2 → IR lowering.
 
 use heck::ToPascalCase;
 use indexmap::IndexMap;
 
-use openapi_nexus_spec::oas31::spec::{
+use openapi_nexus_spec::oas32::spec::{
     self as oas, ObjectOrReference, ObjectSchema, Schema, SchemaType, SchemaTypeSet,
 };
 
@@ -20,7 +20,7 @@ use crate::types::{
 // Public entry point
 // ---------------------------------------------------------------------------
 
-pub fn lower_v31(spec: &oas::OpenApiV31Spec) -> Result<IrSpec, LowerError> {
+pub fn lower_v32(spec: &oas::OpenApiV32Spec) -> Result<IrSpec, LowerError> {
     let mut ctx = LowerCtx::new(spec);
 
     // 1. Lower component schemas
@@ -93,7 +93,7 @@ pub fn lower_v31(spec: &oas::OpenApiV31Spec) -> Result<IrSpec, LowerError> {
 // ---------------------------------------------------------------------------
 
 struct LowerCtx<'a> {
-    spec: &'a oas::OpenApiV31Spec,
+    spec: &'a oas::OpenApiV32Spec,
     schemas: IndexMap<String, IrSchema>,
     used_names: std::collections::HashSet<String>,
     /// When true, promoted schemas are marked as component schemas.
@@ -101,7 +101,7 @@ struct LowerCtx<'a> {
 }
 
 impl<'a> LowerCtx<'a> {
-    fn new(spec: &'a oas::OpenApiV31Spec) -> Self {
+    fn new(spec: &'a oas::OpenApiV32Spec) -> Self {
         let mut used_names = std::collections::HashSet::new();
         if let Some(components) = &spec.components {
             for name in components.schemas.keys() {
@@ -274,7 +274,7 @@ impl<'a> LowerCtx<'a> {
         let patterns: Vec<Option<TaggedEnumPattern>> = obj
             .one_of
             .iter()
-            .map(TaggedEnumPattern::detect_from_schema)
+            .map(TaggedEnumPattern::detect_from_schema_v32)
             .collect();
 
         // All must match for it to be a tagged union
@@ -400,7 +400,7 @@ impl<'a> LowerCtx<'a> {
         }
 
         Ok(Some(IrTaggedUnion {
-            discriminator_field: disc.property_name.clone(),
+            discriminator_field: disc.property_name.clone().unwrap_or_default(),
             tagging: TaggingStyle::Internal,
             variants,
         }))
@@ -789,6 +789,7 @@ impl<'a> LowerCtx<'a> {
         lower_method!(head, "HEAD");
         lower_method!(patch, "PATCH");
         lower_method!(trace, "TRACE");
+        lower_method!(query, "QUERY");
 
         Ok(ops)
     }
@@ -905,6 +906,7 @@ impl<'a> LowerCtx<'a> {
                 oas::ParameterIn::Query => ParameterLocation::Query,
                 oas::ParameterIn::Header => ParameterLocation::Header,
                 oas::ParameterIn::Cookie => ParameterLocation::Cookie,
+                oas::ParameterIn::Querystring => ParameterLocation::Query,
             },
             type_expr,
             required: param.required.unwrap_or(false),
@@ -984,6 +986,7 @@ impl<'a> LowerCtx<'a> {
         resp: &oas::Response,
     ) -> Result<IrResponse, LowerError> {
         let mut content = IndexMap::new();
+        let mut item_content = IndexMap::new();
         for (mime, media_type) in &resp.content {
             if let Some(schema_ref) = &media_type.schema {
                 let type_expr = self.lower_schema_ref_with_promotion(
@@ -991,6 +994,13 @@ impl<'a> LowerCtx<'a> {
                     schema_ref,
                 )?;
                 content.insert(mime.clone(), type_expr);
+            }
+            if let Some(item_schema_ref) = &media_type.item_schema {
+                let type_expr = self.lower_schema_ref_with_promotion(
+                    &format!("{parent_name}Response{status}Item"),
+                    item_schema_ref,
+                )?;
+                item_content.insert(mime.clone(), type_expr);
             }
         }
 
@@ -1016,7 +1026,7 @@ impl<'a> LowerCtx<'a> {
             status: status.to_string(),
             description: resp.description.clone().unwrap_or_default(),
             content,
-            item_content: IndexMap::new(),
+            item_content,
             headers,
         })
     }
@@ -1407,15 +1417,15 @@ mod tests {
     use super::*;
 
     fn lower_yaml(yaml: &str) -> IrSpec {
-        let spec = openapi_nexus_parser::parse_content_yaml_v31(yaml).unwrap();
-        lower_v31(&spec).unwrap()
+        let parsed = openapi_nexus_parser::parse_content_yaml(yaml).unwrap();
+        lower_v32(parsed.as_v32().unwrap()).unwrap()
     }
 
     #[test]
     fn test_lower_minimal_spec() {
         let ir = lower_yaml(
             r#"
-openapi: "3.1.0"
+openapi: "3.2.0"
 info:
   title: Test
   version: "1.0"
@@ -1432,7 +1442,7 @@ paths: {}
     fn test_lower_simple_object_schema() {
         let ir = lower_yaml(
             r#"
-openapi: "3.1.0"
+openapi: "3.2.0"
 info:
   title: Test
   version: "1.0"
@@ -1465,7 +1475,7 @@ components:
     fn test_lower_string_enum() {
         let ir = lower_yaml(
             r#"
-openapi: "3.1.0"
+openapi: "3.2.0"
 info:
   title: Test
   version: "1.0"
@@ -1491,7 +1501,7 @@ components:
     fn test_lower_nullable_type() {
         let ir = lower_yaml(
             r#"
-openapi: "3.1.0"
+openapi: "3.2.0"
 info:
   title: Test
   version: "1.0"
@@ -1515,7 +1525,7 @@ components:
     fn test_lower_operation() {
         let ir = lower_yaml(
             r#"
-openapi: "3.1.0"
+openapi: "3.2.0"
 info:
   title: Test
   version: "1.0"
@@ -1554,7 +1564,7 @@ paths:
     fn test_lower_array_alias() {
         let ir = lower_yaml(
             r#"
-openapi: "3.1.0"
+openapi: "3.2.0"
 info:
   title: Test
   version: "1.0"
@@ -1578,7 +1588,7 @@ components:
     fn test_lower_ref_schema() {
         let ir = lower_yaml(
             r##"
-openapi: "3.1.0"
+openapi: "3.2.0"
 info:
   title: Test
   version: "1.0"
@@ -1600,5 +1610,63 @@ components:
         } else {
             panic!("Expected Named alias");
         }
+    }
+
+    #[test]
+    fn test_lower_query_method() {
+        let ir = lower_yaml(
+            r#"
+openapi: "3.2.0"
+info:
+  title: Test
+  version: "1.0"
+paths:
+  /search:
+    query:
+      operationId: searchItems
+      responses:
+        "200":
+          description: OK
+"#,
+        );
+        assert_eq!(ir.operations.len(), 1);
+        let op = &ir.operations[0];
+        assert_eq!(op.operation_id, "searchItems");
+        assert_eq!(op.method, "QUERY");
+        assert_eq!(op.path, "/search");
+    }
+
+    #[test]
+    fn test_lower_item_schema_streaming() {
+        let ir = lower_yaml(
+            r#"
+openapi: "3.2.0"
+info:
+  title: Test
+  version: "1.0"
+paths:
+  /events:
+    get:
+      operationId: streamEvents
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              itemSchema:
+                type: object
+                properties:
+                  event:
+                    type: string
+                  data:
+                    type: string
+"#,
+        );
+        assert_eq!(ir.operations.len(), 1);
+        let resp = &ir.operations[0].responses[0];
+        assert!(!resp.item_content.is_empty());
+        assert!(resp.item_content.contains_key("text/event-stream"));
     }
 }

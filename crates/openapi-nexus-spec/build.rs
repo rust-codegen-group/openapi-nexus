@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 const FIXTURES_SUBDIR: &str = "tests/openapi-generator-fixtures";
 const OAS30_PREFIX: &str = "oas30/";
 const OAS31_PREFIX: &str = "oas31/";
+const OAS32_PREFIX: &str = "oas32/";
 const SUPPORTED_EXTENSIONS: &[&str] = &["yaml", "yml", "json"];
 const SKIP_SUFFIX: &str = "tags.json";
 const TEST_FN_PREFIX: &str = "test_oag_fixture_";
@@ -118,12 +119,16 @@ fn main() {
 
     let oas30 = fixtures_base.join("oas30");
     let oas31 = fixtures_base.join("oas31");
+    let oas32 = fixtures_base.join("oas32");
     let mut rel_paths = Vec::new();
     if oas30.exists() {
         collect_fixture_paths(&oas30, &oas30, OAS30_PREFIX, &skip_paths, &mut rel_paths);
     }
     if oas31.exists() {
         collect_fixture_paths(&oas31, &oas31, OAS31_PREFIX, &skip_paths, &mut rel_paths);
+    }
+    if oas32.exists() {
+        collect_fixture_paths(&oas32, &oas32, OAS32_PREFIX, &skip_paths, &mut rel_paths);
     }
     rel_paths.sort();
 

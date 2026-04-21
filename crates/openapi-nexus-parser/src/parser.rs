@@ -8,7 +8,7 @@ use tracing::{debug, error};
 use crate::ParsedSpec;
 use crate::error::ParseError;
 use crate::serde_error::SerdeErrorExtractor;
-use openapi_nexus_spec::{OpenApiV30Spec, OpenApiV31Spec};
+use openapi_nexus_spec::{OpenApiV30Spec, OpenApiV31Spec, OpenApiV32Spec};
 
 fn extract_error_context(content: &str, error_msg: &str) -> Vec<String> {
     let (line, column) = SerdeErrorExtractor::new(error_msg).extract_location();
@@ -92,6 +92,8 @@ fn classify_version(version: &str) -> Result<OpenApiMajorMinor, ParseError> {
         Ok(OpenApiMajorMinor::V3_0)
     } else if version.starts_with("3.1") {
         Ok(OpenApiMajorMinor::V3_1)
+    } else if version.starts_with("3.2") {
+        Ok(OpenApiMajorMinor::V3_2)
     } else {
         Err(ParseError::UnsupportedVersion {
             version: version.to_string(),
@@ -102,6 +104,7 @@ fn classify_version(version: &str) -> Result<OpenApiMajorMinor, ParseError> {
 enum OpenApiMajorMinor {
     V3_0,
     V3_1,
+    V3_2,
 }
 
 pub fn parse_content_json(content: &str) -> Result<ParsedSpec, ParseError> {
@@ -131,6 +134,13 @@ pub fn parse_content_json(content: &str) -> Result<ParsedSpec, ParseError> {
                 ParseError::OpenApiDeserializeJson { source: e }
             })?;
             Ok(ParsedSpec::V31(Box::new(spec)))
+        }
+        OpenApiMajorMinor::V3_2 => {
+            let spec: OpenApiV32Spec = serde_json::from_value(value).map_err(|e| {
+                debug!("parse error: {}", e);
+                ParseError::OpenApiDeserializeJson { source: e }
+            })?;
+            Ok(ParsedSpec::V32(Box::new(spec)))
         }
     }
 }
@@ -162,6 +172,13 @@ pub fn parse_content_yaml(content: &str) -> Result<ParsedSpec, ParseError> {
                 ParseError::OpenApiDeserializeYaml { source: e }
             })?;
             Ok(ParsedSpec::V31(Box::new(spec)))
+        }
+        OpenApiMajorMinor::V3_2 => {
+            let spec: OpenApiV32Spec = serde_norway::from_value(value).map_err(|e| {
+                debug!("parse error: {}", e);
+                ParseError::OpenApiDeserializeYaml { source: e }
+            })?;
+            Ok(ParsedSpec::V32(Box::new(spec)))
         }
     }
 }

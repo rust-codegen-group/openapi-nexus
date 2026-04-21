@@ -5,6 +5,7 @@
 //! Dispatches to version-specific lowering functions that all produce the same `IrSpec`.
 
 pub mod v31;
+pub mod v32;
 
 use crate::types::IrSpec;
 use openapi_nexus_parser::ParsedSpec;
@@ -20,6 +21,7 @@ pub fn lower(parsed: ParsedSpec) -> Result<IrSpec, LowerError> {
 fn lower_impl(parsed: &ParsedSpec) -> Result<IrSpec, LowerError> {
     match parsed {
         ParsedSpec::V31(spec) => v31::lower_v31(spec),
+        ParsedSpec::V32(spec) => v32::lower_v32(spec),
         ParsedSpec::V30(_) => Err(LowerError::UnsupportedVersion {
             version: "3.0".to_string(),
         }),
