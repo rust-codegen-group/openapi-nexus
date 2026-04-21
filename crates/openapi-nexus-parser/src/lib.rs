@@ -15,7 +15,7 @@ pub use parser::{
 };
 pub use serde_error::SerdeErrorExtractor;
 
-use openapi_nexus_spec::{OpenApiV30Spec, OpenApiV31Spec};
+use openapi_nexus_spec::{OpenApiV30Spec, OpenApiV31Spec, OpenApiV32Spec};
 
 /// Parsed OpenAPI specification, version-tagged.
 /// The parser auto-detects the version from the `openapi` field and
@@ -24,14 +24,24 @@ use openapi_nexus_spec::{OpenApiV30Spec, OpenApiV31Spec};
 pub enum ParsedSpec {
     V30(Box<OpenApiV30Spec>),
     V31(Box<OpenApiV31Spec>),
+    V32(Box<OpenApiV32Spec>),
 }
 
 impl ParsedSpec {
-    /// Get the OpenAPI version string (e.g. "3.0" or "3.1").
+    /// Get the OpenAPI version string (e.g. "3.0", "3.1", or "3.2").
     pub fn version_tag(&self) -> &'static str {
         match self {
             ParsedSpec::V30(_) => "3.0",
             ParsedSpec::V31(_) => "3.1",
+            ParsedSpec::V32(_) => "3.2",
+        }
+    }
+
+    /// If this is a v3.2 spec, return a reference to it.
+    pub fn as_v32(&self) -> Option<&OpenApiV32Spec> {
+        match self {
+            ParsedSpec::V32(spec) => Some(spec),
+            _ => None,
         }
     }
 

@@ -1,7 +1,7 @@
-//! OpenAPI 3.2.x specification (stub).
+//! OpenAPI 3.2.x specification types and parsing.
 //!
-//! Reserved for future 3.2 support.
+//! See <https://spec.openapis.org/oas/v3.2.0>.
 
-pub mod spec {
-    //! Placeholder for OpenAPI 3.2.x spec types.
-}
+pub mod spec;
+
+pub use spec::OpenApiV32Spec;

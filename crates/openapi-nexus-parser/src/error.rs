@@ -34,7 +34,7 @@ pub enum ParseError {
     OpenApiDeserializeYaml { source: serde_norway::Error },
 
     #[snafu(display(
-        "Unsupported OpenAPI version: '{}'. Supported versions: 3.0.x, 3.1.x",
+        "Unsupported OpenAPI version: '{}'. Supported versions: 3.0.x, 3.1.x, 3.2.x",
         version
     ))]
     UnsupportedVersion { version: String },

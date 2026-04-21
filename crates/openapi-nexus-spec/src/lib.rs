@@ -1,7 +1,6 @@
 //! OpenAPI specification types for OpenAPI Nexus.
 //!
 //! This crate provides versioned modules for OpenAPI 3.0, 3.1, and 3.2.
-//! OpenAPI 3.0 and 3.1 are fully implemented; 3.2 is a stub for future use.
 
 pub mod oas30;
 pub mod oas31;
@@ -9,6 +8,7 @@ pub mod oas32;
 
 pub use oas30::OpenApiV30Spec;
 pub use oas31::OpenApiV31Spec;
+pub use oas32::OpenApiV32Spec;
 
 #[cfg(test)]
 mod test_utils;
