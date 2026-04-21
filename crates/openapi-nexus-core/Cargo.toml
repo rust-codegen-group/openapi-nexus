@@ -13,4 +13,4 @@ publish = true
 serde.workspace = true
 serde_plain.workspace = true
 
-openapi-nexus-spec.workspace = true
+openapi-nexus-ir.workspace = true

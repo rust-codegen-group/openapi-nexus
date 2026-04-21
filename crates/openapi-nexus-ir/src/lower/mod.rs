@@ -1,8 +1,6 @@
 //! Lowering pass: converts versioned OpenAPI specs into the version-agnostic IR.
 //!
-//! Public entry points:
-//! - `lower(parsed: ParsedSpec) -> Result<IrSpec, LowerError>` (consumes)
-//! - `lower_ref(parsed: &ParsedSpec) -> Result<IrSpec, LowerError>` (borrows)
+//! Entry point: `lower(parsed: ParsedSpec) -> Result<IrSpec, LowerError>`
 //!
 //! Dispatches to version-specific lowering functions that all produce the same `IrSpec`.
 
@@ -16,11 +14,10 @@ pub use error::LowerError;
 
 /// Lower a parsed OpenAPI spec (any supported version) into the IR.
 pub fn lower(parsed: ParsedSpec) -> Result<IrSpec, LowerError> {
-    lower_ref(&parsed)
+    lower_impl(&parsed)
 }
 
-/// Lower a parsed OpenAPI spec by reference into the IR.
-pub fn lower_ref(parsed: &ParsedSpec) -> Result<IrSpec, LowerError> {
+fn lower_impl(parsed: &ParsedSpec) -> Result<IrSpec, LowerError> {
     match parsed {
         ParsedSpec::V31(spec) => v31::lower_v31(spec),
         ParsedSpec::V30(_) => Err(LowerError::UnsupportedVersion {

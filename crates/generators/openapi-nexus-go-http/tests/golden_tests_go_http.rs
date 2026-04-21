@@ -5,292 +5,22 @@
 //!   UPDATE_GOLDEN=1 cargo test --test golden_tests_go_http
 
 use std::collections::HashMap;
-use std::env;
-use std::fs;
 use std::path::Path;
-use std::process;
-use std::time::{SystemTime, UNIX_EPOCH};
 
-use similar::TextDiff;
 use tracing_test::traced_test;
 
-use openapi_nexus_core::traits::code_generator::CodeGenerator as _;
-use openapi_nexus_core::traits::file_writer::FileWriter;
 use openapi_nexus_go_http::GoHttpCodeGenerator;
-use openapi_nexus_spec::OpenApiV31Spec;
+use openapi_nexus_test_utils::{run_golden_test, test_cases_from_slice};
 
-/// Read a fixture file from various possible locations
-fn read_fixture(fixture_path: &str) -> String {
-    let possible_paths = [
-        Path::new("tests/fixtures").join(fixture_path),
-        Path::new("../../../tests/fixtures").join(fixture_path),
-        Path::new("../../tests/fixtures").join(fixture_path),
-        Path::new("../tests/fixtures").join(fixture_path),
-    ];
-
-    for path in &possible_paths {
-        if path.exists() {
-            return fs::read_to_string(path).unwrap();
-        }
-    }
-    panic!("Could not find fixture: {}", fixture_path);
-}
-
-/// Get the golden directory path
-fn get_golden_dir() -> &'static Path {
+fn golden_dir() -> &'static Path {
     Path::new("../../../tests/golden/go/go-http")
 }
 
-/// Convert a generated filename to a golden filename by appending ".golden"
-fn to_golden_filename(filename: &str) -> String {
-    format!("{}.golden", filename)
-}
+const UPDATE_HINT: &str = "UPDATE_GOLDEN=1 cargo test --test golden_tests_go_http";
 
-/// Convert a golden filename back to the original generated filename by removing ".golden" suffix
-fn from_golden_filename(golden_filename: &str) -> Option<String> {
-    golden_filename
-        .strip_suffix(".golden")
-        .map(|s| s.to_string())
-}
-
-/// Generate files from an OpenAPI specification
-fn generate_files(
-    spec_content: &str,
-) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
-    let openapi: OpenApiV31Spec = openapi_nexus_parser::parse_content_yaml_v31(spec_content)?;
-
-    let generator = GoHttpCodeGenerator::new(toml::value::Table::new());
-    let generated_files = match generator.generate(&openapi) {
-        Ok(files) => {
-            println!("Successfully generated {} files", files.len());
-            files
-        }
-        Err(e) => {
-            println!("Error generating files: {}", e);
-            return Err(e);
-        }
-    };
-
-    // Create a unique temporary directory to write files with proper directory structure
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let temp_dir = std::env::temp_dir().join(format!(
-        "openapi_nexus_test_{}_{}",
-        std::process::id(),
-        timestamp
-    ));
-    fs::create_dir_all(&temp_dir).unwrap();
-
-    // Use the FileWriter trait to write files with proper directory organization
-    if let Err(e) = generator.write_files(&temp_dir, &generated_files) {
-        println!("Error writing files: {}", e);
-        println!("Temp directory: {}", temp_dir.display());
-        println!("Generated files count: {}", generated_files.len());
-        for (i, file) in generated_files.iter().enumerate() {
-            println!(
-                "  File {}: {} (category: {:?})",
-                i, file.filename, file.category
-            );
-        }
-        return Err(e);
-    }
-
-    // Read all files recursively from the temporary directory
-    let mut result = HashMap::new();
-    read_directory_recursive(&temp_dir, &temp_dir, &mut result);
-
-    // Clean up temporary directory
-    fs::remove_dir_all(&temp_dir).unwrap();
-
-    Ok(result)
-}
-
-/// Recursively read all files from a directory
-fn read_directory_recursive(
-    base_dir: &Path,
-    current_dir: &Path,
-    result: &mut HashMap<String, String>,
-) {
-    for entry in fs::read_dir(current_dir).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-
-        if path.is_dir() {
-            read_directory_recursive(base_dir, &path, result);
-        } else if path.is_file() {
-            let relative_path = path.strip_prefix(base_dir).unwrap();
-            // Normalize path separators to forward slashes for consistency
-            let filename = relative_path.to_string_lossy().replace('\\', "/");
-            let content = fs::read_to_string(&path).unwrap();
-            result.insert(filename, content);
-        }
-    }
-}
-
-/// Update or compare golden files for a given spec
-fn test_golden_files(
-    spec_name: &str,
-    fixture_path: &str,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let spec_content = read_fixture(fixture_path);
-    let generated = match generate_files(&spec_content) {
-        Ok(files) => files,
-        Err(e) => {
-            println!("Failed to generate Go files for {}: {}", spec_name, e);
-            return Err(e);
-        }
-    };
-    let update_mode = env::var("UPDATE_GOLDEN").is_ok();
-
-    if update_mode {
-        update_golden_files(spec_name, &generated)?;
-    } else {
-        compare_with_golden_files(spec_name, &generated)?;
-    }
-
-    Ok(())
-}
-
-/// Update golden files with generated content
-fn update_golden_files(
-    spec_name: &str,
-    generated: &HashMap<String, String>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!(
-        "UPDATE_GOLDEN mode: updating golden files for {}",
-        spec_name
-    );
-    let golden_dir = get_golden_dir().join(spec_name);
-
-    // Clean up existing files before updating
-    if golden_dir.exists() {
-        println!("Cleaning up existing files in: {}", golden_dir.display());
-        fs::remove_dir_all(&golden_dir)?;
-    }
-
-    fs::create_dir_all(&golden_dir)?;
-
-    for (filename, content) in generated {
-        let golden_filename = to_golden_filename(filename);
-        let file_path = golden_dir.join(&golden_filename);
-
-        // Create parent directories if they don't exist
-        if let Some(parent) = file_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
-        fs::write(&file_path, content)?;
-        println!("Updated: {}", file_path.display());
-    }
-    println!("Updated golden files for {}", spec_name);
-    Ok(())
-}
-
-/// Compare generated files with golden files and report differences
-fn compare_with_golden_files(
-    spec_name: &str,
-    generated: &HashMap<String, String>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let golden_dir = get_golden_dir().join(spec_name);
-
-    // Recursively compare directories
-    compare_directories_recursive(&golden_dir, &golden_dir, generated, spec_name)?;
-
-    println!("Golden file test passed for {}", spec_name);
-    Ok(())
-}
-
-/// Recursively compare directories and files
-fn compare_directories_recursive(
-    base_dir: &Path,
-    current_dir: &Path,
-    generated: &HashMap<String, String>,
-    spec_name: &str,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    if !current_dir.exists() {
-        println!("Golden directory not found: {}", current_dir.display());
-        return Err(format!("Golden directory not found: {}", current_dir.display()).into());
-    }
-
-    // Walk through the golden directory recursively
-    for entry in fs::read_dir(current_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-            // Recursively compare subdirectories
-            compare_directories_recursive(base_dir, &path, generated, spec_name)?;
-        } else if path.is_file() {
-            // Compare individual files
-            let relative_path = path.strip_prefix(base_dir)?;
-            // Normalize path separators to forward slashes for consistency
-            let golden_filename = relative_path.to_string_lossy().replace('\\', "/");
-
-            // Convert golden filename back to generated filename
-            let filename = match from_golden_filename(&golden_filename) {
-                Some(f) => f,
-                None => {
-                    println!(
-                        "Golden file does not have .golden suffix: {}",
-                        golden_filename
-                    );
-                    return Err(format!(
-                        "Golden file does not have .golden suffix: {}",
-                        golden_filename
-                    )
-                    .into());
-                }
-            };
-
-            if let Some(generated_content) = generated.get(&filename) {
-                let golden_content = fs::read_to_string(&path)?;
-
-                if generated_content != &golden_content {
-                    show_diff(spec_name, &filename, &golden_content, generated_content);
-                    return Err(
-                        format!("Golden file mismatch for {}: {}", spec_name, filename).into(),
-                    );
-                }
-            } else {
-                println!(
-                    "Generated file not found for golden file: {}",
-                    golden_filename
-                );
-                return Err(format!(
-                    "Generated file not found for golden file: {}",
-                    golden_filename
-                )
-                .into());
-            }
-        }
-    }
-
-    Ok(())
-}
-
-/// Show a diff when golden files don't match
-fn show_diff(spec_name: &str, filename: &str, golden: &str, generated: &str) {
-    println!("Content mismatch in: {}/{}", spec_name, filename);
-    println!("{}", "=".repeat(80));
-
-    let diff = TextDiff::from_lines(golden, generated);
-    println!(
-        "{}",
-        diff.unified_diff()
-            .context_radius(3)
-            .header("golden", "generated")
-    );
-
-    println!("To update golden files, run:");
-    println!("   UPDATE_GOLDEN=1 cargo test --test golden_tests_go_http");
-}
-
-/// Map of test case names to their fixture paths
 #[rustfmt::skip]
 fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
-    [
+    test_cases_from_slice(&[
         ("petstore", "valid/petstore.yaml"),
 
         ("comprehensive-schemas", "valid/comprehensive-schemas.yaml"),
@@ -298,7 +28,9 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("duplicate-param-names", "valid/duplicate-param-names.yaml"),
         ("interface-with-enum-reference", "valid/interface-with-enum-reference.yaml"),
         ("minimal", "valid/minimal.yaml"),
+        ("multiple-similar-request-schemas", "valid/multiple-similar-request-schemas.yaml"),
         ("naming-conventions", "valid/naming-conventions.yaml"),
+        ("request-body-content-types", "valid/request-body-content-types.yaml"),
         ("server-object", "valid/server-object.yaml"),
 
         ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
@@ -341,28 +73,24 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
         ("enum-repr", "valid/enum-repr/enum-repr.yaml"),
         ("query-param-enum", "valid/query/query-param-enum.yaml"),
-    ]
-    .into_iter()
-    .collect()
+    ])
 }
 
-/// Generate and run golden file tests from the test cases HashMap
-fn run_golden_test(spec_name: &str, fixture_path: &str) {
-    if let Err(e) = test_golden_files(spec_name, fixture_path) {
-        println!("Golden test failed for {}: {}", spec_name, e);
-        process::exit(1);
-    }
-}
-
-// Generate test functions from the HashMap
 macro_rules! generate_golden_tests {
     ($($test_name:ident: $spec_name:expr),* $(,)?) => {
         $(
             #[test]
             #[traced_test]
             fn $test_name() {
-                let test_cases = get_golden_test_cases();
-                run_golden_test($spec_name, test_cases.get($spec_name).unwrap());
+                let cases = get_golden_test_cases();
+                let generator = GoHttpCodeGenerator::new(toml::value::Table::new());
+                run_golden_test(
+                    &generator,
+                    golden_dir(),
+                    $spec_name,
+                    cases.get($spec_name).unwrap(),
+                    UPDATE_HINT,
+                );
             }
         )*
     };
@@ -376,7 +104,9 @@ generate_golden_tests! {
     test_duplicate_param_names_golden: "duplicate-param-names",
     test_interface_with_enum_reference_golden: "interface-with-enum-reference",
     test_minimal_golden: "minimal",
+    test_multiple_similar_request_schemas_golden: "multiple-similar-request-schemas",
     test_naming_conventions_golden: "naming-conventions",
+    test_request_body_content_types_golden: "request-body-content-types",
     test_server_object_golden: "server-object",
 
     test_recursive_json_all_optional_properties_golden: "recursive-json-all-optional-properties",

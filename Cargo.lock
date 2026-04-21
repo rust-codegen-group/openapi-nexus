@@ -424,22 +424,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
-name = "errno"
-version = "0.3.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
-dependencies = [
- "libc",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "fastrand"
-version = "2.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
-
-[[package]]
 name = "find-msvc-tools"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -909,12 +893,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "linux-raw-sys"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
-
-[[package]]
 name = "litemap"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1031,10 +1009,9 @@ dependencies = [
  "openapi-nexus-config",
  "openapi-nexus-core",
  "openapi-nexus-go-http",
+ "openapi-nexus-ir",
  "openapi-nexus-parser",
  "openapi-nexus-typescript-fetch",
- "snafu 0.8.9",
- "toml",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1048,14 +1025,13 @@ dependencies = [
  "openapi-nexus-core",
  "serde",
  "toml",
- "tracing",
 ]
 
 [[package]]
 name = "openapi-nexus-core"
 version = "0.0.5"
 dependencies = [
- "openapi-nexus-spec",
+ "openapi-nexus-ir",
  "serde",
  "serde_plain",
 ]
@@ -1068,13 +1044,10 @@ dependencies = [
  "openapi-nexus-core",
  "openapi-nexus-ir",
  "openapi-nexus-parser",
- "openapi-nexus-spec",
+ "openapi-nexus-test-utils",
  "serde",
  "serde_json",
- "serde_norway",
  "sigil-stitch",
- "similar",
- "snafu 0.8.9",
  "toml",
  "tracing",
  "tracing-test",
@@ -1086,15 +1059,10 @@ version = "0.0.5"
 dependencies = [
  "heck",
  "indexmap",
- "openapi-nexus-core",
  "openapi-nexus-parser",
  "openapi-nexus-spec",
  "serde",
  "serde_json",
- "snafu 0.8.9",
- "tempfile",
- "tracing",
- "utoipa",
 ]
 
 [[package]]
@@ -1107,33 +1075,6 @@ dependencies = [
  "serde_norway",
  "snafu 0.8.9",
  "tracing",
- "utoipa",
-]
-
-[[package]]
-name = "openapi-nexus-plugin"
-version = "0.0.5"
-dependencies = [
- "openapi-nexus-spec",
- "serde",
- "serde_json",
- "snafu 0.8.9",
- "utoipa",
-]
-
-[[package]]
-name = "openapi-nexus-rust-reqwest"
-version = "0.0.5"
-dependencies = [
- "heck",
- "indexmap",
- "openapi-nexus-plugin",
- "openapi-nexus-spec",
- "pretty",
- "serde",
- "snafu 0.8.9",
- "tracing",
- "utoipa",
 ]
 
 [[package]]
@@ -1152,6 +1093,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openapi-nexus-test-utils"
+version = "0.0.5"
+dependencies = [
+ "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "similar",
+]
+
+[[package]]
 name = "openapi-nexus-typescript-fetch"
 version = "0.0.5"
 dependencies = [
@@ -1159,13 +1110,10 @@ dependencies = [
  "openapi-nexus-core",
  "openapi-nexus-ir",
  "openapi-nexus-parser",
- "openapi-nexus-spec",
+ "openapi-nexus-test-utils",
  "serde",
  "serde_json",
- "serde_norway",
  "sigil-stitch",
- "similar",
- "snafu 0.8.9",
  "toml",
  "tracing",
  "tracing-test",
@@ -1352,19 +1300,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
-]
-
-[[package]]
-name = "rustix"
-version = "1.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "146c9e247ccc180c1f61615433868c99f3de3ae256a30a43b49f67c2d9171f34"
-dependencies = [
- "bitflags",
- "errno",
- "libc",
- "linux-raw-sys",
- "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1673,19 +1608,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tempfile"
-version = "3.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "655da9c7eb6305c55742045d5a8d2037996d61d8de95806335c7c86ce0f82e9c"
-dependencies = [
- "fastrand",
- "getrandom 0.3.4",
- "once_cell",
- "rustix",
- "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -1,9 +1,8 @@
-//! Phase 3: sigil-stitch emit for IR schemas.
+//! Sigil-stitch emit for IR schemas.
 //!
 //! Dispatches on `IrSchemaKind` and produces a `FileSpec<TypeScript>` per
 //! schema. Each model file carries a `@generated` header and the declaration
-//! (interface / type alias / union / etc.) matching
-//! `docs/target-output-spec.md`.
+//! (interface / type alias / union / etc.).
 //!
 //! Coverage:
 //! - `Object` — `export interface`
@@ -13,16 +12,6 @@
 //! - `Intersection` — `export type X = A & B & C;` (allOf)
 //! - `TaggedUnion` — discriminated union across Internal / Adjacent / External
 //!   tagging styles, each variant narrows on the discriminator literal.
-//!
-//! Not yet wired into [`crate::codegen::TypeScriptFetchCodeGenerator`]. This
-//! lives in the public surface so integration tests can exercise it directly.
-//!
-//! # Known upstream gaps
-//!
-//! 1. **Field-level doc comment indentation is broken.** Inner `*` lines sit
-//!    flush-left instead of aligning with the field indent. Cosmetic.
-//! 2. **`Visibility::Public` on interface fields leaks `public` keyword.** TS
-//!    interfaces don't accept `public` — field visibility is left unset.
 
 use heck::{ToLowerCamelCase, ToPascalCase};
 use openapi_nexus_core::traits::file_writer::FileInfo;
@@ -40,8 +29,6 @@ use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
 /// Emit a TypeScript model file for an IR schema. Dispatches on `schema.kind`.
-///
-/// Returns `None` only for kinds not yet implemented (Stage B/C).
 pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
     match &schema.kind {
         IrSchemaKind::Object(obj) => Some(emit_object_file(schema, obj)),
@@ -354,9 +341,7 @@ fn type_expr_to_typename_nested(expr: &IrTypeExpr) -> TypeName<TypeScript> {
     }
 }
 
-/// Lower every supported `IrSchema` in the spec into a sigil-rendered
-/// `FileInfo`. Fails if a schema kind isn't yet implemented — Stage B/C close
-/// that gap.
+/// Lower every `IrSchema` in the spec into a sigil-rendered `FileInfo`.
 pub fn generate_model_files(ir: &IrSpec) -> Result<Vec<FileInfo>, String> {
     let header = crate::project_files::render_file_header(&ir.info);
     let mut files = Vec::with_capacity(ir.schemas.len());

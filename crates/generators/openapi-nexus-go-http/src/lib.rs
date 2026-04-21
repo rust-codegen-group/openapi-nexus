@@ -1,6 +1,6 @@
 //! Go HTTP code generator for OpenAPI specifications.
 //!
-//! This crate lowers an `OpenApiV31Spec` through `openapi-nexus-ir` and emits
+//! This crate receives a pre-lowered `IrSpec` from `openapi-nexus-ir` and emits
 //! idiomatic Go using `sigil-stitch`. The surface area is intentionally small:
 //! one `sdk` package with functional-option construction, an `Authenticator`
 //! interface for auth plumbing, typed response structs per operation, and plain

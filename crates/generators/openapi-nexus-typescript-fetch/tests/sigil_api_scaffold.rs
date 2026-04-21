@@ -1,12 +1,7 @@
-//! Slice D / D-stage 1 smoke test: `sigil_emit_api::generate_api_files` must
-//! produce one API class file per tag for the petstore fixture and each file
-//! must contain structural fragments (imports, ApiInterface, ApiClass, at
-//! least one Raw + convenience method pair).
-//!
-//! This is *not* a golden test. Method bodies in the scaffold are placeholder
-//! `throw` statements and are expected to diverge from the live generator's
-//! output. D-stage 2 fills in the real bodies; D-stage 3 cuts the generator
-//! over and promotes a golden comparison.
+//! Smoke test: `sigil_emit_api::generate_api_files` must produce one API class
+//! file per tag for the petstore fixture and each file must contain structural
+//! fragments (imports, ApiInterface, ApiClass, at least one Raw + convenience
+//! method pair).
 
 use std::fs;
 use std::path::Path;

@@ -69,18 +69,18 @@ impl OpenApiCodeGenerator {
             }
         };
 
-        // Legacy path: extract v3.1 spec for current generators
-        // (TypeScript generator handles IR lowering internally)
-        let openapi = match parsed.as_v31() {
-            Some(spec) => spec,
-            None => {
-                error!(
-                    "OpenAPI 3.0 specs are not yet supported by generators directly. \
-                     This will be resolved when generators migrate to the IR pipeline."
-                );
+        let ir = match openapi_nexus_ir::lower::lower(parsed) {
+            Ok(ir) => ir,
+            Err(e) => {
+                error!("Failed to lower OpenAPI spec to IR: {}. Skipping.", e);
                 return;
             }
         };
+        info!(
+            "Lowered to IR: {} schemas, {} operations",
+            ir.schemas.len(),
+            ir.operations.len()
+        );
 
         // Get generators from config
         let generators = config
@@ -112,7 +112,7 @@ impl OpenApiCodeGenerator {
                 }
             };
 
-            let files = match generator.generate(openapi) {
+            let files = match generator.generate(&ir) {
                 Ok(files) => files,
                 Err(e) => {
                     error!(

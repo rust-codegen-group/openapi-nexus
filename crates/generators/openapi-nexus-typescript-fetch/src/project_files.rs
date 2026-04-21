@@ -1,9 +1,4 @@
 //! Hardcoded TypeScript-fetch runtime, README, and index files.
-//!
-//! Replaces the minijinja templates that previously rendered these: the
-//! runtime body is fully static except for the base URL, the README is a
-//! handful of string substitutions, and the `index.ts` aggregators are a
-//! header plus export list. No engine needed.
 
 use heck::ToKebabCase as _;
 

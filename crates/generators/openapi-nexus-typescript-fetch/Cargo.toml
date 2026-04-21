@@ -14,17 +14,14 @@ heck.workspace = true
 serde.workspace = true
 sigil-stitch.workspace = true
 serde_json.workspace = true
-snafu.workspace = true
 toml.workspace = true
 tracing.workspace = true
 
 openapi-nexus-core.workspace = true
 openapi-nexus-ir.workspace = true
-openapi-nexus-spec.workspace = true
 
 [dev-dependencies]
-serde_norway.workspace = true
-similar.workspace = true
 tracing-test.workspace = true
 
 openapi-nexus-parser.workspace = true
+openapi-nexus-test-utils.workspace = true

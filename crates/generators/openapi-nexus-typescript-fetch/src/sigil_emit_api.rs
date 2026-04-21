@@ -760,7 +760,13 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, Str
 }
 
 fn is_void_type(ty: &TypeName<TypeScript>) -> bool {
-    format!("{:?}", ty) == format!("{:?}", TypeName::<TypeScript>::primitive("void"))
+    let Ok(val) = serde_json::to_value(ty) else {
+        return false;
+    };
+    let Ok(void_val) = serde_json::to_value(TypeName::<TypeScript>::primitive("void")) else {
+        return false;
+    };
+    val == void_val
 }
 
 // ============================================================================
