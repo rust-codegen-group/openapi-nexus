@@ -80,9 +80,17 @@ jobs:
             cmd: just golden::build-ts
           - generator: go-http
             cmd: just golden::build-go
+          - generator: rust-reqwest
+            cmd: just golden::build-rust-reqwest
+          - generator: rust-ureq
+            cmd: just golden::build-rust-ureq
+          - generator: rust-aioduct
+            cmd: just golden::build-rust-aioduct
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        if: contains(matrix.generator, 'rust-')
       - uses: actions/setup-node@v6
         if: matrix.generator == 'typescript-fetch'
         with:

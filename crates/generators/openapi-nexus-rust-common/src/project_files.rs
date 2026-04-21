@@ -22,7 +22,7 @@ pub fn render_file_header(info: &IrInfo) -> String {
 /// Generate `lib.rs` with standard module re-exports.
 pub fn lib_rs_file(header: &str) -> FileInfo {
     let content = format!("{header}pub mod apis;\npub mod models;\npub mod runtime;\n");
-    FileInfo::project("lib.rs".to_string(), content)
+    FileInfo::project("src/lib.rs".to_string(), content)
 }
 
 /// Generate `README.md` from IR info.

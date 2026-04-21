@@ -76,7 +76,11 @@ impl CodeGenerator for RustUreqCodeGenerator {
     }
 }
 
-impl FileWriter for RustUreqCodeGenerator {}
+impl FileWriter for RustUreqCodeGenerator {
+    fn source_dir(&self) -> Option<&str> {
+        Some("src")
+    }
+}
 
 fn cargo_toml_file(crate_name: &str, info: &IrInfo) -> FileInfo {
     let description = info.description.as_deref().unwrap_or("Generated Rust SDK.");
