@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 /// Array of inline objects with nested inline objects and arrays
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComplexArrayStructure {
-    pub items: Vec<ComplexArrayStructureItemsItem>,
+    pub items: Vec<super::ComplexArrayStructureItemsItem>,
 }

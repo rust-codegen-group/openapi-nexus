@@ -145,7 +145,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async createUser(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
@@ -189,7 +188,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async createUsersWithListInput(requestParameters: ApiCreateUsersWithListInputRequest,
@@ -233,7 +231,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async loginUser(requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit
@@ -267,7 +264,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async logoutUser(initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
@@ -314,7 +310,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async getUserByName(requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit
@@ -371,7 +366,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async updateUser(requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit
@@ -419,7 +413,6 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async deleteUser(requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit

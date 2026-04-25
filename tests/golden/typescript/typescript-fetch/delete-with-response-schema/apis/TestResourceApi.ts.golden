@@ -83,7 +83,6 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async createTestResource(requestParameters: ApiCreateTestResourceRequest,
@@ -131,7 +130,6 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async deleteTestResource(requestParameters: ApiDeleteTestResourceRequest,

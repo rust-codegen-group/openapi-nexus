@@ -7,6 +7,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Quux {
-    pub foo: Foo,
+    pub foo: super::Foo,
     pub name: String,
 }

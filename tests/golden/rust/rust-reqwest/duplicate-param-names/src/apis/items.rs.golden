@@ -14,7 +14,9 @@ pub struct ItemsApi<'a> {
 impl<'a> ItemsApi<'a> {
     /// Create a new `ItemsApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Create item with body parameter conflict
@@ -39,10 +41,7 @@ impl<'a> ItemsApi<'a> {
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = CreateItemWithBodyConflictResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = CreateItemWithBodyConflictResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);

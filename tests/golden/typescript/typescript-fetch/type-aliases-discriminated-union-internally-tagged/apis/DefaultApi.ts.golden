@@ -67,7 +67,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async createResource(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit

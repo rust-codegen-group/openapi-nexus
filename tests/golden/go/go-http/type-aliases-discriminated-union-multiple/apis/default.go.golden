@@ -20,7 +20,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -33,15 +33,12 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // CreateContainerResponse carries the response from the corresponding operation.
 type CreateContainerResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.ContainerKind
 }
 
 // CreateContainer — Create container with ContainerKind discriminated union
-func (a *DefaultAPI) CreateContainer(
-	ctx context.Context,
-	body *models.ContainerKind,
-) (*CreateContainerResponse, error) {
+func (a *DefaultAPI) CreateContainer(ctx context.Context, body *models.ContainerKind) (*CreateContainerResponse, error) {
 	path := "/container"
 	var bodyReader io.Reader
 	if body != nil {
@@ -65,17 +62,17 @@ func (a *DefaultAPI) CreateContainer(
 
 	resp := &CreateContainerResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.ContainerKind
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.ContainerKind
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -83,15 +80,12 @@ func (a *DefaultAPI) CreateContainer(
 // CreateVolumeResponse carries the response from the corresponding operation.
 type CreateVolumeResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.VolumeKind
 }
 
 // CreateVolume — Create volume with VolumeKind discriminated union
-func (a *DefaultAPI) CreateVolume(
-	ctx context.Context,
-	body *models.VolumeKind,
-) (*CreateVolumeResponse, error) {
+func (a *DefaultAPI) CreateVolume(ctx context.Context, body *models.VolumeKind) (*CreateVolumeResponse, error) {
 	path := "/volume"
 	var bodyReader io.Reader
 	if body != nil {
@@ -115,17 +109,17 @@ func (a *DefaultAPI) CreateVolume(
 
 	resp := &CreateVolumeResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.VolumeKind
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.VolumeKind
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

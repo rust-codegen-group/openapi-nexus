@@ -8,3 +8,4 @@ description = "Test fixture for DELETE operations with JSON response schemas and
 ureq = { version = "3", features = ["json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_repr = "0.1"

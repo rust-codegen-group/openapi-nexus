@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 /// Three levels of nested inline objects
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeeplyNestedInline {
-    pub level_one: DeeplyNestedInlineLevelOne,
+    pub level_one: super::DeeplyNestedInlineLevelOne,
 }

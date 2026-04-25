@@ -1092,6 +1092,7 @@ dependencies = [
  "openapi-nexus-test-utils",
  "serde",
  "serde_json",
+ "sigil-stitch",
  "toml",
  "tracing",
  "tracing-test",
@@ -1106,6 +1107,7 @@ dependencies = [
  "openapi-nexus-ir",
  "serde",
  "serde_json",
+ "sigil-stitch",
  "toml",
  "tracing",
 ]
@@ -1122,6 +1124,7 @@ dependencies = [
  "openapi-nexus-test-utils",
  "serde",
  "serde_json",
+ "sigil-stitch",
  "toml",
  "tracing",
  "tracing-test",
@@ -1139,6 +1142,7 @@ dependencies = [
  "openapi-nexus-test-utils",
  "serde",
  "serde_json",
+ "sigil-stitch",
  "toml",
  "tracing",
  "tracing-test",
@@ -1538,9 +1542,9 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sigil-stitch"
-version = "0.2.2"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86256bdfed4d3e655dffa5281052778de302c1ee6aa3f2b69c67415149b127af"
+checksum = "e1ab5fcbdade502fde3c57f1c9529df75db917f01684c0ba6d3263895480627c"
 dependencies = [
  "pretty",
  "serde",
@@ -1550,9 +1554,9 @@ dependencies = [
 
 [[package]]
 name = "sigil-stitch-macros"
-version = "0.2.2"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e17cafd1652989556f7432da04546e590b9cda511e6bff5d3b55d095aeb7765b"
+checksum = "090b80aae531e9a1092847daf23e09f4aab5ca631e6dc58ca026e04ffc0a657e"
 dependencies = [
  "proc-macro2",
  "quote",

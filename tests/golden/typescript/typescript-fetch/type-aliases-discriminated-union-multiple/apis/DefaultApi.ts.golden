@@ -79,7 +79,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async createContainer(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
@@ -123,7 +122,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async createVolume(requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit

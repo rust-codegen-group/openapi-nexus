@@ -14,7 +14,9 @@ pub struct PetApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
     /// Create a new `PetApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Update an existing pet
@@ -28,10 +30,7 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = UpdatePetResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = UpdatePetResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -52,10 +51,7 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = AddPetResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = AddPetResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -70,21 +66,18 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
         &self,
         status: &String,
     ) -> Result<FindPetsByStatusResponse, Error> {
-        let path = "/pet/findByStatus".to_string();
+        let mut path = "/pet/findByStatus".to_string();
         let mut query_parts: Vec<(&str, String)> = Vec::new();
         query_parts.push(("status", status.to_string()));
         if !query_parts.is_empty() {
             let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
             path = format!("{}?{}", path, qs.join("&"));
         }
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = FindPetsByStatusResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = FindPetsByStatusResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -99,21 +92,18 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
         &self,
         tags: &Vec<String>,
     ) -> Result<FindPetsByTagsResponse, Error> {
-        let path = "/pet/findByTags".to_string();
+        let mut path = "/pet/findByTags".to_string();
         let mut query_parts: Vec<(&str, String)> = Vec::new();
-        query_parts.push(("tags", tags.to_string()));
+        query_parts.push(("tags", tags.iter().map(ToString::to_string).collect::<Vec<_>>().join(",")));
         if !query_parts.is_empty() {
             let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
             path = format!("{}?{}", path, qs.join("&"));
         }
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = FindPetsByTagsResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = FindPetsByTagsResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -130,14 +120,11 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
     ) -> Result<GetPetByIdResponse, Error> {
         let mut path = "/pet/{petId}".to_string();
         path = path.replace("{petId}", &pet_id.to_string());
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = GetPetByIdResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetPetByIdResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -167,14 +154,11 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
             let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
             path = format!("{}?{}", path, qs.join("&"));
         }
-        let mut req = self.client.post(&path)?;
+        let req = self.client.post(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = UpdatePetWithFormResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = UpdatePetWithFormResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -191,7 +175,7 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
     ) -> Result<DeletePetResponse, Error> {
         let mut path = "/pet/{petId}".to_string();
         path = path.replace("{petId}", &pet_id.to_string());
-        let mut req = self.client.delete(&path)?;
+        let req = self.client.delete(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(DeletePetResponse { status_code })
@@ -213,14 +197,11 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
             let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
             path = format!("{}?{}", path, qs.join("&"));
         }
-        let mut req = self.client.post(&path)?;
+        let req = self.client.post(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = UploadFileResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = UploadFileResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -249,14 +230,14 @@ pub struct AddPetResponse {
 #[derive(Debug)]
 pub struct FindPetsByStatusResponse {
     pub status_code: u16,
-    pub data: Option<Vec<Pet>>,
+    pub data: Option<Vec<crate::models::Pet>>,
 }
 
 /// Response from `find_pets_by_tags`.
 #[derive(Debug)]
 pub struct FindPetsByTagsResponse {
     pub status_code: u16,
-    pub data: Option<Vec<Pet>>,
+    pub data: Option<Vec<crate::models::Pet>>,
 }
 
 /// Response from `get_pet_by_id`.

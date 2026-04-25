@@ -117,7 +117,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async handleAdjacentlyTagged(requestParameters: ApiHandleAdjacentlyTaggedRequest,
@@ -164,7 +163,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async handleExternallyTagged(requestParameters: ApiHandleExternallyTaggedRequest,
@@ -211,7 +209,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async handleInternallyTagged(requestParameters: ApiHandleInternallyTaggedRequest,
@@ -258,7 +255,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async handleMixed(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
@@ -305,7 +301,6 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async handleUntagged(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit

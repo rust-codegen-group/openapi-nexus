@@ -18,7 +18,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// TestResourceAPI groups operations under the "test-resource" tag.
+// TestResourceAPI groups operations under the corresponding tag.
 type TestResourceAPI struct {
 	client *runtime.Client
 }
@@ -31,15 +31,13 @@ func NewTestResourceAPI(client *runtime.Client) *TestResourceAPI {
 // CreateTestResourceResponse carries the response from the corresponding operation.
 type CreateTestResourceResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.CreateTestResourceResponse
 }
 
 // CreateTestResource calls POST /v1/api/test-resource.
-func (a *TestResourceAPI) CreateTestResource(
-	ctx context.Context,
-	body *models.CreateTestResourceRequest,
-) (*CreateTestResourceResponse, error) {
+func (a *TestResourceAPI) CreateTestResource(ctx context.Context,
+body *models.CreateTestResourceRequest) (*CreateTestResourceResponse, error) {
 	path := "/v1/api/test-resource"
 	var bodyReader io.Reader
 	if body != nil {
@@ -63,17 +61,17 @@ func (a *TestResourceAPI) CreateTestResource(
 
 	resp := &CreateTestResourceResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.CreateTestResourceResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.CreateTestResourceResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -81,17 +79,14 @@ func (a *TestResourceAPI) CreateTestResource(
 // DeleteTestResourceResponse carries the response from the corresponding operation.
 type DeleteTestResourceResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.DeleteTestResourceResponse
 	Status4XX *models.HttpErrorResponse
 	Status5XX *models.HttpErrorResponse
 }
 
 // DeleteTestResource calls DELETE /v1/api/test-resource/{resource_id}.
-func (a *TestResourceAPI) DeleteTestResource(
-	ctx context.Context,
-	resourceId string,
-) (*DeleteTestResourceResponse, error) {
+func (a *TestResourceAPI) DeleteTestResource(ctx context.Context, resourceId string) (*DeleteTestResourceResponse, error) {
 	path := "/v1/api/test-resource/{resource_id}"
 	path = strings.Replace(path, "{resource_id}", resourceId, 1)
 	req, err := a.client.NewRequest(ctx, "DELETE", path, nil, nil)
@@ -107,17 +102,17 @@ func (a *TestResourceAPI) DeleteTestResource(
 
 	resp := &DeleteTestResourceResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.DeleteTestResourceResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.DeleteTestResourceResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

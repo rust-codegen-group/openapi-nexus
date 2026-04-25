@@ -19,7 +19,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// UsersAPI groups operations under the "users" tag.
+// UsersAPI groups operations under the corresponding tag.
 type UsersAPI struct {
 	client *runtime.Client
 }
@@ -32,17 +32,12 @@ func NewUsersAPI(client *runtime.Client) *UsersAPI {
 // GetUserByIdDuplicateResponse carries the response from the corresponding operation.
 type GetUserByIdDuplicateResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.GetUserByIdDuplicateResponse200
 }
 
 // GetUserByIdDuplicate — Get user by ID with duplicate parameter names
-func (a *UsersAPI) GetUserByIdDuplicate(
-	ctx context.Context,
-	id int64,
-	id2 *int64,
-	id3 *string,
-) (*GetUserByIdDuplicateResponse, error) {
+func (a *UsersAPI) GetUserByIdDuplicate(ctx context.Context, id int64, id2 *int64, id3 *string) (*GetUserByIdDuplicateResponse, error) {
 	path := "/users/{id}"
 	path = strings.Replace(path, "{id}", strconv.FormatInt(int64(id), 10), 1)
 	query := url.Values{}
@@ -65,17 +60,17 @@ func (a *UsersAPI) GetUserByIdDuplicate(
 
 	resp := &GetUserByIdDuplicateResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.GetUserByIdDuplicateResponse200
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.GetUserByIdDuplicateResponse200
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

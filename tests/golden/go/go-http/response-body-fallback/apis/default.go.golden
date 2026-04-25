@@ -15,7 +15,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -28,13 +28,11 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // GetFallbackNoBodyResponse carries the response from the corresponding operation.
 type GetFallbackNoBodyResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // GetFallbackNoBody calls GET /fallback/no-body.
-func (a *DefaultAPI) GetFallbackNoBody(
-	ctx context.Context,
-) (*GetFallbackNoBodyResponse, error) {
+func (a *DefaultAPI) GetFallbackNoBody(ctx context.Context) (*GetFallbackNoBodyResponse, error) {
 	path := "/fallback/no-body"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -58,14 +56,12 @@ func (a *DefaultAPI) GetFallbackNoBody(
 // GetFallbackWithBodyResponse carries the response from the corresponding operation.
 type GetFallbackWithBodyResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.GetFallbackWithBodyResponse200
 }
 
 // GetFallbackWithBody calls GET /fallback/with-body.
-func (a *DefaultAPI) GetFallbackWithBody(
-	ctx context.Context,
-) (*GetFallbackWithBodyResponse, error) {
+func (a *DefaultAPI) GetFallbackWithBody(ctx context.Context) (*GetFallbackWithBodyResponse, error) {
 	path := "/fallback/with-body"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -80,17 +76,17 @@ func (a *DefaultAPI) GetFallbackWithBody(
 
 	resp := &GetFallbackWithBodyResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.GetFallbackWithBodyResponse200
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.GetFallbackWithBodyResponse200
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

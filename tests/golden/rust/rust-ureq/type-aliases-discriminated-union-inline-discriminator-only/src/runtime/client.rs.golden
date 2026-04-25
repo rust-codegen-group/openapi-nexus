@@ -16,7 +16,6 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::runtime::auth::Authenticator;
-use crate::runtime::error::Error;
 
 /// Synchronous HTTP client wrapping `ureq::Agent`.
 pub struct Client {
@@ -50,18 +49,47 @@ impl Client {
         self
     }
 
-    /// Build a request for the given method and path.
-    pub fn request(
-        &self,
-        method: &str,
-        path: &str,
-    ) -> Result<ureq::RequestBuilder, Error> {
-        let url = format!("{}{}", self.base_url, path);
-        let mut req = self.inner.request(method, &url);
+    fn full_url(&self, path: &str) -> String {
+        format!("{}{}", self.base_url, path)
+    }
+
+    fn apply_auth<S>(&self, mut req: ureq::RequestBuilder<S>) -> ureq::RequestBuilder<S> {
         if let Some(auth) = &self.authenticator {
-            req = auth.authenticate(req)?;
+            for (key, value) in auth.auth_headers() {
+                req = req.header(key, &value);
+            }
         }
-        Ok(req)
+        req
+    }
+
+    /// Build a GET request.
+    pub fn get(&self, path: &str) -> ureq::RequestBuilder<ureq::typestate::WithoutBody> {
+        self.apply_auth(self.inner.get(&self.full_url(path)))
+    }
+
+    /// Build a POST request.
+    pub fn post(&self, path: &str) -> ureq::RequestBuilder<ureq::typestate::WithBody> {
+        self.apply_auth(self.inner.post(&self.full_url(path)))
+    }
+
+    /// Build a PUT request.
+    pub fn put(&self, path: &str) -> ureq::RequestBuilder<ureq::typestate::WithBody> {
+        self.apply_auth(self.inner.put(&self.full_url(path)))
+    }
+
+    /// Build a DELETE request.
+    pub fn delete(&self, path: &str) -> ureq::RequestBuilder<ureq::typestate::WithoutBody> {
+        self.apply_auth(self.inner.delete(&self.full_url(path)))
+    }
+
+    /// Build a PATCH request.
+    pub fn patch(&self, path: &str) -> ureq::RequestBuilder<ureq::typestate::WithBody> {
+        self.apply_auth(self.inner.patch(&self.full_url(path)))
+    }
+
+    /// Build a HEAD request.
+    pub fn head(&self, path: &str) -> ureq::RequestBuilder<ureq::typestate::WithoutBody> {
+        self.apply_auth(self.inner.head(&self.full_url(path)))
     }
 }
 

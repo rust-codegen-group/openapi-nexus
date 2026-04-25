@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Qux {
     pub namespace: String,
-    pub type: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
     pub url: String,
 }

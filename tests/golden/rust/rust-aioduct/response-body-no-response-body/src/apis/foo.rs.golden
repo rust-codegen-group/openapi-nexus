@@ -13,7 +13,9 @@ pub struct FooApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> FooApi<'a, R> {
     /// Create a new `FooApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// PATCH /foo/bar
@@ -29,11 +31,7 @@ impl<'a, R: aioduct::Runtime> FooApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = UpdateFooBarResponse {
-            status_code,
-            status_400: None,
-            status_500: None,
-        };
+        let mut result = UpdateFooBarResponse { status_code, status_400: None, status_500: None };
         match status_code {
             400 => {
                 result.status_400 = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);

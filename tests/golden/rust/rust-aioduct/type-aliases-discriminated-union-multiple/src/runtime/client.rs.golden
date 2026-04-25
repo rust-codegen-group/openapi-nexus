@@ -18,7 +18,7 @@ use crate::runtime::error::Error;
 pub struct Client<R: Runtime> {
     inner: aioduct::Client<R>,
     base_url: String,
-    authenticator: Option<Arc<dyn Authenticator>>,
+    authenticator: Option<Arc<dyn Authenticator<R>>>,
 }
 
 impl<R: Runtime> Client<R> {
@@ -41,7 +41,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Attach an authenticator to the client.
-    pub fn with_auth(mut self, auth: Arc<dyn Authenticator>) -> Self {
+    pub fn with_auth(mut self, auth: Arc<dyn Authenticator<R>>) -> Self {
         self.authenticator = Some(auth);
         self
     }
@@ -51,7 +51,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a GET request.
-    pub fn get(&self, path: &str) -> Result<aioduct::RequestBuilder<R>, Error> {
+    pub fn get(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
         let mut req = self.inner.get(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -60,7 +60,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a POST request.
-    pub fn post(&self, path: &str) -> Result<aioduct::RequestBuilder<R>, Error> {
+    pub fn post(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
         let mut req = self.inner.post(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -69,7 +69,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a PUT request.
-    pub fn put(&self, path: &str) -> Result<aioduct::RequestBuilder<R>, Error> {
+    pub fn put(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
         let mut req = self.inner.put(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -78,7 +78,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a DELETE request.
-    pub fn delete(&self, path: &str) -> Result<aioduct::RequestBuilder<R>, Error> {
+    pub fn delete(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
         let mut req = self.inner.delete(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -87,7 +87,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a PATCH request.
-    pub fn patch(&self, path: &str) -> Result<aioduct::RequestBuilder<R>, Error> {
+    pub fn patch(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
         let mut req = self.inner.patch(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -96,7 +96,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a HEAD request.
-    pub fn head(&self, path: &str) -> Result<aioduct::RequestBuilder<R>, Error> {
+    pub fn head(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
         let mut req = self.inner.head(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;

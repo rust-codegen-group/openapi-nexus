@@ -9,5 +9,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FooMember3 {
     /// Nested object in third type
-    pub grault: FooMember3Grault,
+    pub grault: super::FooMember3Grault,
 }

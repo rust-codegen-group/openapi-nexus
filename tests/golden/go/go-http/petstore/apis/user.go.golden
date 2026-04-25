@@ -19,7 +19,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// UserAPI groups operations under the "user" tag.
+// UserAPI groups operations under the corresponding tag.
 type UserAPI struct {
 	client *runtime.Client
 }
@@ -32,15 +32,12 @@ func NewUserAPI(client *runtime.Client) *UserAPI {
 // CreateUserResponse carries the response from the corresponding operation.
 type CreateUserResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.User
 }
 
 // CreateUser — Create user
-func (a *UserAPI) CreateUser(
-	ctx context.Context,
-	body *models.User,
-) (*CreateUserResponse, error) {
+func (a *UserAPI) CreateUser(ctx context.Context, body *models.User) (*CreateUserResponse, error) {
 	path := "/user"
 	var bodyReader io.Reader
 	if body != nil {
@@ -64,17 +61,17 @@ func (a *UserAPI) CreateUser(
 
 	resp := &CreateUserResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.User
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.User
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -82,15 +79,12 @@ func (a *UserAPI) CreateUser(
 // CreateUsersWithListInputResponse carries the response from the corresponding operation.
 type CreateUsersWithListInputResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.User
 }
 
 // CreateUsersWithListInput — Creates list of users with given input array
-func (a *UserAPI) CreateUsersWithListInput(
-	ctx context.Context,
-	body []models.User,
-) (*CreateUsersWithListInputResponse, error) {
+func (a *UserAPI) CreateUsersWithListInput(ctx context.Context, body []models.User) (*CreateUsersWithListInputResponse, error) {
 	path := "/user/createWithList"
 	var bodyReader io.Reader
 	if body != nil {
@@ -114,17 +108,17 @@ func (a *UserAPI) CreateUsersWithListInput(
 
 	resp := &CreateUsersWithListInputResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.User
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.User
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -132,15 +126,11 @@ func (a *UserAPI) CreateUsersWithListInput(
 // LoginUserResponse carries the response from the corresponding operation.
 type LoginUserResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // LoginUser — Logs user into the system
-func (a *UserAPI) LoginUser(
-	ctx context.Context,
-	username *string,
-	password *string,
-) (*LoginUserResponse, error) {
+func (a *UserAPI) LoginUser(ctx context.Context, username *string, password *string) (*LoginUserResponse, error) {
 	path := "/user/login"
 	query := url.Values{}
 	if username != nil {
@@ -171,13 +161,11 @@ func (a *UserAPI) LoginUser(
 // LogoutUserResponse carries the response from the corresponding operation.
 type LogoutUserResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // LogoutUser — Logs out current logged in user session
-func (a *UserAPI) LogoutUser(
-	ctx context.Context,
-) (*LogoutUserResponse, error) {
+func (a *UserAPI) LogoutUser(ctx context.Context) (*LogoutUserResponse, error) {
 	path := "/user/logout"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -201,15 +189,12 @@ func (a *UserAPI) LogoutUser(
 // GetUserByNameResponse carries the response from the corresponding operation.
 type GetUserByNameResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.User
 }
 
 // GetUserByName — Get user by user name
-func (a *UserAPI) GetUserByName(
-	ctx context.Context,
-	username string,
-) (*GetUserByNameResponse, error) {
+func (a *UserAPI) GetUserByName(ctx context.Context, username string) (*GetUserByNameResponse, error) {
 	path := "/user/{username}"
 	path = strings.Replace(path, "{username}", username, 1)
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
@@ -225,17 +210,17 @@ func (a *UserAPI) GetUserByName(
 
 	resp := &GetUserByNameResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.User
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.User
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -243,15 +228,11 @@ func (a *UserAPI) GetUserByName(
 // UpdateUserResponse carries the response from the corresponding operation.
 type UpdateUserResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // UpdateUser — Update user
-func (a *UserAPI) UpdateUser(
-	ctx context.Context,
-	username string,
-	body *models.User,
-) (*UpdateUserResponse, error) {
+func (a *UserAPI) UpdateUser(ctx context.Context, username string, body *models.User) (*UpdateUserResponse, error) {
 	path := "/user/{username}"
 	path = strings.Replace(path, "{username}", username, 1)
 	var bodyReader io.Reader
@@ -285,14 +266,11 @@ func (a *UserAPI) UpdateUser(
 // DeleteUserResponse carries the response from the corresponding operation.
 type DeleteUserResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // DeleteUser — Delete user
-func (a *UserAPI) DeleteUser(
-	ctx context.Context,
-	username string,
-) (*DeleteUserResponse, error) {
+func (a *UserAPI) DeleteUser(ctx context.Context, username string) (*DeleteUserResponse, error) {
 	path := "/user/{username}"
 	path = strings.Replace(path, "{username}", username, 1)
 	req, err := a.client.NewRequest(ctx, "DELETE", path, nil, nil)

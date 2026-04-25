@@ -8,6 +8,6 @@ use serde::{Deserialize, Serialize};
 /// User with required nested profile reference
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserWithProfile {
-    pub profile: UserProfile,
+    pub profile: super::UserProfile,
     pub user_id: String,
 }

@@ -16,26 +16,35 @@ use openapi_nexus_ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
     IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
+use sigil_stitch::code_block::{CodeBlock, StringLitArg};
+use sigil_stitch::prelude::sigil_quote;
+use sigil_stitch::spec::file_spec::FileSpec;
+use sigil_stitch::spec::import_spec::ImportSpec;
+use sigil_stitch::type_name::TypeName;
 
 /// Generate every model file from the IR.
 pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, String> {
     let mut files = Vec::new();
     let mut mod_entries = Vec::new();
 
-    for (name, schema) in &ir.schemas {
-        let Some(body) = emit_model_body(schema) else {
+    for (_name, schema) in &ir.schemas {
+        let Some(file_spec) = emit_model_file(schema) else {
             return Err(format!(
-                "unsupported schema kind for {name}: {:?}",
-                schema.kind
+                "unsupported schema kind for {}: {:?}",
+                schema.name, schema.kind
             ));
         };
         let stem = schema.name.to_snake_case();
         let filename = format!("{stem}.rs");
         mod_entries.push(stem);
 
-        let mut content = String::with_capacity(header.len() + body.len());
+        let rendered = file_spec
+            .render(100)
+            .map_err(|e| format!("render error for {}: {e}", schema.name))?;
+
+        let mut content = String::with_capacity(header.len() + rendered.len());
         content.push_str(header);
-        content.push_str(&body);
+        content.push_str(&rendered);
         files.push(FileInfo::model(filename, content));
     }
 
@@ -49,7 +58,7 @@ pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, 
     Ok(files)
 }
 
-fn emit_model_body(schema: &IrSchema) -> Option<String> {
+fn emit_model_file(schema: &IrSchema) -> Option<FileSpec> {
     match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj),
         IrSchemaKind::Enum(en) => emit_enum(schema, en),
@@ -61,98 +70,83 @@ fn emit_model_body(schema: &IrSchema) -> Option<String> {
 }
 
 // ---------------------------------------------------------------------------
-// Object → struct
+// Object -> struct
 // ---------------------------------------------------------------------------
 
-fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<String> {
+fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-    let mut out = String::new();
+    let stem = schema.name.to_snake_case();
 
-    out.push_str(&imports_for_object(obj));
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
+
+    let mut body = CodeBlock::builder();
 
     if let Some(doc) = &schema.description {
-        for line in doc.lines() {
-            out.push_str(&format!("/// {line}\n"));
-        }
+        emit_doc_comment(&mut body, doc);
     }
-    out.push_str("#[derive(Debug, Clone, Serialize, Deserialize)]\n");
-    out.push_str(&format!("pub struct {name} {{\n"));
+    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add_line();
+    body.add(&format!("pub struct {name}"), ());
+    body.begin_control_flow("", ());
 
     for (json_name, prop) in &obj.properties {
         if let Some(desc) = &prop.description {
-            for line in desc.lines() {
-                out.push_str(&format!("    /// {line}\n"));
-            }
+            emit_doc_comment(&mut body, desc);
         }
-        let field_name = json_name.to_snake_case();
+        let raw_field_name = json_name.to_snake_case();
+        let field_name = escape_rust_keyword(&raw_field_name);
         let needs_rename = field_name != *json_name;
         let is_optional = !prop.required || prop.nullable;
 
         if needs_rename {
-            out.push_str(&format!("    #[serde(rename = \"{json_name}\")]\n"));
+            body.add(&format!("#[serde(rename = \"{json_name}\")]"), ());
+            body.add_line();
         }
         if is_optional {
-            out.push_str("    #[serde(skip_serializing_if = \"Option::is_none\", default)]\n");
+            body.add(
+                "#[serde(skip_serializing_if = \"Option::is_none\", default)]",
+                (),
+            );
+            body.add_line();
         }
 
-        let rust_type = rust_type_str(&prop.type_expr);
+        let rust_type = rust_type_str_model(&prop.type_expr);
         if is_optional {
-            out.push_str(&format!("    pub {field_name}: Option<{rust_type}>,\n"));
+            body.add(&format!("pub {field_name}: Option<{rust_type}>,"), ());
         } else {
-            out.push_str(&format!("    pub {field_name}: {rust_type},\n"));
+            body.add(&format!("pub {field_name}: {rust_type},"), ());
         }
+        body.add_line();
     }
 
     if let Some(additional) = &obj.additional_properties {
-        out.push_str("    #[serde(flatten)]\n");
-        let val_type = rust_type_str(additional);
-        out.push_str(&format!(
-            "    pub additional_properties: std::collections::HashMap<String, {val_type}>,\n"
-        ));
+        body.add("#[serde(flatten)]", ());
+        body.add_line();
+        let val_type = rust_type_str_model(additional);
+        body.add(
+            &format!("pub additional_properties: std::collections::HashMap<String, {val_type}>,"),
+            (),
+        );
+        body.add_line();
     }
 
-    out.push_str("}\n");
-    Some(out)
-}
-
-fn imports_for_object(obj: &IrObject) -> String {
-    let mut needs_hashmap = obj.additional_properties.is_some();
-    for (_, prop) in &obj.properties {
-        if type_needs_hashmap(&prop.type_expr) {
-            needs_hashmap = true;
-        }
-    }
-
-    let mut out = String::new();
-    out.push_str("use serde::{Deserialize, Serialize};\n");
-    if needs_hashmap {
-        out.push_str("use std::collections::HashMap;\n");
-    }
-    out.push('\n');
-    out
+    body.end_control_flow();
+    fsb = fsb.add_code(body.build().expect("object body builds"));
+    fsb.build().ok()
 }
 
 // ---------------------------------------------------------------------------
 // Enum
 // ---------------------------------------------------------------------------
 
-fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
+fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
 
     match en.value_type {
-        IrEnumValueType::Mixed => {
-            return Some(emit_type_alias(
-                &name,
-                "serde_json::Value",
-                schema.description.as_deref(),
-            ));
-        }
-        IrEnumValueType::Number => {
-            return Some(emit_type_alias(
-                &name,
-                "serde_json::Value",
-                schema.description.as_deref(),
-            ));
+        IrEnumValueType::Mixed | IrEnumValueType::Number => {
+            return emit_type_alias_file(schema, "serde_json::Value");
         }
         IrEnumValueType::Integer => {
             return emit_integer_enum(schema, en);
@@ -160,45 +154,70 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
         IrEnumValueType::String => {}
     }
 
-    let mut out = String::new();
-    out.push_str("use serde::{Deserialize, Serialize};\n\n");
+    let stem = schema.name.to_snake_case();
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
+
+    let mut body = CodeBlock::builder();
 
     if let Some(doc) = &schema.description {
-        for line in doc.lines() {
-            out.push_str(&format!("/// {line}\n"));
-        }
+        emit_doc_comment(&mut body, doc);
     }
-    out.push_str("#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]\n");
-    out.push_str(&format!("pub enum {name} {{\n"));
+    body.add(
+        "#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]",
+        (),
+    );
+    body.add_line();
+    body.add(&format!("pub enum {name}"), ());
+    body.begin_control_flow("", ());
 
+    let mut variants: Vec<(String, String)> = Vec::new();
     for v in &en.values {
         let s = v.value.as_str()?;
         let variant = s.to_pascal_case();
         if variant != s {
-            out.push_str(&format!("    #[serde(rename = \"{}\")]\n", escape_str(s)));
+            body.add(&format!("#[serde(rename = \"{}\")]", escape_str(s)), ());
+            body.add_line();
         }
-        out.push_str(&format!("    {variant},\n"));
+        body.add(&format!("{variant},"), ());
+        body.add_line();
+        variants.push((variant, s.to_string()));
     }
 
-    out.push_str("}\n");
-    Some(out)
+    body.end_control_flow();
+    fsb = fsb.add_code(body.build().expect("enum body builds"));
+
+    // Display impl via sigil_quote!
+    if let Some(display_block) = build_string_enum_display(&name, &variants) {
+        fsb = fsb.add_code(display_block);
+    }
+
+    fsb.build().ok()
 }
 
-fn emit_integer_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
+fn emit_integer_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-    let mut out = String::new();
-    out.push_str("use serde_repr::{Deserialize_repr, Serialize_repr};\n\n");
+    let stem = schema.name.to_snake_case();
+
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+    fsb = fsb.add_import(ImportSpec::named("serde_repr", "Deserialize_repr"));
+    fsb = fsb.add_import(ImportSpec::named("serde_repr", "Serialize_repr"));
+
+    let mut body = CodeBlock::builder();
 
     if let Some(doc) = &schema.description {
-        for line in doc.lines() {
-            out.push_str(&format!("/// {line}\n"));
-        }
+        emit_doc_comment(&mut body, doc);
     }
-    out.push_str(
-        "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]\n",
+    body.add(
+        "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]",
+        (),
     );
-    out.push_str("#[repr(i64)]\n");
-    out.push_str(&format!("pub enum {name} {{\n"));
+    body.add_line();
+    body.add("#[repr(i64)]", ());
+    body.add_line();
+    body.add(&format!("pub enum {name}"), ());
+    body.begin_control_flow("", ());
 
     for v in &en.values {
         let n = v.value.as_i64()?;
@@ -207,63 +226,104 @@ fn emit_integer_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
         } else {
             format!("N{n}")
         };
-        out.push_str(&format!("    {variant_name} = {n},\n"));
+        body.add(&format!("{variant_name} = {n},"), ());
+        body.add_line();
     }
 
-    out.push_str("}\n");
-    Some(out)
+    body.end_control_flow();
+    fsb = fsb.add_code(body.build().expect("integer enum body builds"));
+
+    // Display impl via sigil_quote!
+    if let Some(display_block) = build_integer_enum_display(&name) {
+        fsb = fsb.add_code(display_block);
+    }
+
+    fsb.build().ok()
 }
 
 // ---------------------------------------------------------------------------
-// Alias → pub type
+// Alias -> pub type
 // ---------------------------------------------------------------------------
 
-fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr) -> Option<String> {
+fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-    let rhs = rust_type_str(expr);
-    Some(emit_type_alias(&name, &rhs, schema.description.as_deref()))
+    let stem = schema.name.to_snake_case();
+    let rhs = rust_type_str_model(expr);
+    let rhs_type = TypeName::raw(&rhs);
+
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+
+    let mut cb = CodeBlock::builder();
+    if let Some(doc) = &schema.description {
+        cb.add("%L", doc_comment_block(doc));
+    }
+
+    let alias = sigil_quote!(RustLang {
+        pub type $N(name.as_str()) = $T(rhs_type);
+    })
+    .ok()?;
+    cb.add_code(alias);
+
+    fsb = fsb.add_code(cb.build().ok()?);
+    fsb.build().ok()
 }
 
-fn emit_type_alias(name: &str, rhs: &str, doc: Option<&str>) -> String {
-    let mut out = String::new();
-    if rhs.contains("HashMap") {
-        out.push_str("use std::collections::HashMap;\n\n");
-    }
-    if let Some(d) = doc {
-        for line in d.lines() {
-            out.push_str(&format!("/// {line}\n"));
-        }
-    }
-    out.push_str(&format!("pub type {name} = {rhs};\n"));
-    out
-}
-
-// ---------------------------------------------------------------------------
-// Union → #[serde(untagged)] enum
-// ---------------------------------------------------------------------------
-
-fn emit_union(schema: &IrSchema, union: &IrUnion) -> Option<String> {
+fn emit_type_alias_file(schema: &IrSchema, rhs_str: &str) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-    let mut out = String::new();
-    out.push_str("use serde::{Deserialize, Serialize};\n\n");
+    let stem = schema.name.to_snake_case();
+
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+
+    let mut cb = CodeBlock::builder();
+    if let Some(doc) = &schema.description {
+        cb.add("%L", doc_comment_block(doc));
+    }
+
+    let rhs_type = TypeName::raw(rhs_str);
+    let alias = sigil_quote!(RustLang {
+        pub type $N(name.as_str()) = $T(rhs_type);
+    })
+    .ok()?;
+    cb.add_code(alias);
+
+    fsb = fsb.add_code(cb.build().ok()?);
+    fsb.build().ok()
+}
+
+// ---------------------------------------------------------------------------
+// Union -> #[serde(untagged)] enum
+// ---------------------------------------------------------------------------
+
+fn emit_union(schema: &IrSchema, union: &IrUnion) -> Option<FileSpec> {
+    let name = schema.name.to_pascal_case();
+    let stem = schema.name.to_snake_case();
+
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
+
+    let mut body = CodeBlock::builder();
 
     if let Some(doc) = &schema.description {
-        for line in doc.lines() {
-            out.push_str(&format!("/// {line}\n"));
-        }
+        emit_doc_comment(&mut body, doc);
     }
-    out.push_str("#[derive(Debug, Clone, Serialize, Deserialize)]\n");
-    out.push_str("#[serde(untagged)]\n");
-    out.push_str(&format!("pub enum {name} {{\n"));
+    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add_line();
+    body.add("#[serde(untagged)]", ());
+    body.add_line();
+    body.add(&format!("pub enum {name}"), ());
+    body.begin_control_flow("", ());
 
     for (i, member) in union.members.iter().enumerate() {
         let variant_name = union_variant_name(member, i);
-        let rust_type = rust_type_str(member);
-        out.push_str(&format!("    {variant_name}({rust_type}),\n"));
+        let rust_type = rust_type_str_model(member);
+        body.add(&format!("{variant_name}({rust_type}),"), ());
+        body.add_line();
     }
 
-    out.push_str("}\n");
-    Some(out)
+    body.end_control_flow();
+    fsb = fsb.add_code(body.build().expect("union body builds"));
+    fsb.build().ok()
 }
 
 fn union_variant_name(expr: &IrTypeExpr, index: usize) -> String {
@@ -290,91 +350,173 @@ fn primitive_variant_name(p: &IrPrimitive) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// TaggedUnion → serde-tagged enum
+// TaggedUnion -> serde-tagged enum
 // ---------------------------------------------------------------------------
 
-fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<String> {
+fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec> {
     if tu.variants.is_empty() {
         return None;
     }
 
     let name = schema.name.to_pascal_case();
-    let mut out = String::new();
-    out.push_str("use serde::{Deserialize, Serialize};\n\n");
+    let stem = schema.name.to_snake_case();
+
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
+
+    let mut body = CodeBlock::builder();
 
     if let Some(doc) = &schema.description {
-        for line in doc.lines() {
-            out.push_str(&format!("/// {line}\n"));
-        }
+        emit_doc_comment(&mut body, doc);
     }
-    out.push_str("#[derive(Debug, Clone, Serialize, Deserialize)]\n");
+    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add_line();
 
     match &tu.tagging {
         TaggingStyle::Internal => {
-            out.push_str(&format!(
-                "#[serde(tag = \"{}\")]\n",
-                escape_str(&tu.discriminator_field)
-            ));
+            body.add(
+                &format!(
+                    "#[serde(tag = \"{}\")]",
+                    escape_str(&tu.discriminator_field)
+                ),
+                (),
+            );
+            body.add_line();
         }
         TaggingStyle::Adjacent { content_field } => {
-            out.push_str(&format!(
-                "#[serde(tag = \"{}\", content = \"{}\")]\n",
-                escape_str(&tu.discriminator_field),
-                escape_str(content_field)
-            ));
+            body.add(
+                &format!(
+                    "#[serde(tag = \"{}\", content = \"{}\")]",
+                    escape_str(&tu.discriminator_field),
+                    escape_str(content_field)
+                ),
+                (),
+            );
+            body.add_line();
         }
-        TaggingStyle::External => {
-            // Default serde representation — no attribute needed.
-        }
+        TaggingStyle::External => {}
     }
 
-    out.push_str(&format!("pub enum {name} {{\n"));
+    body.add(&format!("pub enum {name}"), ());
+    body.begin_control_flow("", ());
 
     for variant in &tu.variants {
         let variant_name = variant.discriminator_value.to_pascal_case();
         if variant_name != variant.discriminator_value {
-            out.push_str(&format!(
-                "    #[serde(rename = \"{}\")]\n",
-                escape_str(&variant.discriminator_value)
-            ));
+            body.add(
+                &format!(
+                    "#[serde(rename = \"{}\")]",
+                    escape_str(&variant.discriminator_value)
+                ),
+                (),
+            );
+            body.add_line();
         }
-        let rust_type = rust_type_str(&variant.content_type);
-        out.push_str(&format!("    {variant_name}({rust_type}),\n"));
+        let rust_type = rust_type_str_model(&variant.content_type);
+        body.add(&format!("{variant_name}({rust_type}),"), ());
+        body.add_line();
     }
 
-    out.push_str("}\n");
-    Some(out)
+    body.end_control_flow();
+    fsb = fsb.add_code(body.build().expect("tagged union body builds"));
+    fsb.build().ok()
 }
 
 // ---------------------------------------------------------------------------
-// Intersection → flattened struct
+// Intersection -> flattened struct
 // ---------------------------------------------------------------------------
 
-fn emit_intersection(schema: &IrSchema, inter: &IrIntersection) -> Option<String> {
+fn emit_intersection(schema: &IrSchema, inter: &IrIntersection) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-    let mut out = String::new();
-    out.push_str("use serde::{Deserialize, Serialize};\n\n");
+    let stem = schema.name.to_snake_case();
+
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
+    fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
+
+    let mut body = CodeBlock::builder();
 
     if let Some(doc) = &schema.description {
-        for line in doc.lines() {
-            out.push_str(&format!("/// {line}\n"));
-        }
+        emit_doc_comment(&mut body, doc);
     }
-    out.push_str("#[derive(Debug, Clone, Serialize, Deserialize)]\n");
-    out.push_str(&format!("pub struct {name} {{\n"));
+    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add_line();
+    body.add(&format!("pub struct {name}"), ());
+    body.begin_control_flow("", ());
 
     for (i, member) in inter.members.iter().enumerate() {
-        let field_name = match member {
+        let raw_name = match member {
             IrTypeExpr::Named(n) => n.to_snake_case(),
             _ => format!("member_{i}"),
         };
-        let rust_type = rust_type_str(member);
-        out.push_str("    #[serde(flatten)]\n");
-        out.push_str(&format!("    pub {field_name}: {rust_type},\n"));
+        let field_name = escape_rust_keyword(&raw_name);
+        let rust_type = rust_type_str_model(member);
+        body.add("#[serde(flatten)]", ());
+        body.add_line();
+        body.add(&format!("pub {field_name}: {rust_type},"), ());
+        body.add_line();
     }
 
-    out.push_str("}\n");
-    Some(out)
+    body.end_control_flow();
+    fsb = fsb.add_code(body.build().expect("intersection body builds"));
+    fsb.build().ok()
+}
+
+// ---------------------------------------------------------------------------
+// Display impl helpers
+// ---------------------------------------------------------------------------
+
+fn build_integer_enum_display(name: &str) -> Option<CodeBlock> {
+    sigil_quote!(RustLang {
+        impl std::fmt::Display for $N(name) {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", *self as i64)
+            }
+        }
+    })
+    .ok()
+}
+
+fn build_string_enum_display(name: &str, variants: &[(String, String)]) -> Option<CodeBlock> {
+    let mut match_arms = CodeBlock::builder();
+    for (variant, wire_value) in variants {
+        match_arms.add(
+            &format!("{name}::{variant} => write!(f, %S),\n"),
+            (StringLitArg(wire_value.clone()),),
+        );
+    }
+    let match_body = match_arms.build().ok()?;
+
+    sigil_quote!(RustLang {
+        impl std::fmt::Display for $N(name) {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self { $C(match_body) }
+            }
+        }
+    })
+    .ok()
+}
+
+// ---------------------------------------------------------------------------
+// Doc comment helpers
+// ---------------------------------------------------------------------------
+
+/// Emit doc comment lines into a CodeBlockBuilder.
+fn emit_doc_comment(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, doc: &str) {
+    for line in doc.lines() {
+        cb.add(&format!("/// {line}"), ());
+        cb.add_line();
+    }
+}
+
+/// Build a doc-comment string for use with %L interpolation.
+fn doc_comment_block(doc: &str) -> String {
+    let mut out = String::new();
+    for line in doc.lines() {
+        out.push_str(&format!("/// {line}\n"));
+    }
+    out
 }
 
 // ---------------------------------------------------------------------------
@@ -400,6 +542,26 @@ pub fn rust_type_str(expr: &IrTypeExpr) -> String {
 pub fn rust_type_str_qualified(expr: &IrTypeExpr) -> String {
     match expr {
         IrTypeExpr::Named(name) => format!("crate::models::{}", name.to_pascal_case()),
+        IrTypeExpr::Array(inner) => format!("Vec<{}>", rust_type_str_qualified(inner)),
+        IrTypeExpr::Map(inner) => format!(
+            "std::collections::HashMap<String, {}>",
+            rust_type_str_qualified(inner)
+        ),
+        IrTypeExpr::Nullable(inner) => format!("Option<{}>", rust_type_str_qualified(inner)),
+        other => rust_type_str(other),
+    }
+}
+
+/// Map an IR type for use within model files (sibling references use `super::`).
+fn rust_type_str_model(expr: &IrTypeExpr) -> String {
+    match expr {
+        IrTypeExpr::Named(name) => format!("super::{}", name.to_pascal_case()),
+        IrTypeExpr::Array(inner) => format!("Vec<{}>", rust_type_str_model(inner)),
+        IrTypeExpr::Map(inner) => format!(
+            "std::collections::HashMap<String, {}>",
+            rust_type_str_model(inner)
+        ),
+        IrTypeExpr::Nullable(inner) => format!("Option<{}>", rust_type_str_model(inner)),
         other => rust_type_str(other),
     }
 }
@@ -427,15 +589,20 @@ fn rust_primitive(p: &IrPrimitive) -> &'static str {
     }
 }
 
-fn type_needs_hashmap(expr: &IrTypeExpr) -> bool {
-    match expr {
-        IrTypeExpr::Map(_) => true,
-        IrTypeExpr::Array(inner) => type_needs_hashmap(inner),
-        IrTypeExpr::Nullable(inner) => type_needs_hashmap(inner),
-        _ => false,
-    }
-}
-
 fn escape_str(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn escape_rust_keyword(name: &str) -> String {
+    const KEYWORDS: &[&str] = &[
+        "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum",
+        "extern", "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move",
+        "mut", "pub", "ref", "return", "self", "Self", "static", "struct", "super", "trait",
+        "true", "type", "union", "unsafe", "use", "where", "while", "yield",
+    ];
+    if KEYWORDS.contains(&name) {
+        format!("r#{name}")
+    } else {
+        name.to_string()
+    }
 }

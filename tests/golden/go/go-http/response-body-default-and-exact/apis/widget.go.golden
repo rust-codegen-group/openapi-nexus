@@ -15,7 +15,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// WidgetAPI groups operations under the "Widget" tag.
+// WidgetAPI groups operations under the corresponding tag.
 type WidgetAPI struct {
 	client *runtime.Client
 }
@@ -28,15 +28,13 @@ func NewWidgetAPI(client *runtime.Client) *WidgetAPI {
 // GetWidgetResponse carries the response from the corresponding operation.
 type GetWidgetResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Widget
 	Default *models.ErrorResponse
 }
 
 // GetWidget calls GET /widgets.
-func (a *WidgetAPI) GetWidget(
-	ctx context.Context,
-) (*GetWidgetResponse, error) {
+func (a *WidgetAPI) GetWidget(ctx context.Context) (*GetWidgetResponse, error) {
 	path := "/widgets"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -51,17 +49,17 @@ func (a *WidgetAPI) GetWidget(
 
 	resp := &GetWidgetResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Widget
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Widget
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

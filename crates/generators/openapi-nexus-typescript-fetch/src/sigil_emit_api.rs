@@ -1,6 +1,6 @@
 //! Sigil-stitch emit for TypeScript API class files.
 //!
-//! Produces one `FileSpec<TypeScript>` per tag containing:
+//! Produces one `FileSpec` per tag containing:
 //! - request interfaces (one per operation that has parameters)
 //! - `{Tag}ApiInterface` — method arrow-function signatures (emitted as a raw
 //!   `CodeBlock` so `%T` slots can carry import tracking for every type ref)
@@ -25,7 +25,6 @@ use openapi_nexus_ir::types::{
     ParameterLocation as IrParameterLocation,
 };
 use sigil_stitch::code_block::{Arg, CodeBlock};
-use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::fun_spec::FunSpec;
@@ -114,34 +113,34 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
     out
 }
 
-fn emit_api_file(tag: &str, ops: &[&IrOperation]) -> Result<FileSpec<TypeScript>, String> {
+fn emit_api_file(tag: &str, ops: &[&IrOperation]) -> Result<FileSpec, String> {
     let class_name = format!("{}Api", tag.to_pascal_case());
     let interface_name = format!("{}Interface", class_name);
 
-    let mut fb = FileSpec::<TypeScript>::builder(&format!("{}.ts", class_name));
+    let mut fb = FileSpec::builder(&format!("{}.ts", class_name));
 
     // Request interfaces — one per op that has at least one parameter / body.
     for op in ops {
         if let Some(req_iface) = build_request_interface(op) {
-            fb.add_type(req_iface);
+            fb = fb.add_type(req_iface);
         }
     }
 
     // Per-operation raw response type aliases — emit each union member on its
     // own line so readers can scan each `Wrapper & { status: N }` pair without
     // the pretty printer splitting intersections across lines.
-    fb.add_code(build_response_aliases_block(ops)?);
+    fb = fb.add_code(build_response_aliases_block(ops)?);
 
     // ApiInterface — emit as a raw CodeBlock so `%T` slots propagate imports
     // for every arrow-function parameter and return type. (TypeSpec with
     // FieldSpec arrow-function fields can't carry structural TypeName for the
     // whole `(p: T) => R` shape because sigil's `TypeName::function` doesn't
     // emit parameter names.)
-    fb.add_code(build_api_interface_block(&interface_name, ops)?);
+    fb = fb.add_code(build_api_interface_block(&interface_name, ops)?);
 
     // ApiClass stays structural so modifiers / docs / constructor delegation
     // use sigil's machinery.
-    fb.add_type(build_api_class(&class_name, &interface_name, ops)?);
+    fb = fb.add_type(build_api_class(&class_name, &interface_name, ops)?);
 
     fb.build()
         .map_err(|e| format!("sigil_emit_api: FileSpec build {tag}: {e}"))
@@ -160,8 +159,8 @@ fn raw_response_alias_name(op: &IrOperation) -> String {
 /// Each member is a `%T` slot so imports still flow through the collector,
 /// and each sits on its own line so intersections (`Wrapper & { status: N }`)
 /// stay intact.
-fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock<TypeScript>, String> {
-    let mut cb = CodeBlock::<TypeScript>::builder();
+fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock, String> {
+    let mut cb = CodeBlock::builder();
     for op in ops {
         let alias = raw_response_alias_name(op);
         let members = raw_response_members(op);
@@ -185,8 +184,8 @@ fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock<TypeSc
 
 /// Compute the deduplicated list of union members for an operation's raw
 /// response type (wrapper intersected with status literal).
-fn raw_response_members(op: &IrOperation) -> Vec<TypeName<TypeScript>> {
-    let mut members: Vec<TypeName<TypeScript>> = Vec::new();
+fn raw_response_members(op: &IrOperation) -> Vec<TypeName> {
+    let mut members: Vec<TypeName> = Vec::new();
     let mut any_body = false;
     let mut has_default = false;
 
@@ -214,7 +213,7 @@ fn raw_response_members(op: &IrOperation) -> Vec<TypeName<TypeScript>> {
 // Request interfaces
 // ============================================================================
 
-fn build_request_interface(op: &IrOperation) -> Option<TypeSpec<TypeScript>> {
+fn build_request_interface(op: &IrOperation) -> Option<TypeSpec> {
     let has_params = !op.parameters.is_empty() || op.request_body.is_some();
     if !has_params {
         return None;
@@ -224,30 +223,30 @@ fn build_request_interface(op: &IrOperation) -> Option<TypeSpec<TypeScript>> {
     let interface_name = format!("Api{}Request", method_base.to_pascal_case());
     let names = resolve_param_names(op);
 
-    let mut tb = TypeSpec::<TypeScript>::builder(&interface_name, TypeKind::Interface);
-    tb.visibility(Visibility::Public);
+    let mut tb =
+        TypeSpec::builder(&interface_name, TypeKind::Interface).visibility(Visibility::Public);
 
     for param in &op.parameters {
         if matches!(param.location, IrParameterLocation::Cookie) {
             continue;
         }
-        tb.add_field(build_param_field(param, &resolved_param(&names, param)));
+        tb = tb.add_field(build_param_field(param, &resolved_param(&names, param)));
     }
     if let Some(rb) = &op.request_body {
-        tb.add_field(build_body_field(rb, &resolved_body(&names)));
+        tb = tb.add_field(build_body_field(rb, &resolved_body(&names)));
     }
 
     tb.build().ok()
 }
 
-fn build_param_field(param: &IrParameter, name: &str) -> FieldSpec<TypeScript> {
+fn build_param_field(param: &IrParameter, name: &str) -> FieldSpec {
     let ty = type_expr_to_typename(&param.type_expr);
-    let mut fb = FieldSpec::<TypeScript>::builder(name, ty);
+    let mut fb = FieldSpec::builder(name, ty);
     if !param.required {
-        fb.is_optional();
+        fb = fb.is_optional();
     }
     if let Some(desc) = &param.description {
-        fb.doc(desc);
+        fb = fb.doc(desc);
     }
     fb.build().expect("FieldSpec builds")
 }
@@ -264,17 +263,17 @@ fn preferred_request_media_type(rb: &IrRequestBody) -> Option<&str> {
     }
 }
 
-fn build_body_field(rb: &IrRequestBody, name: &str) -> FieldSpec<TypeScript> {
+fn build_body_field(rb: &IrRequestBody, name: &str) -> FieldSpec {
     let ty = preferred_request_media_type(rb)
         .and_then(|mt| rb.content.get(mt))
         .map(type_expr_to_typename)
         .unwrap_or_else(|| TypeName::primitive("unknown"));
-    let mut fb = FieldSpec::<TypeScript>::builder(name, ty);
+    let mut fb = FieldSpec::builder(name, ty);
     if !rb.required {
-        fb.is_optional();
+        fb = fb.is_optional();
     }
     if let Some(desc) = &rb.description {
-        fb.doc(desc);
+        fb = fb.doc(desc);
     }
     fb.build().expect("FieldSpec builds")
 }
@@ -286,8 +285,8 @@ fn build_body_field(rb: &IrRequestBody, name: &str) -> FieldSpec<TypeScript> {
 fn build_api_interface_block(
     interface_name: &str,
     ops: &[&IrOperation],
-) -> Result<CodeBlock<TypeScript>, String> {
-    let mut cb = CodeBlock::<TypeScript>::builder();
+) -> Result<CodeBlock, String> {
+    let mut cb = CodeBlock::builder();
     cb.add(&format!("export interface {} {{\n", interface_name), vec![]);
 
     for op in ops {
@@ -319,12 +318,12 @@ fn build_api_interface_block(
 /// onto the given block, using `%T` slots for every named type so imports
 /// flow through.
 fn emit_arrow_signature(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
-    return_ty: TypeName<TypeScript>,
+    return_ty: TypeName,
 ) {
     let mut parts: Vec<String> = Vec::new();
-    let mut args: Vec<Arg<TypeScript>> = Vec::new();
+    let mut args: Vec<Arg> = Vec::new();
 
     if operation_has_params(op) {
         let iface = format!(
@@ -355,61 +354,58 @@ fn build_api_class(
     class_name: &str,
     interface_name: &str,
     ops: &[&IrOperation],
-) -> Result<TypeSpec<TypeScript>, String> {
-    let mut tb = TypeSpec::<TypeScript>::builder(class_name, TypeKind::Class);
-    tb.visibility(Visibility::Public);
-    tb.extends(rt_value("BaseAPI"));
-    tb.implements(TypeName::raw(interface_name));
-
-    tb.add_method(build_constructor());
+) -> Result<TypeSpec, String> {
+    let mut tb = TypeSpec::builder(class_name, TypeKind::Class)
+        .visibility(Visibility::Public)
+        .extends(rt_value("BaseAPI"))
+        .implements(TypeName::raw(interface_name))
+        .add_method(build_constructor());
 
     for op in ops {
-        tb.add_method(build_raw_method(op)?);
-        tb.add_method(build_convenience_method(op)?);
+        tb = tb.add_method(build_raw_method(op)?);
+        tb = tb.add_method(build_convenience_method(op)?);
     }
 
     tb.build()
         .map_err(|e| format!("sigil_emit_api: ApiClass {class_name}: {e}"))
 }
 
-fn build_constructor() -> FunSpec<TypeScript> {
-    let mut fb = FunSpec::<TypeScript>::builder("constructor");
-    fb.is_constructor();
-    fb.doc("Initialize the API client");
-
-    fb.add_param(
-        ParameterSpec::<TypeScript>::builder("configuration?", rt_type("Configuration"))
-            .build()
-            .expect("ParameterSpec builds"),
-    );
-
-    let mut body = CodeBlock::<TypeScript>::builder();
+fn build_constructor() -> FunSpec {
+    let mut body = CodeBlock::builder();
     body.add(
         "super(configuration ?? %T);",
         vec![Arg::TypeName(rt_value("DefaultConfig"))],
     );
-    fb.body(body.build().expect("CodeBlock builds"));
 
-    fb.build().expect("Constructor FunSpec builds")
+    FunSpec::builder("constructor")
+        .is_constructor()
+        .doc("Initialize the API client")
+        .add_param(
+            ParameterSpec::builder("configuration?", rt_type("Configuration"))
+                .build()
+                .expect("ParameterSpec builds"),
+        )
+        .body(body.build().expect("CodeBlock builds"))
+        .build()
+        .expect("Constructor FunSpec builds")
 }
 
 // ============================================================================
 // Raw method — full request body with parameter handling and response dispatch
 // ============================================================================
 
-fn build_raw_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, String> {
+fn build_raw_method(op: &IrOperation) -> Result<FunSpec, String> {
     let method_base = op.operation_id.to_lower_camel_case();
     let method_name = format!("{}Raw", method_base);
 
-    let mut fb = FunSpec::<TypeScript>::builder(&method_name);
-    fb.is_async();
+    let mut fb = FunSpec::builder(&method_name).is_async();
 
     for param in method_param_specs(op) {
-        fb.add_param(param);
+        fb = fb.add_param(param);
     }
-    fb.returns(raw_return_type(op));
+    fb = fb.returns(raw_return_type(op));
 
-    let mut body = CodeBlock::<TypeScript>::builder();
+    let mut body = CodeBlock::builder();
     emit_required_param_checks(&mut body, op, &method_name);
     emit_url_path(&mut body, op);
     emit_query_params(&mut body, op);
@@ -418,7 +414,7 @@ fn build_raw_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, String> {
     emit_make_request(&mut body, op, op.request_body.is_some());
     emit_response_handler(&mut body, op);
 
-    fb.body(body.build().map_err(|e| format!("body build: {e}"))?);
+    fb = fb.body(body.build().map_err(|e| format!("body build: {e}"))?);
 
     fb.build()
         .map_err(|e| format!("sigil_emit_api: raw method {method_name}: {e}"))
@@ -449,7 +445,7 @@ fn request_parameters_access(key: &str) -> String {
 }
 
 fn emit_required_param_checks(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
     method_name: &str,
 ) {
@@ -479,10 +475,7 @@ fn emit_required_param_checks(
     }
 }
 
-fn emit_url_path(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
-    op: &IrOperation,
-) {
+fn emit_url_path(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
     cb.add("// Build path with path parameters\n", vec![]);
     let has_path_params = op
         .parameters
@@ -511,10 +504,7 @@ fn emit_url_path(
     }
 }
 
-fn emit_query_params(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
-    op: &IrOperation,
-) {
+fn emit_query_params(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
     cb.add("// Build query parameters\n", vec![]);
     cb.add(
         "const queryParameters: %T = {};\n",
@@ -538,7 +528,7 @@ fn emit_query_params(
     }
 }
 
-fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>, op: &IrOperation) {
+fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
     cb.add("// Build headers\n", vec![]);
     cb.add(
         "const headerParameters: Record<string, string> = {\n",
@@ -568,10 +558,7 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
     }
 }
 
-fn emit_request_body(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
-    op: &IrOperation,
-) {
+fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
     if op.request_body.is_some() {
         cb.add("// Prepare request body\n", vec![]);
         let names = resolve_param_names(op);
@@ -582,7 +569,7 @@ fn emit_request_body(
 }
 
 fn emit_make_request(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
     has_body: bool,
 ) {
@@ -598,10 +585,7 @@ fn emit_make_request(
     );
 }
 
-fn emit_response_handler(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
-    op: &IrOperation,
-) {
+fn emit_response_handler(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
     cb.add("// Handle responses\n", vec![]);
 
     // Classify: conditional (explicit 2xx/4xx status), default (the "default"
@@ -648,7 +632,7 @@ fn emit_response_handler(
 
 /// `return new Wrapper(response) as Wrapper<Body> & { status: X };`
 fn emit_response_return(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     resp: &IrResponse,
     _inside_block: bool,
 ) {
@@ -686,7 +670,7 @@ fn emit_response_return(
 /// `return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };`
 /// (or VoidApiResponse equivalent when no body appears anywhere).
 fn emit_fallback_return(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder<TypeScript>,
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     any_body: bool,
     _inside_block: bool,
 ) {
@@ -714,28 +698,23 @@ fn emit_fallback_return(
 // Convenience method
 // ============================================================================
 
-fn build_convenience_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, String> {
+fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, String> {
     let method_base = op.operation_id.to_lower_camel_case();
     let raw_name = format!("{}Raw", method_base);
 
-    let mut fb = FunSpec::<TypeScript>::builder(&method_base);
-    fb.is_async();
+    let mut fb = FunSpec::builder(&method_base).is_async();
 
     for param in method_param_specs(op) {
-        fb.add_param(param);
+        fb = fb.add_param(param);
     }
     let body_ty = convenience_body_type(op);
-    fb.returns(TypeName::generic(
+    fb = fb.returns(TypeName::generic(
         TypeName::primitive("Promise"),
         vec![body_ty.clone()],
     ));
 
     let args_list = raw_call_args(op);
-    let mut body = CodeBlock::<TypeScript>::builder();
-    // The raw union may include `JSONApiResponse<unknown>` for the fallback,
-    // so `response.value()` widens to `unknown`. Narrow it with a cast to
-    // the declared body type — this is a "genuine boundary" where the
-    // fallback's runtime shape isn't knowable from the OpenAPI spec.
+    let mut body = CodeBlock::builder();
     if is_void_type(&body_ty) {
         body.add(
             &format!(
@@ -753,17 +732,17 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec<TypeScript>, Str
             vec![Arg::TypeName(body_ty)],
         );
     }
-    fb.body(body.build().expect("CodeBlock builds"));
+    fb = fb.body(body.build().expect("CodeBlock builds"));
 
     fb.build()
         .map_err(|e| format!("sigil_emit_api: convenience method {method_base}: {e}"))
 }
 
-fn is_void_type(ty: &TypeName<TypeScript>) -> bool {
+fn is_void_type(ty: &TypeName) -> bool {
     let Ok(val) = serde_json::to_value(ty) else {
         return false;
     };
-    let Ok(void_val) = serde_json::to_value(TypeName::<TypeScript>::primitive("void")) else {
+    let Ok(void_val) = serde_json::to_value(TypeName::primitive("void")) else {
         return false;
     };
     val == void_val
@@ -773,7 +752,7 @@ fn is_void_type(ty: &TypeName<TypeScript>) -> bool {
 // Parameter helpers
 // ============================================================================
 
-fn method_param_specs(op: &IrOperation) -> Vec<ParameterSpec<TypeScript>> {
+fn method_param_specs(op: &IrOperation) -> Vec<ParameterSpec> {
     let mut out = Vec::new();
     if operation_has_params(op) {
         let iface_name = format!(
@@ -781,7 +760,7 @@ fn method_param_specs(op: &IrOperation) -> Vec<ParameterSpec<TypeScript>> {
             op.operation_id.to_lower_camel_case().to_pascal_case()
         );
         out.push(
-            ParameterSpec::<TypeScript>::builder("requestParameters", TypeName::raw(&iface_name))
+            ParameterSpec::builder("requestParameters", TypeName::raw(&iface_name))
                 .build()
                 .expect("ParameterSpec builds"),
         );
@@ -790,13 +769,13 @@ fn method_param_specs(op: &IrOperation) -> Vec<ParameterSpec<TypeScript>> {
     out
 }
 
-fn init_overrides_param() -> ParameterSpec<TypeScript> {
-    ParameterSpec::<TypeScript>::builder("initOverrides?", init_overrides_type())
+fn init_overrides_param() -> ParameterSpec {
+    ParameterSpec::builder("initOverrides?", init_overrides_type())
         .build()
         .expect("ParameterSpec builds")
 }
 
-fn init_overrides_type() -> TypeName<TypeScript> {
+fn init_overrides_type() -> TypeName {
     TypeName::union(vec![
         TypeName::primitive("RequestInit"),
         rt_type("InitOverrideFunction"),
@@ -823,7 +802,7 @@ fn raw_call_args(op: &IrOperation) -> String {
 // Return types (structural — imports flow through %T)
 // ============================================================================
 
-fn raw_return_type(op: &IrOperation) -> TypeName<TypeScript> {
+fn raw_return_type(op: &IrOperation) -> TypeName {
     // Returns `Promise<{OpId}RawResponse>` — the alias itself lives in the
     // same file (see `build_response_aliases_block`) so no import is needed.
     TypeName::generic(
@@ -832,7 +811,7 @@ fn raw_return_type(op: &IrOperation) -> TypeName<TypeScript> {
     )
 }
 
-fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName<TypeScript> {
+fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName {
     let status_literal = resp
         .status
         .parse::<u16>()
@@ -851,7 +830,7 @@ fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName<TypeS
     TypeName::intersection(vec![wrapper_type, TypeName::raw(&status_literal)])
 }
 
-fn fallback_member(any_body: bool) -> TypeName<TypeScript> {
+fn fallback_member(any_body: bool) -> TypeName {
     let wrapper = if any_body {
         TypeName::generic(
             rt_value("JSONApiResponse"),
@@ -863,8 +842,8 @@ fn fallback_member(any_body: bool) -> TypeName<TypeScript> {
     TypeName::intersection(vec![wrapper, TypeName::raw("{ status: number }")])
 }
 
-fn convenience_body_type(op: &IrOperation) -> TypeName<TypeScript> {
-    let mut members: Vec<TypeName<TypeScript>> = Vec::new();
+fn convenience_body_type(op: &IrOperation) -> TypeName {
+    let mut members: Vec<TypeName> = Vec::new();
     let mut any_body = false;
     for resp in &op.responses {
         match classify_response(resp) {
@@ -898,9 +877,9 @@ fn convenience_body_type(op: &IrOperation) -> TypeName<TypeScript> {
 
 /// Stable de-dup of union members by `Debug` representation (cheap, correct
 /// for sigil's `TypeName` variants).
-fn dedup_union_members(members: Vec<TypeName<TypeScript>>) -> Vec<TypeName<TypeScript>> {
+fn dedup_union_members(members: Vec<TypeName>) -> Vec<TypeName> {
     let mut seen: BTreeSet<String> = BTreeSet::new();
-    let mut out: Vec<TypeName<TypeScript>> = Vec::new();
+    let mut out: Vec<TypeName> = Vec::new();
     for m in members {
         let key = format!("{:?}", m);
         if seen.insert(key) {
@@ -910,7 +889,7 @@ fn dedup_union_members(members: Vec<TypeName<TypeScript>>) -> Vec<TypeName<TypeS
     out
 }
 
-fn dedup_union(members: Vec<TypeName<TypeScript>>) -> TypeName<TypeScript> {
+fn dedup_union(members: Vec<TypeName>) -> TypeName {
     let mut out = dedup_union_members(members);
     if out.len() == 1 {
         out.pop().unwrap()
@@ -925,7 +904,7 @@ fn dedup_union(members: Vec<TypeName<TypeScript>>) -> TypeName<TypeScript> {
 
 #[derive(Clone)]
 enum ResponseKind {
-    Json(Option<TypeName<TypeScript>>),
+    Json(Option<TypeName>),
     Text,
     Blob,
     None,
@@ -1051,12 +1030,12 @@ fn resolved_body(names: &BTreeMap<ParamKey, String>) -> String {
 
 /// Runtime symbol imported as a value (class, function, const): emits
 /// `import { Name } from '../runtime/runtime'`.
-fn rt_value(name: &str) -> TypeName<TypeScript> {
+fn rt_value(name: &str) -> TypeName {
     TypeName::importable(RUNTIME_MOD, name)
 }
 
 /// Runtime symbol imported type-only: emits `import type { Name } from '../runtime/runtime'`.
-fn rt_type(name: &str) -> TypeName<TypeScript> {
+fn rt_type(name: &str) -> TypeName {
     TypeName::importable_type(RUNTIME_MOD, name)
 }
 
@@ -1064,7 +1043,7 @@ fn rt_type(name: &str) -> TypeName<TypeScript> {
 // IrTypeExpr → TypeName
 // ============================================================================
 
-fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName<TypeScript> {
+fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName {
     match expr {
         IrTypeExpr::Named(name) => {
             let ts_name = name.to_pascal_case();

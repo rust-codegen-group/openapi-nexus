@@ -14,7 +14,9 @@ pub struct AdditionalPropertiesApi<'a> {
 impl<'a> AdditionalPropertiesApi<'a> {
     /// Create a new `AdditionalPropertiesApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Echo leaf payload (attributes map).
@@ -28,10 +30,7 @@ impl<'a> AdditionalPropertiesApi<'a> {
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = PostLeafResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = PostLeafResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -52,10 +51,7 @@ impl<'a> AdditionalPropertiesApi<'a> {
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = PostMiddleResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = PostMiddleResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -76,10 +72,7 @@ impl<'a> AdditionalPropertiesApi<'a> {
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = PostRootResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = PostRootResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);

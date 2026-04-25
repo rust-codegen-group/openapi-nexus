@@ -9,5 +9,5 @@ use serde::{Deserialize, Serialize};
 pub struct ArrayWithReferencePropertyItemsItem {
     pub item_id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub owner: Option<User>,
+    pub owner: Option<super::User>,
 }

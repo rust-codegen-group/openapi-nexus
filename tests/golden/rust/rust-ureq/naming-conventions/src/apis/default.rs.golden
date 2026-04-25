@@ -14,7 +14,9 @@ pub struct DefaultApi<'a> {
 impl<'a> DefaultApi<'a> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Get with query parameters
@@ -34,48 +36,45 @@ impl<'a> DefaultApi<'a> {
         id: Option<i64>,
     ) -> Result<GetWithQueryParamsResponse, Error> {
         let path = "/test".to_string();
-        let mut query_parts: Vec<(&str, String)> = Vec::new();
-        query_parts.push(("snake_case_param", snake_case_param.to_string()));
+        let mut req = self.client.get(&path);
+        req = req.query("snake_case_param", &snake_case_param.to_string());
         if let Some(v) = &snake_case_number {
-            query_parts.push(("snake_case_number", v.to_string()));
+            req = req.query("snake_case_number", &v.to_string());
         }
         if let Some(v) = &kebab_case_param {
-            query_parts.push(("kebab-case-param", v.to_string()));
+            req = req.query("kebab-case-param", &v.to_string());
         }
-        if let Some(v) = &kebab_case_array {
-            query_parts.push(("kebab-case-array", v.to_string()));
+        if let Some(vals) = &kebab_case_array {
+            for v in vals {
+                req = req.query("kebab-case-array", &v.to_string());
+            }
         }
         if let Some(v) = &pascal_case_param {
-            query_parts.push(("PascalCaseParam", v.to_string()));
+            req = req.query("PascalCaseParam", &v.to_string());
         }
         if let Some(v) = &pascal_case_number {
-            query_parts.push(("PascalCaseNumber", v.to_string()));
+            req = req.query("PascalCaseNumber", &v.to_string());
         }
         if let Some(v) = &screaming_snake_case {
-            query_parts.push(("SCREAMING_SNAKE_CASE", v.to_string()));
+            req = req.query("SCREAMING_SNAKE_CASE", &v.to_string());
         }
         if let Some(v) = &screaming_number {
-            query_parts.push(("SCREAMING_NUMBER", v.to_string()));
+            req = req.query("SCREAMING_NUMBER", &v.to_string());
         }
         if let Some(v) = &camel_case_param {
-            query_parts.push(("camelCaseParam", v.to_string()));
+            req = req.query("camelCaseParam", &v.to_string());
         }
         if let Some(v) = &camel_case_number {
-            query_parts.push(("camelCaseNumber", v.to_string()));
+            req = req.query("camelCaseNumber", &v.to_string());
         }
         if let Some(v) = &singleword {
-            query_parts.push(("singleword", v.to_string()));
+            req = req.query("singleword", &v.to_string());
         }
         if let Some(v) = &id {
-            query_parts.push(("id", v.to_string()));
+            req = req.query("id", &v.to_string());
         }
-        if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
-        }
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
         Ok(GetWithQueryParamsResponse { status_code })
     }
 
@@ -85,14 +84,11 @@ impl<'a> DefaultApi<'a> {
         body: &crate::models::NamingConventionTest,
     ) -> Result<TestNamingConventionsResponse, Error> {
         let path = "/test".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = TestNamingConventionsResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = TestNamingConventionsResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);

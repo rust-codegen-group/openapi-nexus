@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 pub struct NestedObject {
     /// Additional metadata about the object
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub metadata: Option<NestedObjectMetadata>,
+    pub metadata: Option<super::NestedObjectMetadata>,
     /// User information object
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub user: Option<NestedObjectUser>,
+    pub user: Option<super::NestedObjectUser>,
 }

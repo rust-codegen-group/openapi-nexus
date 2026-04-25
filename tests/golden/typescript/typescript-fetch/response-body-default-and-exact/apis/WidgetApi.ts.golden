@@ -51,7 +51,6 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<ErrorResponse> & { status: number };
     }
-
   }
 
   async getWidget(initOverrides?: RequestInit | InitOverrideFunction): Promise<Widget

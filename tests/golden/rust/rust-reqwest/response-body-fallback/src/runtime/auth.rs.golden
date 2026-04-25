@@ -9,10 +9,7 @@ use crate::runtime::error::Error;
 /// Trait for authenticating HTTP requests.
 pub trait Authenticator: Send + Sync + std::fmt::Debug {
     /// Apply authentication to the given headers.
-    fn authenticate(
-        &self,
-        headers: &mut HeaderMap,
-    ) -> impl std::future::Future<Output = Result<(), Error>> + Send;
+    fn authenticate(&self, headers: &mut HeaderMap) -> Result<(), Error>;
 }
 
 /// Bearer token authentication.
@@ -31,7 +28,7 @@ impl BearerAuth {
 }
 
 impl Authenticator for BearerAuth {
-    async fn authenticate(&self, headers: &mut HeaderMap) -> Result<(), Error> {
+    fn authenticate(&self, headers: &mut HeaderMap) -> Result<(), Error> {
         let value = HeaderValue::from_str(&format!("Bearer {}", self.token))
             .map_err(|e| Error::Api {
                 status: reqwest::StatusCode::INTERNAL_SERVER_ERROR,
@@ -60,7 +57,7 @@ impl ApiKeyAuth {
 }
 
 impl Authenticator for ApiKeyAuth {
-    async fn authenticate(&self, headers: &mut HeaderMap) -> Result<(), Error> {
+    fn authenticate(&self, headers: &mut HeaderMap) -> Result<(), Error> {
         let name = reqwest::header::HeaderName::from_bytes(self.header_name.as_bytes())
             .map_err(|e| Error::Api {
                 status: reqwest::StatusCode::INTERNAL_SERVER_ERROR,

@@ -17,7 +17,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// TestApiAPI groups operations under the "test-api" tag.
+// TestApiAPI groups operations under the corresponding tag.
 type TestApiAPI struct {
 	client *runtime.Client
 }
@@ -30,15 +30,12 @@ func NewTestApiAPI(client *runtime.Client) *TestApiAPI {
 // CreateTypeAResponse carries the response from the corresponding operation.
 type CreateTypeAResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.ResourceTypeA
 }
 
 // CreateTypeA — Create TypeA resource
-func (a *TestApiAPI) CreateTypeA(
-	ctx context.Context,
-	body *models.CreateRequestTypeA,
-) (*CreateTypeAResponse, error) {
+func (a *TestApiAPI) CreateTypeA(ctx context.Context, body *models.CreateRequestTypeA) (*CreateTypeAResponse, error) {
 	path := "/api/v1/type-a/resources"
 	var bodyReader io.Reader
 	if body != nil {
@@ -62,17 +59,17 @@ func (a *TestApiAPI) CreateTypeA(
 
 	resp := &CreateTypeAResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.ResourceTypeA
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.ResourceTypeA
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -80,15 +77,12 @@ func (a *TestApiAPI) CreateTypeA(
 // CreateTypeBResponse carries the response from the corresponding operation.
 type CreateTypeBResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.ResourceTypeB
 }
 
 // CreateTypeB — Create TypeB resource
-func (a *TestApiAPI) CreateTypeB(
-	ctx context.Context,
-	body *models.CreateRequestTypeB,
-) (*CreateTypeBResponse, error) {
+func (a *TestApiAPI) CreateTypeB(ctx context.Context, body *models.CreateRequestTypeB) (*CreateTypeBResponse, error) {
 	path := "/api/v1/type-b/resources"
 	var bodyReader io.Reader
 	if body != nil {
@@ -112,17 +106,17 @@ func (a *TestApiAPI) CreateTypeB(
 
 	resp := &CreateTypeBResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.ResourceTypeB
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.ResourceTypeB
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

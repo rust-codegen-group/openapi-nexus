@@ -8,5 +8,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bar {
     pub endpoint: String,
-    pub type: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
 }

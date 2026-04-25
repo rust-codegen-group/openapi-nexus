@@ -8,11 +8,11 @@ use serde::{Deserialize, Serialize};
 /// Object with mixed property types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MixedPropertyTypes {
-    pub array_of_inline: Vec<MixedPropertyTypesArrayOfInlineItem>,
+    pub array_of_inline: Vec<super::MixedPropertyTypesArrayOfInlineItem>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub inline_object: Option<MixedPropertyTypesInlineObject>,
+    pub inline_object: Option<super::MixedPropertyTypesInlineObject>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub nested_reference: Option<User>,
+    pub nested_reference: Option<super::User>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub simple_number: Option<i64>,
     pub simple_string: String,

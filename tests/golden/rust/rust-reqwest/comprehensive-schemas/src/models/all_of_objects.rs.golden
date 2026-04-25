@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AllOfObjects {
     #[serde(flatten)]
-    pub basic_object: BasicObject,
+    pub basic_object: super::BasicObject,
     #[serde(flatten)]
-    pub all_of_objects_all_of2: AllOfObjectsAllOf2,
+    pub all_of_objects_all_of2: super::AllOfObjectsAllOf2,
 }

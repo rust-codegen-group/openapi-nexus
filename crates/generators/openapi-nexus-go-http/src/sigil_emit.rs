@@ -23,7 +23,6 @@ use openapi_nexus_ir::types::{
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use sigil_stitch::code_block::CodeBlock;
-use sigil_stitch::lang::go_lang::GoLang;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::modifiers::TypeKind;
@@ -84,35 +83,34 @@ fn emit_model_body(schema: &IrSchema) -> Option<String> {
 
 fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<String> {
     let name = schema.name.to_pascal_case();
-    let mut tb = TypeSpec::<GoLang>::builder(&name, TypeKind::Struct);
+    let mut tb = TypeSpec::builder(&name, TypeKind::Struct);
     if let Some(doc) = &schema.description {
-        tb.doc(doc);
+        tb = tb.doc(doc);
     }
     for (json_name, prop) in &obj.properties {
-        tb.add_field(build_struct_field(json_name, prop));
+        tb = tb.add_field(build_struct_field(json_name, prop));
     }
 
-    let mut fb = FileSpec::<GoLang>::builder(&format!("{}.go", name));
-    fb.header(package_header());
-    fb.add_type(tb.build().ok()?);
+    let fb = FileSpec::builder(&format!("{}.go", name))
+        .header(package_header())
+        .add_type(tb.build().ok()?);
     let file = fb.build().ok()?;
     file.render(RENDER_WIDTH).ok()
 }
 
-fn build_struct_field(json_name: &str, prop: &IrProperty) -> FieldSpec<GoLang> {
+fn build_struct_field(json_name: &str, prop: &IrProperty) -> FieldSpec {
     let field_name = go_field_name(&prop.name);
     let ty = go_type_name(&prop.type_expr);
 
-    let mut fb = FieldSpec::<GoLang>::builder(&field_name, ty);
     let tag = json_tag(json_name, prop.required, prop.nullable);
-    fb.tag(&tag);
+    let mut fb = FieldSpec::builder(&field_name, ty).tag(&tag);
     if !prop.required || prop.nullable {
         // Optional or nullable fields become `*T` so callers can distinguish
         // "absent" from "zero-value present".
-        fb.is_optional();
+        fb = fb.is_optional();
     }
     if let Some(desc) = &prop.description {
-        fb.doc(desc);
+        fb = fb.doc(desc);
     }
     fb.build().expect("FieldSpec builds")
 }
@@ -260,8 +258,8 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<String> {
 // ---------------------------------------------------------------------------
 
 /// Build a `package models` header block.
-fn package_header() -> CodeBlock<GoLang> {
-    let mut b = CodeBlock::<GoLang>::builder();
+fn package_header() -> CodeBlock {
+    let mut b = CodeBlock::builder();
     b.add(&format!("package {MODELS_PACKAGE}"), ());
     b.build().expect("package header builds")
 }
@@ -296,12 +294,12 @@ fn preamble(_name: &str, doc: Option<&str>) -> String {
     out
 }
 
-/// Map an IR type expression to a sigil `TypeName<GoLang>`.
+/// Map an IR type expression to a sigil `TypeName`.
 ///
 /// All same-package references (named schemas, primitives) resolve to a plain
 /// `TypeName::primitive` with the Go identifier. Cross-package imports aren't
 /// needed within the `models/` tree.
-fn go_type_name(expr: &IrTypeExpr) -> TypeName<GoLang> {
+fn go_type_name(expr: &IrTypeExpr) -> TypeName {
     TypeName::primitive(&go_type_str(expr))
 }
 

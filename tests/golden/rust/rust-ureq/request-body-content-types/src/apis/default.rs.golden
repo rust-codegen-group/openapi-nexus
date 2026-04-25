@@ -14,7 +14,9 @@ pub struct DefaultApi<'a> {
 impl<'a> DefaultApi<'a> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// POST /form
@@ -23,9 +25,9 @@ impl<'a> DefaultApi<'a> {
         body: &crate::models::Payload,
     ) -> Result<PostFormResponse, Error> {
         let path = "/form".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
+        let status_code = resp.status().as_u16();
         Ok(PostFormResponse { status_code })
     }
 
@@ -35,9 +37,9 @@ impl<'a> DefaultApi<'a> {
         body: &crate::models::Payload,
     ) -> Result<PostJsonResponse, Error> {
         let path = "/json".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
+        let status_code = resp.status().as_u16();
         Ok(PostJsonResponse { status_code })
     }
 
@@ -49,9 +51,9 @@ impl<'a> DefaultApi<'a> {
         body: &crate::models::Payload,
     ) -> Result<PostJsonOrXmlResponse, Error> {
         let path = "/json-or-xml".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
+        let status_code = resp.status().as_u16();
         Ok(PostJsonOrXmlResponse { status_code })
     }
 
@@ -61,9 +63,9 @@ impl<'a> DefaultApi<'a> {
         body: &String,
     ) -> Result<PostTextResponse, Error> {
         let path = "/text".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
+        let status_code = resp.status().as_u16();
         Ok(PostTextResponse { status_code })
     }
 
@@ -73,9 +75,9 @@ impl<'a> DefaultApi<'a> {
         body: &crate::models::Payload,
     ) -> Result<PostXmlResponse, Error> {
         let path = "/xml".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
+        let status_code = resp.status().as_u16();
         Ok(PostXmlResponse { status_code })
     }
 }

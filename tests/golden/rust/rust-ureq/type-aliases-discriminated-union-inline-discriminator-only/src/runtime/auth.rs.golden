@@ -12,15 +12,10 @@
 // After the fix, these should generate properly prefixed names like
 // "EventKindUnspecified" instead of generic "Kind".
 
-use crate::runtime::error::Error;
-
 /// Trait for authenticating requests.
 pub trait Authenticator: Send + Sync + std::fmt::Debug {
-    /// Apply authentication to the request builder.
-    fn authenticate(
-        &self,
-        req: ureq::RequestBuilder,
-    ) -> Result<ureq::RequestBuilder, Error>;
+    /// Return header key-value pairs to apply to the request.
+    fn auth_headers(&self) -> Vec<(&str, String)>;
 }
 
 /// Bearer token authentication.
@@ -38,11 +33,8 @@ impl BearerAuth {
 }
 
 impl Authenticator for BearerAuth {
-    fn authenticate(
-        &self,
-        req: ureq::RequestBuilder,
-    ) -> Result<ureq::RequestBuilder, Error> {
-        Ok(req.header("Authorization", &format!("Bearer {}", self.token)))
+    fn auth_headers(&self) -> Vec<(&str, String)> {
+        vec![("Authorization", format!("Bearer {}", self.token))]
     }
 }
 
@@ -63,10 +55,7 @@ impl ApiKeyAuth {
 }
 
 impl Authenticator for ApiKeyAuth {
-    fn authenticate(
-        &self,
-        req: ureq::RequestBuilder,
-    ) -> Result<ureq::RequestBuilder, Error> {
-        Ok(req.header(&self.header_name, &self.api_key))
+    fn auth_headers(&self) -> Vec<(&str, String)> {
+        vec![(&self.header_name, self.api_key.clone())]
     }
 }

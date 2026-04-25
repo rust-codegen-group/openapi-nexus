@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComplexNestedObjectUserProfile {
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub contact: Option<ComplexNestedObjectUserProfileContact>,
+    pub contact: Option<super::ComplexNestedObjectUserProfileContact>,
     #[serde(rename = "firstName")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub first_name: Option<String>,

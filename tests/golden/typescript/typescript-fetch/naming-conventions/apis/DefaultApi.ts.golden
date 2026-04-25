@@ -119,7 +119,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async getWithQueryParams(requestParameters: ApiGetWithQueryParamsRequest,
@@ -163,7 +162,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async testNamingConventions(requestParameters: ApiTestNamingConventionsRequest,

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "kind")]
 pub enum ContainerImage {
     #[serde(rename = "CONTAINER_IMAGE_MANAGED")]
-    ContainerImageManaged(ContainerImageManaged),
+    ContainerImageManaged(super::ContainerImageManaged),
     #[serde(rename = "CONTAINER_IMAGE_CUSTOM")]
-    ContainerImageCustom(ContainerImageCustom),
+    ContainerImageCustom(super::ContainerImageCustom),
 }

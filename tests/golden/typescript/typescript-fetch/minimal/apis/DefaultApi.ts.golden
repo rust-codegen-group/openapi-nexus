@@ -49,7 +49,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async getTest(initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {

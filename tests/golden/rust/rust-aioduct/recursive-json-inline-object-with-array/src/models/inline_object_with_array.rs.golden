@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 /// Inline object containing array of inline objects
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InlineObjectWithArray {
-    pub container_data: InlineObjectWithArrayContainerData,
+    pub container_data: super::InlineObjectWithArrayContainerData,
 }

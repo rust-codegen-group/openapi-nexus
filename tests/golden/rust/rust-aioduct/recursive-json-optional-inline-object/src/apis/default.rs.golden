@@ -14,7 +14,9 @@ pub struct DefaultApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Test endpoint
@@ -22,7 +24,7 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
         &self,
     ) -> Result<TestResponse, Error> {
         let path = "/test".to_string();
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(TestResponse { status_code })

@@ -17,7 +17,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -30,14 +30,11 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // PostFormResponse carries the response from the corresponding operation.
 type PostFormResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // PostForm calls POST /form.
-func (a *DefaultAPI) PostForm(
-	ctx context.Context,
-	body *models.Payload,
-) (*PostFormResponse, error) {
+func (a *DefaultAPI) PostForm(ctx context.Context, body *models.Payload) (*PostFormResponse, error) {
 	path := "/form"
 	var bodyReader io.Reader
 	if body != nil {
@@ -70,14 +67,11 @@ func (a *DefaultAPI) PostForm(
 // PostJsonResponse carries the response from the corresponding operation.
 type PostJsonResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // PostJson calls POST /json.
-func (a *DefaultAPI) PostJson(
-	ctx context.Context,
-	body *models.Payload,
-) (*PostJsonResponse, error) {
+func (a *DefaultAPI) PostJson(ctx context.Context, body *models.Payload) (*PostJsonResponse, error) {
 	path := "/json"
 	var bodyReader io.Reader
 	if body != nil {
@@ -110,16 +104,13 @@ func (a *DefaultAPI) PostJson(
 // PostJsonOrXmlResponse carries the response from the corresponding operation.
 type PostJsonOrXmlResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // PostJsonOrXml calls POST /json-or-xml.
 //
 // Multiple media types declared — JSON should be preferred.
-func (a *DefaultAPI) PostJsonOrXml(
-	ctx context.Context,
-	body *models.Payload,
-) (*PostJsonOrXmlResponse, error) {
+func (a *DefaultAPI) PostJsonOrXml(ctx context.Context, body *models.Payload) (*PostJsonOrXmlResponse, error) {
 	path := "/json-or-xml"
 	var bodyReader io.Reader
 	if body != nil {
@@ -152,14 +143,11 @@ func (a *DefaultAPI) PostJsonOrXml(
 // PostTextResponse carries the response from the corresponding operation.
 type PostTextResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // PostText calls POST /text.
-func (a *DefaultAPI) PostText(
-	ctx context.Context,
-	body *string,
-) (*PostTextResponse, error) {
+func (a *DefaultAPI) PostText(ctx context.Context, body *string) (*PostTextResponse, error) {
 	path := "/text"
 	var bodyReader io.Reader
 	if body != nil {
@@ -192,14 +180,11 @@ func (a *DefaultAPI) PostText(
 // PostXmlResponse carries the response from the corresponding operation.
 type PostXmlResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // PostXml calls POST /xml.
-func (a *DefaultAPI) PostXml(
-	ctx context.Context,
-	body *models.Payload,
-) (*PostXmlResponse, error) {
+func (a *DefaultAPI) PostXml(ctx context.Context, body *models.Payload) (*PostXmlResponse, error) {
 	path := "/xml"
 	var bodyReader io.Reader
 	if body != nil {

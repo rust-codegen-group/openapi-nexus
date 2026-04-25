@@ -17,7 +17,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// EnumReprAPI groups operations under the "enum-repr" tag.
+// EnumReprAPI groups operations under the corresponding tag.
 type EnumReprAPI struct {
 	client *runtime.Client
 }
@@ -30,15 +30,12 @@ func NewEnumReprAPI(client *runtime.Client) *EnumReprAPI {
 // HandleAdjacentlyTaggedResponse carries the response from the corresponding operation.
 type HandleAdjacentlyTaggedResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.AdjacentlyTaggedEnum
 }
 
 // HandleAdjacentlyTagged — Handle adjacently tagged enum
-func (a *EnumReprAPI) HandleAdjacentlyTagged(
-	ctx context.Context,
-	body *models.AdjacentlyTaggedEnum,
-) (*HandleAdjacentlyTaggedResponse, error) {
+func (a *EnumReprAPI) HandleAdjacentlyTagged(ctx context.Context, body *models.AdjacentlyTaggedEnum) (*HandleAdjacentlyTaggedResponse, error) {
 	path := "/adjacently-tagged"
 	var bodyReader io.Reader
 	if body != nil {
@@ -62,17 +59,17 @@ func (a *EnumReprAPI) HandleAdjacentlyTagged(
 
 	resp := &HandleAdjacentlyTaggedResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.AdjacentlyTaggedEnum
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.AdjacentlyTaggedEnum
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -80,15 +77,12 @@ func (a *EnumReprAPI) HandleAdjacentlyTagged(
 // HandleExternallyTaggedResponse carries the response from the corresponding operation.
 type HandleExternallyTaggedResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.ExternallyTaggedEnum
 }
 
 // HandleExternallyTagged — Handle externally tagged enum
-func (a *EnumReprAPI) HandleExternallyTagged(
-	ctx context.Context,
-	body *models.ExternallyTaggedEnum,
-) (*HandleExternallyTaggedResponse, error) {
+func (a *EnumReprAPI) HandleExternallyTagged(ctx context.Context, body *models.ExternallyTaggedEnum) (*HandleExternallyTaggedResponse, error) {
 	path := "/externally-tagged"
 	var bodyReader io.Reader
 	if body != nil {
@@ -112,17 +106,17 @@ func (a *EnumReprAPI) HandleExternallyTagged(
 
 	resp := &HandleExternallyTaggedResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.ExternallyTaggedEnum
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.ExternallyTaggedEnum
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -130,15 +124,12 @@ func (a *EnumReprAPI) HandleExternallyTagged(
 // HandleInternallyTaggedResponse carries the response from the corresponding operation.
 type HandleInternallyTaggedResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.InternallyTaggedEnum
 }
 
 // HandleInternallyTagged — Handle internally tagged enum
-func (a *EnumReprAPI) HandleInternallyTagged(
-	ctx context.Context,
-	body *models.InternallyTaggedEnum,
-) (*HandleInternallyTaggedResponse, error) {
+func (a *EnumReprAPI) HandleInternallyTagged(ctx context.Context, body *models.InternallyTaggedEnum) (*HandleInternallyTaggedResponse, error) {
 	path := "/internally-tagged"
 	var bodyReader io.Reader
 	if body != nil {
@@ -162,17 +153,17 @@ func (a *EnumReprAPI) HandleInternallyTagged(
 
 	resp := &HandleInternallyTaggedResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.InternallyTaggedEnum
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.InternallyTaggedEnum
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -180,15 +171,12 @@ func (a *EnumReprAPI) HandleInternallyTagged(
 // HandleMixedResponse carries the response from the corresponding operation.
 type HandleMixedResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.MixedEnum
 }
 
 // HandleMixed — Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
-func (a *EnumReprAPI) HandleMixed(
-	ctx context.Context,
-	body *models.MixedEnum,
-) (*HandleMixedResponse, error) {
+func (a *EnumReprAPI) HandleMixed(ctx context.Context, body *models.MixedEnum) (*HandleMixedResponse, error) {
 	path := "/mixed"
 	var bodyReader io.Reader
 	if body != nil {
@@ -212,17 +200,17 @@ func (a *EnumReprAPI) HandleMixed(
 
 	resp := &HandleMixedResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.MixedEnum
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.MixedEnum
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -230,15 +218,12 @@ func (a *EnumReprAPI) HandleMixed(
 // HandleUntaggedResponse carries the response from the corresponding operation.
 type HandleUntaggedResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.UntaggedEnum
 }
 
 // HandleUntagged — Handle untagged enum
-func (a *EnumReprAPI) HandleUntagged(
-	ctx context.Context,
-	body *models.UntaggedEnum,
-) (*HandleUntaggedResponse, error) {
+func (a *EnumReprAPI) HandleUntagged(ctx context.Context, body *models.UntaggedEnum) (*HandleUntaggedResponse, error) {
 	path := "/untagged"
 	var bodyReader io.Reader
 	if body != nil {
@@ -262,17 +247,17 @@ func (a *EnumReprAPI) HandleUntagged(
 
 	resp := &HandleUntaggedResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.UntaggedEnum
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.UntaggedEnum
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

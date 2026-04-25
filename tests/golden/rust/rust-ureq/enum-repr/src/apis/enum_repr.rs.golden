@@ -14,7 +14,9 @@ pub struct EnumReprApi<'a> {
 impl<'a> EnumReprApi<'a> {
     /// Create a new `EnumReprApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Handle adjacently tagged enum
@@ -23,14 +25,11 @@ impl<'a> EnumReprApi<'a> {
         body: &crate::models::AdjacentlyTaggedEnum,
     ) -> Result<HandleAdjacentlyTaggedResponse, Error> {
         let path = "/adjacently-tagged".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = HandleAdjacentlyTaggedResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = HandleAdjacentlyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -46,14 +45,11 @@ impl<'a> EnumReprApi<'a> {
         body: &crate::models::ExternallyTaggedEnum,
     ) -> Result<HandleExternallyTaggedResponse, Error> {
         let path = "/externally-tagged".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = HandleExternallyTaggedResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = HandleExternallyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -69,14 +65,11 @@ impl<'a> EnumReprApi<'a> {
         body: &crate::models::InternallyTaggedEnum,
     ) -> Result<HandleInternallyTaggedResponse, Error> {
         let path = "/internally-tagged".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = HandleInternallyTaggedResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = HandleInternallyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -92,14 +85,11 @@ impl<'a> EnumReprApi<'a> {
         body: &crate::models::MixedEnum,
     ) -> Result<HandleMixedResponse, Error> {
         let path = "/mixed".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = HandleMixedResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = HandleMixedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -115,14 +105,11 @@ impl<'a> EnumReprApi<'a> {
         body: &crate::models::UntaggedEnum,
     ) -> Result<HandleUntaggedResponse, Error> {
         let path = "/untagged".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = HandleUntaggedResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = HandleUntaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);

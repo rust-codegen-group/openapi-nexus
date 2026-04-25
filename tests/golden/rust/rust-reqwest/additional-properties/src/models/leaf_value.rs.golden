@@ -4,7 +4,6 @@
 // API demonstrating OpenAPI additionalProperties with multiple levels of structs (RootLevel -> MiddleLevel -> LeafValue), each with HashMap fields.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Leaf level: fixed fields plus maps with string and integer value kinds.
 #[derive(Debug, Clone, Serialize, Deserialize)]

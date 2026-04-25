@@ -10,5 +10,5 @@ pub struct BazAllOf2 {
     /// Metadata (nullable)
     #[serde(rename = "metaData")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub meta_data: Option<Bar>,
+    pub meta_data: Option<super::Bar>,
 }

@@ -14,7 +14,9 @@ pub struct EnumReprApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> EnumReprApi<'a, R> {
     /// Create a new `EnumReprApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Handle adjacently tagged enum
@@ -28,10 +30,7 @@ impl<'a, R: aioduct::Runtime> EnumReprApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = HandleAdjacentlyTaggedResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = HandleAdjacentlyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -52,10 +51,7 @@ impl<'a, R: aioduct::Runtime> EnumReprApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = HandleExternallyTaggedResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = HandleExternallyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -76,10 +72,7 @@ impl<'a, R: aioduct::Runtime> EnumReprApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = HandleInternallyTaggedResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = HandleInternallyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -100,10 +93,7 @@ impl<'a, R: aioduct::Runtime> EnumReprApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = HandleMixedResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = HandleMixedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -124,10 +114,7 @@ impl<'a, R: aioduct::Runtime> EnumReprApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = HandleUntaggedResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = HandleUntaggedResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);

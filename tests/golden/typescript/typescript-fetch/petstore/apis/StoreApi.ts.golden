@@ -93,7 +93,6 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async getInventory(initOverrides?: RequestInit | InitOverrideFunction): Promise<Record<string,
@@ -140,7 +139,6 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async placeOrder(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
@@ -188,7 +186,6 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async getOrderById(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
@@ -236,7 +233,6 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async deleteOrder(requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit

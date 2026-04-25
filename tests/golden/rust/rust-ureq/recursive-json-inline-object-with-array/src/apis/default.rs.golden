@@ -14,7 +14,9 @@ pub struct DefaultApi<'a> {
 impl<'a> DefaultApi<'a> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Test endpoint
@@ -22,9 +24,9 @@ impl<'a> DefaultApi<'a> {
         &self,
     ) -> Result<TestResponse, Error> {
         let path = "/test".to_string();
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
+        let req = self.client.get(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
         Ok(TestResponse { status_code })
     }
 }

@@ -14,7 +14,9 @@ pub struct TestApiApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> TestApiApi<'a, R> {
     /// Create a new `TestApiApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Create TypeA resource
@@ -28,10 +30,7 @@ impl<'a, R: aioduct::Runtime> TestApiApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = CreateTypeAResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = CreateTypeAResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -52,10 +51,7 @@ impl<'a, R: aioduct::Runtime> TestApiApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = CreateTypeBResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = CreateTypeBResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);

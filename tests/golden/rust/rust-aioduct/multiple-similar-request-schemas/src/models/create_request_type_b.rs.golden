@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 /// Request to create TypeB resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateRequestTypeB {
-    pub resource: ResourceTypeB,
+    pub resource: super::ResourceTypeB,
 }

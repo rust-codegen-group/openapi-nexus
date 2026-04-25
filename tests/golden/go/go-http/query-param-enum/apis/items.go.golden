@@ -17,7 +17,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// ItemsAPI groups operations under the "items" tag.
+// ItemsAPI groups operations under the corresponding tag.
 type ItemsAPI struct {
 	client *runtime.Client
 }
@@ -30,15 +30,12 @@ func NewItemsAPI(client *runtime.Client) *ItemsAPI {
 // GetItemsResponse carries the response from the corresponding operation.
 type GetItemsResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.GetItemsResponse200
 }
 
 // GetItems — Get items with enum query parameter
-func (a *ItemsAPI) GetItems(
-	ctx context.Context,
-	status *models.FooStatus,
-) (*GetItemsResponse, error) {
+func (a *ItemsAPI) GetItems(ctx context.Context, status *models.FooStatus) (*GetItemsResponse, error) {
 	path := "/items"
 	query := url.Values{}
 	if status != nil {
@@ -57,17 +54,17 @@ func (a *ItemsAPI) GetItems(
 
 	resp := &GetItemsResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.GetItemsResponse200
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.GetItemsResponse200
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

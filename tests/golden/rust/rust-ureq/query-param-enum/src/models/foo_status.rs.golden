@@ -15,3 +15,14 @@ pub enum FooStatus {
     #[serde(rename = "baz")]
     Baz,
 }
+
+impl std:: fmt:: Display for FooStatus {
+    fn fmt(& self, f: & mut std:: fmt:: Formatter < '_ >) -> std:: fmt:: Result {
+        match self {
+            FooStatus::Foo => write!(f, "foo"),
+            FooStatus::Bar => write!(f, "bar"),
+            FooStatus::Baz => write!(f, "baz"),
+
+        }
+    }
+}

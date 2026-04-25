@@ -4,4 +4,4 @@
 // Comprehensive test for all OpenAPI v3.1.2 schema types
 
 /// Array of references
-pub type ReferenceArray = Vec<StringType>;
+pub type ReferenceArray = Vec<super::StringType>;

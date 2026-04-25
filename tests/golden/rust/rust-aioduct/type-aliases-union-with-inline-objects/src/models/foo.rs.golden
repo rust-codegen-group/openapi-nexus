@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Foo {
-    FooMember1(FooMember1),
-    FooMember2(FooMember2),
-    FooMember3(FooMember3),
+    FooMember1(super::FooMember1),
+    FooMember2(super::FooMember2),
+    FooMember3(super::FooMember3),
 }

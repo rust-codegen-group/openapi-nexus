@@ -18,7 +18,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -31,16 +31,14 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // GetAllUsersResponse carries the response from the corresponding operation.
 type GetAllUsersResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 []models.GetAllUsersResponse200Item
 }
 
 // GetAllUsers — Get all users
 //
 // Retrieve a list of all users
-func (a *DefaultAPI) GetAllUsers(
-	ctx context.Context,
-) (*GetAllUsersResponse, error) {
+func (a *DefaultAPI) GetAllUsers(ctx context.Context) (*GetAllUsersResponse, error) {
 	path := "/users"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -55,17 +53,17 @@ func (a *DefaultAPI) GetAllUsers(
 
 	resp := &GetAllUsersResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload []models.GetAllUsersResponse200Item
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload []models.GetAllUsersResponse200Item
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -73,7 +71,7 @@ func (a *DefaultAPI) GetAllUsers(
 // GetUserByIdResponse carries the response from the corresponding operation.
 type GetUserByIdResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.GetUserByIdResponse200
 	Status404 *models.GetUserByIdResponse404
 }
@@ -81,10 +79,7 @@ type GetUserByIdResponse struct {
 // GetUserById — Get user by ID
 //
 // Retrieve a specific user by their ID
-func (a *DefaultAPI) GetUserById(
-	ctx context.Context,
-	id int64,
-) (*GetUserByIdResponse, error) {
+func (a *DefaultAPI) GetUserById(ctx context.Context, id int64) (*GetUserByIdResponse, error) {
 	path := "/users/{id}"
 	path = strings.Replace(path, "{id}", strconv.FormatInt(int64(id), 10), 1)
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
@@ -100,23 +95,23 @@ func (a *DefaultAPI) GetUserById(
 
 	resp := &GetUserByIdResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.GetUserByIdResponse200
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	case 404:
-		var payload models.GetUserByIdResponse404
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status404 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.GetUserByIdResponse200
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		case 404:
+			var payload models.GetUserByIdResponse404
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status404 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

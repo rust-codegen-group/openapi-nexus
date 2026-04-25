@@ -15,7 +15,9 @@ pub struct DefaultApi<'a> {
 impl<'a> DefaultApi<'a> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Create container with discriminated union
@@ -29,10 +31,7 @@ impl<'a> DefaultApi<'a> {
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = CreateContainerResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = CreateContainerResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
