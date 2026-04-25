@@ -126,6 +126,7 @@ _build LANG DIR MARKER CMD:
         echo "error: golden dir not found: $golden" >&2
         exit 1
     fi
+    shared_target=$(mktemp -d)
     total=0; passed=0; failed=0; fails=()
     for test_dir in "$golden"/*/; do
         [ -f "$test_dir/{{ MARKER }}" ] || continue
@@ -141,7 +142,7 @@ _build LANG DIR MARKER CMD:
             cp "$f" "$dst"
         done < <(find "$test_dir" -type f -name '*.golden' -print0)
         log=$(mktemp)
-        if (cd "$tmp" && {{ CMD }}) >"$log" 2>&1; then
+        if (cd "$tmp" && CARGO_TARGET_DIR="$shared_target" {{ CMD }}) >"$log" 2>&1; then
             echo "ok"
             passed=$((passed+1))
         else
@@ -153,6 +154,7 @@ _build LANG DIR MARKER CMD:
         rm -rf "$tmp" "$log"
         trap - EXIT
     done
+    rm -rf "$shared_target"
     echo
     echo "{{ LANG }}: $passed/$total passed"
     if [ "$failed" -gt 0 ]; then
