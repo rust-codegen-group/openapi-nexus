@@ -1011,6 +1011,7 @@ dependencies = [
  "openapi-nexus-go-http",
  "openapi-nexus-ir",
  "openapi-nexus-parser",
+ "openapi-nexus-python-httpx",
  "openapi-nexus-rust-aioduct",
  "openapi-nexus-rust-reqwest",
  "openapi-nexus-rust-ureq",
@@ -1078,6 +1079,24 @@ dependencies = [
  "serde_norway",
  "snafu 0.8.9",
  "tracing",
+]
+
+[[package]]
+name = "openapi-nexus-python-httpx"
+version = "0.0.5"
+dependencies = [
+ "heck",
+ "indexmap",
+ "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "openapi-nexus-test-utils",
+ "serde",
+ "serde_json",
+ "sigil-stitch",
+ "toml",
+ "tracing",
+ "tracing-test",
 ]
 
 [[package]]

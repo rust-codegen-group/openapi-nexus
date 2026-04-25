@@ -19,6 +19,7 @@ openapi-nexus-core.workspace = true
 openapi-nexus-go-http.workspace = true
 openapi-nexus-ir.workspace = true
 openapi-nexus-parser.workspace = true
+openapi-nexus-python-httpx.workspace = true
 openapi-nexus-rust-reqwest.workspace = true
 openapi-nexus-rust-ureq.workspace = true
 openapi-nexus-rust-aioduct.workspace = true

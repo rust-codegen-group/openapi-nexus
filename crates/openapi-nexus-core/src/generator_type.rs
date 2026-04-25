@@ -22,6 +22,9 @@ pub enum GeneratorType {
     /// Rust client using aioduct (hyper 1.x)
     #[serde(rename = "rust-aioduct")]
     RustAioduct,
+    /// Python client using httpx
+    #[serde(rename = "python-httpx")]
+    PythonHttpx,
 }
 
 serde_plain::derive_display_from_serialize!(GeneratorType);
@@ -36,6 +39,7 @@ impl GeneratorType {
             GeneratorType::RustReqwest => Language::Rust,
             GeneratorType::RustUreq => Language::Rust,
             GeneratorType::RustAioduct => Language::Rust,
+            GeneratorType::PythonHttpx => Language::Python,
         }
     }
 
@@ -47,6 +51,7 @@ impl GeneratorType {
             GeneratorType::RustReqwest => "reqwest".to_string(),
             GeneratorType::RustUreq => "ureq".to_string(),
             GeneratorType::RustAioduct => "aioduct".to_string(),
+            GeneratorType::PythonHttpx => "httpx".to_string(),
         }
     }
 }

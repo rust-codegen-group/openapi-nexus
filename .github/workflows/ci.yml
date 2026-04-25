@@ -86,6 +86,8 @@ jobs:
             cmd: just golden::build-rust-ureq
           - generator: rust-aioduct
             cmd: just golden::build-rust-aioduct
+          - generator: python-httpx
+            cmd: just golden::build-python
     steps:
       - uses: actions/checkout@v6
       - uses: extractions/setup-just@v4
@@ -101,6 +103,14 @@ jobs:
         if: matrix.generator == 'go-http'
         with:
           go-version: 'stable'
+      - uses: actions/setup-python@v5
+        if: matrix.generator == 'python-httpx'
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        if: matrix.generator == 'python-httpx'
+        with:
+          node-version: '20'
       - run: ${{ matrix.cmd }}
 
   basics:

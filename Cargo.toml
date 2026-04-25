@@ -16,6 +16,7 @@ members = [
     "crates/generators/openapi-nexus-rust-reqwest",
     "crates/generators/openapi-nexus-rust-ureq",
     "crates/generators/openapi-nexus-rust-aioduct",
+    "crates/generators/openapi-nexus-python-httpx",
     "crates/generators/openapi-nexus-typescript-fetch",
 ]
 
@@ -66,6 +67,7 @@ openapi-nexus-core = { version = "0.0.5", path = "crates/openapi-nexus-core" }
 openapi-nexus-go-http = { version = "0.0.5", path = "crates/generators/openapi-nexus-go-http" }
 openapi-nexus-ir = { version = "0.0.5", path = "crates/openapi-nexus-ir" }
 openapi-nexus-parser = { version = "0.0.5", path = "crates/openapi-nexus-parser" }
+openapi-nexus-python-httpx = { version = "0.0.5", path = "crates/generators/openapi-nexus-python-httpx" }
 openapi-nexus-rust-common = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-common" }
 openapi-nexus-rust-reqwest = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-reqwest" }
 openapi-nexus-rust-ureq = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-ureq" }
@@ -89,5 +91,6 @@ order = [
     "openapi-nexus-rust-reqwest",
     "openapi-nexus-rust-ureq",
     "openapi-nexus-rust-aioduct",
+    "openapi-nexus-python-httpx",
     "openapi-nexus",
 ]
