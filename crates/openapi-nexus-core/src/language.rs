@@ -14,6 +14,9 @@ pub enum Language {
     /// Rust
     #[serde(rename = "Rust")]
     Rust,
+    /// Python
+    #[serde(rename = "Python")]
+    Python,
 }
 
 serde_plain::derive_display_from_serialize!(Language);
