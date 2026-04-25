@@ -8,6 +8,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Qux {
-    Bar(Bar),
-    Baz(Baz),
+    Bar(super::Bar),
+    Baz(super::Baz),
 }

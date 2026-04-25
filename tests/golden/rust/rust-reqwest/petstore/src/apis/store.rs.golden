@@ -14,7 +14,9 @@ pub struct StoreApi<'a> {
 impl<'a> StoreApi<'a> {
     /// Create a new `StoreApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Returns pet inventories by status
@@ -22,14 +24,11 @@ impl<'a> StoreApi<'a> {
         &self,
     ) -> Result<GetInventoryResponse, Error> {
         let path = "/store/inventory".to_string();
-        let mut req = self.client.request(reqwest::Method::GET, &path).await?;
+        let req = self.client.request(reqwest::Method::GET, &path).await?;
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = GetInventoryResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetInventoryResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -50,10 +49,7 @@ impl<'a> StoreApi<'a> {
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = PlaceOrderResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = PlaceOrderResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -70,14 +66,11 @@ impl<'a> StoreApi<'a> {
     ) -> Result<GetOrderByIdResponse, Error> {
         let mut path = "/store/order/{orderId}".to_string();
         path = path.replace("{orderId}", &order_id.to_string());
-        let mut req = self.client.request(reqwest::Method::GET, &path).await?;
+        let req = self.client.request(reqwest::Method::GET, &path).await?;
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = GetOrderByIdResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetOrderByIdResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -94,7 +87,7 @@ impl<'a> StoreApi<'a> {
     ) -> Result<DeleteOrderResponse, Error> {
         let mut path = "/store/order/{orderId}".to_string();
         path = path.replace("{orderId}", &order_id.to_string());
-        let mut req = self.client.request(reqwest::Method::DELETE, &path).await?;
+        let req = self.client.request(reqwest::Method::DELETE, &path).await?;
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         Ok(DeleteOrderResponse { status_code })

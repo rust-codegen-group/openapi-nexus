@@ -12,7 +12,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -25,13 +25,11 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // GetTestResponse carries the response from the corresponding operation.
 type GetTestResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // GetTest calls GET /test.
-func (a *DefaultAPI) GetTest(
-	ctx context.Context,
-) (*GetTestResponse, error) {
+func (a *DefaultAPI) GetTest(ctx context.Context) (*GetTestResponse, error) {
 	path := "/test"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {

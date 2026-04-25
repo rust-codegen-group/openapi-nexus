@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 /// Array of inline objects with reference property
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArrayWithReferenceProperty {
-    pub items: Vec<ArrayWithReferencePropertyItemsItem>,
+    pub items: Vec<super::ArrayWithReferencePropertyItemsItem>,
 }

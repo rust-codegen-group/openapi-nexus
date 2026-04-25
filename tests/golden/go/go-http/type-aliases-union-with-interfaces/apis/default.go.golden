@@ -17,7 +17,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -30,15 +30,12 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // TestUnionResponse carries the response from the corresponding operation.
 type TestUnionResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Foo
 }
 
 // TestUnion — Test endpoint with union type
-func (a *DefaultAPI) TestUnion(
-	ctx context.Context,
-	body *models.Foo,
-) (*TestUnionResponse, error) {
+func (a *DefaultAPI) TestUnion(ctx context.Context, body *models.Foo) (*TestUnionResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {
@@ -62,17 +59,17 @@ func (a *DefaultAPI) TestUnion(
 
 	resp := &TestUnionResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Foo
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Foo
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

@@ -19,7 +19,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// ItemsAPI groups operations under the "items" tag.
+// ItemsAPI groups operations under the corresponding tag.
 type ItemsAPI struct {
 	client *runtime.Client
 }
@@ -32,17 +32,13 @@ func NewItemsAPI(client *runtime.Client) *ItemsAPI {
 // CreateItemWithBodyConflictResponse carries the response from the corresponding operation.
 type CreateItemWithBodyConflictResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.CreateItemWithBodyConflictResponse200
 }
 
 // CreateItemWithBodyConflict — Create item with body parameter conflict
-func (a *ItemsAPI) CreateItemWithBodyConflict(
-	ctx context.Context,
-	itemId string,
-	body *string,
-	body2 *models.CreateItemWithBodyConflictRequest,
-) (*CreateItemWithBodyConflictResponse, error) {
+func (a *ItemsAPI) CreateItemWithBodyConflict(ctx context.Context, itemId string, body *string,
+body2 *models.CreateItemWithBodyConflictRequest) (*CreateItemWithBodyConflictResponse, error) {
 	path := "/items/{itemId}"
 	path = strings.Replace(path, "{itemId}", itemId, 1)
 	query := url.Values{}
@@ -71,17 +67,17 @@ func (a *ItemsAPI) CreateItemWithBodyConflict(
 
 	resp := &CreateItemWithBodyConflictResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.CreateItemWithBodyConflictResponse200
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.CreateItemWithBodyConflictResponse200
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

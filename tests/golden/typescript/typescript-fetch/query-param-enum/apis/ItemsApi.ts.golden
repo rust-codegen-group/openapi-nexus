@@ -67,7 +67,6 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async getItems(requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit

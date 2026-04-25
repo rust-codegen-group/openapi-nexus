@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "ty", content = "data")]
 pub enum AdjacentlyTaggedEnum {
     #[serde(rename = "ADJACENTLY_TAGGED_ENUM_VARIANT_A")]
-    AdjacentlyTaggedEnumVariantA(VariantA),
+    AdjacentlyTaggedEnumVariantA(super::VariantA),
     #[serde(rename = "ADJACENTLY_TAGGED_ENUM_VARIANT_B")]
-    AdjacentlyTaggedEnumVariantB(VariantB),
+    AdjacentlyTaggedEnumVariantB(super::VariantB),
 }

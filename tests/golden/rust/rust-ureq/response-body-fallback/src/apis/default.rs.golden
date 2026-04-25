@@ -13,7 +13,9 @@ pub struct DefaultApi<'a> {
 impl<'a> DefaultApi<'a> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// GET /fallback/no-body
@@ -21,9 +23,9 @@ impl<'a> DefaultApi<'a> {
         &self,
     ) -> Result<GetFallbackNoBodyResponse, Error> {
         let path = "/fallback/no-body".to_string();
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
+        let req = self.client.get(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
         Ok(GetFallbackNoBodyResponse { status_code })
     }
 
@@ -32,14 +34,11 @@ impl<'a> DefaultApi<'a> {
         &self,
     ) -> Result<GetFallbackWithBodyResponse, Error> {
         let path = "/fallback/with-body".to_string();
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = GetFallbackWithBodyResponse {
-            status_code,
-            data: None,
-        };
+        let req = self.client.get(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = GetFallbackWithBodyResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);

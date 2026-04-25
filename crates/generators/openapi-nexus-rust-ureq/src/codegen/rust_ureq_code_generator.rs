@@ -83,7 +83,13 @@ impl FileWriter for RustUreqCodeGenerator {
 }
 
 fn cargo_toml_file(crate_name: &str, info: &IrInfo) -> FileInfo {
-    let description = info.description.as_deref().unwrap_or("Generated Rust SDK.");
+    let description = info
+        .description
+        .as_deref()
+        .unwrap_or("Generated Rust SDK.")
+        .lines()
+        .next()
+        .unwrap_or("Generated Rust SDK.");
     let content = format!(
         r#"[package]
 name = "{crate_name}"
@@ -95,6 +101,7 @@ description = "{description}"
 ureq = {{ version = "3", features = ["json"] }}
 serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
+serde_repr = "0.1"
 "#,
     );
     FileInfo::project("Cargo.toml".to_string(), content)

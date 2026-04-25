@@ -14,7 +14,9 @@ pub struct UserApi<'a> {
 impl<'a> UserApi<'a> {
     /// Create a new `UserApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Create user
@@ -23,14 +25,11 @@ impl<'a> UserApi<'a> {
         body: &crate::models::User,
     ) -> Result<CreateUserResponse, Error> {
         let path = "/user".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = CreateUserResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = CreateUserResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -43,17 +42,14 @@ impl<'a> UserApi<'a> {
     /// Creates list of users with given input array
     pub fn create_users_with_list_input(
         &self,
-        body: &Vec<User>,
+        body: &Vec<crate::models::User>,
     ) -> Result<CreateUsersWithListInputResponse, Error> {
         let path = "/user/createWithList".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = CreateUsersWithListInputResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = CreateUsersWithListInputResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -70,20 +66,15 @@ impl<'a> UserApi<'a> {
         password: &Option<String>,
     ) -> Result<LoginUserResponse, Error> {
         let path = "/user/login".to_string();
-        let mut query_parts: Vec<(&str, String)> = Vec::new();
+        let mut req = self.client.get(&path);
         if let Some(v) = &username {
-            query_parts.push(("username", v.to_string()));
+            req = req.query("username", &v.to_string());
         }
         if let Some(v) = &password {
-            query_parts.push(("password", v.to_string()));
+            req = req.query("password", &v.to_string());
         }
-        if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
-        }
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
         Ok(LoginUserResponse { status_code })
     }
 
@@ -92,9 +83,9 @@ impl<'a> UserApi<'a> {
         &self,
     ) -> Result<LogoutUserResponse, Error> {
         let path = "/user/logout".to_string();
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
+        let req = self.client.get(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
         Ok(LogoutUserResponse { status_code })
     }
 
@@ -105,14 +96,11 @@ impl<'a> UserApi<'a> {
     ) -> Result<GetUserByNameResponse, Error> {
         let mut path = "/user/{username}".to_string();
         path = path.replace("{username}", &username.to_string());
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = GetUserByNameResponse {
-            status_code,
-            data: None,
-        };
+        let req = self.client.get(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = GetUserByNameResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -130,9 +118,9 @@ impl<'a> UserApi<'a> {
     ) -> Result<UpdateUserResponse, Error> {
         let mut path = "/user/{username}".to_string();
         path = path.replace("{username}", &username.to_string());
-        let mut req = self.client.request("PUT", &path)?;
+        let req = self.client.put(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
+        let status_code = resp.status().as_u16();
         Ok(UpdateUserResponse { status_code })
     }
 
@@ -143,9 +131,9 @@ impl<'a> UserApi<'a> {
     ) -> Result<DeleteUserResponse, Error> {
         let mut path = "/user/{username}".to_string();
         path = path.replace("{username}", &username.to_string());
-        let mut req = self.client.request("DELETE", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
+        let req = self.client.delete(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
         Ok(DeleteUserResponse { status_code })
     }
 }

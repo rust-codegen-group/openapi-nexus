@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Event {
-    EventMember1(EventMember1),
-    EventMember2(EventMember2),
-    EventMember3(EventMember3),
+    EventMember1(super::EventMember1),
+    EventMember2(super::EventMember2),
+    EventMember3(super::EventMember3),
 }

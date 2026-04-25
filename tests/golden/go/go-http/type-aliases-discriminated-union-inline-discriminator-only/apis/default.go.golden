@@ -26,7 +26,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -39,15 +39,12 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // CreateEventResponse carries the response from the corresponding operation.
 type CreateEventResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Event
 }
 
 // CreateEvent — Create event with discriminated union
-func (a *DefaultAPI) CreateEvent(
-	ctx context.Context,
-	body *models.Event,
-) (*CreateEventResponse, error) {
+func (a *DefaultAPI) CreateEvent(ctx context.Context, body *models.Event) (*CreateEventResponse, error) {
 	path := "/event"
 	var bodyReader io.Reader
 	if body != nil {
@@ -71,17 +68,17 @@ func (a *DefaultAPI) CreateEvent(
 
 	resp := &CreateEventResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Event
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Event
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

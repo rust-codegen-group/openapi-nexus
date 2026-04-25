@@ -19,7 +19,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// StoreAPI groups operations under the "store" tag.
+// StoreAPI groups operations under the corresponding tag.
 type StoreAPI struct {
 	client *runtime.Client
 }
@@ -32,14 +32,12 @@ func NewStoreAPI(client *runtime.Client) *StoreAPI {
 // GetInventoryResponse carries the response from the corresponding operation.
 type GetInventoryResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 map[string]int32
 }
 
 // GetInventory — Returns pet inventories by status
-func (a *StoreAPI) GetInventory(
-	ctx context.Context,
-) (*GetInventoryResponse, error) {
+func (a *StoreAPI) GetInventory(ctx context.Context) (*GetInventoryResponse, error) {
 	path := "/store/inventory"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -54,17 +52,17 @@ func (a *StoreAPI) GetInventory(
 
 	resp := &GetInventoryResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload map[string]int32
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload map[string]int32
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -72,15 +70,12 @@ func (a *StoreAPI) GetInventory(
 // PlaceOrderResponse carries the response from the corresponding operation.
 type PlaceOrderResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Order
 }
 
 // PlaceOrder — Place an order for a pet
-func (a *StoreAPI) PlaceOrder(
-	ctx context.Context,
-	body *models.Order,
-) (*PlaceOrderResponse, error) {
+func (a *StoreAPI) PlaceOrder(ctx context.Context, body *models.Order) (*PlaceOrderResponse, error) {
 	path := "/store/order"
 	var bodyReader io.Reader
 	if body != nil {
@@ -104,17 +99,17 @@ func (a *StoreAPI) PlaceOrder(
 
 	resp := &PlaceOrderResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Order
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Order
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -122,15 +117,12 @@ func (a *StoreAPI) PlaceOrder(
 // GetOrderByIdResponse carries the response from the corresponding operation.
 type GetOrderByIdResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Order
 }
 
 // GetOrderById — Find purchase order by ID
-func (a *StoreAPI) GetOrderById(
-	ctx context.Context,
-	orderId int64,
-) (*GetOrderByIdResponse, error) {
+func (a *StoreAPI) GetOrderById(ctx context.Context, orderId int64) (*GetOrderByIdResponse, error) {
 	path := "/store/order/{orderId}"
 	path = strings.Replace(path, "{orderId}", strconv.FormatInt(int64(orderId), 10), 1)
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
@@ -146,17 +138,17 @@ func (a *StoreAPI) GetOrderById(
 
 	resp := &GetOrderByIdResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Order
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Order
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -164,14 +156,11 @@ func (a *StoreAPI) GetOrderById(
 // DeleteOrderResponse carries the response from the corresponding operation.
 type DeleteOrderResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // DeleteOrder — Delete purchase order by ID
-func (a *StoreAPI) DeleteOrder(
-	ctx context.Context,
-	orderId int64,
-) (*DeleteOrderResponse, error) {
+func (a *StoreAPI) DeleteOrder(ctx context.Context, orderId int64) (*DeleteOrderResponse, error) {
 	path := "/store/order/{orderId}"
 	path = strings.Replace(path, "{orderId}", strconv.FormatInt(int64(orderId), 10), 1)
 	req, err := a.client.NewRequest(ctx, "DELETE", path, nil, nil)

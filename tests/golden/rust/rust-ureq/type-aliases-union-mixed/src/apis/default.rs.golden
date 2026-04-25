@@ -14,7 +14,9 @@ pub struct DefaultApi<'a> {
 impl<'a> DefaultApi<'a> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Test endpoint with mixed union type
@@ -23,14 +25,11 @@ impl<'a> DefaultApi<'a> {
         body: &crate::models::Foo,
     ) -> Result<TestMixedUnionResponse, Error> {
         let path = "/test".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = TestMixedUnionResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = TestMixedUnionResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);

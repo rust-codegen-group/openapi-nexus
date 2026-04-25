@@ -9,5 +9,5 @@ use serde::{Deserialize, Serialize};
 pub struct InlineObjectWithArrayContainerData {
     pub container_id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub items: Option<Vec<InlineObjectWithArrayContainerDataItemsItem>>,
+    pub items: Option<Vec<super::InlineObjectWithArrayContainerDataItemsItem>>,
 }

@@ -14,7 +14,9 @@ pub struct PetApi<'a> {
 impl<'a> PetApi<'a> {
     /// Create a new `PetApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Update an existing pet
@@ -23,14 +25,11 @@ impl<'a> PetApi<'a> {
         body: &crate::models::Pet,
     ) -> Result<UpdatePetResponse, Error> {
         let path = "/pet".to_string();
-        let mut req = self.client.request("PUT", &path)?;
+        let req = self.client.put(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = UpdatePetResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = UpdatePetResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -46,14 +45,11 @@ impl<'a> PetApi<'a> {
         body: &crate::models::Pet,
     ) -> Result<AddPetResponse, Error> {
         let path = "/pet".to_string();
-        let mut req = self.client.request("POST", &path)?;
+        let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = AddPetResponse {
-            status_code,
-            data: None,
-        };
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = AddPetResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -69,20 +65,12 @@ impl<'a> PetApi<'a> {
         status: &String,
     ) -> Result<FindPetsByStatusResponse, Error> {
         let path = "/pet/findByStatus".to_string();
-        let mut query_parts: Vec<(&str, String)> = Vec::new();
-        query_parts.push(("status", status.to_string()));
-        if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
-        }
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = FindPetsByStatusResponse {
-            status_code,
-            data: None,
-        };
+        let mut req = self.client.get(&path);
+        req = req.query("status", &status.to_string());
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = FindPetsByStatusResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -98,20 +86,14 @@ impl<'a> PetApi<'a> {
         tags: &Vec<String>,
     ) -> Result<FindPetsByTagsResponse, Error> {
         let path = "/pet/findByTags".to_string();
-        let mut query_parts: Vec<(&str, String)> = Vec::new();
-        query_parts.push(("tags", tags.to_string()));
-        if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
+        let mut req = self.client.get(&path);
+        for v in tags {
+            req = req.query("tags", &v.to_string());
         }
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = FindPetsByTagsResponse {
-            status_code,
-            data: None,
-        };
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = FindPetsByTagsResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -128,14 +110,11 @@ impl<'a> PetApi<'a> {
     ) -> Result<GetPetByIdResponse, Error> {
         let mut path = "/pet/{petId}".to_string();
         path = path.replace("{petId}", &pet_id.to_string());
-        let mut req = self.client.request("GET", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = GetPetByIdResponse {
-            status_code,
-            data: None,
-        };
+        let req = self.client.get(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = GetPetByIdResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -154,25 +133,17 @@ impl<'a> PetApi<'a> {
     ) -> Result<UpdatePetWithFormResponse, Error> {
         let mut path = "/pet/{petId}".to_string();
         path = path.replace("{petId}", &pet_id.to_string());
-        let mut query_parts: Vec<(&str, String)> = Vec::new();
+        let mut req = self.client.post(&path);
         if let Some(v) = &name {
-            query_parts.push(("name", v.to_string()));
+            req = req.query("name", &v.to_string());
         }
         if let Some(v) = &status {
-            query_parts.push(("status", v.to_string()));
+            req = req.query("status", &v.to_string());
         }
-        if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
-        }
-        let mut req = self.client.request("POST", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = UpdatePetWithFormResponse {
-            status_code,
-            data: None,
-        };
+        let resp = req.send_empty()?;
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = UpdatePetWithFormResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -189,9 +160,9 @@ impl<'a> PetApi<'a> {
     ) -> Result<DeletePetResponse, Error> {
         let mut path = "/pet/{petId}".to_string();
         path = path.replace("{petId}", &pet_id.to_string());
-        let mut req = self.client.request("DELETE", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
+        let req = self.client.delete(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
         Ok(DeletePetResponse { status_code })
     }
 
@@ -203,22 +174,14 @@ impl<'a> PetApi<'a> {
     ) -> Result<UploadFileResponse, Error> {
         let mut path = "/pet/{petId}/uploadImage".to_string();
         path = path.replace("{petId}", &pet_id.to_string());
-        let mut query_parts: Vec<(&str, String)> = Vec::new();
+        let mut req = self.client.post(&path);
         if let Some(v) = &additional_metadata {
-            query_parts.push(("additionalMetadata", v.to_string()));
+            req = req.query("additionalMetadata", &v.to_string());
         }
-        if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
-        }
-        let mut req = self.client.request("POST", &path)?;
-        let resp = req.send()?;
-        let status_code = resp.status();
-        let body_str = resp.into_body().read_to_string().map_err(Error::Io)?;
-        let mut result = UploadFileResponse {
-            status_code,
-            data: None,
-        };
+        let resp = req.send_empty()?;
+        let status_code = resp.status().as_u16();
+        let body_str = resp.into_body().read_to_string()?;
+        let mut result = UploadFileResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
@@ -247,14 +210,14 @@ pub struct AddPetResponse {
 #[derive(Debug)]
 pub struct FindPetsByStatusResponse {
     pub status_code: u16,
-    pub data: Option<Vec<Pet>>,
+    pub data: Option<Vec<crate::models::Pet>>,
 }
 
 /// Response from `find_pets_by_tags`.
 #[derive(Debug)]
 pub struct FindPetsByTagsResponse {
     pub status_code: u16,
-    pub data: Option<Vec<Pet>>,
+    pub data: Option<Vec<crate::models::Pet>>,
 }
 
 /// Response from `get_pet_by_id`.

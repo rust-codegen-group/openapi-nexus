@@ -4,7 +4,6 @@
 // Comprehensive test for all OpenAPI v3.1.2 schema types
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Object with typed additional properties
 #[derive(Debug, Clone, Serialize, Deserialize)]

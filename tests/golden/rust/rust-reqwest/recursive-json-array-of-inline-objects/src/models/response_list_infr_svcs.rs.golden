@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 /// Response containing a list of inference services - main test case for recursive JSON parsing
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseListInfrSvcs {
-    pub inference_services: Vec<ResponseListInfrSvcsInferenceServicesItem>,
+    pub inference_services: Vec<super::ResponseListInfrSvcsInferenceServicesItem>,
 }

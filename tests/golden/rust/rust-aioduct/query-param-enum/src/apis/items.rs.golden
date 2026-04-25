@@ -14,7 +14,9 @@ pub struct ItemsApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> ItemsApi<'a, R> {
     /// Create a new `ItemsApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Get items with enum query parameter
@@ -22,7 +24,7 @@ impl<'a, R: aioduct::Runtime> ItemsApi<'a, R> {
         &self,
         status: &Option<crate::models::FooStatus>,
     ) -> Result<GetItemsResponse, Error> {
-        let path = "/items".to_string();
+        let mut path = "/items".to_string();
         let mut query_parts: Vec<(&str, String)> = Vec::new();
         if let Some(v) = &status {
             query_parts.push(("status", v.to_string()));
@@ -31,14 +33,11 @@ impl<'a, R: aioduct::Runtime> ItemsApi<'a, R> {
             let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
             path = format!("{}?{}", path, qs.join("&"));
         }
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = GetItemsResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetItemsResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);

@@ -8,3 +8,4 @@ description = "This API demonstrates all 4 kinds of enum representation types: E
 ureq = { version = "3", features = ["json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_repr = "0.1"

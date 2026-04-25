@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetItemsResponse200 {
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub items: Option<Vec<GetItemsResponse200ItemsItem>>,
+    pub items: Option<Vec<super::GetItemsResponse200ItemsItem>>,
 }

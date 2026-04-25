@@ -18,7 +18,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// DefaultAPI groups operations under the "default" tag.
+// DefaultAPI groups operations under the corresponding tag.
 type DefaultAPI struct {
 	client *runtime.Client
 }
@@ -31,15 +31,12 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 // CreateTestResponse carries the response from the corresponding operation.
 type CreateTestResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Baz
 }
 
 // CreateTest — Create test with intersection type
-func (a *DefaultAPI) CreateTest(
-	ctx context.Context,
-	body *models.Baz,
-) (*CreateTestResponse, error) {
+func (a *DefaultAPI) CreateTest(ctx context.Context, body *models.Baz) (*CreateTestResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {
@@ -63,17 +60,17 @@ func (a *DefaultAPI) CreateTest(
 
 	resp := &CreateTestResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Baz
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Baz
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -81,15 +78,12 @@ func (a *DefaultAPI) CreateTest(
 // GetTestResponse carries the response from the corresponding operation.
 type GetTestResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Baz
 }
 
 // GetTest — Get test
-func (a *DefaultAPI) GetTest(
-	ctx context.Context,
-	id string,
-) (*GetTestResponse, error) {
+func (a *DefaultAPI) GetTest(ctx context.Context, id string) (*GetTestResponse, error) {
 	path := "/test/{id}"
 	path = strings.Replace(path, "{id}", id, 1)
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
@@ -105,17 +99,17 @@ func (a *DefaultAPI) GetTest(
 
 	resp := &GetTestResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Baz
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Baz
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

@@ -94,7 +94,13 @@ impl FileWriter for RustReqwestCodeGenerator {
 }
 
 fn cargo_toml_file(crate_name: &str, info: &IrInfo) -> FileInfo {
-    let description = info.description.as_deref().unwrap_or("Generated Rust SDK.");
+    let description = info
+        .description
+        .as_deref()
+        .unwrap_or("Generated Rust SDK.")
+        .lines()
+        .next()
+        .unwrap_or("Generated Rust SDK.");
     let content = format!(
         r#"[package]
 name = "{crate_name}"
@@ -106,6 +112,7 @@ description = "{description}"
 reqwest = {{ version = "0.12", features = ["json"] }}
 serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
+serde_repr = "0.1"
 tokio = {{ version = "1", features = ["full"] }}
 "#,
     );

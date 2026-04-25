@@ -9,5 +9,5 @@ pub struct WidgetListPartial {
     #[serde(rename = "hasMore")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub has_more: Option<bool>,
-    pub items: Vec<Widget>,
+    pub items: Vec<super::Widget>,
 }

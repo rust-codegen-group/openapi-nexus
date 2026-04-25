@@ -15,7 +15,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// WidgetAPI groups operations under the "Widget" tag.
+// WidgetAPI groups operations under the corresponding tag.
 type WidgetAPI struct {
 	client *runtime.Client
 }
@@ -28,16 +28,14 @@ func NewWidgetAPI(client *runtime.Client) *WidgetAPI {
 // ListWidgetsResponse carries the response from the corresponding operation.
 type ListWidgetsResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 []models.Widget
 	Status206 *models.WidgetListPartial
 	Status404 *models.ErrorResponse
 }
 
 // ListWidgets calls GET /widgets.
-func (a *WidgetAPI) ListWidgets(
-	ctx context.Context,
-) (*ListWidgetsResponse, error) {
+func (a *WidgetAPI) ListWidgets(ctx context.Context) (*ListWidgetsResponse, error) {
 	path := "/widgets"
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -52,29 +50,29 @@ func (a *WidgetAPI) ListWidgets(
 
 	resp := &ListWidgetsResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload []models.Widget
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = payload
-	case 206:
-		var payload models.WidgetListPartial
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status206 = &payload
-	case 404:
-		var payload models.ErrorResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status404 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload []models.Widget
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = payload
+		case 206:
+			var payload models.WidgetListPartial
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status206 = &payload
+		case 404:
+			var payload models.ErrorResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status404 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

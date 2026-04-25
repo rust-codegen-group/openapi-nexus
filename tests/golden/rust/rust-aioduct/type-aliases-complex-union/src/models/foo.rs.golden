@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Foo {
-    Bar(Bar),
-    Baz(Baz),
-    Qux(Qux),
+    Bar(super::Bar),
+    Baz(super::Baz),
+    Qux(super::Qux),
 }

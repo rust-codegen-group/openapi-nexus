@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct ComplexArrayStructureItemsItem {
     pub item_id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub metadata: Option<ComplexArrayStructureItemsItemMetadata>,
+    pub metadata: Option<super::ComplexArrayStructureItemsItemMetadata>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub nested_data: Option<ComplexArrayStructureItemsItemNestedData>,
+    pub nested_data: Option<super::ComplexArrayStructureItemsItemNestedData>,
 }

@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 /// Object with array that can be empty
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmptyArrayTest {
-    pub empty_items: Vec<EmptyArrayTestEmptyItemsItem>,
+    pub empty_items: Vec<super::EmptyArrayTestEmptyItemsItem>,
 }

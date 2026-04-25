@@ -17,7 +17,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// FooAPI groups operations under the "Foo" tag.
+// FooAPI groups operations under the corresponding tag.
 type FooAPI struct {
 	client *runtime.Client
 }
@@ -30,17 +30,13 @@ func NewFooAPI(client *runtime.Client) *FooAPI {
 // UpdateFooBarResponse carries the response from the corresponding operation.
 type UpdateFooBarResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status400 *models.ErrorResponse
 	Status500 *models.ErrorResponse
 }
 
 // UpdateFooBar calls PATCH /foo/bar.
-func (a *FooAPI) UpdateFooBar(
-	ctx context.Context,
-	fooId string,
-	body *models.FooRequest,
-) (*UpdateFooBarResponse, error) {
+func (a *FooAPI) UpdateFooBar(ctx context.Context, fooId string, body *models.FooRequest) (*UpdateFooBarResponse, error) {
 	path := "/foo/bar"
 	path = strings.Replace(path, "{foo_id}", fooId, 1)
 	var bodyReader io.Reader
@@ -65,23 +61,23 @@ func (a *FooAPI) UpdateFooBar(
 
 	resp := &UpdateFooBarResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 400:
-		var payload models.ErrorResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status400 = &payload
-	case 500:
-		var payload models.ErrorResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status500 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 400:
+			var payload models.ErrorResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status400 = &payload
+		case 500:
+			var payload models.ErrorResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status500 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

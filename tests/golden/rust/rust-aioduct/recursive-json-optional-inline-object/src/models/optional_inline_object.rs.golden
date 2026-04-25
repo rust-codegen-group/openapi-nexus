@@ -9,5 +9,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptionalInlineObject {
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub optional_config: Option<OptionalInlineObjectOptionalConfig>,
+    pub optional_config: Option<super::OptionalInlineObjectOptionalConfig>,
 }

@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "kind")]
 pub enum Resource {
     #[serde(rename = "RESOURCE_UNSPECIFIED")]
-    ResourceUnspecified(ResourceUnspecified),
+    ResourceUnspecified(super::ResourceUnspecified),
     #[serde(rename = "RESOURCE_QUICK")]
-    ResourceQuick(ResourceQuick),
+    ResourceQuick(super::ResourceQuick),
     #[serde(rename = "RESOURCE_CUSTOM")]
-    ResourceCustom(ResourceCustom),
+    ResourceCustom(super::ResourceCustom),
 }

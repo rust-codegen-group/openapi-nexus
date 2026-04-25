@@ -14,6 +14,14 @@ use openapi_nexus_core::traits::file_writer::FileInfo;
 use openapi_nexus_ir::types::{
     IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
 };
+use sigil_stitch::code_block::{CodeBlock, CodeBlockBuilder};
+use sigil_stitch::spec::annotation_spec::AnnotationSpec;
+use sigil_stitch::spec::field_spec::FieldSpec;
+use sigil_stitch::spec::file_spec::FileSpec;
+use sigil_stitch::spec::import_spec::ImportSpec;
+use sigil_stitch::spec::modifiers::{TypeKind, Visibility};
+use sigil_stitch::spec::type_spec::TypeSpec;
+use sigil_stitch::type_name::TypeName;
 
 use crate::emit_models::rust_type_str_qualified;
 
@@ -42,7 +50,7 @@ pub fn generate_api_files(
     ir: &IrSpec,
     header: &str,
     config: &RustBackendConfig,
-    body_emitter: &dyn Fn(&OpPlan<'_>) -> String,
+    body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
 ) -> Result<Vec<FileInfo>, String> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
@@ -94,24 +102,22 @@ fn emit_api_file(
     tag: &str,
     ops: &[&IrOperation],
     config: &RustBackendConfig,
-    body_emitter: &dyn Fn(&OpPlan<'_>) -> String,
+    body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
 ) -> String {
     let struct_name = format!("{}Api", tag.to_pascal_case());
     let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op)).collect();
 
-    let mut out = String::new();
-    out.push_str("use crate::runtime::client::Client;\n");
-    out.push_str("use crate::runtime::error::Error;\n");
-    out.push('\n');
+    let stem = tag.to_snake_case();
+    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
+
+    // Use imports
+    fsb = fsb.add_import(ImportSpec::named("crate::runtime::client", "Client"));
+    fsb = fsb.add_import(ImportSpec::named("crate::runtime::error", "Error"));
 
     // Struct generics (e.g., `<'a, R: aioduct::Runtime>`)
-    // struct_gen: used in struct definition (has bounds), e.g., `<'a, R: aioduct::Runtime>`
-    // impl_gen: used in impl header (has bounds), e.g., `<'a, R: aioduct::Runtime>`
-    // type_args: used after struct name in impl (no bounds), e.g., `<'a, R>`
     let (struct_gen, impl_gen, type_args, client_field_args) = match &config.struct_generics {
         Some(g) => {
             let client_args = config.client_type_args.as_deref().unwrap_or("");
-            // Extract just the type parameter name (before the colon) for type args
             let param_name = g.split(':').next().unwrap_or(g).trim();
             (
                 format!("<'a, {g}>"),
@@ -128,33 +134,56 @@ fn emit_api_file(
         ),
     };
 
-    out.push_str(&format!("/// API operations under the \"{tag}\" tag.\n"));
-    out.push_str(&format!("pub struct {struct_name}{struct_gen} {{\n"));
-    out.push_str(&format!("    client: &'a Client{client_field_args},\n"));
-    out.push_str("}\n\n");
+    // Build struct + impl as a CodeBlock (lifetimes/generics don't fit TypeSpec)
+    let mut body = CodeBlock::builder();
 
-    out.push_str(&format!("impl{impl_gen} {struct_name}{type_args} {{\n"));
-    out.push_str(&format!(
-        "    /// Create a new `{struct_name}` bound to the given client.\n"
-    ));
-    out.push_str(&format!(
-        "    pub fn new(client: &'a Client{client_field_args}) -> Self {{\n        Self {{ client }}\n    }}\n"
-    ));
+    // Struct doc + declaration
+    body.add(&format!("/// API operations under the \"{tag}\" tag."), ());
+    body.add_line();
+    body.add(&format!("pub struct {struct_name}{struct_gen}"), ());
+    body.begin_control_flow("", ());
+    body.add(&format!("client: &'a Client{client_field_args},\n"), ());
+    body.end_control_flow();
+    body.add_line();
 
+    // Impl block
+    body.add(&format!("impl{impl_gen} {struct_name}{type_args}"), ());
+    body.begin_control_flow("", ());
+
+    // Constructor
+    body.add(
+        &format!("/// Create a new `{struct_name}` bound to the given client."),
+        (),
+    );
+    body.add_line();
+    body.add(
+        &format!("pub fn new(client: &'a Client{client_field_args}) -> Self"),
+        (),
+    );
+    body.begin_control_flow("", ());
+    body.add("Self", ());
+    body.begin_control_flow("", ());
+    body.add("client,\n", ());
+    body.end_control_flow();
+    body.end_control_flow();
+
+    // Methods
     for plan in &plans {
-        out.push('\n');
-        out.push_str(&emit_operation(plan, config, body_emitter));
+        body.add_line();
+        body.add_code(emit_operation(plan, config, body_emitter));
     }
 
-    out.push_str("}\n");
+    body.end_control_flow(); // close impl
 
-    // Response structs after the impl block
+    fsb = fsb.add_code(body.build().expect("body builds"));
+
+    // Response structs -- add as TypeSpec members
     for plan in &plans {
-        out.push('\n');
-        out.push_str(&emit_response_struct(plan));
+        fsb = fsb.add_type(emit_response_struct(plan));
     }
 
-    out
+    let file = fsb.build().expect("FileSpec builds");
+    file.render(100).expect("FileSpec renders")
 }
 
 // ---------------------------------------------------------------------------
@@ -286,8 +315,8 @@ pub fn unique_name(desired: &str, used: &mut HashSet<String>) -> String {
 fn emit_operation(
     plan: &OpPlan<'_>,
     config: &RustBackendConfig,
-    body_emitter: &dyn Fn(&OpPlan<'_>) -> String,
-) -> String {
+    body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
+) -> CodeBlock {
     let OpPlan {
         op,
         method_name,
@@ -295,21 +324,21 @@ fn emit_operation(
         ..
     } = plan;
 
-    let mut out = String::new();
+    let mut b = CodeBlock::builder();
 
+    // Doc comment
     if let Some(summary) = &op.summary {
-        out.push_str(&format!("    /// {summary}\n"));
+        b.add(&format!("/// {summary}\n"), ());
     } else {
-        out.push_str(&format!(
-            "    /// {} {}\n",
-            op.method.to_uppercase(),
-            op.path,
-        ));
+        b.add(
+            &format!("/// {} {}\n", op.method.to_uppercase(), op.path),
+            (),
+        );
     }
     if let Some(desc) = &op.description {
-        out.push_str("    ///\n");
+        b.add("///\n", ());
         for line in desc.lines() {
-            out.push_str(&format!("    /// {line}\n"));
+            b.add(&format!("/// {line}\n"), ());
         }
     }
 
@@ -334,36 +363,50 @@ fn emit_operation(
     }
 
     let async_kw = if config.is_async { "async " } else { "" };
-    out.push_str(&format!(
-        "    pub {async_kw}fn {method_name}(\n        {},\n    ) -> Result<{response_type}, Error> {{\n",
-        params.join(",\n        "),
-    ));
+    b.add(
+        &format!(
+            "pub {async_kw}fn {method_name}(\n    {},\n) -> Result<{response_type}, Error>",
+            params.join(",\n    "),
+        ),
+        (),
+    );
+    b.begin_control_flow("", ());
 
-    out.push_str(&body_emitter(plan));
-    out.push_str("    }\n");
-    out
+    // Method body from backend
+    b.add_code(body_emitter(plan));
+
+    b.end_control_flow();
+    b.build().unwrap()
 }
 
-pub fn emit_response_struct(plan: &OpPlan<'_>) -> String {
-    let mut out = String::new();
-    out.push_str(&format!("/// Response from `{}`.\n", plan.method_name));
-    out.push_str("#[derive(Debug)]\n");
-    out.push_str(&format!("pub struct {} {{\n", plan.response_type));
-    out.push_str("    pub status_code: u16,\n");
+pub fn emit_response_struct(plan: &OpPlan<'_>) -> TypeSpec {
+    let mut tb = TypeSpec::builder(&plan.response_type, TypeKind::Struct);
+    tb = tb.visibility(Visibility::Public);
+    tb = tb.doc(&format!("Response from `{}`.", plan.method_name));
+    tb = tb.annotate(AnnotationSpec::new("derive").arg("Debug"));
 
+    // status_code field
+    {
+        let fb = FieldSpec::builder("status_code", TypeName::primitive("u16"));
+        let fb = fb.visibility(Visibility::Public);
+        tb = tb.add_field(fb.build().expect("FieldSpec builds"));
+    }
+
+    // typed response fields
     let mut seen: HashSet<String> = HashSet::new();
     for tr in &plan.typed_responses {
         if !seen.insert(tr.field_name.clone()) {
             continue;
         }
-        out.push_str(&format!(
-            "    pub {}: Option<{}>,\n",
-            tr.field_name, tr.rust_type
-        ));
+        let fb = FieldSpec::builder(
+            &tr.field_name,
+            TypeName::raw(&format!("Option<{}>", tr.rust_type)),
+        );
+        let fb = fb.visibility(Visibility::Public);
+        tb = tb.add_field(fb.build().expect("FieldSpec builds"));
     }
 
-    out.push_str("}\n");
-    out
+    tb.build().expect("TypeSpec builds")
 }
 
 // ---------------------------------------------------------------------------
@@ -387,7 +430,25 @@ pub fn response_field_name(status: &str) -> String {
         "201" => "created".to_string(),
         "204" => "no_content".to_string(),
         "default" => "error_body".to_string(),
+        s if s.ends_with("XX") => {
+            let prefix = &s[..s.len() - 2];
+            format!("status_{prefix}xx")
+        }
         s => format!("status_{s}"),
+    }
+}
+
+/// Convert an OpenAPI status code string to a Rust match pattern.
+pub fn status_match_pattern(status: &str) -> String {
+    match status {
+        "default" => "_".to_string(),
+        s if s.ends_with("XX") => {
+            let prefix: u16 = s[..s.len() - 2].parse().unwrap_or(0);
+            let lo = prefix * 100;
+            let hi = lo + 99;
+            format!("{lo}..={hi}")
+        }
+        s => s.to_string(),
     }
 }
 
@@ -405,8 +466,13 @@ pub fn pick_response_type(r: &IrResponse) -> Option<IrTypeExpr> {
         .cloned()
 }
 
-pub fn render_to_string(var: &str, _type_expr: &IrTypeExpr, _is_optional: bool) -> String {
-    format!("{var}.to_string()")
+pub fn render_to_string(var: &str, type_expr: &IrTypeExpr, _is_optional: bool) -> String {
+    match type_expr {
+        IrTypeExpr::Array(_) => {
+            format!("{var}.iter().map(ToString::to_string).collect::<Vec<_>>().join(\",\")")
+        }
+        _ => format!("{var}.to_string()"),
+    }
 }
 
 pub fn is_copy_type(ty: &str) -> bool {
@@ -420,4 +486,59 @@ pub fn is_copy_type(ty: &str) -> bool {
                 .strip_suffix('>')
                 .unwrap_or(""),
         )
+}
+
+// ---------------------------------------------------------------------------
+// Shared body-emission helpers (used by all Rust backends)
+// ---------------------------------------------------------------------------
+
+/// Emit `let mut result = FooResponse { status_code, field1: None, ... };`
+pub fn emit_result_init(
+    b: &mut CodeBlockBuilder,
+    response_type: &str,
+    typed_responses: &[TypedResponse],
+) {
+    let mut fields = vec!["status_code".to_string()];
+    let mut seen: HashSet<String> = HashSet::new();
+    for tr in typed_responses {
+        if seen.insert(tr.field_name.clone()) {
+            fields.push(format!("{}: None", tr.field_name));
+        }
+    }
+    b.add(
+        &format!(
+            "let mut result = {response_type} {{ {} }};\n",
+            fields.join(", ")
+        ),
+        (),
+    );
+}
+
+/// Emit `match status_code { ... }` dispatching deserialized bodies into result fields.
+pub fn emit_response_match(
+    b: &mut CodeBlockBuilder,
+    typed_responses: &[TypedResponse],
+    deser_expr: &str,
+) {
+    b.begin_control_flow("match status_code", ());
+    let mut seen: HashSet<String> = HashSet::new();
+    for tr in typed_responses {
+        if !seen.insert(format!("{}-{}", tr.status, tr.field_name)) {
+            continue;
+        }
+        let status_pattern = status_match_pattern(&tr.status);
+        b.begin_control_flow(&format!("{status_pattern} =>"), ());
+        b.add(
+            &format!(
+                "result.{} = Some({deser_expr}.map_err(Error::Deserialize)?);\n",
+                tr.field_name
+            ),
+            (),
+        );
+        b.end_control_flow();
+    }
+    if !typed_responses.iter().any(|tr| tr.status == "default") {
+        b.add("_ => {}\n", ());
+    }
+    b.end_control_flow();
 }

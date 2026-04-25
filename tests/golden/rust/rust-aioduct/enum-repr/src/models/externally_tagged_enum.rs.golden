@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExternallyTaggedEnum {
     #[serde(rename = "EXTERNALLY_TAGGED_ENUM_VARIANT_A")]
-    ExternallyTaggedEnumVariantA(VariantA),
+    ExternallyTaggedEnumVariantA(super::VariantA),
     #[serde(rename = "EXTERNALLY_TAGGED_ENUM_VARIANT_B")]
-    ExternallyTaggedEnumVariantB(VariantB),
+    ExternallyTaggedEnumVariantB(super::VariantB),
 }

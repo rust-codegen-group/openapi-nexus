@@ -14,7 +14,9 @@ pub struct DefaultApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Get with query parameters
@@ -33,7 +35,7 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
         singleword: &Option<String>,
         id: Option<i64>,
     ) -> Result<GetWithQueryParamsResponse, Error> {
-        let path = "/test".to_string();
+        let mut path = "/test".to_string();
         let mut query_parts: Vec<(&str, String)> = Vec::new();
         query_parts.push(("snake_case_param", snake_case_param.to_string()));
         if let Some(v) = &snake_case_number {
@@ -43,7 +45,7 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
             query_parts.push(("kebab-case-param", v.to_string()));
         }
         if let Some(v) = &kebab_case_array {
-            query_parts.push(("kebab-case-array", v.to_string()));
+            query_parts.push(("kebab-case-array", v.iter().map(ToString::to_string).collect::<Vec<_>>().join(",")));
         }
         if let Some(v) = &pascal_case_param {
             query_parts.push(("PascalCaseParam", v.to_string()));
@@ -73,7 +75,7 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
             let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
             path = format!("{}?{}", path, qs.join("&"));
         }
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(GetWithQueryParamsResponse { status_code })
@@ -90,10 +92,7 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = TestNamingConventionsResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = TestNamingConventionsResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);

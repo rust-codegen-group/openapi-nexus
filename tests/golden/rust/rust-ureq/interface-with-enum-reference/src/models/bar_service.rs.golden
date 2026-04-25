@@ -11,5 +11,5 @@ pub struct BarService {
     #[serde(rename = "DIYnameASAP")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub di_yname_asap: Option<String>,
-    pub status: BarStatus,
+    pub status: super::BarStatus,
 }

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pet {
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub category: Option<Category>,
+    pub category: Option<super::Category>,
     /// Pet ID
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub id: Option<i64>,
@@ -18,8 +18,8 @@ pub struct Pet {
     /// Photo URLs
     pub photo_urls: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub status: Option<PetStatus>,
+    pub status: Option<super::PetStatus>,
     /// Pet tags
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub tags: Option<Vec<Tag>>,
+    pub tags: Option<Vec<super::Tag>>,
 }

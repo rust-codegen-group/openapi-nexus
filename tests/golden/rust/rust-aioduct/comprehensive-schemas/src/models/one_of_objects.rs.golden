@@ -9,6 +9,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum OneOfObjects {
-    BasicObject(BasicObject),
-    NestedObject(NestedObject),
+    BasicObject(super::BasicObject),
+    NestedObject(super::NestedObject),
 }

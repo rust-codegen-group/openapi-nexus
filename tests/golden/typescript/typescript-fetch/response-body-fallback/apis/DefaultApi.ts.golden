@@ -61,7 +61,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async getFallbackNoBody(initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
@@ -97,7 +96,6 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async getFallbackWithBody(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetFallbackWithBodyResponse200> {

@@ -1,6 +1,6 @@
 //! Sigil-stitch emit for IR schemas.
 //!
-//! Dispatches on `IrSchemaKind` and produces a `FileSpec<TypeScript>` per
+//! Dispatches on `IrSchemaKind` and produces a `FileSpec` per
 //! schema. Each model file carries a `@generated` header and the declaration
 //! (interface / type alias / union / etc.).
 //!
@@ -20,7 +20,6 @@ use openapi_nexus_ir::types::{
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use sigil_stitch::code_block::{Arg, CodeBlock};
-use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
@@ -29,7 +28,7 @@ use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
 /// Emit a TypeScript model file for an IR schema. Dispatches on `schema.kind`.
-pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
+pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec> {
     match &schema.kind {
         IrSchemaKind::Object(obj) => Some(emit_object_file(schema, obj)),
         IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en),
@@ -41,39 +40,39 @@ pub fn emit_model_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
 }
 
 /// Back-compat alias used by the enum prototype test. Prefer `emit_model_file`.
-pub fn emit_enum_file(schema: &IrSchema) -> Option<FileSpec<TypeScript>> {
+pub fn emit_enum_file(schema: &IrSchema) -> Option<FileSpec> {
     let IrSchemaKind::Enum(en) = &schema.kind else {
         return None;
     };
     emit_enum_file_from(schema, en)
 }
 
-fn emit_object_file(schema: &IrSchema, obj: &IrObject) -> FileSpec<TypeScript> {
+fn emit_object_file(schema: &IrSchema, obj: &IrObject) -> FileSpec {
     let name = schema.name.to_pascal_case();
-    let mut tb = TypeSpec::<TypeScript>::builder(&name, TypeKind::Interface);
     // `Visibility::Public` on the TypeSpec emits `export`; on an interface
     // FieldSpec it leaks a stray `public` keyword, so field visibility stays
     // unset.
-    tb.visibility(Visibility::Public);
+    let mut tb = TypeSpec::builder(&name, TypeKind::Interface).visibility(Visibility::Public);
     if let Some(doc) = &schema.description {
-        tb.doc(doc);
+        tb = tb.doc(doc);
     }
 
     for (_json_name, prop) in &obj.properties {
-        tb.add_field(build_field(prop));
+        tb = tb.add_field(build_field(prop));
     }
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::<TypeScript>::builder(&filename);
-    fb.add_type(tb.build().expect("TypeSpec builds"));
-    fb.build().expect("FileSpec builds")
+    FileSpec::builder(&filename)
+        .add_type(tb.build().expect("TypeSpec builds"))
+        .build()
+        .expect("FileSpec builds")
 }
 
 /// Enum file: `export type Name = 'a' | 'b' | 1 | 2 | null;`
 ///
 /// Handles string / integer / number / mixed value types. Returns `None` if
 /// any enum value can't be rendered as a TS literal.
-fn emit_enum_file_from(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec<TypeScript>> {
+fn emit_enum_file_from(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let union_body = enum_union_body(en)?;
 
@@ -83,18 +82,17 @@ fn emit_enum_file_from(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec<TypeSc
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    let mut fb = FileSpec::builder(&filename);
     if let Some(doc) = &schema.description {
         // FileSpec has no structural doc slot — use a raw prelude comment.
-        fb.add_raw(&format!("/** {doc} */\n"));
+        fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(type_alias);
-    fb.build().ok()
+    fb.add_code(type_alias).build().ok()
 }
 
 /// Alias file: `export type Name = Inner;` — where `Inner` may be a named ref
 /// (import auto-emitted), a primitive, a readonly array, etc.
-fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec<TypeScript>> {
+fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let rhs = type_expr_to_typename(expr);
 
@@ -104,22 +102,20 @@ fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec<Type
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    let mut fb = FileSpec::builder(&filename);
     if let Some(doc) = &schema.description {
-        fb.add_raw(&format!("/** {doc} */\n"));
+        fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(type_alias);
-    fb.build().ok()
+    fb.add_code(type_alias).build().ok()
 }
 
 /// Union file: `export type Name = A | B | C [| null];`
 ///
 /// `nullable` appends a `null` member. Imports for each `IrTypeExpr::Named`
 /// member are tracked via `TypeName::Importable` inside `TypeName::union`.
-fn emit_union_file(schema: &IrSchema, union: &IrUnion) -> Option<FileSpec<TypeScript>> {
+fn emit_union_file(schema: &IrSchema, union: &IrUnion) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-    let mut members: Vec<TypeName<TypeScript>> =
-        union.members.iter().map(type_expr_to_typename).collect();
+    let mut members: Vec<TypeName> = union.members.iter().map(type_expr_to_typename).collect();
     if union.nullable {
         members.push(TypeName::primitive("null"));
     }
@@ -131,27 +127,23 @@ fn emit_union_file(schema: &IrSchema, union: &IrUnion) -> Option<FileSpec<TypeSc
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    let mut fb = FileSpec::builder(&filename);
     if let Some(doc) = &schema.description {
-        fb.add_raw(&format!("/** {doc} */\n"));
+        fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(type_alias);
-    fb.build().ok()
+    fb.add_code(type_alias).build().ok()
 }
 
 /// Intersection file: `export type Name = A & B & C;`
 ///
 /// Empty `members` is degenerate — skip by returning `None` so the caller
 /// reports it as unsupported rather than emitting `export type Name = ;`.
-fn emit_intersection_file(
-    schema: &IrSchema,
-    intersection: &IrIntersection,
-) -> Option<FileSpec<TypeScript>> {
+fn emit_intersection_file(schema: &IrSchema, intersection: &IrIntersection) -> Option<FileSpec> {
     if intersection.members.is_empty() {
         return None;
     }
     let name = schema.name.to_pascal_case();
-    let members: Vec<TypeName<TypeScript>> = intersection
+    let members: Vec<TypeName> = intersection
         .members
         .iter()
         .map(type_expr_to_typename)
@@ -164,12 +156,11 @@ fn emit_intersection_file(
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    let mut fb = FileSpec::builder(&filename);
     if let Some(doc) = &schema.description {
-        fb.add_raw(&format!("/** {doc} */\n"));
+        fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(type_alias);
-    fb.build().ok()
+    fb.add_code(type_alias).build().ok()
 }
 
 /// Tagged union file: discriminated `export type` across three tagging styles.
@@ -181,7 +172,7 @@ fn emit_intersection_file(
 /// Each variant's `content_type` flows through `type_expr_to_typename`, so
 /// imports track like any other named ref. An empty variants list is treated
 /// as unsupported (degenerate — skip rather than emit `export type X = ;`).
-fn emit_tagged_union_file(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec<TypeScript>> {
+fn emit_tagged_union_file(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec> {
     if tu.variants.is_empty() {
         return None;
     }
@@ -193,7 +184,7 @@ fn emit_tagged_union_file(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileS
     let name = schema.name.to_pascal_case();
     let mut format = format!("export type {} = ", name);
     let mut pieces: Vec<String> = Vec::with_capacity(tu.variants.len());
-    let mut args: Vec<Arg<TypeScript>> = Vec::with_capacity(tu.variants.len() * 2);
+    let mut args: Vec<Arg> = Vec::with_capacity(tu.variants.len() * 2);
 
     for variant in &tu.variants {
         let content_ty = type_expr_to_typename(&variant.content_type);
@@ -212,17 +203,16 @@ fn emit_tagged_union_file(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileS
 
     // sigil_quote! needs compile-time format; fall back to CodeBlock builder
     // for the dynamic variant count.
-    let mut cb = CodeBlock::<TypeScript>::builder();
+    let mut cb = CodeBlock::builder();
     cb.add(&format, args);
     let code = cb.build().ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::<TypeScript>::builder(&filename);
+    let mut fb = FileSpec::builder(&filename);
     if let Some(doc) = &schema.description {
-        fb.add_raw(&format!("/** {doc} */\n"));
+        fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(code);
-    fb.build().ok()
+    fb.add_code(code).build().ok()
 }
 
 /// Render one variant of a tagged union as a format fragment + its args.
@@ -233,8 +223,8 @@ fn render_variant_piece(
     tagging: &TaggingStyle,
     discriminator_field: &str,
     discriminator_value: &str,
-    content_ty: TypeName<TypeScript>,
-) -> (String, Vec<Arg<TypeScript>>) {
+    content_ty: TypeName,
+) -> (String, Vec<Arg>) {
     match tagging {
         TaggingStyle::Internal => (
             format!("({{ {discriminator_field}: '{discriminator_value}' }} & %T)"),
@@ -281,7 +271,7 @@ fn json_value_to_ts_literal(v: &serde_json::Value) -> Option<String> {
     }
 }
 
-fn build_field(prop: &IrProperty) -> FieldSpec<TypeScript> {
+fn build_field(prop: &IrProperty) -> FieldSpec {
     let ts_field_name = prop.name.to_lower_camel_case();
     let inner_ty = type_expr_to_typename(&prop.type_expr);
     let field_ty = if prop.nullable && prop.required {
@@ -290,18 +280,17 @@ fn build_field(prop: &IrProperty) -> FieldSpec<TypeScript> {
         inner_ty
     };
 
-    let mut fb = FieldSpec::<TypeScript>::builder(&ts_field_name, field_ty);
-    fb.is_readonly();
+    let mut fb = FieldSpec::builder(&ts_field_name, field_ty).is_readonly();
     if !prop.required {
-        fb.is_optional();
+        fb = fb.is_optional();
     }
     if let Some(desc) = &prop.description {
-        fb.doc(desc);
+        fb = fb.doc(desc);
     }
     fb.build().expect("FieldSpec builds")
 }
 
-fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName<TypeScript> {
+fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName {
     match expr {
         IrTypeExpr::Named(name) => {
             let ts_name = name.to_pascal_case();
@@ -334,7 +323,7 @@ fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName<TypeScript> {
 }
 
 /// Same as [`type_expr_to_typename`] but nested arrays render as plain `X[]`.
-fn type_expr_to_typename_nested(expr: &IrTypeExpr) -> TypeName<TypeScript> {
+fn type_expr_to_typename_nested(expr: &IrTypeExpr) -> TypeName {
     match expr {
         IrTypeExpr::Array(inner) => TypeName::array(type_expr_to_typename_nested(inner)),
         other => type_expr_to_typename(other),

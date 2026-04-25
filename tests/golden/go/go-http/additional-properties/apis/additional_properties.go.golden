@@ -17,7 +17,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// AdditionalPropertiesAPI groups operations under the "additional-properties" tag.
+// AdditionalPropertiesAPI groups operations under the corresponding tag.
 type AdditionalPropertiesAPI struct {
 	client *runtime.Client
 }
@@ -30,15 +30,12 @@ func NewAdditionalPropertiesAPI(client *runtime.Client) *AdditionalPropertiesAPI
 // PostLeafResponse carries the response from the corresponding operation.
 type PostLeafResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.LeafValue
 }
 
 // PostLeaf — Echo leaf payload (attributes map).
-func (a *AdditionalPropertiesAPI) PostLeaf(
-	ctx context.Context,
-	body *models.LeafValue,
-) (*PostLeafResponse, error) {
+func (a *AdditionalPropertiesAPI) PostLeaf(ctx context.Context, body *models.LeafValue) (*PostLeafResponse, error) {
 	path := "/leaf"
 	var bodyReader io.Reader
 	if body != nil {
@@ -62,17 +59,17 @@ func (a *AdditionalPropertiesAPI) PostLeaf(
 
 	resp := &PostLeafResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.LeafValue
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.LeafValue
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -80,15 +77,12 @@ func (a *AdditionalPropertiesAPI) PostLeaf(
 // PostMiddleResponse carries the response from the corresponding operation.
 type PostMiddleResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.MiddleLevel
 }
 
 // PostMiddle — Echo middle-level payload (nested + extra maps).
-func (a *AdditionalPropertiesAPI) PostMiddle(
-	ctx context.Context,
-	body *models.MiddleLevel,
-) (*PostMiddleResponse, error) {
+func (a *AdditionalPropertiesAPI) PostMiddle(ctx context.Context, body *models.MiddleLevel) (*PostMiddleResponse, error) {
 	path := "/middle"
 	var bodyReader io.Reader
 	if body != nil {
@@ -112,17 +106,17 @@ func (a *AdditionalPropertiesAPI) PostMiddle(
 
 	resp := &PostMiddleResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.MiddleLevel
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.MiddleLevel
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -130,15 +124,12 @@ func (a *AdditionalPropertiesAPI) PostMiddle(
 // PostRootResponse carries the response from the corresponding operation.
 type PostRootResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.RootLevel
 }
 
 // PostRoot — Echo root payload (all three levels with additional-properties-style maps).
-func (a *AdditionalPropertiesAPI) PostRoot(
-	ctx context.Context,
-	body *models.RootLevel,
-) (*PostRootResponse, error) {
+func (a *AdditionalPropertiesAPI) PostRoot(ctx context.Context, body *models.RootLevel) (*PostRootResponse, error) {
 	path := "/root"
 	var bodyReader io.Reader
 	if body != nil {
@@ -162,17 +153,17 @@ func (a *AdditionalPropertiesAPI) PostRoot(
 
 	resp := &PostRootResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.RootLevel
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.RootLevel
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

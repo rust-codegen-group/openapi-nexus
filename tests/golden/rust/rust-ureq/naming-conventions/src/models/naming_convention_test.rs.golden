@@ -13,7 +13,7 @@ pub struct NamingConventionTest {
     pub pascal_case_field: Option<String>,
     #[serde(rename = "PascalCaseObject")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub pascal_case_object: Option<NamingConventionTestPascalCaseObject>,
+    pub pascal_case_object: Option<super::NamingConventionTestPascalCaseObject>,
     /// A number in SCREAMING_SNAKE_CASE
     #[serde(rename = "SCREAMING_NUMBER")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -33,7 +33,7 @@ pub struct NamingConventionTest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub id: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub items_array: Option<Vec<NamingConventionTestItemsArrayItem>>,
+    pub items_array: Option<Vec<super::NamingConventionTestItemsArrayItem>>,
     /// An array field in kebab-case
     #[serde(rename = "kebab-case-array")]
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -43,7 +43,7 @@ pub struct NamingConventionTest {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub kebab_case_field: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub nested_object: Option<NamingConventionTestNestedObject>,
+    pub nested_object: Option<super::NamingConventionTestNestedObject>,
     /// A single word field
     pub singleword: String,
     /// A field in snake_case

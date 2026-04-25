@@ -20,7 +20,7 @@ import (
 	"example.com/sdk/runtime"
 )
 
-// PetAPI groups operations under the "pet" tag.
+// PetAPI groups operations under the corresponding tag.
 type PetAPI struct {
 	client *runtime.Client
 }
@@ -33,15 +33,12 @@ func NewPetAPI(client *runtime.Client) *PetAPI {
 // UpdatePetResponse carries the response from the corresponding operation.
 type UpdatePetResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Pet
 }
 
 // UpdatePet — Update an existing pet
-func (a *PetAPI) UpdatePet(
-	ctx context.Context,
-	body *models.Pet,
-) (*UpdatePetResponse, error) {
+func (a *PetAPI) UpdatePet(ctx context.Context, body *models.Pet) (*UpdatePetResponse, error) {
 	path := "/pet"
 	var bodyReader io.Reader
 	if body != nil {
@@ -65,17 +62,17 @@ func (a *PetAPI) UpdatePet(
 
 	resp := &UpdatePetResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Pet
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Pet
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -83,15 +80,12 @@ func (a *PetAPI) UpdatePet(
 // AddPetResponse carries the response from the corresponding operation.
 type AddPetResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Pet
 }
 
 // AddPet — Add a new pet to the store
-func (a *PetAPI) AddPet(
-	ctx context.Context,
-	body *models.Pet,
-) (*AddPetResponse, error) {
+func (a *PetAPI) AddPet(ctx context.Context, body *models.Pet) (*AddPetResponse, error) {
 	path := "/pet"
 	var bodyReader io.Reader
 	if body != nil {
@@ -115,17 +109,17 @@ func (a *PetAPI) AddPet(
 
 	resp := &AddPetResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Pet
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Pet
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -133,15 +127,12 @@ func (a *PetAPI) AddPet(
 // FindPetsByStatusResponse carries the response from the corresponding operation.
 type FindPetsByStatusResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 []models.Pet
 }
 
 // FindPetsByStatus — Find pets by status
-func (a *PetAPI) FindPetsByStatus(
-	ctx context.Context,
-	status string,
-) (*FindPetsByStatusResponse, error) {
+func (a *PetAPI) FindPetsByStatus(ctx context.Context, status string) (*FindPetsByStatusResponse, error) {
 	path := "/pet/findByStatus"
 	query := url.Values{}
 	query.Set("status", status)
@@ -158,17 +149,17 @@ func (a *PetAPI) FindPetsByStatus(
 
 	resp := &FindPetsByStatusResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload []models.Pet
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload []models.Pet
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -176,15 +167,12 @@ func (a *PetAPI) FindPetsByStatus(
 // FindPetsByTagsResponse carries the response from the corresponding operation.
 type FindPetsByTagsResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 []models.Pet
 }
 
 // FindPetsByTags — Find pets by tags
-func (a *PetAPI) FindPetsByTags(
-	ctx context.Context,
-	tags []string,
-) (*FindPetsByTagsResponse, error) {
+func (a *PetAPI) FindPetsByTags(ctx context.Context, tags []string) (*FindPetsByTagsResponse, error) {
 	path := "/pet/findByTags"
 	query := url.Values{}
 	query.Set("tags", fmt.Sprintf("%v", tags))
@@ -201,17 +189,17 @@ func (a *PetAPI) FindPetsByTags(
 
 	resp := &FindPetsByTagsResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload []models.Pet
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload []models.Pet
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -219,15 +207,12 @@ func (a *PetAPI) FindPetsByTags(
 // GetPetByIdResponse carries the response from the corresponding operation.
 type GetPetByIdResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Pet
 }
 
 // GetPetById — Find pet by ID
-func (a *PetAPI) GetPetById(
-	ctx context.Context,
-	petId int64,
-) (*GetPetByIdResponse, error) {
+func (a *PetAPI) GetPetById(ctx context.Context, petId int64) (*GetPetByIdResponse, error) {
 	path := "/pet/{petId}"
 	path = strings.Replace(path, "{petId}", strconv.FormatInt(int64(petId), 10), 1)
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
@@ -243,17 +228,17 @@ func (a *PetAPI) GetPetById(
 
 	resp := &GetPetByIdResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Pet
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Pet
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -261,17 +246,12 @@ func (a *PetAPI) GetPetById(
 // UpdatePetWithFormResponse carries the response from the corresponding operation.
 type UpdatePetWithFormResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.Pet
 }
 
 // UpdatePetWithForm — Update a pet in the store with form data
-func (a *PetAPI) UpdatePetWithForm(
-	ctx context.Context,
-	petId int64,
-	name *string,
-	status *string,
-) (*UpdatePetWithFormResponse, error) {
+func (a *PetAPI) UpdatePetWithForm(ctx context.Context, petId int64, name *string, status *string) (*UpdatePetWithFormResponse, error) {
 	path := "/pet/{petId}"
 	path = strings.Replace(path, "{petId}", strconv.FormatInt(int64(petId), 10), 1)
 	query := url.Values{}
@@ -294,17 +274,17 @@ func (a *PetAPI) UpdatePetWithForm(
 
 	resp := &UpdatePetWithFormResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.Pet
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.Pet
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }
@@ -312,14 +292,11 @@ func (a *PetAPI) UpdatePetWithForm(
 // DeletePetResponse carries the response from the corresponding operation.
 type DeletePetResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 }
 
 // DeletePet — Delete a pet
-func (a *PetAPI) DeletePet(
-	ctx context.Context,
-	petId int64,
-) (*DeletePetResponse, error) {
+func (a *PetAPI) DeletePet(ctx context.Context, petId int64) (*DeletePetResponse, error) {
 	path := "/pet/{petId}"
 	path = strings.Replace(path, "{petId}", strconv.FormatInt(int64(petId), 10), 1)
 	req, err := a.client.NewRequest(ctx, "DELETE", path, nil, nil)
@@ -344,16 +321,12 @@ func (a *PetAPI) DeletePet(
 // UploadFileResponse carries the response from the corresponding operation.
 type UploadFileResponse struct {
 	StatusCode int
-	Raw        *http.Response
+	Raw *http.Response
 	Status200 *models.UploadResponse
 }
 
 // UploadFile — Upload an image
-func (a *PetAPI) UploadFile(
-	ctx context.Context,
-	petId int64,
-	additionalMetadata *string,
-) (*UploadFileResponse, error) {
+func (a *PetAPI) UploadFile(ctx context.Context, petId int64, additionalMetadata *string) (*UploadFileResponse, error) {
 	path := "/pet/{petId}/uploadImage"
 	path = strings.Replace(path, "{petId}", strconv.FormatInt(int64(petId), 10), 1)
 	query := url.Values{}
@@ -373,17 +346,17 @@ func (a *PetAPI) UploadFile(
 
 	resp := &UploadFileResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
-	case 200:
-		var payload models.UploadResponse
-		if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-			return nil, fmt.Errorf("decode response: %w", err)
-		}
-		resp.Status200 = &payload
-	default:
-		if httpResp.StatusCode >= 400 {
-			body, _ := io.ReadAll(httpResp.Body)
-			return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
-		}
+		case 200:
+			var payload models.UploadResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

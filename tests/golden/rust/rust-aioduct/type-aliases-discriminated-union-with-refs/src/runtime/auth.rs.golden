@@ -7,12 +7,12 @@
 use crate::runtime::error::Error;
 
 /// Trait for authenticating requests.
-pub trait Authenticator: Send + Sync + std::fmt::Debug {
+pub trait Authenticator<R: aioduct::Runtime>: Send + Sync + std::fmt::Debug {
     /// Apply authentication to the request builder.
-    fn authenticate<R: aioduct::Runtime>(
+    fn authenticate<'a>(
         &self,
-        req: aioduct::RequestBuilder<R>,
-    ) -> Result<aioduct::RequestBuilder<R>, Error>;
+        req: aioduct::RequestBuilder<'a, R>,
+    ) -> Result<aioduct::RequestBuilder<'a, R>, Error>;
 }
 
 /// Bearer token authentication.
@@ -29,11 +29,11 @@ impl BearerAuth {
     }
 }
 
-impl Authenticator for BearerAuth {
-    fn authenticate<R: aioduct::Runtime>(
+impl<R: aioduct::Runtime> Authenticator<R> for BearerAuth {
+    fn authenticate<'a>(
         &self,
-        req: aioduct::RequestBuilder<R>,
-    ) -> Result<aioduct::RequestBuilder<R>, Error> {
+        req: aioduct::RequestBuilder<'a, R>,
+    ) -> Result<aioduct::RequestBuilder<'a, R>, Error> {
         Ok(req.bearer_auth(&self.token))
     }
 }
@@ -54,11 +54,11 @@ impl ApiKeyAuth {
     }
 }
 
-impl Authenticator for ApiKeyAuth {
-    fn authenticate<R: aioduct::Runtime>(
+impl<R: aioduct::Runtime> Authenticator<R> for ApiKeyAuth {
+    fn authenticate<'a>(
         &self,
-        req: aioduct::RequestBuilder<R>,
-    ) -> Result<aioduct::RequestBuilder<R>, Error> {
+        req: aioduct::RequestBuilder<'a, R>,
+    ) -> Result<aioduct::RequestBuilder<'a, R>, Error> {
         Ok(req.header_str(&self.header_name, &self.api_key)?)
     }
 }

@@ -10,5 +10,5 @@ pub struct ComplexNestedObjectUser {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub id: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub profile: Option<ComplexNestedObjectUserProfile>,
+    pub profile: Option<super::ComplexNestedObjectUserProfile>,
 }

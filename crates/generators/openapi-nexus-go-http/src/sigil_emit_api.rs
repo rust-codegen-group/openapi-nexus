@@ -9,11 +9,12 @@
 //! Non-2xx responses are surfaced as `*runtime.APIError` so callers can switch
 //! on error via `errors.As`.
 //!
-//! We build each file as a plain string here — the method body is imperative
-//! Go (path templating, query building, JSON marshal/unmarshal, status switch)
-//! which doesn't fit sigil-stitch's structural builders cleanly. Structural
-//! emission can be layered back in when/if import-tracking across files
-//! becomes load-bearing.
+//! File-level structure (package declaration, imports, struct/func declarations)
+//! is assembled via sigil-stitch's `FileSpec`, `TypeSpec`, `FunSpec`, and
+//! `CodeBlock` builders, giving us automatic import tracking through
+//! `TypeName::importable`. Method bodies are emitted as `CodeBlock`s because
+//! the imperative Go code (path templating, query building, JSON
+//! marshal/unmarshal, status switch) does not fit the structural builders.
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
@@ -23,6 +24,18 @@ use openapi_nexus_ir::types::{
     IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation,
 };
+use sigil_stitch::code_block::CodeBlock;
+use sigil_stitch::spec::field_spec::FieldSpec;
+use sigil_stitch::spec::file_spec::FileSpec;
+use sigil_stitch::spec::fun_spec::FunSpec;
+use sigil_stitch::spec::import_spec::ImportSpec;
+use sigil_stitch::spec::modifiers::TypeKind;
+use sigil_stitch::spec::parameter_spec::ParameterSpec;
+use sigil_stitch::spec::type_spec::TypeSpec;
+use sigil_stitch::type_name::TypeName;
+
+const APIS_PACKAGE: &str = "apis";
+const RENDER_WIDTH: usize = 100;
 
 /// Generate every API file from the IR.
 pub fn generate_api_files(
@@ -69,36 +82,278 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
 fn emit_api_file(tag: &str, ops: &[&IrOperation], module_path: &str) -> String {
     let struct_name = format!("{}API", tag.to_pascal_case());
 
-    // Pre-plan each operation so we can compute imports from actual usage.
+    // Pre-plan each operation so we can build specs from the plans.
     let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op)).collect();
 
-    let imports = compute_imports(&plans);
+    let filename = format!("{}.go", tag.to_snake_case());
+    let mut fb = FileSpec::builder(&filename)
+        // Package header
+        .header(package_header())
+        // API struct type
+        .add_type(build_api_struct(&struct_name, module_path))
+        // Constructor function
+        .add_function(build_constructor(&struct_name, module_path));
 
-    let mut out = String::new();
-    out.push_str("package apis\n\n");
-    out.push_str(&render_imports(&imports, module_path));
-    out.push('\n');
-
-    out.push_str(&format!(
-        "// {struct_name} groups operations under the \"{tag}\" tag.\n"
-    ));
-    out.push_str(&format!("type {struct_name} struct {{\n"));
-    out.push_str("\tclient *runtime.Client\n");
-    out.push_str("}\n\n");
-
-    out.push_str(&format!(
-        "// New{struct_name} constructs a {struct_name} bound to client.\n"
-    ));
-    out.push_str(&format!(
-        "func New{struct_name}(client *runtime.Client) *{struct_name} {{\n\treturn &{struct_name}{{client: client}}\n}}\n",
-    ));
-
-    for plan in &plans {
-        out.push('\n');
-        out.push_str(&emit_operation(&struct_name, plan));
+    // Body-level imports: packages used inside CodeBlock method bodies that
+    // sigil can't infer from structural TypeName references.
+    for import in collect_body_imports(&plans, module_path) {
+        fb = fb.add_import(import);
     }
 
-    out
+    // For each operation: response struct + method
+    for plan in &plans {
+        fb = fb
+            .add_type(build_response_struct(plan, module_path))
+            .add_function(build_operation_fun(&struct_name, plan));
+    }
+
+    let file = fb.build().expect("FileSpec builds for API file");
+    file.render(RENDER_WIDTH)
+        .expect("FileSpec renders for API file")
+}
+
+// ---------------------------------------------------------------------------
+// Body-level import collection
+// ---------------------------------------------------------------------------
+
+fn collect_body_imports(plans: &[OpPlan<'_>], module_path: &str) -> Vec<ImportSpec> {
+    let mut pkgs: BTreeSet<String> = BTreeSet::new();
+
+    for plan in plans {
+        let has_path_params = !plan.path_params.is_empty();
+        let has_query_params = !plan.query_params.is_empty();
+        let has_body = plan.body.is_some();
+        let has_typed_responses = !plan.typed_responses.is_empty();
+
+        if has_path_params {
+            pkgs.insert("strings".to_string());
+        }
+        if has_query_params {
+            pkgs.insert("net/url".to_string());
+        }
+        if has_body {
+            pkgs.insert("io".to_string());
+            pkgs.insert("encoding/json".to_string());
+            pkgs.insert("fmt".to_string());
+            pkgs.insert("bytes".to_string());
+        }
+        // io.ReadAll used in error handling (4xx branch)
+        pkgs.insert("io".to_string());
+        if has_typed_responses {
+            pkgs.insert("encoding/json".to_string());
+            pkgs.insert("fmt".to_string());
+        }
+
+        // Check if any param stringification needs strconv or fmt
+        for p in plan
+            .path_params
+            .iter()
+            .chain(&plan.query_params)
+            .chain(&plan.header_params)
+        {
+            collect_stringify_imports(&p.param.type_expr, &mut pkgs);
+        }
+
+        // Check if body or any typed response references models
+        if let Some(b) = &plan.body
+            && b.go_type.contains("models.")
+        {
+            pkgs.insert(format!("{module_path}/models"));
+        }
+        for tr in &plan.typed_responses {
+            if tr.go_type.contains("models.") {
+                pkgs.insert(format!("{module_path}/models"));
+            }
+        }
+    }
+
+    pkgs.into_iter()
+        .map(|pkg| {
+            let name = pkg.rsplit('/').next().unwrap_or(&pkg);
+            ImportSpec::named(&pkg, name)
+        })
+        .collect()
+}
+
+fn collect_stringify_imports(t: &IrTypeExpr, pkgs: &mut BTreeSet<String>) {
+    match t {
+        IrTypeExpr::Primitive(
+            IrPrimitive::String
+            | IrPrimitive::Date
+            | IrPrimitive::DateTime
+            | IrPrimitive::Uuid
+            | IrPrimitive::StringWithFormat(_)
+            | IrPrimitive::Binary,
+        )
+        | IrTypeExpr::StringLiteral(_)
+        | IrTypeExpr::StringEnum(_)
+        | IrTypeExpr::Named(_) => {}
+        IrTypeExpr::Primitive(IrPrimitive::Boolean)
+        | IrTypeExpr::Primitive(IrPrimitive::Integer)
+        | IrTypeExpr::Primitive(IrPrimitive::IntegerWithFormat(_))
+        | IrTypeExpr::Primitive(IrPrimitive::Number)
+        | IrTypeExpr::Primitive(IrPrimitive::NumberWithFormat(_)) => {
+            pkgs.insert("strconv".to_string());
+        }
+        IrTypeExpr::Nullable(inner) => collect_stringify_imports(inner, pkgs),
+        _ => {
+            pkgs.insert("fmt".to_string());
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Structural builders
+// ---------------------------------------------------------------------------
+
+/// Build a `package apis` header block.
+fn package_header() -> CodeBlock {
+    let mut b = CodeBlock::builder();
+    b.add(&format!("package {APIS_PACKAGE}"), ());
+    b.build().expect("package header builds")
+}
+
+/// Build the API struct: `type {Name}API struct { client *runtime.Client }`
+fn build_api_struct(struct_name: &str, module_path: &str) -> TypeSpec {
+    let runtime_client_ty = TypeName::importable(&format!("{module_path}/runtime"), "Client");
+
+    TypeSpec::builder(struct_name, TypeKind::Struct)
+        .doc(&format!(
+            "{struct_name} groups operations under the corresponding tag."
+        ))
+        .add_field(
+            FieldSpec::builder("client", TypeName::pointer(runtime_client_ty))
+                .build()
+                .expect("client field builds"),
+        )
+        .build()
+        .expect("API struct TypeSpec builds")
+}
+
+/// Build the constructor: `func New{Name}(client *runtime.Client) *{Name} { ... }`
+fn build_constructor(struct_name: &str, module_path: &str) -> FunSpec {
+    let runtime_client_ty = TypeName::importable(&format!("{module_path}/runtime"), "Client");
+    let func_name = format!("New{struct_name}");
+
+    let mut body = CodeBlock::builder();
+    body.add(&format!("return &{struct_name}{{client: client}}"), ());
+
+    FunSpec::builder(&func_name)
+        .doc(&format!(
+            "New{struct_name} constructs a {struct_name} bound to client."
+        ))
+        .add_param(
+            ParameterSpec::new("client", TypeName::pointer(runtime_client_ty))
+                .expect("param builds"),
+        )
+        .returns(TypeName::pointer(TypeName::primitive(struct_name)))
+        .body(body.build().expect("constructor body builds"))
+        .build()
+        .expect("constructor FunSpec builds")
+}
+
+/// Build the response struct for an operation.
+fn build_response_struct(plan: &OpPlan<'_>, module_path: &str) -> TypeSpec {
+    let _ = module_path;
+
+    // Raw *http.Response
+    let http_response_ty = TypeName::importable("net/http", "Response");
+
+    let mut tb = TypeSpec::builder(&plan.response_type, TypeKind::Struct)
+        .doc(&format!(
+            "{} carries the response from the corresponding operation.",
+            plan.response_type
+        ))
+        // StatusCode int
+        .add_field(
+            FieldSpec::builder("StatusCode", TypeName::primitive("int"))
+                .build()
+                .expect("StatusCode field builds"),
+        )
+        // Raw *http.Response
+        .add_field(
+            FieldSpec::builder("Raw", TypeName::pointer(http_response_ty))
+                .build()
+                .expect("Raw field builds"),
+        );
+
+    // Typed response payload fields
+    let mut seen: BTreeSet<String> = BTreeSet::new();
+    for tr in &plan.typed_responses {
+        if !seen.insert(tr.field_name.clone()) {
+            continue;
+        }
+        let type_name = pointerize_type_name(&tr.go_type);
+        tb = tb.add_field(
+            FieldSpec::builder(&tr.field_name, type_name)
+                .build()
+                .expect("response payload field builds"),
+        );
+    }
+
+    tb.build().expect("response struct TypeSpec builds")
+}
+
+/// Build a FunSpec for an operation method.
+fn build_operation_fun(struct_name: &str, plan: &OpPlan<'_>) -> FunSpec {
+    let OpPlan {
+        op,
+        method_name,
+        response_type,
+        ..
+    } = plan;
+
+    let mut fb = FunSpec::builder(method_name);
+
+    // Doc comment
+    if let Some(summary) = &op.summary {
+        fb = fb.doc(&format!("{method_name} \u{2014} {summary}"));
+    } else {
+        fb = fb.doc(&format!(
+            "{method_name} calls {} {}.",
+            op.method.to_uppercase(),
+            op.path,
+        ));
+    }
+    if let Some(desc) = &op.description {
+        fb = fb.doc("");
+        for line in desc.lines() {
+            fb = fb.doc(line);
+        }
+    }
+
+    // Receiver: (a *{StructName})
+    fb = fb.receiver(
+        ParameterSpec::new("a", TypeName::pointer(TypeName::primitive(struct_name)))
+            .expect("receiver builds"),
+    );
+
+    // Parameters: ctx context.Context, then path/query/header params, then body
+    let context_ty = TypeName::importable("context", "Context");
+    fb = fb.add_param(ParameterSpec::new("ctx", context_ty).expect("ctx param builds"));
+
+    for p in plan
+        .path_params
+        .iter()
+        .chain(&plan.query_params)
+        .chain(&plan.header_params)
+    {
+        let type_name = TypeName::raw(&p.go_type);
+        fb = fb.add_param(ParameterSpec::new(&p.var_name, type_name).expect("param builds"));
+    }
+    if let Some(body) = &plan.body {
+        let type_name = TypeName::raw(&body.go_type);
+        fb =
+            fb.add_param(ParameterSpec::new(&body.var_name, type_name).expect("body param builds"));
+    }
+
+    // Return type: (*{Response}, error)
+    fb = fb.returns(TypeName::raw(&format!("(*{response_type}, error)")));
+
+    // Body
+    fb = fb.body(emit_method_body(plan));
+
+    fb.build().expect("operation FunSpec builds")
 }
 
 // ---------------------------------------------------------------------------
@@ -109,39 +364,28 @@ struct OpPlan<'a> {
     op: &'a IrOperation,
     method_name: String,
     response_type: String,
-    /// Path parameters, in the order they appear as method args.
     path_params: Vec<ParamBinding<'a>>,
-    /// Query parameters.
     query_params: Vec<ParamBinding<'a>>,
-    /// Header parameters.
     header_params: Vec<ParamBinding<'a>>,
-    /// Optional request body with its final Go variable name + type.
     body: Option<BodyBinding>,
-    /// Typed responses with resolved Go types.
     typed_responses: Vec<TypedResponse>,
 }
 
 struct ParamBinding<'a> {
     param: &'a IrParameter,
-    /// Final Go identifier for the function argument.
     var_name: String,
-    /// Go type as it appears in the method signature (may be pointer for optional).
     go_type: String,
-    /// Whether `var_name` is a pointer type that must be dereferenced to get the value.
     is_pointer: bool,
 }
 
 struct BodyBinding {
     var_name: String,
-    /// Go type in the method signature. Always a pointer for Named/primitive
-    /// types; bare for slice/map.
     go_type: String,
 }
 
 struct TypedResponse {
     status: String,
     field_name: String,
-    /// Go type (e.g. `models.Foo`, `[]string`, etc.).
     go_type: String,
 }
 
@@ -170,10 +414,7 @@ fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
             ParameterLocation::Path => path_params.push(binding),
             ParameterLocation::Query => query_params.push(binding),
             ParameterLocation::Header => header_params.push(binding),
-            ParameterLocation::Cookie => {
-                // Cookies are rare; treat like headers (caller sets via Cookie header).
-                header_params.push(binding);
-            }
+            ParameterLocation::Cookie => header_params.push(binding),
         }
     }
 
@@ -221,11 +462,7 @@ fn plan_response(r: &IrResponse) -> Option<TypedResponse> {
 
 fn param_go_type(p: &IrParameter) -> (String, bool) {
     let base = go_type_str(&p.type_expr);
-    if p.required {
-        let pointer = base.starts_with('*');
-        (base, pointer)
-    } else if base.starts_with('*') || base.starts_with('[') || base.starts_with("map[") {
-        // Already nilable — leave as is.
+    if p.required || base.starts_with('*') || base.starts_with('[') || base.starts_with("map[") {
         let pointer = base.starts_with('*');
         (base, pointer)
     } else {
@@ -247,234 +484,10 @@ fn unique_name(desired: &str, used: &mut HashSet<String>) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// Import tracking
+// Method body emission (CodeBlock)
 // ---------------------------------------------------------------------------
 
-#[derive(Default)]
-struct Imports {
-    bytes: bool,
-    context: bool,
-    encoding_json: bool,
-    fmt: bool,
-    io: bool,
-    net_http: bool,
-    net_url: bool,
-    strconv: bool,
-    strings: bool,
-    models: bool,
-}
-
-fn compute_imports(plans: &[OpPlan<'_>]) -> Imports {
-    let mut imp = Imports {
-        context: true,
-        io: true,
-        net_http: true,
-        ..Imports::default()
-    };
-
-    for plan in plans {
-        if !plan.path_params.is_empty() {
-            imp.strings = true;
-        }
-        if !plan.query_params.is_empty() {
-            imp.net_url = true;
-        }
-        for p in plan
-            .path_params
-            .iter()
-            .chain(&plan.query_params)
-            .chain(&plan.header_params)
-        {
-            if needs_strconv(&p.param.type_expr) {
-                imp.strconv = true;
-            }
-            if refs_models(&p.param.type_expr) {
-                imp.models = true;
-            }
-        }
-        if plan.body.is_some() {
-            imp.bytes = true;
-            imp.encoding_json = true;
-            imp.fmt = true;
-        }
-        if let Some(body) = &plan.body
-            && body.go_type.contains("models.")
-        {
-            imp.models = true;
-        }
-        if !plan.typed_responses.is_empty() {
-            imp.encoding_json = true;
-            imp.fmt = true;
-        }
-        for tr in &plan.typed_responses {
-            if tr.go_type.contains("models.") {
-                imp.models = true;
-            }
-        }
-    }
-
-    imp
-}
-
-fn needs_strconv(t: &IrTypeExpr) -> bool {
-    match t {
-        IrTypeExpr::Primitive(
-            IrPrimitive::Boolean
-            | IrPrimitive::Integer
-            | IrPrimitive::IntegerWithFormat(_)
-            | IrPrimitive::Number
-            | IrPrimitive::NumberWithFormat(_),
-        ) => true,
-        IrTypeExpr::Nullable(inner) => needs_strconv(inner),
-        _ => false,
-    }
-}
-
-fn refs_models(t: &IrTypeExpr) -> bool {
-    match t {
-        IrTypeExpr::Named(_) => true,
-        IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
-            refs_models(inner)
-        }
-        IrTypeExpr::Union(members) => members.iter().any(refs_models),
-        _ => false,
-    }
-}
-
-fn render_imports(imp: &Imports, module_path: &str) -> String {
-    let mut stdlib = Vec::new();
-    if imp.bytes {
-        stdlib.push("\"bytes\"");
-    }
-    if imp.context {
-        stdlib.push("\"context\"");
-    }
-    if imp.encoding_json {
-        stdlib.push("\"encoding/json\"");
-    }
-    if imp.fmt {
-        stdlib.push("\"fmt\"");
-    }
-    if imp.io {
-        stdlib.push("\"io\"");
-    }
-    if imp.net_http {
-        stdlib.push("\"net/http\"");
-    }
-    if imp.net_url {
-        stdlib.push("\"net/url\"");
-    }
-    if imp.strconv {
-        stdlib.push("\"strconv\"");
-    }
-    if imp.strings {
-        stdlib.push("\"strings\"");
-    }
-
-    let mut project = Vec::new();
-    if imp.models {
-        project.push(format!("\"{module_path}/models\""));
-    }
-    project.push(format!("\"{module_path}/runtime\""));
-
-    let mut out = String::from("import (\n");
-    for s in &stdlib {
-        out.push_str(&format!("\t{s}\n"));
-    }
-    if !stdlib.is_empty() {
-        out.push('\n');
-    }
-    for s in &project {
-        out.push_str(&format!("\t{s}\n"));
-    }
-    out.push_str(")\n");
-    out
-}
-
-// ---------------------------------------------------------------------------
-// Per-operation emission
-// ---------------------------------------------------------------------------
-
-fn emit_operation(struct_name: &str, plan: &OpPlan<'_>) -> String {
-    let OpPlan {
-        op,
-        method_name,
-        response_type,
-        ..
-    } = plan;
-
-    let mut out = String::new();
-
-    out.push_str(&emit_response_struct(response_type, plan));
-    out.push('\n');
-
-    if let Some(summary) = &op.summary {
-        out.push_str(&format!("// {method_name} — {summary}\n"));
-    } else {
-        out.push_str(&format!(
-            "// {method_name} calls {} {}.\n",
-            op.method.to_uppercase(),
-            op.path,
-        ));
-    }
-    if let Some(desc) = &op.description {
-        out.push_str("//\n");
-        for line in desc.lines() {
-            out.push_str(&format!("// {line}\n"));
-        }
-    }
-
-    let mut params = vec!["ctx context.Context".to_string()];
-    for p in plan
-        .path_params
-        .iter()
-        .chain(&plan.query_params)
-        .chain(&plan.header_params)
-    {
-        params.push(format!("{} {}", p.var_name, p.go_type));
-    }
-    if let Some(body) = &plan.body {
-        params.push(format!("{} {}", body.var_name, body.go_type));
-    }
-
-    out.push_str(&format!(
-        "func (a *{struct_name}) {method_name}(\n\t{},\n) (*{response_type}, error) {{\n",
-        params.join(",\n\t"),
-    ));
-
-    out.push_str(&emit_method_body(plan));
-    out.push_str("}\n");
-    out
-}
-
-fn emit_response_struct(response_type: &str, plan: &OpPlan<'_>) -> String {
-    let mut out =
-        format!("// {response_type} carries the response from the corresponding operation.\n");
-    out.push_str(&format!("type {response_type} struct {{\n"));
-    out.push_str("\tStatusCode int\n");
-    out.push_str("\tRaw        *http.Response\n");
-    let mut seen: BTreeSet<String> = BTreeSet::new();
-    for tr in &plan.typed_responses {
-        if !seen.insert(tr.field_name.clone()) {
-            continue;
-        }
-        let ptr = pointerize(&tr.go_type);
-        out.push_str(&format!("\t{} {}\n", tr.field_name, ptr));
-    }
-    out.push_str("}\n");
-    out
-}
-
-/// Wrap bare struct types in `*`; leave slices/maps/pointers alone.
-fn pointerize(go_ty: &str) -> String {
-    if go_ty.starts_with('[') || go_ty.starts_with('*') || go_ty.starts_with("map[") {
-        go_ty.to_string()
-    } else {
-        format!("*{go_ty}")
-    }
-}
-
-fn emit_method_body(plan: &OpPlan<'_>) -> String {
+fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     let OpPlan {
         op,
         response_type,
@@ -485,137 +498,184 @@ fn emit_method_body(plan: &OpPlan<'_>) -> String {
         ..
     } = plan;
 
-    let mut out = String::new();
+    let mut cb = CodeBlock::builder();
 
     // Path.
-    out.push_str(&format!("\tpath := \"{}\"\n", op.path));
+    cb.add(&format!("path := \"{}\"", op.path), ());
+    cb.add_line();
     for p in path_params {
         let placeholder = format!("{{{}}}", p.param.name);
         let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
         let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
-        out.push_str(&format!(
-            "\tpath = strings.Replace(path, \"{placeholder}\", {stringified}, 1)\n",
-        ));
+        cb.add(
+            &format!("path = strings.Replace(path, \"{placeholder}\", {stringified}, 1)"),
+            (),
+        );
+        cb.add_line();
     }
 
     // Query.
     let has_query = !query_params.is_empty();
     if has_query {
-        out.push_str("\tquery := url.Values{}\n");
+        cb.add("query := url.Values{}", ());
+        cb.add_line();
         for p in query_params {
             let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
             let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
-            let set = format!("\tquery.Set(\"{}\", {stringified})\n", p.param.name,);
+            let set_line = format!("query.Set(\"{}\", {stringified})", p.param.name);
             if p.param.required || !p.is_pointer {
-                out.push_str(&set);
+                cb.add(&set_line, ());
+                cb.add_line();
             } else {
-                out.push_str(&format!("\tif {} != nil {{\n\t", p.var_name));
-                out.push_str(&set);
-                out.push_str("\t}\n");
+                cb.begin_control_flow(&format!("if {} != nil", p.var_name), ());
+                cb.add(&set_line, ());
+                cb.add_line();
+                cb.end_control_flow();
             }
         }
     }
 
     // Body.
     if let Some(body) = body {
-        out.push_str("\tvar bodyReader io.Reader\n");
-        out.push_str(&format!("\tif {} != nil {{\n", body.var_name));
-        out.push_str(&format!(
-            "\t\tbuf, err := json.Marshal({})\n",
-            body.var_name,
-        ));
-        out.push_str(
-            "\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"marshal body: %w\", err)\n\t\t}\n",
-        );
-        out.push_str("\t\tbodyReader = bytes.NewReader(buf)\n");
-        out.push_str("\t}\n");
+        cb.add("var bodyReader io.Reader", ());
+        cb.add_line();
+        cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
+        cb.add(&format!("buf, err := json.Marshal({})", body.var_name), ());
+        cb.add_line();
+        cb.begin_control_flow("if err != nil", ());
+        cb.add("return nil, fmt.Errorf(\"marshal body: %%w\", err)", ());
+        cb.add_line();
+        cb.end_control_flow();
+        cb.add("bodyReader = bytes.NewReader(buf)", ());
+        cb.add_line();
+        cb.end_control_flow();
     }
 
     // Build request.
     let query_arg = if has_query { "query" } else { "nil" };
     let body_arg = if body.is_some() { "bodyReader" } else { "nil" };
-    out.push_str(&format!(
-        "\treq, err := a.client.NewRequest(ctx, \"{}\", path, {query_arg}, {body_arg})\n",
-        op.method.to_uppercase(),
-    ));
-    out.push_str("\tif err != nil {\n\t\treturn nil, err\n\t}\n");
+    cb.add(
+        &format!(
+            "req, err := a.client.NewRequest(ctx, \"{}\", path, {query_arg}, {body_arg})",
+            op.method.to_uppercase(),
+        ),
+        (),
+    );
+    cb.add_line();
+    cb.begin_control_flow("if err != nil", ());
+    cb.add("return nil, err", ());
+    cb.add_line();
+    cb.end_control_flow();
 
     // Headers.
     for p in header_params {
         let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
         let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
         if p.param.required || !p.is_pointer {
-            out.push_str(&format!(
-                "\treq.Header.Set(\"{}\", {stringified})\n",
-                p.param.name,
-            ));
+            cb.add(
+                &format!("req.Header.Set(\"{}\", {stringified})", p.param.name),
+                (),
+            );
+            cb.add_line();
         } else {
-            out.push_str(&format!(
-                "\tif {} != nil {{\n\t\treq.Header.Set(\"{}\", {stringified})\n\t}}\n",
-                p.var_name, p.param.name,
-            ));
+            cb.begin_control_flow(&format!("if {} != nil", p.var_name), ());
+            cb.add(
+                &format!("req.Header.Set(\"{}\", {stringified})", p.param.name),
+                (),
+            );
+            cb.add_line();
+            cb.end_control_flow();
         }
     }
 
     if body.is_some() {
-        out.push_str("\treq.Header.Set(\"Content-Type\", \"application/json\")\n");
+        cb.add("req.Header.Set(\"Content-Type\", \"application/json\")", ());
+        cb.add_line();
     }
-    out.push_str("\treq.Header.Set(\"Accept\", \"application/json\")\n");
+    cb.add("req.Header.Set(\"Accept\", \"application/json\")", ());
+    cb.add_line();
 
     // Dispatch.
-    out.push_str("\thttpResp, err := a.client.Do(req)\n");
-    out.push_str("\tif err != nil {\n\t\treturn nil, err\n\t}\n");
-    out.push_str("\tdefer httpResp.Body.Close()\n\n");
+    cb.add("httpResp, err := a.client.Do(req)", ());
+    cb.add_line();
+    cb.begin_control_flow("if err != nil", ());
+    cb.add("return nil, err", ());
+    cb.add_line();
+    cb.end_control_flow();
+    cb.add("defer httpResp.Body.Close()", ());
+    cb.add_line();
+    cb.add_line();
 
-    out.push_str(&format!(
-        "\tresp := &{response_type}{{StatusCode: httpResp.StatusCode, Raw: httpResp}}\n",
-    ));
+    cb.add(
+        &format!("resp := &{response_type}{{StatusCode: httpResp.StatusCode, Raw: httpResp}}"),
+        (),
+    );
+    cb.add_line();
 
     if !plan.typed_responses.is_empty() {
-        out.push_str("\tswitch httpResp.StatusCode {\n");
+        cb.begin_control_flow("switch httpResp.StatusCode", ());
         for tr in &plan.typed_responses {
-            // We only emit numeric status cases; `default` and range statuses
-            // like "2XX" fall through to the default arm.
             let Some(code) = tr.status.parse::<u16>().ok() else {
                 continue;
             };
-            out.push_str(&format!("\tcase {code}:\n"));
-            out.push_str(&emit_decode_into(&tr.field_name, &tr.go_type));
+            cb.add(&format!("case {code}:"), ());
+            cb.add_line();
+            cb.add("%L", emit_decode_into(&tr.field_name, &tr.go_type));
         }
-        out.push_str("\tdefault:\n");
-        out.push_str("\t\tif httpResp.StatusCode >= 400 {\n");
-        out.push_str("\t\t\tbody, _ := io.ReadAll(httpResp.Body)\n");
-        out.push_str("\t\t\treturn nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}\n");
-        out.push_str("\t\t}\n");
-        out.push_str("\t}\n");
+        cb.add("default:", ());
+        cb.add_line();
+        cb.add("%>", ());
+        cb.begin_control_flow("if httpResp.StatusCode >= 400", ());
+        cb.add("body, _ := io.ReadAll(httpResp.Body)", ());
+        cb.add_line();
+        cb.add(
+            "return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}",
+            (),
+        );
+        cb.add_line();
+        cb.end_control_flow();
+        cb.add("%<", ());
+        cb.end_control_flow();
     } else {
-        out.push_str("\tif httpResp.StatusCode >= 400 {\n");
-        out.push_str("\t\tbody, _ := io.ReadAll(httpResp.Body)\n");
-        out.push_str("\t\treturn nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}\n");
-        out.push_str("\t}\n");
+        cb.begin_control_flow("if httpResp.StatusCode >= 400", ());
+        cb.add("body, _ := io.ReadAll(httpResp.Body)", ());
+        cb.add_line();
+        cb.add(
+            "return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}",
+            (),
+        );
+        cb.add_line();
+        cb.end_control_flow();
     }
 
-    out.push_str("\treturn resp, nil\n");
-    out
+    cb.add("return resp, nil", ());
+    cb.build().expect("method body builds")
 }
 
-fn emit_decode_into(field: &str, go_ty: &str) -> String {
+fn emit_decode_into(field: &str, go_ty: &str) -> CodeBlock {
     let (elem_ty, assignment) = if go_ty.starts_with('[') || go_ty.starts_with("map[") {
-        (go_ty.to_string(), format!("resp.{field} = payload\n"))
+        (go_ty.to_string(), format!("resp.{field} = payload"))
     } else {
         (
             go_ty.trim_start_matches('*').to_string(),
-            format!("resp.{field} = &payload\n"),
+            format!("resp.{field} = &payload"),
         )
     };
-    let mut out = String::new();
-    out.push_str(&format!("\t\tvar payload {elem_ty}\n"));
-    out.push_str("\t\tif err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {\n");
-    out.push_str("\t\t\treturn nil, fmt.Errorf(\"decode response: %w\", err)\n");
-    out.push_str("\t\t}\n");
-    out.push_str("\t\t");
-    out.push_str(&assignment);
-    out
+    let mut cb = CodeBlock::builder();
+    cb.add("%>", ());
+    cb.add(&format!("var payload {elem_ty}"), ());
+    cb.add_line();
+    cb.begin_control_flow(
+        "if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil",
+        (),
+    );
+    cb.add("return nil, fmt.Errorf(\"decode response: %%w\", err)", ());
+    cb.add_line();
+    cb.end_control_flow();
+    cb.add(&assignment, ());
+    cb.add_line();
+    cb.add("%<", ());
+    cb.build().expect("decode body builds")
 }
 
 fn deref_if_pointer(var: &str, is_pointer: bool) -> String {
@@ -623,6 +683,18 @@ fn deref_if_pointer(var: &str, is_pointer: bool) -> String {
         format!("*{var}")
     } else {
         var.to_string()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TypeName builder for response struct fields
+// ---------------------------------------------------------------------------
+
+fn pointerize_type_name(go_ty: &str) -> TypeName {
+    if go_ty.starts_with('[') || go_ty.starts_with('*') || go_ty.starts_with("map[") {
+        TypeName::raw(go_ty)
+    } else {
+        TypeName::raw(&format!("*{go_ty}"))
     }
 }
 
@@ -655,7 +727,7 @@ fn pick_body_type(body: &IrRequestBody) -> Option<IrTypeExpr> {
 }
 
 // ---------------------------------------------------------------------------
-// Param → Go identifier, value → Go string expression
+// Param -> Go identifier, value -> Go string expression
 // ---------------------------------------------------------------------------
 
 fn go_ident(name: &str) -> String {
@@ -673,8 +745,6 @@ fn go_ident(name: &str) -> String {
     }
 }
 
-/// Render a value expression as a Go `string`. Expects `value_expr` to already
-/// be the pointer-dereferenced form for optional vars.
 fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
     match t {
         IrTypeExpr::Primitive(
@@ -699,15 +769,14 @@ fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
         }
         IrTypeExpr::Nullable(inner) => render_value_as_string(value_expr, inner),
         IrTypeExpr::Named(_) => {
-            // Named refs in path/query/header are almost always string enums.
             format!("string({value_expr})")
         }
-        _ => format!("fmt.Sprintf(\"%v\", {value_expr})"),
+        _ => format!("fmt.Sprintf(\"%%v\", {value_expr})"),
     }
 }
 
 // ---------------------------------------------------------------------------
-// Type-expr → Go type
+// Type-expr -> Go type
 // ---------------------------------------------------------------------------
 
 fn go_type_str(expr: &IrTypeExpr) -> String {

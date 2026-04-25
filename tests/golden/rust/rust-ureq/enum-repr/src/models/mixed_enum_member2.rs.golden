@@ -9,5 +9,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MixedEnumMember2 {
     #[serde(rename = "VariantA")]
-    pub variant_a: VariantA,
+    pub variant_a: super::VariantA,
 }

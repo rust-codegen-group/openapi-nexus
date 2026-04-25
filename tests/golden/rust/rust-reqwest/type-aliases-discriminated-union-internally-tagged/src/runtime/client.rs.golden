@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::header::HeaderMap;
 
 use crate::runtime::auth::Authenticator;
 use crate::runtime::error::Error;
@@ -56,7 +56,7 @@ impl Client {
 
         if let Some(auth) = &self.authenticator {
             let mut headers = HeaderMap::new();
-            auth.authenticate(&mut headers).await?;
+            auth.authenticate(&mut headers)?;
             builder = builder.headers(headers);
         }
 

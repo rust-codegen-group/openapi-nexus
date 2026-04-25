@@ -9,11 +9,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AllOptionalProperties {
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub optional_array: Option<Vec<AllOptionalPropertiesOptionalArrayItem>>,
+    pub optional_array: Option<Vec<super::AllOptionalPropertiesOptionalArrayItem>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub optional_inline: Option<AllOptionalPropertiesOptionalInline>,
+    pub optional_inline: Option<super::AllOptionalPropertiesOptionalInline>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub optional_reference: Option<User>,
+    pub optional_reference: Option<super::User>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub optional_string: Option<String>,
 }

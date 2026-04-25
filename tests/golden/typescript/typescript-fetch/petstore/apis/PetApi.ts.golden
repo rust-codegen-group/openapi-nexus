@@ -186,7 +186,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async updatePet(requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit
@@ -236,7 +235,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async addPet(requestParameters: ApiAddPetRequest, initOverrides?: RequestInit
@@ -283,7 +281,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async findPetsByStatus(requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit
@@ -330,7 +327,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async findPetsByTags(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
@@ -378,7 +374,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async getPetById(requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit
@@ -429,7 +424,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async updatePetWithForm(requestParameters: ApiUpdatePetWithFormRequest,
@@ -474,7 +468,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new VoidApiResponse(response) as VoidApiResponse & { status: number };
     }
-
   }
 
   async deletePet(requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit
@@ -519,7 +512,6 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async uploadFile(requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit

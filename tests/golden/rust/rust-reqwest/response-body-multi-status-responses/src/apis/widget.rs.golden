@@ -13,7 +13,9 @@ pub struct WidgetApi<'a> {
 impl<'a> WidgetApi<'a> {
     /// Create a new `WidgetApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// GET /widgets
@@ -21,16 +23,11 @@ impl<'a> WidgetApi<'a> {
         &self,
     ) -> Result<ListWidgetsResponse, Error> {
         let path = "/widgets".to_string();
-        let mut req = self.client.request(reqwest::Method::GET, &path).await?;
+        let req = self.client.request(reqwest::Method::GET, &path).await?;
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = ListWidgetsResponse {
-            status_code,
-            data: None,
-            status_206: None,
-            status_404: None,
-        };
+        let mut result = ListWidgetsResponse { status_code, data: None, status_206: None, status_404: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -51,7 +48,7 @@ impl<'a> WidgetApi<'a> {
 #[derive(Debug)]
 pub struct ListWidgetsResponse {
     pub status_code: u16,
-    pub data: Option<Vec<Widget>>,
+    pub data: Option<Vec<crate::models::Widget>>,
     pub status_206: Option<crate::models::WidgetListPartial>,
     pub status_404: Option<crate::models::ErrorResponse>,
 }

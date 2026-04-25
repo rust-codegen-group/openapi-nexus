@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Baz {
     #[serde(flatten)]
-    pub foo: Foo,
+    pub foo: super::Foo,
     #[serde(flatten)]
-    pub baz_all_of2: BazAllOf2,
+    pub baz_all_of2: super::BazAllOf2,
 }

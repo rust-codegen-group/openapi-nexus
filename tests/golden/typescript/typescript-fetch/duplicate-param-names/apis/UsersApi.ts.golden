@@ -88,7 +88,6 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: number };
     }
-
   }
 
   async getUserByIdDuplicate(requestParameters: ApiGetUserByIdDuplicateRequest,

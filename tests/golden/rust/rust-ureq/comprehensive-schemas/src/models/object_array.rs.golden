@@ -4,4 +4,4 @@
 // Comprehensive test for all OpenAPI v3.1.2 schema types
 
 /// Array of objects
-pub type ObjectArray = Vec<ObjectArrayItems>;
+pub type ObjectArray = Vec<super::ObjectArrayItems>;

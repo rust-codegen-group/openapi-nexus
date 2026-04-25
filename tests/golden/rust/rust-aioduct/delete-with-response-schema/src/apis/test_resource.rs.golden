@@ -14,7 +14,9 @@ pub struct TestResourceApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> TestResourceApi<'a, R> {
     /// Create a new `TestResourceApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// POST /v1/api/test-resource
@@ -28,10 +30,7 @@ impl<'a, R: aioduct::Runtime> TestResourceApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = CreateTestResourceResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = CreateTestResourceResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -48,25 +47,20 @@ impl<'a, R: aioduct::Runtime> TestResourceApi<'a, R> {
     ) -> Result<DeleteTestResourceResponse, Error> {
         let mut path = "/v1/api/test-resource/{resource_id}".to_string();
         path = path.replace("{resource_id}", &resource_id.to_string());
-        let mut req = self.client.delete(&path)?;
+        let req = self.client.delete(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = DeleteTestResourceResponse {
-            status_code,
-            data: None,
-            status_4XX: None,
-            status_5XX: None,
-        };
+        let mut result = DeleteTestResourceResponse { status_code, data: None, status_4xx: None, status_5xx: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
             }
-            4XX => {
-                result.status_4XX = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
+            400..=499 => {
+                result.status_4xx = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
             }
-            5XX => {
-                result.status_5XX = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
+            500..=599 => {
+                result.status_5xx = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -86,6 +80,6 @@ pub struct CreateTestResourceResponse {
 pub struct DeleteTestResourceResponse {
     pub status_code: u16,
     pub data: Option<crate::models::DeleteTestResourceResponse>,
-    pub status_4XX: Option<crate::models::HttpErrorResponse>,
-    pub status_5XX: Option<crate::models::HttpErrorResponse>,
+    pub status_4xx: Option<crate::models::HttpErrorResponse>,
+    pub status_5xx: Option<crate::models::HttpErrorResponse>,
 }

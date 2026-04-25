@@ -14,7 +14,9 @@ pub struct StoreApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> StoreApi<'a, R> {
     /// Create a new `StoreApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Returns pet inventories by status
@@ -22,14 +24,11 @@ impl<'a, R: aioduct::Runtime> StoreApi<'a, R> {
         &self,
     ) -> Result<GetInventoryResponse, Error> {
         let path = "/store/inventory".to_string();
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = GetInventoryResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetInventoryResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -50,10 +49,7 @@ impl<'a, R: aioduct::Runtime> StoreApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = PlaceOrderResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = PlaceOrderResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -70,14 +66,11 @@ impl<'a, R: aioduct::Runtime> StoreApi<'a, R> {
     ) -> Result<GetOrderByIdResponse, Error> {
         let mut path = "/store/order/{orderId}".to_string();
         path = path.replace("{orderId}", &order_id.to_string());
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = GetOrderByIdResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetOrderByIdResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -94,7 +87,7 @@ impl<'a, R: aioduct::Runtime> StoreApi<'a, R> {
     ) -> Result<DeleteOrderResponse, Error> {
         let mut path = "/store/order/{orderId}".to_string();
         path = path.replace("{orderId}", &order_id.to_string());
-        let mut req = self.client.delete(&path)?;
+        let req = self.client.delete(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(DeleteOrderResponse { status_code })

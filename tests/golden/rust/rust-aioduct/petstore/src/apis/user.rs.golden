@@ -14,7 +14,9 @@ pub struct UserApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
     /// Create a new `UserApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// Create user
@@ -28,10 +30,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = CreateUserResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = CreateUserResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -44,7 +43,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
     /// Creates list of users with given input array
     pub async fn create_users_with_list_input(
         &self,
-        body: &Vec<User>,
+        body: &Vec<crate::models::User>,
     ) -> Result<CreateUsersWithListInputResponse, Error> {
         let path = "/user/createWithList".to_string();
         let mut req = self.client.post(&path)?;
@@ -52,10 +51,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = CreateUsersWithListInputResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = CreateUsersWithListInputResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -71,7 +67,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
         username: &Option<String>,
         password: &Option<String>,
     ) -> Result<LoginUserResponse, Error> {
-        let path = "/user/login".to_string();
+        let mut path = "/user/login".to_string();
         let mut query_parts: Vec<(&str, String)> = Vec::new();
         if let Some(v) = &username {
             query_parts.push(("username", v.to_string()));
@@ -83,7 +79,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
             let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
             path = format!("{}?{}", path, qs.join("&"));
         }
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(LoginUserResponse { status_code })
@@ -94,7 +90,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
         &self,
     ) -> Result<LogoutUserResponse, Error> {
         let path = "/user/logout".to_string();
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(LogoutUserResponse { status_code })
@@ -107,14 +103,11 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
     ) -> Result<GetUserByNameResponse, Error> {
         let mut path = "/user/{username}".to_string();
         path = path.replace("{username}", &username.to_string());
-        let mut req = self.client.get(&path)?;
+        let req = self.client.get(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await?;
-        let mut result = GetUserByNameResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetUserByNameResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -146,7 +139,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
     ) -> Result<DeleteUserResponse, Error> {
         let mut path = "/user/{username}".to_string();
         path = path.replace("{username}", &username.to_string());
-        let mut req = self.client.delete(&path)?;
+        let req = self.client.delete(&path)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(DeleteUserResponse { status_code })

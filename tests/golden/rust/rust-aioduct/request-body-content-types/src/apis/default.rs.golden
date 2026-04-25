@@ -14,7 +14,9 @@ pub struct DefaultApi<'a, R: aioduct::Runtime> {
 impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client<R>) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// POST /form

@@ -13,7 +13,9 @@ pub struct DefaultApi<'a> {
 impl<'a> DefaultApi<'a> {
     /// Create a new `DefaultApi` bound to the given client.
     pub fn new(client: &'a Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     /// GET /fallback/no-body
@@ -21,7 +23,7 @@ impl<'a> DefaultApi<'a> {
         &self,
     ) -> Result<GetFallbackNoBodyResponse, Error> {
         let path = "/fallback/no-body".to_string();
-        let mut req = self.client.request(reqwest::Method::GET, &path).await?;
+        let req = self.client.request(reqwest::Method::GET, &path).await?;
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         Ok(GetFallbackNoBodyResponse { status_code })
@@ -32,14 +34,11 @@ impl<'a> DefaultApi<'a> {
         &self,
     ) -> Result<GetFallbackWithBodyResponse, Error> {
         let path = "/fallback/with-body".to_string();
-        let mut req = self.client.request(reqwest::Method::GET, &path).await?;
+        let req = self.client.request(reqwest::Method::GET, &path).await?;
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = GetFallbackWithBodyResponse {
-            status_code,
-            data: None,
-        };
+        let mut result = GetFallbackWithBodyResponse { status_code, data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
