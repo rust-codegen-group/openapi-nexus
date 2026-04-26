@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "query_parameter_enum_test"
+version = "1.0.0"
+description = "Test case for query parameters that reference enum schemas"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

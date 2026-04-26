@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "additional_properties_api"
+version = "1.0.0"
+description = "API demonstrating OpenAPI additionalProperties with multiple levels of structs (RootLevel -> MiddleLevel -> LeafValue), each with HashMap fields."
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

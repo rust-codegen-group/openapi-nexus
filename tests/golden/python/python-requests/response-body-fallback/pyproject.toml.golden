@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "response_fallback_test_api"
+version = "1.0.0"
+description = "Generated Python SDK."
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

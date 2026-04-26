@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "interface_with_enum_reference_test"
+version = "1.0.0"
+description = "Test case for interfaces that reference enum types"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

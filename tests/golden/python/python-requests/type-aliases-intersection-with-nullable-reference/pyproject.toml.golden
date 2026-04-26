@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "intersection_type_with_nullable_reference_test"
+version = "1.0.0"
+description = "Test fixture for allOf intersection types with nullable reference properties"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

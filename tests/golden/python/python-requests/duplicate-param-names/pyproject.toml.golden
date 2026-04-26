@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "duplicate_parameter_names_test_api"
+version = "1.0.0"
+description = "Test API with duplicate parameter names across different locations"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]
