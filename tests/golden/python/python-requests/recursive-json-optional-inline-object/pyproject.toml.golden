@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "optional_inline_object_test"
+version = "1.0.0"
+description = "Test case for optional inline objects"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

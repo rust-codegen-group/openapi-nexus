@@ -1012,6 +1012,7 @@ dependencies = [
  "openapi-nexus-ir",
  "openapi-nexus-parser",
  "openapi-nexus-python-httpx",
+ "openapi-nexus-python-requests",
  "openapi-nexus-rust-aioduct",
  "openapi-nexus-rust-reqwest",
  "openapi-nexus-rust-ureq",
@@ -1083,6 +1084,24 @@ dependencies = [
 
 [[package]]
 name = "openapi-nexus-python-httpx"
+version = "0.0.5"
+dependencies = [
+ "heck",
+ "indexmap",
+ "openapi-nexus-core",
+ "openapi-nexus-ir",
+ "openapi-nexus-parser",
+ "openapi-nexus-test-utils",
+ "serde",
+ "serde_json",
+ "sigil-stitch",
+ "toml",
+ "tracing",
+ "tracing-test",
+]
+
+[[package]]
+name = "openapi-nexus-python-requests"
 version = "0.0.5"
 dependencies = [
  "heck",

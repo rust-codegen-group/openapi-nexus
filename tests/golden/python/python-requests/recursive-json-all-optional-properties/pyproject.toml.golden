@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "all_optional_properties_test"
+version = "1.0.0"
+description = "Test case for object with all optional properties including arrays, references, and inline objects"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

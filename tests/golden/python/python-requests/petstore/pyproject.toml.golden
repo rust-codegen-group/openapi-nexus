@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "petstore_api"
+version = "1.0.0"
+description = "This is a sample Pet Store Server based on the OpenAPI 3.1 specification"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

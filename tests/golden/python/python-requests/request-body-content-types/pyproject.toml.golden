@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "request_body_content_types"
+version = "1.0.0"
+description = "Covers non-JSON request body media types to pin Content-Type emission."
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

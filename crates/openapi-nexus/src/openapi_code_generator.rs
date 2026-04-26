@@ -11,6 +11,7 @@ use openapi_nexus_core::traits::{CodeGenerator, FileWriter};
 use openapi_nexus_go_http::GoHttpCodeGenerator;
 use openapi_nexus_parser::parse_file;
 use openapi_nexus_python_httpx::PythonHttpxCodeGenerator;
+use openapi_nexus_python_requests::PythonRequestsCodeGenerator;
 use openapi_nexus_rust_aioduct::RustAioductCodeGenerator;
 use openapi_nexus_rust_reqwest::RustReqwestCodeGenerator;
 use openapi_nexus_rust_ureq::RustUreqCodeGenerator;
@@ -81,6 +82,16 @@ impl OpenApiCodeGenerator {
                 config
                     .generators
                     .get(&GeneratorType::PythonHttpx)
+                    .cloned()
+                    .unwrap_or_default(),
+            ),
+        );
+        generator_registry.register_generator(
+            GeneratorType::PythonRequests,
+            PythonRequestsCodeGenerator::new(
+                config
+                    .generators
+                    .get(&GeneratorType::PythonRequests)
                     .cloned()
                     .unwrap_or_default(),
             ),

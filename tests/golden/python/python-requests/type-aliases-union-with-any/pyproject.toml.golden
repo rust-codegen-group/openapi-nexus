@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "union_type_with_any_test"
+version = "1.0.0"
+description = "Test fixture for union types that include the any type"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

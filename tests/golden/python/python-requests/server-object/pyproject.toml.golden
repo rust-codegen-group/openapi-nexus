@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "test_api_with_server_objects"
+version = "1.0.0"
+description = "This is a test API specification that includes various server configurations"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

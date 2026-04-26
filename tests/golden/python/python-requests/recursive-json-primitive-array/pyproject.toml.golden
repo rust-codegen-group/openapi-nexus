@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "primitive_array_test"
+version = "1.0.0"
+description = "Test case for arrays with primitive items (should not be affected by recursive parsing)"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

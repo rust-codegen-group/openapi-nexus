@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "inline_object_with_array_test"
+version = "1.0.0"
+description = "Test case for inline object containing an array of inline objects"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]
