@@ -42,19 +42,30 @@ impl RustUreqCodeGenerator {
         let mut files = Vec::new();
 
         files.extend(
-            emit_models::generate_model_files(ir, &header).map_err(|msg| {
+            emit_models::generate_model_files(ir, &header, &self.config).map_err(|msg| {
                 Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}"))
             })?,
         );
 
+        let response_extra = self
+            .config
+            .extra_derives
+            .as_ref()
+            .and_then(|e| e.response_structs.as_ref());
         files.extend(
-            emit_api::generate_api_files(ir, &header, &backend_config, &emit_method_body)
-                .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
+            emit_api::generate_api_files(
+                ir,
+                &header,
+                &backend_config,
+                response_extra,
+                &emit_method_body,
+            )
+            .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
         );
 
         files.extend(runtime_files(&header));
 
-        files.push(cargo_toml_file(&crate_name, &ir.info));
+        files.push(cargo_toml_file(&crate_name, &ir.info, &self.config));
         files.push(project_files::lib_rs_file(&header));
         files.push(project_files::readme_file(&ir.info));
 
@@ -82,7 +93,7 @@ impl FileWriter for RustUreqCodeGenerator {
     }
 }
 
-fn cargo_toml_file(crate_name: &str, info: &IrInfo) -> FileInfo {
+fn cargo_toml_file(crate_name: &str, info: &IrInfo, config: &RustGeneratorConfig) -> FileInfo {
     let description = info
         .description
         .as_deref()
@@ -90,7 +101,7 @@ fn cargo_toml_file(crate_name: &str, info: &IrInfo) -> FileInfo {
         .lines()
         .next()
         .unwrap_or("Generated Rust SDK.");
-    let content = format!(
+    let mut content = format!(
         r#"[package]
 name = "{crate_name}"
 version = "0.1.0"
@@ -104,5 +115,10 @@ serde_json = "1"
 serde_repr = "0.1"
 "#,
     );
+    if let Some(extra) = &config.extra_derives {
+        for (name, spec) in extra.all_dependencies() {
+            content.push_str(&format!("{name} = {spec}\n"));
+        }
+    }
     FileInfo::project("Cargo.toml".to_string(), content)
 }

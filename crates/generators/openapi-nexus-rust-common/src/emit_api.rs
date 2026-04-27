@@ -23,6 +23,7 @@ use sigil_stitch::spec::modifiers::{TypeKind, Visibility};
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
+use crate::config::ExtraDeriveConfig;
 use crate::emit_models::rust_type_str_qualified;
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,7 @@ pub fn generate_api_files(
     ir: &IrSpec,
     header: &str,
     config: &RustBackendConfig,
+    response_extra_derives: Option<&ExtraDeriveConfig>,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
 ) -> Result<Vec<FileInfo>, String> {
     let by_tag = group_by_tag(&ir.operations);
@@ -60,7 +62,7 @@ pub fn generate_api_files(
         let stem = tag.to_snake_case();
         let filename = format!("{stem}.rs");
         mod_entries.push(stem);
-        let body = emit_api_file(tag, ops, config, body_emitter);
+        let body = emit_api_file(tag, ops, config, response_extra_derives, body_emitter);
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -102,6 +104,7 @@ fn emit_api_file(
     tag: &str,
     ops: &[&IrOperation],
     config: &RustBackendConfig,
+    response_extra_derives: Option<&ExtraDeriveConfig>,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
 ) -> String {
     let struct_name = format!("{}Api", tag.to_pascal_case());
@@ -179,7 +182,7 @@ fn emit_api_file(
 
     // Response structs -- add as TypeSpec members
     for plan in &plans {
-        fsb = fsb.add_type(emit_response_struct(plan));
+        fsb = fsb.add_type(emit_response_struct(plan, response_extra_derives));
     }
 
     let file = fsb.build().expect("FileSpec builds");
@@ -379,11 +382,19 @@ fn emit_operation(
     b.build().unwrap()
 }
 
-pub fn emit_response_struct(plan: &OpPlan<'_>) -> TypeSpec {
+pub fn emit_response_struct(plan: &OpPlan<'_>, extra: Option<&ExtraDeriveConfig>) -> TypeSpec {
     let mut tb = TypeSpec::builder(&plan.response_type, TypeKind::Struct);
     tb = tb.visibility(Visibility::Public);
     tb = tb.doc(&format!("Response from `{}`.", plan.method_name));
-    tb = tb.annotate(AnnotationSpec::new("derive").arg("Debug"));
+
+    let mut ann = AnnotationSpec::new("derive");
+    ann = ann.arg("Debug");
+    if let Some(cfg) = extra {
+        for d in &cfg.derives {
+            ann = ann.arg(d);
+        }
+    }
+    tb = tb.annotate(ann);
 
     // status_code field
     {
