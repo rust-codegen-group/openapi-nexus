@@ -22,13 +22,19 @@ use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::import_spec::ImportSpec;
 use sigil_stitch::type_name::TypeName;
 
+use crate::config::{ExtraDeriveConfig, RustGeneratorConfig};
+
 /// Generate every model file from the IR.
-pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, String> {
+pub fn generate_model_files(
+    ir: &IrSpec,
+    header: &str,
+    config: &RustGeneratorConfig,
+) -> Result<Vec<FileInfo>, String> {
     let mut files = Vec::new();
     let mut mod_entries = Vec::new();
 
     for (_name, schema) in &ir.schemas {
-        let Some(file_spec) = emit_model_file(schema) else {
+        let Some(file_spec) = emit_model_file(schema, config) else {
             return Err(format!(
                 "unsupported schema kind for {}: {:?}",
                 schema.name, schema.kind
@@ -58,14 +64,34 @@ pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, 
     Ok(files)
 }
 
-fn emit_model_file(schema: &IrSchema) -> Option<FileSpec> {
+fn emit_model_file(schema: &IrSchema, config: &RustGeneratorConfig) -> Option<FileSpec> {
+    let extra = config.extra_derives.as_ref();
     match &schema.kind {
-        IrSchemaKind::Object(obj) => emit_object(schema, obj),
-        IrSchemaKind::Enum(en) => emit_enum(schema, en),
+        IrSchemaKind::Object(obj) => {
+            emit_object(schema, obj, extra.and_then(|e| e.structs.as_ref()))
+        }
+        IrSchemaKind::Enum(en) => emit_enum(schema, en, extra.and_then(|e| e.enums.as_ref())),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr),
-        IrSchemaKind::Union(u) => emit_union(schema, u),
-        IrSchemaKind::Intersection(i) => emit_intersection(schema, i),
-        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu),
+        IrSchemaKind::Union(u) => emit_union(schema, u, extra.and_then(|e| e.unions.as_ref())),
+        IrSchemaKind::Intersection(i) => {
+            emit_intersection(schema, i, extra.and_then(|e| e.structs.as_ref()))
+        }
+        IrSchemaKind::TaggedUnion(tu) => {
+            emit_tagged_union(schema, tu, extra.and_then(|e| e.unions.as_ref()))
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Derive attribute helper
+// ---------------------------------------------------------------------------
+
+fn derive_attr(base: &str, extra: Option<&ExtraDeriveConfig>) -> String {
+    match extra {
+        Some(cfg) if !cfg.derives.is_empty() => {
+            format!("#[derive({base}, {})]", cfg.derives.join(", "))
+        }
+        _ => format!("#[derive({base})]"),
     }
 }
 
@@ -73,7 +99,11 @@ fn emit_model_file(schema: &IrSchema) -> Option<FileSpec> {
 // Object -> struct
 // ---------------------------------------------------------------------------
 
-fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<FileSpec> {
+fn emit_object(
+    schema: &IrSchema,
+    obj: &IrObject,
+    extra: Option<&ExtraDeriveConfig>,
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let stem = schema.name.to_snake_case();
 
@@ -86,7 +116,10 @@ fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<FileSpec> {
     if let Some(doc) = &schema.description {
         emit_doc_comment(&mut body, doc);
     }
-    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add(
+        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
+        (),
+    );
     body.add_line();
     body.add(&format!("pub struct {name}"), ());
     body.begin_control_flow("", ());
@@ -141,7 +174,11 @@ fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<FileSpec> {
 // Enum
 // ---------------------------------------------------------------------------
 
-fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
+fn emit_enum(
+    schema: &IrSchema,
+    en: &IrEnum,
+    extra: Option<&ExtraDeriveConfig>,
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
 
     match en.value_type {
@@ -149,7 +186,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
             return emit_type_alias_file(schema, "serde_json::Value");
         }
         IrEnumValueType::Integer => {
-            return emit_integer_enum(schema, en);
+            return emit_integer_enum(schema, en, extra);
         }
         IrEnumValueType::String => {}
     }
@@ -165,7 +202,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
         emit_doc_comment(&mut body, doc);
     }
     body.add(
-        "#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]",
+        &derive_attr("Debug, Clone, PartialEq, Eq, Serialize, Deserialize", extra),
         (),
     );
     body.add_line();
@@ -196,7 +233,11 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
     fsb.build().ok()
 }
 
-fn emit_integer_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
+fn emit_integer_enum(
+    schema: &IrSchema,
+    en: &IrEnum,
+    extra: Option<&ExtraDeriveConfig>,
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let stem = schema.name.to_snake_case();
 
@@ -210,7 +251,10 @@ fn emit_integer_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
         emit_doc_comment(&mut body, doc);
     }
     body.add(
-        "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]",
+        &derive_attr(
+            "Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr",
+            extra,
+        ),
         (),
     );
     body.add_line();
@@ -294,7 +338,11 @@ fn emit_type_alias_file(schema: &IrSchema, rhs_str: &str) -> Option<FileSpec> {
 // Union -> #[serde(untagged)] enum
 // ---------------------------------------------------------------------------
 
-fn emit_union(schema: &IrSchema, union: &IrUnion) -> Option<FileSpec> {
+fn emit_union(
+    schema: &IrSchema,
+    union: &IrUnion,
+    extra: Option<&ExtraDeriveConfig>,
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let stem = schema.name.to_snake_case();
 
@@ -307,7 +355,10 @@ fn emit_union(schema: &IrSchema, union: &IrUnion) -> Option<FileSpec> {
     if let Some(doc) = &schema.description {
         emit_doc_comment(&mut body, doc);
     }
-    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add(
+        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
+        (),
+    );
     body.add_line();
     body.add("#[serde(untagged)]", ());
     body.add_line();
@@ -353,7 +404,11 @@ fn primitive_variant_name(p: &IrPrimitive) -> String {
 // TaggedUnion -> serde-tagged enum
 // ---------------------------------------------------------------------------
 
-fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec> {
+fn emit_tagged_union(
+    schema: &IrSchema,
+    tu: &IrTaggedUnion,
+    extra: Option<&ExtraDeriveConfig>,
+) -> Option<FileSpec> {
     if tu.variants.is_empty() {
         return None;
     }
@@ -370,7 +425,10 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec> 
     if let Some(doc) = &schema.description {
         emit_doc_comment(&mut body, doc);
     }
-    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add(
+        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
+        (),
+    );
     body.add_line();
 
     match &tu.tagging {
@@ -427,7 +485,11 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec> 
 // Intersection -> flattened struct
 // ---------------------------------------------------------------------------
 
-fn emit_intersection(schema: &IrSchema, inter: &IrIntersection) -> Option<FileSpec> {
+fn emit_intersection(
+    schema: &IrSchema,
+    inter: &IrIntersection,
+    extra: Option<&ExtraDeriveConfig>,
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let stem = schema.name.to_snake_case();
 
@@ -440,7 +502,10 @@ fn emit_intersection(schema: &IrSchema, inter: &IrIntersection) -> Option<FileSp
     if let Some(doc) = &schema.description {
         emit_doc_comment(&mut body, doc);
     }
-    body.add("#[derive(Debug, Clone, Serialize, Deserialize)]", ());
+    body.add(
+        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
+        (),
+    );
     body.add_line();
     body.add(&format!("pub struct {name}"), ());
     body.begin_control_flow("", ());
