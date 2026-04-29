@@ -2,17 +2,13 @@
 
 set working-directory := '..'
 
-# Build all crates
+# Build all
 @build-all:
     cargo build
 
 # Build release
 @build-release:
     cargo build --release
-
-# Build specific crate
-@build-crate CRATE:
-    cargo build -p {{ CRATE }}
 
 # Check (compile without running)
 @check:
