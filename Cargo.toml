@@ -4,21 +4,6 @@ members = [
     "fixture-generators/additional-properties",
     "fixture-generators/enum-repr",
     "fixture-generators/petstore",
-    "crates/openapi-nexus",
-    "crates/openapi-nexus-config",
-    "crates/openapi-nexus-core",
-    "crates/openapi-nexus-ir",
-    "crates/openapi-nexus-parser",
-    "crates/openapi-nexus-spec",
-    "crates/openapi-nexus-test-utils",
-    "crates/generators/openapi-nexus-go-http",
-    "crates/generators/openapi-nexus-rust-common",
-    "crates/generators/openapi-nexus-rust-reqwest",
-    "crates/generators/openapi-nexus-rust-ureq",
-    "crates/generators/openapi-nexus-rust-aioduct",
-    "crates/generators/openapi-nexus-python-httpx",
-    "crates/generators/openapi-nexus-python-requests",
-    "crates/generators/openapi-nexus-typescript-fetch",
 ]
 
 [workspace.package]
@@ -32,68 +17,83 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-derive_more = { version = "2", features = ["display", "from"] }
-regex = "1.12.3"
-axum = { version = "0.8.8", features = ["macros"] }
-axum-extra = { version = "0.12.5", features = ["typed-header"] }
-chrono = { version = "0.4.42", features = ["serde"] }
+# Shared dependencies (openapi-nexus + fixture-generators)
 clap = { version = "4.5.51", features = ["derive", "env"] }
+derive_more = { version = "2", features = ["display", "from"] }
 dirs = "6.0.0"
 heck = "0.5.0"
 http = "1.4.0"
 indexmap = { version = "2.12.1", features = ["serde"] }
+regex = "1.12.3"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
 serde_norway = "0.9.42"
 serde_plain = "1.0.2"
+sigil-stitch = "0.3.1"
 similar = "2.7.0"
 snafu = "0.8.9"
-tokio = { version = "1.49.0", features = ["full"] }
 toml = "0.9.8"
-tower = "0.5.2"
-tower-http = { version = "0.6.8", features = ["cors", "trace"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 tracing-test = "0.2.5"
 url = { version = "2.5.7", features = ["serde"] }
+
+# Fixture-generator dependencies
+axum = { version = "0.8.8", features = ["macros"] }
+axum-extra = { version = "0.12.5", features = ["typed-header"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+tokio = { version = "1.49.0", features = ["full"] }
+tower = "0.5.2"
+tower-http = { version = "0.6.8", features = ["cors", "trace"] }
 utoipa = { version = "5.4.0", features = ["axum_extras", "chrono", "config", "debug", "non_strict_integers", "openapi_extensions", "time", "ulid", "url", "uuid", "yaml"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "cache", "vendored"] }
 uuid = { version = "1.19.0", features = ["v4", "v7", "serde"] }
 
-# Workspace Projects
-openapi-nexus = { version = "0.0.5", path = "crates/openapi-nexus" }
-openapi-nexus-config = { version = "0.0.5", path = "crates/openapi-nexus-config" }
-openapi-nexus-core = { version = "0.0.5", path = "crates/openapi-nexus-core" }
-openapi-nexus-go-http = { version = "0.0.5", path = "crates/generators/openapi-nexus-go-http" }
-openapi-nexus-ir = { version = "0.0.5", path = "crates/openapi-nexus-ir" }
-openapi-nexus-parser = { version = "0.0.5", path = "crates/openapi-nexus-parser" }
-openapi-nexus-python-httpx = { version = "0.0.5", path = "crates/generators/openapi-nexus-python-httpx" }
-openapi-nexus-python-requests = { version = "0.0.5", path = "crates/generators/openapi-nexus-python-requests" }
-openapi-nexus-rust-common = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-common" }
-openapi-nexus-rust-reqwest = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-reqwest" }
-openapi-nexus-rust-ureq = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-ureq" }
-openapi-nexus-rust-aioduct = { version = "0.0.5", path = "crates/generators/openapi-nexus-rust-aioduct" }
-openapi-nexus-spec = { version = "0.0.5", path = "crates/openapi-nexus-spec" }
-openapi-nexus-test-utils = { version = "0.0.5", path = "crates/openapi-nexus-test-utils" }
-openapi-nexus-typescript-fetch = { version = "0.0.5", path = "crates/generators/openapi-nexus-typescript-fetch" }
+[package]
+name = "openapi-nexus"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+license.workspace = true
 
-sigil-stitch = "0.3.1"
+[[bin]]
+name = "openapi-nexus"
+path = "src/main.rs"
 
-[workspace.metadata.publish]
-order = [
-    "openapi-nexus-spec",
-    "openapi-nexus-parser",
-    "openapi-nexus-ir",
-    "openapi-nexus-core",
-    "openapi-nexus-config",
-    "openapi-nexus-typescript-fetch",
-    "openapi-nexus-go-http",
-    "openapi-nexus-rust-common",
-    "openapi-nexus-rust-reqwest",
-    "openapi-nexus-rust-ureq",
-    "openapi-nexus-rust-aioduct",
-    "openapi-nexus-python-httpx",
-    "openapi-nexus-python-requests",
-    "openapi-nexus",
-]
+[lib]
+name = "openapi_nexus"
+path = "src/lib.rs"
+
+[features]
+default = []
+test-utils = ["dep:similar"]
+
+[dependencies]
+clap.workspace = true
+derive_more.workspace = true
+dirs.workspace = true
+heck.workspace = true
+http.workspace = true
+indexmap.workspace = true
+regex.workspace = true
+semver.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_norway.workspace = true
+serde_plain.workspace = true
+sigil-stitch.workspace = true
+snafu.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+similar = { workspace = true, optional = true }
+
+[dev-dependencies]
+tracing-test.workspace = true
+openapi-nexus = { path = ".", features = ["test-utils"] }

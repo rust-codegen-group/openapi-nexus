@@ -1006,226 +1006,26 @@ name = "openapi-nexus"
 version = "0.0.5"
 dependencies = [
  "clap",
- "openapi-nexus-config",
- "openapi-nexus-core",
- "openapi-nexus-go-http",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-python-httpx",
- "openapi-nexus-python-requests",
- "openapi-nexus-rust-aioduct",
- "openapi-nexus-rust-reqwest",
- "openapi-nexus-rust-ureq",
- "openapi-nexus-typescript-fetch",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "openapi-nexus-config"
-version = "0.0.5"
-dependencies = [
- "clap",
- "dirs",
- "openapi-nexus-core",
- "serde",
- "toml",
-]
-
-[[package]]
-name = "openapi-nexus-core"
-version = "0.0.5"
-dependencies = [
- "openapi-nexus-ir",
- "serde",
- "serde_plain",
-]
-
-[[package]]
-name = "openapi-nexus-go-http"
-version = "0.0.5"
-dependencies = [
- "heck",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-test-utils",
- "serde",
- "serde_json",
- "sigil-stitch",
- "toml",
- "tracing",
- "tracing-test",
-]
-
-[[package]]
-name = "openapi-nexus-ir"
-version = "0.0.5"
-dependencies = [
- "heck",
- "indexmap",
- "openapi-nexus-parser",
- "openapi-nexus-spec",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "openapi-nexus-parser"
-version = "0.0.5"
-dependencies = [
- "openapi-nexus-spec",
- "serde",
- "serde_json",
- "serde_norway",
- "snafu 0.8.9",
- "tracing",
-]
-
-[[package]]
-name = "openapi-nexus-python-httpx"
-version = "0.0.5"
-dependencies = [
- "heck",
- "indexmap",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-test-utils",
- "serde",
- "serde_json",
- "sigil-stitch",
- "toml",
- "tracing",
- "tracing-test",
-]
-
-[[package]]
-name = "openapi-nexus-python-requests"
-version = "0.0.5"
-dependencies = [
- "heck",
- "indexmap",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-test-utils",
- "serde",
- "serde_json",
- "sigil-stitch",
- "toml",
- "tracing",
- "tracing-test",
-]
-
-[[package]]
-name = "openapi-nexus-rust-aioduct"
-version = "0.0.5"
-dependencies = [
- "heck",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-rust-common",
- "openapi-nexus-test-utils",
- "serde",
- "serde_json",
- "sigil-stitch",
- "toml",
- "tracing",
- "tracing-test",
-]
-
-[[package]]
-name = "openapi-nexus-rust-common"
-version = "0.0.5"
-dependencies = [
- "heck",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "serde",
- "serde_json",
- "sigil-stitch",
- "toml",
- "tracing",
-]
-
-[[package]]
-name = "openapi-nexus-rust-reqwest"
-version = "0.0.5"
-dependencies = [
- "heck",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-rust-common",
- "openapi-nexus-test-utils",
- "serde",
- "serde_json",
- "sigil-stitch",
- "toml",
- "tracing",
- "tracing-test",
-]
-
-[[package]]
-name = "openapi-nexus-rust-ureq"
-version = "0.0.5"
-dependencies = [
- "heck",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-rust-common",
- "openapi-nexus-test-utils",
- "serde",
- "serde_json",
- "sigil-stitch",
- "toml",
- "tracing",
- "tracing-test",
-]
-
-[[package]]
-name = "openapi-nexus-spec"
-version = "0.0.5"
-dependencies = [
  "derive_more",
+ "dirs",
+ "heck",
  "http",
+ "indexmap",
+ "openapi-nexus",
  "regex",
  "semver",
  "serde",
  "serde_json",
  "serde_norway",
- "snafu 0.8.9",
- "url",
-]
-
-[[package]]
-name = "openapi-nexus-test-utils"
-version = "0.0.5"
-dependencies = [
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "similar",
-]
-
-[[package]]
-name = "openapi-nexus-typescript-fetch"
-version = "0.0.5"
-dependencies = [
- "heck",
- "openapi-nexus-core",
- "openapi-nexus-ir",
- "openapi-nexus-parser",
- "openapi-nexus-test-utils",
- "serde",
- "serde_json",
+ "serde_plain",
  "sigil-stitch",
+ "similar",
+ "snafu 0.8.9",
  "toml",
  "tracing",
+ "tracing-subscriber",
  "tracing-test",
+ "url",
 ]
 
 [[package]]
