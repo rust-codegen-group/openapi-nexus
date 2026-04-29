@@ -22,9 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-      - uses: peaceiris/actions-mdbook@v2
-        with:
-          mdbook-version: 'latest'
+      - uses: taiki-e/install-action@mdbook
       - uses: taiki-e/install-action@just
       - run: cargo install mdbook-mermaid-mmdr
       - run: just book
