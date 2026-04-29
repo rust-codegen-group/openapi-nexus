@@ -21,14 +21,15 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
       - uses: peaceiris/actions-mdbook@v2
         with:
           mdbook-version: 'latest'
+      - uses: taiki-e/install-action@just
       - run: cargo install mdbook-mermaid-mmdr
-      - run: mdbook build doc
+      - run: just book
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: doc/book
+          path: docs/book
       - id: deploy
         uses: actions/deploy-pages@v5

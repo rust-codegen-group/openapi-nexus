@@ -9,7 +9,7 @@ examples/*/generated/
 examples/*/target/
 
 # mdbook build output
-doc/book/
+docs/book/
 
 # IDE and editor files
 .vscode/
@@ -45,7 +45,7 @@ lcov.info
 criterion/
 
 # Documentation build artifacts
-doc/book/
+docs/book/
 
 # Test artifacts
 test-report.txt
