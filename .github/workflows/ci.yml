@@ -63,9 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-      - uses: peaceiris/actions-mdbook@v2
-        with:
-          mdbook-version: 'latest'
+      - uses: taiki-e/install-action@mdbook
       - uses: taiki-e/install-action@just
       - run: cargo install mdbook-mermaid-mmdr
       - run: just book
@@ -164,7 +162,7 @@ jobs:
         if: matrix.generator == 'go-http'
         with:
           go-version: 'stable'
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: contains(matrix.generator, 'python-')
         with:
           python-version: '3.12'
