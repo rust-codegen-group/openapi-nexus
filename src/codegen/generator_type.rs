@@ -28,6 +28,12 @@ pub enum GeneratorType {
     /// Python client using requests
     #[serde(rename = "python-requests")]
     PythonRequests,
+    /// Kotlin client using OkHttp
+    #[serde(rename = "kotlin-okhttp")]
+    KotlinOkhttp,
+    /// Java client using OkHttp
+    #[serde(rename = "java-okhttp")]
+    JavaOkhttp,
 }
 
 serde_plain::derive_display_from_serialize!(GeneratorType);
@@ -44,6 +50,8 @@ impl GeneratorType {
             GeneratorType::RustAioduct => Language::Rust,
             GeneratorType::PythonHttpx => Language::Python,
             GeneratorType::PythonRequests => Language::Python,
+            GeneratorType::KotlinOkhttp => Language::Kotlin,
+            GeneratorType::JavaOkhttp => Language::Java,
         }
     }
 
@@ -57,6 +65,8 @@ impl GeneratorType {
             GeneratorType::RustAioduct => "aioduct".to_string(),
             GeneratorType::PythonHttpx => "httpx".to_string(),
             GeneratorType::PythonRequests => "requests".to_string(),
+            GeneratorType::KotlinOkhttp => "okhttp".to_string(),
+            GeneratorType::JavaOkhttp => "okhttp".to_string(),
         }
     }
 }

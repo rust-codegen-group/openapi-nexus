@@ -9,6 +9,8 @@ use crate::codegen::GeneratorType;
 use crate::codegen::traits::{CodeGenerator, FileWriter};
 use crate::config::Config;
 use crate::generators::go::http::GoHttpCodeGenerator;
+use crate::generators::java::okhttp::JavaOkhttpCodeGenerator;
+use crate::generators::kotlin::okhttp::KotlinOkhttpCodeGenerator;
 use crate::generators::python::httpx::PythonHttpxCodeGenerator;
 use crate::generators::python::requests::PythonRequestsCodeGenerator;
 use crate::generators::rust::aioduct::RustAioductCodeGenerator;
@@ -92,6 +94,26 @@ impl OpenApiCodeGenerator {
                 config
                     .generators
                     .get(&GeneratorType::PythonRequests)
+                    .cloned()
+                    .unwrap_or_default(),
+            ),
+        );
+        generator_registry.register_generator(
+            GeneratorType::KotlinOkhttp,
+            KotlinOkhttpCodeGenerator::new(
+                config
+                    .generators
+                    .get(&GeneratorType::KotlinOkhttp)
+                    .cloned()
+                    .unwrap_or_default(),
+            ),
+        );
+        generator_registry.register_generator(
+            GeneratorType::JavaOkhttp,
+            JavaOkhttpCodeGenerator::new(
+                config
+                    .generators
+                    .get(&GeneratorType::JavaOkhttp)
                     .cloned()
                     .unwrap_or_default(),
             ),

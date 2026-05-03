@@ -1,0 +1,16 @@
+package runtime;
+
+import okhttp3.Request;
+
+public class BearerAuth implements Authenticator {
+    private final String token;
+
+    public BearerAuth(String token) {
+        this.token = token;
+    }
+
+    @Override
+    public void authenticate(Request.Builder builder) {
+        builder.header("Authorization", "Bearer " + token);
+    }
+}

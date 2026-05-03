@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Reserved Word Fields Test
+  version: 1.0.0
+  description: Test case for object properties that collide with language reserved words
+
+paths:
+  /items:
+    get:
+      tags:
+        - items
+      summary: Get items
+      operationId: get_items
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - class
+        - return
+        - name
+      properties:
+        class:
+          type: string
+          description: The item class
+        return:
+          type: boolean
+          description: Whether the item can be returned
+        default:
+          type: string
+          description: Default value
+        name:
+          type: string
+          description: The item name

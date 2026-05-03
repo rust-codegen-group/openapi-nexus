@@ -1,0 +1,7 @@
+package runtime
+
+class ApiException(
+    val statusCode: Int,
+    val status: String,
+    val body: String,
+) : RuntimeException("API error $statusCode: $status")
