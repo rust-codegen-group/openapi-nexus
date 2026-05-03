@@ -6,6 +6,8 @@ mod golden-typescript 'just/golden-typescript.just'
 mod golden-go 'just/golden-go.just'
 mod golden-rust 'just/golden-rust.just'
 mod golden-python 'just/golden-python.just'
+mod golden-java 'just/golden-java.just'
+mod golden-kotlin 'just/golden-kotlin.just'
 
 # ---------- Build ----------
 
@@ -111,9 +113,17 @@ generate-typescript INPUT OUTPUT:
 generate-go INPUT OUTPUT:
     cargo run --bin openapi-nexus -- generate --input {{ INPUT }} --output {{ OUTPUT }} --generators go-http
 
-# Generate both TypeScript and Go from a spec file
+# Generate Java from a spec file
+generate-java INPUT OUTPUT:
+    cargo run --bin openapi-nexus -- generate --input {{ INPUT }} --output {{ OUTPUT }} --generators java-okhttp
+
+# Generate Kotlin from a spec file
+generate-kotlin INPUT OUTPUT:
+    cargo run --bin openapi-nexus -- generate --input {{ INPUT }} --output {{ OUTPUT }} --generators kotlin-okhttp
+
+# Generate all languages from a spec file
 generate-all INPUT OUTPUT:
-    cargo run --bin openapi-nexus -- generate --input {{ INPUT }} --output {{ OUTPUT }} --generators typescript-fetch,go-http
+    cargo run --bin openapi-nexus -- generate --input {{ INPUT }} --output {{ OUTPUT }} --generators typescript-fetch,go-http,java-okhttp,kotlin-okhttp
 
 # Check TypeScript compilation in output directory
 check-ts OUTPUT_DIR:
@@ -130,12 +140,14 @@ golden-check:
     cargo test --test golden_tests_rust_aioduct
     cargo test --test golden_tests_python_httpx
     cargo test --test golden_tests_python_requests
+    cargo test --test golden_tests_java_okhttp
+    cargo test --test golden_tests_kotlin_okhttp
 
 # Update .golden files for all generators
-golden-update: golden-typescript::update golden-go::update golden-rust::update golden-python::update
+golden-update: golden-typescript::update golden-go::update golden-rust::update golden-python::update golden-java::update golden-kotlin::update
 
 # Compile-check all goldens
-golden-build-all: golden-typescript::build golden-go::build golden-rust::build golden-python::build
+golden-build-all: golden-typescript::build golden-go::build golden-rust::build golden-python::build golden-java::build golden-kotlin::build
 
 # ---------- CI (run everything locally) ----------
 

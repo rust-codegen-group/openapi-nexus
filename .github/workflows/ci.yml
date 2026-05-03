@@ -145,6 +145,10 @@ jobs:
             cmd: just golden-python::build-httpx
           - generator: python-requests
             cmd: just golden-python::build-requests
+          - generator: java-okhttp
+            cmd: just golden-java::build
+          - generator: kotlin-okhttp
+            cmd: just golden-kotlin::build
     steps:
       - uses: actions/checkout@v6
       - uses: taiki-e/install-action@just
@@ -170,6 +174,13 @@ jobs:
         if: contains(matrix.generator, 'python-')
         with:
           node-version: '20'
+      - uses: actions/setup-java@v5
+        if: contains(matrix.generator, 'java-') || contains(matrix.generator, 'kotlin-')
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v6
+        if: contains(matrix.generator, 'java-') || contains(matrix.generator, 'kotlin-')
       - run: ${{ matrix.cmd }}
 
   release:

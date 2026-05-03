@@ -17,6 +17,12 @@ pub enum Language {
     /// Python
     #[serde(rename = "Python")]
     Python,
+    /// Kotlin
+    #[serde(rename = "Kotlin")]
+    Kotlin,
+    /// Java
+    #[serde(rename = "Java")]
+    Java,
 }
 
 serde_plain::derive_display_from_serialize!(Language);

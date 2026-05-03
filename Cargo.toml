@@ -30,7 +30,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
 serde_norway = "0.9.42"
 serde_plain = "1.0.2"
-sigil-stitch = "0.3.1"
+sigil-stitch = "0.4.1"
 similar = "2.7.0"
 snafu = "0.8.9"
 toml = "0.9.8"
