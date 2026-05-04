@@ -15,12 +15,17 @@ Each generator has a test file that:
 
 ```
 tests/
-├── fixtures/valid/           # Input OpenAPI specs
+├── fixtures/valid/                  Input OpenAPI specs
 ├── golden/
-│   ├── typescript/
-│   │   └── typescript-fetch/ # Expected TS output per fixture
-│   └── go/
-│       └── go-http/          # Expected Go output per fixture
+│   ├── typescript/typescript-fetch/  Expected TypeScript output per fixture
+│   ├── go/go-http/                   Expected Go output per fixture
+│   ├── rust/rust-reqwest/            Expected Rust (reqwest) output
+│   ├── rust/rust-ureq/               Expected Rust (ureq) output
+│   ├── rust/rust-aioduct/            Expected Rust (aioduct) output
+│   ├── python/python-httpx/          Expected Python (httpx) output
+│   ├── python/python-requests/       Expected Python (requests) output
+│   ├── java/java-okhttp/             Expected Java output
+│   └── kotlin/kotlin-okhttp/         Expected Kotlin output
 ```
 
 Each golden directory contains files with a `.golden` suffix:
@@ -40,8 +45,14 @@ tests/golden/go/go-http/petstore/
 
 CI materializes each golden directory into a temp folder (stripping the `.golden` suffix) and runs the target language's compiler:
 
-- TypeScript: `tsc --noEmit` (marker: `tsconfig.json.golden`)
-- Go: `go build ./...` (marker: `go.mod.golden`)
+| Language | Command | Marker file |
+|----------|---------|-------------|
+| TypeScript | `tsc --noEmit` | `tsconfig.json.golden` |
+| Go | `go build ./...` | `go.mod.golden` |
+| Rust | `cargo check` | `Cargo.toml.golden` |
+| Python | `pyright` | `pyproject.toml.golden` |
+| Java | `gradle compileJava` | `build.gradle.golden` |
+| Kotlin | `gradle compileKotlin` | `build.gradle.kts.golden` |
 
 This catches type errors that snapshot comparison alone cannot.
 
@@ -51,14 +62,19 @@ This catches type errors that snapshot comparison alone cannot.
 # Run all snapshot tests
 cargo test
 
-# Run only TypeScript golden tests
-cargo test -p openapi-nexus-typescript-fetch --test golden_tests_typescript_fetch
-
-# Run only Go golden tests
-cargo test -p openapi-nexus-go-http --test golden_tests_go_http
+# Run specific generator's golden tests
+cargo test --test golden_tests_typescript_fetch
+cargo test --test golden_tests_go_http
+cargo test --test golden_tests_rust_reqwest
+cargo test --test golden_tests_rust_ureq
+cargo test --test golden_tests_rust_aioduct
+cargo test --test golden_tests_python_httpx
+cargo test --test golden_tests_python_requests
+cargo test --test golden_tests_java_okhttp
+cargo test --test golden_tests_kotlin_okhttp
 
 # Run a single test by name
-cargo test -p openapi-nexus-go-http --test golden_tests_go_http -- minimal
+cargo test --test golden_tests_go_http -- minimal
 ```
 
 ## Updating Golden Files
@@ -69,19 +85,21 @@ When you intentionally change generator output:
 # Update all
 UPDATE_GOLDEN=1 cargo test
 
-# Update TypeScript only
+# Update one generator
 UPDATE_GOLDEN=1 cargo test --test golden_tests_typescript_fetch
-
-# Update Go only
-UPDATE_GOLDEN=1 cargo test --test golden_tests_go_http
+UPDATE_GOLDEN=1 cargo test --test golden_tests_rust_reqwest
 ```
 
 After updating, verify the compile check passes:
 
 ```bash
-just golden::build-ts    # TypeScript compile check
-just golden::build-go    # Go compile check
-just golden::build-all   # Both
+just golden-typescript::build
+just golden-go::build
+just golden-rust::build
+just golden-python::build
+just golden-java::build
+just golden-kotlin::build
+just golden-build-all           # all languages
 ```
 
 ## Extra File Detection

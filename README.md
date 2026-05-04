@@ -1,19 +1,26 @@
 # OpenAPI Nexus
 
-> OpenAPI 3.1 to multi-language code generator
+> OpenAPI 3.0 / 3.1 / 3.2 to multi-language code generator
 
 [![CI](https://github.com/adamcavendish/openapi-nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/adamcavendish/openapi-nexus/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 [![Rust](https://img.shields.io/badge/rust-1.90+-orange.svg)](https://www.rust-lang.org/)
 
-OpenAPI Nexus transforms OpenAPI 3.1 specifications into type-safe client libraries. Generated output is deterministic, compile-checked in CI, and tested byte-for-byte via golden tests.
+OpenAPI Nexus transforms OpenAPI specifications into type-safe client libraries. Generated output is deterministic, compile-checked in CI, and tested byte-for-byte via golden tests.
 
 ## Language Support
 
-| Language | Generator | Status |
-|----------|-----------|--------|
-| TypeScript (fetch) | `typescript-fetch` | Stable |
-| Go (net/http) | `go-http` | Stable |
+| Language | Generator | HTTP Client | Status |
+|----------|-----------|-------------|--------|
+| TypeScript | `typescript-fetch` | fetch | Beta |
+| Go | `go-http` | net/http | Beta |
+| Rust | `rust-reqwest` | reqwest | Beta |
+| Rust | `rust-ureq` | ureq | Beta |
+| Rust | `rust-aioduct` | aioduct | Beta |
+| Python | `python-httpx` | httpx | Beta |
+| Python | `python-requests` | requests | Beta |
+| Java | `java-okhttp` | OkHttp | Beta |
+| Kotlin | `kotlin-okhttp` | OkHttp | Beta |
 
 ## Quick Start
 
@@ -22,7 +29,7 @@ OpenAPI Nexus transforms OpenAPI 3.1 specifications into type-safe client librar
 Download a binary from the [releases page](https://github.com/adamcavendish/openapi-nexus/releases), or build from source:
 
 ```bash
-cargo install --path crates/openapi-nexus
+cargo install openapi-nexus
 ```
 
 Requires Rust 1.90+.
@@ -36,8 +43,17 @@ openapi-nexus generate -i spec.yaml -o output -g typescript-fetch
 # Go client
 openapi-nexus generate -i spec.yaml -o output -g go-http
 
-# Both at once
-openapi-nexus generate -i spec.yaml -o output -g typescript-fetch,go-http
+# Rust client (reqwest)
+openapi-nexus generate -i spec.yaml -o output -g rust-reqwest
+
+# Python client (httpx)
+openapi-nexus generate -i spec.yaml -o output -g python-httpx
+
+# Java client
+openapi-nexus generate -i spec.yaml -o output -g java-okhttp
+
+# Multiple generators at once
+openapi-nexus generate -i spec.yaml -o output -g typescript-fetch,go-http,rust-reqwest
 ```
 
 ## Configuration
@@ -56,6 +72,12 @@ Generator-specific options go in the config file:
 ```toml
 [generators.go-http]
 module_path = "github.com/myorg/myproject/sdk"
+
+[generators.rust-reqwest.extra_derives.structs]
+derives = ["PartialEq"]
+
+[generators.rust-reqwest.extra_derives.enums]
+derives = ["Hash"]
 ```
 
 ## How It Works
@@ -64,7 +86,7 @@ module_path = "github.com/myorg/myproject/sdk"
 OpenAPI YAML/JSON → parse → lower to IR → CodeGenerator::generate(&IrSpec) → write
 ```
 
-Parsing auto-detects OAS version. Lowering produces a version-agnostic `IrSpec`. Each generator receives the pre-lowered IR and uses [sigil-stitch](https://github.com/adamcavendish/sigil-stitch) for type-safe code emission.
+Parsing auto-detects OAS version (3.0, 3.1, 3.2). Lowering produces a version-agnostic `IrSpec`. Each generator receives the pre-lowered IR and uses [sigil-stitch](https://github.com/adamcavendish/sigil-stitch) for type-safe code emission.
 
 ## Documentation
 
@@ -82,8 +104,8 @@ cargo clippy --all-targets --all-features -- -D warnings
 # Update golden files after intentional output changes
 UPDATE_GOLDEN=1 cargo test
 
-# Compile-check generated output
-just golden::build-all
+# Compile-check generated output for all languages
+just golden-build-all
 ```
 
 ## License
