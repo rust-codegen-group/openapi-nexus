@@ -99,7 +99,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
     /// Get user by user name
     pub async fn get_user_by_name(
         &self,
-        username: &String,
+        username: &str,
     ) -> Result<GetUserByNameResponse, Error> {
         let mut path = "/user/{username}".to_string();
         path = path.replace("{username}", &username.to_string());
@@ -120,7 +120,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
     /// Update user
     pub async fn update_user(
         &self,
-        username: &String,
+        username: &str,
         body: &crate::models::User,
     ) -> Result<UpdateUserResponse, Error> {
         let mut path = "/user/{username}".to_string();
@@ -135,7 +135,7 @@ impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
     /// Delete user
     pub async fn delete_user(
         &self,
-        username: &String,
+        username: &str,
     ) -> Result<DeleteUserResponse, Error> {
         let mut path = "/user/{username}".to_string();
         path = path.replace("{username}", &username.to_string());

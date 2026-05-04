@@ -62,7 +62,7 @@ impl<'a> PetApi<'a> {
     /// Find pets by status
     pub fn find_pets_by_status(
         &self,
-        status: &String,
+        status: &str,
     ) -> Result<FindPetsByStatusResponse, Error> {
         let path = "/pet/findByStatus".to_string();
         let mut req = self.client.get(&path);

@@ -21,7 +21,7 @@ impl<'a, R: aioduct::Runtime> FooApi<'a, R> {
     /// PATCH /foo/bar
     pub async fn update_foo_bar(
         &self,
-        foo_id: &String,
+        foo_id: &str,
         body: &crate::models::FooRequest,
     ) -> Result<UpdateFooBarResponse, Error> {
         let mut path = "/foo/bar".to_string();
