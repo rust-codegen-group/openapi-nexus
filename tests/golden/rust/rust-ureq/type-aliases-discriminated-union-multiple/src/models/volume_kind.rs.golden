@@ -12,7 +12,13 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "kind")]
 pub enum VolumeKind {
     #[serde(rename = "VOLUME_KIND_LOCAL")]
-    VolumeKindLocal(super::VolumeKindLocal),
+    VolumeKindLocal {
+        #[serde(rename = "localPath")]
+        local_path: String,
+    },
     #[serde(rename = "VOLUME_KIND_REMOTE")]
-    VolumeKindRemote(super::VolumeKindRemote),
+    VolumeKindRemote {
+        #[serde(rename = "remotePath")]
+        remote_path: String,
+    },
 }
