@@ -33,7 +33,7 @@ pub fn generate_model_files(
     let mut mod_entries = Vec::new();
 
     for (_name, schema) in &ir.schemas {
-        let Some(file_spec) = emit_model_file(schema, config) else {
+        let Some(file_spec) = emit_model_file(schema, config, ir) else {
             continue;
         };
         let stem = schema.name.to_snake_case();
@@ -60,7 +60,11 @@ pub fn generate_model_files(
     Ok(files)
 }
 
-fn emit_model_file(schema: &IrSchema, config: &RustGeneratorConfig) -> Option<FileSpec> {
+fn emit_model_file(
+    schema: &IrSchema,
+    config: &RustGeneratorConfig,
+    ir: &IrSpec,
+) -> Option<FileSpec> {
     let extra = config.extra_derives.as_ref();
     match &schema.kind {
         IrSchemaKind::Object(obj) => {
@@ -75,7 +79,7 @@ fn emit_model_file(schema: &IrSchema, config: &RustGeneratorConfig) -> Option<Fi
             emit_intersection(schema, i, extra.and_then(|e| e.structs.as_ref()))
         }
         IrSchemaKind::TaggedUnion(tu) => {
-            emit_tagged_union(schema, tu, extra.and_then(|e| e.unions.as_ref()))
+            emit_tagged_union(schema, tu, extra.and_then(|e| e.unions.as_ref()), ir)
         }
     }
 }
@@ -397,6 +401,7 @@ fn emit_tagged_union(
     schema: &IrSchema,
     tu: &IrTaggedUnion,
     extra: Option<&ExtraDeriveConfig>,
+    ir: &IrSpec,
 ) -> Option<FileSpec> {
     if tu.variants.is_empty() {
         return None;
@@ -426,6 +431,72 @@ fn emit_tagged_union(
         TaggingStyle::External => String::new(),
     };
 
+    let inline_fields = matches!(
+        tu.tagging,
+        TaggingStyle::Internal | TaggingStyle::Adjacent { .. }
+    );
+
+    let mut variant_blocks: Vec<String> = Vec::new();
+    for variant in &tu.variants {
+        let variant_name = variant.discriminator_value.to_pascal_case();
+        let mut block = String::new();
+
+        if variant.discriminator_value.to_pascal_case() != variant.discriminator_value {
+            block.push_str(&format!(
+                "#[serde(rename = \"{}\")]\n",
+                escape_str(&variant.discriminator_value)
+            ));
+        }
+
+        if inline_fields {
+            if let Some(obj) = resolve_object(&variant.content_type, ir) {
+                block.push_str(&format!("{variant_name} {{"));
+                for (json_name, prop) in &obj.properties {
+                    let field_name = escape_rust_keyword(&json_name.to_snake_case());
+                    if field_name != *json_name {
+                        block.push_str(&format!("\n    #[serde(rename = \"{json_name}\")]"));
+                    }
+                    if !prop.required || prop.nullable {
+                        block.push_str(
+                            "\n    #[serde(skip_serializing_if = \"Option::is_none\", default)]",
+                        );
+                        block.push_str(&format!(
+                            "\n    {field_name}: Option<{}>,",
+                            rust_type_str_model(&prop.type_expr)
+                        ));
+                    } else {
+                        block.push_str(&format!(
+                            "\n    {field_name}: {},",
+                            rust_type_str_model(&prop.type_expr)
+                        ));
+                    }
+                }
+                if let Some(ap) = &obj.additional_properties {
+                    block.push_str("\n    #[serde(flatten)]");
+                    block.push_str(&format!(
+                        "\n    additional_properties: std::collections::HashMap<String, {}>,",
+                        rust_type_str_model(ap)
+                    ));
+                }
+                block.push_str("\n},");
+            } else {
+                block.push_str(&format!(
+                    "{}({}),",
+                    variant_name,
+                    rust_type_str_model(&variant.content_type)
+                ));
+            }
+        } else {
+            block.push_str(&format!(
+                "{}({}),",
+                variant_name,
+                rust_type_str_model(&variant.content_type)
+            ));
+        }
+
+        variant_blocks.push(block);
+    }
+
     let body = sigil_quote!(RustLang {
         $if(schema.description.is_some()) {
             $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
@@ -435,11 +506,8 @@ fn emit_tagged_union(
             $L(serde_tag_attr.as_str())
         }
         pub enum $N(name.as_str()) {
-            $for(variant in tu.variants.iter()) {
-                $if(variant.discriminator_value.to_pascal_case() != variant.discriminator_value) {
-                    $L(format!("#[serde(rename = \"{}\")]", escape_str(&variant.discriminator_value)))
-                }
-                $L(format!("{}({}),", variant.discriminator_value.to_pascal_case(), rust_type_str_model(&variant.content_type)))
+            $for(block in variant_blocks.iter()) {
+                $L(block.as_str())
             }
         }
     })
@@ -543,6 +611,20 @@ fn doc_comment_block(doc: &str) -> String {
         }
     }
     out
+}
+
+// ---------------------------------------------------------------------------
+// Schema resolution helper
+// ---------------------------------------------------------------------------
+
+fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
+    if let IrTypeExpr::Named(name) = expr
+        && let Some(schema) = ir.schemas.get(name)
+        && let IrSchemaKind::Object(obj) = &schema.kind
+    {
+        return Some(obj);
+    }
+    None
 }
 
 // ---------------------------------------------------------------------------
