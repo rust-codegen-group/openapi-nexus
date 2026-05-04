@@ -6,13 +6,13 @@
 flowchart TD
     A["OpenAPI YAML / JSON"] --> B
 
-    B["openapi-nexus-parser
+    B["Parser
     Parses YAML/JSON into ParsedSpec
-    Auto-detects OAS 3.0 vs 3.1"]
+    Auto-detects OAS 3.0 / 3.1 / 3.2"]
 
     B --> C
 
-    C["openapi-nexus-ir
+    C["IR Lowering
     Lowers ParsedSpec into IrSpec
     Version-agnostic IR"]
 
@@ -28,36 +28,36 @@ flowchart TD
     Writes files to disk"]
 ```
 
-Lowering happens once in the orchestrator (`OpenApiCodeGenerator`). Generators never touch raw OpenAPI types.
+Lowering happens once in the orchestrator (`src/generators/orchestrator.rs`). Generators never touch raw OpenAPI types.
 
-## Workspace Crates
+## Module Layout
 
-### Core pipeline
+openapi-nexus is a single crate. All modules live under `src/`:
 
-| Crate | Purpose |
-|-------|---------|
-| `openapi-nexus` | CLI binary, orchestrator (`OpenApiCodeGenerator`, `GeneratorRegistry`) |
-| `openapi-nexus-parser` | Parses YAML/JSON into `ParsedSpec` |
-| `openapi-nexus-spec` | Raw OpenAPI types (`OpenApiV30Spec`, `OpenApiV31Spec`) |
-| `openapi-nexus-ir` | Lowers parsed spec to `IrSpec` via `lower::lower()` |
-| `openapi-nexus-core` | Shared traits (`CodeGenerator`, `FileWriter`, `CombinedGenerator`), enums (`GeneratorType`, `Language`) |
-| `openapi-nexus-config` | Configuration loading (CLI > env > TOML > defaults) |
-
-### Generators
-
-| Crate | Language | Emission |
-|-------|----------|----------|
-| `openapi-nexus-typescript-fetch` | TypeScript | `sigil-stitch` |
-| `openapi-nexus-go-http` | Go | `sigil-stitch` |
-
-Both generators live under `crates/generators/`.
-
-### Test infrastructure
-
-| Crate | Purpose |
-|-------|---------|
-| `openapi-nexus-test-utils` | Shared golden-test harness (`run_golden_test`, `generate_files`) |
-| `fixture-generators/*` | Generate type-checked OAS fixtures from Rust + utoipa |
+```
+src/
+├── cli/              CLI argument parsing and entry point
+├── codegen/          CodeGenerator/FileWriter traits, GeneratorType, Language enums
+├── config/           Configuration loading (CLI > env > TOML > defaults)
+├── ir/               IrSpec types and lowering passes
+│   └── lower/        v30.rs, v31.rs, v32.rs
+├── spec/             Raw OAS types (v30, v31, v32)
+├── parser/           YAML/JSON parsing, OAS version auto-detection
+└── generators/       One submodule per generator
+    ├── typescript/fetch/
+    ├── go/http/
+    ├── rust/common/         Shared model + API emission for Rust backends
+    ├── rust/reqwest/
+    ├── rust/ureq/
+    ├── rust/aioduct/
+    ├── python/common/       Shared model + API emission for Python backends
+    ├── python/httpx/
+    ├── python/requests/
+    ├── java/okhttp/
+    ├── kotlin/okhttp/
+    ├── orchestrator.rs      Orchestrates parse → lower → generate → write
+    └── registry.rs          Maps GeneratorType to constructor
+```
 
 ## The CodeGenerator Trait
 
@@ -73,11 +73,11 @@ pub trait CodeGenerator {
 
 ## Code Emission
 
-Both generators use [sigil-stitch](https://github.com/adamcavendish/sigil-stitch), a type-safe code generation framework. sigil-stitch provides:
+All generators use [sigil-stitch](https://github.com/adamcavendish/sigil-stitch), a type-safe code generation framework. sigil-stitch provides:
 
-- Language-specific type systems (TypeScript, Go)
+- Language-specific type systems (TypeScript, Go, Rust, Python, Java, Kotlin)
 - Import tracking and deduplication
 - Width-aware pretty printing
-- The `sigil_quote!` macro for inline code templates
+- The `sigil_quote!` macro for inline code templates with `$if`, `$for`, `$let` directives
 
 Each generator's `sigil_emit*.rs` files contain the emission logic that transforms IR types into sigil-stitch AST nodes.

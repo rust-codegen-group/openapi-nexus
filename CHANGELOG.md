@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0]
+
+### Added
+
+- Rust code generators: `rust-reqwest`, `rust-ureq`, `rust-aioduct` (three HTTP backends with shared model emission)
+- Python code generators: `python-httpx`, `python-requests`
+- Java OkHttp code generator: `java-okhttp`
+- Kotlin OkHttp code generator: `kotlin-okhttp`
+- OpenAPI 3.0 spec parsing and IR lowering
+- OpenAPI 3.2 spec parsing and IR lowering
+- Configurable extra derives per type-kind for Rust generators (`extra_derives` config)
+- AbortSignal support in TypeScript fetch runtime (`RequestOpts`)
+- Compile-check CI gates for all 6 target languages (TypeScript, Go, Rust, Python, Java, Kotlin)
+
+### Changed
+
+- Consolidated 15 workspace crates into a single crate with modules (`src/` replaces `crates/`)
+- Replaced minijinja templates with sigil-stitch code emission across all generators
+- Converted remaining `CodeBlock::builder()` sites to `sigil_quote!()` macro (sigil-stitch 0.2.1 → 0.4.3)
+- Bumped MSRV to 1.90 (Rust edition 2024)
+- Bumped aioduct dependency 0.1.3 → 0.1.6 (added required `rustls-ring` feature)
+- Flattened Justfile layout, aligned CI with sibling projects
+- TypeScript: replaced `any` with `unknown` across generated code and runtime
+- TypeScript: named re-exports instead of barrel `export *`
+- TypeScript: collapsed nullable+optional fields to two states
+- TypeScript: unified file headers, dropped `tslint:disable`
+- Go: rewrote generator on IR + sigil-stitch (no more minijinja)
+
+### Fixed
+
+- TypeScript: use strict equality (`===`) in required-param guards
+- TypeScript: derive Content-Type from `requestBody.content` instead of hardcoding JSON
+- TypeScript: use dot access for statically-known `requestParameters` keys
+- TypeScript: unified `runtime.ts` indentation to 2-space
+
 ## [0.0.5]
 
 ### Added

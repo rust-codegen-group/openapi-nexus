@@ -5,7 +5,7 @@
 Download the latest binary from the [releases page](https://github.com/adamcavendish/openapi-nexus/releases), or build from source:
 
 ```bash
-cargo install --path crates/openapi-nexus
+cargo install openapi-nexus
 ```
 
 Requires Rust 1.90+ (edition 2024).
@@ -21,13 +21,20 @@ openapi-nexus generate \
   --generator typescript-fetch
 ```
 
-Generate both TypeScript and Go clients at once:
+Generate clients for multiple languages at once:
 
 ```bash
 openapi-nexus generate \
   --input spec.yaml \
   --output output \
-  --generators typescript-fetch,go-http
+  --generators typescript-fetch,go-http,rust-reqwest,python-httpx
+```
+
+All nine generators:
+
+```bash
+openapi-nexus generate -i spec.yaml -o output \
+  -g typescript-fetch,go-http,rust-reqwest,rust-ureq,rust-aioduct,python-httpx,python-requests,java-okhttp,kotlin-okhttp
 ```
 
 ## Configuration
@@ -56,6 +63,12 @@ Generator-specific options live under `[generators.<name>]` sections:
 ```toml
 [generators.go-http]
 module_path = "github.com/myorg/myproject/sdk"
+
+[generators.rust-reqwest.extra_derives.structs]
+derives = ["PartialEq"]
+
+[generators.rust-reqwest.extra_derives.enums]
+derives = ["Hash"]
 ```
 
 ### CLI Reference
