@@ -22,7 +22,6 @@ impl std:: fmt:: Display for PetStatus {
             PetStatus::Available => write!(f, "available"),
             PetStatus::Pending => write!(f, "pending"),
             PetStatus::Sold => write!(f, "sold"),
-
         }
     }
 }
