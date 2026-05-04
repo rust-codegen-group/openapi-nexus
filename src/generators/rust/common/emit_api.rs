@@ -341,7 +341,11 @@ fn emit_operation(
     if let Some(desc) = &op.description {
         b.add("///\n", ());
         for line in desc.lines() {
-            b.add(&format!("/// {line}\n"), ());
+            if line.is_empty() {
+                b.add("///\n", ());
+            } else {
+                b.add(&format!("/// {line}\n"), ());
+            }
         }
     }
 
@@ -356,6 +360,8 @@ fn emit_operation(
     {
         let ty = if is_copy_type(&p.rust_type) {
             p.rust_type.clone()
+        } else if p.rust_type == "String" {
+            "&str".to_string()
         } else {
             format!("&{}", p.rust_type)
         };

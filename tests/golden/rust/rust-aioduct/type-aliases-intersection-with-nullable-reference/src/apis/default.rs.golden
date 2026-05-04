@@ -43,7 +43,7 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
     /// Get test
     pub async fn get_test(
         &self,
-        id: &String,
+        id: &str,
     ) -> Result<GetTestResponse, Error> {
         let mut path = "/test/{id}".to_string();
         path = path.replace("{id}", &id.to_string());

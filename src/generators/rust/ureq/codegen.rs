@@ -101,8 +101,25 @@ fn cargo_toml_file(crate_name: &str, info: &IrInfo, config: &RustGeneratorConfig
         .lines()
         .next()
         .unwrap_or("Generated Rust SDK.");
-    let mut content = format!(
-        r#"[package]
+    let workspace = config.workspace_mode.unwrap_or(false);
+    let mut content = if workspace {
+        format!(
+            r#"[package]
+name = "{crate_name}"
+version.workspace = true
+edition.workspace = true
+description = "{description}"
+
+[dependencies]
+ureq = {{ version = "3", features = ["json"] }}
+serde = {{ version = "1", features = ["derive"] }}
+serde_json = "1"
+serde_repr = "0.1"
+"#,
+        )
+    } else {
+        format!(
+            r#"[package]
 name = "{crate_name}"
 version = "0.1.0"
 edition = "2024"
@@ -114,7 +131,8 @@ serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
 serde_repr = "0.1"
 "#,
-    );
+        )
+    };
     if let Some(extra) = &config.extra_derives {
         for (name, spec) in extra.all_dependencies() {
             content.push_str(&format!("{name} = {spec}\n"));

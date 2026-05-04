@@ -22,7 +22,7 @@ impl<'a> DefaultApi<'a> {
     /// Get with query parameters
     pub async fn get_with_query_params(
         &self,
-        snake_case_param: &String,
+        snake_case_param: &str,
         snake_case_number: Option<i64>,
         kebab_case_param: &Option<String>,
         kebab_case_array: &Option<Vec<String>>,

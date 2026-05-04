@@ -43,7 +43,7 @@ impl<'a, R: aioduct::Runtime> TestResourceApi<'a, R> {
     /// DELETE /v1/api/test-resource/{resource_id}
     pub async fn delete_test_resource(
         &self,
-        resource_id: &String,
+        resource_id: &str,
     ) -> Result<DeleteTestResourceResponse, Error> {
         let mut path = "/v1/api/test-resource/{resource_id}".to_string();
         path = path.replace("{resource_id}", &resource_id.to_string());

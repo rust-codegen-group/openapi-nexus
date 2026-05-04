@@ -34,10 +34,7 @@ pub fn generate_model_files(
 
     for (_name, schema) in &ir.schemas {
         let Some(file_spec) = emit_model_file(schema, config) else {
-            return Err(format!(
-                "unsupported schema kind for {}: {:?}",
-                schema.name, schema.kind
-            ));
+            continue;
         };
         let stem = schema.name.to_snake_case();
         let filename = format!("{stem}.rs");
@@ -70,7 +67,9 @@ fn emit_model_file(schema: &IrSchema, config: &RustGeneratorConfig) -> Option<Fi
             emit_object(schema, obj, extra.and_then(|e| e.structs.as_ref()))
         }
         IrSchemaKind::Enum(en) => emit_enum(schema, en, extra.and_then(|e| e.enums.as_ref())),
-        IrSchemaKind::Alias(expr) => emit_alias(schema, expr),
+        IrSchemaKind::Alias(expr) => {
+            emit_alias(schema, expr, extra.and_then(|e| e.structs.as_ref()))
+        }
         IrSchemaKind::Union(u) => emit_union(schema, u, extra.and_then(|e| e.unions.as_ref())),
         IrSchemaKind::Intersection(i) => {
             emit_intersection(schema, i, extra.and_then(|e| e.structs.as_ref()))
@@ -254,22 +253,51 @@ fn emit_integer_enum(
 // Alias -> pub type
 // ---------------------------------------------------------------------------
 
-fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec> {
+fn emit_alias(
+    schema: &IrSchema,
+    expr: &IrTypeExpr,
+    extra: Option<&ExtraDeriveConfig>,
+) -> Option<FileSpec> {
+    if let IrTypeExpr::Named(n) = expr
+        && n.to_pascal_case() == schema.name.to_pascal_case()
+    {
+        return None;
+    }
+
     let name = schema.name.to_pascal_case();
     let stem = schema.name.to_snake_case();
     let rhs = rust_type_str_model(expr);
-    let rhs_type = TypeName::raw(&rhs);
 
     let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
 
-    let block = sigil_quote!(RustLang {
-        $if(schema.description.is_some()) {
-            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
-        }
-        pub type $N(name.as_str()) = $T(rhs_type);
-    })
-    .ok()?;
-    fsb = fsb.add_code(block);
+    let has_extra = extra.is_some_and(|cfg| !cfg.derives.is_empty());
+
+    if has_extra {
+        fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
+        fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
+
+        let rhs_type = TypeName::raw(&rhs);
+        let block = sigil_quote!(RustLang {
+            $if(schema.description.is_some()) {
+                $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+            }
+            $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+            #[serde(transparent)]
+            pub struct $N(name.as_str())(pub $T(rhs_type));
+        })
+        .ok()?;
+        fsb = fsb.add_code(block);
+    } else {
+        let rhs_type = TypeName::raw(&rhs);
+        let block = sigil_quote!(RustLang {
+            $if(schema.description.is_some()) {
+                $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+            }
+            pub type $N(name.as_str()) = $T(rhs_type);
+        })
+        .ok()?;
+        fsb = fsb.add_code(block);
+    }
 
     fsb.build().ok()
 }
@@ -508,7 +536,11 @@ fn build_string_enum_display(name: &str, variants: &[(String, String)]) -> Optio
 fn doc_comment_block(doc: &str) -> String {
     let mut out = String::new();
     for line in doc.lines() {
-        out.push_str(&format!("/// {line}\n"));
+        if line.is_empty() {
+            out.push_str("///\n");
+        } else {
+            out.push_str(&format!("/// {line}\n"));
+        }
     }
     out
 }
@@ -572,6 +604,8 @@ fn rust_primitive(p: &IrPrimitive) -> &'static str {
         IrPrimitive::IntegerWithFormat(format) => match format.as_str() {
             "int32" => "i32",
             "int64" => "i64",
+            "uint32" => "u32",
+            "uint64" => "u64",
             _ => "i64",
         },
         IrPrimitive::Number => "f64",

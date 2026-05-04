@@ -55,6 +55,8 @@ pub struct RustGeneratorConfig {
     pub crate_name: Option<String>,
     #[serde(default)]
     pub extra_derives: Option<ExtraDerivesConfig>,
+    #[serde(default)]
+    pub workspace_mode: Option<bool>,
 }
 
 impl From<toml::value::Table> for RustGeneratorConfig {

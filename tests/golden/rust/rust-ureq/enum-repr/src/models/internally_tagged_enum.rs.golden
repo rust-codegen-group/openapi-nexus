@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Internally tagged enum
-/// 
+///
 /// The tag is a field inside the object alongside other fields:
 /// `{"ty": "VariantA", "field1": "...", "field2": 123}`
 #[derive(Debug, Clone, Serialize, Deserialize)]

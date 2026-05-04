@@ -22,7 +22,7 @@ impl<'a, R: aioduct::Runtime> ItemsApi<'a, R> {
     /// Create item with body parameter conflict
     pub async fn create_item_with_body_conflict(
         &self,
-        item_id: &String,
+        item_id: &str,
         body: &Option<String>,
         body_2: &crate::models::CreateItemWithBodyConflictRequest,
     ) -> Result<CreateItemWithBodyConflictResponse, Error> {
