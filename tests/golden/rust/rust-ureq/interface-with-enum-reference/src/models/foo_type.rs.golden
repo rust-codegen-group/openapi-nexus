@@ -22,7 +22,6 @@ impl std:: fmt:: Display for FooType {
             FooType::Foo => write!(f, "foo"),
             FooType::Bar => write!(f, "bar"),
             FooType::Baz => write!(f, "baz"),
-
         }
     }
 }

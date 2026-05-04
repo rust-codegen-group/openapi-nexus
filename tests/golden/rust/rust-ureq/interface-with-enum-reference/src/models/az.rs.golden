@@ -22,7 +22,6 @@ impl std:: fmt:: Display for Az {
             Az::Foo => write!(f, "foo"),
             Az::Bar => write!(f, "bar"),
             Az::Baz => write!(f, "baz"),
-
         }
     }
 }

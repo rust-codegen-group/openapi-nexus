@@ -22,7 +22,6 @@ impl std:: fmt:: Display for FooStatus {
             FooStatus::Foo => write!(f, "foo"),
             FooStatus::Bar => write!(f, "bar"),
             FooStatus::Baz => write!(f, "baz"),
-
         }
     }
 }

@@ -25,6 +25,7 @@ use crate::ir::types::{
 };
 use heck::{ToLowerCamelCase, ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::CodeBlock;
+use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::fun_spec::FunSpec;
@@ -208,9 +209,10 @@ fn collect_stringify_imports(t: &IrTypeExpr, pkgs: &mut BTreeSet<String>) {
 
 /// Build a `package apis` header block.
 fn package_header() -> CodeBlock {
-    let mut b = CodeBlock::builder();
-    b.add(&format!("package {APIS_PACKAGE}"), ());
-    b.build().expect("package header builds")
+    sigil_quote!(GoLang {
+        package $L(APIS_PACKAGE)
+    })
+    .expect("package header builds")
 }
 
 /// Build the API struct: `type {Name}API struct { client *runtime.Client }`
@@ -235,8 +237,10 @@ fn build_constructor(struct_name: &str, module_path: &str) -> FunSpec {
     let runtime_client_ty = TypeName::importable(&format!("{module_path}/runtime"), "Client");
     let func_name = format!("New{struct_name}");
 
-    let mut body = CodeBlock::builder();
-    body.add(&format!("return &{struct_name}{{client: client}}"), ());
+    let body = sigil_quote!(GoLang {
+        $L(format!("return &{struct_name}{{client: client}}"))
+    })
+    .expect("constructor body builds");
 
     FunSpec::builder(&func_name)
         .doc(&format!(
@@ -247,7 +251,7 @@ fn build_constructor(struct_name: &str, module_path: &str) -> FunSpec {
                 .expect("param builds"),
         )
         .returns(TypeName::pointer(TypeName::primitive(struct_name)))
-        .body(body.build().expect("constructor body builds"))
+        .body(body)
         .build()
         .expect("constructor FunSpec builds")
 }
@@ -661,21 +665,16 @@ fn emit_decode_into(field: &str, go_ty: &str) -> CodeBlock {
             format!("resp.{field} = &payload"),
         )
     };
-    let mut cb = CodeBlock::builder();
-    cb.add("%>", ());
-    cb.add(&format!("var payload {elem_ty}"), ());
-    cb.add_line();
-    cb.begin_control_flow(
-        "if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil",
-        (),
-    );
-    cb.add("return nil, fmt.Errorf(\"decode response: %%w\", err)", ());
-    cb.add_line();
-    cb.end_control_flow();
-    cb.add(&assignment, ());
-    cb.add_line();
-    cb.add("%<", ());
-    cb.build().expect("decode body builds")
+    sigil_quote!(GoLang {
+        $>
+        $L(format!("var payload {elem_ty}"))
+        $L("if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil") {
+            $L("return nil, fmt.Errorf(\"decode response: %w\", err)")
+        }
+        $L(assignment)
+        $<
+    })
+    .expect("decode body builds")
 }
 
 fn deref_if_pointer(var: &str, is_pointer: bool) -> String {

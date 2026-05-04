@@ -25,6 +25,7 @@ use crate::ir::types::{
 };
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use sigil_stitch::code_block::{Arg, CodeBlock};
+use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::fun_spec::FunSpec;
@@ -371,11 +372,10 @@ fn build_api_class(
 }
 
 fn build_constructor() -> FunSpec {
-    let mut body = CodeBlock::builder();
-    body.add(
-        "super(configuration ?? %T);",
-        vec![Arg::TypeName(rt_value("DefaultConfig"))],
-    );
+    let body = sigil_quote!(TypeScript {
+        super(configuration ?? $T(rt_value("DefaultConfig")));
+    })
+    .expect("CodeBlock builds");
 
     FunSpec::builder("constructor")
         .is_constructor()
@@ -385,7 +385,7 @@ fn build_constructor() -> FunSpec {
                 .build()
                 .expect("ParameterSpec builds"),
         )
-        .body(body.build().expect("CodeBlock builds"))
+        .body(body)
         .build()
         .expect("Constructor FunSpec builds")
 }
@@ -714,25 +714,22 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, String> {
     ));
 
     let args_list = raw_call_args(op);
-    let mut body = CodeBlock::builder();
-    if is_void_type(&body_ty) {
-        body.add(
-            &format!(
-                "const response = await this.{}({});\nreturn await response.value();",
-                raw_name, args_list
-            ),
-            vec![],
-        );
+    let is_void = is_void_type(&body_ty);
+    let call_expr = format!("this.{raw_name}({args_list})");
+    let body = if is_void {
+        sigil_quote!(TypeScript {
+            const response = await $L(call_expr.clone());
+            return await response.value();
+        })
+        .expect("CodeBlock builds")
     } else {
-        body.add(
-            &format!(
-                "const response = await this.{}({});\nreturn await response.value() as %T;",
-                raw_name, args_list
-            ),
-            vec![Arg::TypeName(body_ty)],
-        );
-    }
-    fb = fb.body(body.build().expect("CodeBlock builds"));
+        sigil_quote!(TypeScript {
+            const response = await $L(call_expr);
+            return await response.value() as $T(body_ty);
+        })
+        .expect("CodeBlock builds")
+    };
+    fb = fb.body(body);
 
     fb.build()
         .map_err(|e| format!("sigil_emit_api: convenience method {method_base}: {e}"))

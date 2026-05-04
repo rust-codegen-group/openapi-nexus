@@ -16,8 +16,7 @@ use crate::ir::types::{
     IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
-use sigil_stitch::code_block::{CodeBlock, StringLitArg};
-use sigil_stitch::prelude::sigil_quote;
+use sigil_stitch::prelude::{CodeBlock, sigil_quote};
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::import_spec::ImportSpec;
 use sigil_stitch::type_name::TypeName;
@@ -111,62 +110,35 @@ fn emit_object(
     fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
     fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
 
-    let mut body = CodeBlock::builder();
-
-    if let Some(doc) = &schema.description {
-        emit_doc_comment(&mut body, doc);
-    }
-    body.add(
-        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
-        (),
-    );
-    body.add_line();
-    body.add(&format!("pub struct {name}"), ());
-    body.begin_control_flow("", ());
-
-    for (json_name, prop) in &obj.properties {
-        if let Some(desc) = &prop.description {
-            emit_doc_comment(&mut body, desc);
+    let body = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        let raw_field_name = json_name.to_snake_case();
-        let field_name = escape_rust_keyword(&raw_field_name);
-        let needs_rename = field_name != *json_name;
-        let is_optional = !prop.required || prop.nullable;
-
-        if needs_rename {
-            body.add(&format!("#[serde(rename = \"{json_name}\")]"), ());
-            body.add_line();
+        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        pub struct $N(name.as_str()) {
+            $for((json_name, prop) in obj.properties.iter()) {
+                $if(prop.description.is_some()) {
+                    $L(doc_comment_block(prop.description.as_deref().unwrap()).trim_end())
+                }
+                $if(escape_rust_keyword(&json_name.to_snake_case()) != *json_name) {
+                    $L(format!("#[serde(rename = \"{json_name}\")]"))
+                }
+                $if(!prop.required || prop.nullable) {
+                    #[serde(skip_serializing_if = "Option::is_none", default)]
+                    $L(format!("pub {}: Option<{}>,", escape_rust_keyword(&json_name.to_snake_case()), rust_type_str_model(&prop.type_expr)))
+                } $else {
+                    $L(format!("pub {}: {},", escape_rust_keyword(&json_name.to_snake_case()), rust_type_str_model(&prop.type_expr)))
+                }
+            }
+            $if(obj.additional_properties.is_some()) {
+                #[serde(flatten)]
+                $L(format!("pub additional_properties: std::collections::HashMap<String, {}>,", rust_type_str_model(obj.additional_properties.as_ref().unwrap())))
+            }
         }
-        if is_optional {
-            body.add(
-                "#[serde(skip_serializing_if = \"Option::is_none\", default)]",
-                (),
-            );
-            body.add_line();
-        }
+    })
+    .ok()?;
 
-        let rust_type = rust_type_str_model(&prop.type_expr);
-        if is_optional {
-            body.add(&format!("pub {field_name}: Option<{rust_type}>,"), ());
-        } else {
-            body.add(&format!("pub {field_name}: {rust_type},"), ());
-        }
-        body.add_line();
-    }
-
-    if let Some(additional) = &obj.additional_properties {
-        body.add("#[serde(flatten)]", ());
-        body.add_line();
-        let val_type = rust_type_str_model(additional);
-        body.add(
-            &format!("pub additional_properties: std::collections::HashMap<String, {val_type}>,"),
-            (),
-        );
-        body.add_line();
-    }
-
-    body.end_control_flow();
-    fsb = fsb.add_code(body.build().expect("object body builds"));
+    fsb = fsb.add_code(body);
     fsb.build().ok()
 }
 
@@ -196,34 +168,29 @@ fn emit_enum(
     fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
     fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
 
-    let mut body = CodeBlock::builder();
-
-    if let Some(doc) = &schema.description {
-        emit_doc_comment(&mut body, doc);
-    }
-    body.add(
-        &derive_attr("Debug, Clone, PartialEq, Eq, Serialize, Deserialize", extra),
-        (),
-    );
-    body.add_line();
-    body.add(&format!("pub enum {name}"), ());
-    body.begin_control_flow("", ());
-
     let mut variants: Vec<(String, String)> = Vec::new();
     for v in &en.values {
         let s = v.value.as_str()?;
-        let variant = s.to_pascal_case();
-        if variant != s {
-            body.add(&format!("#[serde(rename = \"{}\")]", escape_str(s)), ());
-            body.add_line();
-        }
-        body.add(&format!("{variant},"), ());
-        body.add_line();
-        variants.push((variant, s.to_string()));
+        variants.push((s.to_pascal_case(), s.to_string()));
     }
 
-    body.end_control_flow();
-    fsb = fsb.add_code(body.build().expect("enum body builds"));
+    let body = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+        }
+        $L(derive_attr("Debug, Clone, PartialEq, Eq, Serialize, Deserialize", extra))
+        pub enum $N(name.as_str()) {
+            $for((variant, wire) in variants.iter()) {
+                $if(variant != wire) {
+                    $L(format!("#[serde(rename = \"{}\")]", escape_str(wire)))
+                }
+                $L(format!("{variant},"))
+            }
+        }
+    })
+    .ok()?;
+
+    fsb = fsb.add_code(body);
 
     // Display impl via sigil_quote!
     if let Some(display_block) = build_string_enum_display(&name, &variants) {
@@ -245,37 +212,35 @@ fn emit_integer_enum(
     fsb = fsb.add_import(ImportSpec::named("serde_repr", "Deserialize_repr"));
     fsb = fsb.add_import(ImportSpec::named("serde_repr", "Serialize_repr"));
 
-    let mut body = CodeBlock::builder();
+    let int_variants: Vec<(String, i64)> = en
+        .values
+        .iter()
+        .map(|v| {
+            let n = v.value.as_i64()?;
+            let variant_name = if n < 0 {
+                format!("Neg{}", n.unsigned_abs())
+            } else {
+                format!("N{n}")
+            };
+            Some((variant_name, n))
+        })
+        .collect::<Option<Vec<_>>>()?;
 
-    if let Some(doc) = &schema.description {
-        emit_doc_comment(&mut body, doc);
-    }
-    body.add(
-        &derive_attr(
-            "Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr",
-            extra,
-        ),
-        (),
-    );
-    body.add_line();
-    body.add("#[repr(i64)]", ());
-    body.add_line();
-    body.add(&format!("pub enum {name}"), ());
-    body.begin_control_flow("", ());
+    let body = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+        }
+        $L(derive_attr("Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr", extra))
+        #[repr(i64)]
+        pub enum $N(name.as_str()) {
+            $for((variant_name, n) in int_variants.iter()) {
+                $L(format!("{variant_name} = {n},"))
+            }
+        }
+    })
+    .ok()?;
 
-    for v in &en.values {
-        let n = v.value.as_i64()?;
-        let variant_name = if n < 0 {
-            format!("Neg{}", n.unsigned_abs())
-        } else {
-            format!("N{n}")
-        };
-        body.add(&format!("{variant_name} = {n},"), ());
-        body.add_line();
-    }
-
-    body.end_control_flow();
-    fsb = fsb.add_code(body.build().expect("integer enum body builds"));
+    fsb = fsb.add_code(body);
 
     // Display impl via sigil_quote!
     if let Some(display_block) = build_integer_enum_display(&name) {
@@ -297,18 +262,15 @@ fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec> {
 
     let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
 
-    let mut cb = CodeBlock::builder();
-    if let Some(doc) = &schema.description {
-        cb.add("%L", doc_comment_block(doc));
-    }
-
-    let alias = sigil_quote!(RustLang {
+    let block = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+        }
         pub type $N(name.as_str()) = $T(rhs_type);
     })
     .ok()?;
-    cb.add_code(alias);
+    fsb = fsb.add_code(block);
 
-    fsb = fsb.add_code(cb.build().ok()?);
     fsb.build().ok()
 }
 
@@ -318,19 +280,16 @@ fn emit_type_alias_file(schema: &IrSchema, rhs_str: &str) -> Option<FileSpec> {
 
     let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
 
-    let mut cb = CodeBlock::builder();
-    if let Some(doc) = &schema.description {
-        cb.add("%L", doc_comment_block(doc));
-    }
-
     let rhs_type = TypeName::raw(rhs_str);
-    let alias = sigil_quote!(RustLang {
+    let block = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+        }
         pub type $N(name.as_str()) = $T(rhs_type);
     })
     .ok()?;
-    cb.add_code(alias);
+    fsb = fsb.add_code(block);
 
-    fsb = fsb.add_code(cb.build().ok()?);
     fsb.build().ok()
 }
 
@@ -350,30 +309,32 @@ fn emit_union(
     fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
     fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
 
-    let mut body = CodeBlock::builder();
+    let variants: Vec<(String, String)> = union
+        .members
+        .iter()
+        .enumerate()
+        .map(|(i, member)| {
+            let variant_name = union_variant_name(member, i);
+            let rust_type = rust_type_str_model(member);
+            (variant_name, rust_type)
+        })
+        .collect();
 
-    if let Some(doc) = &schema.description {
-        emit_doc_comment(&mut body, doc);
-    }
-    body.add(
-        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
-        (),
-    );
-    body.add_line();
-    body.add("#[serde(untagged)]", ());
-    body.add_line();
-    body.add(&format!("pub enum {name}"), ());
-    body.begin_control_flow("", ());
+    let body = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+        }
+        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        #[serde(untagged)]
+        pub enum $N(name.as_str()) {
+            $for((variant_name, rust_type) in variants.iter()) {
+                $L(format!("{variant_name}({rust_type}),"))
+            }
+        }
+    })
+    .ok()?;
 
-    for (i, member) in union.members.iter().enumerate() {
-        let variant_name = union_variant_name(member, i);
-        let rust_type = rust_type_str_model(member);
-        body.add(&format!("{variant_name}({rust_type}),"), ());
-        body.add_line();
-    }
-
-    body.end_control_flow();
-    fsb = fsb.add_code(body.build().expect("union body builds"));
+    fsb = fsb.add_code(body);
     fsb.build().ok()
 }
 
@@ -420,64 +381,43 @@ fn emit_tagged_union(
     fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
     fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
 
-    let mut body = CodeBlock::builder();
-
-    if let Some(doc) = &schema.description {
-        emit_doc_comment(&mut body, doc);
-    }
-    body.add(
-        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
-        (),
-    );
-    body.add_line();
-
-    match &tu.tagging {
+    let serde_tag_attr = match &tu.tagging {
         TaggingStyle::Internal => {
-            body.add(
-                &format!(
-                    "#[serde(tag = \"{}\")]",
-                    escape_str(&tu.discriminator_field)
-                ),
-                (),
-            );
-            body.add_line();
+            format!(
+                "#[serde(tag = \"{}\")]",
+                escape_str(&tu.discriminator_field)
+            )
         }
         TaggingStyle::Adjacent { content_field } => {
-            body.add(
-                &format!(
-                    "#[serde(tag = \"{}\", content = \"{}\")]",
-                    escape_str(&tu.discriminator_field),
-                    escape_str(content_field)
-                ),
-                (),
-            );
-            body.add_line();
+            format!(
+                "#[serde(tag = \"{}\", content = \"{}\")]",
+                escape_str(&tu.discriminator_field),
+                escape_str(content_field)
+            )
         }
-        TaggingStyle::External => {}
-    }
+        TaggingStyle::External => String::new(),
+    };
 
-    body.add(&format!("pub enum {name}"), ());
-    body.begin_control_flow("", ());
-
-    for variant in &tu.variants {
-        let variant_name = variant.discriminator_value.to_pascal_case();
-        if variant_name != variant.discriminator_value {
-            body.add(
-                &format!(
-                    "#[serde(rename = \"{}\")]",
-                    escape_str(&variant.discriminator_value)
-                ),
-                (),
-            );
-            body.add_line();
+    let body = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        let rust_type = rust_type_str_model(&variant.content_type);
-        body.add(&format!("{variant_name}({rust_type}),"), ());
-        body.add_line();
-    }
+        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        $if(!serde_tag_attr.is_empty()) {
+            $L(serde_tag_attr.as_str())
+        }
+        pub enum $N(name.as_str()) {
+            $for(variant in tu.variants.iter()) {
+                $if(variant.discriminator_value.to_pascal_case() != variant.discriminator_value) {
+                    $L(format!("#[serde(rename = \"{}\")]", escape_str(&variant.discriminator_value)))
+                }
+                $L(format!("{}({}),", variant.discriminator_value.to_pascal_case(), rust_type_str_model(&variant.content_type)))
+            }
+        }
+    })
+    .ok()?;
 
-    body.end_control_flow();
-    fsb = fsb.add_code(body.build().expect("tagged union body builds"));
+    fsb = fsb.add_code(body);
     fsb.build().ok()
 }
 
@@ -497,34 +437,36 @@ fn emit_intersection(
     fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
     fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
 
-    let mut body = CodeBlock::builder();
+    let fields: Vec<(String, String)> = inter
+        .members
+        .iter()
+        .enumerate()
+        .map(|(i, member)| {
+            let raw_name = match member {
+                IrTypeExpr::Named(n) => n.to_snake_case(),
+                _ => format!("member_{i}"),
+            };
+            let field_name = escape_rust_keyword(&raw_name);
+            let rust_type = rust_type_str_model(member);
+            (field_name, rust_type)
+        })
+        .collect();
 
-    if let Some(doc) = &schema.description {
-        emit_doc_comment(&mut body, doc);
-    }
-    body.add(
-        &derive_attr("Debug, Clone, Serialize, Deserialize", extra),
-        (),
-    );
-    body.add_line();
-    body.add(&format!("pub struct {name}"), ());
-    body.begin_control_flow("", ());
+    let body = sigil_quote!(RustLang {
+        $if(schema.description.is_some()) {
+            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
+        }
+        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        pub struct $N(name.as_str()) {
+            $for((field_name, rust_type) in fields.iter()) {
+                #[serde(flatten)]
+                $L(format!("pub {field_name}: {rust_type},"))
+            }
+        }
+    })
+    .ok()?;
 
-    for (i, member) in inter.members.iter().enumerate() {
-        let raw_name = match member {
-            IrTypeExpr::Named(n) => n.to_snake_case(),
-            _ => format!("member_{i}"),
-        };
-        let field_name = escape_rust_keyword(&raw_name);
-        let rust_type = rust_type_str_model(member);
-        body.add("#[serde(flatten)]", ());
-        body.add_line();
-        body.add(&format!("pub {field_name}: {rust_type},"), ());
-        body.add_line();
-    }
-
-    body.end_control_flow();
-    fsb = fsb.add_code(body.build().expect("intersection body builds"));
+    fsb = fsb.add_code(body);
     fsb.build().ok()
 }
 
@@ -544,19 +486,14 @@ fn build_integer_enum_display(name: &str) -> Option<CodeBlock> {
 }
 
 fn build_string_enum_display(name: &str, variants: &[(String, String)]) -> Option<CodeBlock> {
-    let mut match_arms = CodeBlock::builder();
-    for (variant, wire_value) in variants {
-        match_arms.add(
-            &format!("{name}::{variant} => write!(f, %S),\n"),
-            (StringLitArg(wire_value.clone()),),
-        );
-    }
-    let match_body = match_arms.build().ok()?;
-
     sigil_quote!(RustLang {
         impl std::fmt::Display for $N(name) {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self { $C(match_body) }
+                match self {
+                    $for((variant, wire_value) in variants.iter()) {
+                        $L(format!("{name}::{variant} => write!(f, {wire_value:?}),"))
+                    }
+                }
             }
         }
     })
@@ -567,15 +504,7 @@ fn build_string_enum_display(name: &str, variants: &[(String, String)]) -> Optio
 // Doc comment helpers
 // ---------------------------------------------------------------------------
 
-/// Emit doc comment lines into a CodeBlockBuilder.
-fn emit_doc_comment(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, doc: &str) {
-    for line in doc.lines() {
-        cb.add(&format!("/// {line}"), ());
-        cb.add_line();
-    }
-}
-
-/// Build a doc-comment string for use with %L interpolation.
+/// Build a doc-comment string for use with $L interpolation.
 fn doc_comment_block(doc: &str) -> String {
     let mut out = String::new();
     for line in doc.lines() {

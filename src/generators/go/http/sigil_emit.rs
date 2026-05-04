@@ -22,7 +22,7 @@ use crate::ir::types::{
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
-use sigil_stitch::code_block::CodeBlock;
+use sigil_stitch::prelude::{CodeBlock, sigil_quote};
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::modifiers::TypeKind;
@@ -259,9 +259,10 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<String> {
 
 /// Build a `package models` header block.
 fn package_header() -> CodeBlock {
-    let mut b = CodeBlock::builder();
-    b.add(&format!("package {MODELS_PACKAGE}"), ());
-    b.build().expect("package header builds")
+    sigil_quote!(GoLang {
+        package $L(MODELS_PACKAGE)
+    })
+    .expect("package header builds")
 }
 
 /// Render a simple type-alias file: package + optional doc + `type X = Y`.

@@ -22,7 +22,6 @@ impl std:: fmt:: Display for OrderStatus {
             OrderStatus::Placed => write!(f, "placed"),
             OrderStatus::Approved => write!(f, "approved"),
             OrderStatus::Delivered => write!(f, "delivered"),
-
         }
     }
 }
