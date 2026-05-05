@@ -14,3 +14,23 @@ from .container_kind_managed import ContainerKindManaged
 # Discriminator: kind (internal).
 
 type ContainerKind = ContainerKindManaged | ContainerKindCustom
+
+
+def container_kind_from_dict(data: dict[str, object]) -> ContainerKind:
+    _tag = data["kind"]
+    if _tag == "CONTAINER_KIND_MANAGED":
+        return ContainerKindManaged.from_dict(data)
+    elif _tag == "CONTAINER_KIND_CUSTOM":
+        return ContainerKindCustom.from_dict(data)
+    raise ValueError(f"Unknown discriminator value for ContainerKind: {data}")
+
+def container_kind_to_dict(obj: ContainerKind) -> dict[str, object]:
+    if isinstance(obj, ContainerKindManaged):
+        result = obj.to_dict()
+        result["kind"] = "CONTAINER_KIND_MANAGED"
+        return result
+    elif isinstance(obj, ContainerKindCustom):  # type: ignore[reportUnnecessaryIsInstance]
+        result = obj.to_dict()
+        result["kind"] = "CONTAINER_KIND_CUSTOM"
+        return result
+    raise ValueError(f"Unknown variant for ContainerKind: {type(obj)}")

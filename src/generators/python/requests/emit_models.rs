@@ -7,7 +7,7 @@
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
-    IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
+    IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::CodeBlock;
@@ -41,7 +41,7 @@ fn emit_model_body(schema: &IrSchema, ir: &IrSpec) -> Option<String> {
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr),
         IrSchemaKind::Union(u) => emit_union(schema, u),
         IrSchemaKind::Intersection(i) => emit_intersection(schema, i, ir),
-        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu),
+        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir),
     }?;
     file_spec.render(100).ok()
 }
@@ -441,8 +441,9 @@ fn emit_intersection_as_dataclass(
 // TaggedUnion -> type X = A | B | C
 // ---------------------------------------------------------------------------
 
-fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec> {
+fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion, ir: &IrSpec) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
+    let snake_name = schema.name.to_snake_case();
 
     let members: Vec<TypeName> = tu
         .variants
@@ -489,7 +490,144 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<FileSpec> 
     }
     file = file.add_raw(&doc_block);
     file = file.add_code(type_alias);
+
+    if !tu.variants.is_empty() {
+        let helpers = build_tagged_union_helpers(&name, &snake_name, tu, ir);
+        file = file.add_raw(&helpers);
+    }
+
     file.build().ok()
+}
+
+fn build_tagged_union_helpers(
+    pascal_name: &str,
+    snake_name: &str,
+    tu: &IrTaggedUnion,
+    ir: &IrSpec,
+) -> String {
+    let mut out = String::new();
+    let tag_field = &tu.discriminator_field;
+
+    let resolved_variants: Vec<(&IrTaggedVariant, String)> = tu
+        .variants
+        .iter()
+        .filter_map(|v| {
+            if let IrTypeExpr::Named(ref_name) = &v.content_type
+                && is_object_schema(ref_name, ir)
+            {
+                return Some((v, ref_name.to_pascal_case()));
+            }
+            None
+        })
+        .collect();
+
+    if resolved_variants.is_empty() {
+        return out;
+    }
+
+    // from_dict
+    out.push('\n');
+    out.push_str(&format!(
+        "def {snake_name}_from_dict(data: dict[str, object]) -> {pascal_name}:\n"
+    ));
+    match &tu.tagging {
+        TaggingStyle::Internal => {
+            out.push_str(&format!("    _tag = data[\"{tag_field}\"]\n"));
+            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
+                let kw = if i == 0 { "if" } else { "elif" };
+                out.push_str(&format!(
+                    "    {kw} _tag == \"{}\":\n        return {py_class}.from_dict(data)\n",
+                    variant.discriminator_value
+                ));
+            }
+        }
+        TaggingStyle::Adjacent { content_field } => {
+            out.push_str(&format!("    _tag = data[\"{tag_field}\"]\n"));
+            out.push_str(&format!(
+                "    _content = data[\"{content_field}\"]  # type: ignore[assignment]\n"
+            ));
+            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
+                let kw = if i == 0 { "if" } else { "elif" };
+                out.push_str(&format!(
+                    "    {kw} _tag == \"{}\":\n        return {py_class}.from_dict(_content)  # type: ignore[arg-type]\n",
+                    variant.discriminator_value
+                ));
+            }
+        }
+        TaggingStyle::External => {
+            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
+                let kw = if i == 0 { "if" } else { "elif" };
+                out.push_str(&format!(
+                    "    {kw} \"{}\" in data:\n        return {py_class}.from_dict(data[\"{}\"])  # type: ignore[arg-type]\n",
+                    variant.discriminator_value, variant.discriminator_value
+                ));
+            }
+        }
+    }
+    out.push_str(&format!(
+        "    raise ValueError(f\"Unknown discriminator value for {pascal_name}: {{data}}\")\n"
+    ));
+
+    // to_dict
+    out.push('\n');
+    out.push_str(&format!(
+        "def {snake_name}_to_dict(obj: {pascal_name}) -> dict[str, object]:\n"
+    ));
+    let last_idx = resolved_variants.len() - 1;
+    match &tu.tagging {
+        TaggingStyle::Internal => {
+            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
+                let kw = if i == 0 { "if" } else { "elif" };
+                let ignore = if i == last_idx {
+                    "  # type: ignore[reportUnnecessaryIsInstance]"
+                } else {
+                    ""
+                };
+                out.push_str(&format!("    {kw} isinstance(obj, {py_class}):{ignore}\n"));
+                out.push_str("        result = obj.to_dict()\n");
+                out.push_str(&format!(
+                    "        result[\"{tag_field}\"] = \"{}\"\n",
+                    variant.discriminator_value
+                ));
+                out.push_str("        return result\n");
+            }
+        }
+        TaggingStyle::Adjacent { content_field } => {
+            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
+                let kw = if i == 0 { "if" } else { "elif" };
+                let ignore = if i == last_idx {
+                    "  # type: ignore[reportUnnecessaryIsInstance]"
+                } else {
+                    ""
+                };
+                out.push_str(&format!("    {kw} isinstance(obj, {py_class}):{ignore}\n"));
+                out.push_str(&format!(
+                    "        return {{\"{tag_field}\": \"{}\", \"{content_field}\": obj.to_dict()}}\n",
+                    variant.discriminator_value
+                ));
+            }
+        }
+        TaggingStyle::External => {
+            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
+                let kw = if i == 0 { "if" } else { "elif" };
+                let ignore = if i == last_idx {
+                    "  # type: ignore[reportUnnecessaryIsInstance]"
+                } else {
+                    ""
+                };
+                out.push_str(&format!("    {kw} isinstance(obj, {py_class}):{ignore}\n"));
+                out.push_str(&format!(
+                    "        return {{\"{}\": obj.to_dict()}}\n",
+                    variant.discriminator_value
+                ));
+            }
+        }
+    }
+    out.push_str(&format!(
+        "    raise ValueError(f\"Unknown variant for {pascal_name}: {{type(obj)}}\")\n"
+    ));
+
+    out
 }
 
 // ---------------------------------------------------------------------------

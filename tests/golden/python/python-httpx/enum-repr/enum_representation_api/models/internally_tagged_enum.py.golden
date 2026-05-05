@@ -16,3 +16,23 @@ from .variant_b import VariantB
 # Discriminator: ty (internal).
 
 type InternallyTaggedEnum = VariantA | VariantB
+
+
+def internally_tagged_enum_from_dict(data: dict[str, object]) -> InternallyTaggedEnum:
+    _tag = data["ty"]
+    if _tag == "INTERNALLY_TAGGED_ENUM_VARIANT_A":
+        return VariantA.from_dict(data)
+    elif _tag == "INTERNALLY_TAGGED_ENUM_VARIANT_B":
+        return VariantB.from_dict(data)
+    raise ValueError(f"Unknown discriminator value for InternallyTaggedEnum: {data}")
+
+def internally_tagged_enum_to_dict(obj: InternallyTaggedEnum) -> dict[str, object]:
+    if isinstance(obj, VariantA):
+        result = obj.to_dict()
+        result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_A"
+        return result
+    elif isinstance(obj, VariantB):  # type: ignore[reportUnnecessaryIsInstance]
+        result = obj.to_dict()
+        result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_B"
+        return result
+    raise ValueError(f"Unknown variant for InternallyTaggedEnum: {type(obj)}")
