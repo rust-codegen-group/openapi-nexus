@@ -14,3 +14,23 @@ from .volume_kind_remote import VolumeKindRemote
 # Discriminator: kind (internal).
 
 type VolumeKind = VolumeKindLocal | VolumeKindRemote
+
+
+def volume_kind_from_dict(data: dict[str, object]) -> VolumeKind:
+    _tag = data["kind"]
+    if _tag == "VOLUME_KIND_LOCAL":
+        return VolumeKindLocal.from_dict(data)
+    elif _tag == "VOLUME_KIND_REMOTE":
+        return VolumeKindRemote.from_dict(data)
+    raise ValueError(f"Unknown discriminator value for VolumeKind: {data}")
+
+def volume_kind_to_dict(obj: VolumeKind) -> dict[str, object]:
+    if isinstance(obj, VolumeKindLocal):
+        result = obj.to_dict()
+        result["kind"] = "VOLUME_KIND_LOCAL"
+        return result
+    elif isinstance(obj, VolumeKindRemote):  # type: ignore[reportUnnecessaryIsInstance]
+        result = obj.to_dict()
+        result["kind"] = "VOLUME_KIND_REMOTE"
+        return result
+    raise ValueError(f"Unknown variant for VolumeKind: {type(obj)}")
