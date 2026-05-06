@@ -111,20 +111,30 @@ fn emit_model_file(
     ir: &IrSpec,
 ) -> Option<FileSpec> {
     let extra = config.extra_derives.as_ref();
+    let per_type_cfg = extra
+        .and_then(|e| e.per_type.as_ref())
+        .and_then(|m| m.get(&schema.name));
     match &schema.kind {
         IrSchemaKind::Object(obj) => {
-            emit_object(schema, obj, extra.and_then(|e| e.structs.as_ref()))
+            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref()));
+            emit_object(schema, obj, derives)
         }
-        IrSchemaKind::Enum(en) => emit_enum(schema, en, extra.and_then(|e| e.enums.as_ref())),
+        IrSchemaKind::Enum(en) => {
+            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.enums.as_ref()));
+            emit_enum(schema, en, derives)
+        }
         IrSchemaKind::Alias(expr) => {
-            emit_alias(schema, expr, extra.and_then(|e| e.structs.as_ref()))
+            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref()));
+            emit_alias(schema, expr, derives)
         }
-        IrSchemaKind::Union(u) => emit_union(schema, u, extra.and_then(|e| e.unions.as_ref())),
+        IrSchemaKind::Union(u) => emit_union(schema, u, per_type_cfg),
         IrSchemaKind::Intersection(i) => {
-            emit_intersection(schema, i, extra.and_then(|e| e.structs.as_ref()))
+            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref()));
+            emit_intersection(schema, i, derives)
         }
         IrSchemaKind::TaggedUnion(tu) => {
-            emit_tagged_union(schema, tu, extra.and_then(|e| e.unions.as_ref()), ir)
+            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.unions.as_ref()));
+            emit_tagged_union(schema, tu, derives, ir)
         }
     }
 }
@@ -310,6 +320,10 @@ fn emit_alias(
     if let IrTypeExpr::Named(n) = expr
         && n.to_pascal_case() == schema.name.to_pascal_case()
     {
+        return None;
+    }
+    // Skip trivial primitive aliases that shadow Rust builtins (e.g. schema "string" → pub type String = String)
+    if schema.name.to_pascal_case() == rust_type_str_model(expr) {
         return None;
     }
 

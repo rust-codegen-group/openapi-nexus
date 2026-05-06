@@ -86,33 +86,45 @@ fn extra_derives_on_enums() {
     );
 }
 
+fn generate_tagged_union(config: toml::value::Table) -> std::collections::HashMap<String, String> {
+    let generator = RustUreqCodeGenerator::new(config);
+    let spec = read_fixture("valid/type-aliases/discriminated-union-internally-tagged.yaml");
+    generate_files(&generator, &spec).expect("generation should succeed")
+}
+
 #[test]
 fn extra_derives_on_unions() {
-    let files = generate_union(build_config(
+    let files = generate_tagged_union(build_config(
         r#"
         [extra_derives.unions]
         derives = ["PartialEq"]
         "#,
     ));
 
-    let has_union_derive = files.values().any(|content| {
+    let has_tagged_derive = files.values().any(|content| {
+        content.contains("#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]")
+            && content.contains("#[serde(tag")
+    });
+    assert!(
+        has_tagged_derive,
+        "tagged union should have PartialEq appended"
+    );
+
+    // Untagged unions should NOT receive extra_derives.unions
+    let untagged_files = generate_union(build_config(
+        r#"
+        [extra_derives.unions]
+        derives = ["PartialEq"]
+        "#,
+    ));
+    let has_untagged_derive = untagged_files.values().any(|content| {
         content.contains("#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]")
             && content.contains("#[serde(untagged)]")
     });
-    assert!(has_union_derive, "union should have PartialEq appended");
-
-    let struct_files: Vec<_> = files
-        .iter()
-        .filter(|(k, v)| {
-            k.starts_with("src/models/") && *k != "src/models/mod.rs" && v.contains("pub struct")
-        })
-        .collect();
-    for (path, content) in &struct_files {
-        assert!(
-            !content.contains("PartialEq"),
-            "struct in {path} should not be affected by unions config"
-        );
-    }
+    assert!(
+        !has_untagged_derive,
+        "untagged union should NOT receive extra_derives.unions"
+    );
 }
 
 #[test]

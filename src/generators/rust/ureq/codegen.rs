@@ -94,6 +94,8 @@ impl FileWriter for RustUreqCodeGenerator {
 }
 
 fn cargo_toml_file(crate_name: &str, info: &IrInfo, config: &RustGeneratorConfig) -> FileInfo {
+    use crate::generators::rust::common::config::WorkspaceDepsMode;
+
     let description = info
         .description
         .as_deref()
@@ -102,19 +104,15 @@ fn cargo_toml_file(crate_name: &str, info: &IrInfo, config: &RustGeneratorConfig
         .next()
         .unwrap_or("Generated Rust SDK.");
     let workspace = config.workspace_mode.unwrap_or(false);
-    let mut content = if workspace {
+    let deps_mode = config.workspace_deps.as_ref().cloned().unwrap_or_default();
+
+    let pkg_section = if workspace {
         format!(
             r#"[package]
 name = "{crate_name}"
 version.workspace = true
 edition.workspace = true
 description = "{description}"
-
-[dependencies]
-ureq = {{ version = "3", features = ["json"] }}
-serde = {{ version = "1", features = ["derive"] }}
-serde_json = "1"
-serde_repr = "0.1"
 "#,
         )
     } else {
@@ -124,18 +122,43 @@ name = "{crate_name}"
 version = "0.1.0"
 edition = "2024"
 description = "{description}"
-
-[dependencies]
-ureq = {{ version = "3", features = ["json"] }}
-serde = {{ version = "1", features = ["derive"] }}
-serde_json = "1"
-serde_repr = "0.1"
 "#,
         )
     };
+
+    let deps_section = match deps_mode {
+        WorkspaceDepsMode::Full => "\n[dependencies]\n\
+            ureq.workspace = true\n\
+            serde.workspace = true\n\
+            serde_json.workspace = true\n\
+            serde_repr.workspace = true\n"
+            .to_string(),
+        WorkspaceDepsMode::WorkspaceVersion => "\n[dependencies]\n\
+            ureq = { workspace = true, features = [\"json\"] }\n\
+            serde = { workspace = true, features = [\"derive\"] }\n\
+            serde_json.workspace = true\n\
+            serde_repr.workspace = true\n"
+            .to_string(),
+        WorkspaceDepsMode::Explicit => "\n[dependencies]\n\
+            ureq = { version = \"3\", features = [\"json\"] }\n\
+            serde = { version = \"1\", features = [\"derive\"] }\n\
+            serde_json = \"1\"\n\
+            serde_repr = \"0.1\"\n"
+            .to_string(),
+    };
+
+    let mut content = format!("{pkg_section}{deps_section}");
+
     if let Some(extra) = &config.extra_derives {
         for (name, spec) in extra.all_dependencies() {
-            content.push_str(&format!("{name} = {spec}\n"));
+            match deps_mode {
+                WorkspaceDepsMode::Full | WorkspaceDepsMode::WorkspaceVersion => {
+                    content.push_str(&format!("{name}.workspace = true\n"));
+                }
+                WorkspaceDepsMode::Explicit => {
+                    content.push_str(&format!("{name} = {spec}\n"));
+                }
+            }
         }
     }
     FileInfo::project("Cargo.toml".to_string(), content)

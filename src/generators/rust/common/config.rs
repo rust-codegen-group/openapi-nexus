@@ -25,6 +25,8 @@ pub struct ExtraDerivesConfig {
     pub unions: Option<ExtraDeriveConfig>,
     #[serde(default)]
     pub response_structs: Option<ExtraDeriveConfig>,
+    #[serde(default)]
+    pub per_type: Option<BTreeMap<String, ExtraDeriveConfig>>,
 }
 
 impl ExtraDerivesConfig {
@@ -44,19 +46,41 @@ impl ExtraDerivesConfig {
                 deps.entry(k.clone()).or_insert_with(|| v.clone());
             }
         }
+        if let Some(per_type) = &self.per_type {
+            for cfg in per_type.values() {
+                for (k, v) in &cfg.dependencies {
+                    deps.entry(k.clone()).or_insert_with(|| v.clone());
+                }
+            }
+        }
         deps
     }
+}
+
+/// How dependencies are rendered in the generated Cargo.toml.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WorkspaceDepsMode {
+    /// Version and features specified inline (default).
+    #[default]
+    Explicit,
+    /// `dep = { workspace = true, features = [...] }` — version from workspace, features explicit.
+    WorkspaceVersion,
+    /// `dep.workspace = true` — everything from workspace.
+    Full,
 }
 
 /// Base configuration for Rust generators.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RustGeneratorConfig {
-    #[serde(default)]
+    #[serde(default, alias = "package_name")]
     pub crate_name: Option<String>,
     #[serde(default)]
     pub extra_derives: Option<ExtraDerivesConfig>,
     #[serde(default)]
     pub workspace_mode: Option<bool>,
+    #[serde(default)]
+    pub workspace_deps: Option<WorkspaceDepsMode>,
 }
 
 impl From<toml::value::Table> for RustGeneratorConfig {
@@ -182,6 +206,7 @@ mod tests {
             }),
             unions: None,
             response_structs: None,
+            per_type: None,
         };
         let deps = extra.all_dependencies();
         assert_eq!(deps.len(), 3);
@@ -206,5 +231,77 @@ mod tests {
         let config = RustGeneratorConfig::from(t);
         assert!(config.crate_name.is_none());
         assert!(config.extra_derives.is_none());
+    }
+
+    #[test]
+    fn package_name_alias_resolves_to_crate_name() {
+        let config = RustGeneratorConfig::from(table(r#"package_name = "my-api""#));
+        assert_eq!(config.crate_name.as_deref(), Some("my-api"));
+    }
+
+    #[test]
+    fn workspace_deps_mode_explicit() {
+        let config = RustGeneratorConfig::from(table(r#"workspace_deps = "explicit""#));
+        assert_eq!(
+            config.workspace_deps,
+            Some(super::WorkspaceDepsMode::Explicit)
+        );
+    }
+
+    #[test]
+    fn workspace_deps_mode_workspace_version() {
+        let config = RustGeneratorConfig::from(table(r#"workspace_deps = "workspace_version""#));
+        assert_eq!(
+            config.workspace_deps,
+            Some(super::WorkspaceDepsMode::WorkspaceVersion)
+        );
+    }
+
+    #[test]
+    fn workspace_deps_mode_full() {
+        let config = RustGeneratorConfig::from(table(r#"workspace_deps = "full""#));
+        assert_eq!(config.workspace_deps, Some(super::WorkspaceDepsMode::Full));
+    }
+
+    #[test]
+    fn per_type_extra_derives() {
+        let config = RustGeneratorConfig::from(table(
+            r#"
+            [extra_derives.per_type.PaymentMethod]
+            derives = ["Hash", "PartialEq"]
+
+            [extra_derives.per_type.PaymentMethod.dependencies]
+            dummy = '"1.0"'
+            "#,
+        ));
+        let extra = config.extra_derives.unwrap();
+        let per_type = extra.per_type.unwrap();
+        let pm = per_type.get("PaymentMethod").unwrap();
+        assert_eq!(pm.derives, vec!["Hash", "PartialEq"]);
+        assert_eq!(pm.dependencies.get("dummy").unwrap(), "\"1.0\"");
+    }
+
+    #[test]
+    fn all_dependencies_includes_per_type() {
+        let extra = ExtraDerivesConfig {
+            structs: Some(ExtraDeriveConfig {
+                derives: vec!["utoipa::ToSchema".into()],
+                dependencies: BTreeMap::from([("utoipa".into(), r#"{ version = "5" }"#.into())]),
+            }),
+            enums: None,
+            unions: None,
+            response_structs: None,
+            per_type: Some(BTreeMap::from([(
+                "MyType".into(),
+                ExtraDeriveConfig {
+                    derives: vec!["Hash".into()],
+                    dependencies: BTreeMap::from([("custom".into(), "\"2.0\"".into())]),
+                },
+            )])),
+        };
+        let deps = extra.all_dependencies();
+        assert_eq!(deps.len(), 2);
+        assert!(deps.contains_key("utoipa"));
+        assert!(deps.contains_key("custom"));
     }
 }
