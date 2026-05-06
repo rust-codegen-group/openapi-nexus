@@ -72,8 +72,8 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
             query_parts.push(("id", v.to_string()));
         }
         if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
+            let qs = url::form_urlencoded::Serializer::new(String::new()).extend_pairs(query_parts.iter().map(|(k, v)| (*k, v.as_str()))).finish();
+            path = format!("{}?{}", path, qs);
         }
         let req = self.client.get(&path)?;
         let resp = req.send().await?;

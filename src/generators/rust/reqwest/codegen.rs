@@ -127,6 +127,7 @@ serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
 serde_repr = "0.1"
 tokio = {{ version = "1", features = ["full"] }}
+url = "2"
 "#,
         )
     } else {
@@ -143,6 +144,7 @@ serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
 serde_repr = "0.1"
 tokio = {{ version = "1", features = ["full"] }}
+url = "2"
 "#,
         )
     };

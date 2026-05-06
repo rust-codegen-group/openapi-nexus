@@ -8,13 +8,5 @@
 
 mod container_kind;
 pub use container_kind::*;
-mod container_kind_custom;
-pub use container_kind_custom::*;
-mod container_kind_managed;
-pub use container_kind_managed::*;
 mod volume_kind;
 pub use volume_kind::*;
-mod volume_kind_local;
-pub use volume_kind_local::*;
-mod volume_kind_remote;
-pub use volume_kind_remote::*;

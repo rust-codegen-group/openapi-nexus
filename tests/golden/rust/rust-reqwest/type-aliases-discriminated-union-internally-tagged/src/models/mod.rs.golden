@@ -7,9 +7,3 @@
 
 mod resource;
 pub use resource::*;
-mod resource_custom;
-pub use resource_custom::*;
-mod resource_quick;
-pub use resource_quick::*;
-mod resource_unspecified;
-pub use resource_unspecified::*;

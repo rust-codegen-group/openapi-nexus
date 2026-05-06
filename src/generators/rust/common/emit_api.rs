@@ -362,6 +362,12 @@ fn emit_operation(
             p.rust_type.clone()
         } else if p.rust_type == "String" {
             "&str".to_string()
+        } else if let Some(inner) = p
+            .rust_type
+            .strip_prefix("Vec<")
+            .and_then(|s| s.strip_suffix('>'))
+        {
+            format!("&[{inner}]")
         } else {
             format!("&{}", p.rust_type)
         };

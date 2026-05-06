@@ -16,8 +16,8 @@ pub enum StringEnum {
     Pending,
 }
 
-impl std:: fmt:: Display for StringEnum {
-    fn fmt(& self, f: & mut std:: fmt:: Formatter < '_ >) -> std:: fmt:: Result {
+impl std::fmt::Display for StringEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             StringEnum::Active => write!(f, "active"),
             StringEnum::Inactive => write!(f, "inactive"),

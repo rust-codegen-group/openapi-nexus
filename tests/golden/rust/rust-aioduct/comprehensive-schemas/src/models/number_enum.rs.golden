@@ -14,8 +14,8 @@ pub enum NumberEnum {
     N3 = 3,
 }
 
-impl std:: fmt:: Display for NumberEnum {
-    fn fmt(& self, f: & mut std:: fmt:: Formatter < '_ >) -> std:: fmt:: Result {
-        write !(f, "{}", * self as i64)
+impl std::fmt::Display for NumberEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", *self as i64)
     }
 }

@@ -10,6 +10,8 @@
 //! - `Intersection` — struct with `#[serde(flatten)]` fields.
 //! - `TaggedUnion` — serde-tagged enum (internal/adjacent/external).
 
+use std::collections::HashSet;
+
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
@@ -32,7 +34,50 @@ pub fn generate_model_files(
     let mut files = Vec::new();
     let mut mod_entries = Vec::new();
 
+    // Schemas inlined into Internal/Adjacent tagged unions can be skipped as standalone files,
+    // BUT only if no other schema references them by name (e.g. External/Untagged tuple variants).
+    let inlined_candidates: HashSet<&str> = ir
+        .schemas
+        .values()
+        .filter_map(|s| match &s.kind {
+            IrSchemaKind::TaggedUnion(tu)
+                if matches!(
+                    tu.tagging,
+                    TaggingStyle::Internal | TaggingStyle::Adjacent { .. }
+                ) =>
+            {
+                Some(tu.variants.iter().filter_map(|v| {
+                    if let IrTypeExpr::Named(name) = &v.content_type
+                        && ir
+                            .schemas
+                            .get(name)
+                            .is_some_and(|s| matches!(s.kind, IrSchemaKind::Object(_)))
+                    {
+                        return Some(name.as_str());
+                    }
+                    None
+                }))
+            }
+            _ => None,
+        })
+        .flatten()
+        .collect();
+
+    let referenced_by_name: HashSet<&str> = ir
+        .schemas
+        .values()
+        .flat_map(|s| collect_named_type_refs(s))
+        .collect();
+
+    let inlined_schemas: HashSet<&str> = inlined_candidates
+        .difference(&referenced_by_name)
+        .copied()
+        .collect();
+
     for (_name, schema) in &ir.schemas {
+        if inlined_schemas.contains(schema.name.as_str()) {
+            continue;
+        }
         let Some(file_spec) = emit_model_file(schema, config, ir) else {
             continue;
         };
@@ -714,5 +759,59 @@ fn escape_rust_keyword(name: &str) -> String {
         format!("r#{name}")
     } else {
         name.to_string()
+    }
+}
+
+/// Collect schema names referenced by `IrTypeExpr::Named` in positions that require
+/// a standalone struct to exist (object fields, tuple variants, union members, etc.).
+fn collect_named_type_refs(schema: &IrSchema) -> Vec<&str> {
+    let mut refs = Vec::new();
+    match &schema.kind {
+        IrSchemaKind::Object(obj) => {
+            for prop in obj.properties.values() {
+                collect_named_from_expr(&prop.type_expr, &mut refs);
+            }
+            if let Some(ap) = &obj.additional_properties {
+                collect_named_from_expr(ap, &mut refs);
+            }
+        }
+        IrSchemaKind::TaggedUnion(tu) => {
+            let uses_tuple_variants = matches!(tu.tagging, TaggingStyle::External);
+            if uses_tuple_variants {
+                for v in &tu.variants {
+                    collect_named_from_expr(&v.content_type, &mut refs);
+                }
+            }
+        }
+        IrSchemaKind::Union(u) => {
+            for member in &u.members {
+                collect_named_from_expr(member, &mut refs);
+            }
+        }
+        IrSchemaKind::Alias(expr) => {
+            collect_named_from_expr(expr, &mut refs);
+        }
+        IrSchemaKind::Intersection(inter) => {
+            for member in &inter.members {
+                collect_named_from_expr(member, &mut refs);
+            }
+        }
+        IrSchemaKind::Enum(_) => {}
+    }
+    refs
+}
+
+fn collect_named_from_expr<'a>(expr: &'a IrTypeExpr, refs: &mut Vec<&'a str>) {
+    match expr {
+        IrTypeExpr::Named(name) => refs.push(name.as_str()),
+        IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
+            collect_named_from_expr(inner, refs);
+        }
+        IrTypeExpr::Union(members) => {
+            for m in members {
+                collect_named_from_expr(m, refs);
+            }
+        }
+        _ => {}
     }
 }

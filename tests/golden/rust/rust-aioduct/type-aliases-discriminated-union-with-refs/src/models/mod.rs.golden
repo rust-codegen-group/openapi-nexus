@@ -6,7 +6,3 @@
 
 mod container_image;
 pub use container_image::*;
-mod container_image_custom;
-pub use container_image_custom::*;
-mod container_image_managed;
-pub use container_image_managed::*;

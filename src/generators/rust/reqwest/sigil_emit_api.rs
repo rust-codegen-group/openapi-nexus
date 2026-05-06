@@ -74,10 +74,10 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         }
         b.begin_control_flow("if !query_parts.is_empty()", ());
         b.add(
-            "let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!(\"{}={}\", k, v)).collect();\n",
+            "let qs = url::form_urlencoded::Serializer::new(String::new()).extend_pairs(query_parts.iter().map(|(k, v)| (*k, v.as_str()))).finish();\n",
             (),
         );
-        b.add("path = format!(\"{}?{}\", path, qs.join(\"&\"));\n", ());
+        b.add("path = format!(\"{}?{}\", path, qs);\n", ());
         b.end_control_flow();
     }
 

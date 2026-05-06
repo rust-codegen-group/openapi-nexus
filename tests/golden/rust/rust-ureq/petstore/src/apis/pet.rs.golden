@@ -83,7 +83,7 @@ impl<'a> PetApi<'a> {
     /// Find pets by tags
     pub fn find_pets_by_tags(
         &self,
-        tags: &Vec<String>,
+        tags: &[String],
     ) -> Result<FindPetsByTagsResponse, Error> {
         let path = "/pet/findByTags".to_string();
         let mut req = self.client.get(&path);
