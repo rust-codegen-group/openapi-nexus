@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use similar::TextDiff;
@@ -47,10 +48,13 @@ pub fn generate_files<G: CodeGenerator + FileWriter>(
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_nanos();
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
     let temp_dir = env::temp_dir().join(format!(
-        "openapi_nexus_test_{}_{}",
+        "openapi_nexus_test_{}_{}_{}",
         std::process::id(),
-        timestamp
+        timestamp,
+        seq,
     ));
     fs::create_dir_all(&temp_dir).unwrap();
 

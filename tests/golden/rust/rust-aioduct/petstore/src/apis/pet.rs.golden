@@ -70,8 +70,8 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
         let mut query_parts: Vec<(&str, String)> = Vec::new();
         query_parts.push(("status", status.to_string()));
         if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
+            let qs = url::form_urlencoded::Serializer::new(String::new()).extend_pairs(query_parts.iter().map(|(k, v)| (*k, v.as_str()))).finish();
+            path = format!("{}?{}", path, qs);
         }
         let req = self.client.get(&path)?;
         let resp = req.send().await?;
@@ -90,14 +90,14 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
     /// Find pets by tags
     pub async fn find_pets_by_tags(
         &self,
-        tags: &Vec<String>,
+        tags: &[String],
     ) -> Result<FindPetsByTagsResponse, Error> {
         let mut path = "/pet/findByTags".to_string();
         let mut query_parts: Vec<(&str, String)> = Vec::new();
         query_parts.push(("tags", tags.iter().map(ToString::to_string).collect::<Vec<_>>().join(",")));
         if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
+            let qs = url::form_urlencoded::Serializer::new(String::new()).extend_pairs(query_parts.iter().map(|(k, v)| (*k, v.as_str()))).finish();
+            path = format!("{}?{}", path, qs);
         }
         let req = self.client.get(&path)?;
         let resp = req.send().await?;
@@ -151,8 +151,8 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
             query_parts.push(("status", v.to_string()));
         }
         if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
+            let qs = url::form_urlencoded::Serializer::new(String::new()).extend_pairs(query_parts.iter().map(|(k, v)| (*k, v.as_str()))).finish();
+            path = format!("{}?{}", path, qs);
         }
         let req = self.client.post(&path)?;
         let resp = req.send().await?;
@@ -194,8 +194,8 @@ impl<'a, R: aioduct::Runtime> PetApi<'a, R> {
             query_parts.push(("additionalMetadata", v.to_string()));
         }
         if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
+            let qs = url::form_urlencoded::Serializer::new(String::new()).extend_pairs(query_parts.iter().map(|(k, v)| (*k, v.as_str()))).finish();
+            path = format!("{}?{}", path, qs);
         }
         let req = self.client.post(&path)?;
         let resp = req.send().await?;

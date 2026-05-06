@@ -33,8 +33,8 @@ impl<'a, R: aioduct::Runtime> ItemsApi<'a, R> {
             query_parts.push(("body", v.to_string()));
         }
         if !query_parts.is_empty() {
-            let qs: Vec<String> = query_parts.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
-            path = format!("{}?{}", path, qs.join("&"));
+            let qs = url::form_urlencoded::Serializer::new(String::new()).extend_pairs(query_parts.iter().map(|(k, v)| (*k, v.as_str()))).finish();
+            path = format!("{}?{}", path, qs);
         }
         let mut req = self.client.post(&path)?;
         req = req.json(&body_2)?;
