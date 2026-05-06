@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2]
+
+### Added
+
+- Rust: `workspace_deps` config with 3 modes (`explicit`, `workspace_version`, `full`) for generated Cargo.toml dependencies
+- Rust: `per_type` extra derives for targeting specific schemas by name
+- Rust: `package_name` accepted as alias for `crate_name` in generator config
+
+### Fixed
+
+- Rust: bogus `string.rs` no longer generated for schemas named "string" (was producing `pub type String = String;` that shadows std)
+- Rust: multi-line operation summaries now correctly prefix every line with `///` (YAML `|-` block scalars)
+- Rust: `#[serde(untagged)]` enums excluded from blanket `extra_derives.unions` (incompatible with utoipa::ToSchema)
+
 ## [0.1.1]
 
 ### Added
