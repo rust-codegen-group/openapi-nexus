@@ -132,7 +132,6 @@ description = "{description}"
             serde.workspace = true\n\
             serde_json.workspace = true\n\
             serde_repr.workspace = true\n\
-            tokio.workspace = true\n\
             url.workspace = true\n"
             .to_string(),
         WorkspaceDepsMode::WorkspaceVersion => "\n[dependencies]\n\
@@ -140,7 +139,6 @@ description = "{description}"
             serde = { workspace = true, features = [\"derive\"] }\n\
             serde_json.workspace = true\n\
             serde_repr.workspace = true\n\
-            tokio = { workspace = true, features = [\"full\"] }\n\
             url.workspace = true\n"
             .to_string(),
         WorkspaceDepsMode::Explicit => "\n[dependencies]\n\
@@ -148,7 +146,6 @@ description = "{description}"
             serde = { version = \"1\", features = [\"derive\"] }\n\
             serde_json = \"1\"\n\
             serde_repr = \"0.1\"\n\
-            tokio = { version = \"1\", features = [\"full\"] }\n\
             url = \"2\"\n"
             .to_string(),
     };
@@ -156,6 +153,7 @@ description = "{description}"
     let mut content = format!("{pkg_section}{deps_section}");
 
     if let Some(extra) = &config.extra_derives {
+        extra.warn_missing_dependencies();
         for (name, spec) in extra.all_dependencies() {
             match deps_mode {
                 WorkspaceDepsMode::Full | WorkspaceDepsMode::WorkspaceVersion => {

@@ -150,6 +150,7 @@ description = "{description}"
     let mut content = format!("{pkg_section}{deps_section}");
 
     if let Some(extra) = &config.extra_derives {
+        extra.warn_missing_dependencies();
         for (name, spec) in extra.all_dependencies() {
             match deps_mode {
                 WorkspaceDepsMode::Full | WorkspaceDepsMode::WorkspaceVersion => {

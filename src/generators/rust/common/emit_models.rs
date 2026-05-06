@@ -706,15 +706,24 @@ pub fn rust_type_str(expr: &IrTypeExpr) -> String {
 }
 
 /// Map an IR type to a Rust type string, qualified for use from API modules.
-pub fn rust_type_str_qualified(expr: &IrTypeExpr) -> String {
+/// Named references to suppressed primitive aliases are resolved to the primitive type.
+pub fn rust_type_str_qualified(expr: &IrTypeExpr, ir: &IrSpec) -> String {
     match expr {
-        IrTypeExpr::Named(name) => format!("crate::models::{}", name.to_pascal_case()),
-        IrTypeExpr::Array(inner) => format!("Vec<{}>", rust_type_str_qualified(inner)),
+        IrTypeExpr::Named(name) => {
+            if let Some(schema) = ir.schemas.get(name)
+                && let IrSchemaKind::Alias(inner) = &schema.kind
+                && name.to_pascal_case() == rust_type_str_model(inner)
+            {
+                return rust_type_str(inner);
+            }
+            format!("crate::models::{}", name.to_pascal_case())
+        }
+        IrTypeExpr::Array(inner) => format!("Vec<{}>", rust_type_str_qualified(inner, ir)),
         IrTypeExpr::Map(inner) => format!(
             "std::collections::HashMap<String, {}>",
-            rust_type_str_qualified(inner)
+            rust_type_str_qualified(inner, ir)
         ),
-        IrTypeExpr::Nullable(inner) => format!("Option<{}>", rust_type_str_qualified(inner)),
+        IrTypeExpr::Nullable(inner) => format!("Option<{}>", rust_type_str_qualified(inner, ir)),
         other => rust_type_str(other),
     }
 }
