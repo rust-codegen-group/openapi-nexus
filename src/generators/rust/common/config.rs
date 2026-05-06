@@ -55,6 +55,46 @@ impl ExtraDerivesConfig {
         }
         deps
     }
+
+    /// Warn about derives that reference external crates without a matching
+    /// entry in `dependencies`. Call this during codegen so users get feedback.
+    pub fn warn_missing_dependencies(&self) {
+        let deps = self.all_dependencies();
+        for cfg in [
+            &self.structs,
+            &self.enums,
+            &self.unions,
+            &self.response_structs,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            Self::check_derives(&cfg.derives, &deps);
+        }
+        if let Some(per_type) = &self.per_type {
+            for cfg in per_type.values() {
+                Self::check_derives(&cfg.derives, &deps);
+            }
+        }
+    }
+
+    fn check_derives(derives: &[String], deps: &BTreeMap<String, String>) {
+        for d in derives {
+            if let Some(crate_name) = d.split("::").next()
+                && crate_name != d
+            {
+                let normalized = crate_name.replace('-', "_");
+                if !deps.contains_key(&normalized) {
+                    tracing::warn!(
+                        "Derive `{d}` references crate `{normalized}` but no matching entry \
+                         exists in `extra_derives.*.dependencies`. Add \
+                         `[extra_derives.<kind>.dependencies]\n{normalized} = '{{ version = \"...\" }}'` \
+                         to include it in the generated Cargo.toml."
+                    );
+                }
+            }
+        }
+    }
 }
 
 /// How dependencies are rendered in the generated Cargo.toml.
@@ -303,5 +343,42 @@ mod tests {
         assert_eq!(deps.len(), 2);
         assert!(deps.contains_key("utoipa"));
         assert!(deps.contains_key("custom"));
+    }
+
+    #[test]
+    fn all_dependencies_does_not_auto_infer() {
+        let extra = ExtraDerivesConfig {
+            structs: Some(ExtraDeriveConfig {
+                derives: vec!["utoipa::ToSchema".into(), "Clone".into()],
+                dependencies: BTreeMap::new(),
+            }),
+            enums: Some(ExtraDeriveConfig {
+                derives: vec!["strum::Display".into()],
+                dependencies: BTreeMap::new(),
+            }),
+            unions: None,
+            response_structs: None,
+            per_type: None,
+        };
+        let deps = extra.all_dependencies();
+        assert!(deps.is_empty());
+    }
+
+    #[test]
+    fn warn_missing_dependencies_does_not_panic() {
+        let extra = ExtraDerivesConfig {
+            structs: Some(ExtraDeriveConfig {
+                derives: vec!["utoipa::ToSchema".into()],
+                dependencies: BTreeMap::from([("utoipa".into(), r#"{ version = "5" }"#.into())]),
+            }),
+            enums: Some(ExtraDeriveConfig {
+                derives: vec!["strum::Display".into()],
+                dependencies: BTreeMap::new(),
+            }),
+            unions: None,
+            response_structs: None,
+            per_type: None,
+        };
+        extra.warn_missing_dependencies();
     }
 }

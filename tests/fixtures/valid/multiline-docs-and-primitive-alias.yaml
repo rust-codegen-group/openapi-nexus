@@ -36,6 +36,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NodeStatus"
+  /nodes/{nodeId}/name:
+    get:
+      operationId: getNodeName
+      summary: Get the name of a node (returns a primitive string alias).
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/string"
+      responses:
+        "200":
+          description: Node name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/string"
 components:
   schemas:
     string:

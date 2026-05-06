@@ -62,7 +62,7 @@ pub fn generate_api_files(
         let stem = tag.to_snake_case();
         let filename = format!("{stem}.rs");
         mod_entries.push(stem);
-        let body = emit_api_file(tag, ops, config, response_extra_derives, body_emitter);
+        let body = emit_api_file(tag, ops, ir, config, response_extra_derives, body_emitter);
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -103,12 +103,13 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
 fn emit_api_file(
     tag: &str,
     ops: &[&IrOperation],
+    ir: &IrSpec,
     config: &RustBackendConfig,
     response_extra_derives: Option<&ExtraDeriveConfig>,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
 ) -> String {
     let struct_name = format!("{}Api", tag.to_pascal_case());
-    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op)).collect();
+    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op, ir)).collect();
 
     let stem = tag.to_snake_case();
     let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
@@ -222,7 +223,7 @@ pub struct TypedResponse {
     pub rust_type: String,
 }
 
-pub fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
+pub fn plan_operation<'a>(op: &'a IrOperation, ir: &'a IrSpec) -> OpPlan<'a> {
     let op_id = sanitize_operation_id(&op.operation_id, &op.method, &op.path);
     let method_name = op_id.to_snake_case();
     let response_type = format!("{}Response", op_id.to_pascal_case());
@@ -235,7 +236,7 @@ pub fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
     let mut header_params = Vec::new();
     for p in &op.parameters {
         let var_name = unique_name(&p.name.to_snake_case(), &mut used_names);
-        let (rust_type, is_optional) = param_rust_type(p);
+        let (rust_type, is_optional) = param_rust_type(p, ir);
         let binding = ParamBinding {
             param: p,
             var_name,
@@ -253,9 +254,13 @@ pub fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
     let body = op
         .request_body
         .as_ref()
-        .and_then(|b| plan_body(b, &mut used_names));
+        .and_then(|b| plan_body(b, &mut used_names, ir));
 
-    let typed_responses = op.responses.iter().filter_map(plan_response).collect();
+    let typed_responses = op
+        .responses
+        .iter()
+        .filter_map(|r| plan_response(r, ir))
+        .collect();
 
     OpPlan {
         op,
@@ -269,9 +274,13 @@ pub fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
     }
 }
 
-pub fn plan_body(b: &IrRequestBody, used_names: &mut HashSet<String>) -> Option<BodyBinding> {
+pub fn plan_body(
+    b: &IrRequestBody,
+    used_names: &mut HashSet<String>,
+    ir: &IrSpec,
+) -> Option<BodyBinding> {
     let t = pick_body_type(b)?;
-    let rust_type = rust_type_str_qualified(&t);
+    let rust_type = rust_type_str_qualified(&t, ir);
     let var_name = unique_name("body", used_names);
     Some(BodyBinding {
         var_name,
@@ -279,9 +288,9 @@ pub fn plan_body(b: &IrRequestBody, used_names: &mut HashSet<String>) -> Option<
     })
 }
 
-pub fn plan_response(r: &IrResponse) -> Option<TypedResponse> {
+pub fn plan_response(r: &IrResponse, ir: &IrSpec) -> Option<TypedResponse> {
     let t = pick_response_type(r)?;
-    let rust_type = rust_type_str_qualified(&t);
+    let rust_type = rust_type_str_qualified(&t, ir);
     Some(TypedResponse {
         status: r.status.clone(),
         field_name: response_field_name(&r.status),
@@ -289,8 +298,8 @@ pub fn plan_response(r: &IrResponse) -> Option<TypedResponse> {
     })
 }
 
-pub fn param_rust_type(p: &IrParameter) -> (String, bool) {
-    let base = rust_type_str_qualified(&p.type_expr);
+pub fn param_rust_type(p: &IrParameter, ir: &IrSpec) -> (String, bool) {
+    let base = rust_type_str_qualified(&p.type_expr, ir);
     if p.required {
         (base, false)
     } else {

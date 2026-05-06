@@ -49,6 +49,27 @@ impl<'a> DefaultApi<'a> {
         }
         Ok(result)
     }
+
+    /// Get the name of a node (returns a primitive string alias).
+    pub async fn get_node_name(
+        &self,
+        node_id: &str,
+    ) -> Result<GetNodeNameResponse, Error> {
+        let mut path = "/nodes/{nodeId}/name".to_string();
+        path = path.replace("{nodeId}", &node_id.to_string());
+        let req = self.client.request(reqwest::Method::GET, &path).await?;
+        let resp = self.client.send(req).await?;
+        let status_code = resp.status().as_u16();
+        let body_bytes = resp.bytes().await.map_err(Error::Network)?;
+        let mut result = GetNodeNameResponse { status_code, data: None };
+        match status_code {
+            200 => {
+                result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
+            }
+            _ => {}
+        }
+        Ok(result)
+    }
 }
 
 /// Response from `accept_node`.
@@ -56,4 +77,11 @@ impl<'a> DefaultApi<'a> {
 pub struct AcceptNodeResponse {
     pub status_code: u16,
     pub data: Option<crate::models::NodeStatus>,
+}
+
+/// Response from `get_node_name`.
+#[derive(Debug)]
+pub struct GetNodeNameResponse {
+    pub status_code: u16,
+    pub data: Option<String>,
 }
