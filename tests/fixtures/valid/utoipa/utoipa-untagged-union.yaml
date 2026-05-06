@@ -1,0 +1,78 @@
+openapi: 3.1.0
+info:
+  title: Utoipa Untagged Union Test
+  description: Test fixture for untagged union manual utoipa impl generation
+  version: 1.0.0
+
+paths:
+  /events:
+    post:
+      summary: Create event
+      operationId: create_event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+components:
+  schemas:
+    # Untagged union with 3 variants
+    Event:
+      description: An event payload (click, purchase, or page view)
+      oneOf:
+        - $ref: '#/components/schemas/ClickEvent'
+        - $ref: '#/components/schemas/PurchaseEvent'
+        - $ref: '#/components/schemas/PageViewEvent'
+
+    ClickEvent:
+      type: object
+      description: A click event
+      properties:
+        element_id:
+          type: string
+        x:
+          type: integer
+          format: int32
+        y:
+          type: integer
+          format: int32
+      required:
+        - element_id
+        - x
+        - y
+
+    PurchaseEvent:
+      type: object
+      description: A purchase event
+      properties:
+        item_id:
+          type: string
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+      required:
+        - item_id
+        - amount
+        - currency
+
+    PageViewEvent:
+      type: object
+      description: A page view event
+      properties:
+        url:
+          type: string
+        referrer:
+          type: string
+      required:
+        - url

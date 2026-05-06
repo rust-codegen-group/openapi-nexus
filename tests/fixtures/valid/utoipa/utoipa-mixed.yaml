@@ -1,0 +1,210 @@
+openapi: 3.1.0
+info:
+  title: Utoipa Mixed Types Test
+  description: Test fixture covering all schema kinds with utoipa enabled
+  version: 1.0.0
+
+paths:
+  /pets:
+    get:
+      summary: List pets
+      operationId: list_pets
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PetStatus'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+    post:
+      summary: Create pet
+      operationId: create_pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+
+  /feeds:
+    post:
+      summary: Create feed
+      operationId: create_feed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedSource'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedSource'
+
+  /payments:
+    post:
+      summary: Create payment
+      operationId: create_payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethod'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+
+components:
+  schemas:
+    # Struct
+    Pet:
+      type: object
+      description: A pet in the system
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/PetStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+      required:
+        - id
+        - name
+        - status
+
+    # String enum
+    PetStatus:
+      type: string
+      description: The status of a pet
+      enum:
+        - available
+        - pending
+        - sold
+
+    # Integer enum
+    Priority:
+      type: integer
+      description: Priority level (1=low, 2=medium, 3=high)
+      enum:
+        - 1
+        - 2
+        - 3
+
+    # Tagged union (internally tagged)
+    FeedSource:
+      description: A feed source configuration
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/S3Source'
+            - type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - s3
+        - allOf:
+            - $ref: '#/components/schemas/HttpSource'
+            - type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - http
+
+    S3Source:
+      type: object
+      properties:
+        bucket:
+          type: string
+        key:
+          type: string
+      required:
+        - bucket
+        - key
+
+    HttpSource:
+      type: object
+      properties:
+        url:
+          type: string
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - url
+
+    # Untagged union (should get manual impl)
+    PaymentMethod:
+      description: A payment method (card or bank transfer)
+      oneOf:
+        - $ref: '#/components/schemas/CardPayment'
+        - $ref: '#/components/schemas/BankTransfer'
+
+    CardPayment:
+      type: object
+      properties:
+        card_number:
+          type: string
+        expiry:
+          type: string
+        cvv:
+          type: string
+      required:
+        - card_number
+        - expiry
+        - cvv
+
+    BankTransfer:
+      type: object
+      properties:
+        account_number:
+          type: string
+        routing_number:
+          type: string
+      required:
+        - account_number
+        - routing_number
+
+    # Intersection (allOf)
+    PetWithMetadata:
+      description: Pet with additional metadata fields
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time

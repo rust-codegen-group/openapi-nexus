@@ -1,0 +1,12 @@
+[package]
+name = "utoipa-untagged-union-test"
+version = "0.1.0"
+edition = "2024"
+description = "Test fixture for untagged union manual utoipa impl generation"
+
+[dependencies]
+ureq = { version = "3", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_repr = "0.1"
+utoipa = { version = "5" }
