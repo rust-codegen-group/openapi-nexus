@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1]
+
+### Added
+
+- Python: discriminator-aware `_from_dict()` / `_to_dict()` helpers for tagged unions (internal, adjacent, external)
+- Rust: struct variants for internally/adjacently tagged enums (fields inlined into enum)
+
+### Changed
+
+- Rust: upgrade sigil-stitch 0.4.3 → 0.4.4 (fixes Display impl spacing)
+- Rust: generated code now includes `// @generated` marker and `#![allow(clippy::all)]`
+- Rust: dead standalone struct files no longer emitted for exclusively-inlined variants
+- Rust: function signatures use `&[T]` instead of `&Vec<T>`
+- Rust: query params URL-encoded via `url::form_urlencoded` (reqwest/aioduct)
+
+### Fixed
+
+- Rust: punctuation spacing in generated `Display` impls (`std:: fmt::` → `std::fmt::`)
+- Rust: flaky golden tests from temp dir name collisions under parallelism
+- Python: pyright strict-mode errors in generated tagged union helpers
+
 ## [0.1.0]
 
 ### Added
