@@ -1,0 +1,75 @@
+openapi: "3.1.0"
+info:
+  title: MultilineDocs
+  version: "1.0.0"
+  description: |-
+    A test fixture for multi-line doc comments
+    and primitive type alias suppression.
+paths:
+  /nodes/{nodeId}/accept:
+    post:
+      operationId: acceptNode
+      summary: |-
+        Accept a node into the pool by creating or replacing the resource.
+        The controller converges the Node labels and taint from the CR.
+      description: |-
+        This operation is idempotent. Calling it multiple times
+        with the same payload produces the same result.
+
+        Empty lines above are preserved as paragraph breaks.
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptNodeRequest"
+      responses:
+        "200":
+          description: Node accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodeStatus"
+components:
+  schemas:
+    string:
+      type: string
+      description: A plain string alias that should NOT produce a file (would shadow std::String).
+    integer:
+      type: integer
+      description: An integer alias (Integer = i64, valid since it does not shadow a builtin).
+    AcceptNodeRequest:
+      type: object
+      description: |-
+        Request body for accepting a node.
+        Contains the node configuration and labels.
+      properties:
+        nodeName:
+          type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - nodeName
+    NodeStatus:
+      type: object
+      description: Status of the node after acceptance.
+      properties:
+        id:
+          type: string
+        state:
+          type: string
+          enum:
+            - pending
+            - active
+            - draining
+      required:
+        - id
+        - state

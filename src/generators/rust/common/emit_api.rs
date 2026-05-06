@@ -331,7 +331,13 @@ fn emit_operation(
 
     // Doc comment
     if let Some(summary) = &op.summary {
-        b.add(&format!("/// {summary}\n"), ());
+        for line in summary.lines() {
+            if line.is_empty() {
+                b.add("///\n", ());
+            } else {
+                b.add(&format!("/// {line}\n"), ());
+            }
+        }
     } else {
         b.add(
             &format!("/// {} {}\n", op.method.to_uppercase(), op.path),
