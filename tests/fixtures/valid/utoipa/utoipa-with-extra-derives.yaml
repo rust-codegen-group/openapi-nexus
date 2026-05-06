@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: Utoipa With Extra Derives Test
+  description: Test that utoipa::ToSchema is additive alongside user extra_derives
+  version: 1.0.0
+
+paths:
+  /items:
+    post:
+      summary: Create item
+      operationId: create_item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Item'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+
+components:
+  schemas:
+    Item:
+      type: object
+      description: An item with extra derives
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/ItemKind'
+      required:
+        - id
+        - name
+        - kind
+
+    ItemKind:
+      type: string
+      description: The kind of item
+      enum:
+        - widget
+        - gadget
+        - doohickey

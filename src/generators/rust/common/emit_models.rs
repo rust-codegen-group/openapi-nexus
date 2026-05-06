@@ -34,45 +34,52 @@ pub fn generate_model_files(
     let mut files = Vec::new();
     let mut mod_entries = Vec::new();
 
+    let utoipa_enabled = config.utoipa.as_ref().is_some_and(|u| u.enabled);
+
     // Schemas inlined into Internal/Adjacent tagged unions can be skipped as standalone files,
     // BUT only if no other schema references them by name (e.g. External/Untagged tuple variants).
-    let inlined_candidates: HashSet<&str> = ir
-        .schemas
-        .values()
-        .filter_map(|s| match &s.kind {
-            IrSchemaKind::TaggedUnion(tu)
-                if matches!(
-                    tu.tagging,
-                    TaggingStyle::Internal | TaggingStyle::Adjacent { .. }
-                ) =>
-            {
-                Some(tu.variants.iter().filter_map(|v| {
-                    if let IrTypeExpr::Named(name) = &v.content_type
-                        && ir
-                            .schemas
-                            .get(name)
-                            .is_some_and(|s| matches!(s.kind, IrSchemaKind::Object(_)))
-                    {
-                        return Some(name.as_str());
-                    }
-                    None
-                }))
-            }
-            _ => None,
-        })
-        .flatten()
-        .collect();
+    // When utoipa is enabled, all variant types must exist as standalone modules for PartialSchema.
+    let inlined_schemas: HashSet<&str> = if utoipa_enabled {
+        HashSet::new()
+    } else {
+        let inlined_candidates: HashSet<&str> = ir
+            .schemas
+            .values()
+            .filter_map(|s| match &s.kind {
+                IrSchemaKind::TaggedUnion(tu)
+                    if matches!(
+                        tu.tagging,
+                        TaggingStyle::Internal | TaggingStyle::Adjacent { .. }
+                    ) =>
+                {
+                    Some(tu.variants.iter().filter_map(|v| {
+                        if let IrTypeExpr::Named(name) = &v.content_type
+                            && ir
+                                .schemas
+                                .get(name)
+                                .is_some_and(|s| matches!(s.kind, IrSchemaKind::Object(_)))
+                        {
+                            return Some(name.as_str());
+                        }
+                        None
+                    }))
+                }
+                _ => None,
+            })
+            .flatten()
+            .collect();
 
-    let referenced_by_name: HashSet<&str> = ir
-        .schemas
-        .values()
-        .flat_map(|s| collect_named_type_refs(s))
-        .collect();
+        let referenced_by_name: HashSet<&str> = ir
+            .schemas
+            .values()
+            .flat_map(|s| collect_named_type_refs(s))
+            .collect();
 
-    let inlined_schemas: HashSet<&str> = inlined_candidates
-        .difference(&referenced_by_name)
-        .copied()
-        .collect();
+        inlined_candidates
+            .difference(&referenced_by_name)
+            .copied()
+            .collect()
+    };
 
     for (_name, schema) in &ir.schemas {
         if inlined_schemas.contains(schema.name.as_str()) {
@@ -111,30 +118,45 @@ fn emit_model_file(
     ir: &IrSpec,
 ) -> Option<FileSpec> {
     let extra = config.extra_derives.as_ref();
+    let utoipa_enabled = config.utoipa.as_ref().is_some_and(|u| u.enabled);
     let per_type_cfg = extra
         .and_then(|e| e.per_type.as_ref())
         .and_then(|m| m.get(&schema.name));
     match &schema.kind {
         IrSchemaKind::Object(obj) => {
-            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref()));
-            emit_object(schema, obj, derives)
+            let derives = merge_utoipa(
+                per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref())),
+                utoipa_enabled,
+            );
+            emit_object(schema, obj, derives.as_ref())
         }
         IrSchemaKind::Enum(en) => {
-            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.enums.as_ref()));
-            emit_enum(schema, en, derives)
+            let derives = merge_utoipa(
+                per_type_cfg.or_else(|| extra.and_then(|e| e.enums.as_ref())),
+                utoipa_enabled,
+            );
+            emit_enum(schema, en, derives.as_ref())
         }
         IrSchemaKind::Alias(expr) => {
-            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref()));
-            emit_alias(schema, expr, derives)
+            let derives = merge_utoipa(
+                per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref())),
+                utoipa_enabled,
+            );
+            emit_alias(schema, expr, derives.as_ref())
         }
-        IrSchemaKind::Union(u) => emit_union(schema, u, per_type_cfg),
+        IrSchemaKind::Union(u) => emit_union(schema, u, per_type_cfg, utoipa_enabled),
         IrSchemaKind::Intersection(i) => {
-            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref()));
-            emit_intersection(schema, i, derives)
+            let derives = merge_utoipa(
+                per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref())),
+                utoipa_enabled,
+            );
+            emit_intersection(schema, i, derives.as_ref())
         }
         IrSchemaKind::TaggedUnion(tu) => {
-            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.unions.as_ref()));
-            emit_tagged_union(schema, tu, derives, ir)
+            let derives = per_type_cfg
+                .or_else(|| extra.and_then(|e| e.unions.as_ref()))
+                .cloned();
+            emit_tagged_union(schema, tu, derives.as_ref(), ir, utoipa_enabled)
         }
     }
 }
@@ -146,10 +168,35 @@ fn emit_model_file(
 fn derive_attr(base: &str, extra: Option<&ExtraDeriveConfig>) -> String {
     match extra {
         Some(cfg) if !cfg.derives.is_empty() => {
-            format!("#[derive({base}, {})]", cfg.derives.join(", "))
+            let base_set: Vec<&str> = base.split(", ").collect();
+            let unique_extra: Vec<&str> = cfg
+                .derives
+                .iter()
+                .map(|s| s.as_str())
+                .filter(|d| !base_set.contains(d))
+                .collect();
+            if unique_extra.is_empty() {
+                format!("#[derive({base})]")
+            } else {
+                format!("#[derive({base}, {})]", unique_extra.join(", "))
+            }
         }
         _ => format!("#[derive({base})]"),
     }
+}
+
+fn merge_utoipa(
+    base: Option<&ExtraDeriveConfig>,
+    utoipa_enabled: bool,
+) -> Option<ExtraDeriveConfig> {
+    if !utoipa_enabled {
+        return base.cloned();
+    }
+    let mut cfg = base.cloned().unwrap_or_default();
+    if !cfg.derives.iter().any(|d| d.contains("utoipa")) {
+        cfg.derives.push("utoipa::ToSchema".to_string());
+    }
+    Some(cfg)
 }
 
 // ---------------------------------------------------------------------------
@@ -392,6 +439,7 @@ fn emit_union(
     schema: &IrSchema,
     union: &IrUnion,
     extra: Option<&ExtraDeriveConfig>,
+    utoipa_enabled: bool,
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let stem = schema.name.to_snake_case();
@@ -426,6 +474,16 @@ fn emit_union(
     .ok()?;
 
     fsb = fsb.add_code(body);
+
+    if utoipa_enabled {
+        let variant_types: Vec<String> = variants
+            .iter()
+            .map(|(_, rust_type)| rust_type.clone())
+            .collect();
+        let impl_block = build_utoipa_one_of_impl(&name, &variant_types)?;
+        fsb = fsb.add_code(impl_block);
+    }
+
     fsb.build().ok()
 }
 
@@ -461,6 +519,7 @@ fn emit_tagged_union(
     tu: &IrTaggedUnion,
     extra: Option<&ExtraDeriveConfig>,
     ir: &IrSpec,
+    utoipa_enabled: bool,
 ) -> Option<FileSpec> {
     if tu.variants.is_empty() {
         return None;
@@ -573,6 +632,17 @@ fn emit_tagged_union(
     .ok()?;
 
     fsb = fsb.add_code(body);
+
+    if utoipa_enabled {
+        let variant_types: Vec<String> = tu
+            .variants
+            .iter()
+            .map(|v| rust_type_str_model(&v.content_type))
+            .collect();
+        let impl_block = build_utoipa_one_of_impl(&name, &variant_types)?;
+        fsb = fsb.add_code(impl_block);
+    }
+
     fsb.build().ok()
 }
 
@@ -623,6 +693,36 @@ fn emit_intersection(
 
     fsb = fsb.add_code(body);
     fsb.build().ok()
+}
+
+// ---------------------------------------------------------------------------
+// Utoipa impl helpers
+// ---------------------------------------------------------------------------
+
+fn build_utoipa_one_of_impl(name: &str, variant_types: &[String]) -> Option<CodeBlock> {
+    let items: Vec<String> = variant_types
+        .iter()
+        .map(|rt| format!("    .item(<{rt} as utoipa::PartialSchema>::schema())"))
+        .collect();
+
+    sigil_quote!(RustLang {
+        impl utoipa::PartialSchema for $N(name) {
+            fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+                $L("utoipa::openapi::schema::Schema::OneOf(utoipa::openapi::schema::OneOfBuilder::new()")
+                $for(item in items.iter()) {
+                    $L(item.as_str())
+                }
+                $L("    .build()).into()")
+            }
+        }
+
+        impl utoipa::ToSchema for $N(name) {
+            fn name() -> std::borrow::Cow<'static, str> {
+                $L(format!("std::borrow::Cow::Borrowed(\"{name}\")"))
+            }
+        }
+    })
+    .ok()
 }
 
 // ---------------------------------------------------------------------------

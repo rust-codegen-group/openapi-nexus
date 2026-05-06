@@ -110,6 +110,15 @@ pub enum WorkspaceDepsMode {
     Full,
 }
 
+/// Utoipa integration configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct UtoipaConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub dependency: Option<String>,
+}
+
 /// Base configuration for Rust generators.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RustGeneratorConfig {
@@ -121,6 +130,8 @@ pub struct RustGeneratorConfig {
     pub workspace_mode: Option<bool>,
     #[serde(default)]
     pub workspace_deps: Option<WorkspaceDepsMode>,
+    #[serde(default)]
+    pub utoipa: Option<UtoipaConfig>,
 }
 
 impl From<toml::value::Table> for RustGeneratorConfig {

@@ -127,24 +127,30 @@ description = "{description}"
     };
 
     let deps_section = match deps_mode {
-        WorkspaceDepsMode::Full => "\n[dependencies]\n\
-            ureq.workspace = true\n\
-            serde.workspace = true\n\
-            serde_json.workspace = true\n\
-            serde_repr.workspace = true\n"
-            .to_string(),
-        WorkspaceDepsMode::WorkspaceVersion => "\n[dependencies]\n\
-            ureq = { workspace = true, features = [\"json\"] }\n\
-            serde = { workspace = true, features = [\"derive\"] }\n\
-            serde_json.workspace = true\n\
-            serde_repr.workspace = true\n"
-            .to_string(),
-        WorkspaceDepsMode::Explicit => "\n[dependencies]\n\
-            ureq = { version = \"3\", features = [\"json\"] }\n\
-            serde = { version = \"1\", features = [\"derive\"] }\n\
-            serde_json = \"1\"\n\
-            serde_repr = \"0.1\"\n"
-            .to_string(),
+        WorkspaceDepsMode::Full => r#"
+[dependencies]
+ureq.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_repr.workspace = true
+"#
+        .to_string(),
+        WorkspaceDepsMode::WorkspaceVersion => r#"
+[dependencies]
+ureq = { workspace = true, features = ["json"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+serde_repr.workspace = true
+"#
+        .to_string(),
+        WorkspaceDepsMode::Explicit => r#"
+[dependencies]
+ureq = { version = "3", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_repr = "0.1"
+"#
+        .to_string(),
     };
 
     let mut content = format!("{pkg_section}{deps_section}");
@@ -162,5 +168,23 @@ description = "{description}"
             }
         }
     }
+    if let Some(utoipa_cfg) = &config.utoipa
+        && utoipa_cfg.enabled
+    {
+        let spec = utoipa_cfg.dependency.as_deref().unwrap_or("\"*\"");
+        match deps_mode {
+            WorkspaceDepsMode::Full | WorkspaceDepsMode::WorkspaceVersion => {
+                content.push_str("utoipa.workspace = true\n");
+            }
+            WorkspaceDepsMode::Explicit => {
+                content.push_str(&format!("utoipa = {spec}\n"));
+            }
+        }
+    }
+
+    if workspace {
+        content.push_str("\n[lints]\nworkspace = true\n");
+    }
+
     FileInfo::project("Cargo.toml".to_string(), content)
 }

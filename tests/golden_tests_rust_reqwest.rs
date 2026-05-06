@@ -150,3 +150,72 @@ generate_golden_tests! {
     test_query_param_enum_golden: "query-param-enum",
     test_multiline_docs_and_primitive_alias_golden: "multiline-docs-and-primitive-alias",
 }
+
+// --- Utoipa golden tests (require custom config) ---
+
+fn utoipa_config() -> toml::value::Table {
+    toml::from_str::<toml::value::Table>(
+        r#"
+        [utoipa]
+        enabled = true
+        dependency = '{ version = "5" }'
+        "#,
+    )
+    .unwrap()
+}
+
+fn utoipa_with_extra_derives_config() -> toml::value::Table {
+    toml::from_str::<toml::value::Table>(
+        r#"
+        [utoipa]
+        enabled = true
+        dependency = '{ version = "5" }'
+
+        [extra_derives.structs]
+        derives = ["PartialEq", "Eq"]
+
+        [extra_derives.enums]
+        derives = ["PartialEq", "Eq", "Hash"]
+        "#,
+    )
+    .unwrap()
+}
+
+#[test]
+#[traced_test]
+fn test_utoipa_mixed_golden() {
+    let generator = RustReqwestCodeGenerator::new(utoipa_config());
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "utoipa-mixed",
+        "valid/utoipa/utoipa-mixed.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
+fn test_utoipa_untagged_union_golden() {
+    let generator = RustReqwestCodeGenerator::new(utoipa_config());
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "utoipa-untagged-union",
+        "valid/utoipa/utoipa-untagged-union.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
+fn test_utoipa_with_extra_derives_golden() {
+    let generator = RustReqwestCodeGenerator::new(utoipa_with_extra_derives_config());
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "utoipa-with-extra-derives",
+        "valid/utoipa/utoipa-with-extra-derives.yaml",
+        UPDATE_HINT,
+    );
+}

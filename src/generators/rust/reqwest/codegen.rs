@@ -76,7 +76,7 @@ impl RustReqwestCodeGenerator {
         files.extend(runtime_files(&header));
 
         // Project files
-        files.push(cargo_toml_file(&crate_name, &ir.info, &self.config));
+        files.push(cargo_toml_file(&crate_name, ir, &self.config));
         files.push(project_files::lib_rs_file(&header));
         files.push(project_files::readme_file(&ir.info));
 
@@ -104,10 +104,12 @@ impl FileWriter for RustReqwestCodeGenerator {
     }
 }
 
-fn cargo_toml_file(crate_name: &str, info: &IrInfo, config: &RustGeneratorConfig) -> FileInfo {
+fn cargo_toml_file(crate_name: &str, ir: &IrSpec, config: &RustGeneratorConfig) -> FileInfo {
     use crate::generators::rust::common::config::WorkspaceDepsMode;
+    use crate::ir::types::ParameterLocation;
 
-    let description = info
+    let description = ir
+        .info
         .description
         .as_deref()
         .unwrap_or("Generated Rust SDK.")
@@ -116,6 +118,11 @@ fn cargo_toml_file(crate_name: &str, info: &IrInfo, config: &RustGeneratorConfig
         .unwrap_or("Generated Rust SDK.");
     let workspace = config.workspace_mode.unwrap_or(false);
     let deps_mode = config.workspace_deps.as_ref().cloned().unwrap_or_default();
+    let needs_url = ir.operations.iter().any(|op| {
+        op.parameters
+            .iter()
+            .any(|p| p.location == ParameterLocation::Query)
+    });
 
     let pkg_section = if workspace {
         format!(
@@ -137,31 +144,46 @@ description = "{description}"
         )
     };
 
+    let url_full = if needs_url {
+        "url.workspace = true\n"
+    } else {
+        ""
+    };
+    let url_ws = if needs_url {
+        "url.workspace = true\n"
+    } else {
+        ""
+    };
+    let url_explicit = if needs_url { "url = \"2\"\n" } else { "" };
+
     let deps_section = match deps_mode {
-        WorkspaceDepsMode::Full => "\n[dependencies]\n\
-            reqwest.workspace = true\n\
-            serde.workspace = true\n\
-            serde_json.workspace = true\n\
-            serde_repr.workspace = true\n\
-            tokio.workspace = true\n\
-            url.workspace = true\n"
-            .to_string(),
-        WorkspaceDepsMode::WorkspaceVersion => "\n[dependencies]\n\
-            reqwest = { workspace = true, features = [\"json\"] }\n\
-            serde = { workspace = true, features = [\"derive\"] }\n\
-            serde_json.workspace = true\n\
-            serde_repr.workspace = true\n\
-            tokio = { workspace = true, features = [\"full\"] }\n\
-            url.workspace = true\n"
-            .to_string(),
-        WorkspaceDepsMode::Explicit => "\n[dependencies]\n\
-            reqwest = { version = \"0.12\", features = [\"json\"] }\n\
-            serde = { version = \"1\", features = [\"derive\"] }\n\
-            serde_json = \"1\"\n\
-            serde_repr = \"0.1\"\n\
-            tokio = { version = \"1\", features = [\"full\"] }\n\
-            url = \"2\"\n"
-            .to_string(),
+        WorkspaceDepsMode::Full => format!(
+            r#"
+[dependencies]
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_repr.workspace = true
+{url_full}"#
+        ),
+        WorkspaceDepsMode::WorkspaceVersion => format!(
+            r#"
+[dependencies]
+reqwest = {{ workspace = true, features = ["json"] }}
+serde = {{ workspace = true, features = ["derive"] }}
+serde_json.workspace = true
+serde_repr.workspace = true
+{url_ws}"#
+        ),
+        WorkspaceDepsMode::Explicit => format!(
+            r#"
+[dependencies]
+reqwest = {{ version = "0.12", features = ["json"] }}
+serde = {{ version = "1", features = ["derive"] }}
+serde_json = "1"
+serde_repr = "0.1"
+{url_explicit}"#
+        ),
     };
 
     let mut content = format!("{pkg_section}{deps_section}");
@@ -179,5 +201,24 @@ description = "{description}"
             }
         }
     }
+
+    if let Some(utoipa_cfg) = &config.utoipa
+        && utoipa_cfg.enabled
+    {
+        let spec = utoipa_cfg.dependency.as_deref().unwrap_or("\"*\"");
+        match deps_mode {
+            WorkspaceDepsMode::Full | WorkspaceDepsMode::WorkspaceVersion => {
+                content.push_str("utoipa.workspace = true\n");
+            }
+            WorkspaceDepsMode::Explicit => {
+                content.push_str(&format!("utoipa = {spec}\n"));
+            }
+        }
+    }
+
+    if workspace {
+        content.push_str("\n[lints]\nworkspace = true\n");
+    }
+
     FileInfo::project("Cargo.toml".to_string(), content)
 }
