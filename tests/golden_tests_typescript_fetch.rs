@@ -154,6 +154,48 @@ generate_golden_tests! {
 }
 
 // ===========================================================================
+// Config-aware golden tests (enum const objects + type guards)
+// ===========================================================================
+
+#[test]
+#[traced_test]
+fn test_enum_const_object_golden() {
+    let config: toml::value::Table = toml::from_str(
+        r#"
+emit_enum_constants = true
+"#,
+    )
+    .unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-enum-const",
+        "valid/ts-enum-const.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
+fn test_type_guards_golden() {
+    let config: toml::value::Table = toml::from_str(
+        r#"
+emit_type_guards = true
+"#,
+    )
+    .unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-type-guards",
+        "valid/ts-type-guards.yaml",
+        UPDATE_HINT,
+    );
+}
+
+// ===========================================================================
 // IR pipeline integration tests
 // ===========================================================================
 
