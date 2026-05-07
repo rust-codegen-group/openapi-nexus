@@ -78,6 +78,10 @@ derives = ["Hash"]
 [generators.rust-reqwest.utoipa]
 enabled = true
 dependency = '{ version = "5" }'
+
+[generators.typescript-fetch]
+emit_enum_constants = true
+emit_type_guards = true
 ```
 
 ### CLI Reference

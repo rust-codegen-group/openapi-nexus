@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5]
+
+### Added
+
+- TypeScript: `emit_enum_constants` config for companion const objects (`export const Name = { KEY: 'val' as const, ... }`) alongside enum type aliases
+- TypeScript: `emit_type_guards` config for `is*` type guard functions alongside tagged union type aliases (internal, adjacent, and external tagging)
+- TypeScript: models barrel (`models/index.ts`) now emits value re-exports alongside type re-exports when features are enabled
+
 ## [0.1.4]
 
 ### Added
