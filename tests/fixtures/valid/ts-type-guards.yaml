@@ -1,0 +1,118 @@
+openapi: 3.1.0
+info:
+  title: TS Type Guard Test
+  version: 1.0.0
+
+paths:
+  /events:
+    post:
+      summary: Handle event
+      operationId: handle_event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppEvent'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    # Internal tagging
+    AppEvent:
+      description: An application event
+      oneOf:
+        - $ref: '#/components/schemas/ClickEvent'
+        - $ref: '#/components/schemas/ScrollEvent'
+        - $ref: '#/components/schemas/KeyEvent'
+      discriminator:
+        propertyName: eventType
+
+    ClickEvent:
+      type: object
+      description: A click event with coordinates
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
+      required:
+        - x
+        - y
+
+    ScrollEvent:
+      type: object
+      description: A scroll event
+      properties:
+        delta:
+          type: integer
+      required:
+        - delta
+
+    KeyEvent:
+      type: object
+      description: A key press event
+      properties:
+        key:
+          type: string
+      required:
+        - key
+
+    # External tagging (untagged union with $refs — no discriminator, so no guards emitted)
+    ServerResponse:
+      description: An API response
+      oneOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: '#/components/schemas/ErrorResponse'
+        - $ref: '#/components/schemas/UnspecifiedResponse'
+
+    SuccessResponse:
+      type: object
+      properties:
+        data:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+
+    UnspecifiedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    # Adjacent tagging
+    Shape:
+      description: A geometric shape
+      oneOf:
+        - $ref: '#/components/schemas/Circle'
+        - $ref: '#/components/schemas/Rectangle'
+      discriminator:
+        propertyName: kind
+        mapping:
+          circle: '#/components/schemas/Circle'
+          rectangle: '#/components/schemas/Rectangle'
+
+    Circle:
+      type: object
+      properties:
+        radius:
+          type: number
+      required:
+        - radius
+
+    Rectangle:
+      type: object
+      properties:
+        width:
+          type: number
+        height:
+          type: number
+      required:
+        - width
+        - height

@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info:
+  title: TS Enum Const Object Test
+  version: 1.0.0
+
+paths:
+  /items:
+    get:
+      summary: Get items
+      operationId: get_items
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/ItemKind'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        score:
+          $ref: '#/components/schemas/Score'
+        mood:
+          $ref: '#/components/schemas/Mood'
+      required:
+        - kind
+        - priority
+
+    # String enum
+    ItemKind:
+      type: string
+      description: The kind of item
+      enum:
+        - BOOK
+        - MOVIE
+        - MUSIC
+
+    # Integer enum
+    Priority:
+      type: integer
+      description: Priority level
+      enum:
+        - 1
+        - 2
+        - 3
+
+    # Number enum (float values)
+    Score:
+      type: number
+      description: A numeric score
+      enum:
+        - 0.5
+        - 1.0
+        - 1.5
+
+    # Mixed enum (string + integer)
+    Mood:
+      type:
+        - string
+        - integer
+      description: Mood value
+      enum:
+        - happy
+        - sad
+        - 0
+        - 1

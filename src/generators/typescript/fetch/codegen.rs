@@ -49,25 +49,67 @@ impl TypeScriptFetchCodeGenerator {
         &self,
         ir: &crate::ir::types::IrSpec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let mut files = super::sigil_emit::generate_model_files(ir).map_err(|msg| {
+        let flags = super::sigil_emit::EmitFlags {
+            emit_enum_constants: self.config.emit_enum_constants,
+            emit_type_guards: self.config.emit_type_guards,
+        };
+        let mut files = super::sigil_emit::generate_model_files(ir, flags).map_err(|msg| {
             Box::<dyn Error + Send + Sync>::from(format!("sigil_emit model generation: {msg}"))
         })?;
 
         if !ir.schemas.is_empty() {
             let mut names: Vec<String> = ir.schemas.keys().cloned().collect();
             names.sort();
-            let exports: Vec<String> = names
-                .iter()
-                .map(|name| {
-                    let type_name = name.to_pascal_case();
-                    let filename = self.generate_filename(name);
-                    format!(
-                        "export type {{ {} }} from './{}';",
-                        type_name,
-                        filename.trim_end_matches(".ts")
-                    )
-                })
-                .collect();
+            let mut exports: Vec<String> = Vec::new();
+            // Track which value names have already been re-exported to avoid
+            // collisions between versioned schemas (20260130 / 20260330) that
+            // produce identically-named type guard functions.
+            let mut used_value_names: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
+
+            for name in &names {
+                let type_name = name.to_pascal_case();
+                let filename = self.generate_filename(name);
+                let stem = filename.trim_end_matches(".ts");
+
+                let value_names = ir
+                    .schemas
+                    .get(name)
+                    .map(|s| super::sigil_emit::value_exports_for_schema(s, flags))
+                    .unwrap_or_default();
+
+                if value_names.is_empty() {
+                    exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+                } else {
+                    let type_name_is_value = value_names.contains(&type_name);
+                    used_value_names.insert(type_name.clone());
+
+                    let mut unique_values: Vec<String> = Vec::new();
+                    for vn in &value_names {
+                        if used_value_names.insert(vn.clone()) {
+                            unique_values.push(vn.clone());
+                        }
+                    }
+
+                    if type_name_is_value {
+                        // Enum const: the type name IS the value. Single
+                        // `export { X }` covers both the type and value sides.
+                        let mut all_names = vec![type_name.clone()];
+                        all_names.extend(unique_values);
+                        let joined = all_names.join(", ");
+                        exports.push(format!("export {{ {joined} }} from './{stem}';"));
+                    } else {
+                        // Tagged union: type is separate from guard values.
+                        // Emit `export type { X }` for the type and a separate
+                        // `export { isA, isB }` for the guards (if any uniques).
+                        exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+                        if !unique_values.is_empty() {
+                            let joined = unique_values.join(", ");
+                            exports.push(format!("export {{ {joined} }} from './{stem}';"));
+                        }
+                    }
+                }
+            }
             files.push(render_index_file(&ir.info, "models/index.ts", &exports));
         }
 

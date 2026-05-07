@@ -47,6 +47,14 @@ pub struct TypeScriptFetchConfig {
     /// Whether to include build scripts in package.json
     #[serde(default = "default_include_build_scripts")]
     pub include_build_scripts: bool,
+
+    /// Emit companion const objects alongside enum type aliases.
+    #[serde(default)]
+    pub emit_enum_constants: bool,
+
+    /// Emit `is*` type guard functions alongside tagged union type aliases.
+    #[serde(default)]
+    pub emit_type_guards: bool,
 }
 
 fn default_file_naming_convention() -> NamingConvention {
@@ -119,6 +127,8 @@ impl Default for TypeScriptFetchConfig {
             ts_lib: default_typescript_lib(),
             generate_esm_config: default_generate_esm_config(),
             include_build_scripts: default_include_build_scripts(),
+            emit_enum_constants: false,
+            emit_type_guards: false,
         }
     }
 }
