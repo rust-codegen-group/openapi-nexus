@@ -64,11 +64,20 @@ Generator-specific options live under `[generators.<name>]` sections:
 [generators.go-http]
 module_path = "github.com/myorg/myproject/sdk"
 
+[generators.rust-reqwest]
+crate_name = "my-api-client"
+workspace_mode = true
+workspace_deps = "workspace_version"  # "explicit" | "workspace_version" | "full"
+
 [generators.rust-reqwest.extra_derives.structs]
 derives = ["PartialEq"]
 
 [generators.rust-reqwest.extra_derives.enums]
 derives = ["Hash"]
+
+[generators.rust-reqwest.utoipa]
+enabled = true
+dependency = '{ version = "5" }'
 ```
 
 ### CLI Reference

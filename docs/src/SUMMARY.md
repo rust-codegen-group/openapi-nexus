@@ -2,6 +2,7 @@
 
 - [Introduction](introduction.md)
 - [Getting Started](getting_started.md)
+- [Rust Generator Configuration](rust_config.md)
 - [Architecture](architecture.md)
 - [Adding a Generator](adding_a_generator.md)
 - [IR Reference](ir_reference.md)
