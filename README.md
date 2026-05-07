@@ -73,11 +73,19 @@ Generator-specific options go in the config file:
 [generators.go-http]
 module_path = "github.com/myorg/myproject/sdk"
 
+[generators.rust-reqwest]
+workspace_mode = true
+workspace_deps = "workspace_version"
+
 [generators.rust-reqwest.extra_derives.structs]
 derives = ["PartialEq"]
 
 [generators.rust-reqwest.extra_derives.enums]
 derives = ["Hash"]
+
+[generators.rust-reqwest.utoipa]
+enabled = true
+dependency = '{ version = "5" }'
 ```
 
 ## How It Works
