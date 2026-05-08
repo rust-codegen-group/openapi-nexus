@@ -195,6 +195,25 @@ emit_type_guards = true
     );
 }
 
+#[test]
+#[traced_test]
+fn test_property_naming_camel_case_golden() {
+    let config: toml::value::Table = toml::from_str(
+        r#"
+property_naming = "camelCase"
+"#,
+    )
+    .unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-property-naming-camel-case",
+        "valid/naming-conventions.yaml",
+        UPDATE_HINT,
+    );
+}
+
 // ===========================================================================
 // IR pipeline integration tests
 // ===========================================================================
