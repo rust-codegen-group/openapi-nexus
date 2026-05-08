@@ -1,0 +1,45 @@
+openapi: 3.1.0
+info:
+  title: Intersection with Enum Reference Test
+  description: Test case for allOf intersections mixing objects and enums
+  version: 1.0.0
+
+paths: {}
+
+components:
+  schemas:
+    EnumStatus:
+      type: string
+      enum:
+        - active
+        - inactive
+
+    AnotherEnum:
+      type: string
+      enum:
+        - alpha
+        - beta
+        - gamma
+
+    ObjectBase:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    Mixed:
+      description: Intersection with one object (convertible) and one enum (non-convertible)
+      allOf:
+        - $ref: '#/components/schemas/ObjectBase'
+        - $ref: '#/components/schemas/EnumStatus'
+
+    AllEnums:
+      description: Intersection with only enum members (should NOT emit camelCase converters)
+      allOf:
+        - $ref: '#/components/schemas/EnumStatus'
+        - $ref: '#/components/schemas/AnotherEnum'

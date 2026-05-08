@@ -68,6 +68,7 @@ impl TypeScriptFetchCodeGenerator {
             // produce identically-named type guard functions.
             let mut used_value_names: std::collections::HashSet<String> =
                 std::collections::HashSet::new();
+            let convertible = super::sigil_emit::build_convertible_set(ir, flags);
 
             for name in &names {
                 let type_name = name.to_pascal_case();
@@ -77,12 +78,14 @@ impl TypeScriptFetchCodeGenerator {
                 let value_names = ir
                     .schemas
                     .get(name)
-                    .map(|s| super::sigil_emit::value_exports_for_schema(s, flags))
+                    .map(|s| super::sigil_emit::value_exports_for_schema(s, flags, &convertible))
                     .unwrap_or_default();
                 let extra_types = ir
                     .schemas
                     .get(name)
-                    .map(|s| super::sigil_emit::extra_type_exports_for_schema(s, flags))
+                    .map(|s| {
+                        super::sigil_emit::extra_type_exports_for_schema(s, flags, &convertible)
+                    })
                     .unwrap_or_default();
 
                 if value_names.is_empty() {

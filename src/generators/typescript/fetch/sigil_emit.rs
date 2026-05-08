@@ -49,7 +49,11 @@ pub(super) fn fn_base_name(pascal: &str) -> String {
 /// - Enums with `emit_enum_constants`: the type name itself (the const object).
 /// - Tagged unions with `emit_type_guards`: one `is{Variant}` per contentful variant.
 /// - Everything else: empty.
-pub fn value_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec<String> {
+pub fn value_exports_for_schema(
+    schema: &IrSchema,
+    flags: EmitFlags,
+    convertible: &HashSet<String>,
+) -> Vec<String> {
     match &schema.kind {
         IrSchemaKind::Object(_) if flags.property_naming_camel_case => {
             let pascal = schema.name.to_pascal_case();
@@ -78,16 +82,12 @@ pub fn value_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec<Stri
             }
             exports
         }
-        IrSchemaKind::Intersection(i)
-            if flags.property_naming_camel_case && i.members.iter().any(has_any_named_ref) =>
-        {
+        IrSchemaKind::Intersection(_) if convertible.contains(&schema.name) => {
             let pascal = schema.name.to_pascal_case();
             let base = fn_base_name(&pascal);
             vec![format!("{base}FromJSON"), format!("{base}ToJSON")]
         }
-        IrSchemaKind::Union(u)
-            if flags.property_naming_camel_case && u.members.iter().any(has_any_named_ref) =>
-        {
+        IrSchemaKind::Union(_) if convertible.contains(&schema.name) => {
             let pascal = schema.name.to_pascal_case();
             let base = fn_base_name(&pascal);
             vec![format!("{base}FromJSON"), format!("{base}ToJSON")]
@@ -114,7 +114,11 @@ pub fn value_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec<Stri
 /// Return extra type-export names for the barrel (beyond the primary type name).
 ///
 /// Objects in camelCase mode also export `Name$Wire`.
-pub fn extra_type_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec<String> {
+pub fn extra_type_exports_for_schema(
+    schema: &IrSchema,
+    flags: EmitFlags,
+    convertible: &HashSet<String>,
+) -> Vec<String> {
     match &schema.kind {
         IrSchemaKind::Object(_) if flags.property_naming_camel_case => {
             vec![format!("{}$Wire", schema.name.to_pascal_case())]
@@ -124,14 +128,10 @@ pub fn extra_type_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec
         {
             vec![format!("{}$Wire", schema.name.to_pascal_case())]
         }
-        IrSchemaKind::Intersection(i)
-            if flags.property_naming_camel_case && i.members.iter().any(has_any_named_ref) =>
-        {
+        IrSchemaKind::Intersection(_) if convertible.contains(&schema.name) => {
             vec![format!("{}$Wire", schema.name.to_pascal_case())]
         }
-        IrSchemaKind::Union(u)
-            if flags.property_naming_camel_case && u.members.iter().any(has_any_named_ref) =>
-        {
+        IrSchemaKind::Union(_) if convertible.contains(&schema.name) => {
             vec![format!("{}$Wire", schema.name.to_pascal_case())]
         }
         _ => vec![],
@@ -604,17 +604,6 @@ fn has_named_ref(expr: &IrTypeExpr, convertible: &HashSet<String>) -> bool {
     }
 }
 
-/// Returns true if a type expression contains ANY Named ref (unfiltered).
-fn has_any_named_ref(expr: &IrTypeExpr) -> bool {
-    match expr {
-        IrTypeExpr::Named(_) => true,
-        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
-            has_any_named_ref(inner)
-        }
-        _ => false,
-    }
-}
-
 /// Collect unique Named type references from an object's properties (only convertible ones).
 fn collect_named_refs(obj: &IrObject, convertible: &HashSet<String>) -> Vec<String> {
     let mut refs = HashSet::new();
@@ -763,7 +752,7 @@ fn emit_union_file(
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
 
-    if flags.property_naming_camel_case && union.members.iter().any(has_any_named_ref) {
+    if flags.property_naming_camel_case && convertible.contains(&schema.name) {
         return emit_union_file_camel_case(schema, union, &name, convertible);
     }
 
@@ -801,7 +790,7 @@ fn emit_intersection_file(
     }
     let name = schema.name.to_pascal_case();
 
-    if flags.property_naming_camel_case && intersection.members.iter().any(has_any_named_ref) {
+    if flags.property_naming_camel_case && convertible.contains(&schema.name) {
         return emit_intersection_file_camel_case(schema, intersection, &name, convertible);
     }
 
@@ -1275,7 +1264,7 @@ fn emit_intersection_file_camel_case(
     let ergo_body = ergo_members.join(" & ");
     fb = fb.add_raw(&format!("export type {name} = {ergo_body};\n"));
 
-    // fromJSON: spread each Named member's converter (only if convertible)
+    // fromJSON: spread each convertible Named member's converter
     let base = fn_base_name(name);
     let from_spreads: Vec<String> = intersection
         .members
@@ -1289,7 +1278,7 @@ fn emit_intersection_file_camel_case(
                         "...{member_base}FromJSON(json as {member_pascal}$Wire)"
                     ))
                 } else {
-                    Some("...json".to_string())
+                    None
                 }
             } else {
                 None
@@ -1302,7 +1291,7 @@ fn emit_intersection_file_camel_case(
         from_spreads.join(", ")
     ));
 
-    // toJSON: spread each Named member's converter (only if convertible)
+    // toJSON: spread each convertible Named member's converter
     let to_spreads: Vec<String> = intersection
         .members
         .iter()
@@ -1313,7 +1302,7 @@ fn emit_intersection_file_camel_case(
                     let member_base = fn_base_name(&member_pascal);
                     Some(format!("...{member_base}ToJSON(value as {member_pascal})"))
                 } else {
-                    Some("...value".to_string())
+                    None
                 }
             } else {
                 None
@@ -1614,19 +1603,34 @@ pub fn build_convertible_set(ir: &IrSpec, flags: EmitFlags) -> HashSet<String> {
     if !flags.property_naming_camel_case {
         return HashSet::new();
     }
-    ir.schemas
+    // Pass 1: leaf convertibles (Object, TaggedUnion) — always convertible.
+    let leaf: HashSet<String> = ir
+        .schemas
         .iter()
         .filter_map(|(name, schema)| {
             let dominated = match &schema.kind {
                 IrSchemaKind::Object(_) => true,
                 IrSchemaKind::TaggedUnion(tu) => !tu.variants.is_empty(),
-                IrSchemaKind::Intersection(i) => i.members.iter().any(has_any_named_ref),
-                IrSchemaKind::Union(u) => u.members.iter().any(has_any_named_ref),
                 _ => false,
             };
             dominated.then(|| name.clone())
         })
-        .collect()
+        .collect();
+
+    // Pass 2: composite convertibles (Intersection, Union) — only if they
+    // reference at least one leaf-convertible member.
+    let mut set = leaf.clone();
+    for (name, schema) in &ir.schemas {
+        let dominated = match &schema.kind {
+            IrSchemaKind::Intersection(i) => i.members.iter().any(|m| has_named_ref(m, &leaf)),
+            IrSchemaKind::Union(u) => u.members.iter().any(|m| has_named_ref(m, &leaf)),
+            _ => false,
+        };
+        if dominated {
+            set.insert(name.clone());
+        }
+    }
+    set
 }
 
 /// Lower every `IrSchema` in the spec into a sigil-rendered `FileInfo`.
