@@ -34,6 +34,8 @@ use sigil_stitch::spec::parameter_spec::ParameterSpec;
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
+use super::sigil_emit::fn_base_name;
+
 const RUNTIME_MOD: &str = "../runtime/runtime";
 
 /// Lower every tag in the IR spec into a sigil-rendered API class `FileInfo`.
@@ -152,14 +154,9 @@ fn emit_api_file(
         for name in collect_named_body_types(ops) {
             let pascal = name.to_pascal_case();
             let module = format!("../models/{pascal}");
-            let from_fn = format!(
-                "{}FromJSON",
-                pascal[..1].to_lowercase() + &pascal[1..]
-            );
-            let to_fn = format!(
-                "{}ToJSON",
-                pascal[..1].to_lowercase() + &pascal[1..]
-            );
+            let base = fn_base_name(&pascal);
+            let from_fn = format!("{base}FromJSON");
+            let to_fn = format!("{base}ToJSON");
             let wire_name = format!("{}$Wire", pascal);
             fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named(
                 &module, &from_fn,
@@ -703,28 +700,27 @@ fn emit_response_return(
 
     // When camelCase is enabled and the response is JSON with a Named type,
     // inject a fromJSON transformer: `new JSONApiResponse<Pet>(response, (json) => petFromJSON(json as Pet$Wire))`
-    if property_naming_camel_case {
-        if let ResponseKind::Json(Some(_)) = &kind {
-            if let Some(from_json) = response_from_json_transformer(resp) {
-                let wrapper_type = match kind {
-                    ResponseKind::Json(Some(body_ty)) => {
-                        TypeName::generic(rt_value("JSONApiResponse"), vec![body_ty])
-                    }
-                    _ => unreachable!(),
-                };
-                cb.add(
-                    &format!(
-                        "return new %T(response, {}) as %T & {{ status: {} }};\n",
-                        from_json, status_ty
-                    ),
-                    vec![
-                        Arg::TypeName(rt_value("JSONApiResponse")),
-                        Arg::TypeName(wrapper_type),
-                    ],
-                );
-                return;
+    if property_naming_camel_case
+        && let ResponseKind::Json(Some(_)) = &kind
+        && let Some(from_json) = response_from_json_transformer(resp)
+    {
+        let wrapper_type = match kind {
+            ResponseKind::Json(Some(body_ty)) => {
+                TypeName::generic(rt_value("JSONApiResponse"), vec![body_ty])
             }
-        }
+            _ => unreachable!(),
+        };
+        cb.add(
+            &format!(
+                "return new %T(response, {}) as %T & {{ status: {} }};\n",
+                from_json, status_ty
+            ),
+            vec![
+                Arg::TypeName(rt_value("JSONApiResponse")),
+                Arg::TypeName(wrapper_type),
+            ],
+        );
+        return;
     }
 
     let wrapper_value = match kind {
@@ -1184,24 +1180,16 @@ fn response_from_json_transformer(resp: &IrResponse) -> Option<String> {
     match type_expr {
         IrTypeExpr::Named(name) => {
             let pascal = name.to_pascal_case();
-            let from_fn = format!(
-                "{}FromJSON",
-                pascal[..1].to_lowercase() + &pascal[1..]
-            );
+            let from_fn = format!("{}FromJSON", fn_base_name(&pascal));
             let wire = format!("{}$Wire", pascal);
             Some(format!("(json) => {from_fn}(json as {wire})"))
         }
         IrTypeExpr::Array(inner) => match inner.as_ref() {
             IrTypeExpr::Named(name) => {
                 let pascal = name.to_pascal_case();
-                let from_fn = format!(
-                    "{}FromJSON",
-                    pascal[..1].to_lowercase() + &pascal[1..]
-                );
+                let from_fn = format!("{}FromJSON", fn_base_name(&pascal));
                 let wire = format!("{}$Wire", pascal);
-                Some(format!(
-                    "(json) => (json as {wire}[]).map({from_fn})"
-                ))
+                Some(format!("(json) => (json as {wire}[]).map({from_fn})"))
             }
             _ => None,
         },
@@ -1216,19 +1204,13 @@ fn body_to_json_expr(content_type: &IrTypeExpr, access: &str) -> Option<String> 
     match content_type {
         IrTypeExpr::Named(name) => {
             let pascal = name.to_pascal_case();
-            let to_fn = format!(
-                "{}ToJSON",
-                pascal[..1].to_lowercase() + &pascal[1..]
-            );
+            let to_fn = format!("{}ToJSON", fn_base_name(&pascal));
             Some(format!("{to_fn}({access})"))
         }
         IrTypeExpr::Array(inner) => match inner.as_ref() {
             IrTypeExpr::Named(name) => {
                 let pascal = name.to_pascal_case();
-                let to_fn = format!(
-                    "{}ToJSON",
-                    pascal[..1].to_lowercase() + &pascal[1..]
-                );
+                let to_fn = format!("{}ToJSON", fn_base_name(&pascal));
                 Some(format!("{access}.map({to_fn})"))
             }
             _ => None,
@@ -1245,20 +1227,20 @@ fn collect_named_body_types(ops: &[&IrOperation]) -> BTreeSet<String> {
             if let Some(IrTypeExpr::Named(n)) = body.content.get("application/json") {
                 names.insert(n.clone());
             }
-            if let Some(IrTypeExpr::Array(inner)) = body.content.get("application/json") {
-                if let IrTypeExpr::Named(n) = inner.as_ref() {
-                    names.insert(n.clone());
-                }
+            if let Some(IrTypeExpr::Array(inner)) = body.content.get("application/json")
+                && let IrTypeExpr::Named(n) = inner.as_ref()
+            {
+                names.insert(n.clone());
             }
         }
         for resp in &op.responses {
             if let Some(IrTypeExpr::Named(n)) = resp.content.get("application/json") {
                 names.insert(n.clone());
             }
-            if let Some(IrTypeExpr::Array(inner)) = resp.content.get("application/json") {
-                if let IrTypeExpr::Named(n) = inner.as_ref() {
-                    names.insert(n.clone());
-                }
+            if let Some(IrTypeExpr::Array(inner)) = resp.content.get("application/json")
+                && let IrTypeExpr::Named(n) = inner.as_ref()
+            {
+                names.insert(n.clone());
             }
         }
     }
