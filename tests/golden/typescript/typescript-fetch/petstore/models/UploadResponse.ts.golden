@@ -19,5 +19,5 @@ export interface UploadResponse {
   /**
    * Response type
    */
-  readonly type_?: string;
+  readonly type?: string;
 }

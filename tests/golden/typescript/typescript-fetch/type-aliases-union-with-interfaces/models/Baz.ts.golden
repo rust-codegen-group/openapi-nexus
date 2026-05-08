@@ -6,5 +6,5 @@
  */
 export interface Baz {
   readonly path: string;
-  readonly type_: 'baz';
+  readonly type: 'baz';
 }

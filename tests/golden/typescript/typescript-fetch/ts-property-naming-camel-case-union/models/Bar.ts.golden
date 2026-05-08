@@ -7,13 +7,13 @@
 export interface Bar$Wire {
   readonly bucket: string;
   readonly endpoint: string;
-  readonly type_: 'bar';
+  readonly type: 'bar';
 }
 
 export interface Bar {
   readonly bucket: string;
   readonly endpoint: string;
-  readonly type_: 'bar';
+  readonly type: 'bar';
 }
 
 export function barFromJSON(json: Bar$Wire): Bar {
