@@ -16,7 +16,7 @@
 //! `TypeName::raw`. Method bodies use `CodeBlock::add(fmt, [%T, %L, ...])` so
 //! sigil resolves all imports in one pass.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::ir::types::{
@@ -34,7 +34,7 @@ use sigil_stitch::spec::parameter_spec::ParameterSpec;
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
-use super::sigil_emit::fn_base_name;
+use super::sigil_emit::{EmitFlags, build_convertible_set, fn_base_name};
 
 const RUNTIME_MOD: &str = "../runtime/runtime";
 
@@ -45,10 +45,15 @@ pub fn generate_api_files(
 ) -> Result<Vec<FileInfo>, String> {
     let header = super::project_files::render_file_header(&ir.info);
     let by_tag = group_by_tag(&ir.operations);
+    let flags = EmitFlags {
+        property_naming_camel_case,
+        ..EmitFlags::default()
+    };
+    let convertible = build_convertible_set(ir, flags);
 
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
-        let file_spec = emit_api_file(tag, ops, property_naming_camel_case)?;
+        let file_spec = emit_api_file(tag, ops, property_naming_camel_case, &convertible)?;
         let body = file_spec
             .render(100)
             .map_err(|e| format!("sigil_emit_api: render {tag}: {e}"))?;
@@ -123,6 +128,7 @@ fn emit_api_file(
     tag: &str,
     ops: &[&IrOperation],
     property_naming_camel_case: bool,
+    convertible: &HashSet<String>,
 ) -> Result<FileSpec, String> {
     let class_name = format!("{}Api", tag.to_pascal_case());
     let interface_name = format!("{}Interface", class_name);
@@ -151,7 +157,7 @@ fn emit_api_file(
     // When property_naming_camel_case is enabled, add explicit imports for
     // converter functions and $Wire types referenced in raw code blocks.
     if property_naming_camel_case {
-        for name in collect_named_body_types(ops) {
+        for name in collect_named_body_types(ops, convertible) {
             let pascal = name.to_pascal_case();
             let module = format!("../models/{pascal}");
             let base = fn_base_name(&pascal);
@@ -177,6 +183,7 @@ fn emit_api_file(
         &interface_name,
         ops,
         property_naming_camel_case,
+        convertible,
     )?);
 
     fb.build()
@@ -392,6 +399,7 @@ fn build_api_class(
     interface_name: &str,
     ops: &[&IrOperation],
     property_naming_camel_case: bool,
+    convertible: &HashSet<String>,
 ) -> Result<TypeSpec, String> {
     let mut tb = TypeSpec::builder(class_name, TypeKind::Class)
         .visibility(Visibility::Public)
@@ -400,7 +408,11 @@ fn build_api_class(
         .add_method(build_constructor());
 
     for op in ops {
-        tb = tb.add_method(build_raw_method(op, property_naming_camel_case)?);
+        tb = tb.add_method(build_raw_method(
+            op,
+            property_naming_camel_case,
+            convertible,
+        )?);
         tb = tb.add_method(build_convenience_method(op)?);
     }
 
@@ -431,7 +443,11 @@ fn build_constructor() -> FunSpec {
 // Raw method — full request body with parameter handling and response dispatch
 // ============================================================================
 
-fn build_raw_method(op: &IrOperation, property_naming_camel_case: bool) -> Result<FunSpec, String> {
+fn build_raw_method(
+    op: &IrOperation,
+    property_naming_camel_case: bool,
+    convertible: &HashSet<String>,
+) -> Result<FunSpec, String> {
     let method_base = op.operation_id.to_lower_camel_case();
     let method_name = format!("{}Raw", method_base);
 
@@ -447,9 +463,9 @@ fn build_raw_method(op: &IrOperation, property_naming_camel_case: bool) -> Resul
     emit_url_path(&mut body, op);
     emit_query_params(&mut body, op);
     emit_headers(&mut body, op);
-    emit_request_body(&mut body, op, property_naming_camel_case);
+    emit_request_body(&mut body, op, property_naming_camel_case, convertible);
     emit_make_request(&mut body, op, op.request_body.is_some());
-    emit_response_handler(&mut body, op, property_naming_camel_case);
+    emit_response_handler(&mut body, op, property_naming_camel_case, convertible);
 
     fb = fb.body(body.build().map_err(|e| format!("body build: {e}"))?);
 
@@ -599,6 +615,7 @@ fn emit_request_body(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
     property_naming_camel_case: bool,
+    convertible: &HashSet<String>,
 ) {
     if let Some(ref body) = op.request_body {
         cb.add("// Prepare request body\n", vec![]);
@@ -608,7 +625,9 @@ fn emit_request_body(
 
         if property_naming_camel_case {
             let json_type = body.content.get("application/json");
-            if let Some(to_json) = json_type.and_then(|ty| body_to_json_expr(ty, &access)) {
+            if let Some(to_json) =
+                json_type.and_then(|ty| body_to_json_expr(ty, &access, convertible))
+            {
                 cb.add(&format!("const requestBody = {};\n", to_json), vec![]);
             } else {
                 cb.add(&format!("const requestBody = {};\n", access), vec![]);
@@ -640,6 +659,7 @@ fn emit_response_handler(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
     property_naming_camel_case: bool,
+    convertible: &HashSet<String>,
 ) {
     cb.add("// Handle responses\n", vec![]);
 
@@ -660,7 +680,7 @@ fn emit_response_handler(
 
     if conditional.is_empty() {
         if let Some(d) = default {
-            emit_response_return(cb, d, false, property_naming_camel_case);
+            emit_response_return(cb, d, false, property_naming_camel_case, convertible);
         } else {
             emit_fallback_return(cb, fallback_has_body, false);
         }
@@ -672,12 +692,12 @@ fn emit_response_handler(
                 &format!("{} (response.status === {}) {{\n  ", keyword, status_code),
                 vec![],
             );
-            emit_response_return(cb, resp, true, property_naming_camel_case);
+            emit_response_return(cb, resp, true, property_naming_camel_case, convertible);
             cb.add("}\n", vec![]);
         }
         cb.add("else {\n  ", vec![]);
         if let Some(d) = default {
-            emit_response_return(cb, d, true, property_naming_camel_case);
+            emit_response_return(cb, d, true, property_naming_camel_case, convertible);
         } else {
             emit_fallback_return(cb, fallback_has_body, true);
         }
@@ -691,6 +711,7 @@ fn emit_response_return(
     resp: &IrResponse,
     _inside_block: bool,
     property_naming_camel_case: bool,
+    convertible: &HashSet<String>,
 ) {
     let kind = classify_response(resp);
     let status_ty = match resp.status.parse::<u16>() {
@@ -702,7 +723,7 @@ fn emit_response_return(
     // inject a fromJSON transformer: `new JSONApiResponse<Pet>(response, (json) => petFromJSON(json as Pet$Wire))`
     if property_naming_camel_case
         && let ResponseKind::Json(Some(_)) = &kind
-        && let Some(from_json) = response_from_json_transformer(resp)
+        && let Some(from_json) = response_from_json_transformer(resp, convertible)
     {
         let wrapper_type = match kind {
             ResponseKind::Json(Some(body_ty)) => {
@@ -1175,17 +1196,20 @@ fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
 /// `(json) => petFromJSON(json as Pet$Wire)`
 /// For Array(Named), produce: `(json) => (json as Pet$Wire[]).map(petFromJSON)`
 /// Returns None for non-Named types (no conversion needed).
-fn response_from_json_transformer(resp: &IrResponse) -> Option<String> {
+fn response_from_json_transformer(
+    resp: &IrResponse,
+    convertible: &HashSet<String>,
+) -> Option<String> {
     let type_expr = resp.content.get("application/json")?;
     match type_expr {
-        IrTypeExpr::Named(name) => {
+        IrTypeExpr::Named(name) if convertible.contains(name) => {
             let pascal = name.to_pascal_case();
             let from_fn = format!("{}FromJSON", fn_base_name(&pascal));
             let wire = format!("{}$Wire", pascal);
             Some(format!("(json) => {from_fn}(json as {wire})"))
         }
         IrTypeExpr::Array(inner) => match inner.as_ref() {
-            IrTypeExpr::Named(name) => {
+            IrTypeExpr::Named(name) if convertible.contains(name) => {
                 let pascal = name.to_pascal_case();
                 let from_fn = format!("{}FromJSON", fn_base_name(&pascal));
                 let wire = format!("{}$Wire", pascal);
@@ -1200,15 +1224,19 @@ fn response_from_json_transformer(resp: &IrResponse) -> Option<String> {
 /// For a request body with a Named type, produce the toJSON call:
 /// `petToJSON(requestParameters.body)` or `requestParameters.body.map(petToJSON)`
 /// Returns None for non-Named types (no conversion needed).
-fn body_to_json_expr(content_type: &IrTypeExpr, access: &str) -> Option<String> {
+fn body_to_json_expr(
+    content_type: &IrTypeExpr,
+    access: &str,
+    convertible: &HashSet<String>,
+) -> Option<String> {
     match content_type {
-        IrTypeExpr::Named(name) => {
+        IrTypeExpr::Named(name) if convertible.contains(name) => {
             let pascal = name.to_pascal_case();
             let to_fn = format!("{}ToJSON", fn_base_name(&pascal));
             Some(format!("{to_fn}({access})"))
         }
         IrTypeExpr::Array(inner) => match inner.as_ref() {
-            IrTypeExpr::Named(name) => {
+            IrTypeExpr::Named(name) if convertible.contains(name) => {
                 let pascal = name.to_pascal_case();
                 let to_fn = format!("{}ToJSON", fn_base_name(&pascal));
                 Some(format!("{access}.map({to_fn})"))
@@ -1219,26 +1247,36 @@ fn body_to_json_expr(content_type: &IrTypeExpr, access: &str) -> Option<String> 
     }
 }
 
-/// Collect unique Named type references from request bodies and JSON responses.
-fn collect_named_body_types(ops: &[&IrOperation]) -> BTreeSet<String> {
+/// Collect unique Named type references from request bodies and JSON responses
+/// that are in the convertible set (i.e., have $Wire/fromJSON/toJSON emitted).
+fn collect_named_body_types(
+    ops: &[&IrOperation],
+    convertible: &HashSet<String>,
+) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
     for op in ops {
         if let Some(ref body) = op.request_body {
-            if let Some(IrTypeExpr::Named(n)) = body.content.get("application/json") {
+            if let Some(IrTypeExpr::Named(n)) = body.content.get("application/json")
+                && convertible.contains(n)
+            {
                 names.insert(n.clone());
             }
             if let Some(IrTypeExpr::Array(inner)) = body.content.get("application/json")
                 && let IrTypeExpr::Named(n) = inner.as_ref()
+                && convertible.contains(n)
             {
                 names.insert(n.clone());
             }
         }
         for resp in &op.responses {
-            if let Some(IrTypeExpr::Named(n)) = resp.content.get("application/json") {
+            if let Some(IrTypeExpr::Named(n)) = resp.content.get("application/json")
+                && convertible.contains(n)
+            {
                 names.insert(n.clone());
             }
             if let Some(IrTypeExpr::Array(inner)) = resp.content.get("application/json")
                 && let IrTypeExpr::Named(n) = inner.as_ref()
+                && convertible.contains(n)
             {
                 names.insert(n.clone());
             }
