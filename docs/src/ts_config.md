@@ -15,6 +15,7 @@ generate_esm_config = true
 include_build_scripts = true
 emit_enum_constants = true
 emit_type_guards = true
+property_naming = "camelCase"
 ```
 
 ## Options Reference
@@ -105,6 +106,62 @@ The narrowing expression depends on the tagging style:
 - **External**: `'<value>' in value`
 
 Variants with "UNSPECIFIED" in the discriminator value, discriminator values equal to the field name, or bare string-literal content types are skipped. Defaults to `false`.
+
+### `property_naming`
+
+Controls the naming convention for properties in generated interfaces. When set to `"camelCase"`, generates dual-type model files:
+
+- A `Name$Wire` interface preserving the original wire-format property names (snake_case, kebab-case, etc.)
+- A `Name` interface with camelCase property names for ergonomic usage
+- `nameFromJSON(json: Name$Wire): Name` converter function
+- `nameToJSON(value: Name): Name$Wire` converter function
+
+```toml
+[generators.typescript-fetch]
+property_naming = "camelCase"
+```
+
+Example output for a schema with snake_case properties:
+
+```typescript
+export interface User$Wire {
+  readonly user_id: number;
+  readonly first_name: string;
+  readonly last_name: string;
+}
+
+export interface User {
+  readonly userId: number;
+  readonly firstName: string;
+  readonly lastName: string;
+}
+
+export function userFromJSON(json: User$Wire): User {
+  return {
+    userId: json.user_id,
+    firstName: json.first_name,
+    lastName: json.last_name,
+  };
+}
+
+export function userToJSON(value: User): User$Wire {
+  return {
+    user_id: value.userId,
+    first_name: value.firstName,
+    last_name: value.lastName,
+  };
+}
+```
+
+Works with all schema kinds:
+- **Objects**: dual interfaces + converters
+- **Tagged unions** (internal, adjacent, external): dual type aliases + switch/if-chain converters
+- **Intersections** (allOf): dual type aliases + spread-based converters
+- **Unions** (oneOf): dual type aliases + cast-through converters
+
+Referenced types that are themselves convertible (objects, intersections, unions) get their converter functions called recursively. Enums and simple aliases pass through unchanged.
+
+Defaults to `"preserve"` (no renaming, single interface, no converters).
 
 ## Barrel Exports
 

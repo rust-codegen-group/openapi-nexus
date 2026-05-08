@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6]
+
+### Added
+
+- TypeScript: `property_naming = "camelCase"` config generates dual-type model files with wire-format (`Name$Wire`) and ergonomic (`Name`) interfaces, plus `nameFromJSON` / `nameToJSON` converter functions
+  - Covers Objects, TaggedUnions (internal, adjacent, external tagging), Intersections (allOf), and Unions (oneOf)
+  - Externally-tagged unions use `if ('KEY' in json)` chains instead of switch statements
+  - Barrel re-exports both types and converter functions automatically
+
+### Fixed
+
+- TypeScript: intersection `fromJSON` returns now use type assertion (`as Name`) for mixed object+enum allOf compositions
+- TypeScript: two-pass convertible set computation correctly handles Intersection/Union schemas containing enum member refs
+- TypeScript: non-convertible schemas (enums, simple aliases) no longer generate broken `$Wire` import references in camelCase mode
+- TypeScript: reserved-word field names (e.g. `delete`, `class`) are correctly quoted in generated interfaces (sigil-stitch 0.5.0)
+
 ## [0.1.5]
 
 ### Added
