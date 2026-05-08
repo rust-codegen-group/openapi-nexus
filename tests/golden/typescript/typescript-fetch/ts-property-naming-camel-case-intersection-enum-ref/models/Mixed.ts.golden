@@ -15,7 +15,7 @@ export type Mixed$Wire = ObjectBase$Wire & EnumStatus;
 export type Mixed = ObjectBase & EnumStatus;
 
 export function mixedFromJSON(json: Mixed$Wire): Mixed {
-  return { ...objectBaseFromJSON(json as ObjectBase$Wire) };
+  return { ...objectBaseFromJSON(json as ObjectBase$Wire) } as Mixed;
 }
 
 export function mixedToJSON(value: Mixed): Mixed$Wire {

@@ -1287,7 +1287,7 @@ fn emit_intersection_file_camel_case(
         .collect();
 
     fb = fb.add_raw(&format!(
-        "export function {base}FromJSON(json: {name}$Wire): {name} {{\n  return {{ {} }};\n}}\n",
+        "export function {base}FromJSON(json: {name}$Wire): {name} {{\n  return {{ {} }} as {name};\n}}\n",
         from_spreads.join(", ")
     ));
 
