@@ -6,12 +6,12 @@
  */
 export interface Baz$Wire {
   readonly path: string;
-  readonly type_: 'baz';
+  readonly type: 'baz';
 }
 
 export interface Baz {
   readonly path: string;
-  readonly type_: 'baz';
+  readonly type: 'baz';
 }
 
 export function bazFromJSON(json: Baz$Wire): Baz {

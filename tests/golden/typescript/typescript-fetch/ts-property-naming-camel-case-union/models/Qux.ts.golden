@@ -5,14 +5,14 @@
  * Test fixture for oneOf/anyOf union types with interface members
  */
 export interface Qux$Wire {
-  readonly namespace_: string;
-  readonly type_: 'qux';
+  readonly namespace: string;
+  readonly type: 'qux';
   readonly url: string;
 }
 
 export interface Qux {
-  readonly namespace_: string;
-  readonly type_: 'qux';
+  readonly namespace: string;
+  readonly type: 'qux';
   readonly url: string;
 }
 

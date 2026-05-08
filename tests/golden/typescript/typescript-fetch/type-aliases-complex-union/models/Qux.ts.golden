@@ -5,7 +5,7 @@
  * Test fixture for complex union types
  */
 export interface Qux {
-  readonly namespace_: string;
-  readonly type_: 'qux';
+  readonly namespace: string;
+  readonly type: 'qux';
   readonly url: string;
 }

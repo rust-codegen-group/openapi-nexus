@@ -7,5 +7,5 @@
 export interface Bar {
   readonly bucket: string;
   readonly endpoint: string;
-  readonly type_: 'bar';
+  readonly type: 'bar';
 }

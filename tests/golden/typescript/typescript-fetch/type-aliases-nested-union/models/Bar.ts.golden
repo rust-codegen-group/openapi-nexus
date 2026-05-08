@@ -6,5 +6,5 @@
  */
 export interface Bar {
   readonly endpoint: string;
-  readonly type_: 'bar';
+  readonly type: 'bar';
 }

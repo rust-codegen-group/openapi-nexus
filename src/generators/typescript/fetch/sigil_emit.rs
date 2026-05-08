@@ -391,9 +391,10 @@ fn build_from_json_fn(name: &str, wire_name: &str, obj: &IrObject) -> CodeBlock 
 
     for (_json_name, prop) in &obj.properties {
         let camel = prop.name.to_lower_camel_case();
+        let ergo_key = obj_literal_key(&camel);
         let wire_access = wire_field_access(&prop.name);
         let conversion = from_json_expr(&prop.type_expr, &wire_access, !prop.required);
-        lines.push(format!("    {camel}: {conversion},"));
+        lines.push(format!("    {ergo_key}: {conversion},"));
     }
 
     lines.push("  };".to_string());
@@ -413,12 +414,9 @@ fn build_to_json_fn(name: &str, wire_name: &str, obj: &IrObject) -> CodeBlock {
 
     for (_json_name, prop) in &obj.properties {
         let camel = prop.name.to_lower_camel_case();
-        let wire_key = if is_valid_ts_identifier(&prop.name) {
-            prop.name.clone()
-        } else {
-            format!("'{}'", prop.name)
-        };
-        let conversion = to_json_expr(&prop.type_expr, &format!("value.{camel}"), !prop.required);
+        let wire_key = obj_literal_key(&prop.name);
+        let ergo_access = ergo_field_access(&camel);
+        let conversion = to_json_expr(&prop.type_expr, &ergo_access, !prop.required);
         lines.push(format!("    {wire_key}: {conversion},"));
     }
 
@@ -434,6 +432,24 @@ fn wire_field_access(wire_name: &str) -> String {
         format!("json.{wire_name}")
     } else {
         format!("json['{wire_name}']")
+    }
+}
+
+/// Produce `value.field` or `value['field']` for accessing the ergonomic object.
+fn ergo_field_access(camel: &str) -> String {
+    if is_valid_ts_identifier(camel) {
+        format!("value.{camel}")
+    } else {
+        format!("value['{camel}']")
+    }
+}
+
+/// Produce a valid object literal key: quote if not a valid identifier.
+fn obj_literal_key(name: &str) -> String {
+    if is_valid_ts_identifier(name) {
+        name.to_string()
+    } else {
+        format!("'{name}'")
     }
 }
 
