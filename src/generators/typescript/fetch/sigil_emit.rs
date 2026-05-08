@@ -145,7 +145,7 @@ pub fn emit_model_file(
     convertible: &HashSet<String>,
 ) -> Option<FileSpec> {
     match &schema.kind {
-        IrSchemaKind::Object(obj) => Some(emit_object_file(schema, obj, flags, convertible)),
+        IrSchemaKind::Object(obj) => emit_object_file(schema, obj, flags, convertible),
         IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en, flags),
         IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr),
         IrSchemaKind::Union(u) => emit_union_file(schema, u, flags, convertible),
@@ -167,7 +167,7 @@ fn emit_object_file(
     obj: &IrObject,
     flags: EmitFlags,
     convertible: &HashSet<String>,
-) -> FileSpec {
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
 
     if flags.property_naming_camel_case {
@@ -180,14 +180,14 @@ fn emit_object_file(
     }
 
     for (_json_name, prop) in &obj.properties {
-        tb = tb.add_field(build_field(prop));
+        tb = tb.add_field(build_field(prop)?);
     }
 
     let filename = format!("{}.ts", name);
     FileSpec::builder(&filename)
-        .add_type(tb.build().expect("TypeSpec builds"))
+        .add_type(tb.build().ok()?)
         .build()
-        .expect("FileSpec builds")
+        .ok()
 }
 
 /// Emit an object file with dual types: `Name$Wire` (wire format) + `Name`
@@ -197,7 +197,7 @@ fn emit_object_file_camel_case(
     obj: &IrObject,
     name: &str,
     convertible: &HashSet<String>,
-) -> FileSpec {
+) -> Option<FileSpec> {
     let wire_name = format!("{}$Wire", name);
     let filename = format!("{}.ts", name);
 
@@ -208,7 +208,7 @@ fn emit_object_file_camel_case(
         wire_tb = wire_tb.doc(doc);
     }
     for (_json_name, prop) in &obj.properties {
-        wire_tb = wire_tb.add_field(build_field_wire(prop, convertible));
+        wire_tb = wire_tb.add_field(build_field_wire(prop, convertible)?);
     }
 
     // --- Ergonomic interface (camelCase property names) ---
@@ -217,19 +217,19 @@ fn emit_object_file_camel_case(
         ergo_tb = ergo_tb.doc(doc);
     }
     for (_json_name, prop) in &obj.properties {
-        ergo_tb = ergo_tb.add_field(build_field_camel(prop));
+        ergo_tb = ergo_tb.add_field(build_field_camel(prop)?);
     }
 
     // Collect Named refs that need converter imports (only convertible ones)
     let named_refs = collect_named_refs(obj, convertible);
 
     // --- fromJSON / toJSON functions ---
-    let from_json = build_from_json_fn(name, &wire_name, obj, convertible);
-    let to_json = build_to_json_fn(name, &wire_name, obj, convertible);
+    let from_json = build_from_json_fn(name, &wire_name, obj, convertible)?;
+    let to_json = build_to_json_fn(name, &wire_name, obj, convertible)?;
 
     let mut fb = FileSpec::builder(&filename);
-    fb = fb.add_type(wire_tb.build().expect("TypeSpec builds"));
-    fb = fb.add_type(ergo_tb.build().expect("TypeSpec builds"));
+    fb = fb.add_type(wire_tb.build().ok()?);
+    fb = fb.add_type(ergo_tb.build().ok()?);
 
     // Add explicit imports for referenced converter functions
     for ref_name in &named_refs {
@@ -244,11 +244,11 @@ fn emit_object_file_camel_case(
 
     fb = fb.add_code(from_json);
     fb = fb.add_code(to_json);
-    fb.build().expect("FileSpec builds")
+    fb.build().ok()
 }
 
 /// Build a field for the $Wire interface (preserves original property name).
-fn build_field_wire(prop: &IrProperty, convertible: &HashSet<String>) -> FieldSpec {
+fn build_field_wire(prop: &IrProperty, convertible: &HashSet<String>) -> Option<FieldSpec> {
     let field_name = if is_valid_ts_identifier(&prop.name) {
         prop.name.clone()
     } else {
@@ -268,11 +268,11 @@ fn build_field_wire(prop: &IrProperty, convertible: &HashSet<String>) -> FieldSp
     if let Some(desc) = &prop.description {
         fb = fb.doc(desc);
     }
-    fb.build().expect("FieldSpec builds")
+    fb.build().ok()
 }
 
 /// Build a field for the ergonomic interface (camelCase property name).
-fn build_field_camel(prop: &IrProperty) -> FieldSpec {
+fn build_field_camel(prop: &IrProperty) -> Option<FieldSpec> {
     let camel = prop.name.to_lower_camel_case();
     let field_name = if is_valid_ts_identifier(&camel) {
         camel
@@ -293,7 +293,7 @@ fn build_field_camel(prop: &IrProperty) -> FieldSpec {
     if let Some(desc) = &prop.description {
         fb = fb.doc(desc);
     }
-    fb.build().expect("FieldSpec builds")
+    fb.build().ok()
 }
 
 /// Like `type_expr_to_typename` but Named refs resolve to `Name$Wire` (only if convertible).
@@ -417,26 +417,28 @@ fn build_from_json_fn(
     wire_name: &str,
     obj: &IrObject,
     convertible: &HashSet<String>,
-) -> CodeBlock {
+) -> Option<CodeBlock> {
     let fn_name = format!("{}FromJSON", fn_base_name(name));
-    let mut lines: Vec<String> = Vec::new();
-    lines.push(format!(
-        "export function {fn_name}(json: {wire_name}): {name} {{"
-    ));
-    lines.push("  return {".to_string());
-
-    for (_json_name, prop) in &obj.properties {
-        let camel = prop.name.to_lower_camel_case();
-        let ergo_key = obj_literal_key(&camel);
-        let wire_access = wire_field_access(&prop.name);
-        let conversion = from_json_expr(&prop.type_expr, &wire_access, !prop.required, convertible);
-        lines.push(format!("    {ergo_key}: {conversion},"));
-    }
-
-    lines.push("  };".to_string());
-    lines.push("}".to_string());
-
-    CodeBlock::of(&lines.join("\n"), ()).expect("CodeBlock builds")
+    let fields: Vec<CodeBlock> = obj
+        .properties
+        .iter()
+        .map(|(_json_name, prop)| {
+            let camel = prop.name.to_lower_camel_case();
+            let ergo_key = obj_literal_key(&camel);
+            let wire_access = wire_field_access(&prop.name);
+            let conv = from_json_expr(&prop.type_expr, &wire_access, !prop.required, convertible);
+            CodeBlock::of(&format!("    {ergo_key}: {conv},"), ())
+        })
+        .collect::<Result<_, _>>()
+        .ok()?;
+    sigil_quote!(TypeScript {
+        $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
+        $L("  return {")
+        $C_each(fields);
+        $L("  };")
+        $L("}")
+    })
+    .ok()
 }
 
 /// Build the `export function nameToJSON(value: Name): Name$Wire` function body.
@@ -445,26 +447,28 @@ fn build_to_json_fn(
     wire_name: &str,
     obj: &IrObject,
     convertible: &HashSet<String>,
-) -> CodeBlock {
+) -> Option<CodeBlock> {
     let fn_name = format!("{}ToJSON", fn_base_name(name));
-    let mut lines: Vec<String> = Vec::new();
-    lines.push(format!(
-        "export function {fn_name}(value: {name}): {wire_name} {{"
-    ));
-    lines.push("  return {".to_string());
-
-    for (_json_name, prop) in &obj.properties {
-        let camel = prop.name.to_lower_camel_case();
-        let wire_key = obj_literal_key(&prop.name);
-        let ergo_access = ergo_field_access(&camel);
-        let conversion = to_json_expr(&prop.type_expr, &ergo_access, !prop.required, convertible);
-        lines.push(format!("    {wire_key}: {conversion},"));
-    }
-
-    lines.push("  };".to_string());
-    lines.push("}".to_string());
-
-    CodeBlock::of(&lines.join("\n"), ()).expect("CodeBlock builds")
+    let fields: Vec<CodeBlock> = obj
+        .properties
+        .iter()
+        .map(|(_json_name, prop)| {
+            let camel = prop.name.to_lower_camel_case();
+            let wire_key = obj_literal_key(&prop.name);
+            let ergo_access = ergo_field_access(&camel);
+            let conv = to_json_expr(&prop.type_expr, &ergo_access, !prop.required, convertible);
+            CodeBlock::of(&format!("    {wire_key}: {conv},"), ())
+        })
+        .collect::<Result<_, _>>()
+        .ok()?;
+    sigil_quote!(TypeScript {
+        $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
+        $L("  return {")
+        $C_each(fields);
+        $L("  };")
+        $L("}")
+    })
+    .ok()
 }
 
 /// Produce `json.field` or `json['kebab-field']` depending on identifier validity.
@@ -941,8 +945,8 @@ fn emit_tagged_union_file_camel_case(
     let ergo_code = ergo_cb.build().ok()?;
 
     // --- fromJSON / toJSON ---
-    let from_json = build_tagged_union_from_json(name, &wire_name, tu, convertible);
-    let to_json = build_tagged_union_to_json(name, &wire_name, tu, convertible);
+    let from_json = build_tagged_union_from_json(name, &wire_name, tu, convertible)?;
+    let to_json = build_tagged_union_to_json(name, &wire_name, tu, convertible)?;
 
     let mut fb = FileSpec::builder(&filename);
     if let Some(doc) = &schema.description {
@@ -985,8 +989,13 @@ fn build_tagged_union_from_json(
     wire_name: &str,
     tu: &IrTaggedUnion,
     convertible: &HashSet<String>,
-) -> CodeBlock {
+) -> Option<CodeBlock> {
     let fn_name = format!("{}FromJSON", fn_base_name(name));
+
+    if matches!(tu.tagging, TaggingStyle::External) {
+        return build_external_tagged_from_json(&fn_name, name, wire_name, tu, convertible);
+    }
+
     let disc_field = &tu.discriminator_field;
     let disc_field_camel = disc_field.to_lower_camel_case();
     let disc_access = if is_valid_ts_identifier(disc_field) {
@@ -995,75 +1004,126 @@ fn build_tagged_union_from_json(
         format!("json['{disc_field}']")
     };
 
-    let mut lines: Vec<String> = Vec::new();
-    lines.push(format!(
-        "export function {fn_name}(json: {wire_name}): {name} {{"
-    ));
-    lines.push(format!("  switch ({disc_access}) {{"));
-
+    let mut case_lines: Vec<String> = Vec::new();
     for variant in &tu.variants {
         let val = &variant.discriminator_value;
-        let case_body = match &tu.tagging {
-            TaggingStyle::Internal => {
-                if let IrTypeExpr::Named(ref_name) = &variant.content_type {
-                    if convertible.contains(ref_name) {
-                        let pascal = ref_name.to_pascal_case();
-                        let converter = format!("{}FromJSON", fn_base_name(&pascal));
-                        format!("return {{ {disc_field_camel}: '{val}', ...{converter}(json) }};")
-                    } else {
-                        format!("return {{ {disc_field_camel}: '{val}', ...json }};")
-                    }
+        let case_body = internal_or_adjacent_from_json_case(
+            &tu.tagging,
+            val,
+            &disc_field_camel,
+            &variant.content_type,
+            convertible,
+        );
+        case_lines.push(format!("    case '{val}': {case_body}"));
+    }
+    let cases: Vec<CodeBlock> = case_lines
+        .iter()
+        .map(|l| CodeBlock::of(l, ()))
+        .collect::<Result<_, _>>()
+        .ok()?;
+
+    sigil_quote!(TypeScript {
+        $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
+        $L(format!("  switch ({disc_access}) {{"))
+        $C_each(cases);
+        $L("  }")
+        $L("}")
+    })
+    .ok()
+}
+
+fn internal_or_adjacent_from_json_case(
+    tagging: &TaggingStyle,
+    val: &str,
+    disc_field_camel: &str,
+    content_type: &IrTypeExpr,
+    convertible: &HashSet<String>,
+) -> String {
+    match tagging {
+        TaggingStyle::Internal => {
+            if let IrTypeExpr::Named(ref_name) = content_type {
+                if convertible.contains(ref_name) {
+                    let pascal = ref_name.to_pascal_case();
+                    let converter = format!("{}FromJSON", fn_base_name(&pascal));
+                    format!("return {{ {disc_field_camel}: '{val}', ...{converter}(json) }};")
                 } else {
                     format!("return {{ {disc_field_camel}: '{val}', ...json }};")
                 }
+            } else {
+                format!("return {{ {disc_field_camel}: '{val}', ...json }};")
             }
-            TaggingStyle::Adjacent { content_field } => {
-                let content_camel = content_field.to_lower_camel_case();
-                let content_access = if is_valid_ts_identifier(content_field) {
-                    format!("json.{content_field}")
-                } else {
-                    format!("json['{content_field}']")
-                };
-                if let IrTypeExpr::Named(ref_name) = &variant.content_type {
-                    if convertible.contains(ref_name) {
-                        let pascal = ref_name.to_pascal_case();
-                        let converter = format!("{}FromJSON", fn_base_name(&pascal));
-                        format!(
-                            "return {{ {disc_field_camel}: '{val}', {content_camel}: {converter}({content_access}) }};"
-                        )
-                    } else {
-                        format!(
-                            "return {{ {disc_field_camel}: '{val}', {content_camel}: {content_access} }};"
-                        )
-                    }
+        }
+        TaggingStyle::Adjacent { content_field } => {
+            let content_camel = content_field.to_lower_camel_case();
+            let content_access = if is_valid_ts_identifier(content_field) {
+                format!("json.{content_field}")
+            } else {
+                format!("json['{content_field}']")
+            };
+            if let IrTypeExpr::Named(ref_name) = content_type {
+                if convertible.contains(ref_name) {
+                    let pascal = ref_name.to_pascal_case();
+                    let converter = format!("{}FromJSON", fn_base_name(&pascal));
+                    format!(
+                        "return {{ {disc_field_camel}: '{val}', {content_camel}: {converter}({content_access}) }};"
+                    )
                 } else {
                     format!(
                         "return {{ {disc_field_camel}: '{val}', {content_camel}: {content_access} }};"
                     )
                 }
+            } else {
+                format!(
+                    "return {{ {disc_field_camel}: '{val}', {content_camel}: {content_access} }};"
+                )
             }
-            TaggingStyle::External => {
-                let val_access = format!("json['{val}']");
-                if let IrTypeExpr::Named(ref_name) = &variant.content_type {
-                    if convertible.contains(ref_name) {
-                        let pascal = ref_name.to_pascal_case();
-                        let converter = format!("{}FromJSON", fn_base_name(&pascal));
-                        format!("return {{ '{val}': {converter}({val_access}) }};")
-                    } else {
-                        format!("return {{ '{val}': {val_access} }};")
-                    }
-                } else {
-                    format!("return {{ '{val}': {val_access} }};")
-                }
-            }
-        };
-        lines.push(format!("    case '{val}': {case_body}"));
+        }
+        TaggingStyle::External => unreachable!(),
     }
+}
 
-    lines.push("  }".to_string());
-    lines.push("}".to_string());
+fn build_external_tagged_from_json(
+    fn_name: &str,
+    name: &str,
+    wire_name: &str,
+    tu: &IrTaggedUnion,
+    convertible: &HashSet<String>,
+) -> Option<CodeBlock> {
+    let mut body_lines: Vec<String> = Vec::new();
+    for variant in &tu.variants {
+        let val = &variant.discriminator_value;
+        let ret_expr = external_variant_from_json_expr(val, &variant.content_type, convertible);
+        body_lines.push(format!("  if ('{val}' in json) return {ret_expr};"));
+    }
+    body_lines.push("  throw new Error('Unknown variant');".to_string());
+    let body: Vec<CodeBlock> = body_lines
+        .iter()
+        .map(|l| CodeBlock::of(l, ()))
+        .collect::<Result<_, _>>()
+        .ok()?;
 
-    CodeBlock::of(&lines.join("\n"), ()).expect("CodeBlock builds")
+    sigil_quote!(TypeScript {
+        $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
+        $C_each(body);
+        $L("}")
+    })
+    .ok()
+}
+
+fn external_variant_from_json_expr(
+    val: &str,
+    content_type: &IrTypeExpr,
+    convertible: &HashSet<String>,
+) -> String {
+    let val_access = format!("json['{val}']");
+    if let IrTypeExpr::Named(ref_name) = content_type
+        && convertible.contains(ref_name)
+    {
+        let pascal = ref_name.to_pascal_case();
+        let converter = format!("{}FromJSON", fn_base_name(&pascal));
+        return format!("{{ '{val}': {converter}({val_access}) }}");
+    }
+    format!("{{ '{val}': {val_access} }}")
 }
 
 /// Build toJSON for a tagged union: switch on the camelCase discriminator field.
@@ -1072,8 +1132,13 @@ fn build_tagged_union_to_json(
     wire_name: &str,
     tu: &IrTaggedUnion,
     convertible: &HashSet<String>,
-) -> CodeBlock {
+) -> Option<CodeBlock> {
     let fn_name = format!("{}ToJSON", fn_base_name(name));
+
+    if matches!(tu.tagging, TaggingStyle::External) {
+        return build_external_tagged_to_json(&fn_name, name, wire_name, tu, convertible);
+    }
+
     let disc_field = &tu.discriminator_field;
     let disc_field_camel = disc_field.to_lower_camel_case();
     let disc_access = if is_valid_ts_identifier(&disc_field_camel) {
@@ -1081,88 +1146,141 @@ fn build_tagged_union_to_json(
     } else {
         format!("value['{disc_field_camel}']")
     };
+    let disc_wire_key = if is_valid_ts_identifier(disc_field) {
+        disc_field.clone()
+    } else {
+        format!("'{disc_field}'")
+    };
 
-    let mut lines: Vec<String> = Vec::new();
-    lines.push(format!(
-        "export function {fn_name}(value: {name}): {wire_name} {{"
-    ));
-    lines.push(format!("  switch ({disc_access}) {{"));
-
+    let mut case_lines: Vec<String> = Vec::new();
     for variant in &tu.variants {
         let val = &variant.discriminator_value;
-        let disc_wire_key = if is_valid_ts_identifier(disc_field) {
-            disc_field.clone()
-        } else {
-            format!("'{disc_field}'")
-        };
-        let case_body = match &tu.tagging {
-            TaggingStyle::Internal => {
-                if let IrTypeExpr::Named(ref_name) = &variant.content_type {
-                    if convertible.contains(ref_name) {
-                        let pascal = ref_name.to_pascal_case();
-                        let converter = format!("{}ToJSON", fn_base_name(&pascal));
-                        format!(
-                            "return {{ {disc_wire_key}: '{val}', ...{converter}(value) }} as {wire_name};"
-                        )
-                    } else {
-                        format!("return {{ {disc_wire_key}: '{val}', ...value }} as {wire_name};")
-                    }
+        let case_body = internal_or_adjacent_to_json_case(
+            &tu.tagging,
+            val,
+            &disc_wire_key,
+            wire_name,
+            &variant.content_type,
+            convertible,
+        );
+        case_lines.push(format!("    case '{val}': {case_body}"));
+    }
+    let cases: Vec<CodeBlock> = case_lines
+        .iter()
+        .map(|l| CodeBlock::of(l, ()))
+        .collect::<Result<_, _>>()
+        .ok()?;
+
+    sigil_quote!(TypeScript {
+        $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
+        $L(format!("  switch ({disc_access}) {{"))
+        $C_each(cases);
+        $L("  }")
+        $L("}")
+    })
+    .ok()
+}
+
+fn internal_or_adjacent_to_json_case(
+    tagging: &TaggingStyle,
+    val: &str,
+    disc_wire_key: &str,
+    wire_name: &str,
+    content_type: &IrTypeExpr,
+    convertible: &HashSet<String>,
+) -> String {
+    match tagging {
+        TaggingStyle::Internal => {
+            if let IrTypeExpr::Named(ref_name) = content_type {
+                if convertible.contains(ref_name) {
+                    let pascal = ref_name.to_pascal_case();
+                    let converter = format!("{}ToJSON", fn_base_name(&pascal));
+                    format!(
+                        "return {{ {disc_wire_key}: '{val}', ...{converter}(value) }} as {wire_name};"
+                    )
                 } else {
                     format!("return {{ {disc_wire_key}: '{val}', ...value }} as {wire_name};")
                 }
+            } else {
+                format!("return {{ {disc_wire_key}: '{val}', ...value }} as {wire_name};")
             }
-            TaggingStyle::Adjacent { content_field } => {
-                let content_camel = content_field.to_lower_camel_case();
-                let content_wire_key = if is_valid_ts_identifier(content_field) {
-                    content_field.clone()
-                } else {
-                    format!("'{content_field}'")
-                };
-                let content_access = if is_valid_ts_identifier(&content_camel) {
-                    format!("value.{content_camel}")
-                } else {
-                    format!("value['{content_camel}']")
-                };
-                if let IrTypeExpr::Named(ref_name) = &variant.content_type {
-                    if convertible.contains(ref_name) {
-                        let pascal = ref_name.to_pascal_case();
-                        let converter = format!("{}ToJSON", fn_base_name(&pascal));
-                        format!(
-                            "return {{ {disc_wire_key}: '{val}', {content_wire_key}: {converter}({content_access}) }};"
-                        )
-                    } else {
-                        format!(
-                            "return {{ {disc_wire_key}: '{val}', {content_wire_key}: {content_access} }};"
-                        )
-                    }
+        }
+        TaggingStyle::Adjacent { content_field } => {
+            let content_camel = content_field.to_lower_camel_case();
+            let content_wire_key = if is_valid_ts_identifier(content_field) {
+                content_field.clone()
+            } else {
+                format!("'{content_field}'")
+            };
+            let content_access = if is_valid_ts_identifier(&content_camel) {
+                format!("value.{content_camel}")
+            } else {
+                format!("value['{content_camel}']")
+            };
+            if let IrTypeExpr::Named(ref_name) = content_type {
+                if convertible.contains(ref_name) {
+                    let pascal = ref_name.to_pascal_case();
+                    let converter = format!("{}ToJSON", fn_base_name(&pascal));
+                    format!(
+                        "return {{ {disc_wire_key}: '{val}', {content_wire_key}: {converter}({content_access}) }};"
+                    )
                 } else {
                     format!(
                         "return {{ {disc_wire_key}: '{val}', {content_wire_key}: {content_access} }};"
                     )
                 }
+            } else {
+                format!(
+                    "return {{ {disc_wire_key}: '{val}', {content_wire_key}: {content_access} }};"
+                )
             }
-            TaggingStyle::External => {
-                let val_access = format!("value['{val}']");
-                if let IrTypeExpr::Named(ref_name) = &variant.content_type {
-                    if convertible.contains(ref_name) {
-                        let pascal = ref_name.to_pascal_case();
-                        let converter = format!("{}ToJSON", fn_base_name(&pascal));
-                        format!("return {{ '{val}': {converter}({val_access}) }};")
-                    } else {
-                        format!("return {{ '{val}': {val_access} }};")
-                    }
-                } else {
-                    format!("return {{ '{val}': {val_access} }};")
-                }
-            }
-        };
-        lines.push(format!("    case '{val}': {case_body}"));
+        }
+        TaggingStyle::External => unreachable!(),
     }
+}
 
-    lines.push("  }".to_string());
-    lines.push("}".to_string());
+fn build_external_tagged_to_json(
+    fn_name: &str,
+    name: &str,
+    wire_name: &str,
+    tu: &IrTaggedUnion,
+    convertible: &HashSet<String>,
+) -> Option<CodeBlock> {
+    let mut body_lines: Vec<String> = Vec::new();
+    for variant in &tu.variants {
+        let val = &variant.discriminator_value;
+        let ret_expr = external_variant_to_json_expr(val, &variant.content_type, convertible);
+        body_lines.push(format!("  if ('{val}' in value) return {ret_expr};"));
+    }
+    body_lines.push("  throw new Error('Unknown variant');".to_string());
+    let body: Vec<CodeBlock> = body_lines
+        .iter()
+        .map(|l| CodeBlock::of(l, ()))
+        .collect::<Result<_, _>>()
+        .ok()?;
 
-    CodeBlock::of(&lines.join("\n"), ()).expect("CodeBlock builds")
+    sigil_quote!(TypeScript {
+        $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
+        $C_each(body);
+        $L("}")
+    })
+    .ok()
+}
+
+fn external_variant_to_json_expr(
+    val: &str,
+    content_type: &IrTypeExpr,
+    convertible: &HashSet<String>,
+) -> String {
+    let val_access = format!("value['{val}']");
+    if let IrTypeExpr::Named(ref_name) = content_type
+        && convertible.contains(ref_name)
+    {
+        let pascal = ref_name.to_pascal_case();
+        let converter = format!("{}ToJSON", fn_base_name(&pascal));
+        return format!("{{ '{val}': {converter}({val_access}) }}");
+    }
+    format!("{{ '{val}': {val_access} }}")
 }
 
 // ---------------------------------------------------------------------------
@@ -1192,7 +1310,11 @@ fn emit_union_file_camel_case(
         wire_members.push("null".to_string());
     }
     let wire_body = wire_members.join(" | ");
-    fb = fb.add_raw(&format!("export type {name}$Wire = {wire_body};\n"));
+    let wire_type = sigil_quote!(TypeScript {
+        $L(format!("export type {name}$Wire = {wire_body};"))
+    })
+    .ok()?;
+    fb = fb.add_code(wire_type);
 
     // Ergonomic type alias
     let mut ergo_members: Vec<String> = union.members.iter().map(type_expr_str).collect();
@@ -1200,18 +1322,30 @@ fn emit_union_file_camel_case(
         ergo_members.push("null".to_string());
     }
     let ergo_body = ergo_members.join(" | ");
-    fb = fb.add_raw(&format!("export type {name} = {ergo_body};\n"));
+    let ergo_type = sigil_quote!(TypeScript {
+        $L(format!("export type {name} = {ergo_body};"))
+    })
+    .ok()?;
+    fb = fb.add_code(ergo_type);
 
     // fromJSON: cast-through
     let base = fn_base_name(name);
-    fb = fb.add_raw(&format!(
-        "export function {base}FromJSON(json: {name}$Wire): {name} {{\n  return json as unknown as {name};\n}}\n"
-    ));
+    let from_json = sigil_quote!(TypeScript {
+        $L(format!("export function {base}FromJSON(json: {name}$Wire): {name} {{"))
+        $L(format!("  return json as unknown as {name};"))
+        $L("}")
+    })
+    .ok()?;
+    fb = fb.add_code(from_json);
 
     // toJSON: cast-through
-    fb = fb.add_raw(&format!(
-        "export function {base}ToJSON(value: {name}): {name}$Wire {{\n  return value as unknown as {name}$Wire;\n}}\n"
-    ));
+    let to_json = sigil_quote!(TypeScript {
+        $L(format!("export function {base}ToJSON(value: {name}): {name}$Wire {{"))
+        $L(format!("  return value as unknown as {name}$Wire;"))
+        $L("}")
+    })
+    .ok()?;
+    fb = fb.add_code(to_json);
 
     // Add imports for Named members (wire + ergonomic types only if convertible)
     for member in &union.members {
@@ -1257,12 +1391,20 @@ fn emit_intersection_file_camel_case(
         .map(|m| type_expr_str_wire(m, convertible))
         .collect();
     let wire_body = wire_members.join(" & ");
-    fb = fb.add_raw(&format!("export type {name}$Wire = {wire_body};\n"));
+    let wire_type = sigil_quote!(TypeScript {
+        $L(format!("export type {name}$Wire = {wire_body};"))
+    })
+    .ok()?;
+    fb = fb.add_code(wire_type);
 
     // Ergonomic type alias: A & B & ...
     let ergo_members: Vec<String> = intersection.members.iter().map(type_expr_str).collect();
     let ergo_body = ergo_members.join(" & ");
-    fb = fb.add_raw(&format!("export type {name} = {ergo_body};\n"));
+    let ergo_type = sigil_quote!(TypeScript {
+        $L(format!("export type {name} = {ergo_body};"))
+    })
+    .ok()?;
+    fb = fb.add_code(ergo_type);
 
     // fromJSON: spread each convertible Named member's converter
     let base = fn_base_name(name);
@@ -1286,10 +1428,13 @@ fn emit_intersection_file_camel_case(
         })
         .collect();
 
-    fb = fb.add_raw(&format!(
-        "export function {base}FromJSON(json: {name}$Wire): {name} {{\n  return {{ {} }} as {name};\n}}\n",
-        from_spreads.join(", ")
-    ));
+    let from_json = sigil_quote!(TypeScript {
+        $L(format!("export function {base}FromJSON(json: {name}$Wire): {name} {{"))
+        $L(format!("  return {{ {} }} as {name};", from_spreads.join(", ")))
+        $L("}")
+    })
+    .ok()?;
+    fb = fb.add_code(from_json);
 
     // toJSON: spread each convertible Named member's converter
     let to_spreads: Vec<String> = intersection
@@ -1310,10 +1455,13 @@ fn emit_intersection_file_camel_case(
         })
         .collect();
 
-    fb = fb.add_raw(&format!(
-        "export function {base}ToJSON(value: {name}): {name}$Wire {{\n  return {{ {} }} as {name}$Wire;\n}}\n",
-        to_spreads.join(", ")
-    ));
+    let to_json = sigil_quote!(TypeScript {
+        $L(format!("export function {base}ToJSON(value: {name}): {name}$Wire {{"))
+        $L(format!("  return {{ {} }} as {name}$Wire;", to_spreads.join(", ")))
+        $L("}")
+    })
+    .ok()?;
+    fb = fb.add_code(to_json);
 
     // Add imports for Named members
     for member in &intersection.members {
@@ -1536,7 +1684,7 @@ fn json_value_to_ts_literal(v: &serde_json::Value) -> Option<String> {
     }
 }
 
-fn build_field(prop: &IrProperty) -> FieldSpec {
+fn build_field(prop: &IrProperty) -> Option<FieldSpec> {
     let field_name = if is_valid_ts_identifier(&prop.name) {
         prop.name.clone()
     } else {
@@ -1556,7 +1704,7 @@ fn build_field(prop: &IrProperty) -> FieldSpec {
     if let Some(desc) = &prop.description {
         fb = fb.doc(desc);
     }
-    fb.build().expect("FieldSpec builds")
+    fb.build().ok()
 }
 
 fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName {

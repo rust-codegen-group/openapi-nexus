@@ -1,0 +1,46 @@
+openapi: "3.1.0"
+info:
+  title: Externally Tagged Union Test
+  version: "1.0.0"
+  description: Test case for externally-tagged discriminated unions with camelCase property naming
+components:
+  schemas:
+    VariantA:
+      type: object
+      description: Variant A with snake_case fields
+      properties:
+        field_one:
+          type: string
+        field_two:
+          type: integer
+      required:
+        - field_one
+        - field_two
+    VariantB:
+      type: object
+      description: Variant B with snake_case fields
+      properties:
+        other_field:
+          type: string
+        is_active:
+          type: boolean
+      required:
+        - other_field
+        - is_active
+    ExternallyTaggedEnum:
+      oneOf:
+      - type: object
+        description: Variant A wrapper
+        required:
+        - EXTERNALLY_TAGGED_VARIANT_A
+        properties:
+          EXTERNALLY_TAGGED_VARIANT_A:
+            $ref: '#/components/schemas/VariantA'
+      - type: object
+        description: Variant B wrapper
+        required:
+        - EXTERNALLY_TAGGED_VARIANT_B
+        properties:
+          EXTERNALLY_TAGGED_VARIANT_B:
+            $ref: '#/components/schemas/VariantB'
+      description: Externally tagged enum where the key determines the variant
