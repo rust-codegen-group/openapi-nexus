@@ -18,7 +18,7 @@ use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
-use heck::{ToLowerCamelCase, ToPascalCase};
+use heck::ToPascalCase;
 use sigil_stitch::code_block::{Arg, CodeBlock};
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
@@ -515,7 +515,11 @@ fn json_value_to_ts_literal(v: &serde_json::Value) -> Option<String> {
 }
 
 fn build_field(prop: &IrProperty) -> FieldSpec {
-    let ts_field_name = prop.name.to_lower_camel_case();
+    let field_name = if is_valid_ts_identifier(&prop.name) {
+        prop.name.clone()
+    } else {
+        format!("'{}'", prop.name)
+    };
     let inner_ty = type_expr_to_typename(&prop.type_expr);
     let field_ty = if prop.nullable && prop.required {
         TypeName::optional(inner_ty)
@@ -523,7 +527,7 @@ fn build_field(prop: &IrProperty) -> FieldSpec {
         inner_ty
     };
 
-    let mut fb = FieldSpec::builder(&ts_field_name, field_ty).is_readonly();
+    let mut fb = FieldSpec::builder(&field_name, field_ty).is_readonly();
     if !prop.required {
         fb = fb.is_optional();
     }

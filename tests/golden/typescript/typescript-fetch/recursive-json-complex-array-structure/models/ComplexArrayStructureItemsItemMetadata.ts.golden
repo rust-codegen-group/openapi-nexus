@@ -5,6 +5,6 @@
  * Test case for array of inline objects where each object has nested inline objects
  */
 export interface ComplexArrayStructureItemsItemMetadata {
-  readonly createdAt?: string;
+  readonly created_at?: string;
   readonly tags?: readonly string[];
 }

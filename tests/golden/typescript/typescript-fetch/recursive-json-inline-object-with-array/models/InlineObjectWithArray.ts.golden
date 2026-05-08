@@ -10,5 +10,5 @@ import type { InlineObjectWithArrayContainerData } from './InlineObjectWithArray
  * Inline object containing array of inline objects
  */
 export interface InlineObjectWithArray {
-  readonly containerData: InlineObjectWithArrayContainerData;
+  readonly container_data: InlineObjectWithArrayContainerData;
 }

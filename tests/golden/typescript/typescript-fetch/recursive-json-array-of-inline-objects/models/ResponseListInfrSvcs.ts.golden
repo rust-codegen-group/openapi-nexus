@@ -10,5 +10,5 @@ import type { ResponseListInfrSvcsInferenceServicesItem } from './ResponseListIn
  * Response containing a list of inference services - main test case for recursive JSON parsing
  */
 export interface ResponseListInfrSvcs {
-  readonly inferenceServices: readonly ResponseListInfrSvcsInferenceServicesItem[];
+  readonly inference_services: readonly ResponseListInfrSvcsInferenceServicesItem[];
 }

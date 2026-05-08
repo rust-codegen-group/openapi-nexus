@@ -8,5 +8,5 @@
  * Response after creating a test resource
  */
 export interface CreateTestResourceResponse {
-  readonly resourceId: string;
+  readonly resource_id: string;
 }

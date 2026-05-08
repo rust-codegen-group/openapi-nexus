@@ -12,9 +12,9 @@ import type { User } from './User';
  * Object with mixed property types
  */
 export interface MixedPropertyTypes {
-  readonly arrayOfInline: readonly MixedPropertyTypesArrayOfInlineItem[];
-  readonly inlineObject?: MixedPropertyTypesInlineObject;
-  readonly nestedReference?: User;
-  readonly simpleNumber?: number;
-  readonly simpleString: string;
+  readonly array_of_inline: readonly MixedPropertyTypesArrayOfInlineItem[];
+  readonly inline_object?: MixedPropertyTypesInlineObject;
+  readonly nested_reference?: User;
+  readonly simple_number?: number;
+  readonly simple_string: string;
 }

@@ -7,5 +7,5 @@
 import type { FooType } from './FooType';
 
 export interface FooSpecs {
-  readonly fooType: FooType;
+  readonly foo_type: FooType;
 }

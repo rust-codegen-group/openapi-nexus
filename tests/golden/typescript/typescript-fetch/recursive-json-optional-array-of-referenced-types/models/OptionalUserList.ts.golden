@@ -10,5 +10,5 @@ import type { User } from './User';
  * Object with optional array of User references
  */
 export interface OptionalUserList {
-  readonly optionalUsers?: readonly User[];
+  readonly optional_users?: readonly User[];
 }

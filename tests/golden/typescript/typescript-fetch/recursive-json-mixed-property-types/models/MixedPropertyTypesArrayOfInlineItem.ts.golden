@@ -5,5 +5,5 @@
  * Test case for object with mix of simple types, arrays, references, and inline objects
  */
 export interface MixedPropertyTypesArrayOfInlineItem {
-  readonly inlineField?: string;
+  readonly inline_field?: string;
 }

@@ -8,7 +8,7 @@
  * User model with snake_case properties
  */
 export interface User {
-  readonly emailAddress?: string;
-  readonly userId: string;
-  readonly userName: string;
+  readonly email_address?: string;
+  readonly user_id: string;
+  readonly user_name: string;
 }

@@ -10,5 +10,5 @@ import type { EmptyArrayTestEmptyItemsItem } from './EmptyArrayTestEmptyItemsIte
  * Object with array that can be empty
  */
 export interface EmptyArrayTest {
-  readonly emptyItems: readonly EmptyArrayTestEmptyItemsItem[];
+  readonly empty_items: readonly EmptyArrayTestEmptyItemsItem[];
 }

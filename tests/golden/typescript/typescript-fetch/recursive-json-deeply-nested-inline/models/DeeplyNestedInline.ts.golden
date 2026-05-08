@@ -10,5 +10,5 @@ import type { DeeplyNestedInlineLevelOne } from './DeeplyNestedInlineLevelOne';
  * Three levels of nested inline objects
  */
 export interface DeeplyNestedInline {
-  readonly levelOne: DeeplyNestedInlineLevelOne;
+  readonly level_one: DeeplyNestedInlineLevelOne;
 }

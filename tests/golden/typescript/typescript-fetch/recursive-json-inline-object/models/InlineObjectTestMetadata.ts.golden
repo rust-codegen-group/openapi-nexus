@@ -5,7 +5,7 @@
  * Test case for inline objects (not arrays) with snake_case to camelCase conversion
  */
 export interface InlineObjectTestMetadata {
-  readonly createdAt: string;
-  readonly updatedAt?: string;
-  readonly versionNumber?: number;
+  readonly created_at: string;
+  readonly updated_at?: string;
+  readonly version_number?: number;
 }

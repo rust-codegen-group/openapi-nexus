@@ -5,5 +5,5 @@
  * Test case for empty array handling
  */
 export interface EmptyArrayTestEmptyItemsItem {
-  readonly itemId?: string;
+  readonly item_id?: string;
 }

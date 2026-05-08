@@ -8,6 +8,6 @@
  * Arrays with primitive items should remain unchanged
  */
 export interface PrimitiveArray {
-  readonly numberItems: readonly number[];
-  readonly stringItems: readonly string[];
+  readonly number_items: readonly number[];
+  readonly string_items: readonly string[];
 }

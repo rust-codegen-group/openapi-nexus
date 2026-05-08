@@ -7,6 +7,6 @@
 import type { DeeplyNestedInlineLevelOneLevelTwoLevelThree } from './DeeplyNestedInlineLevelOneLevelTwoLevelThree';
 
 export interface DeeplyNestedInlineLevelOneLevelTwo {
-  readonly levelThree?: DeeplyNestedInlineLevelOneLevelTwoLevelThree;
-  readonly levelTwoField?: number;
+  readonly level_three?: DeeplyNestedInlineLevelOneLevelTwoLevelThree;
+  readonly level_two_field?: number;
 }

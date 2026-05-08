@@ -5,5 +5,5 @@
  * Test case for object with all optional properties including arrays, references, and inline objects
  */
 export interface AllOptionalPropertiesOptionalInline {
-  readonly optionalInlineField?: string;
+  readonly optional_inline_field?: string;
 }

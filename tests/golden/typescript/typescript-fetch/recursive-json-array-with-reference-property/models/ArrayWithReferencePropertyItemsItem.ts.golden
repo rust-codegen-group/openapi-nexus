@@ -7,6 +7,6 @@
 import type { User } from './User';
 
 export interface ArrayWithReferencePropertyItemsItem {
-  readonly itemId: string;
+  readonly item_id: string;
   readonly owner?: User;
 }

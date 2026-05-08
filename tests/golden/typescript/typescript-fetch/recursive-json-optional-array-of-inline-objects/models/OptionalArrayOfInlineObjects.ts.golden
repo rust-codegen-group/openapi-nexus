@@ -10,5 +10,5 @@ import type { OptionalArrayOfInlineObjectsOptionalItemsItem } from './OptionalAr
  * Object with optional array of inline objects
  */
 export interface OptionalArrayOfInlineObjects {
-  readonly optionalItems?: readonly OptionalArrayOfInlineObjectsOptionalItemsItem[];
+  readonly optional_items?: readonly OptionalArrayOfInlineObjectsOptionalItemsItem[];
 }

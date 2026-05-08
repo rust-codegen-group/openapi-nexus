@@ -5,7 +5,7 @@
  * Test case for optional array of inline objects with snake_case to camelCase conversion
  */
 export interface OptionalArrayOfInlineObjectsOptionalItemsItem {
-  readonly itemCount?: number;
-  readonly itemId?: string;
-  readonly itemName?: string;
+  readonly item_count?: number;
+  readonly item_id?: string;
+  readonly item_name?: string;
 }

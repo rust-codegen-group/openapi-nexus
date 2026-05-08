@@ -5,9 +5,9 @@
  * Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)
  */
 export interface ResponseListInfrSvcsInferenceServicesItem {
-  readonly createdAt: string;
-  readonly numReadyReplicas: number;
-  readonly numTotalReplicas: number;
+  readonly created_at: string;
+  readonly num_ready_replicas: number;
+  readonly num_total_replicas: number;
   readonly status: 'decommissioned' | 'degraded' | 'running';
   readonly uid: string;
 }

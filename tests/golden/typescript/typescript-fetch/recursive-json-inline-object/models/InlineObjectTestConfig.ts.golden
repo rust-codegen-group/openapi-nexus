@@ -5,6 +5,6 @@
  * Test case for inline objects (not arrays) with snake_case to camelCase conversion
  */
 export interface InlineObjectTestConfig {
-  readonly maxRetryCount?: number;
-  readonly timeoutSeconds?: number;
+  readonly max_retry_count?: number;
+  readonly timeout_seconds?: number;
 }

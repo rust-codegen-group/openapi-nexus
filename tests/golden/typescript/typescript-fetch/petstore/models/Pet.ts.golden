@@ -24,7 +24,7 @@ export interface Pet {
   /**
    * Photo URLs
    */
-  readonly photoUrls: readonly string[];
+  readonly photo_urls: readonly string[];
   readonly status?: PetStatus;
   /**
    * Pet tags
