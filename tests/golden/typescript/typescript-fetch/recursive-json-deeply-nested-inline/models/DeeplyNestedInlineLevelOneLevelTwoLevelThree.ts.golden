@@ -5,5 +5,5 @@
  * Test case for three levels of nested inline objects
  */
 export interface DeeplyNestedInlineLevelOneLevelTwoLevelThree {
-  readonly levelThreeField?: boolean;
+  readonly level_three_field?: boolean;
 }

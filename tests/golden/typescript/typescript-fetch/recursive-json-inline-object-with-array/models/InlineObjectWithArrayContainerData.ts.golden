@@ -7,6 +7,6 @@
 import type { InlineObjectWithArrayContainerDataItemsItem } from './InlineObjectWithArrayContainerDataItemsItem';
 
 export interface InlineObjectWithArrayContainerData {
-  readonly containerId: string;
+  readonly container_id: string;
   readonly items?: readonly InlineObjectWithArrayContainerDataItemsItem[];
 }

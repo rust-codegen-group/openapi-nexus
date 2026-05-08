@@ -5,8 +5,8 @@
  * Test fixture to verify language property naming conventions
  */
 export interface NamingConventionTestNestedObject {
-  readonly nestedPascalCase?: string;
-  readonly nestedKebabCase?: string;
+  readonly NestedPascalCase?: string;
+  readonly 'nested-kebab-case'?: string;
   readonly nestedCamelCase?: string;
-  readonly nestedSnakeCase: string;
+  readonly nested_snake_case: string;
 }

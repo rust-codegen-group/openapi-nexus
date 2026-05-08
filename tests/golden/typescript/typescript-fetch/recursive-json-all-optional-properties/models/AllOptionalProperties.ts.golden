@@ -12,8 +12,8 @@ import type { User } from './User';
  * Object with all optional properties
  */
 export interface AllOptionalProperties {
-  readonly optionalArray?: readonly AllOptionalPropertiesOptionalArrayItem[];
-  readonly optionalInline?: AllOptionalPropertiesOptionalInline;
-  readonly optionalReference?: User;
-  readonly optionalString?: string;
+  readonly optional_array?: readonly AllOptionalPropertiesOptionalArrayItem[];
+  readonly optional_inline?: AllOptionalPropertiesOptionalInline;
+  readonly optional_reference?: User;
+  readonly optional_string?: string;
 }

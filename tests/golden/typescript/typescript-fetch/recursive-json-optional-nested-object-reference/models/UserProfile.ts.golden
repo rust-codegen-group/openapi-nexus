@@ -8,7 +8,7 @@
  * User profile model with snake_case properties
  */
 export interface UserProfile {
-  readonly bioText?: string;
-  readonly displayName?: string;
-  readonly profileId: string;
+  readonly bio_text?: string;
+  readonly display_name?: string;
+  readonly profile_id: string;
 }

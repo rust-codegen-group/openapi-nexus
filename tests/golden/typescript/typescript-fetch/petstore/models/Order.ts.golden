@@ -21,7 +21,7 @@ export interface Order {
   /**
    * Pet ID
    */
-  readonly petId?: number;
+  readonly pet_id?: number;
   /**
    * Quantity
    */
@@ -29,6 +29,6 @@ export interface Order {
   /**
    * Ship date
    */
-  readonly shipDate?: string;
+  readonly ship_date?: string;
   readonly status?: OrderStatus;
 }

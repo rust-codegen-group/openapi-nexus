@@ -91,7 +91,7 @@ fn mixed_object_and_enum_dispatch_in_one_spec() {
         "expected interface, got:\n{foo_specs}"
     );
     assert!(
-        foo_specs.contains("readonly fooType: FooType"),
+        foo_specs.contains("readonly foo_type: FooType"),
         "expected field referencing FooType, got:\n{foo_specs}"
     );
     assert!(

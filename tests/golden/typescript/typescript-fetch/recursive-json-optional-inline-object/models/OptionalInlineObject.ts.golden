@@ -10,5 +10,5 @@ import type { OptionalInlineObjectOptionalConfig } from './OptionalInlineObjectO
  * Object with optional inline object property
  */
 export interface OptionalInlineObject {
-  readonly optionalConfig?: OptionalInlineObjectOptionalConfig;
+  readonly optional_config?: OptionalInlineObjectOptionalConfig;
 }

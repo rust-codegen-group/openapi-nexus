@@ -10,5 +10,5 @@ import type { VariantB } from './VariantB';
  * Tuple variant with VariantB payload
  */
 export interface MixedEnumMember4 {
-  readonly variantB: VariantB;
+  readonly VariantB: VariantB;
 }

@@ -5,6 +5,6 @@
  * Test case for array of inline objects where each object has nested inline objects
  */
 export interface ComplexArrayStructureItemsItemNestedData {
-  readonly nestedFieldOne?: string;
-  readonly nestedFieldTwo?: number;
+  readonly nested_field_one?: string;
+  readonly nested_field_two?: number;
 }

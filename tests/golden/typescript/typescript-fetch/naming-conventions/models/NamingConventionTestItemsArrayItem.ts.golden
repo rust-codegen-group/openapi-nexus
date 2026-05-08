@@ -5,8 +5,8 @@
  * Test fixture to verify language property naming conventions
  */
 export interface NamingConventionTestItemsArrayItem {
-  readonly itemPascalCase?: string;
-  readonly itemKebabCase?: string;
+  readonly ItemPascalCase?: string;
+  readonly 'item-kebab-case'?: string;
   readonly itemCamelCase?: string;
-  readonly itemSnakeCase?: string;
+  readonly item_snake_case?: string;
 }

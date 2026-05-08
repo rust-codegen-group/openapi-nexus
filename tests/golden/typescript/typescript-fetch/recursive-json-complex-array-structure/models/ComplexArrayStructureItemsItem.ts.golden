@@ -8,7 +8,7 @@ import type { ComplexArrayStructureItemsItemMetadata } from './ComplexArrayStruc
 import type { ComplexArrayStructureItemsItemNestedData } from './ComplexArrayStructureItemsItemNestedData';
 
 export interface ComplexArrayStructureItemsItem {
-  readonly itemId: string;
+  readonly item_id: string;
   readonly metadata?: ComplexArrayStructureItemsItemMetadata;
-  readonly nestedData?: ComplexArrayStructureItemsItemNestedData;
+  readonly nested_data?: ComplexArrayStructureItemsItemNestedData;
 }

@@ -5,5 +5,5 @@
  * Test fixture to verify language property naming conventions
  */
 export interface NamingConventionTestPascalCaseObject {
-  readonly nestedProperty?: string;
+  readonly nested_property?: string;
 }

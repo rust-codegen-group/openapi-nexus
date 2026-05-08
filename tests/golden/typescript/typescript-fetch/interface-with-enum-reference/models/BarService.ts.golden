@@ -10,6 +10,6 @@ export interface BarService {
   /**
    * DIY name ASAP
    */
-  readonly diYnameAsap?: string;
+  readonly DIYnameASAP?: string;
   readonly status: BarStatus;
 }

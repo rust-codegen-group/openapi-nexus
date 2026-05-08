@@ -11,5 +11,5 @@ import type { UserProfile } from './UserProfile';
  */
 export interface UserWithProfile {
   readonly profile: UserProfile;
-  readonly userId: string;
+  readonly user_id: string;
 }

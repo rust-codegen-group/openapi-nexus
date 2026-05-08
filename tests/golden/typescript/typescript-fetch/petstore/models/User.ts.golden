@@ -15,7 +15,7 @@ export interface User {
   /**
    * First name
    */
-  readonly firstName?: string;
+  readonly first_name?: string;
   /**
    * User ID
    */
@@ -23,7 +23,7 @@ export interface User {
   /**
    * Last name
    */
-  readonly lastName?: string;
+  readonly last_name?: string;
   /**
    * Password
    */
@@ -35,7 +35,7 @@ export interface User {
   /**
    * User status
    */
-  readonly userStatus?: number;
+  readonly user_status?: number;
   /**
    * Username
    */

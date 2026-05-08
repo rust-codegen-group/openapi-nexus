@@ -5,6 +5,6 @@
  * Test case for inline object containing an array of inline objects
  */
 export interface InlineObjectWithArrayContainerDataItemsItem {
-  readonly itemName?: string;
-  readonly itemValue?: number;
+  readonly item_name?: string;
+  readonly item_value?: number;
 }
