@@ -18,29 +18,38 @@ use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
-use heck::ToPascalCase;
+use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::code_block::{Arg, CodeBlock};
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
+use sigil_stitch::spec::import_spec::ImportSpec;
 use sigil_stitch::spec::modifiers::{TypeKind, Visibility};
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
+use std::collections::HashSet;
 
 /// Flags controlling optional TS emissions (const objects, type guards).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct EmitFlags {
     pub emit_enum_constants: bool,
     pub emit_type_guards: bool,
+    pub property_naming_camel_case: bool,
 }
 
 /// Return the value-export names a schema contributes to the barrel.
 ///
+/// - Objects with `property_naming_camel_case`: `nameFromJSON` + `nameToJSON`.
 /// - Enums with `emit_enum_constants`: the type name itself (the const object).
 /// - Tagged unions with `emit_type_guards`: one `is{Variant}` per contentful variant.
 /// - Everything else: empty.
 pub fn value_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec<String> {
     match &schema.kind {
+        IrSchemaKind::Object(_) if flags.property_naming_camel_case => {
+            let pascal = schema.name.to_pascal_case();
+            let base = format!("{}{}", pascal[..1].to_lowercase(), &pascal[1..]);
+            vec![format!("{base}FromJSON"), format!("{base}ToJSON")]
+        }
         IrSchemaKind::Enum(_) if flags.emit_enum_constants => {
             vec![schema.name.to_pascal_case()]
         }
@@ -60,10 +69,22 @@ pub fn value_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec<Stri
     }
 }
 
+/// Return extra type-export names for the barrel (beyond the primary type name).
+///
+/// Objects in camelCase mode also export `Name$Wire`.
+pub fn extra_type_exports_for_schema(schema: &IrSchema, flags: EmitFlags) -> Vec<String> {
+    match &schema.kind {
+        IrSchemaKind::Object(_) if flags.property_naming_camel_case => {
+            vec![format!("{}$Wire", schema.name.to_pascal_case())]
+        }
+        _ => vec![],
+    }
+}
+
 /// Emit a TypeScript model file for an IR schema. Dispatches on `schema.kind`.
 pub fn emit_model_file(schema: &IrSchema, flags: EmitFlags) -> Option<FileSpec> {
     match &schema.kind {
-        IrSchemaKind::Object(obj) => Some(emit_object_file(schema, obj)),
+        IrSchemaKind::Object(obj) => Some(emit_object_file(schema, obj, flags)),
         IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en, flags),
         IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr),
         IrSchemaKind::Union(u) => emit_union_file(schema, u),
@@ -80,11 +101,13 @@ pub fn emit_enum_file(schema: &IrSchema) -> Option<FileSpec> {
     emit_enum_file_from(schema, en, EmitFlags::default())
 }
 
-fn emit_object_file(schema: &IrSchema, obj: &IrObject) -> FileSpec {
+fn emit_object_file(schema: &IrSchema, obj: &IrObject, flags: EmitFlags) -> FileSpec {
     let name = schema.name.to_pascal_case();
-    // `Visibility::Public` on the TypeSpec emits `export`; on an interface
-    // FieldSpec it leaks a stray `public` keyword, so field visibility stays
-    // unset.
+
+    if flags.property_naming_camel_case {
+        return emit_object_file_camel_case(schema, obj, &name);
+    }
+
     let mut tb = TypeSpec::builder(&name, TypeKind::Interface).visibility(Visibility::Public);
     if let Some(doc) = &schema.description {
         tb = tb.doc(doc);
@@ -99,6 +122,329 @@ fn emit_object_file(schema: &IrSchema, obj: &IrObject) -> FileSpec {
         .add_type(tb.build().expect("TypeSpec builds"))
         .build()
         .expect("FileSpec builds")
+}
+
+/// Emit an object file with dual types: `Name$Wire` (wire format) + `Name`
+/// (camelCase ergonomic) plus `nameFromJSON` / `nameToJSON` converters.
+fn emit_object_file_camel_case(schema: &IrSchema, obj: &IrObject, name: &str) -> FileSpec {
+    let wire_name = format!("{}$Wire", name);
+    let filename = format!("{}.ts", name);
+
+    // --- $Wire interface (original wire-format property names) ---
+    let mut wire_tb =
+        TypeSpec::builder(&wire_name, TypeKind::Interface).visibility(Visibility::Public);
+    if let Some(doc) = &schema.description {
+        wire_tb = wire_tb.doc(doc);
+    }
+    for (_json_name, prop) in &obj.properties {
+        wire_tb = wire_tb.add_field(build_field_wire(prop));
+    }
+
+    // --- Ergonomic interface (camelCase property names) ---
+    let mut ergo_tb = TypeSpec::builder(name, TypeKind::Interface).visibility(Visibility::Public);
+    if let Some(doc) = &schema.description {
+        ergo_tb = ergo_tb.doc(doc);
+    }
+    for (_json_name, prop) in &obj.properties {
+        ergo_tb = ergo_tb.add_field(build_field_camel(prop));
+    }
+
+    // Collect Named refs that need converter imports
+    let named_refs = collect_named_refs(obj);
+
+    // --- fromJSON / toJSON functions ---
+    let from_json = build_from_json_fn(name, &wire_name, obj);
+    let to_json = build_to_json_fn(name, &wire_name, obj);
+
+    let mut fb = FileSpec::builder(&filename);
+    fb = fb.add_type(wire_tb.build().expect("TypeSpec builds"));
+    fb = fb.add_type(ergo_tb.build().expect("TypeSpec builds"));
+
+    // Add explicit imports for referenced converter functions
+    for ref_name in &named_refs {
+        let pascal = ref_name.to_pascal_case();
+        let module = format!("./{pascal}");
+        let from_fn = format!(
+            "{}FromJSON",
+            pascal[..1].to_lowercase() + &pascal[1..]
+        );
+        let to_fn = format!(
+            "{}ToJSON",
+            pascal[..1].to_lowercase() + &pascal[1..]
+        );
+        fb = fb.add_import(ImportSpec::named(&module, &from_fn));
+        fb = fb.add_import(ImportSpec::named(&module, &to_fn));
+    }
+
+    fb = fb.add_code(from_json);
+    fb = fb.add_code(to_json);
+    fb.build().expect("FileSpec builds")
+}
+
+/// Build a field for the $Wire interface (preserves original property name).
+fn build_field_wire(prop: &IrProperty) -> FieldSpec {
+    let field_name = if is_valid_ts_identifier(&prop.name) {
+        prop.name.clone()
+    } else {
+        format!("'{}'", prop.name)
+    };
+    let inner_ty = type_expr_to_typename_wire(&prop.type_expr);
+    let field_ty = if prop.nullable && prop.required {
+        TypeName::optional(inner_ty)
+    } else {
+        inner_ty
+    };
+
+    let mut fb = FieldSpec::builder(&field_name, field_ty).is_readonly();
+    if !prop.required {
+        fb = fb.is_optional();
+    }
+    if let Some(desc) = &prop.description {
+        fb = fb.doc(desc);
+    }
+    fb.build().expect("FieldSpec builds")
+}
+
+/// Build a field for the ergonomic interface (camelCase property name).
+fn build_field_camel(prop: &IrProperty) -> FieldSpec {
+    let camel = prop.name.to_lower_camel_case();
+    let field_name = if is_valid_ts_identifier(&camel) {
+        camel
+    } else {
+        format!("'{}'", camel)
+    };
+    let inner_ty = type_expr_to_typename(&prop.type_expr);
+    let field_ty = if prop.nullable && prop.required {
+        TypeName::optional(inner_ty)
+    } else {
+        inner_ty
+    };
+
+    let mut fb = FieldSpec::builder(&field_name, field_ty).is_readonly();
+    if !prop.required {
+        fb = fb.is_optional();
+    }
+    if let Some(desc) = &prop.description {
+        fb = fb.doc(desc);
+    }
+    fb.build().expect("FieldSpec builds")
+}
+
+/// Like `type_expr_to_typename` but Named refs resolve to `Name$Wire`.
+fn type_expr_to_typename_wire(expr: &IrTypeExpr) -> TypeName {
+    match expr {
+        IrTypeExpr::Named(name) => {
+            let ts_name = name.to_pascal_case();
+            let wire_name = format!("{}$Wire", ts_name);
+            let module = format!("./{ts_name}");
+            TypeName::importable_type(&module, &wire_name)
+        }
+        IrTypeExpr::Array(inner) => TypeName::readonly_array(type_expr_to_typename_wire_nested(inner)),
+        IrTypeExpr::Nullable(inner) => TypeName::optional(type_expr_to_typename_wire(inner)),
+        IrTypeExpr::Map(inner) => TypeName::generic(
+            TypeName::primitive("Record"),
+            vec![TypeName::primitive("string"), type_expr_to_typename_wire(inner)],
+        ),
+        other => type_expr_to_typename(other),
+    }
+}
+
+fn type_expr_to_typename_wire_nested(expr: &IrTypeExpr) -> TypeName {
+    match expr {
+        IrTypeExpr::Array(inner) => TypeName::array(type_expr_to_typename_wire_nested(inner)),
+        other => type_expr_to_typename_wire(other),
+    }
+}
+
+/// Build the `export function nameFromJSON(json: Name$Wire): Name` function body.
+fn build_from_json_fn(name: &str, wire_name: &str, obj: &IrObject) -> CodeBlock {
+    let fn_name = format!("{}FromJSON", name[..1].to_lowercase() + &name[1..]);
+    let mut lines: Vec<String> = Vec::new();
+    lines.push(format!(
+        "export function {fn_name}(json: {wire_name}): {name} {{"
+    ));
+    lines.push("  return {".to_string());
+
+    for (_json_name, prop) in &obj.properties {
+        let camel = prop.name.to_lower_camel_case();
+        let wire_access = wire_field_access(&prop.name);
+        let conversion = from_json_expr(&prop.type_expr, &wire_access, !prop.required);
+        lines.push(format!("    {camel}: {conversion},"));
+    }
+
+    lines.push("  };".to_string());
+    lines.push("}".to_string());
+
+    CodeBlock::of(&lines.join("\n"), ()).expect("CodeBlock builds")
+}
+
+/// Build the `export function nameToJSON(value: Name): Name$Wire` function body.
+fn build_to_json_fn(name: &str, wire_name: &str, obj: &IrObject) -> CodeBlock {
+    let fn_name = format!("{}ToJSON", name[..1].to_lowercase() + &name[1..]);
+    let mut lines: Vec<String> = Vec::new();
+    lines.push(format!(
+        "export function {fn_name}(value: {name}): {wire_name} {{"
+    ));
+    lines.push("  return {".to_string());
+
+    for (_json_name, prop) in &obj.properties {
+        let camel = prop.name.to_lower_camel_case();
+        let wire_key = if is_valid_ts_identifier(&prop.name) {
+            prop.name.clone()
+        } else {
+            format!("'{}'", prop.name)
+        };
+        let conversion = to_json_expr(&prop.type_expr, &format!("value.{camel}"), !prop.required);
+        lines.push(format!("    {wire_key}: {conversion},"));
+    }
+
+    lines.push("  };".to_string());
+    lines.push("}".to_string());
+
+    CodeBlock::of(&lines.join("\n"), ()).expect("CodeBlock builds")
+}
+
+/// Produce `json.field` or `json['kebab-field']` depending on identifier validity.
+fn wire_field_access(wire_name: &str) -> String {
+    if is_valid_ts_identifier(wire_name) {
+        format!("json.{wire_name}")
+    } else {
+        format!("json['{wire_name}']")
+    }
+}
+
+/// Generate the fromJSON expression for a type.
+fn from_json_expr(expr: &IrTypeExpr, access: &str, optional: bool) -> String {
+    if optional {
+        let inner = from_json_expr_inner(expr, access);
+        if needs_conversion(expr) {
+            format!("{access} !== undefined ? {inner} : undefined")
+        } else {
+            inner
+        }
+    } else {
+        from_json_expr_inner(expr, access)
+    }
+}
+
+fn from_json_expr_inner(expr: &IrTypeExpr, access: &str) -> String {
+    match expr {
+        IrTypeExpr::Named(ref_name) => {
+            let pascal = ref_name.to_pascal_case();
+            let converter = format!(
+                "{}FromJSON",
+                pascal[..1].to_lowercase() + &pascal[1..]
+            );
+            format!("{converter}({access})")
+        }
+        IrTypeExpr::Array(inner) if has_named_ref(inner) => {
+            let item_expr = from_json_expr_inner(inner, "item");
+            format!("{access}.map((item) => {item_expr})")
+        }
+        IrTypeExpr::Nullable(inner) if has_named_ref(inner) => {
+            let inner_expr = from_json_expr_inner(inner, access);
+            format!("{access} != null ? {inner_expr} : null")
+        }
+        IrTypeExpr::Map(inner) if has_named_ref(inner) => {
+            let val_expr = from_json_expr_inner(inner, "v");
+            format!(
+                "Object.fromEntries(Object.entries({access} ?? {{}}).map(([k, v]) => [k, {val_expr}]))"
+            )
+        }
+        _ => access.to_string(),
+    }
+}
+
+/// Generate the toJSON expression for a type.
+fn to_json_expr(expr: &IrTypeExpr, access: &str, optional: bool) -> String {
+    if optional {
+        let inner = to_json_expr_inner(expr, access);
+        if needs_conversion(expr) {
+            format!("{access} !== undefined ? {inner} : undefined")
+        } else {
+            inner
+        }
+    } else {
+        to_json_expr_inner(expr, access)
+    }
+}
+
+fn to_json_expr_inner(expr: &IrTypeExpr, access: &str) -> String {
+    match expr {
+        IrTypeExpr::Named(ref_name) => {
+            let pascal = ref_name.to_pascal_case();
+            let converter = format!(
+                "{}ToJSON",
+                pascal[..1].to_lowercase() + &pascal[1..]
+            );
+            format!("{converter}({access})")
+        }
+        IrTypeExpr::Array(inner) if has_named_ref(inner) => {
+            let item_expr = to_json_expr_inner(inner, "item");
+            format!("{access}.map((item) => {item_expr})")
+        }
+        IrTypeExpr::Nullable(inner) if has_named_ref(inner) => {
+            let inner_expr = to_json_expr_inner(inner, access);
+            format!("{access} != null ? {inner_expr} : null")
+        }
+        IrTypeExpr::Map(inner) if has_named_ref(inner) => {
+            let val_expr = to_json_expr_inner(inner, "v");
+            format!(
+                "Object.fromEntries(Object.entries({access} ?? {{}}).map(([k, v]) => [k, {val_expr}]))"
+            )
+        }
+        _ => access.to_string(),
+    }
+}
+
+/// Returns true if the type expression contains a Named reference that needs conversion.
+fn needs_conversion(expr: &IrTypeExpr) -> bool {
+    match expr {
+        IrTypeExpr::Named(_) => true,
+        IrTypeExpr::Array(inner) => has_named_ref(inner),
+        IrTypeExpr::Nullable(inner) => has_named_ref(inner),
+        IrTypeExpr::Map(inner) => has_named_ref(inner),
+        _ => false,
+    }
+}
+
+/// Returns true if a type expression (recursively) contains a Named ref.
+fn has_named_ref(expr: &IrTypeExpr) -> bool {
+    match expr {
+        IrTypeExpr::Named(_) => true,
+        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
+            has_named_ref(inner)
+        }
+        _ => false,
+    }
+}
+
+/// Collect all unique Named type references from an object's properties.
+fn collect_named_refs(obj: &IrObject) -> Vec<String> {
+    let mut refs = HashSet::new();
+    for (_name, prop) in &obj.properties {
+        collect_named_refs_from_expr(&prop.type_expr, &mut refs);
+    }
+    let mut sorted: Vec<String> = refs.into_iter().collect();
+    sorted.sort();
+    sorted
+}
+
+fn collect_named_refs_from_expr(expr: &IrTypeExpr, refs: &mut HashSet<String>) {
+    match expr {
+        IrTypeExpr::Named(name) => {
+            refs.insert(name.clone());
+        }
+        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
+            collect_named_refs_from_expr(inner, refs);
+        }
+        IrTypeExpr::Union(members) => {
+            for m in members {
+                collect_named_refs_from_expr(m, refs);
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Enum file: `export type Name = 'a' | 'b' | 1 | 2 | null;`

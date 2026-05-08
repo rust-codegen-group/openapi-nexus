@@ -52,6 +52,8 @@ impl TypeScriptFetchCodeGenerator {
         let flags = super::sigil_emit::EmitFlags {
             emit_enum_constants: self.config.emit_enum_constants,
             emit_type_guards: self.config.emit_type_guards,
+            property_naming_camel_case: self.config.property_naming
+                == super::config::PropertyNaming::CamelCase,
         };
         let mut files = super::sigil_emit::generate_model_files(ir, flags).map_err(|msg| {
             Box::<dyn Error + Send + Sync>::from(format!("sigil_emit model generation: {msg}"))
@@ -77,9 +79,21 @@ impl TypeScriptFetchCodeGenerator {
                     .get(name)
                     .map(|s| super::sigil_emit::value_exports_for_schema(s, flags))
                     .unwrap_or_default();
+                let extra_types = ir
+                    .schemas
+                    .get(name)
+                    .map(|s| super::sigil_emit::extra_type_exports_for_schema(s, flags))
+                    .unwrap_or_default();
 
                 if value_names.is_empty() {
-                    exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+                    if extra_types.is_empty() {
+                        exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+                    } else {
+                        let mut all_types = vec![type_name.clone()];
+                        all_types.extend(extra_types);
+                        let joined = all_types.join(", ");
+                        exports.push(format!("export type {{ {joined} }} from './{stem}';"));
+                    }
                 } else {
                     let type_name_is_value = value_names.contains(&type_name);
                     used_value_names.insert(type_name.clone());
@@ -99,10 +113,13 @@ impl TypeScriptFetchCodeGenerator {
                         let joined = all_names.join(", ");
                         exports.push(format!("export {{ {joined} }} from './{stem}';"));
                     } else {
-                        // Tagged union: type is separate from guard values.
-                        // Emit `export type { X }` for the type and a separate
-                        // `export { isA, isB }` for the guards (if any uniques).
-                        exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+                        // Type is separate from value exports.
+                        // Emit `export type { X, X$Wire }` for types and a separate
+                        // `export { xFromJSON, xToJSON }` for value exports.
+                        let mut all_types = vec![type_name.clone()];
+                        all_types.extend(extra_types);
+                        let type_joined = all_types.join(", ");
+                        exports.push(format!("export type {{ {type_joined} }} from './{stem}';"));
                         if !unique_values.is_empty() {
                             let joined = unique_values.join(", ");
                             exports.push(format!("export {{ {joined} }} from './{stem}';"));
@@ -147,7 +164,11 @@ impl TypeScriptFetchCodeGenerator {
         &self,
         ir: &crate::ir::types::IrSpec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
-        let mut files = super::sigil_emit_api::generate_api_files(ir).map_err(|msg| {
+        let mut files = super::sigil_emit_api::generate_api_files(
+            ir,
+            self.config.property_naming == super::config::PropertyNaming::CamelCase,
+        )
+        .map_err(|msg| {
             Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api generation: {msg}"))
         })?;
 

@@ -6,6 +6,19 @@ use tracing::error;
 use super::module::TypeScriptModule;
 use crate::codegen::NamingConvention;
 
+/// Controls how interface property names are emitted.
+///
+/// `Preserve` emits names matching the wire format exactly.
+/// `CamelCase` emits dual types (`Pet` + `Pet$Wire`) with camelCase
+/// ergonomic interfaces and `fromJSON`/`toJSON` conversion functions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PropertyNaming {
+    #[default]
+    Preserve,
+    CamelCase,
+}
+
 /// TypeScript Fetch generator-specific configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptFetchConfig {
@@ -55,6 +68,14 @@ pub struct TypeScriptFetchConfig {
     /// Emit `is*` type guard functions alongside tagged union type aliases.
     #[serde(default)]
     pub emit_type_guards: bool,
+
+    /// Property naming strategy for generated interfaces.
+    ///
+    /// - `preserve` (default): property names match the JSON wire format.
+    /// - `camelCase`: emits dual types (`T` + `T$Wire`) with camelCase ergonomic
+    ///   interfaces and `fromJSON`/`toJSON` conversion functions.
+    #[serde(default)]
+    pub property_naming: PropertyNaming,
 }
 
 fn default_file_naming_convention() -> NamingConvention {
@@ -129,6 +150,7 @@ impl Default for TypeScriptFetchConfig {
             include_build_scripts: default_include_build_scripts(),
             emit_enum_constants: false,
             emit_type_guards: false,
+            property_naming: PropertyNaming::default(),
         }
     }
 }
