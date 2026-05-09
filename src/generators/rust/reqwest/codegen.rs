@@ -115,7 +115,8 @@ fn cargo_toml_file(crate_name: &str, ir: &IrSpec, config: &RustGeneratorConfig) 
         .unwrap_or("Generated Rust SDK.")
         .lines()
         .next()
-        .unwrap_or("Generated Rust SDK.");
+        .unwrap_or("Generated Rust SDK.")
+        .replace('"', r#"\""#);
     let workspace = config.workspace_mode.unwrap_or(false);
     let deps_mode = config.workspace_deps.as_ref().cloned().unwrap_or_default();
     let needs_url = ir.operations.iter().any(|op| {
