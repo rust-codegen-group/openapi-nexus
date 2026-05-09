@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7]
+
+### Added
+
+- Rust (aioduct): config-driven feature management via `[generators.rust-aioduct.aioduct]` section
+  - `runtime` — select async runtime: `tokio` (default), `smol`, or `compio`
+  - `tls` — TLS backend: `rustls-ring` (default), `rustls-aws-lc-rs`, or `"false"` to disable
+  - `compression` — opt-in decompression codecs: `gzip`, `brotli`, `zstd`, `deflate`
+  - `features` — pass-through feature flags (e.g. `tracing`, `http3`, `blocking`)
+  - `version` — override the pinned aioduct version
+- Rust (aioduct): generated client now uses `Client::with_rustls()` (or `with_http3()`) based on TLS config, fixing HTTPS support
+
+### Changed
+
+- Bumped aioduct dependency 0.1.6 → 0.1.8
+
+### Fixed
+
+- Rust: escape double quotes in Cargo.toml `description` field (fixes TOML parse errors when spec descriptions contain quotes)
+- Rust: skip discriminator field in internally-tagged struct variants (fixes `serde(tag)` conflict)
+- Rust: emit unit variants when all fields are the discriminator (e.g. `SetupUnspecified,` instead of `SetupUnspecified {}`)
+
 ## [0.1.6]
 
 ### Added

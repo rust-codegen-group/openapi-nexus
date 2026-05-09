@@ -87,6 +87,10 @@ derives = ["Hash"]
 enabled = true
 dependency = '{ version = "5" }'
 
+[generators.rust-aioduct.aioduct]
+compression = ["gzip", "zstd"]
+features = ["tracing"]
+
 [generators.typescript-fetch]
 emit_enum_constants = true
 emit_type_guards = true
