@@ -53,6 +53,7 @@ uuid = { version = "1.19.0", features = ["v4", "v7", "serde"] }
 [package]
 name = "openapi-nexus"
 version.workspace = true
+exclude = ["tests/golden/", "fixture-generators/"]
 edition.workspace = true
 rust-version.workspace = true
 description.workspace = true
