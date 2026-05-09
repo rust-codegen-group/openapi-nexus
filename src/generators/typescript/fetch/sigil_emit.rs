@@ -1045,12 +1045,12 @@ fn internal_or_adjacent_from_json_case(
                 if convertible.contains(ref_name) {
                     let pascal = ref_name.to_pascal_case();
                     let converter = format!("{}FromJSON", fn_base_name(&pascal));
-                    format!("return {{ {disc_field_camel}: '{val}', ...{converter}(json) }};")
+                    format!("return {{ ...{converter}(json), {disc_field_camel}: '{val}' }};")
                 } else {
-                    format!("return {{ {disc_field_camel}: '{val}', ...json }};")
+                    format!("return {{ ...json, {disc_field_camel}: '{val}' }};")
                 }
             } else {
-                format!("return {{ {disc_field_camel}: '{val}', ...json }};")
+                format!("return {{ ...json, {disc_field_camel}: '{val}' }};")
             }
         }
         TaggingStyle::Adjacent { content_field } => {
@@ -1196,13 +1196,13 @@ fn internal_or_adjacent_to_json_case(
                     let pascal = ref_name.to_pascal_case();
                     let converter = format!("{}ToJSON", fn_base_name(&pascal));
                     format!(
-                        "return {{ {disc_wire_key}: '{val}', ...{converter}(value) }} as {wire_name};"
+                        "return {{ ...{converter}(value), {disc_wire_key}: '{val}' }} as {wire_name};"
                     )
                 } else {
-                    format!("return {{ {disc_wire_key}: '{val}', ...value }} as {wire_name};")
+                    format!("return {{ ...value, {disc_wire_key}: '{val}' }} as {wire_name};")
                 }
             } else {
-                format!("return {{ {disc_wire_key}: '{val}', ...value }} as {wire_name};")
+                format!("return {{ ...value, {disc_wire_key}: '{val}' }} as {wire_name};")
             }
         }
         TaggingStyle::Adjacent { content_field } => {

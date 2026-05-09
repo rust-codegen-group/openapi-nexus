@@ -16,14 +16,14 @@ export type ContainerImage = ({ kind: 'CONTAINER_IMAGE_MANAGED' } & ContainerIma
 
 export function containerImageFromJSON(json: ContainerImage$Wire): ContainerImage {
   switch (json.kind) {
-    case 'CONTAINER_IMAGE_MANAGED': return { kind: 'CONTAINER_IMAGE_MANAGED', ...containerImageManagedFromJSON(json) };
-    case 'CONTAINER_IMAGE_CUSTOM': return { kind: 'CONTAINER_IMAGE_CUSTOM', ...containerImageCustomFromJSON(json) };
+    case 'CONTAINER_IMAGE_MANAGED': return { ...containerImageManagedFromJSON(json), kind: 'CONTAINER_IMAGE_MANAGED' };
+    case 'CONTAINER_IMAGE_CUSTOM': return { ...containerImageCustomFromJSON(json), kind: 'CONTAINER_IMAGE_CUSTOM' };
   }
 }
 
 export function containerImageToJSON(value: ContainerImage): ContainerImage$Wire {
   switch (value.kind) {
-    case 'CONTAINER_IMAGE_MANAGED': return { kind: 'CONTAINER_IMAGE_MANAGED', ...containerImageManagedToJSON(value) } as ContainerImage$Wire;
-    case 'CONTAINER_IMAGE_CUSTOM': return { kind: 'CONTAINER_IMAGE_CUSTOM', ...containerImageCustomToJSON(value) } as ContainerImage$Wire;
+    case 'CONTAINER_IMAGE_MANAGED': return { ...containerImageManagedToJSON(value), kind: 'CONTAINER_IMAGE_MANAGED' } as ContainerImage$Wire;
+    case 'CONTAINER_IMAGE_CUSTOM': return { ...containerImageCustomToJSON(value), kind: 'CONTAINER_IMAGE_CUSTOM' } as ContainerImage$Wire;
   }
 }

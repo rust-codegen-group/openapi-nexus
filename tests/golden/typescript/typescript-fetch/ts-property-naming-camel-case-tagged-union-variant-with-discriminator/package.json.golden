@@ -1,0 +1,26 @@
+{
+  "description": "Test fixture where variant schemas include the discriminator property in their own\nproperties. This is the pattern that triggers TS2783 if the fromJSON/toJSON functions\nput the discriminator literal BEFORE the spread (since the spread would overwrite it).\nThe fix is to put the spread first, then the discriminator literal last so it wins.\n",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.js",
+  "name": "discriminated-union-variant-includes-discriminator-field",
+  "scripts": {
+    "build": "tsc"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}

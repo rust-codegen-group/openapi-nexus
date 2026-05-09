@@ -1,0 +1,102 @@
+openapi: 3.1.0
+info:
+  title: Discriminated Union - Variant Includes Discriminator Field
+  description: |
+    Test fixture where variant schemas include the discriminator property in their own
+    properties. This is the pattern that triggers TS2783 if the fromJSON/toJSON functions
+    put the discriminator literal BEFORE the spread (since the spread would overwrite it).
+    The fix is to put the spread first, then the discriminator literal last so it wins.
+  version: 1.0.0
+
+paths:
+  /setup:
+    post:
+      summary: Create setup
+      operationId: create_setup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Setup'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setup'
+
+components:
+  schemas:
+    # Variant that includes discriminator in its own properties (triggers TS2783)
+    SetupUnspecified:
+      type: object
+      properties:
+        kind:
+          type: string
+          description: The kind discriminator (included in variant schema)
+        name:
+          type: string
+      required:
+        - kind
+        - name
+
+    # Variant that also includes discriminator
+    SetupAutomatic:
+      type: object
+      properties:
+        kind:
+          type: string
+          description: The kind discriminator (included in variant schema)
+        autoField:
+          type: string
+      required:
+        - kind
+        - autoField
+
+    # Variant without discriminator in own schema (for comparison)
+    SetupManual:
+      type: object
+      properties:
+        manualField:
+          type: string
+      required:
+        - manualField
+
+    # Discriminated union type (internally tagged)
+    Setup:
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/SetupUnspecified'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - SETUP_UNSPECIFIED
+              description: Unspecified setup variant
+        - allOf:
+            - $ref: '#/components/schemas/SetupAutomatic'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - SETUP_AUTOMATIC
+              description: Automatic setup variant
+        - allOf:
+            - $ref: '#/components/schemas/SetupManual'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - SETUP_MANUAL
+              description: Manual setup variant
