@@ -132,6 +132,8 @@ pub struct RustGeneratorConfig {
     pub workspace_deps: Option<WorkspaceDepsMode>,
     #[serde(default)]
     pub utoipa: Option<UtoipaConfig>,
+    #[serde(default)]
+    pub aioduct: Option<crate::generators::rust::aioduct::config::AioductFeatureConfig>,
 }
 
 impl From<toml::value::Table> for RustGeneratorConfig {

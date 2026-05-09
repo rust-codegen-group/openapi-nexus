@@ -35,9 +35,14 @@ impl RustAioductCodeGenerator {
     }
 
     fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        use super::config::{AioductFeatureConfig, default_aioduct_features};
+
         let header = project_files::render_file_header(&ir.info);
         let crate_name = self.crate_name(&ir.info);
         let backend_config = aioduct_backend_config();
+        let default_cfg = default_aioduct_features();
+        let aioduct_cfg: &AioductFeatureConfig =
+            self.config.aioduct.as_ref().unwrap_or(&default_cfg);
 
         let mut files = Vec::new();
 
@@ -63,7 +68,7 @@ impl RustAioductCodeGenerator {
             .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
         );
 
-        files.extend(runtime_files(&header));
+        files.extend(runtime_files(&header, aioduct_cfg));
 
         files.push(cargo_toml_file(&crate_name, ir, &self.config));
         files.push(project_files::lib_rs_file(&header));
@@ -94,8 +99,14 @@ impl FileWriter for RustAioductCodeGenerator {
 }
 
 fn cargo_toml_file(crate_name: &str, ir: &IrSpec, config: &RustGeneratorConfig) -> FileInfo {
+    use crate::generators::rust::aioduct::config::default_aioduct_features;
     use crate::generators::rust::common::config::WorkspaceDepsMode;
     use crate::ir::types::ParameterLocation;
+
+    let default_cfg = default_aioduct_features();
+    let aioduct_cfg = config.aioduct.as_ref().unwrap_or(&default_cfg);
+    let aioduct_version = aioduct_cfg.version();
+    let aioduct_features = aioduct_cfg.features_toml_array();
 
     let description = ir
         .info
@@ -159,7 +170,7 @@ serde_repr.workspace = true
         WorkspaceDepsMode::WorkspaceVersion => format!(
             r#"
 [dependencies]
-aioduct = {{ workspace = true, features = ["tokio", "rustls", "rustls-ring", "json"] }}
+aioduct = {{ workspace = true, features = {aioduct_features} }}
 serde = {{ workspace = true, features = ["derive"] }}
 serde_json.workspace = true
 serde_repr.workspace = true
@@ -168,7 +179,7 @@ serde_repr.workspace = true
         WorkspaceDepsMode::Explicit => format!(
             r#"
 [dependencies]
-aioduct = {{ version = "0.1.6", features = ["tokio", "rustls", "rustls-ring", "json"] }}
+aioduct = {{ version = "{aioduct_version}", features = {aioduct_features} }}
 serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
 serde_repr = "0.1"
