@@ -2,6 +2,8 @@
 
 All three Rust backends (`rust-reqwest`, `rust-ureq`, `rust-aioduct`) share the same configuration options.
 
+The `rust-aioduct` backend has an additional `[aioduct]` section for controlling aioduct-specific features.
+
 ## Full Example
 
 ```toml
@@ -108,3 +110,58 @@ When enabled:
 The `dependency` field accepts any valid TOML inline table or string that would appear after `utoipa = ` in Cargo.toml. If omitted, defaults to `"*"`.
 
 You do NOT need to add `utoipa::ToSchema` to `extra_derives` when using this config. The `[utoipa]` section handles everything, including the cases where the derive macro cannot be used.
+
+### `aioduct` (rust-aioduct only)
+
+Configure aioduct-specific dependency features for the generated crate. This section only applies to the `rust-aioduct` generator.
+
+```toml
+[generators.rust-aioduct.aioduct]
+version = "0.1.8"
+runtime = "tokio"
+tls = "rustls-ring"
+compression = ["gzip", "brotli", "zstd"]
+features = ["tracing", "http3"]
+```
+
+All fields are optional. Defaults: `runtime = "tokio"`, `tls = "rustls-ring"`, no compression, no extra features. The `json` feature is always included.
+
+#### `version`
+
+Override the pinned aioduct version. Defaults to `"0.1.8"`.
+
+#### `runtime`
+
+Which async runtime to use. One of:
+
+| Value | Description |
+|-------|-------------|
+| `"tokio"` (default) | Tokio runtime |
+| `"smol"` | smol runtime |
+| `"compio"` | compio (io_uring) runtime |
+
+#### `tls`
+
+TLS backend selection:
+
+| Value | Description |
+|-------|-------------|
+| `"rustls-ring"` (default) | rustls with ring crypto |
+| `"rustls-aws-lc-rs"` | rustls with AWS-LC crypto |
+| `"false"` | Disable TLS (HTTP-only) |
+
+#### `compression`
+
+List of decompression codecs to enable. Valid values: `"gzip"`, `"brotli"`, `"zstd"`, `"deflate"`.
+
+```toml
+compression = ["gzip", "zstd"]
+```
+
+#### `features`
+
+Pass-through feature flags appended to the aioduct dependency. Use this for features not covered by the structured fields above (e.g., `"tracing"`, `"otel"`, `"http3"`, `"hickory-dns"`, `"doh"`, `"dot"`, `"blocking"`, `"tower"`).
+
+```toml
+features = ["tracing", "http3", "blocking"]
+```
