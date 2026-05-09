@@ -329,11 +329,22 @@ impl<'a> LowerCtx<'a> {
         }
 
         // Build variants
+        // For variants detected as ExternallyTagged in a mixed union that has a
+        // common tag field, re-interpret them as InternallyTagged unit variants.
         let mut variants = Vec::new();
         for (member, pattern) in obj.one_of.iter().zip(patterns.iter()) {
             let pattern = pattern.as_ref().unwrap();
+            let effective_pattern = match pattern {
+                TaggedEnumPattern::ExternallyTagged { .. } => {
+                    &TaggedEnumPattern::InternallyTagged {
+                        variant_name: pattern.variant_name().to_string(),
+                        tag_field: first_tag.to_string(),
+                    }
+                }
+                other => other,
+            };
             let (disc_value, content_type) =
-                self.extract_tagged_variant(parent_name, member, pattern)?;
+                self.extract_tagged_variant(parent_name, member, effective_pattern)?;
             let description = match member {
                 ObjectOrReference::Object(obj) => obj.description.clone(),
                 _ => None,
@@ -1252,17 +1263,24 @@ fn classify_tagging_style(
     patterns: &[Option<crate::ir::tagged_enum_pattern::TaggedEnumPattern>],
 ) -> TaggingStyle {
     use crate::ir::tagged_enum_pattern::TaggedEnumPattern;
+    let mut saw_internal = false;
+    let mut saw_adjacent: Option<String> = None;
     for p in patterns.iter().flatten() {
         match p {
             TaggedEnumPattern::AdjacentlyTagged { content_field, .. } => {
-                return TaggingStyle::Adjacent {
-                    content_field: content_field.clone(),
-                };
+                saw_adjacent = Some(content_field.clone());
             }
-            TaggedEnumPattern::ExternallyTagged { .. } => return TaggingStyle::External,
-            TaggedEnumPattern::InternallyTagged { .. } => return TaggingStyle::Internal,
-            TaggedEnumPattern::Untagged { .. } => {}
+            TaggedEnumPattern::InternallyTagged { .. } => {
+                saw_internal = true;
+            }
+            TaggedEnumPattern::ExternallyTagged { .. } | TaggedEnumPattern::Untagged { .. } => {}
         }
+    }
+    if let Some(content_field) = saw_adjacent {
+        return TaggingStyle::Adjacent { content_field };
+    }
+    if saw_internal {
+        return TaggingStyle::Internal;
     }
     TaggingStyle::Internal
 }

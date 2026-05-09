@@ -554,65 +554,110 @@ fn emit_tagged_union(
         TaggingStyle::Internal | TaggingStyle::Adjacent { .. }
     );
 
-    let mut variant_blocks: Vec<String> = Vec::new();
+    let mut variant_blocks: Vec<CodeBlock> = Vec::new();
     for variant in &tu.variants {
         let variant_name = variant.discriminator_value.to_pascal_case();
-        let mut block = String::new();
 
-        if variant.discriminator_value.to_pascal_case() != variant.discriminator_value {
-            block.push_str(&format!(
-                "#[serde(rename = \"{}\")]\n",
+        let rename_attr = if variant_name != variant.discriminator_value {
+            format!(
+                "#[serde(rename = \"{}\")]",
                 escape_str(&variant.discriminator_value)
-            ));
-        }
+            )
+        } else {
+            String::new()
+        };
 
-        if inline_fields {
+        let variant_block = if inline_fields {
             if let Some(obj) = resolve_object(&variant.content_type, ir) {
-                block.push_str(&format!("{variant_name} {{"));
-                for (json_name, prop) in &obj.properties {
-                    let field_name = escape_rust_keyword(&json_name.to_snake_case());
-                    if field_name != *json_name {
-                        block.push_str(&format!("\n    #[serde(rename = \"{json_name}\")]"));
-                    }
-                    if !prop.required || prop.nullable {
-                        block.push_str(
-                            "\n    #[serde(skip_serializing_if = \"Option::is_none\", default)]",
-                        );
-                        block.push_str(&format!(
-                            "\n    {field_name}: Option<{}>,",
-                            rust_type_str_model(&prop.type_expr)
-                        ));
+                let non_tag_fields: Vec<_> = obj
+                    .properties
+                    .iter()
+                    .filter(|(json_name, _)| *json_name != &tu.discriminator_field)
+                    .collect();
+                let has_additional = obj.additional_properties.is_some();
+
+                if non_tag_fields.is_empty() && !has_additional {
+                    sigil_quote!(RustLang {
+                        $if(!rename_attr.is_empty()) {
+                            $L(rename_attr.as_str())
+                        }
+                        $L(format!("{variant_name},"))
+                    })
+                    .ok()?
+                } else {
+                    let field_blocks: Vec<CodeBlock> = non_tag_fields
+                        .iter()
+                        .map(|(json_name, prop)| {
+                            let field_name = escape_rust_keyword(&json_name.to_snake_case());
+                            let ty = rust_type_str_model(&prop.type_expr);
+                            let needs_rename = field_name != **json_name;
+                            let optional = !prop.required || prop.nullable;
+                            sigil_quote!(RustLang {
+                                $if(needs_rename) {
+                                    $L(format!("#[serde(rename = \"{json_name}\")]"))
+                                }
+                                $if(optional) {
+                                    #[serde(skip_serializing_if = "Option::is_none", default)]
+                                    $L(format!("{field_name}: Option<{ty}>,"))
+                                }
+                                $if(!optional) {
+                                    $L(format!("{field_name}: {ty},"))
+                                }
+                            })
+                            .ok()
+                        })
+                        .collect::<Option<_>>()?;
+
+                    let additional_blocks: Vec<CodeBlock> = if let Some(ap) =
+                        &obj.additional_properties
+                    {
+                        let ty = rust_type_str_model(ap);
+                        vec![sigil_quote!(RustLang {
+                                #[serde(flatten)]
+                                $L(format!("additional_properties: std::collections::HashMap<String, {ty}>,"))
+                            })
+                            .ok()?]
                     } else {
-                        block.push_str(&format!(
-                            "\n    {field_name}: {},",
-                            rust_type_str_model(&prop.type_expr)
-                        ));
+                        vec![]
+                    };
+
+                    let mut cb = CodeBlock::builder();
+                    if !rename_attr.is_empty() {
+                        cb.add(&rename_attr, ());
+                        cb.add_line();
                     }
+                    cb.add(&format!("{variant_name} {{\n%>"), ());
+                    for fb in field_blocks {
+                        cb.add_code(fb);
+                    }
+                    for ab in additional_blocks {
+                        cb.add_code(ab);
+                    }
+                    cb.add("%<},", ());
+                    cb.build().ok()?
                 }
-                if let Some(ap) = &obj.additional_properties {
-                    block.push_str("\n    #[serde(flatten)]");
-                    block.push_str(&format!(
-                        "\n    additional_properties: std::collections::HashMap<String, {}>,",
-                        rust_type_str_model(ap)
-                    ));
-                }
-                block.push_str("\n},");
             } else {
-                block.push_str(&format!(
-                    "{}({}),",
-                    variant_name,
-                    rust_type_str_model(&variant.content_type)
-                ));
+                let content_ty = rust_type_str_model(&variant.content_type);
+                sigil_quote!(RustLang {
+                    $if(!rename_attr.is_empty()) {
+                        $L(rename_attr.as_str())
+                    }
+                    $L(format!("{variant_name}({content_ty}),"))
+                })
+                .ok()?
             }
         } else {
-            block.push_str(&format!(
-                "{}({}),",
-                variant_name,
-                rust_type_str_model(&variant.content_type)
-            ));
-        }
+            let content_ty = rust_type_str_model(&variant.content_type);
+            sigil_quote!(RustLang {
+                $if(!rename_attr.is_empty()) {
+                    $L(rename_attr.as_str())
+                }
+                $L(format!("{variant_name}({content_ty}),"))
+            })
+            .ok()?
+        };
 
-        variant_blocks.push(block);
+        variant_blocks.push(variant_block);
     }
 
     let body = sigil_quote!(RustLang {
@@ -624,9 +669,7 @@ fn emit_tagged_union(
             $L(serde_tag_attr.as_str())
         }
         pub enum $N(name.as_str()) {
-            $for(block in variant_blocks.iter()) {
-                $L(block.as_str())
-            }
+            $C_each(variant_blocks);
         }
     })
     .ok()?;
