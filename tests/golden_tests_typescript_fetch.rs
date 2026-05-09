@@ -237,6 +237,25 @@ property_naming = "camelCase"
 
 #[test]
 #[traced_test]
+fn test_property_naming_camel_case_tagged_union_variant_with_discriminator_golden() {
+    let config: toml::value::Table = toml::from_str(
+        r#"
+property_naming = "camelCase"
+"#,
+    )
+    .unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-property-naming-camel-case-tagged-union-variant-with-discriminator",
+        "valid/type-aliases/discriminated-union-variant-with-discriminator-field.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
 fn test_property_naming_camel_case_intersection_golden() {
     let config: toml::value::Table = toml::from_str(
         r#"
