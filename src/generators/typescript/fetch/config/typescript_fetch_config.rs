@@ -19,6 +19,18 @@ pub enum PropertyNaming {
     CamelCase,
 }
 
+/// Toolchain for type checking and building.
+///
+/// `Tsc` uses bare `tsc` (default).
+/// `Vp` uses vite-plus (`vp check --no-fmt`) with type-aware linting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Toolchain {
+    #[default]
+    Tsc,
+    Vp,
+}
+
 /// TypeScript Fetch generator-specific configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptFetchConfig {
@@ -76,6 +88,13 @@ pub struct TypeScriptFetchConfig {
     ///   interfaces and `fromJSON`/`toJSON` conversion functions.
     #[serde(default)]
     pub property_naming: PropertyNaming,
+
+    /// Toolchain for type checking and building.
+    ///
+    /// - `tsc` (default): bare TypeScript compiler.
+    /// - `vp`: vite-plus with type-aware linting and type checking.
+    #[serde(default)]
+    pub toolchain: Toolchain,
 }
 
 fn default_file_naming_convention() -> NamingConvention {
@@ -151,6 +170,7 @@ impl Default for TypeScriptFetchConfig {
             emit_enum_constants: false,
             emit_type_guards: false,
             property_naming: PropertyNaming::default(),
+            toolchain: Toolchain::default(),
         }
     }
 }

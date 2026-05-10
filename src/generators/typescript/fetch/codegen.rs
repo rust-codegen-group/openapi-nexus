@@ -5,6 +5,7 @@ use std::error::Error;
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 
 use super::config::TypeScriptFetchConfig;
+use super::config::typescript_fetch_config::Toolchain;
 use super::project_files::{render_index_file, render_readme_file, render_runtime_file};
 use crate::codegen::NamingConvention;
 use crate::codegen::traits::code_generator::CodeGenerator;
@@ -216,6 +217,9 @@ impl TypeScriptFetchCodeGenerator {
             if self.config.generate_esm_config {
                 files.push(self.generate_tsconfig_esm_from_config());
             }
+            if self.config.toolchain == Toolchain::Vp {
+                files.push(self.generate_vite_config());
+            }
         }
 
         files.push(self.generate_main_index_from_ir(ir, has_apis, has_models));
@@ -275,9 +279,22 @@ impl TypeScriptFetchCodeGenerator {
         }
 
         if self.config.include_build_scripts {
-            package_json["scripts"] = serde_json::json!({
-                "build": "tsc",
-            });
+            match self.config.toolchain {
+                Toolchain::Tsc => {
+                    package_json["scripts"] = serde_json::json!({
+                        "build": "tsc",
+                    });
+                }
+                Toolchain::Vp => {
+                    package_json["scripts"] = serde_json::json!({
+                        "build": "vp pack",
+                        "check": "vp check --no-fmt",
+                    });
+                    package_json["devDependencies"] = serde_json::json!({
+                        "vite-plus": "latest",
+                    });
+                }
+            }
         }
 
         let content =
@@ -329,6 +346,27 @@ impl TypeScriptFetchCodeGenerator {
         let content =
             serde_json::to_string_pretty(&tsconfig_esm).unwrap_or_else(|_| "{}".to_string());
         FileInfo::project("tsconfig.esm.json".to_string(), content)
+    }
+
+    /// Generate vite.config.ts for vite-plus toolchain.
+    fn generate_vite_config(&self) -> FileInfo {
+        let content = r#"import { defineConfig } from 'vite-plus';
+
+export default defineConfig({
+  lint: {
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
+    ignorePatterns: ['node_modules', 'dist'],
+  },
+  pack: {
+    dts: true,
+    format: ['esm'],
+  },
+});
+"#;
+        FileInfo::project("vite.config.ts".to_string(), content.to_string())
     }
 
     /// Generate main index.ts from IR.

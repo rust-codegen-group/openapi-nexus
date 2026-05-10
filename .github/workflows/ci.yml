@@ -159,9 +159,9 @@ jobs:
       - uses: actions/setup-node@v6
         if: matrix.generator == 'typescript-fetch'
         with:
-          node-version: '20'
+          node-version: 'lts/*'
       - if: matrix.generator == 'typescript-fetch'
-        run: npm install -g typescript
+        run: npm install -g typescript vite-plus
       - uses: actions/setup-go@v6
         if: matrix.generator == 'go-http'
         with:

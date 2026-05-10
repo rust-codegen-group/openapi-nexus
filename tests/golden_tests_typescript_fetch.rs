@@ -501,3 +501,23 @@ components:
         my_pet_file.content
     );
 }
+
+#[test]
+#[traced_test]
+fn test_toolchain_vp_golden() {
+    let config: toml::value::Table = toml::from_str(
+        r#"
+toolchain = "vp"
+property_naming = "camelCase"
+"#,
+    )
+    .unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-toolchain-vp",
+        "valid/type-aliases/discriminated-union-with-refs.yaml",
+        UPDATE_HINT,
+    );
+}

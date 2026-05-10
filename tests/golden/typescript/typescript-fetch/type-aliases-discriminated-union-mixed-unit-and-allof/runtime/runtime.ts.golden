@@ -87,7 +87,7 @@ export const DefaultConfig = new Configuration();
  */
 export class BaseAPI {
 
-  private static readonly jsonRegex = new RegExp('^(:?application\/json|[^;/ \t]+\/[^;/ \t]+[+]json)[ \t]*(:?;.*)?$', 'i');
+  private static readonly jsonRegex = new RegExp('^(:?application/json|[^;/ \t]+/[^;/ \t]+[+]json)[ \t]*(:?;.*)?$', 'i');
   private middleware: Middleware[];
 
   constructor(protected configuration = DefaultConfig) {
@@ -255,21 +255,21 @@ function isFormData(value: unknown): value is FormData {
 }
 
 export class ResponseError extends Error {
-  override name: "ResponseError" = "ResponseError";
+  override name = "ResponseError" as const;
   constructor(public response: Response, msg?: string) {
     super(msg);
   }
 }
 
 export class FetchError extends Error {
-  override name: "FetchError" = "FetchError";
+  override name = "FetchError" as const;
   constructor(public cause: Error, msg?: string) {
     super(msg);
   }
 }
 
 export class RequiredError extends Error {
-  override name: "RequiredError" = "RequiredError";
+  override name = "RequiredError" as const;
   constructor(public field: string, msg?: string) {
     super(msg);
   }
@@ -281,7 +281,7 @@ export type Json = unknown;
 export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
 export type HTTPHeaders = { [key: string]: string };
 export type HTTPQuery = { [key: string]: string | number | null | boolean | Array<string | number | null | boolean> | Set<string | number | null | boolean> | HTTPQuery };
-export type HTTPBody = Json | FormData | URLSearchParams;
+export type HTTPBody = Json | FormData | URLSearchParams; // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
 export type HTTPRequestInit = { headers?: HTTPHeaders; method: HTTPMethod; credentials?: RequestCredentials; body?: HTTPBody; signal?: AbortSignal };
 export type ModelPropertyNaming = 'camelCase' | 'snake_case' | 'PascalCase' | 'original';
 
