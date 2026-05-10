@@ -9,6 +9,14 @@ if [ ! -d "$golden" ]; then
   exit 1
 fi
 
+# Detect available type checker
+if command -v vp &>/dev/null; then
+  USE_VP=1
+else
+  USE_VP=0
+  echo "note: vp not found, falling back to tsc --noEmit"
+fi
+
 total=0; passed=0; failed=0; fails=()
 
 for test_dir in "$golden"/*/; do
@@ -28,14 +36,29 @@ for test_dir in "$golden"/*/; do
   done < <(find "$test_dir" -type f -name '*.golden' -print0)
 
   log=$(mktemp)
-  if (cd "$tmp" && tsc --noEmit) >"$log" 2>&1; then
-    echo "ok"
-    passed=$((passed + 1))
+  if [ "$USE_VP" = "1" ]; then
+    if [ -f "$tmp/vite.config.ts" ]; then
+      (cd "$tmp" && vp install --silent) >>"$log" 2>&1 || true
+    fi
+    if (cd "$tmp" && vp check --no-fmt) >>"$log" 2>&1; then
+      echo "ok"
+      passed=$((passed + 1))
+    else
+      echo "FAIL"
+      failed=$((failed + 1))
+      fails+=("$name")
+      sed 's/^/    /' "$log" || true
+    fi
   else
-    echo "FAIL"
-    failed=$((failed + 1))
-    fails+=("$name")
-    sed 's/^/    /' "$log" || true
+    if (cd "$tmp" && tsc --noEmit) >>"$log" 2>&1; then
+      echo "ok"
+      passed=$((passed + 1))
+    else
+      echo "FAIL"
+      failed=$((failed + 1))
+      fails+=("$name")
+      sed 's/^/    /' "$log" || true
+    fi
   fi
 
   rm -rf "$tmp" "$log"
