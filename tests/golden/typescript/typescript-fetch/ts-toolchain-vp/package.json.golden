@@ -1,6 +1,7 @@
 {
   "description": "Test fixture for discriminated union where variants are references to component schemas.\nThis is similar to the ContainerImage pattern in the infiron API.\n",
   "devDependencies": {
+    "typescript": "latest",
     "vite-plus": "latest"
   },
   "exports": {
