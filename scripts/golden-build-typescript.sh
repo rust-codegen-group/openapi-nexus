@@ -38,9 +38,9 @@ for test_dir in "$golden"/*/; do
   log=$(mktemp)
   if [ "$USE_VP" = "1" ]; then
     if [ -f "$tmp/vite.config.ts" ]; then
-      (cd "$tmp" && vp install --silent) >>"$log" 2>&1 || true
+      (cd "$tmp" && vp install) >>"$log" 2>&1 || true
     fi
-    if (cd "$tmp" && vp check --no-fmt) >>"$log" 2>&1; then
+    if (cd "$tmp" && vp check --no-fmt && vp run build) >>"$log" 2>&1; then
       echo "ok"
       passed=$((passed + 1))
     else

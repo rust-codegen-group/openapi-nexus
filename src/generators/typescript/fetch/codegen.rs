@@ -291,6 +291,7 @@ impl TypeScriptFetchCodeGenerator {
                         "check": "vp check --no-fmt",
                     });
                     package_json["devDependencies"] = serde_json::json!({
+                        "typescript": "latest",
                         "vite-plus": "latest",
                     });
                 }
@@ -361,6 +362,7 @@ export default defineConfig({
     ignorePatterns: ['node_modules', 'dist'],
   },
   pack: {
+    entry: ['index.ts'],
     dts: true,
     format: ['esm'],
   },
