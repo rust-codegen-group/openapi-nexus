@@ -5,7 +5,58 @@
 
 package models
 
+import "encoding/json"
+
 // Object with typed additional properties
 type ObjectWithTypedAdditionalProperties struct {
 	Name string `json:"name"`
+	// Additional properties not captured by defined fields.
+	AdditionalProperties map[string]float64 `json:"-"`
+}
+
+func (o ObjectWithTypedAdditionalProperties) MarshalJSON() ([]byte, error) {
+	type Plain ObjectWithTypedAdditionalProperties
+	data, err := json.Marshal(Plain(o))
+	if err != nil {
+		return nil, err
+	}
+	if len(o.AdditionalProperties) == 0 {
+		return data, nil
+	}
+	var base map[string]json.RawMessage
+	if err := json.Unmarshal(data, &base); err != nil {
+		return nil, err
+	}
+	for k, v := range o.AdditionalProperties {
+		raw, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		base[k] = raw
+	}
+	return json.Marshal(base)
+}
+
+func (o *ObjectWithTypedAdditionalProperties) UnmarshalJSON(data []byte) error {
+	type Plain ObjectWithTypedAdditionalProperties
+	if err := json.Unmarshal(data, (*Plain)(o)); err != nil {
+		return err
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	known := map[string]bool{"name": true}
+	o.AdditionalProperties = make(map[string]float64)
+	for k, v := range raw {
+		if known[k] {
+			continue
+		}
+		var parsed float64
+		if err := json.Unmarshal(v, &parsed); err != nil {
+			continue
+		}
+		o.AdditionalProperties[k] = parsed
+	}
+	return nil
 }

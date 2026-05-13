@@ -56,6 +56,14 @@ func (a *WidgetAPI) GetWidget(ctx context.Context) (*GetWidgetResponse, error) {
 			}
 			resp.Status200 = &payload
 		default:
+			if httpResp.StatusCode >= 0 && httpResp.StatusCode < 1000 {
+					var payload models.ErrorResponse
+					if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+						return nil, fmt.Errorf("decode response: %w", err)
+					}
+					resp.Default = &payload
+				return resp, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status}
+			}
 			if httpResp.StatusCode >= 400 {
 				body, _ := io.ReadAll(httpResp.Body)
 				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}

@@ -16,10 +16,10 @@ class DefaultApi:
     def create_test(self, *, body: Baz) -> Baz:
         """Create test with intersection type."""
         path = "/test"
-        response = self._client.request("POST", path, json=body)
+        response = self._client.request("POST", path, json=body.to_dict())
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
-        return response.json()  # type: ignore[return-value]
+        return Baz.from_dict(response.json())
 
     def get_test(self, id: str) -> Baz:
         """Get test."""
@@ -27,4 +27,4 @@ class DefaultApi:
         response = self._client.request("GET", path)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
-        return response.json()  # type: ignore[return-value]
+        return Baz.from_dict(response.json())

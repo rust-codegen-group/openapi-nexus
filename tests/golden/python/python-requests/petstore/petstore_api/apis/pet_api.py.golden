@@ -44,7 +44,7 @@ class PetApi:
         """Find pets by tags."""
         path = "/pet/findByTags"
         params: dict[str, str] = {}
-        params["tags"] = str(tags)
+        params["tags"] = ",".join(str(v) for v in tags)
         response = self._client.request("GET", path, params=params)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason, response.content)

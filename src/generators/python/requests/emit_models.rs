@@ -352,7 +352,7 @@ fn emit_intersection(schema: &IrSchema, inter: &IrIntersection, ir: &IrSpec) -> 
         return emit_intersection_as_alias(schema, inter);
     }
 
-    emit_intersection_as_dataclass(schema, &all_props)
+    emit_intersection_as_dataclass(schema, &all_props, ir)
 }
 
 fn emit_intersection_as_alias(schema: &IrSchema, inter: &IrIntersection) -> Option<FileSpec> {
@@ -381,6 +381,7 @@ fn emit_intersection_as_alias(schema: &IrSchema, inter: &IrIntersection) -> Opti
 fn emit_intersection_as_dataclass(
     schema: &IrSchema,
     all_props: &indexmap::IndexMap<String, IrProperty>,
+    ir: &IrSpec,
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
 
@@ -431,6 +432,11 @@ fn emit_intersection_as_dataclass(
                     .expect("optional field"),
             );
         }
+
+        let all_fields: Vec<(&String, &IrProperty)> =
+            required.iter().chain(optional.iter()).copied().collect();
+        cls = cls.add_method(build_to_dict_method(&all_fields, ir, all_props));
+        cls = cls.add_method(build_from_dict_method(&name, &all_fields, ir, all_props));
     }
 
     file = file.add_type(cls.build().ok()?);
@@ -821,6 +827,14 @@ fn render_to_dict_expr(
             }
             value_expr.to_string()
         }
+        Some(IrTypeExpr::Map(inner)) => {
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_object_schema(ref_name, ir)
+            {
+                return format!("{{k: v.to_dict() for k, v in {value_expr}.items()}}");
+            }
+            value_expr.to_string()
+        }
         _ => value_expr.to_string(),
     }
 }
@@ -849,6 +863,17 @@ fn render_from_dict_expr(
                 let py_name = ref_name.to_pascal_case();
                 return format!(
                     "[{py_name}.from_dict(item) for item in {accessor}]  # type: ignore[union-attr]"
+                );
+            }
+            format!("{accessor}  # type: ignore[assignment]")
+        }
+        Some(IrTypeExpr::Map(inner)) => {
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_object_schema(ref_name, ir)
+            {
+                let py_name = ref_name.to_pascal_case();
+                return format!(
+                    "{{k: {py_name}.from_dict(v) for k, v in {accessor}.items()}}  # type: ignore[union-attr]"
                 );
             }
             format!("{accessor}  # type: ignore[assignment]")
@@ -891,14 +916,35 @@ fn render_from_dict_optional_expr(
             }
             format!("{accessor}  # type: ignore[assignment]")
         }
+        Some(IrTypeExpr::Map(inner)) => {
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_object_schema(ref_name, ir)
+            {
+                let py_name = ref_name.to_pascal_case();
+                return format!(
+                    "{{k: {py_name}.from_dict(v) for k, v in {accessor}.items()}} if {accessor} is not None else None  # type: ignore[union-attr]"
+                );
+            }
+            format!("{accessor}  # type: ignore[assignment]")
+        }
         _ => format!("{accessor}  # type: ignore[assignment]"),
     }
 }
 
 pub fn is_object_schema(name: &str, ir: &IrSpec) -> bool {
-    ir.schemas
-        .get(name)
-        .is_some_and(|s| matches!(s.kind, IrSchemaKind::Object(_)))
+    ir.schemas.get(name).is_some_and(|s| match &s.kind {
+        IrSchemaKind::Object(_) => true,
+        IrSchemaKind::Intersection(inter) => inter.members.iter().any(|m| {
+            if let IrTypeExpr::Named(ref_name) = m {
+                ir.schemas
+                    .get(ref_name.as_str())
+                    .is_some_and(|ms| matches!(ms.kind, IrSchemaKind::Object(_)))
+            } else {
+                false
+            }
+        }),
+        _ => false,
+    })
 }
 
 // ---------------------------------------------------------------------------

@@ -14,3 +14,21 @@ class Foo:
     name: str
     email: str
     created_at: datetime | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        result: dict[str, object] = {}
+        result["id"] = self.id
+        result["name"] = self.name
+        result["email"] = self.email
+        if self.created_at is not None:
+            result["createdAt"] = self.created_at
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Foo:
+        return cls(
+            id=data["id"],  # type: ignore[assignment]
+            name=data["name"],  # type: ignore[assignment]
+            email=data["email"],  # type: ignore[assignment]
+            created_at=data.get("createdAt"),  # type: ignore[assignment]
+        )

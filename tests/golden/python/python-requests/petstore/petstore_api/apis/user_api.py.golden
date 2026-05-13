@@ -24,7 +24,7 @@ class UserApi:
     def create_users_with_list_input(self, *, body: list[User]) -> User:
         """Creates list of users with given input array."""
         path = "/user/createWithList"
-        response = self._client.request("POST", path, json=body)
+        response = self._client.request("POST", path, json=[item.to_dict() for item in body])
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason, response.content)
         return User.from_dict(response.json())
