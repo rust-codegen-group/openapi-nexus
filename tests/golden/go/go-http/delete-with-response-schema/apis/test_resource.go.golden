@@ -109,6 +109,22 @@ func (a *TestResourceAPI) DeleteTestResource(ctx context.Context, resourceId str
 			}
 			resp.Status200 = &payload
 		default:
+			if httpResp.StatusCode >= 400 && httpResp.StatusCode < 500 {
+					var payload models.HttpErrorResponse
+					if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+						return nil, fmt.Errorf("decode response: %w", err)
+					}
+					resp.Status4XX = &payload
+				return resp, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status}
+			}
+			if httpResp.StatusCode >= 500 && httpResp.StatusCode < 600 {
+					var payload models.HttpErrorResponse
+					if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+						return nil, fmt.Errorf("decode response: %w", err)
+					}
+					resp.Status5XX = &payload
+				return resp, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status}
+			}
 			if httpResp.StatusCode >= 400 {
 				body, _ := io.ReadAll(httpResp.Body)
 				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}

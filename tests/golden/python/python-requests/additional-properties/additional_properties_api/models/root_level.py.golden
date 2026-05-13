@@ -21,7 +21,7 @@ class RootLevel:
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result["children"] = self.children
+        result["children"] = {k: v.to_dict() for k, v in self.children.items()}
         result["id"] = self.id
         result["name"] = self.name
         if self.extras is not None:
@@ -33,7 +33,7 @@ class RootLevel:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> RootLevel:
         return cls(
-            children=data["children"],  # type: ignore[assignment]
+            children={k: MiddleLevel.from_dict(v) for k, v in data["children"].items()},  # type: ignore[union-attr]
             id=data["id"],  # type: ignore[assignment]
             name=data["name"],  # type: ignore[assignment]
             extras=data.get("extras"),  # type: ignore[assignment]

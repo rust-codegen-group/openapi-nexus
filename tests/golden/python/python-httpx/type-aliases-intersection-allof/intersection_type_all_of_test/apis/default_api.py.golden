@@ -16,7 +16,7 @@ class DefaultApi:
     def test_intersection(self, *, body: Foo) -> Foo:
         """Test endpoint with intersection type."""
         path = "/test"
-        response = self._client.request("POST", path, json=body)
+        response = self._client.request("POST", path, json=body.to_dict())
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
-        return response.json()  # type: ignore[return-value]
+        return Foo.from_dict(response.json())

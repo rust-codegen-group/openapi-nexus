@@ -22,6 +22,7 @@ use crate::ir::types::{
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
+use sigil_stitch::lang::go_lang::GoLang;
 use sigil_stitch::prelude::{CodeBlock, sigil_quote};
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
@@ -91,11 +92,36 @@ fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<String> {
         tb = tb.add_field(build_struct_field(json_name, prop));
     }
 
+    if let Some(ap_type) = &obj.additional_properties {
+        let value_type = go_type_str(ap_type);
+        let ap_field = FieldSpec::builder(
+            "AdditionalProperties",
+            TypeName::primitive(&format!("map[string]{value_type}")),
+        )
+        .tag("json:\"-\"")
+        .doc("Additional properties not captured by defined fields.")
+        .build()
+        .expect("AP field builds");
+        tb = tb.add_field(ap_field);
+    }
+
     let fb = FileSpec::builder(&format!("{}.go", name))
         .header(package_header())
         .add_type(tb.build().ok()?);
     let file = fb.build().ok()?;
-    file.render(RENDER_WIDTH).ok()
+    let mut rendered = file.render(RENDER_WIDTH).ok()?;
+
+    if let Some(ap_type) = &obj.additional_properties {
+        let value_type = go_type_str(ap_type);
+        // Insert `import "encoding/json"` after the package declaration.
+        if let Some(pos) = rendered.find("\n\n") {
+            rendered.insert_str(pos + 1, "\nimport \"encoding/json\"\n");
+        }
+        rendered.push_str(&emit_marshal_json(&name));
+        rendered.push_str(&emit_unmarshal_json(&name, obj, &value_type));
+    }
+
+    Some(rendered)
 }
 
 fn build_struct_field(json_name: &str, prop: &IrProperty) -> FieldSpec {
@@ -121,6 +147,76 @@ fn json_tag(json_name: &str, required: bool, nullable: bool) -> String {
     } else {
         format!("json:\"{},omitempty\"", json_name)
     }
+}
+
+fn emit_marshal_json(struct_name: &str) -> String {
+    let cb = sigil_quote!(GoLang {
+        $L("")
+        $L(format!("func (o {struct_name}) MarshalJSON() ([]byte, error)")) {
+            $L(format!("type Plain {struct_name}"))
+            $L("data, err := json.Marshal(Plain(o))")
+            $L("if err != nil") {
+                $L("return nil, err")
+            }
+            $L("if len(o.AdditionalProperties) == 0") {
+                $L("return data, nil")
+            }
+            $L("var base map[string]json.RawMessage")
+            $L("if err := json.Unmarshal(data, &base); err != nil") {
+                $L("return nil, err")
+            }
+            $L("for k, v := range o.AdditionalProperties") {
+                $L("raw, err := json.Marshal(v)")
+                $L("if err != nil") {
+                    $L("return nil, err")
+                }
+                $L("base[k] = raw")
+            }
+            $L("return json.Marshal(base)")
+        }
+    })
+    .expect("MarshalJSON builds");
+    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+        .expect("MarshalJSON renders")
+}
+
+fn emit_unmarshal_json(struct_name: &str, obj: &IrObject, value_type: &str) -> String {
+    let known_map = obj
+        .properties
+        .keys()
+        .map(|k| format!("\"{k}\": true"))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let cb = sigil_quote!(GoLang {
+        $L("")
+        $L(format!("func (o *{struct_name}) UnmarshalJSON(data []byte) error")) {
+            $L(format!("type Plain {struct_name}"))
+            $L("if err := json.Unmarshal(data, (*Plain)(o)); err != nil") {
+                $L("return err")
+            }
+            $L("var raw map[string]json.RawMessage")
+            $L("if err := json.Unmarshal(data, &raw); err != nil") {
+                $L("return err")
+            }
+            $L(format!("known := map[string]bool{{{known_map}}}"))
+            $L(format!("o.AdditionalProperties = make(map[string]{value_type})"))
+            $L("for k, v := range raw") {
+                $L("if known[k]") {
+                    $L("continue")
+                }
+                $L(format!("var parsed {value_type}"))
+                $L("if err := json.Unmarshal(v, &parsed); err != nil") {
+                    $L("continue")
+                }
+                $L("o.AdditionalProperties[k] = parsed")
+            }
+            $L("return nil")
+        }
+    })
+    .expect("UnmarshalJSON builds");
+    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+        .expect("UnmarshalJSON renders")
 }
 
 // ---------------------------------------------------------------------------

@@ -617,11 +617,19 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     cb.add_line();
 
     if !plan.typed_responses.is_empty() {
-        cb.begin_control_flow("switch httpResp.StatusCode", ());
+        let mut numeric_responses: Vec<&TypedResponse> = Vec::new();
+        let mut wildcard_responses: Vec<&TypedResponse> = Vec::new();
         for tr in &plan.typed_responses {
-            let Some(code) = tr.status.parse::<u16>().ok() else {
-                continue;
-            };
+            if tr.status.parse::<u16>().is_ok() {
+                numeric_responses.push(tr);
+            } else {
+                wildcard_responses.push(tr);
+            }
+        }
+
+        cb.begin_control_flow("switch httpResp.StatusCode", ());
+        for tr in &numeric_responses {
+            let code = tr.status.parse::<u16>().unwrap();
             cb.add(&format!("case {code}:"), ());
             cb.add_line();
             cb.add("%L", emit_decode_into(&tr.field_name, &tr.go_type));
@@ -629,6 +637,23 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         cb.add("default:", ());
         cb.add_line();
         cb.add("%>", ());
+        for tr in &wildcard_responses {
+            let (low, high) = wildcard_range(&tr.status);
+            cb.begin_control_flow(
+                &format!(
+                    "if httpResp.StatusCode >= {} && httpResp.StatusCode < {}",
+                    low, high
+                ),
+                (),
+            );
+            cb.add("%L", emit_decode_into(&tr.field_name, &tr.go_type));
+            cb.add(
+                "return resp, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status}",
+                (),
+            );
+            cb.add_line();
+            cb.end_control_flow();
+        }
         cb.begin_control_flow("if httpResp.StatusCode >= 400", ());
         cb.add("body, _ := io.ReadAll(httpResp.Body)", ());
         cb.add_line();
@@ -708,6 +733,17 @@ fn response_field_name(status: &str) -> String {
         format!("Status{code}")
     } else {
         format!("Status{}", status.to_uppercase())
+    }
+}
+
+fn wildcard_range(status: &str) -> (u16, u16) {
+    match status.to_uppercase().as_str() {
+        "1XX" => (100, 200),
+        "2XX" => (200, 300),
+        "3XX" => (300, 400),
+        "4XX" => (400, 500),
+        "5XX" => (500, 600),
+        _ => (0, 1000),
     }
 }
 

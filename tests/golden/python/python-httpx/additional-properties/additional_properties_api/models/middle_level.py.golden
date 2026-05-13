@@ -23,7 +23,7 @@ class MiddleLevel:
         result: dict[str, object] = {}
         result["count"] = self.count
         result["key"] = self.key
-        result["nested"] = self.nested
+        result["nested"] = {k: v.to_dict() for k, v in self.nested.items()}
         if self.extras is not None:
             result["extras"] = self.extras
         if self.flags is not None:
@@ -35,7 +35,7 @@ class MiddleLevel:
         return cls(
             count=data["count"],  # type: ignore[assignment]
             key=data["key"],  # type: ignore[assignment]
-            nested=data["nested"],  # type: ignore[assignment]
+            nested={k: LeafValue.from_dict(v) for k, v in data["nested"].items()},  # type: ignore[union-attr]
             extras=data.get("extras"),  # type: ignore[assignment]
             flags=data.get("flags"),  # type: ignore[assignment]
         )

@@ -19,3 +19,25 @@ class Baz:
     id: str
     status: Literal["active", "inactive", "pending"]
     meta_data: Bar | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        result: dict[str, object] = {}
+        result["count1"] = self.count1
+        result["count2"] = self.count2
+        result["createdAt"] = self.created_at
+        result["id"] = self.id
+        result["status"] = self.status
+        if self.meta_data is not None:
+            result["metaData"] = self.meta_data.to_dict()
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict[str, object]) -> Baz:
+        return cls(
+            count1=data["count1"],  # type: ignore[assignment]
+            count2=data["count2"],  # type: ignore[assignment]
+            created_at=data["createdAt"],  # type: ignore[assignment]
+            id=data["id"],  # type: ignore[assignment]
+            status=data["status"],  # type: ignore[assignment]
+            meta_data=Bar.from_dict(data.get("metaData")) if data.get("metaData") is not None else None,  # type: ignore[arg-type]
+        )

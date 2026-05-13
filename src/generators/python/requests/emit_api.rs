@@ -223,6 +223,15 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> C
                     b.var_name, b.var_name
                 )
             }
+        } else if is_array_of_objects(&b.type_expr, ir) {
+            if b.required {
+                format!("[item.to_dict() for item in {}]", b.var_name)
+            } else {
+                format!(
+                    "[item.to_dict() for item in {}] if {} is not None else None",
+                    b.var_name, b.var_name
+                )
+            }
         } else {
             b.var_name.clone()
         }
@@ -292,6 +301,7 @@ fn render_stringify(var: &str, type_expr: &IrTypeExpr) -> String {
             | IrPrimitive::NumberWithFormat(_),
         ) => format!("str({var})"),
         IrTypeExpr::Nullable(inner) => render_stringify(var, inner),
+        IrTypeExpr::Array(_) => format!("\",\".join(str(v) for v in {var})"),
         _ => format!("str({var})"),
     }
 }
@@ -324,6 +334,15 @@ fn render_response_parse(type_expr: &IrTypeExpr, ir: &IrSpec) -> String {
 
 fn is_object_type(type_expr: &IrTypeExpr, ir: &IrSpec) -> bool {
     if let IrTypeExpr::Named(name) = type_expr {
+        return is_object_schema(name, ir);
+    }
+    false
+}
+
+fn is_array_of_objects(type_expr: &IrTypeExpr, ir: &IrSpec) -> bool {
+    if let IrTypeExpr::Array(inner) = type_expr
+        && let IrTypeExpr::Named(name) = inner.as_ref()
+    {
         return is_object_schema(name, ir);
     }
     false

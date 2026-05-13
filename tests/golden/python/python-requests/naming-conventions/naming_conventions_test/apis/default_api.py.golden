@@ -28,7 +28,7 @@ class DefaultApi:
         if kebab_case_param is not None:
             params["kebab-case-param"] = str(kebab_case_param)
         if kebab_case_array is not None:
-            params["kebab-case-array"] = str(kebab_case_array)
+            params["kebab-case-array"] = ",".join(str(v) for v in kebab_case_array)
         if pascal_case_param is not None:
             params["PascalCaseParam"] = str(pascal_case_param)
         if pascal_case_number is not None:
