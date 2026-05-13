@@ -414,12 +414,9 @@ pub fn emit_response_struct(plan: &OpPlan<'_>, extra: Option<&ExtraDeriveConfig>
     tb = tb.visibility(Visibility::Public);
     tb = tb.doc(&format!("Response from `{}`.", plan.method_name));
 
-    let mut ann = AnnotationSpec::new("derive");
-    ann = ann.arg("Debug");
+    let mut ann = AnnotationSpec::new("derive").args(["Debug"]);
     if let Some(cfg) = extra {
-        for d in &cfg.derives {
-            ann = ann.arg(d);
-        }
+        ann = ann.args(cfg.derives.iter().map(|s| s.as_str()));
     }
     tb = tb.annotate(ann);
 

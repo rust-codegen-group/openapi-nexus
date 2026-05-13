@@ -718,7 +718,7 @@ fn pointerize_type_name(go_ty: &str) -> TypeName {
     if go_ty.starts_with('[') || go_ty.starts_with('*') || go_ty.starts_with("map[") {
         TypeName::raw(go_ty)
     } else {
-        TypeName::raw(&format!("*{go_ty}"))
+        TypeName::pointer(TypeName::raw(go_ty))
     }
 }
 
