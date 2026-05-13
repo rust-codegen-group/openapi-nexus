@@ -1,0 +1,32 @@
+{
+  "description": "This is a sample Pet Store Server based on the OpenAPI 3.1 specification",
+  "devDependencies": {
+    "typescript": "latest",
+    "vite-plus": "latest"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "license": "Apache 2.0",
+  "main": "./dist/index.mjs",
+  "name": "petstore-api",
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check --no-fmt"
+  },
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "version": "1.0.0"
+}

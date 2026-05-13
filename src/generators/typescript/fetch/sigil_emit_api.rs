@@ -157,22 +157,32 @@ fn emit_api_file(
     // When property_naming_camel_case is enabled, add explicit imports for
     // converter functions and $Wire types referenced in raw code blocks.
     if property_naming_camel_case {
-        for name in collect_named_body_types(ops, convertible) {
+        let request_types = collect_request_named_types(ops, convertible);
+        let response_types = collect_response_named_types(ops, convertible);
+
+        for name in request_types.union(&response_types) {
             let pascal = name.to_pascal_case();
             let module = format!("../models/{pascal}");
             let base = fn_base_name(&pascal);
-            let from_fn = format!("{base}FromJSON");
-            let to_fn = format!("{base}ToJSON");
-            let wire_name = format!("{}$Wire", pascal);
-            fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named(
-                &module, &from_fn,
-            ));
-            fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named(
-                &module, &to_fn,
-            ));
-            fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named_type(
-                &module, &wire_name,
-            ));
+            let in_request = request_types.contains(name);
+            let in_response = response_types.contains(name);
+
+            if in_response {
+                let from_fn = format!("{base}FromJSON");
+                let wire_name = format!("{}$Wire", pascal);
+                fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named(
+                    &module, &from_fn,
+                ));
+                fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named_type(
+                    &module, &wire_name,
+                ));
+            }
+            if in_request {
+                let to_fn = format!("{base}ToJSON");
+                fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named(
+                    &module, &to_fn,
+                ));
+            }
         }
     }
 
@@ -663,45 +673,76 @@ fn emit_response_handler(
 ) {
     cb.add("// Handle responses\n", vec![]);
 
-    // Classify: conditional (explicit 2xx/4xx status), default (the "default"
-    // response key), fallback (we synthesize one when no default is given).
-    let mut conditional: Vec<(String, &IrResponse)> = Vec::new();
+    let mut numeric: Vec<(u16, &IrResponse)> = Vec::new();
+    let mut wildcards: Vec<(&str, &IrResponse)> = Vec::new();
     let mut default: Option<&IrResponse> = None;
     for resp in &op.responses {
         if resp.status.eq_ignore_ascii_case("default") {
             default = Some(resp);
+        } else if let Ok(code) = resp.status.parse::<u16>() {
+            numeric.push((code, resp));
         } else {
-            conditional.push((resp.status.clone(), resp));
+            wildcards.push((&resp.status, resp));
         }
     }
-    conditional.sort_by(|a, b| a.0.cmp(&b.0));
+    numeric.sort_by_key(|(code, _)| *code);
 
     let fallback_has_body = op.responses.iter().any(|r| !r.content.is_empty());
 
-    if conditional.is_empty() {
+    if numeric.is_empty() && wildcards.is_empty() {
         if let Some(d) = default {
             emit_response_return(cb, d, false, property_naming_camel_case, convertible);
         } else {
             emit_fallback_return(cb, fallback_has_body, false);
         }
     } else {
-        for (i, (_, resp)) in conditional.iter().enumerate() {
+        for (i, (code, resp)) in numeric.iter().enumerate() {
             let keyword = if i == 0 { "if" } else { "else if" };
-            let status_code: u16 = resp.status.parse().unwrap_or(0);
             cb.add(
-                &format!("{} (response.status === {}) {{\n  ", keyword, status_code),
+                &format!("{keyword} (response.status === {code}) {{\n  "),
                 vec![],
             );
             emit_response_return(cb, resp, true, property_naming_camel_case, convertible);
             cb.add("}\n", vec![]);
         }
-        cb.add("else {\n  ", vec![]);
+
+        // Wildcard range checks (4XX, 5XX, etc.) go in the else arm
+        let else_keyword = if numeric.is_empty() { "" } else { "else " };
+        if !wildcards.is_empty() {
+            for (i, (status, resp)) in wildcards.iter().enumerate() {
+                let (low, high) = wildcard_status_range(status);
+                let kw = if i == 0 { else_keyword } else { "else " };
+                cb.add(
+                    &format!(
+                        "{kw}if (response.status >= {low} && response.status < {high}) {{\n  "
+                    ),
+                    vec![],
+                );
+                emit_response_return(cb, resp, true, property_naming_camel_case, convertible);
+                cb.add("}\n", vec![]);
+            }
+            cb.add("else {\n  ", vec![]);
+        } else {
+            cb.add(&format!("{else_keyword}{{\n  "), vec![]);
+        }
+
         if let Some(d) = default {
             emit_response_return(cb, d, true, property_naming_camel_case, convertible);
         } else {
             emit_fallback_return(cb, fallback_has_body, true);
         }
         cb.add("}\n", vec![]);
+    }
+}
+
+fn wildcard_status_range(status: &str) -> (u16, u16) {
+    match status.to_uppercase().as_str() {
+        "1XX" => (100, 200),
+        "2XX" => (200, 300),
+        "3XX" => (300, 400),
+        "4XX" => (400, 500),
+        "5XX" => (500, 600),
+        _ => (0, 1000),
     }
 }
 
@@ -1247,9 +1288,9 @@ fn body_to_json_expr(
     }
 }
 
-/// Collect unique Named type references from request bodies and JSON responses
+/// Collect unique Named type references from request bodies only
 /// that are in the convertible set (i.e., have $Wire/fromJSON/toJSON emitted).
-fn collect_named_body_types(
+fn collect_request_named_types(
     ops: &[&IrOperation],
     convertible: &HashSet<String>,
 ) -> BTreeSet<String> {
@@ -1268,6 +1309,18 @@ fn collect_named_body_types(
                 names.insert(n.clone());
             }
         }
+    }
+    names
+}
+
+/// Collect unique Named type references from JSON responses only
+/// that are in the convertible set (i.e., have $Wire/fromJSON/toJSON emitted).
+fn collect_response_named_types(
+    ops: &[&IrOperation],
+    convertible: &HashSet<String>,
+) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    for op in ops {
         for resp in &op.responses {
             if let Some(IrTypeExpr::Named(n)) = resp.content.get("application/json")
                 && convertible.contains(n)

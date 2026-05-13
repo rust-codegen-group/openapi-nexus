@@ -1,0 +1,32 @@
+{
+  "description": "This API demonstrates all 4 kinds of enum representation types: Externally Tagged, Internally Tagged, Adjacently Tagged, and Untagged",
+  "devDependencies": {
+    "typescript": "latest",
+    "vite-plus": "latest"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "license": "MIT OR Apache-2.0",
+  "main": "./dist/index.mjs",
+  "name": "enum-representation-api",
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check --no-fmt"
+  },
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "version": "1.0.0"
+}

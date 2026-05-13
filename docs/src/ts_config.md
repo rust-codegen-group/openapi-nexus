@@ -107,6 +107,20 @@ The narrowing expression depends on the tagging style:
 
 Variants with "UNSPECIFIED" in the discriminator value, discriminator values equal to the field name, or bare string-literal content types are skipped. Defaults to `false`.
 
+### `toolchain`
+
+Selects the type checking and build toolchain. One of `"tsc"` (default) or `"vp"`.
+
+- `"tsc"` — bare TypeScript compiler. Generates `tsconfig.json` only. Build script: `tsc`.
+- `"vp"` — vite-plus. Generates `vite.config.ts` with `pack` config for library output (ESM + .d.ts). Build script: `vp pack`. Check script: `vp check --no-fmt`.
+
+When `toolchain = "vp"`, the generated `package.json` includes `vite-plus` and `typescript` as dev dependencies, and scripts use `vp pack` (library mode) rather than `vp build` (app mode).
+
+```toml
+[generators.typescript-fetch]
+toolchain = "vp"
+```
+
 ### `property_naming`
 
 Controls the naming convention for properties in generated interfaces. When set to `"camelCase"`, generates dual-type model files:

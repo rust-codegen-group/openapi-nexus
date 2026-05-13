@@ -257,17 +257,22 @@ impl TypeScriptFetchCodeGenerator {
             package_name
         };
 
+        let (main_file, types_file) = match self.config.toolchain {
+            Toolchain::Vp => ("./dist/index.mjs", "./dist/index.d.mts"),
+            Toolchain::Tsc => ("./dist/index.js", "./dist/index.d.ts"),
+        };
+
         let mut package_json = serde_json::json!({
             "name": scoped_name,
             "version": version,
             "description": description,
             "type": "module",
-            "main": "./dist/index.js",
-            "types": "./dist/index.d.ts",
+            "main": main_file,
+            "types": types_file,
             "exports": {
                 ".": {
-                    "types": "./dist/index.d.ts",
-                    "default": "./dist/index.js"
+                    "types": types_file,
+                    "default": main_file
                 }
             },
             "files": ["dist"],
