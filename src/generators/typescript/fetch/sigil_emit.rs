@@ -431,6 +431,16 @@ fn build_from_json_fn(
         })
         .collect::<Result<_, _>>()
         .ok()?;
+
+    if obj.properties.is_empty() {
+        return sigil_quote!(TypeScript {
+            $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
+            $L(format!("  return json as unknown as {name};"))
+            $L("}")
+        })
+        .ok();
+    }
+
     sigil_quote!(TypeScript {
         $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
         $L("  return {")
@@ -461,6 +471,16 @@ fn build_to_json_fn(
         })
         .collect::<Result<_, _>>()
         .ok()?;
+
+    if obj.properties.is_empty() {
+        return sigil_quote!(TypeScript {
+            $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
+            $L(format!("  return value as unknown as {wire_name};"))
+            $L("}")
+        })
+        .ok();
+    }
+
     sigil_quote!(TypeScript {
         $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
         $L("  return {")

@@ -131,8 +131,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - generator: typescript-fetch
-            cmd: just golden-typescript::build
+          - generator: typescript-fetch-tsc
+            cmd: just golden-typescript::build-tsc
+          - generator: typescript-fetch-vp
+            cmd: just golden-typescript::build-vp
           - generator: go-http
             cmd: just golden-go::build
           - generator: rust-reqwest
@@ -157,10 +159,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         if: contains(matrix.generator, 'rust-')
       - uses: actions/setup-node@v6
-        if: matrix.generator == 'typescript-fetch'
+        if: contains(matrix.generator, 'typescript-fetch')
         with:
           node-version: 'lts/*'
-      - if: matrix.generator == 'typescript-fetch'
+      - if: contains(matrix.generator, 'typescript-fetch')
         run: npm install -g typescript vite-plus
       - uses: actions/setup-go@v6
         if: matrix.generator == 'go-http'

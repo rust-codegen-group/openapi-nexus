@@ -47,7 +47,7 @@ CI materializes each golden directory into a temp folder (stripping the `.golden
 
 | Language | Command | Marker file |
 |----------|---------|-------------|
-| TypeScript | `tsc --noEmit` | `tsconfig.json.golden` |
+| TypeScript | `vp check --no-fmt && vp pack` or `tsc --noEmit` (see below) | `tsconfig.json.golden` |
 | Go | `go build ./...` | `go.mod.golden` |
 | Rust | `cargo check` | `Cargo.toml.golden` |
 | Python | `pyright` | `pyproject.toml.golden` |
@@ -55,6 +55,19 @@ CI materializes each golden directory into a temp folder (stripping the `.golden
 | Kotlin | `gradle compileKotlin` | `build.gradle.kts.golden` |
 
 This catches type errors that snapshot comparison alone cannot.
+
+### TypeScript: `vp pack` vs `tsc --noEmit`
+
+The TypeScript golden build script selects the toolchain per-test based on whether
+`vite.config.ts.golden` exists in the test directory:
+
+- **With `vite.config.ts`** — runs `vp install && vp check --no-fmt && vp pack`. This is the `toolchain = "vp"` path: installs deps, runs type-aware linting, then builds the library bundle.
+- **Without `vite.config.ts`** — runs `tsc --noEmit`. This is the `toolchain = "tsc"` path: type-checks only.
+
+Both paths are always exercised in CI. Both `vp` and `tsc` must be available.
+
+`vp pack` is library mode (uses `pack.entry` from `vite.config.ts`, emits `.mjs` + `.d.mts`).
+`vp build` is app mode (expects `index.html`). Generated packages are libraries, never apps.
 
 ## Running Golden Tests
 

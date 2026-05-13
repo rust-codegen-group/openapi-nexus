@@ -1,0 +1,31 @@
+{
+  "description": "Comprehensive test for all OpenAPI v3.1.2 schema types",
+  "devDependencies": {
+    "typescript": "latest",
+    "vite-plus": "latest"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.mjs",
+  "name": "comprehensive-schema-types-example",
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check --no-fmt"
+  },
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "version": "1.0.0"
+}

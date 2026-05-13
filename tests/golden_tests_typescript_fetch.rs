@@ -218,6 +218,25 @@ property_naming = "camelCase"
 
 #[test]
 #[traced_test]
+fn test_property_naming_camel_case_response_only_types_golden() {
+    let config: toml::value::Table = toml::from_str(
+        r#"
+property_naming = "camelCase"
+"#,
+    )
+    .unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-property-naming-camel-case-response-only-types",
+        "valid/delete-with-response-schema.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
 fn test_property_naming_camel_case_tagged_union_golden() {
     let config: toml::value::Table = toml::from_str(
         r#"
@@ -502,22 +521,38 @@ components:
     );
 }
 
-#[test]
-#[traced_test]
-fn test_toolchain_vp_golden() {
-    let config: toml::value::Table = toml::from_str(
-        r#"
-toolchain = "vp"
-property_naming = "camelCase"
-"#,
-    )
-    .unwrap();
-    let generator = TypeScriptFetchCodeGenerator::new(config);
-    run_golden_test(
-        &generator,
-        golden_dir(),
-        "ts-toolchain-vp",
-        "valid/type-aliases/discriminated-union-with-refs.yaml",
-        UPDATE_HINT,
-    );
+// ===========================================================================
+// Toolchain = "vp" golden tests
+// Same fixtures re-generated with vp toolchain to verify both paths compile.
+// ===========================================================================
+
+macro_rules! generate_vp_golden_tests {
+    ($($test_name:ident: ($golden_name:expr, $fixture:expr, $extra_config:expr)),* $(,)?) => {
+        $(
+            #[test]
+            #[traced_test]
+            fn $test_name() {
+                let config: toml::value::Table = toml::from_str(
+                    &format!("toolchain = \"vp\"\n{}", $extra_config),
+                )
+                .unwrap();
+                let generator = TypeScriptFetchCodeGenerator::new(config);
+                run_golden_test(
+                    &generator,
+                    golden_dir(),
+                    $golden_name,
+                    $fixture,
+                    UPDATE_HINT,
+                );
+            }
+        )*
+    };
+}
+
+generate_vp_golden_tests! {
+    test_toolchain_vp_petstore_golden: ("ts-toolchain-vp-petstore", "valid/petstore.yaml", ""),
+    test_toolchain_vp_comprehensive_golden: ("ts-toolchain-vp-comprehensive", "valid/comprehensive-schemas.yaml", ""),
+    test_toolchain_vp_camel_case_golden: ("ts-toolchain-vp", "valid/type-aliases/discriminated-union-with-refs.yaml", "property_naming = \"camelCase\""),
+    test_toolchain_vp_delete_response_golden: ("ts-toolchain-vp-delete-response", "valid/delete-with-response-schema.yaml", "property_naming = \"camelCase\""),
+    test_toolchain_vp_enum_repr_golden: ("ts-toolchain-vp-enum-repr", "valid/enum-repr/enum-repr.yaml", "emit_enum_constants = true"),
 }

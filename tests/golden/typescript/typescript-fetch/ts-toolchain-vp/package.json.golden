@@ -6,8 +6,8 @@
   },
   "exports": {
     ".": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     }
   },
   "files": [
@@ -19,13 +19,13 @@
     "typescript",
     "generated"
   ],
-  "main": "./dist/index.js",
+  "main": "./dist/index.mjs",
   "name": "discriminated-union-with-references-test",
   "scripts": {
     "build": "vp pack",
     "check": "vp check --no-fmt"
   },
   "type": "module",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.mts",
   "version": "1.0.0"
 }
