@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9]
+
+### Added
+
+- TypeScript: `toolchain = "vp"` config for vite-plus — generates `vite.config.ts` with type-aware linting, `vp pack` library build, and `vp check --no-fmt` type checking
+
+### Fixed
+
+- TypeScript: wildcard response codes (4XX, 5XX) now emit range checks instead of duplicate `status === 0` branches
+- TypeScript: split import collection into request-only and response-only sets so `toJSON` is only imported for request body types
+- TypeScript: empty-object `fromJSON`/`toJSON` converters use pass-through cast instead of empty destructure
+- TypeScript: vp toolchain emits `.mjs`/`.d.mts` paths in `package.json` to match `vp pack` output
+- Python: add `to_dict`/`from_dict` to allOf intersection dataclasses
+- Python: serialize `list[Model]` request bodies with `to_dict` mapping
+- Python: use comma-join for array query params instead of `str(list)`
+- Python: recursively serialize Map values containing object types
+- Go: populate `Status4XX`/`Status5XX` fields for wildcard response codes
+- Go: emit `AdditionalProperties` field with `MarshalJSON`/`UnmarshalJSON`
+
+### Changed
+
+- Bumped sigil-stitch 0.5.0 → 0.5.1
+- Internal: migrated raw `format!()` string building to sigil-stitch structured APIs (Go `TypeName`, `add_embedded`, Python `CodeBlock`, Rust `AnnotationSpec::args`)
+
 ## [0.1.8]
 
 ### Fixed
