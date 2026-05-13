@@ -499,7 +499,7 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion, ir: &IrSpec) -> Opti
 
     if !tu.variants.is_empty() {
         let helpers = build_tagged_union_helpers(&name, &snake_name, tu, ir);
-        file = file.add_raw(&helpers);
+        file = file.add_code(helpers);
     }
 
     file.build().ok()
@@ -510,8 +510,7 @@ fn build_tagged_union_helpers(
     snake_name: &str,
     tu: &IrTaggedUnion,
     ir: &IrSpec,
-) -> String {
-    let mut out = String::new();
+) -> CodeBlock {
     let tag_field = &tu.discriminator_field;
 
     // Only generate helpers for variants that resolve to Object schemas
@@ -528,113 +527,161 @@ fn build_tagged_union_helpers(
         })
         .collect();
 
+    let mut cb = CodeBlock::builder();
+
     if resolved_variants.is_empty() {
-        return out;
+        return cb.build_unwrap();
     }
 
     // from_dict
-    out.push('\n');
-    out.push_str(&format!(
-        "def {snake_name}_from_dict(data: dict[str, object]) -> {pascal_name}:\n"
-    ));
+    cb.add_line();
+    cb.begin_control_flow_with_open(
+        &format!("def {snake_name}_from_dict(data: dict[str, object]) -> {pascal_name}"),
+        (),
+        ":",
+    );
     match &tu.tagging {
         TaggingStyle::Internal => {
-            out.push_str(&format!("    _tag = data[\"{tag_field}\"]\n"));
+            cb.add_statement(&format!("_tag = data[\"{tag_field}\"]"), ());
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let kw = if i == 0 { "if" } else { "elif" };
-                out.push_str(&format!(
-                    "    {kw} _tag == \"{}\":\n        return {py_class}.from_dict(data)\n",
-                    variant.discriminator_value
-                ));
+                let cond = format!("_tag == \"{}\"", variant.discriminator_value);
+                emit_elif(&mut cb, i == 0, &cond, "");
+                cb.add_statement(&format!("return {py_class}.from_dict(data)"), ());
             }
+            cb.end_control_flow();
         }
         TaggingStyle::Adjacent { content_field } => {
-            out.push_str(&format!("    _tag = data[\"{tag_field}\"]\n"));
-            out.push_str(&format!(
-                "    _content = data[\"{content_field}\"]  # type: ignore[assignment]\n"
-            ));
+            cb.add_statement(&format!("_tag = data[\"{tag_field}\"]"), ());
+            cb.add_statement(
+                &format!("_content = data[\"{content_field}\"]  # type: ignore[assignment]"),
+                (),
+            );
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let kw = if i == 0 { "if" } else { "elif" };
-                out.push_str(&format!(
-                    "    {kw} _tag == \"{}\":\n        return {py_class}.from_dict(_content)  # type: ignore[arg-type]\n",
-                    variant.discriminator_value
-                ));
+                let cond = format!("_tag == \"{}\"", variant.discriminator_value);
+                emit_elif(&mut cb, i == 0, &cond, "");
+                cb.add_statement(
+                    &format!("return {py_class}.from_dict(_content)  # type: ignore[arg-type]"),
+                    (),
+                );
             }
+            cb.end_control_flow();
         }
         TaggingStyle::External => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let kw = if i == 0 { "if" } else { "elif" };
-                out.push_str(&format!(
-                    "    {kw} \"{}\" in data:\n        return {py_class}.from_dict(data[\"{}\"])  # type: ignore[arg-type]\n",
-                    variant.discriminator_value, variant.discriminator_value
-                ));
+                let cond = format!("\"{}\" in data", variant.discriminator_value);
+                emit_elif(&mut cb, i == 0, &cond, "");
+                cb.add_statement(
+                    &format!(
+                        "return {py_class}.from_dict(data[\"{}\"])  # type: ignore[arg-type]",
+                        variant.discriminator_value
+                    ),
+                    (),
+                );
             }
+            cb.end_control_flow();
         }
     }
-    out.push_str(&format!(
-        "    raise ValueError(f\"Unknown discriminator value for {pascal_name}: {{data}}\")\n"
-    ));
+    cb.add_statement(
+        &format!("raise ValueError(f\"Unknown discriminator value for {pascal_name}: {{data}}\")"),
+        (),
+    );
+    cb.end_control_flow();
 
     // to_dict
-    out.push('\n');
-    out.push_str(&format!(
-        "def {snake_name}_to_dict(obj: {pascal_name}) -> dict[str, object]:\n"
-    ));
+    cb.add_line();
+    cb.begin_control_flow_with_open(
+        &format!("def {snake_name}_to_dict(obj: {pascal_name}) -> dict[str, object]"),
+        (),
+        ":",
+    );
     let last_idx = resolved_variants.len() - 1;
     match &tu.tagging {
         TaggingStyle::Internal => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let kw = if i == 0 { "if" } else { "elif" };
-                let ignore = if i == last_idx {
+                let suffix = if i == last_idx {
                     "  # type: ignore[reportUnnecessaryIsInstance]"
                 } else {
                     ""
                 };
-                out.push_str(&format!("    {kw} isinstance(obj, {py_class}):{ignore}\n"));
-                out.push_str("        result = obj.to_dict()\n");
-                out.push_str(&format!(
-                    "        result[\"{tag_field}\"] = \"{}\"\n",
-                    variant.discriminator_value
-                ));
-                out.push_str("        return result\n");
+                let cond = format!("isinstance(obj, {py_class})");
+                emit_elif(&mut cb, i == 0, &cond, suffix);
+                cb.add_statement("result = obj.to_dict()", ());
+                cb.add_statement(
+                    &format!(
+                        "result[\"{tag_field}\"] = \"{}\"",
+                        variant.discriminator_value
+                    ),
+                    (),
+                );
+                cb.add_statement("return result", ());
             }
+            cb.end_control_flow();
         }
         TaggingStyle::Adjacent { content_field } => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let kw = if i == 0 { "if" } else { "elif" };
-                let ignore = if i == last_idx {
+                let suffix = if i == last_idx {
                     "  # type: ignore[reportUnnecessaryIsInstance]"
                 } else {
                     ""
                 };
-                out.push_str(&format!("    {kw} isinstance(obj, {py_class}):{ignore}\n"));
-                out.push_str(&format!(
-                    "        return {{\"{tag_field}\": \"{}\", \"{content_field}\": obj.to_dict()}}\n",
-                    variant.discriminator_value
-                ));
+                let cond = format!("isinstance(obj, {py_class})");
+                emit_elif(&mut cb, i == 0, &cond, suffix);
+                cb.add_statement(
+                    &format!(
+                        "return {{\"{tag_field}\": \"{}\", \"{content_field}\": obj.to_dict()}}",
+                        variant.discriminator_value
+                    ),
+                    (),
+                );
             }
+            cb.end_control_flow();
         }
         TaggingStyle::External => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let kw = if i == 0 { "if" } else { "elif" };
-                let ignore = if i == last_idx {
+                let suffix = if i == last_idx {
                     "  # type: ignore[reportUnnecessaryIsInstance]"
                 } else {
                     ""
                 };
-                out.push_str(&format!("    {kw} isinstance(obj, {py_class}):{ignore}\n"));
-                out.push_str(&format!(
-                    "        return {{\"{}\": obj.to_dict()}}\n",
-                    variant.discriminator_value
-                ));
+                let cond = format!("isinstance(obj, {py_class})");
+                emit_elif(&mut cb, i == 0, &cond, suffix);
+                cb.add_statement(
+                    &format!(
+                        "return {{\"{}\": obj.to_dict()}}",
+                        variant.discriminator_value
+                    ),
+                    (),
+                );
             }
+            cb.end_control_flow();
         }
     }
-    out.push_str(&format!(
-        "    raise ValueError(f\"Unknown variant for {pascal_name}: {{type(obj)}}\")\n"
-    ));
+    cb.add_statement(
+        &format!("raise ValueError(f\"Unknown variant for {pascal_name}: {{type(obj)}}\")"),
+        (),
+    );
+    cb.end_control_flow();
 
-    out
+    cb.build_unwrap()
+}
+
+/// Emit an if/elif branch header for Python.
+///
+/// Uses `begin_control_flow_with_open` with an empty custom-open so that the
+/// colon and any trailing comment (suffix) are included directly in the format
+/// string, avoiding the issue where `BlockOpen` (`:`) would be placed after the
+/// suffix.
+fn emit_elif(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    is_first: bool,
+    cond: &str,
+    suffix: &str,
+) {
+    let kw = if is_first { "if" } else { "elif" };
+    if !is_first {
+        cb.end_control_flow();
+    }
+    cb.begin_control_flow_with_open(&format!("{kw} {cond}:{suffix}"), (), "");
 }
 
 // ---------------------------------------------------------------------------

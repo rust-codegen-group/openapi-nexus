@@ -26,6 +26,7 @@ use sigil_stitch::lang::go_lang::GoLang;
 use sigil_stitch::prelude::{CodeBlock, sigil_quote};
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
+use sigil_stitch::spec::import_spec::ImportSpec;
 use sigil_stitch::spec::modifiers::TypeKind;
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
@@ -92,11 +93,11 @@ fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<String> {
         tb = tb.add_field(build_struct_field(json_name, prop));
     }
 
+    let has_ap = obj.additional_properties.is_some();
     if let Some(ap_type) = &obj.additional_properties {
-        let value_type = go_type_str(ap_type);
         let ap_field = FieldSpec::builder(
             "AdditionalProperties",
-            TypeName::primitive(&format!("map[string]{value_type}")),
+            TypeName::map(TypeName::primitive("string"), go_type_name(ap_type)),
         )
         .tag("json:\"-\"")
         .doc("Additional properties not captured by defined fields.")
@@ -105,22 +106,20 @@ fn emit_object(schema: &IrSchema, obj: &IrObject) -> Option<String> {
         tb = tb.add_field(ap_field);
     }
 
-    let fb = FileSpec::builder(&format!("{}.go", name))
+    let mut fb = FileSpec::builder(&format!("{}.go", name))
         .header(package_header())
         .add_type(tb.build().ok()?);
-    let file = fb.build().ok()?;
-    let mut rendered = file.render(RENDER_WIDTH).ok()?;
 
-    if let Some(ap_type) = &obj.additional_properties {
-        let value_type = go_type_str(ap_type);
-        // Insert `import "encoding/json"` after the package declaration.
-        if let Some(pos) = rendered.find("\n\n") {
-            rendered.insert_str(pos + 1, "\nimport \"encoding/json\"\n");
-        }
-        rendered.push_str(&emit_marshal_json(&name));
-        rendered.push_str(&emit_unmarshal_json(&name, obj, &value_type));
+    if has_ap {
+        let value_type = go_type_str(obj.additional_properties.as_ref().unwrap());
+        fb = fb
+            .add_import(ImportSpec::named("encoding/json", "json"))
+            .add_raw(&emit_marshal_json(&name))
+            .add_raw(&emit_unmarshal_json(&name, obj, &value_type));
     }
 
+    let file = fb.build().ok()?;
+    let rendered = file.render(RENDER_WIDTH).ok()?;
     Some(rendered)
 }
 
@@ -151,7 +150,6 @@ fn json_tag(json_name: &str, required: bool, nullable: bool) -> String {
 
 fn emit_marshal_json(struct_name: &str) -> String {
     let cb = sigil_quote!(GoLang {
-        $L("")
         $L(format!("func (o {struct_name}) MarshalJSON() ([]byte, error)")) {
             $L(format!("type Plain {struct_name}"))
             $L("data, err := json.Marshal(Plain(o))")
@@ -189,7 +187,6 @@ fn emit_unmarshal_json(struct_name: &str, obj: &IrObject, value_type: &str) -> S
         .join(", ");
 
     let cb = sigil_quote!(GoLang {
-        $L("")
         $L(format!("func (o *{struct_name}) UnmarshalJSON(data []byte) error")) {
             $L(format!("type Plain {struct_name}"))
             $L("if err := json.Unmarshal(data, (*Plain)(o)); err != nil") {
@@ -308,16 +305,20 @@ fn emit_union(schema: &IrSchema, _union: &IrUnion) -> Option<String> {
 // ---------------------------------------------------------------------------
 
 fn emit_intersection(schema: &IrSchema, inter: &IrIntersection) -> Option<String> {
-    // Hand-rolled: Go embedded fields have no field name, which sigil's
-    // FieldSpec builder rejects. Format the struct directly.
     let name = schema.name.to_pascal_case();
-    let mut out = preamble(&name, schema.description.as_deref());
-    out.push_str(&format!("type {name} struct {{\n"));
-    for member in &inter.members {
-        out.push_str(&format!("\t{}\n", go_type_str(member)));
+    let mut tb = TypeSpec::builder(&name, TypeKind::Struct);
+    if let Some(doc) = &schema.description {
+        tb = tb.doc(doc);
     }
-    out.push_str("}\n");
-    Some(out)
+    for member in &inter.members {
+        tb = tb.add_embedded(go_type_name(member));
+    }
+
+    let fb = FileSpec::builder(&format!("{}.go", name))
+        .header(package_header())
+        .add_type(tb.build().ok()?);
+    let file = fb.build().ok()?;
+    file.render(RENDER_WIDTH).ok()
 }
 
 // ---------------------------------------------------------------------------
@@ -397,7 +398,15 @@ fn preamble(_name: &str, doc: Option<&str>) -> String {
 /// `TypeName::primitive` with the Go identifier. Cross-package imports aren't
 /// needed within the `models/` tree.
 fn go_type_name(expr: &IrTypeExpr) -> TypeName {
-    TypeName::primitive(&go_type_str(expr))
+    match expr {
+        IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
+        IrTypeExpr::Primitive(p) => TypeName::primitive(go_primitive(p)),
+        IrTypeExpr::Array(inner) => TypeName::slice(go_type_name(inner)),
+        IrTypeExpr::Map(inner) => TypeName::map(TypeName::primitive("string"), go_type_name(inner)),
+        IrTypeExpr::Nullable(inner) => TypeName::pointer(go_type_name(inner)),
+        IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => TypeName::primitive("string"),
+        IrTypeExpr::Union(_) | IrTypeExpr::Any => TypeName::primitive("any"),
+    }
 }
 
 /// Map an IR type expression to a Go type as a bare string.
