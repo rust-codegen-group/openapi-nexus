@@ -29,7 +29,7 @@ def container_kind_to_dict(obj: ContainerKind) -> dict[str, object]:
         result = obj.to_dict()
         result["kind"] = "CONTAINER_KIND_MANAGED"
         return result
-    elif isinstance(obj, ContainerKindCustom):  # type: ignore[reportUnnecessaryIsInstance]
+    else:
         result = obj.to_dict()
         result["kind"] = "CONTAINER_KIND_CUSTOM"
         return result

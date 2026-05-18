@@ -35,7 +35,7 @@ def resource_to_dict(obj: Resource) -> dict[str, object]:
         result = obj.to_dict()
         result["kind"] = "RESOURCE_QUICK"
         return result
-    elif isinstance(obj, ResourceCustom):  # type: ignore[reportUnnecessaryIsInstance]
+    else:
         result = obj.to_dict()
         result["kind"] = "RESOURCE_CUSTOM"
         return result

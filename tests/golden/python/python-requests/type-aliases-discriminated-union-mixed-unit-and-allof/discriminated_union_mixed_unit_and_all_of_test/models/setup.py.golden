@@ -40,7 +40,7 @@ def setup_to_dict(obj: Setup) -> dict[str, object]:
         result = obj.to_dict()
         result["kind"] = "SETUP_QUICK"
         return result
-    elif isinstance(obj, SetupCustom):  # type: ignore[reportUnnecessaryIsInstance]
+    else:
         result = obj.to_dict()
         result["kind"] = "SETUP_CUSTOM"
         return result
