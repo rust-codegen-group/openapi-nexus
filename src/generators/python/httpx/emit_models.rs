@@ -535,17 +535,16 @@ fn build_tagged_union_helpers(
 
     // from_dict
     cb.add_line();
-    cb.begin_control_flow_with_open(
+    cb.begin_control_flow(
         &format!("def {snake_name}_from_dict(data: dict[str, object]) -> {pascal_name}"),
         (),
-        ":",
     );
     match &tu.tagging {
         TaggingStyle::Internal => {
             cb.add_statement(&format!("_tag = data[\"{tag_field}\"]"), ());
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
                 let cond = format!("_tag == \"{}\"", variant.discriminator_value);
-                emit_elif(&mut cb, i == 0, &cond, "");
+                emit_elif(&mut cb, i == 0, false, &cond);
                 cb.add_statement(&format!("return {py_class}.from_dict(data)"), ());
             }
             cb.end_control_flow();
@@ -558,7 +557,7 @@ fn build_tagged_union_helpers(
             );
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
                 let cond = format!("_tag == \"{}\"", variant.discriminator_value);
-                emit_elif(&mut cb, i == 0, &cond, "");
+                emit_elif(&mut cb, i == 0, false, &cond);
                 cb.add_statement(
                     &format!("return {py_class}.from_dict(_content)  # type: ignore[arg-type]"),
                     (),
@@ -569,7 +568,7 @@ fn build_tagged_union_helpers(
         TaggingStyle::External => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
                 let cond = format!("\"{}\" in data", variant.discriminator_value);
-                emit_elif(&mut cb, i == 0, &cond, "");
+                emit_elif(&mut cb, i == 0, false, &cond);
                 cb.add_statement(
                     &format!(
                         "return {py_class}.from_dict(data[\"{}\"])  # type: ignore[arg-type]",
@@ -589,22 +588,16 @@ fn build_tagged_union_helpers(
 
     // to_dict
     cb.add_line();
-    cb.begin_control_flow_with_open(
+    cb.begin_control_flow(
         &format!("def {snake_name}_to_dict(obj: {pascal_name}) -> dict[str, object]"),
         (),
-        ":",
     );
     let last_idx = resolved_variants.len() - 1;
     match &tu.tagging {
         TaggingStyle::Internal => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let suffix = if i == last_idx {
-                    "  # type: ignore[reportUnnecessaryIsInstance]"
-                } else {
-                    ""
-                };
                 let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, &cond, suffix);
+                emit_elif(&mut cb, i == 0, i == last_idx, &cond);
                 cb.add_statement("result = obj.to_dict()", ());
                 cb.add_statement(
                     &format!(
@@ -619,13 +612,8 @@ fn build_tagged_union_helpers(
         }
         TaggingStyle::Adjacent { content_field } => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let suffix = if i == last_idx {
-                    "  # type: ignore[reportUnnecessaryIsInstance]"
-                } else {
-                    ""
-                };
                 let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, &cond, suffix);
+                emit_elif(&mut cb, i == 0, i == last_idx, &cond);
                 cb.add_statement(
                     &format!(
                         "return {{\"{tag_field}\": \"{}\", \"{content_field}\": obj.to_dict()}}",
@@ -638,13 +626,8 @@ fn build_tagged_union_helpers(
         }
         TaggingStyle::External => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let suffix = if i == last_idx {
-                    "  # type: ignore[reportUnnecessaryIsInstance]"
-                } else {
-                    ""
-                };
                 let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, &cond, suffix);
+                emit_elif(&mut cb, i == 0, i == last_idx, &cond);
                 cb.add_statement(
                     &format!(
                         "return {{\"{}\": obj.to_dict()}}",
@@ -665,23 +648,21 @@ fn build_tagged_union_helpers(
     cb.build_unwrap()
 }
 
-/// Emit an if/elif branch header for Python.
-///
-/// Uses `begin_control_flow_with_open` with an empty custom-open so that the
-/// colon and any trailing comment (suffix) are included directly in the format
-/// string, avoiding the issue where `BlockOpen` (`:`) would be placed after the
-/// suffix.
 fn emit_elif(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     is_first: bool,
+    is_last: bool,
     cond: &str,
-    suffix: &str,
 ) {
-    let kw = if is_first { "if" } else { "elif" };
     if !is_first {
         cb.end_control_flow();
     }
-    cb.begin_control_flow_with_open(&format!("{kw} {cond}:{suffix}"), (), "");
+    if is_last && !is_first {
+        cb.begin_control_flow("else", ());
+    } else {
+        let kw = if is_first { "if" } else { "elif" };
+        cb.begin_control_flow(&format!("{kw} {cond}"), ());
+    }
 }
 
 // ---------------------------------------------------------------------------

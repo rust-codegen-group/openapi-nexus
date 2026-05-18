@@ -27,7 +27,7 @@ def container_image_to_dict(obj: ContainerImage) -> dict[str, object]:
         result = obj.to_dict()
         result["kind"] = "CONTAINER_IMAGE_MANAGED"
         return result
-    elif isinstance(obj, ContainerImageCustom):  # type: ignore[reportUnnecessaryIsInstance]
+    else:
         result = obj.to_dict()
         result["kind"] = "CONTAINER_IMAGE_CUSTOM"
         return result

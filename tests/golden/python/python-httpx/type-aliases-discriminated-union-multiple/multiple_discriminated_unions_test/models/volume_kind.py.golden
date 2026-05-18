@@ -29,7 +29,7 @@ def volume_kind_to_dict(obj: VolumeKind) -> dict[str, object]:
         result = obj.to_dict()
         result["kind"] = "VOLUME_KIND_LOCAL"
         return result
-    elif isinstance(obj, VolumeKindRemote):  # type: ignore[reportUnnecessaryIsInstance]
+    else:
         result = obj.to_dict()
         result["kind"] = "VOLUME_KIND_REMOTE"
         return result
