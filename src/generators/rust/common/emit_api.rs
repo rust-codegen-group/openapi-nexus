@@ -15,6 +15,7 @@ use crate::ir::types::{
 };
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::{CodeBlock, CodeBlockBuilder};
+use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::annotation_spec::AnnotationSpec;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
@@ -141,35 +142,41 @@ fn emit_api_file(
     // Build struct + impl as a CodeBlock (lifetimes/generics don't fit TypeSpec)
     let mut body = CodeBlock::builder();
 
-    // Struct doc + declaration
-    body.add(&format!("/// API operations under the \"{tag}\" tag."), ());
-    body.add_line();
-    body.add(&format!("pub struct {struct_name}{struct_gen}"), ());
-    body.begin_control_flow("", ());
-    body.add(&format!("client: &'a Client{client_field_args},\n"), ());
-    body.end_control_flow();
-    body.add_line();
-
-    // Impl block
-    body.add(&format!("impl{impl_gen} {struct_name}{type_args}"), ());
-    body.begin_control_flow("", ());
-
-    // Constructor
-    body.add(
-        &format!("/// Create a new `{struct_name}` bound to the given client."),
-        (),
+    // Struct declaration via sigil_quote
+    let doc_struct = format!("/// API operations under the \"{tag}\" tag.");
+    let generics = struct_gen.as_str();
+    let client_type_suffix = client_field_args.as_str();
+    let client_field = format!("client: &'a Client{client_type_suffix},");
+    body.add_code(
+        sigil_quote!(RustLang {
+            $L(doc_struct)
+            pub struct $N(struct_name.as_str())$L(generics) {
+                $L(client_field)
+            }
+        })
+        .expect("struct sigil_quote builds"),
     );
     body.add_line();
-    body.add(
-        &format!("pub fn new(client: &'a Client{client_field_args}) -> Self"),
-        (),
+
+    // Impl block (kept open for method injection)
+    let impl_header = format!("impl{impl_gen} {struct_name}{type_args}");
+    body.add(&impl_header, ());
+    body.begin_control_flow("", ());
+
+    // Constructor via sigil_quote
+    let doc_ctor = format!("/// Create a new `{struct_name}` bound to the given client.");
+    let ctor_sig = format!("pub fn new(client: &'a Client{client_type_suffix}) -> Self");
+    body.add_code(
+        sigil_quote!(RustLang {
+            $L(doc_ctor)
+            $L(ctor_sig) {
+                Self {
+                    client,
+                }
+            }
+        })
+        .expect("constructor sigil_quote builds"),
     );
-    body.begin_control_flow("", ());
-    body.add("Self", ());
-    body.begin_control_flow("", ());
-    body.add("client,\n", ());
-    body.end_control_flow();
-    body.end_control_flow();
 
     // Methods
     for plan in &plans {

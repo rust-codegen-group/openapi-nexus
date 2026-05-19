@@ -690,11 +690,12 @@ fn emit_decode_into(field: &str, go_ty: &str) -> CodeBlock {
             format!("resp.{field} = &payload"),
         )
     };
+    let var_decl = format!("var payload {elem_ty}");
     sigil_quote!(GoLang {
         $>
-        $L(format!("var payload {elem_ty}"))
-        $L("if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil") {
-            $L("return nil, fmt.Errorf(\"decode response: %w\", err)")
+        $L(var_decl)
+        if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+            return nil, fmt.Errorf("decode response: %w", err)
         }
         $L(assignment)
         $<

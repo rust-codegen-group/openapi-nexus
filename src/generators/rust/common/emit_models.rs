@@ -226,7 +226,7 @@ fn emit_object(
                     $L(doc_comment_block(prop.description.as_deref().unwrap()).trim_end())
                 }
                 $if(escape_rust_keyword(&json_name.to_snake_case()) != *json_name) {
-                    $L(format!("#[serde(rename = \"{json_name}\")]"))
+                    #[serde(rename = $S(json_name))]
                 }
                 $if(!prop.required || prop.nullable) {
                     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -287,9 +287,9 @@ fn emit_enum(
         pub enum $N(name.as_str()) {
             $for((variant, wire) in variants.iter()) {
                 $if(variant != wire) {
-                    $L(format!("#[serde(rename = \"{}\")]", escape_str(wire)))
+                    #[serde(rename = $S(wire))]
                 }
-                $L(format!("{variant},"))
+                $N(variant.as_str()),
             }
         }
     })
@@ -339,7 +339,7 @@ fn emit_integer_enum(
         #[repr(i64)]
         pub enum $N(name.as_str()) {
             $for((variant_name, n) in int_variants.iter()) {
-                $L(format!("{variant_name} = {n},"))
+                $N(variant_name.as_str()) = $L(n.to_string()),
             }
         }
     })
@@ -467,7 +467,7 @@ fn emit_union(
         #[serde(untagged)]
         pub enum $N(name.as_str()) {
             $for((variant_name, rust_type) in variants.iter()) {
-                $L(format!("{variant_name}({rust_type}),"))
+                $N(variant_name.as_str())($L(rust_type.as_str())),
             }
         }
     })
@@ -581,7 +581,7 @@ fn emit_tagged_union(
                         $if(!rename_attr.is_empty()) {
                             $L(rename_attr.as_str())
                         }
-                        $L(format!("{variant_name},"))
+                        $N(variant_name.as_str()),
                     })
                     .ok()?
                 } else {
@@ -594,7 +594,7 @@ fn emit_tagged_union(
                             let optional = !prop.required || prop.nullable;
                             sigil_quote!(RustLang {
                                 $if(needs_rename) {
-                                    $L(format!("#[serde(rename = \"{json_name}\")]"))
+                                    #[serde(rename = $S(json_name.as_str()))]
                                 }
                                 $if(optional) {
                                     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -627,11 +627,11 @@ fn emit_tagged_union(
                         cb.add_line();
                     }
                     cb.add(&format!("{variant_name} {{\n%>"), ());
-                    for fb in field_blocks {
-                        cb.add_code(fb);
+                    for fb in &field_blocks {
+                        cb.add_code(fb.clone());
                     }
-                    for ab in additional_blocks {
-                        cb.add_code(ab);
+                    for ab in &additional_blocks {
+                        cb.add_code(ab.clone());
                     }
                     cb.add("%<},", ());
                     cb.build().ok()?
@@ -642,7 +642,7 @@ fn emit_tagged_union(
                     $if(!rename_attr.is_empty()) {
                         $L(rename_attr.as_str())
                     }
-                    $L(format!("{variant_name}({content_ty}),"))
+                    $N(variant_name.as_str())($L(content_ty.as_str())),
                 })
                 .ok()?
             }
@@ -652,7 +652,7 @@ fn emit_tagged_union(
                 $if(!rename_attr.is_empty()) {
                     $L(rename_attr.as_str())
                 }
-                $L(format!("{variant_name}({content_ty}),"))
+                $N(variant_name.as_str())($L(content_ty.as_str())),
             })
             .ok()?
         };
@@ -728,7 +728,7 @@ fn emit_intersection(
         pub struct $N(name.as_str()) {
             $for((field_name, rust_type) in fields.iter()) {
                 #[serde(flatten)]
-                $L(format!("pub {field_name}: {rust_type},"))
+                pub $N(field_name.as_str()): $L(rust_type.as_str()),
             }
         }
     })
@@ -761,7 +761,7 @@ fn build_utoipa_one_of_impl(name: &str, variant_types: &[String]) -> Option<Code
 
         impl utoipa::ToSchema for $N(name) {
             fn name() -> std::borrow::Cow<'static, str> {
-                $L(format!("std::borrow::Cow::Borrowed(\"{name}\")"))
+                std::borrow::Cow::Borrowed($S(name))
             }
         }
     })
@@ -789,7 +789,7 @@ fn build_string_enum_display(name: &str, variants: &[(String, String)]) -> Optio
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
                     $for((variant, wire_value) in variants.iter()) {
-                        $L(format!("{name}::{variant} => write!(f, {wire_value:?}),"))
+                        $N(name)::$N(variant.as_str()) => write!(f, $S(wire_value)),
                     }
                 }
             }

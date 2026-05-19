@@ -545,7 +545,10 @@ fn emit_url_path(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOpe
         .iter()
         .any(|p| matches!(p.location, IrParameterLocation::Path));
     let binding = if has_path_params { "let" } else { "const" };
-    cb.add(&format!("{} urlPath = `{}`;\n", binding, op.path), vec![]);
+    cb.add(
+        &format!("{binding} urlPath = %V;\n"),
+        vec![Arg::VerbatimStr(op.path.clone())],
+    );
 
     let names = resolve_param_names(op);
     for p in op
@@ -556,13 +559,9 @@ fn emit_url_path(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOpe
         let resolved = resolved_param(&names, p);
         let original = &p.name;
         let access = request_parameters_access(&resolved);
-        // The backtick template and the ${...} must both survive into TS output.
         cb.add(
-            &format!(
-                "urlPath = urlPath.replace(`{{{}}}`, encodeURIComponent(String({})));\n",
-                original, access
-            ),
-            vec![],
+            &format!("urlPath = urlPath.replace(%V, encodeURIComponent(String({access})));\n"),
+            vec![Arg::VerbatimStr(format!("{{{original}}}"))],
         );
     }
 }

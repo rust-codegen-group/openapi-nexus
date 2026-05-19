@@ -166,8 +166,8 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> C
     let mut cb = CodeBlock::builder();
 
     // Path interpolation
-    let path_expr = if plan.path_params.is_empty() {
-        format!("\"{}\"", plan.op.path)
+    if plan.path_params.is_empty() {
+        cb.add_statement(&format!("path = \"{}\"", plan.op.path), ());
     } else {
         let mut path_template = plan.op.path.clone();
         for p in &plan.path_params {
@@ -175,9 +175,8 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> C
             let replacement = format!("{{{}}}", p.var_name);
             path_template = path_template.replace(&placeholder, &replacement);
         }
-        format!("f\"{}\"", path_template)
-    };
-    cb.add_statement(&format!("path = {path_expr}"), ());
+        cb.add_statement("path = %V", VerbatimStrArg(path_template));
+    }
 
     // Query params
     let has_query = !plan.query_params.is_empty();
@@ -262,7 +261,7 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> C
         (),
     );
 
-    // Error handling — %T for ApiError auto-import
+    // Error handling
     cb.add_statement("if response.status_code >= 400:%>", ());
     cb.add_statement(
         "raise %T(response.status_code, response.reason, response.content)%<",

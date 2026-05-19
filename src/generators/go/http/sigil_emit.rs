@@ -149,28 +149,30 @@ fn json_tag(json_name: &str, required: bool, nullable: bool) -> String {
 }
 
 fn emit_marshal_json(struct_name: &str) -> String {
+    let func_sig = format!("func (o {struct_name}) MarshalJSON() ([]byte, error)");
+    let plain_alias = format!("type Plain {struct_name}");
     let cb = sigil_quote!(GoLang {
-        $L(format!("func (o {struct_name}) MarshalJSON() ([]byte, error)")) {
-            $L(format!("type Plain {struct_name}"))
-            $L("data, err := json.Marshal(Plain(o))")
-            $L("if err != nil") {
-                $L("return nil, err")
+        $L(func_sig) {
+            $L(plain_alias)
+            data, err := json.Marshal(Plain(o))
+            if err != nil {
+                return nil, err
             }
-            $L("if len(o.AdditionalProperties) == 0") {
-                $L("return data, nil")
+            if len(o.AdditionalProperties) == 0 {
+                return data, nil
             }
-            $L("var base map[string]json.RawMessage")
-            $L("if err := json.Unmarshal(data, &base); err != nil") {
-                $L("return nil, err")
+            var base map[string]json.RawMessage
+            if err := json.Unmarshal(data, &base); err != nil {
+                return nil, err
             }
-            $L("for k, v := range o.AdditionalProperties") {
-                $L("raw, err := json.Marshal(v)")
-                $L("if err != nil") {
-                    $L("return nil, err")
+            for k, v := range o.AdditionalProperties {
+                raw, err := json.Marshal(v)
+                if err != nil {
+                    return nil, err
                 }
-                $L("base[k] = raw")
+                base[k] = raw
             }
-            $L("return json.Marshal(base)")
+            return json.Marshal(base)
         }
     })
     .expect("MarshalJSON builds");
@@ -186,29 +188,34 @@ fn emit_unmarshal_json(struct_name: &str, obj: &IrObject, value_type: &str) -> S
         .collect::<Vec<_>>()
         .join(", ");
 
+    let func_sig = format!("func (o *{struct_name}) UnmarshalJSON(data []byte) error");
+    let plain_alias = format!("type Plain {struct_name}");
+    let known_decl = format!("known := map[string]bool{{{known_map}}}");
+    let make_map = format!("o.AdditionalProperties = make(map[string]{value_type})");
+    let var_parsed = format!("var parsed {value_type}");
     let cb = sigil_quote!(GoLang {
-        $L(format!("func (o *{struct_name}) UnmarshalJSON(data []byte) error")) {
-            $L(format!("type Plain {struct_name}"))
-            $L("if err := json.Unmarshal(data, (*Plain)(o)); err != nil") {
-                $L("return err")
+        $L(func_sig) {
+            $L(plain_alias)
+            if err := json.Unmarshal(data, (*Plain)(o)); err != nil {
+                return err
             }
-            $L("var raw map[string]json.RawMessage")
-            $L("if err := json.Unmarshal(data, &raw); err != nil") {
-                $L("return err")
+            var raw map[string]json.RawMessage
+            if err := json.Unmarshal(data, &raw); err != nil {
+                return err
             }
-            $L(format!("known := map[string]bool{{{known_map}}}"))
-            $L(format!("o.AdditionalProperties = make(map[string]{value_type})"))
-            $L("for k, v := range raw") {
-                $L("if known[k]") {
-                    $L("continue")
+            $L(known_decl)
+            $L(make_map)
+            for k, v := range raw {
+                if known[k] {
+                    continue
                 }
-                $L(format!("var parsed {value_type}"))
-                $L("if err := json.Unmarshal(v, &parsed); err != nil") {
-                    $L("continue")
+                $L(var_parsed)
+                if err := json.Unmarshal(v, &parsed); err != nil {
+                    continue
                 }
-                $L("o.AdditionalProperties[k] = parsed")
+                o.AdditionalProperties[k] = parsed
             }
-            $L("return nil")
+            return nil
         }
     })
     .expect("UnmarshalJSON builds");

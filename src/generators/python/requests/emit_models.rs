@@ -580,8 +580,10 @@ fn build_tagged_union_helpers(
         }
     }
     cb.add_statement(
-        &format!("raise ValueError(f\"Unknown discriminator value for {pascal_name}: {{data}}\")"),
-        (),
+        "raise ValueError(%V)",
+        VerbatimStrArg(format!(
+            "Unknown discriminator value for {pascal_name}: {{data}}"
+        )),
     );
     cb.end_control_flow();
 
@@ -639,8 +641,8 @@ fn build_tagged_union_helpers(
         }
     }
     cb.add_statement(
-        &format!("raise ValueError(f\"Unknown variant for {pascal_name}: {{type(obj)}}\")"),
-        (),
+        "raise ValueError(%V)",
+        VerbatimStrArg(format!("Unknown variant for {pascal_name}: {{type(obj)}}")),
     );
     cb.end_control_flow();
 
