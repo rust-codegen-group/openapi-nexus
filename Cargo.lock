@@ -1380,9 +1380,9 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sigil-stitch"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e449e04d6d0fdb1f403cd725536245661918a8b12e85bedcf3072ae12a33f25e"
+checksum = "c8133249e74f54d112c38af557388a3e6fdea8f30a4698127eba9942b60c9d7e"
 dependencies = [
  "pretty",
  "serde",
@@ -1392,9 +1392,9 @@ dependencies = [
 
 [[package]]
 name = "sigil-stitch-macros"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90c3874fb2fe1270198dbe583670eb214fcba9649a53602d18ac9fe7d089cffd"
+checksum = "584c482b81fb076307d601e9605a707fc330500403e354a325acca0958e0d252"
 dependencies = [
  "proc-macro2",
  "quote",
