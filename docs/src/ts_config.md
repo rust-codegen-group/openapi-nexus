@@ -16,6 +16,7 @@ include_build_scripts = true
 emit_enum_constants = true
 emit_type_guards = true
 property_naming = "camelCase"
+indent = "    "
 ```
 
 ## Options Reference
@@ -119,6 +120,15 @@ When `toolchain = "vp"`, the generated `package.json` includes `vite-plus` and `
 ```toml
 [generators.typescript-fetch]
 toolchain = "vp"
+```
+
+### `indent`
+
+Controls the indentation string used in generated TypeScript files. Accepts any string; common values are `"  "` (2 spaces, default), `"    "` (4 spaces), or `"\t"` (tabs).
+
+```toml
+[generators.typescript-fetch]
+indent = "    "
 ```
 
 ### `property_naming`
