@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11]
+
+### Added
+
+- TypeScript: `indent` config option for controlling output indentation (default `"  "`)
+
+### Fixed
+
+- Python: eliminated extra blank lines between if/elif blocks in tagged union `_from_dict`/`_to_dict` helpers
+
+### Changed
+
+- Bump sigil-stitch 0.5.3 → 0.6.6: adopt `$comment(expr)`, `$attr(expr)`, `%V` verbatim strings, structural braces, and `end_control_flow_no_newline()` across all generators
+
 ## [0.1.10]
 
 ### Changed
