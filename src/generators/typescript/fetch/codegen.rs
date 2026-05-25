@@ -4,6 +4,8 @@ use std::error::Error;
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 
+use sigil_stitch::lang::typescript::TypeScript;
+
 use super::config::TypeScriptFetchConfig;
 use super::config::typescript_fetch_config::Toolchain;
 use super::project_files::{render_index_file, render_readme_file, render_runtime_file};
@@ -50,13 +52,14 @@ impl TypeScriptFetchCodeGenerator {
         &self,
         ir: &crate::ir::types::IrSpec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let ts = TypeScript::new().with_indent(&self.config.indent);
         let flags = super::sigil_emit::EmitFlags {
             emit_enum_constants: self.config.emit_enum_constants,
             emit_type_guards: self.config.emit_type_guards,
             property_naming_camel_case: self.config.property_naming
                 == super::config::PropertyNaming::CamelCase,
         };
-        let mut files = super::sigil_emit::generate_model_files(ir, flags).map_err(|msg| {
+        let mut files = super::sigil_emit::generate_model_files(ir, flags, &ts).map_err(|msg| {
             Box::<dyn Error + Send + Sync>::from(format!("sigil_emit model generation: {msg}"))
         })?;
 
@@ -168,9 +171,11 @@ impl TypeScriptFetchCodeGenerator {
         &self,
         ir: &crate::ir::types::IrSpec,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+        let ts = TypeScript::new().with_indent(&self.config.indent);
         let mut files = super::sigil_emit_api::generate_api_files(
             ir,
             self.config.property_naming == super::config::PropertyNaming::CamelCase,
+            &ts,
         )
         .map_err(|msg| {
             Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api generation: {msg}"))

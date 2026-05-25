@@ -20,6 +20,7 @@ use crate::ir::types::{
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::code_block::{Arg, CodeBlock};
+use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
@@ -143,23 +144,24 @@ pub fn emit_model_file(
     schema: &IrSchema,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     match &schema.kind {
-        IrSchemaKind::Object(obj) => emit_object_file(schema, obj, flags, convertible),
-        IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en, flags),
-        IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr),
-        IrSchemaKind::Union(u) => emit_union_file(schema, u, flags, convertible),
-        IrSchemaKind::Intersection(i) => emit_intersection_file(schema, i, flags, convertible),
-        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union_file(schema, tu, flags, convertible),
+        IrSchemaKind::Object(obj) => emit_object_file(schema, obj, flags, convertible, ts),
+        IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en, flags, ts),
+        IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr, ts),
+        IrSchemaKind::Union(u) => emit_union_file(schema, u, flags, convertible, ts),
+        IrSchemaKind::Intersection(i) => emit_intersection_file(schema, i, flags, convertible, ts),
+        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union_file(schema, tu, flags, convertible, ts),
     }
 }
 
 /// Back-compat alias used by the enum prototype test. Prefer `emit_model_file`.
-pub fn emit_enum_file(schema: &IrSchema) -> Option<FileSpec> {
+pub fn emit_enum_file(schema: &IrSchema, ts: &TypeScript) -> Option<FileSpec> {
     let IrSchemaKind::Enum(en) = &schema.kind else {
         return None;
     };
-    emit_enum_file_from(schema, en, EmitFlags::default())
+    emit_enum_file_from(schema, en, EmitFlags::default(), ts)
 }
 
 fn emit_object_file(
@@ -167,11 +169,12 @@ fn emit_object_file(
     obj: &IrObject,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
 
     if flags.property_naming_camel_case {
-        return emit_object_file_camel_case(schema, obj, &name, convertible);
+        return emit_object_file_camel_case(schema, obj, &name, convertible, ts);
     }
 
     let mut tb = TypeSpec::builder(&name, TypeKind::Interface).visibility(Visibility::Public);
@@ -184,7 +187,7 @@ fn emit_object_file(
     }
 
     let filename = format!("{}.ts", name);
-    FileSpec::builder(&filename)
+    FileSpec::builder_with(&filename, ts.clone())
         .add_type(tb.build().ok()?)
         .build()
         .ok()
@@ -197,6 +200,7 @@ fn emit_object_file_camel_case(
     obj: &IrObject,
     name: &str,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     let wire_name = format!("{}$Wire", name);
     let filename = format!("{}.ts", name);
@@ -227,7 +231,7 @@ fn emit_object_file_camel_case(
     let from_json = build_from_json_fn(name, &wire_name, obj, convertible)?;
     let to_json = build_to_json_fn(name, &wire_name, obj, convertible)?;
 
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
     fb = fb.add_type(wire_tb.build().ok()?);
     fb = fb.add_type(ergo_tb.build().ok()?);
 
@@ -427,26 +431,26 @@ fn build_from_json_fn(
             let ergo_key = obj_literal_key(&camel);
             let wire_access = wire_field_access(&prop.name);
             let conv = from_json_expr(&prop.type_expr, &wire_access, !prop.required, convertible);
-            CodeBlock::of(&format!("    {ergo_key}: {conv},"), ())
+            CodeBlock::of(&format!("{ergo_key}: {conv},"), ())
         })
         .collect::<Result<_, _>>()
         .ok()?;
 
     if obj.properties.is_empty() {
         return sigil_quote!(TypeScript {
-            $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
-            $L(format!("  return json as unknown as {name};"))
-            $L("}")
+            export function $N(fn_name)(json: $N(wire_name)): $N(name) {
+                return json as unknown as $N(name);
+            }
         })
         .ok();
     }
 
     sigil_quote!(TypeScript {
-        $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
-        $L("  return {")
+        export function $N(fn_name)(json: $N(wire_name)): $N(name) {
+        return {
         $C_each(fields);
-        $L("  };")
-        $L("}")
+        };
+        }
     })
     .ok()
 }
@@ -467,26 +471,26 @@ fn build_to_json_fn(
             let wire_key = obj_literal_key(&prop.name);
             let ergo_access = ergo_field_access(&camel);
             let conv = to_json_expr(&prop.type_expr, &ergo_access, !prop.required, convertible);
-            CodeBlock::of(&format!("    {wire_key}: {conv},"), ())
+            CodeBlock::of(&format!("{wire_key}: {conv},"), ())
         })
         .collect::<Result<_, _>>()
         .ok()?;
 
     if obj.properties.is_empty() {
         return sigil_quote!(TypeScript {
-            $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
-            $L(format!("  return value as unknown as {wire_name};"))
-            $L("}")
+            export function $N(fn_name)(value: $N(name)): $N(wire_name) {
+                return value as unknown as $N(wire_name);
+            }
         })
         .ok();
     }
 
     sigil_quote!(TypeScript {
-        $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
-        $L("  return {")
+        export function $N(fn_name)(value: $N(name)): $N(wire_name) {
+        return {
         $C_each(fields);
-        $L("  };")
-        $L("}")
+        };
+        }
     })
     .ok()
 }
@@ -666,17 +670,22 @@ fn collect_named_refs_from_expr(
 ///
 /// Handles string / integer / number / mixed value types. Returns `None` if
 /// any enum value can't be rendered as a TS literal.
-fn emit_enum_file_from(schema: &IrSchema, en: &IrEnum, flags: EmitFlags) -> Option<FileSpec> {
+fn emit_enum_file_from(
+    schema: &IrSchema,
+    en: &IrEnum,
+    flags: EmitFlags,
+    ts: &TypeScript,
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let union_body = enum_union_body(en)?;
 
     let type_alias = sigil_quote!(TypeScript {
-        export type $N(name.as_str()) = $L(union_body.as_str());
+        export type $N(name.as_str()) = $L(union_body);
     })
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         // FileSpec has no structural doc slot — use a raw prelude comment.
         fb = fb.add_raw(&format!("/** {doc} */\n"));
@@ -720,14 +729,14 @@ fn build_enum_const_object(name: &str, en: &IrEnum) -> Option<CodeBlock> {
             } else {
                 format!("'{key}'")
             };
-            CodeBlock::of(&format!("    {key_lit}: {val_literal},"), ()).ok()
+            CodeBlock::of(&format!("  {key_lit}: {val_literal},"), ()).ok()
         })
         .collect();
 
     sigil_quote!(TypeScript {
-        $L(format!("export const {name} = {{"))
-        $C_each(entries);
-        $L("};")
+        export const $N(name) = {
+            $C_each(entries);
+        }
     })
     .ok()
 }
@@ -747,7 +756,7 @@ fn is_valid_ts_identifier(s: &str) -> bool {
 
 /// Alias file: `export type Name = Inner;` — where `Inner` may be a named ref
 /// (import auto-emitted), a primitive, a readonly array, etc.
-fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec> {
+fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr, ts: &TypeScript) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let rhs = type_expr_to_typename(expr);
 
@@ -757,7 +766,7 @@ fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec> {
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
@@ -773,11 +782,12 @@ fn emit_union_file(
     union: &IrUnion,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
 
     if flags.property_naming_camel_case && convertible.contains(&schema.name) {
-        return emit_union_file_camel_case(schema, union, &name, convertible);
+        return emit_union_file_camel_case(schema, union, &name, convertible, ts);
     }
 
     let mut members: Vec<TypeName> = union.members.iter().map(type_expr_to_typename).collect();
@@ -792,7 +802,7 @@ fn emit_union_file(
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
@@ -808,6 +818,7 @@ fn emit_intersection_file(
     intersection: &IrIntersection,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     if intersection.members.is_empty() {
         return None;
@@ -815,7 +826,7 @@ fn emit_intersection_file(
     let name = schema.name.to_pascal_case();
 
     if flags.property_naming_camel_case && convertible.contains(&schema.name) {
-        return emit_intersection_file_camel_case(schema, intersection, &name, convertible);
+        return emit_intersection_file_camel_case(schema, intersection, &name, convertible, ts);
     }
 
     let members: Vec<TypeName> = intersection
@@ -831,7 +842,7 @@ fn emit_intersection_file(
     .ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
@@ -852,6 +863,7 @@ fn emit_tagged_union_file(
     tu: &IrTaggedUnion,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     if tu.variants.is_empty() {
         return None;
@@ -860,7 +872,7 @@ fn emit_tagged_union_file(
     let name = schema.name.to_pascal_case();
 
     if flags.property_naming_camel_case {
-        return emit_tagged_union_file_camel_case(schema, tu, &name, flags, convertible);
+        return emit_tagged_union_file_camel_case(schema, tu, &name, flags, convertible, ts);
     }
 
     // Build `export type Name = <piece> | <piece>;` where each piece
@@ -893,7 +905,7 @@ fn emit_tagged_union_file(
     let code = cb.build().ok()?;
 
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
@@ -916,6 +928,7 @@ fn emit_tagged_union_file_camel_case(
     name: &str,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     let wire_name = format!("{}$Wire", name);
     let filename = format!("{}.ts", name);
@@ -968,7 +981,7 @@ fn emit_tagged_union_file_camel_case(
     let from_json = build_tagged_union_from_json(name, &wire_name, tu, convertible)?;
     let to_json = build_tagged_union_to_json(name, &wire_name, tu, convertible)?;
 
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
@@ -1034,7 +1047,7 @@ fn build_tagged_union_from_json(
             &variant.content_type,
             convertible,
         );
-        case_lines.push(format!("    case '{val}': {case_body}"));
+        case_lines.push(format!("case '{val}': {case_body}"));
     }
     let cases: Vec<CodeBlock> = case_lines
         .iter()
@@ -1043,11 +1056,11 @@ fn build_tagged_union_from_json(
         .ok()?;
 
     sigil_quote!(TypeScript {
-        $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
-        $L(format!("  switch ({disc_access}) {{"))
+        export function $N(fn_name)(json: $N(wire_name)): $N(name) {
+          switch ($L(disc_access)) {
         $C_each(cases);
-        $L("  }")
-        $L("}")
+          }
+        }
     })
     .ok()
 }
@@ -1113,9 +1126,9 @@ fn build_external_tagged_from_json(
     for variant in &tu.variants {
         let val = &variant.discriminator_value;
         let ret_expr = external_variant_from_json_expr(val, &variant.content_type, convertible);
-        body_lines.push(format!("  if ('{val}' in json) return {ret_expr};"));
+        body_lines.push(format!("if ('{val}' in json) return {ret_expr};"));
     }
-    body_lines.push("  throw new Error('Unknown variant');".to_string());
+    body_lines.push("throw new Error('Unknown variant');".to_string());
     let body: Vec<CodeBlock> = body_lines
         .iter()
         .map(|l| CodeBlock::of(l, ()))
@@ -1123,9 +1136,9 @@ fn build_external_tagged_from_json(
         .ok()?;
 
     sigil_quote!(TypeScript {
-        $L(format!("export function {fn_name}(json: {wire_name}): {name} {{"))
+        export function $N(fn_name)(json: $N(wire_name)): $N(name) {
         $C_each(body);
-        $L("}")
+        }
     })
     .ok()
 }
@@ -1183,7 +1196,7 @@ fn build_tagged_union_to_json(
             &variant.content_type,
             convertible,
         );
-        case_lines.push(format!("    case '{val}': {case_body}"));
+        case_lines.push(format!("case '{val}': {case_body}"));
     }
     let cases: Vec<CodeBlock> = case_lines
         .iter()
@@ -1192,11 +1205,11 @@ fn build_tagged_union_to_json(
         .ok()?;
 
     sigil_quote!(TypeScript {
-        $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
-        $L(format!("  switch ({disc_access}) {{"))
+        export function $N(fn_name)(value: $N(name)): $N(wire_name) {
+          switch ($L(disc_access)) {
         $C_each(cases);
-        $L("  }")
-        $L("}")
+          }
+        }
     })
     .ok()
 }
@@ -1270,9 +1283,9 @@ fn build_external_tagged_to_json(
     for variant in &tu.variants {
         let val = &variant.discriminator_value;
         let ret_expr = external_variant_to_json_expr(val, &variant.content_type, convertible);
-        body_lines.push(format!("  if ('{val}' in value) return {ret_expr};"));
+        body_lines.push(format!("if ('{val}' in value) return {ret_expr};"));
     }
-    body_lines.push("  throw new Error('Unknown variant');".to_string());
+    body_lines.push("throw new Error('Unknown variant');".to_string());
     let body: Vec<CodeBlock> = body_lines
         .iter()
         .map(|l| CodeBlock::of(l, ()))
@@ -1280,9 +1293,9 @@ fn build_external_tagged_to_json(
         .ok()?;
 
     sigil_quote!(TypeScript {
-        $L(format!("export function {fn_name}(value: {name}): {wire_name} {{"))
+        export function $N(fn_name)(value: $N(name)): $N(wire_name) {
         $C_each(body);
-        $L("}")
+        }
     })
     .ok()
 }
@@ -1312,15 +1325,17 @@ fn emit_union_file_camel_case(
     union: &IrUnion,
     name: &str,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
 
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
 
     // $Wire type alias
+    let wire_name = format!("{name}$Wire");
     let mut wire_members: Vec<String> = union
         .members
         .iter()
@@ -1331,7 +1346,7 @@ fn emit_union_file_camel_case(
     }
     let wire_body = wire_members.join(" | ");
     let wire_type = sigil_quote!(TypeScript {
-        $L(format!("export type {name}$Wire = {wire_body};"))
+        export type $N(wire_name.as_str()) = $L(wire_body);
     })
     .ok()?;
     fb = fb.add_code(wire_type);
@@ -1343,26 +1358,28 @@ fn emit_union_file_camel_case(
     }
     let ergo_body = ergo_members.join(" | ");
     let ergo_type = sigil_quote!(TypeScript {
-        $L(format!("export type {name} = {ergo_body};"))
+        export type $N(name) = $L(ergo_body);
     })
     .ok()?;
     fb = fb.add_code(ergo_type);
 
     // fromJSON: cast-through
     let base = fn_base_name(name);
+    let from_fn = format!("{base}FromJSON");
+    let to_fn = format!("{base}ToJSON");
     let from_json = sigil_quote!(TypeScript {
-        $L(format!("export function {base}FromJSON(json: {name}$Wire): {name} {{"))
-        $L(format!("  return json as unknown as {name};"))
-        $L("}")
+        export function $N(from_fn)(json: $N(wire_name.as_str())): $N(name) {
+            return json as unknown as $N(name);
+        }
     })
     .ok()?;
     fb = fb.add_code(from_json);
 
     // toJSON: cast-through
     let to_json = sigil_quote!(TypeScript {
-        $L(format!("export function {base}ToJSON(value: {name}): {name}$Wire {{"))
-        $L(format!("  return value as unknown as {name}$Wire;"))
-        $L("}")
+        export function $N(to_fn)(value: $N(name)): $N(wire_name.as_str()) {
+            return value as unknown as $N(wire_name.as_str());
+        }
     })
     .ok()?;
     fb = fb.add_code(to_json);
@@ -1396,15 +1413,17 @@ fn emit_intersection_file_camel_case(
     intersection: &IrIntersection,
     name: &str,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Option<FileSpec> {
     let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder(&filename);
+    let mut fb = FileSpec::builder_with(&filename, ts.clone());
 
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
 
     // $Wire type alias: A$Wire & B$Wire & ... (only $Wire for convertible refs)
+    let wire_name = format!("{name}$Wire");
     let wire_members: Vec<String> = intersection
         .members
         .iter()
@@ -1412,7 +1431,7 @@ fn emit_intersection_file_camel_case(
         .collect();
     let wire_body = wire_members.join(" & ");
     let wire_type = sigil_quote!(TypeScript {
-        $L(format!("export type {name}$Wire = {wire_body};"))
+        export type $N(wire_name.as_str()) = $L(wire_body);
     })
     .ok()?;
     fb = fb.add_code(wire_type);
@@ -1421,13 +1440,15 @@ fn emit_intersection_file_camel_case(
     let ergo_members: Vec<String> = intersection.members.iter().map(type_expr_str).collect();
     let ergo_body = ergo_members.join(" & ");
     let ergo_type = sigil_quote!(TypeScript {
-        $L(format!("export type {name} = {ergo_body};"))
+        export type $N(name) = $L(ergo_body);
     })
     .ok()?;
     fb = fb.add_code(ergo_type);
 
     // fromJSON: spread each convertible Named member's converter
     let base = fn_base_name(name);
+    let from_fn = format!("{base}FromJSON");
+    let to_fn = format!("{base}ToJSON");
     let from_spreads: Vec<String> = intersection
         .members
         .iter()
@@ -1448,10 +1469,11 @@ fn emit_intersection_file_camel_case(
         })
         .collect();
 
+    let from_spreads = from_spreads.join(", ");
     let from_json = sigil_quote!(TypeScript {
-        $L(format!("export function {base}FromJSON(json: {name}$Wire): {name} {{"))
-        $L(format!("  return {{ {} }} as {name};", from_spreads.join(", ")))
-        $L("}")
+        export function $N(from_fn)(json: $N(wire_name.as_str())): $N(name) {
+            return $L("{ @{from_spreads} } as @{name};")
+        }
     })
     .ok()?;
     fb = fb.add_code(from_json);
@@ -1475,10 +1497,11 @@ fn emit_intersection_file_camel_case(
         })
         .collect();
 
+    let to_spreads = to_spreads.join(", ");
     let to_json = sigil_quote!(TypeScript {
-        $L(format!("export function {base}ToJSON(value: {name}): {name}$Wire {{"))
-        $L(format!("  return {{ {} }} as {name}$Wire;", to_spreads.join(", ")))
-        $L("}")
+        export function $N(to_fn)(value: $N(name)): $N(wire_name.as_str()) {
+            return $L("{ @{to_spreads} } as @{name}$Wire;")
+        }
     })
     .ok()?;
     fb = fb.add_code(to_json);
@@ -1536,11 +1559,9 @@ fn build_tagged_union_type_guards(name: &str, tu: &IrTaggedUnion) -> Vec<CodeBlo
 
             let predicate = format!("value is {guard_type}");
             sigil_quote!(TypeScript {
-                $L(format!("export function {guard_name}("))
-                $L(format!("    value: {name}"))
-                $L(format!("): {predicate} {{"))
-                $L(format!("    return {check_body};"))
-                $L("}")
+                export function $N(guard_name)(value: $N(name)): $L(predicate) {
+                return $L(check_body);
+                }
             })
             .ok()
         })
@@ -1802,13 +1823,17 @@ pub fn build_convertible_set(ir: &IrSpec, flags: EmitFlags) -> HashSet<String> {
 }
 
 /// Lower every `IrSchema` in the spec into a sigil-rendered `FileInfo`.
-pub fn generate_model_files(ir: &IrSpec, flags: EmitFlags) -> Result<Vec<FileInfo>, String> {
+pub fn generate_model_files(
+    ir: &IrSpec,
+    flags: EmitFlags,
+    ts: &TypeScript,
+) -> Result<Vec<FileInfo>, String> {
     let header = super::project_files::render_file_header(&ir.info);
     let convertible = build_convertible_set(ir, flags);
     let mut files = Vec::with_capacity(ir.schemas.len());
 
     for (name, schema) in &ir.schemas {
-        let file_spec = emit_model_file(schema, flags, &convertible).ok_or_else(|| {
+        let file_spec = emit_model_file(schema, flags, &convertible, ts).ok_or_else(|| {
             format!(
                 "sigil_emit: unsupported schema kind for {name}: {:?}",
                 schema.kind

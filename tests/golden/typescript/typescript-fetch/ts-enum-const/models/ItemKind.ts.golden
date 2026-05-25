@@ -11,4 +11,4 @@ export const ItemKind = {
     BOOK: 'BOOK' as const,
     MOVIE: 'MOVIE' as const,
     MUSIC: 'MUSIC' as const,
-};
+}

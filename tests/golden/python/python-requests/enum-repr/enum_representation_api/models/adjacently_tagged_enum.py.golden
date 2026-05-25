@@ -27,9 +27,11 @@ def adjacently_tagged_enum_from_dict(data: dict[str, object]) -> AdjacentlyTagge
         return VariantB.from_dict(_content)  # type: ignore[arg-type]
     raise ValueError(f"Unknown discriminator value for AdjacentlyTaggedEnum: {data}")
 
+
 def adjacently_tagged_enum_to_dict(obj: AdjacentlyTaggedEnum) -> dict[str, object]:
     if isinstance(obj, VariantA):
         return {"ty": "ADJACENTLY_TAGGED_ENUM_VARIANT_A", "data": obj.to_dict()}
     else:
         return {"ty": "ADJACENTLY_TAGGED_ENUM_VARIANT_B", "data": obj.to_dict()}
     raise ValueError(f"Unknown variant for AdjacentlyTaggedEnum: {type(obj)}")
+

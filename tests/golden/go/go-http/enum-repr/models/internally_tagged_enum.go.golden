@@ -6,9 +6,9 @@
 package models
 
 // Internally tagged enum
-// 
+//
 // The tag is a field inside the object alongside other fields:
 // `{"ty": "VariantA", "field1": "...", "field2": 123}`
-// 
+//
 // Discriminator: ty (internal).
 type InternallyTaggedEnum = any

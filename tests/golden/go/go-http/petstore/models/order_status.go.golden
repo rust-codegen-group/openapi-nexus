@@ -6,8 +6,8 @@
 package models
 
 // Order status enum
-
 type OrderStatus string
+
 const (
 	OrderStatusPlaced OrderStatus = "placed"
 	OrderStatusApproved OrderStatus = "approved"

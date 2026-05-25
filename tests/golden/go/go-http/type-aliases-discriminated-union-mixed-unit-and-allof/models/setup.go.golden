@@ -11,6 +11,6 @@
 package models
 
 // Setup: quick (managed), custom, or unspecified.
-// 
+//
 // Discriminator: kind (internal).
 type Setup = any

@@ -9,6 +9,7 @@ use std::fs;
 use std::path::Path;
 
 use openapi_nexus::generators::typescript::fetch::sigil_emit;
+use sigil_stitch::lang::typescript::TypeScript;
 
 fn read_fixture(rel: &str) -> String {
     for base in [
@@ -29,7 +30,7 @@ fn render_models(fixture: &str) -> Vec<(String, String)> {
     let yaml = read_fixture(fixture);
     let parsed = openapi_nexus::parser::parse_content_yaml(&yaml).unwrap();
     let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
-    sigil_emit::generate_model_files(&ir, sigil_emit::EmitFlags::default())
+    sigil_emit::generate_model_files(&ir, sigil_emit::EmitFlags::default(), &TypeScript::new())
         .expect("all kinds in fixture should be supported")
         .into_iter()
         .map(|f| (f.filename, f.content))

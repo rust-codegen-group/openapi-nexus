@@ -6,8 +6,8 @@
 package models
 
 // Enum of number values
-
 type NumberEnum int
+
 const (
 	NumberEnumN1 NumberEnum = 1
 	NumberEnumN2 NumberEnum = 2

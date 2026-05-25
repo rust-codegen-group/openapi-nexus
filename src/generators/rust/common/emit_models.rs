@@ -176,12 +176,12 @@ fn derive_attr(base: &str, extra: Option<&ExtraDeriveConfig>) -> String {
                 .filter(|d| !base_set.contains(d))
                 .collect();
             if unique_extra.is_empty() {
-                format!("#[derive({base})]")
+                format!("derive({base})")
             } else {
-                format!("#[derive({base}, {})]", unique_extra.join(", "))
+                format!("derive({base}, {})", unique_extra.join(", "))
             }
         }
-        _ => format!("#[derive({base})]"),
+        _ => format!("derive({base})"),
     }
 }
 
@@ -219,7 +219,7 @@ fn emit_object(
         $if(schema.description.is_some()) {
             $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        $attr(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
         pub struct $N(name.as_str()) {
             $for((json_name, prop) in obj.properties.iter()) {
                 $if(prop.description.is_some()) {
@@ -230,14 +230,14 @@ fn emit_object(
                 }
                 $if(!prop.required || prop.nullable) {
                     #[serde(skip_serializing_if = "Option::is_none", default)]
-                    $L(format!("pub {}: Option<{}>,", escape_rust_keyword(&json_name.to_snake_case()), rust_type_str_model(&prop.type_expr)))
+                    pub $L("@{escape_rust_keyword(&json_name.to_snake_case())}: Option<@{rust_type_str_model(&prop.type_expr)}>,")
                 } $else {
-                    $L(format!("pub {}: {},", escape_rust_keyword(&json_name.to_snake_case()), rust_type_str_model(&prop.type_expr)))
+                    pub $L("@{escape_rust_keyword(&json_name.to_snake_case())}: @{rust_type_str_model(&prop.type_expr)},")
                 }
             }
             $if(obj.additional_properties.is_some()) {
                 #[serde(flatten)]
-                $L(format!("pub additional_properties: std::collections::HashMap<String, {}>,", rust_type_str_model(obj.additional_properties.as_ref().unwrap())))
+                pub $L("additional_properties: std::collections::HashMap<String, @{rust_type_str_model(obj.additional_properties.as_ref().unwrap())}>,")
             }
         }
     })
@@ -283,7 +283,7 @@ fn emit_enum(
         $if(schema.description.is_some()) {
             $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        $L(derive_attr("Debug, Clone, PartialEq, Eq, Serialize, Deserialize", extra))
+        $attr(derive_attr("Debug, Clone, PartialEq, Eq, Serialize, Deserialize", extra))
         pub enum $N(name.as_str()) {
             $for((variant, wire) in variants.iter()) {
                 $if(variant != wire) {
@@ -335,7 +335,7 @@ fn emit_integer_enum(
         $if(schema.description.is_some()) {
             $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        $L(derive_attr("Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr", extra))
+        $attr(derive_attr("Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr", extra))
         #[repr(i64)]
         pub enum $N(name.as_str()) {
             $for((variant_name, n) in int_variants.iter()) {
@@ -391,7 +391,7 @@ fn emit_alias(
             $if(schema.description.is_some()) {
                 $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
             }
-            $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+            $attr(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
             #[serde(transparent)]
             pub struct $N(name.as_str())(pub $T(rhs_type));
         })
@@ -463,7 +463,7 @@ fn emit_union(
         $if(schema.description.is_some()) {
             $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        $attr(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
         #[serde(untagged)]
         pub enum $N(name.as_str()) {
             $for((variant_name, rust_type) in variants.iter()) {
@@ -534,14 +534,11 @@ fn emit_tagged_union(
 
     let serde_tag_attr = match &tu.tagging {
         TaggingStyle::Internal => {
-            format!(
-                "#[serde(tag = \"{}\")]",
-                escape_str(&tu.discriminator_field)
-            )
+            format!("serde(tag = \"{}\")", escape_str(&tu.discriminator_field))
         }
         TaggingStyle::Adjacent { content_field } => {
             format!(
-                "#[serde(tag = \"{}\", content = \"{}\")]",
+                "serde(tag = \"{}\", content = \"{}\")",
                 escape_str(&tu.discriminator_field),
                 escape_str(content_field)
             )
@@ -560,7 +557,7 @@ fn emit_tagged_union(
 
         let rename_attr = if variant_name != variant.discriminator_value {
             format!(
-                "#[serde(rename = \"{}\")]",
+                "serde(rename = \"{}\")",
                 escape_str(&variant.discriminator_value)
             )
         } else {
@@ -579,7 +576,7 @@ fn emit_tagged_union(
                 if non_tag_fields.is_empty() && !has_additional {
                     sigil_quote!(RustLang {
                         $if(!rename_attr.is_empty()) {
-                            $L(rename_attr.as_str())
+                            $attr(rename_attr.as_str())
                         }
                         $N(variant_name.as_str()),
                     })
@@ -623,7 +620,7 @@ fn emit_tagged_union(
 
                     let mut cb = CodeBlock::builder();
                     if !rename_attr.is_empty() {
-                        cb.add(&rename_attr, ());
+                        cb.add(&format!("#[{rename_attr}]"), ());
                         cb.add_line();
                     }
                     cb.add(&format!("{variant_name} {{\n%>"), ());
@@ -640,7 +637,7 @@ fn emit_tagged_union(
                 let content_ty = rust_type_str_model(&variant.content_type);
                 sigil_quote!(RustLang {
                     $if(!rename_attr.is_empty()) {
-                        $L(rename_attr.as_str())
+                        $attr(rename_attr.as_str())
                     }
                     $N(variant_name.as_str())($L(content_ty.as_str())),
                 })
@@ -650,7 +647,7 @@ fn emit_tagged_union(
             let content_ty = rust_type_str_model(&variant.content_type);
             sigil_quote!(RustLang {
                 $if(!rename_attr.is_empty()) {
-                    $L(rename_attr.as_str())
+                    $attr(rename_attr.as_str())
                 }
                 $N(variant_name.as_str())($L(content_ty.as_str())),
             })
@@ -664,9 +661,9 @@ fn emit_tagged_union(
         $if(schema.description.is_some()) {
             $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        $attr(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
         $if(!serde_tag_attr.is_empty()) {
-            $L(serde_tag_attr.as_str())
+            $attr(serde_tag_attr.as_str())
         }
         pub enum $N(name.as_str()) {
             $C_each(variant_blocks);
@@ -724,7 +721,7 @@ fn emit_intersection(
         $if(schema.description.is_some()) {
             $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
         }
-        $L(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
+        $attr(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
         pub struct $N(name.as_str()) {
             $for((field_name, rust_type) in fields.iter()) {
                 #[serde(flatten)]

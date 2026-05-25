@@ -31,6 +31,7 @@ def setup_from_dict(data: dict[str, object]) -> Setup:
         return SetupCustom.from_dict(data)
     raise ValueError(f"Unknown discriminator value for Setup: {data}")
 
+
 def setup_to_dict(obj: Setup) -> dict[str, object]:
     if isinstance(obj, SetupSetupUnspecified):
         result = obj.to_dict()
@@ -45,3 +46,4 @@ def setup_to_dict(obj: Setup) -> dict[str, object]:
         result["kind"] = "SETUP_CUSTOM"
         return result
     raise ValueError(f"Unknown variant for Setup: {type(obj)}")
+

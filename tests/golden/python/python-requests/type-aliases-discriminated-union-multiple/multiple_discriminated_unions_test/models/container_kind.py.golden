@@ -24,6 +24,7 @@ def container_kind_from_dict(data: dict[str, object]) -> ContainerKind:
         return ContainerKindCustom.from_dict(data)
     raise ValueError(f"Unknown discriminator value for ContainerKind: {data}")
 
+
 def container_kind_to_dict(obj: ContainerKind) -> dict[str, object]:
     if isinstance(obj, ContainerKindManaged):
         result = obj.to_dict()
@@ -34,3 +35,4 @@ def container_kind_to_dict(obj: ContainerKind) -> dict[str, object]:
         result["kind"] = "CONTAINER_KIND_CUSTOM"
         return result
     raise ValueError(f"Unknown variant for ContainerKind: {type(obj)}")
+

@@ -26,6 +26,7 @@ def resource_from_dict(data: dict[str, object]) -> Resource:
         return ResourceCustom.from_dict(data)
     raise ValueError(f"Unknown discriminator value for Resource: {data}")
 
+
 def resource_to_dict(obj: Resource) -> dict[str, object]:
     if isinstance(obj, ResourceUnspecified):
         result = obj.to_dict()
@@ -40,3 +41,4 @@ def resource_to_dict(obj: Resource) -> dict[str, object]:
         result["kind"] = "RESOURCE_CUSTOM"
         return result
     raise ValueError(f"Unknown variant for Resource: {type(obj)}")
+

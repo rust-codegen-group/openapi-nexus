@@ -6,8 +6,8 @@
 package models
 
 // AZ enum
-
 type Az string
+
 const (
 	AzFoo Az = "foo"
 	AzBar Az = "bar"

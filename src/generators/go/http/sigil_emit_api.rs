@@ -238,7 +238,7 @@ fn build_constructor(struct_name: &str, module_path: &str) -> FunSpec {
     let func_name = format!("New{struct_name}");
 
     let body = sigil_quote!(GoLang {
-        $L(format!("return &{struct_name}{{client: client}}"))
+        return &$N(struct_name){client: client};
     })
     .expect("constructor body builds");
 
@@ -690,10 +690,9 @@ fn emit_decode_into(field: &str, go_ty: &str) -> CodeBlock {
             format!("resp.{field} = &payload"),
         )
     };
-    let var_decl = format!("var payload {elem_ty}");
     sigil_quote!(GoLang {
         $>
-        $L(var_decl)
+        var $L("payload @{elem_ty}")
         if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
             return nil, fmt.Errorf("decode response: %w", err)
         }
