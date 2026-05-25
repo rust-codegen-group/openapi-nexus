@@ -6,8 +6,8 @@
 package models
 
 // Enum of string values
-
 type StringEnum string
+
 const (
 	StringEnumActive StringEnum = "active"
 	StringEnumInactive StringEnum = "inactive"

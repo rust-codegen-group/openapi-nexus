@@ -6,8 +6,8 @@
 package models
 
 // Foo status enum
-
 type FooStatus string
+
 const (
 	FooStatusFoo FooStatus = "foo"
 	FooStatusBar FooStatus = "bar"

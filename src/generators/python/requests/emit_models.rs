@@ -546,7 +546,7 @@ fn build_tagged_union_helpers(
                 emit_elif(&mut cb, i == 0, false, &cond);
                 cb.add_statement(&format!("return {py_class}.from_dict(data)"), ());
             }
-            cb.end_control_flow();
+            cb.end_control_flow_no_newline();
         }
         TaggingStyle::Adjacent { content_field } => {
             cb.add_statement(&format!("_tag = data[\"{tag_field}\"]"), ());
@@ -562,7 +562,7 @@ fn build_tagged_union_helpers(
                     (),
                 );
             }
-            cb.end_control_flow();
+            cb.end_control_flow_no_newline();
         }
         TaggingStyle::External => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
@@ -576,7 +576,7 @@ fn build_tagged_union_helpers(
                     (),
                 );
             }
-            cb.end_control_flow();
+            cb.end_control_flow_no_newline();
         }
     }
     cb.add_statement(
@@ -609,7 +609,7 @@ fn build_tagged_union_helpers(
                 );
                 cb.add_statement("return result", ());
             }
-            cb.end_control_flow();
+            cb.end_control_flow_no_newline();
         }
         TaggingStyle::Adjacent { content_field } => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
@@ -623,7 +623,7 @@ fn build_tagged_union_helpers(
                     (),
                 );
             }
-            cb.end_control_flow();
+            cb.end_control_flow_no_newline();
         }
         TaggingStyle::External => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
@@ -637,7 +637,7 @@ fn build_tagged_union_helpers(
                     (),
                 );
             }
-            cb.end_control_flow();
+            cb.end_control_flow_no_newline();
         }
     }
     cb.add_statement(
@@ -656,7 +656,7 @@ fn emit_elif(
     cond: &str,
 ) {
     if !is_first {
-        cb.end_control_flow();
+        cb.end_control_flow_no_newline();
     }
     if is_last && !is_first {
         cb.begin_control_flow("else", ());

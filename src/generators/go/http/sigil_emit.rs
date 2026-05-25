@@ -149,11 +149,9 @@ fn json_tag(json_name: &str, required: bool, nullable: bool) -> String {
 }
 
 fn emit_marshal_json(struct_name: &str) -> String {
-    let func_sig = format!("func (o {struct_name}) MarshalJSON() ([]byte, error)");
-    let plain_alias = format!("type Plain {struct_name}");
     let cb = sigil_quote!(GoLang {
-        $L(func_sig) {
-            $L(plain_alias)
+        func (o $L(struct_name)) MarshalJSON() ([]byte, error) {
+            type Plain $L(struct_name)
             data, err := json.Marshal(Plain(o))
             if err != nil {
                 return nil, err
@@ -188,14 +186,11 @@ fn emit_unmarshal_json(struct_name: &str, obj: &IrObject, value_type: &str) -> S
         .collect::<Vec<_>>()
         .join(", ");
 
-    let func_sig = format!("func (o *{struct_name}) UnmarshalJSON(data []byte) error");
-    let plain_alias = format!("type Plain {struct_name}");
     let known_decl = format!("known := map[string]bool{{{known_map}}}");
     let make_map = format!("o.AdditionalProperties = make(map[string]{value_type})");
-    let var_parsed = format!("var parsed {value_type}");
     let cb = sigil_quote!(GoLang {
-        $L(func_sig) {
-            $L(plain_alias)
+        func (o *$L(struct_name)) UnmarshalJSON(data []byte) error {
+            type Plain $L(struct_name)
             if err := json.Unmarshal(data, (*Plain)(o)); err != nil {
                 return err
             }
@@ -209,7 +204,7 @@ fn emit_unmarshal_json(struct_name: &str, obj: &IrObject, value_type: &str) -> S
                 if known[k] {
                     continue
                 }
-                $L(var_parsed)
+                var parsed $L(value_type)
                 if err := json.Unmarshal(v, &parsed); err != nil {
                     continue
                 }
@@ -233,49 +228,50 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
         IrEnumValueType::String => "string",
         IrEnumValueType::Integer => "int",
         IrEnumValueType::Number => "float64",
-        // Mixed-type enums aren't representable as a typed Go enum; fall back
-        // to a plain `interface{}` alias below so callers can pass either
-        // string or number.
         IrEnumValueType::Mixed => {
-            return Some(render_alias_file(
-                &name,
-                "any",
-                schema.description.as_deref(),
-            ));
+            return render_alias_file(&name, "any", schema.description.as_deref());
         }
     };
 
-    // `type Name <base>`
-    let type_decl = format!("type {name} {go_base}");
-
-    // `const ( A Name = "a"; B Name = "b" )`
-    let mut lines = Vec::with_capacity(en.values.len());
-    for v in &en.values {
-        let (const_name, rhs) = match en.value_type {
+    let const_lines: Vec<String> = en
+        .values
+        .iter()
+        .map(|v| match en.value_type {
             IrEnumValueType::String => {
                 let s = v.value.as_str()?;
-                (
-                    format!("{name}{}", s.to_pascal_case()),
-                    format!("\"{}\"", escape_go_string(s)),
-                )
+                Some(format!(
+                    "{}{} {name} = \"{}\"",
+                    name,
+                    s.to_pascal_case(),
+                    escape_go_string(s)
+                ))
             }
             IrEnumValueType::Integer | IrEnumValueType::Number => {
                 let n = v.value.as_number()?;
                 let pretty = n.to_string().replace(['-', '.'], "_");
-                (format!("{name}N{}", pretty), n.to_string())
+                Some(format!("{name}N{pretty} {name} = {n}"))
             }
             IrEnumValueType::Mixed => unreachable!(),
-        };
-        lines.push(format!("\t{const_name} {name} = {rhs}"));
-    }
+        })
+        .collect::<Option<Vec<_>>>()?;
 
-    let body = format!(
-        "{}\n{}\nconst (\n{}\n)\n",
-        preamble(&name, schema.description.as_deref()),
-        type_decl,
-        lines.join("\n"),
-    );
-    Some(body)
+    let cb = sigil_quote!(GoLang {
+        package $L(MODELS_PACKAGE)
+
+        $if(schema.description.is_some()) {
+            $comment(schema.description.as_deref().unwrap())
+        }
+        type $L(name) $L(go_base)
+
+        const (
+        $for(line in const_lines.iter()) {
+            $L(line.as_str())
+        }
+        )
+
+    })
+    .ok()?;
+    cb.render_standalone(&GoLang::new(), RENDER_WIDTH).ok()
 }
 
 // ---------------------------------------------------------------------------
@@ -285,11 +281,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
 fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr) -> Option<String> {
     let name = schema.name.to_pascal_case();
     let rhs = go_type_str(expr);
-    Some(render_alias_file(
-        &name,
-        &rhs,
-        schema.description.as_deref(),
-    ))
+    render_alias_file(&name, &rhs, schema.description.as_deref())
 }
 
 // ---------------------------------------------------------------------------
@@ -300,11 +292,7 @@ fn emit_union(schema: &IrSchema, _union: &IrUnion) -> Option<String> {
     // Untagged unions in Go don't have a clean representation without a
     // discriminator. Use `interface{}` (any) and let callers type-assert.
     let name = schema.name.to_pascal_case();
-    Some(render_alias_file(
-        &name,
-        "any",
-        schema.description.as_deref(),
-    ))
+    render_alias_file(&name, "any", schema.description.as_deref())
 }
 
 // ---------------------------------------------------------------------------
@@ -354,7 +342,7 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<String> {
         Some(desc) => format!("{desc}\n\n{hint}"),
         None => hint,
     };
-    Some(render_alias_file(&name, "any", Some(&combined_doc)))
+    render_alias_file(&name, "any", Some(&combined_doc))
 }
 
 // ---------------------------------------------------------------------------
@@ -373,30 +361,17 @@ fn package_header() -> CodeBlock {
 ///
 /// Used for Alias, mixed-Enum, Union, and TaggedUnion (all reduce to a single
 /// type alias in this pass).
-fn render_alias_file(name: &str, rhs: &str, doc: Option<&str>) -> String {
-    let mut out = String::new();
-    out.push_str(&format!("package {MODELS_PACKAGE}\n\n"));
-    if let Some(d) = doc {
-        for line in d.lines() {
-            out.push_str(&format!("// {line}\n"));
-        }
-    }
-    out.push_str(&format!("type {name} = {rhs}\n"));
-    out
-}
+fn render_alias_file(name: &str, rhs: &str, doc: Option<&str>) -> Option<String> {
+    let cb = sigil_quote!(GoLang {
+        package $L(MODELS_PACKAGE)
 
-/// Preamble = `package models` + optional doc comment.
-///
-/// Used for hand-rolled files (enum const blocks, intersection structs) that
-/// don't fit sigil's builders cleanly.
-fn preamble(_name: &str, doc: Option<&str>) -> String {
-    let mut out = format!("package {MODELS_PACKAGE}\n\n");
-    if let Some(d) = doc {
-        for line in d.lines() {
-            out.push_str(&format!("// {line}\n"));
+        $if(doc.is_some()) {
+            $comment(doc.unwrap())
         }
-    }
-    out
+        type $L(name) = $L(rhs)
+    })
+    .ok()?;
+    cb.render_standalone(&GoLang::new(), RENDER_WIDTH).ok()
 }
 
 /// Map an IR type expression to a sigil `TypeName`.

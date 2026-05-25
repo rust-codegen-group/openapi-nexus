@@ -11,20 +11,14 @@ import type { ScrollEvent } from './ScrollEvent';
 
 export type AppEvent = ({ eventType: 'ClickEvent' } & ClickEvent) | ({ eventType: 'ScrollEvent' } & ScrollEvent) | ({ eventType: 'KeyEvent' } & KeyEvent);
 
-export function isClickEvent(
-    value: AppEvent
-): value is ({ eventType: 'ClickEvent' } & ClickEvent) {
-    return value.eventType === 'ClickEvent';
+export function isClickEvent(value: AppEvent): value is ({ eventType: 'ClickEvent' } & ClickEvent) {
+  return value.eventType === 'ClickEvent';
 }
 
-export function isScrollEvent(
-    value: AppEvent
-): value is ({ eventType: 'ScrollEvent' } & ScrollEvent) {
-    return value.eventType === 'ScrollEvent';
+export function isScrollEvent(value: AppEvent): value is ({ eventType: 'ScrollEvent' } & ScrollEvent) {
+  return value.eventType === 'ScrollEvent';
 }
 
-export function isKeyEvent(
-    value: AppEvent
-): value is ({ eventType: 'KeyEvent' } & KeyEvent) {
-    return value.eventType === 'KeyEvent';
+export function isKeyEvent(value: AppEvent): value is ({ eventType: 'KeyEvent' } & KeyEvent) {
+  return value.eventType === 'KeyEvent';
 }

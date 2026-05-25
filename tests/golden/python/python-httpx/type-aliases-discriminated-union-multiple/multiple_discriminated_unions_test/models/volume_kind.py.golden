@@ -24,6 +24,7 @@ def volume_kind_from_dict(data: dict[str, object]) -> VolumeKind:
         return VolumeKindRemote.from_dict(data)
     raise ValueError(f"Unknown discriminator value for VolumeKind: {data}")
 
+
 def volume_kind_to_dict(obj: VolumeKind) -> dict[str, object]:
     if isinstance(obj, VolumeKindLocal):
         result = obj.to_dict()
@@ -34,3 +35,4 @@ def volume_kind_to_dict(obj: VolumeKind) -> dict[str, object]:
         result["kind"] = "VOLUME_KIND_REMOTE"
         return result
     raise ValueError(f"Unknown variant for VolumeKind: {type(obj)}")
+

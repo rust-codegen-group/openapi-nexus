@@ -6,7 +6,7 @@
 package models
 
 // Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
-// 
+//
 // Serializes as externally tagged: `{"SimpleA": null}`, `{"VariantA": {"field1": "...", "field2": 123}}`,
 // `{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}`
 type MixedEnum = any

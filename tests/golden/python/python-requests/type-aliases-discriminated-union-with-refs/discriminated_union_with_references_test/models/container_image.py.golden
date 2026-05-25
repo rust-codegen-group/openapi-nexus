@@ -22,6 +22,7 @@ def container_image_from_dict(data: dict[str, object]) -> ContainerImage:
         return ContainerImageCustom.from_dict(data)
     raise ValueError(f"Unknown discriminator value for ContainerImage: {data}")
 
+
 def container_image_to_dict(obj: ContainerImage) -> dict[str, object]:
     if isinstance(obj, ContainerImageManaged):
         result = obj.to_dict()
@@ -32,3 +33,4 @@ def container_image_to_dict(obj: ContainerImage) -> dict[str, object]:
         result["kind"] = "CONTAINER_IMAGE_CUSTOM"
         return result
     raise ValueError(f"Unknown variant for ContainerImage: {type(obj)}")
+

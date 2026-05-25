@@ -25,6 +25,7 @@ use crate::ir::types::{
 };
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use sigil_stitch::code_block::{Arg, CodeBlock};
+use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
@@ -42,6 +43,7 @@ const RUNTIME_MOD: &str = "../runtime/runtime";
 pub fn generate_api_files(
     ir: &IrSpec,
     property_naming_camel_case: bool,
+    ts: &TypeScript,
 ) -> Result<Vec<FileInfo>, String> {
     let header = super::project_files::render_file_header(&ir.info);
     let by_tag = group_by_tag(&ir.operations);
@@ -53,7 +55,7 @@ pub fn generate_api_files(
 
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
-        let file_spec = emit_api_file(tag, ops, property_naming_camel_case, &convertible)?;
+        let file_spec = emit_api_file(tag, ops, property_naming_camel_case, &convertible, ts)?;
         let body = file_spec
             .render(100)
             .map_err(|e| format!("sigil_emit_api: render {tag}: {e}"))?;
@@ -129,11 +131,12 @@ fn emit_api_file(
     ops: &[&IrOperation],
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
+    ts: &TypeScript,
 ) -> Result<FileSpec, String> {
     let class_name = format!("{}Api", tag.to_pascal_case());
     let interface_name = format!("{}Interface", class_name);
 
-    let mut fb = FileSpec::builder(&format!("{}.ts", class_name));
+    let mut fb = FileSpec::builder_with(&format!("{}.ts", class_name), ts.clone());
 
     // Request interfaces — one per op that has at least one parameter / body.
     for op in ops {

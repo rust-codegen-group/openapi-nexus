@@ -165,11 +165,10 @@ fn emit_api_file(
 
     // Constructor via sigil_quote
     let doc_ctor = format!("/// Create a new `{struct_name}` bound to the given client.");
-    let ctor_sig = format!("pub fn new(client: &'a Client{client_type_suffix}) -> Self");
     body.add_code(
         sigil_quote!(RustLang {
             $L(doc_ctor)
-            $L(ctor_sig) {
+            pub fn $L("new(client: &'a Client@{client_type_suffix}) -> Self") {
                 Self {
                     client,
                 }

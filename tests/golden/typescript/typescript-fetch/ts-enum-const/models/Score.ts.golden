@@ -11,4 +11,4 @@ export const Score = {
     '0.5': 0.5 as const,
     '1.0': 1.0 as const,
     '1.5': 1.5 as const,
-};
+}

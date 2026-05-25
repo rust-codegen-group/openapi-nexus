@@ -10,14 +10,10 @@ import type { Rectangle } from './Rectangle';
 
 export type Shape = ({ kind: 'circle' } & Circle) | ({ kind: 'rectangle' } & Rectangle);
 
-export function isCircle(
-    value: Shape
-): value is ({ kind: 'circle' } & Circle) {
-    return value.kind === 'circle';
+export function isCircle(value: Shape): value is ({ kind: 'circle' } & Circle) {
+  return value.kind === 'circle';
 }
 
-export function isRectangle(
-    value: Shape
-): value is ({ kind: 'rectangle' } & Rectangle) {
-    return value.kind === 'rectangle';
+export function isRectangle(value: Shape): value is ({ kind: 'rectangle' } & Rectangle) {
+  return value.kind === 'rectangle';
 }

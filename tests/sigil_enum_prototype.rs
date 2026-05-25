@@ -9,6 +9,7 @@ use std::fs;
 use std::path::Path;
 
 use openapi_nexus::generators::typescript::fetch::sigil_emit::emit_enum_file;
+use sigil_stitch::lang::typescript::TypeScript;
 
 fn read_fixture(rel: &str) -> String {
     for base in [
@@ -32,7 +33,7 @@ fn foo_type_enum_renders_as_union_alias() {
     let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
 
     let foo = ir.schemas.get("FooType").expect("FooType schema in IR");
-    let file = emit_enum_file(foo).expect("prototype supports string Enum");
+    let file = emit_enum_file(foo, &TypeScript::new()).expect("prototype supports string Enum");
     let rendered = file.render(100).expect("renders");
 
     println!("--- rendered FooType.ts ---\n{rendered}\n--- end ---");

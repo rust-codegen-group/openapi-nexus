@@ -6,8 +6,8 @@
 package models
 
 // Foo type enum
-
 type FooType string
+
 const (
 	FooTypeFoo FooType = "foo"
 	FooTypeBar FooType = "bar"

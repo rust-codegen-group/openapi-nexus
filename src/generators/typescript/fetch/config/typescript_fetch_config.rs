@@ -95,6 +95,14 @@ pub struct TypeScriptFetchConfig {
     /// - `vp`: vite-plus with type-aware linting and type checking.
     #[serde(default)]
     pub toolchain: Toolchain,
+
+    /// Indent string for generated TypeScript (e.g., `"  "`, `"    "`, `"\t"`).
+    #[serde(default = "default_indent")]
+    pub indent: String,
+}
+
+fn default_indent() -> String {
+    "  ".to_string()
 }
 
 fn default_file_naming_convention() -> NamingConvention {
@@ -171,6 +179,7 @@ impl Default for TypeScriptFetchConfig {
             emit_type_guards: false,
             property_naming: PropertyNaming::default(),
             toolchain: Toolchain::default(),
+            indent: default_indent(),
         }
     }
 }

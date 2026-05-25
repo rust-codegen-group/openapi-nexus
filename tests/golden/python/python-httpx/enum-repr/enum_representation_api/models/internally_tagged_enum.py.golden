@@ -26,6 +26,7 @@ def internally_tagged_enum_from_dict(data: dict[str, object]) -> InternallyTagge
         return VariantB.from_dict(data)
     raise ValueError(f"Unknown discriminator value for InternallyTaggedEnum: {data}")
 
+
 def internally_tagged_enum_to_dict(obj: InternallyTaggedEnum) -> dict[str, object]:
     if isinstance(obj, VariantA):
         result = obj.to_dict()
@@ -36,3 +37,4 @@ def internally_tagged_enum_to_dict(obj: InternallyTaggedEnum) -> dict[str, objec
         result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_B"
         return result
     raise ValueError(f"Unknown variant for InternallyTaggedEnum: {type(obj)}")
+

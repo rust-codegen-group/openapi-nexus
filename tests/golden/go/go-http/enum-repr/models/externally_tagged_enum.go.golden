@@ -6,9 +6,9 @@
 package models
 
 // Externally tagged enum (default Serde representation)
-// 
+//
 // This is the default representation where the variant name is the key
 // and the content is the value: `{"VariantA": {"field1": "...", "field2": 123}}`
-// 
+//
 // Discriminator: variant key (external).
 type ExternallyTaggedEnum = any
