@@ -20,8 +20,8 @@ export interface ConfigurationParameters {
   fetchApi?: FetchAPI; // override for fetch implementation
   middleware?: Middleware[]; // middleware to apply before/after fetch requests
   queryParamsStringify?: (params: HTTPQuery) => string; // stringify function for query strings
-  username?: string; // parameter for basic security
-  password?: string; // parameter for basic security
+  username?: string | (() => string | Promise<string>); // parameter for basic security
+  password?: string | (() => string | Promise<string>); // parameter for basic security
   apiKey?: string | Promise<string> | ((name: string) => string | Promise<string>); // parameter for apiKey security
   accessToken?: string | Promise<string> | ((name?: string, scopes?: string[]) => string | Promise<string>); // parameter for oauth2 security
   headers?: HTTPHeaders; //header params we want to use on every request
@@ -51,12 +51,20 @@ export class Configuration {
     return this.configuration.queryParamsStringify || querystring;
   }
 
-  get username(): string | undefined {
-    return this.configuration.username;
+  get username(): (() => string | Promise<string>) | undefined {
+    const username = this.configuration.username;
+    if (username) {
+      return typeof username === 'function' ? username : async () => username;
+    }
+    return undefined;
   }
 
-  get password(): string | undefined {
-    return this.configuration.password;
+  get password(): (() => string | Promise<string>) | undefined {
+    const password = this.configuration.password;
+    if (password) {
+      return typeof password === 'function' ? password : async () => password;
+    }
+    return undefined;
   }
 
   get apiKey(): ((name: string) => string | Promise<string>) | undefined {
@@ -155,6 +163,14 @@ export class BaseAPI {
     const token = await this.configuration.accessToken?.();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (!headers['Authorization']) {
+      const username = await this.configuration.username?.();
+      const password = await this.configuration.password?.();
+      if (username && password) {
+        headers['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`;
+      }
     }
 
     const initOverrideFn =

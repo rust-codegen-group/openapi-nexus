@@ -34,17 +34,33 @@ class BearerAuth : Authenticator {
     }
 }
 
-class ApiKeyAuth(
-    private val key: String,
-    private val name: String,
-    private val location: ApiKeyLocation,
-) : Authenticator {
+class ApiKeyAuth : Authenticator {
+    private val key: String?
+    private val keyProvider: (() -> String)?
+    private val name: String
+    private val location: ApiKeyLocation
+
+    constructor(key: String, name: String, location: ApiKeyLocation) {
+        this.key = key
+        this.keyProvider = null
+        this.name = name
+        this.location = location
+    }
+
+    constructor(keyProvider: () -> String, name: String, location: ApiKeyLocation) {
+        this.key = null
+        this.keyProvider = keyProvider
+        this.name = name
+        this.location = location
+    }
+
     override fun authenticate(builder: Request.Builder) {
+        val k = keyProvider?.invoke() ?: key!!
         when (location) {
-            ApiKeyLocation.HEADER -> builder.header(name, key)
+            ApiKeyLocation.HEADER -> builder.header(name, k)
             ApiKeyLocation.QUERY -> {
                 val url = builder.build().url.newBuilder()
-                    .addQueryParameter(name, key)
+                    .addQueryParameter(name, k)
                     .build()
                 builder.url(url)
             }
