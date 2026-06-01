@@ -3,6 +3,8 @@
 //
 // Response Fallback Test API — 1.0.0
 
+use std::sync::Arc;
+
 use crate::runtime::error::Error;
 
 /// Trait for authenticating requests.
@@ -15,15 +17,64 @@ pub trait Authenticator<R: aioduct::Runtime>: Send + Sync + std::fmt::Debug {
 }
 
 /// Bearer token authentication.
-#[derive(Debug, Clone)]
+///
+/// Use [`BearerAuth::new`] with a static token, or
+/// [`BearerAuth::from_provider`] with a function that returns the
+/// current token (evaluated on every request).
 pub struct BearerAuth {
-    token: String,
+    token: TokenSource,
+}
+
+enum TokenSource {
+    Static(String),
+    Dynamic(Arc<dyn Fn() -> String + Send + Sync>),
+}
+
+impl std::fmt::Debug for TokenSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Static(t) => f.debug_tuple("Static").field(&t).finish(),
+            Self::Dynamic(_) => f.debug_tuple("Dynamic").field(&"<function>").finish(),
+        }
+    }
+}
+
+impl Clone for TokenSource {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Static(t) => Self::Static(t.clone()),
+            Self::Dynamic(f) => Self::Dynamic(Arc::clone(f)),
+        }
+    }
+}
+
+impl std::fmt::Debug for BearerAuth {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BearerAuth").field("token", &self.token).finish()
+    }
+}
+
+impl Clone for BearerAuth {
+    fn clone(&self) -> Self {
+        Self {
+            token: self.token.clone(),
+        }
+    }
 }
 
 impl BearerAuth {
+    /// Create a new bearer token authenticator with a static token.
     pub fn new(token: impl Into<String>) -> Self {
         Self {
-            token: token.into(),
+            token: TokenSource::Static(token.into()),
+        }
+    }
+
+    /// Create a bearer token authenticator that evaluates the given
+    /// function on every request to obtain the current token.
+    pub fn from_provider(f: impl Fn() -> String + Send + Sync + 'static) -> Self {
+        Self {
+            token: TokenSource::Dynamic(Arc::new(f)),
         }
     }
 }
@@ -33,7 +84,11 @@ impl<R: aioduct::Runtime> Authenticator<R> for BearerAuth {
         &self,
         req: aioduct::RequestBuilder<'a, R>,
     ) -> Result<aioduct::RequestBuilder<'a, R>, Error> {
-        Ok(req.bearer_auth(&self.token))
+        let token = match &self.token {
+            TokenSource::Static(t) => t.clone(),
+            TokenSource::Dynamic(f) => f(),
+        };
+        Ok(req.bearer_auth(&token))
     }
 }
 

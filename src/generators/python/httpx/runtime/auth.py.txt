@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
 
 class Authenticator(ABC):
@@ -15,13 +16,18 @@ class Authenticator(ABC):
 
 
 class BearerAuth(Authenticator):
-    """Bearer token authentication."""
+    """Bearer token authentication.
 
-    def __init__(self, token: str) -> None:
+    Accepts a static token string or a callable that returns the
+    current token (evaluated on every request).
+    """
+
+    def __init__(self, token: str | Callable[[], str]) -> None:
         self._token = token
 
     def auth_headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._token}"}
+        token = self._token() if callable(self._token) else self._token
+        return {"Authorization": f"Bearer {token}"}
 
 
 class ApiKeyAuth(Authenticator):

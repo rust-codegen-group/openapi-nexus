@@ -22,15 +22,24 @@ type Authenticator interface {
 }
 
 // BearerAuth sends `Authorization: Bearer <Token>`.
+//
+// Use the Token field for a static token, or TokenProvider for a
+// function that returns the current token (evaluated per-request).
+// If both are set, TokenProvider takes precedence.
 type BearerAuth struct {
-	Token string
+	Token         string
+	TokenProvider func() string
 }
 
 func (b BearerAuth) AuthenticateRequest(req *http.Request) error {
-	if b.Token == "" {
+	token := b.Token
+	if b.TokenProvider != nil {
+		token = b.TokenProvider()
+	}
+	if token == "" {
 		return fmt.Errorf("bearer auth: empty token")
 	}
-	req.Header.Set("Authorization", "Bearer "+b.Token)
+	req.Header.Set("Authorization", "Bearer "+token)
 	return nil
 }
 

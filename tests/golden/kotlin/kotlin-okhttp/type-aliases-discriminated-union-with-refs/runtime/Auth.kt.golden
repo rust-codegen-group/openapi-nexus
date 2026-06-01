@@ -12,9 +12,23 @@ interface Authenticator {
     fun authenticate(builder: Request.Builder)
 }
 
-class BearerAuth(private val token: String) : Authenticator {
+class BearerAuth : Authenticator {
+    private val token: String?
+    private val tokenProvider: (() -> String)?
+
+    constructor(token: String) {
+        this.token = token
+        this.tokenProvider = null
+    }
+
+    constructor(tokenProvider: () -> String) {
+        this.token = null
+        this.tokenProvider = tokenProvider
+    }
+
     override fun authenticate(builder: Request.Builder) {
-        builder.header("Authorization", "Bearer $token")
+        val t = tokenProvider?.invoke() ?: token!!
+        builder.header("Authorization", "Bearer $t")
     }
 }
 
