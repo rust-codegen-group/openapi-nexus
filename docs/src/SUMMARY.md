@@ -2,6 +2,7 @@
 
 - [Introduction](introduction.md)
 - [Getting Started](getting_started.md)
+- [Authentication](auth.md)
 - [Rust Generator Configuration](rust_config.md)
 - [TypeScript Generator Configuration](ts_config.md)
 - [Architecture](architecture.md)

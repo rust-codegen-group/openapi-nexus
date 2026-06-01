@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.12]
+
+### Added
+
+- Dynamic/lazy auth token provider support across all generators
+  - TypeScript: `accessToken` wired into `createFetchParams()`, evaluated per-request
+  - Go: `BearerAuth` gains `TokenProvider func() string` field
+  - Java: `BearerAuth` gains `Supplier<String>` constructor
+  - Kotlin: `BearerAuth` gains `(() -> String)` secondary constructor
+  - Python: `BearerAuth` accepts `str | Callable[[], str]`
+  - Rust: `BearerAuth` gains `from_provider()` factory with internal `TokenSource` enum
+
 ## [0.1.11]
 
 ### Added
