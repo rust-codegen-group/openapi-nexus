@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Kotlin: `BearerAuth` gains `(() -> String)` secondary constructor
   - Python: `BearerAuth` accepts `str | Callable[[], str]`
   - Rust: `BearerAuth` gains `from_provider()` factory with internal `TokenSource` enum
+- `ApiKeyAuth` dynamic key provider support (all generators)
+  - Go: `KeyProvider func() string` field; Java: `Supplier<String>` constructor; Kotlin: `() -> String` constructor; Python: `str | Callable[[], str]`; Rust: `from_provider()` factory
+- `BasicAuth` dynamic credential provider support
+  - Go: `UsernameProvider` / `PasswordProvider` func fields
+  - TypeScript: `username` / `password` accept `(() => string | Promise<string>)`, wired into `createFetchParams()`
 
 ## [0.1.11]
 

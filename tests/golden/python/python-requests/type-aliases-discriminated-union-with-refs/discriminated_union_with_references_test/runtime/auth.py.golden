@@ -37,11 +37,16 @@ class BearerAuth(Authenticator):
 
 
 class ApiKeyAuth(Authenticator):
-    """API key authentication via a custom header."""
+    """API key authentication via a custom header.
 
-    def __init__(self, header_name: str, api_key: str) -> None:
+    Accepts a static key string or a callable that returns the
+    current key (evaluated on every request).
+    """
+
+    def __init__(self, header_name: str, api_key: str | Callable[[], str]) -> None:
         self._header_name = header_name
         self._api_key = api_key
 
     def auth_headers(self) -> dict[str, str]:
-        return {self._header_name: self._api_key}
+        key = self._api_key() if callable(self._api_key) else self._api_key
+        return {self._header_name: key}
