@@ -14,17 +14,26 @@
 
 package com.example.sdk.runtime;
 
+import java.util.function.Supplier;
 import okhttp3.Request;
 
 public class BearerAuth implements Authenticator {
     private final String token;
+    private final Supplier<String> tokenProvider;
 
     public BearerAuth(String token) {
         this.token = token;
+        this.tokenProvider = null;
+    }
+
+    public BearerAuth(Supplier<String> tokenProvider) {
+        this.token = null;
+        this.tokenProvider = tokenProvider;
     }
 
     @Override
     public void authenticate(Request.Builder builder) {
-        builder.header("Authorization", "Bearer " + token);
+        String t = tokenProvider != null ? tokenProvider.get() : token;
+        builder.header("Authorization", "Bearer " + t);
     }
 }
