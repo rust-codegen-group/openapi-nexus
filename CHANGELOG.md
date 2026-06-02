@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13]
+
+### Added
+
+- cargo-dist support for prebuilt binary releases across 7 platforms
+  - Release workflow: pushes version tags → builds + publishes to GitHub Releases
+  - Nightly workflow: pushes to `master` → builds + updates `nightly` GitHub Release
+  - Shell and PowerShell installers generated automatically
+  - Install via: `curl .../releases/download/nightly/openapi-nexus-installer.sh | sh`
+
 ## [0.1.12]
 
 ### Added

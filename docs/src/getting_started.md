@@ -2,7 +2,19 @@
 
 ## Installation
 
-Download the latest binary from the [releases page](https://github.com/adamcavendish/openapi-nexus/releases), or build from source:
+**Shell installer (no Rust toolchain needed):**
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/adamcavendish/openapi-nexus/releases/download/0.1.13/openapi-nexus-installer.sh | sh
+```
+
+**Nightly build (latest master):**
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/adamcavendish/openapi-nexus/releases/download/nightly/openapi-nexus-installer.sh | sh
+```
+
+**Build from source:**
 
 ```bash
 cargo install openapi-nexus
