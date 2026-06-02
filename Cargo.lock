@@ -447,7 +447,7 @@ checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "fixture-generator-additional-properties"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "axum",
  "axum-extra",
@@ -468,7 +468,7 @@ dependencies = [
 
 [[package]]
 name = "fixture-generator-enum-repr"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "axum",
  "axum-extra",
@@ -489,7 +489,7 @@ dependencies = [
 
 [[package]]
 name = "fixture-generator-petstore"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "axum",
  "axum-extra",
@@ -1032,7 +1032,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "openapi-nexus"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "clap",
  "derive_more",
