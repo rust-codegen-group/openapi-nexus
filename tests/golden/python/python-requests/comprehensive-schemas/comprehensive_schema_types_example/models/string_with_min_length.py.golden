@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # String with minimum length
 
-type StringWithMinLength = str
+type StringWithMinLength = (str)

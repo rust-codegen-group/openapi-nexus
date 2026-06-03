@@ -13,7 +13,10 @@ from .container_kind_managed import ContainerKindManaged
 
 # Discriminator: kind (internal).
 
-type ContainerKind = ContainerKindManaged | ContainerKindCustom
+type ContainerKind = (
+    ContainerKindManaged
+    | ContainerKindCustom
+)
 
 
 def container_kind_from_dict(data: dict[str, object]) -> ContainerKind:

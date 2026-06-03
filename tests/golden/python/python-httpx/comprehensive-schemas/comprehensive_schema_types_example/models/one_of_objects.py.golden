@@ -10,4 +10,7 @@ from .nested_object import NestedObject
 
 # Union of object types
 
-type OneOfObjects = BasicObject | NestedObject
+type OneOfObjects = (
+    BasicObject
+    | NestedObject
+)

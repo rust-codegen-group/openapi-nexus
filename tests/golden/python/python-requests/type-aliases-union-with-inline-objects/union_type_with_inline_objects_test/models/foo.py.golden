@@ -11,4 +11,8 @@ from .foo_member3 import FooMember3
 
 # Union type with inline object schemas
 
-type Foo = FooMember1 | FooMember2 | FooMember3
+type Foo = (
+    FooMember1
+    | FooMember2
+    | FooMember3
+)

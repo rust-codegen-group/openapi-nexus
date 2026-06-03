@@ -5,4 +5,9 @@
 
 from __future__ import annotations
 
-type Foo = str | float | bool | None
+type Foo = (
+    str
+    | float
+    | bool
+    | None
+)

@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Array of numbers
 
-type NumberArray = list[float]
+type NumberArray = (list[float])

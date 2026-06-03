@@ -9,4 +9,8 @@ from .basic_object import BasicObject
 
 # Union of string, null, and schema reference
 
-type OneOfWithNull = str | BasicObject | None
+type OneOfWithNull = (
+    str
+    | BasicObject
+    | None
+)

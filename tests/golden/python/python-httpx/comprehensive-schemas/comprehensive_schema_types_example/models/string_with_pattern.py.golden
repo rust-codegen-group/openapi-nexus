@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # String with regex pattern
 
-type StringWithPattern = str
+type StringWithPattern = (str)

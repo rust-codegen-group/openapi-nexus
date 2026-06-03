@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Double precision floating point
 
-type DoubleType = float
+type DoubleType = (float)

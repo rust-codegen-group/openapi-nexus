@@ -13,7 +13,11 @@ from .resource_unspecified import ResourceUnspecified
 
 # Discriminator: kind (internal).
 
-type Resource = ResourceUnspecified | ResourceQuick | ResourceCustom
+type Resource = (
+    ResourceUnspecified
+    | ResourceQuick
+    | ResourceCustom
+)
 
 
 def resource_from_dict(data: dict[str, object]) -> Resource:

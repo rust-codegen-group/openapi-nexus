@@ -15,7 +15,10 @@ from .variant_b import VariantB
 # 
 # Discriminator: variant key (external).
 
-type ExternallyTaggedEnum = VariantA | VariantB
+type ExternallyTaggedEnum = (
+    VariantA
+    | VariantB
+)
 
 
 def externally_tagged_enum_from_dict(data: dict[str, object]) -> ExternallyTaggedEnum:

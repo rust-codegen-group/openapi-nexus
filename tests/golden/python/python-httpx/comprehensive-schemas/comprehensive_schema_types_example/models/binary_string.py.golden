@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # String with binary format
 
-type BinaryString = bytes
+type BinaryString = (bytes)
