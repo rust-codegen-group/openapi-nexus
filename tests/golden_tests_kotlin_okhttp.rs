@@ -63,6 +63,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("type-aliases-discriminated-union-internally-tagged", "valid/type-aliases/discriminated-union-internally-tagged.yaml"),
         ("type-aliases-discriminated-union-with-refs", "valid/type-aliases/discriminated-union-with-refs.yaml"),
         ("type-aliases-discriminated-union-multiple", "valid/type-aliases/discriminated-union-multiple.yaml"),
+        ("type-aliases-discriminated-union-long-names", "valid/type-aliases/discriminated-union-long-names.yaml"),
         ("type-aliases-discriminated-union-inline-discriminator-only", "valid/type-aliases/discriminated-union-inline-discriminator-only.yaml"),
         ("type-aliases-discriminated-union-mixed-unit-and-allof", "valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml"),
 
@@ -141,6 +142,7 @@ generate_golden_tests! {
     test_type_aliases_discriminated_union_internally_tagged_golden: "type-aliases-discriminated-union-internally-tagged",
     test_type_aliases_discriminated_union_with_refs_golden: "type-aliases-discriminated-union-with-refs",
     test_type_aliases_discriminated_union_multiple_golden: "type-aliases-discriminated-union-multiple",
+    test_type_aliases_discriminated_union_long_names_golden: "type-aliases-discriminated-union-long-names",
     test_type_aliases_discriminated_union_inline_discriminator_only_golden: "type-aliases-discriminated-union-inline-discriminator-only",
     test_type_aliases_discriminated_union_mixed_unit_and_allof_golden: "type-aliases-discriminated-union-mixed-unit-and-allof",
 

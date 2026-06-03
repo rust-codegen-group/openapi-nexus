@@ -1,0 +1,26 @@
+{
+  "description": "Test fixture for discriminated union where variant type names are\nintentionally long enough to force multi-line type alias output at the\n100-char render width. Ensures PEP 695 parenthesization is correct.\n",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.js",
+  "name": "discriminated-union-with-long-type-names-test",
+  "scripts": {
+    "build": "tsc"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.0.0"
+}
