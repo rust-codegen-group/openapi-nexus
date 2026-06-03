@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # 64-bit integer
 
-type Integer64 = int
+type Integer64 = (int)

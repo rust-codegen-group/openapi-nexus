@@ -8,4 +8,7 @@ from __future__ import annotations
 from .bar import Bar
 from .baz import Baz
 
-type Qux = Bar | Baz
+type Qux = (
+    Bar
+    | Baz
+)

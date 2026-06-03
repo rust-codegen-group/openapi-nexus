@@ -9,4 +9,4 @@ from datetime import datetime
 
 # String with date-time format
 
-type DateTimeString = datetime
+type DateTimeString = (datetime)

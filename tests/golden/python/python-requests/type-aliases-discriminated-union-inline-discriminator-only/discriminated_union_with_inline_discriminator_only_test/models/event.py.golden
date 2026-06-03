@@ -18,4 +18,8 @@ from .event_member1 import EventMember1
 from .event_member2 import EventMember2
 from .event_member3 import EventMember3
 
-type Event = EventMember1 | EventMember2 | EventMember3
+type Event = (
+    EventMember1
+    | EventMember2
+    | EventMember3
+)

@@ -7,4 +7,7 @@ from __future__ import annotations
 
 # Any of multiple types
 
-type AnyOfTypes = str | float
+type AnyOfTypes = (
+    str
+    | float
+)

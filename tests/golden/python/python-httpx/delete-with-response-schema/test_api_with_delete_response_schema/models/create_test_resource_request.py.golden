@@ -9,4 +9,4 @@ from typing import Any
 
 # Request to create a new test resource (type alias - no properties)
 
-type CreateTestResourceRequest = Any
+type CreateTestResourceRequest = (Any)

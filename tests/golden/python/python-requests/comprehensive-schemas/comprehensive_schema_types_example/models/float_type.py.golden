@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Floating point number
 
-type FloatType = float
+type FloatType = (float)

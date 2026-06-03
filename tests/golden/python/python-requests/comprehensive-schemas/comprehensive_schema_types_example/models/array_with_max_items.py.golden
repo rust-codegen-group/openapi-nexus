@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Array with maximum items constraint
 
-type ArrayWithMaxItems = list[str]
+type ArrayWithMaxItems = (list[str])

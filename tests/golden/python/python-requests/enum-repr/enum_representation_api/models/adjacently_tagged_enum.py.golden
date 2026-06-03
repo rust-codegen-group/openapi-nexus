@@ -15,7 +15,10 @@ from .variant_b import VariantB
 # 
 # Discriminator: ty / content: data (adjacent).
 
-type AdjacentlyTaggedEnum = VariantA | VariantB
+type AdjacentlyTaggedEnum = (
+    VariantA
+    | VariantB
+)
 
 
 def adjacently_tagged_enum_from_dict(data: dict[str, object]) -> AdjacentlyTaggedEnum:

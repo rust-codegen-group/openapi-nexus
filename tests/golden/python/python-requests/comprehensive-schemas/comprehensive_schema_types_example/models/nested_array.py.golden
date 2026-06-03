@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Array of arrays (nested)
 
-type NestedArray = list[list[str]]
+type NestedArray = (list[list[str]])

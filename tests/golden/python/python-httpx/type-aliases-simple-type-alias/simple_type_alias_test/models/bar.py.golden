@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # A simple number type alias
 
-type Bar = float
+type Bar = (float)

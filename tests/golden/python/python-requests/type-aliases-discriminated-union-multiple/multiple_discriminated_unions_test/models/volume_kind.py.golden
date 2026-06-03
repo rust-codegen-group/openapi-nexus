@@ -13,7 +13,10 @@ from .volume_kind_remote import VolumeKindRemote
 
 # Discriminator: kind (internal).
 
-type VolumeKind = VolumeKindLocal | VolumeKindRemote
+type VolumeKind = (
+    VolumeKindLocal
+    | VolumeKindRemote
+)
 
 
 def volume_kind_from_dict(data: dict[str, object]) -> VolumeKind:

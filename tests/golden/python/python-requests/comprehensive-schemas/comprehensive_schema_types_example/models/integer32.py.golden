@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # 32-bit integer
 
-type Integer32 = int
+type Integer32 = (int)

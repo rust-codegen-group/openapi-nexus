@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # A simple array type alias
 
-type Baz = list[str]
+type Baz = (list[str])

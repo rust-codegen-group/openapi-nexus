@@ -9,4 +9,4 @@ from typing import Any
 
 # Object without properties
 
-type EmptyObject = Any
+type EmptyObject = (Any)

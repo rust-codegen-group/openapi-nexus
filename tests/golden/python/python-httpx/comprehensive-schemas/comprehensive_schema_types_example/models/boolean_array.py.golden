@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Array of booleans
 
-type BooleanArray = list[bool]
+type BooleanArray = (list[bool])
