@@ -1,0 +1,86 @@
+openapi: 3.1.0
+info:
+  title: Discriminated Union with Long Type Names Test
+  description: |
+    Test fixture for discriminated union where variant type names are
+    intentionally long enough to force multi-line type alias output at the
+    100-char render width. Ensures PEP 695 parenthesization is correct.
+  version: 1.0.0
+
+paths:
+  /resource:
+    post:
+      summary: Create resource
+      operationId: create_resource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VeryLongDiscriminatedUnionTypeNameForTesting20260630'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VeryLongDiscriminatedUnionTypeNameForTesting20260630'
+
+components:
+  schemas:
+    VeryLongDiscriminatedUnionTypeNameAlpha20260630:
+      type: object
+      properties:
+        alpha_field:
+          type: string
+      required:
+        - alpha_field
+
+    VeryLongDiscriminatedUnionTypeNameBeta20260630:
+      type: object
+      properties:
+        beta_field:
+          type: string
+      required:
+        - beta_field
+
+    VeryLongDiscriminatedUnionTypeNameGamma20260630:
+      type: object
+      properties:
+        gamma_field:
+          type: string
+      required:
+        - gamma_field
+
+    VeryLongDiscriminatedUnionTypeNameForTesting20260630:
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/VeryLongDiscriminatedUnionTypeNameAlpha20260630'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - ALPHA
+        - allOf:
+            - $ref: '#/components/schemas/VeryLongDiscriminatedUnionTypeNameBeta20260630'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - BETA
+        - allOf:
+            - $ref: '#/components/schemas/VeryLongDiscriminatedUnionTypeNameGamma20260630'
+            - type: object
+              required:
+                - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - GAMMA
