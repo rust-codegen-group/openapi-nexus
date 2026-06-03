@@ -12,4 +12,9 @@ from .mixed_enum_member4 import MixedEnumMember4
 
 # Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
 
-type MixedEnum = Literal["SimpleA"] | MixedEnumMember2 | Literal["SimpleB"] | MixedEnumMember4
+type MixedEnum = (
+    Literal["SimpleA"]
+    | MixedEnumMember2
+    | Literal["SimpleB"]
+    | MixedEnumMember4
+)

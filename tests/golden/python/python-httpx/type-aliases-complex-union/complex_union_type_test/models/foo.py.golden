@@ -9,4 +9,8 @@ from .bar import Bar
 from .baz import Baz
 from .qux import Qux
 
-type Foo = Bar | Baz | Qux
+type Foo = (
+    Bar
+    | Baz
+    | Qux
+)

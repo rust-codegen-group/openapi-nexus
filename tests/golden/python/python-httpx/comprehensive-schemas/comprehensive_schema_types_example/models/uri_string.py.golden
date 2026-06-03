@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # String with URI format
 
-type UriString = str
+type UriString = (str)

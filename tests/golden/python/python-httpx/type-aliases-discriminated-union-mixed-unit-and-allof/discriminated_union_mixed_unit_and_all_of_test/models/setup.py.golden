@@ -18,7 +18,11 @@ from .setup_setup_unspecified import SetupSetupUnspecified
 # 
 # Discriminator: kind (internal).
 
-type Setup = SetupSetupUnspecified | SetupQuick | SetupCustom
+type Setup = (
+    SetupSetupUnspecified
+    | SetupQuick
+    | SetupCustom
+)
 
 
 def setup_from_dict(data: dict[str, object]) -> Setup:

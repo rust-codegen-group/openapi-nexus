@@ -10,4 +10,7 @@ from .variant_b import VariantB
 
 # Untagged enum
 
-type UntaggedEnum = VariantA | VariantB
+type UntaggedEnum = (
+    VariantA
+    | VariantB
+)

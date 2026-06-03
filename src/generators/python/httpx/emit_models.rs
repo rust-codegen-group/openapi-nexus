@@ -264,7 +264,7 @@ fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr) -> Option<FileSpec> {
     let rhs_type = python_type_name(expr);
 
     let type_alias = sigil_quote!(Python {
-        type $N(name.as_str()) = $T(rhs_type);
+        type $N(name.as_str()) = ($T(rhs_type));
     })
     .ok()?;
 
@@ -298,6 +298,38 @@ fn emit_type_alias_raw(schema: &IrSchema, rhs: &str) -> Option<FileSpec> {
 }
 
 // ---------------------------------------------------------------------------
+// Type alias builder with proper multi-line formatting
+// ---------------------------------------------------------------------------
+
+fn format_type_alias(name: &str, members: &[TypeName]) -> CodeBlock {
+    let mut cb = CodeBlock::builder();
+    if members.is_empty() {
+        cb.add(
+            "type %N = (%T)",
+            (
+                NameArg(name.to_string()),
+                TypeName::importable("typing", "Any"),
+            ),
+        );
+    } else if members.len() == 1 {
+        cb.add(
+            "type %N = (%T)",
+            (NameArg(name.to_string()), members[0].clone()),
+        );
+    } else {
+        cb.add(
+            "type %N = (\n    %T",
+            (NameArg(name.to_string()), members[0].clone()),
+        );
+        for member in &members[1..] {
+            cb.add("\n    | %T", (member.clone(),));
+        }
+        cb.add("\n)", ());
+    }
+    cb.build_unwrap()
+}
+
+// ---------------------------------------------------------------------------
 // Union -> type X = A | B | C
 // ---------------------------------------------------------------------------
 
@@ -308,16 +340,8 @@ fn emit_union(schema: &IrSchema, u: &IrUnion) -> Option<FileSpec> {
     if u.nullable {
         members.push(TypeName::primitive("None"));
     }
-    let union_ty = if members.is_empty() {
-        TypeName::importable("typing", "Any")
-    } else {
-        TypeName::union(members)
-    };
 
-    let type_alias = sigil_quote!(Python {
-        type $N(name.as_str()) = $T(union_ty);
-    })
-    .ok()?;
+    let type_alias = format_type_alias(&name, &members);
 
     let mut file =
         FileSpec::builder_with("model.py", Python::new()).header(future_annotations_header());
@@ -358,16 +382,8 @@ fn emit_intersection(schema: &IrSchema, inter: &IrIntersection, ir: &IrSpec) -> 
 fn emit_intersection_as_alias(schema: &IrSchema, inter: &IrIntersection) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let members: Vec<TypeName> = inter.members.iter().map(python_type_name).collect();
-    let union_ty = if members.is_empty() {
-        TypeName::importable("typing", "Any")
-    } else {
-        TypeName::union(members)
-    };
 
-    let type_alias = sigil_quote!(Python {
-        type $N(name.as_str()) = $T(union_ty);
-    })
-    .ok()?;
+    let type_alias = format_type_alias(&name, &members);
 
     let mut file =
         FileSpec::builder_with("model.py", Python::new()).header(future_annotations_header());
@@ -457,16 +473,7 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion, ir: &IrSpec) -> Opti
         .map(|v| python_type_name(&v.content_type))
         .collect();
 
-    let union_ty = if members.is_empty() {
-        TypeName::importable("typing", "Any")
-    } else {
-        TypeName::union(members)
-    };
-
-    let type_alias = sigil_quote!(Python {
-        type $N(name.as_str()) = $T(union_ty);
-    })
-    .ok()?;
+    let type_alias = format_type_alias(&name, &members);
 
     let hint = match &tu.tagging {
         TaggingStyle::Internal => {

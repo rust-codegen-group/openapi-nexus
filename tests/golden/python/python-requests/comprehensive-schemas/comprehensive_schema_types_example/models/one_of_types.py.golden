@@ -7,4 +7,8 @@ from __future__ import annotations
 
 # Union of multiple primitive types
 
-type OneOfTypes = str | float | bool
+type OneOfTypes = (
+    str
+    | float
+    | bool
+)

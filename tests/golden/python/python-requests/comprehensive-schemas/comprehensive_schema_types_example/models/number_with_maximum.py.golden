@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Number with maximum value
 
-type NumberWithMaximum = float
+type NumberWithMaximum = (float)

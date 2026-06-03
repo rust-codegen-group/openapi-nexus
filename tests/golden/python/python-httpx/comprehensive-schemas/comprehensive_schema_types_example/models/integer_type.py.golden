@@ -7,4 +7,4 @@ from __future__ import annotations
 
 # Basic integer type
 
-type IntegerType = int
+type IntegerType = (int)
