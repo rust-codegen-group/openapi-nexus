@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"example.com/sdk/models"
 	"example.com/sdk/runtime"

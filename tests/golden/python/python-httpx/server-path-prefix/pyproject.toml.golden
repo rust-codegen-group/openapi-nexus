@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "server_path_prefix_test"
+version = "1.0.0"
+description = "Test fixture for server URL path prefix stripping in operation paths."
+requires-python = ">=3.12"
+dependencies = ["httpx>=0.27"]

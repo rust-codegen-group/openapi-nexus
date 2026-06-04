@@ -88,6 +88,47 @@ pub fn lower_v32(spec: &oas::OpenApiV32Spec) -> Result<IrSpec, LowerError> {
     })
 }
 
+fn server_path_prefix(servers: &[crate::spec::oas32::spec::Server]) -> String {
+    servers
+        .first()
+        .map(|s| {
+            let u = &s.url;
+            if let Some(proto_end) = u.find("://") {
+                let after_proto = &u[proto_end + 3..];
+                if let Some(path_start) = after_proto.find('/') {
+                    after_proto[path_start..].trim_end_matches('/').to_string()
+                } else {
+                    String::new()
+                }
+            } else if u.starts_with('/') {
+                u.trim_end_matches('/').to_string()
+            } else if !u.is_empty() && !u.starts_with("http") {
+                let with_slash = if u.starts_with('/') {
+                    u.to_string()
+                } else {
+                    format!("/{u}")
+                };
+                with_slash.trim_end_matches('/').to_string()
+            } else {
+                String::new()
+            }
+        })
+        .unwrap_or_default()
+}
+
+fn strip_server_path_prefix(path: &str, servers: &[crate::spec::oas32::spec::Server]) -> String {
+    let prefix = server_path_prefix(servers);
+    if !prefix.is_empty()
+        && path.starts_with(&prefix)
+        && (path.len() == prefix.len() || path.as_bytes()[prefix.len()] == b'/')
+    {
+        let stripped = &path[prefix.len()..];
+        if stripped.is_empty() { "/" } else { stripped }.to_string()
+    } else {
+        path.to_string()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Lowering context
 // ---------------------------------------------------------------------------
@@ -871,7 +912,7 @@ impl<'a> LowerCtx<'a> {
             operation_id: op_id,
             tags: op.tags.clone(),
             method: method.to_string(),
-            path: path.to_string(),
+            path: strip_server_path_prefix(path, &self.spec.servers),
             summary: op.summary.clone(),
             description: op.description.clone(),
             deprecated: op.deprecated.unwrap_or(false),

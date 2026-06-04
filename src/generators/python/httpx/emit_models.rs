@@ -312,30 +312,29 @@ fn emit_type_alias_raw(schema: &IrSchema, rhs: &str) -> Option<FileSpec> {
 // ---------------------------------------------------------------------------
 
 fn format_type_alias(name: &str, members: &[TypeName]) -> CodeBlock {
-    let mut cb = CodeBlock::builder();
     if members.is_empty() {
-        cb.add(
-            "type %N = (%T)",
-            (
-                NameArg(name.to_string()),
-                TypeName::importable("typing", "Any"),
-            ),
-        );
-    } else if members.len() == 1 {
-        cb.add(
-            "type %N = (%T)",
-            (NameArg(name.to_string()), members[0].clone()),
-        );
-    } else {
-        cb.add(
-            "type %N = (\n    %T",
-            (NameArg(name.to_string()), members[0].clone()),
-        );
-        for member in &members[1..] {
-            cb.add("\n    | %T", (member.clone(),));
-        }
-        cb.add("\n)", ());
+        return sigil_quote!(Python {
+            type $N(name) = ($T(TypeName::importable("typing", "Any")));
+        })
+        .unwrap();
     }
+    if members.len() == 1 {
+        return sigil_quote!(Python {
+            type $N(name) = ($T(members[0].clone()));
+        })
+        .unwrap();
+    }
+    // Multi-member: CodeBlock::builder() for line-break control.
+    // TODO: switch to sigil_quote! $for once sigil-stitch adds support.
+    let mut cb = CodeBlock::builder();
+    cb.add(
+        "type %N = (\n    %T",
+        (NameArg(name.to_string()), members[0].clone()),
+    );
+    for member in &members[1..] {
+        cb.add("\n    | %T", (member.clone(),));
+    }
+    cb.add("\n)", ());
     cb.build_unwrap()
 }
 
