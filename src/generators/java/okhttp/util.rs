@@ -196,7 +196,23 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
             format!("String.valueOf({value_expr})")
         }
         IrTypeExpr::Nullable(inner) => render_value_as_string(value_expr, inner),
-        IrTypeExpr::Array(_) => format!("String.join(\",\", {value_expr})"),
+        IrTypeExpr::Array(inner) => {
+            if matches!(
+                inner.as_ref(),
+                IrTypeExpr::Primitive(
+                    IrPrimitive::String
+                        | IrPrimitive::Date
+                        | IrPrimitive::DateTime
+                        | IrPrimitive::Uuid
+                        | IrPrimitive::StringWithFormat(_)
+                ) | IrTypeExpr::StringLiteral(_)
+                    | IrTypeExpr::StringEnum(_)
+            ) {
+                format!("String.join(\",\", {value_expr})")
+            } else {
+                format!("String.valueOf({value_expr})")
+            }
+        }
         IrTypeExpr::Named(_) => format!("String.valueOf({value_expr})"),
         _ => format!("String.valueOf({value_expr})"),
     }

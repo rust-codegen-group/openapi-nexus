@@ -75,6 +75,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
         ("enum-repr", "valid/enum-repr/enum-repr.yaml"),
         ("query-param-enum", "valid/query/query-param-enum.yaml"),
+        ("server-path-prefix", "valid/server-path-prefix.yaml"),
     ])
 }
 
@@ -154,4 +155,5 @@ generate_golden_tests! {
     test_additional_properties_golden: "additional-properties",
 
     test_query_param_enum_golden: "query-param-enum",
+    test_server_path_prefix_golden: "server-path-prefix",
 }

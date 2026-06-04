@@ -197,10 +197,31 @@ fn collect_stringify_imports(t: &IrTypeExpr, pkgs: &mut BTreeSet<String>) {
             pkgs.insert("strconv".to_string());
         }
         IrTypeExpr::Nullable(inner) => collect_stringify_imports(inner, pkgs),
+        IrTypeExpr::Array(inner) => {
+            if is_stringish_primitive(inner) {
+                pkgs.insert("strings".to_string());
+            } else {
+                pkgs.insert("fmt".to_string());
+            }
+        }
         _ => {
             pkgs.insert("fmt".to_string());
         }
     }
+}
+
+fn is_stringish_primitive(t: &IrTypeExpr) -> bool {
+    matches!(
+        t,
+        IrTypeExpr::Primitive(
+            IrPrimitive::String
+                | IrPrimitive::Date
+                | IrPrimitive::DateTime
+                | IrPrimitive::Uuid
+                | IrPrimitive::StringWithFormat(_)
+        ) | IrTypeExpr::StringLiteral(_)
+            | IrTypeExpr::StringEnum(_)
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -806,7 +827,13 @@ fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
         IrTypeExpr::Named(_) => {
             format!("string({value_expr})")
         }
-        IrTypeExpr::Array(_) => format!("strings.Join({value_expr}, \",\")"),
+        IrTypeExpr::Array(inner) => {
+            if is_stringish_primitive(inner) {
+                format!("strings.Join({value_expr}, \",\")")
+            } else {
+                format!("fmt.Sprintf(\"%v\", {value_expr})")
+            }
+        }
         _ => format!("fmt.Sprintf(\"%%v\", {value_expr})"),
     }
 }

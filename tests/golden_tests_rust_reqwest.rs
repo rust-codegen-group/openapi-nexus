@@ -74,6 +74,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("recursive-json-primitive-array", "valid/recursive-json/primitive-array.yaml"),
 
         ("query-param-enum", "valid/query/query-param-enum.yaml"),
+        ("server-path-prefix", "valid/server-path-prefix.yaml"),
         ("multiline-docs-and-primitive-alias", "valid/multiline-docs-and-primitive-alias.yaml"),
     ])
 }
@@ -152,6 +153,7 @@ generate_golden_tests! {
     test_recursive_json_primitive_array_golden: "recursive-json-primitive-array",
 
     test_query_param_enum_golden: "query-param-enum",
+    test_server_path_prefix_golden: "server-path-prefix",
     test_multiline_docs_and_primitive_alias_golden: "multiline-docs-and-primitive-alias",
 }
 
