@@ -46,7 +46,7 @@ npm install
 ## Quick Start
 
 ```typescript
-import { Configuration, DefaultApi } from 'petstore-api';
+import { Configuration, PetApi } from 'petstore-api';
 
 // Create a configuration
 const config = new Configuration({
@@ -57,7 +57,7 @@ const config = new Configuration({
 });
 
 // Initialize the API client
-const api = new DefaultApi(config);
+const api = new PetApi(config);
 
 // Make API calls
 try {
@@ -187,7 +187,7 @@ This will compile TypeScript to JavaScript in the `dist/` directory.
 To build ES modules:
 
 ```bash
-npm run build:esm
+npm run build
 ```
 
 ## TypeScript Support

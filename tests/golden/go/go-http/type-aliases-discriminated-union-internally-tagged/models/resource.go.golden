@@ -9,3 +9,4 @@ package models
 
 // Discriminator: kind (internal).
 type Resource = any
+

@@ -334,8 +334,15 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                     (),
                 );
             } else {
-                // "default" or wildcard status: populate unconditionally
-                cb.add(&format!("val {} = {}", tr.field_name, deserialize_expr), ());
+                // Wildcard status ("4XX", "5XX", "default"): guard by range
+                let guard = wildcard_status_guard(&tr.status);
+                cb.add(
+                    &format!(
+                        "val {} = if ({}) {} else null",
+                        tr.field_name, guard, deserialize_expr
+                    ),
+                    (),
+                );
             }
             cb.add_line();
         }
@@ -480,6 +487,18 @@ fn response_field_name(status: &str) -> String {
         format!("status{code}")
     } else {
         format!("status{}", status.to_lowercase())
+    }
+}
+
+fn wildcard_status_guard(status: &str) -> String {
+    let upper = status.to_uppercase();
+    if upper == "4XX" {
+        "response.code in 400..499".to_string()
+    } else if upper == "5XX" {
+        "response.code in 500..599".to_string()
+    } else {
+        // "default" or unknown wildcard: match everything (fallback response)
+        "true".to_string()
     }
 }
 

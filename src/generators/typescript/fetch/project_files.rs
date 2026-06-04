@@ -1,6 +1,7 @@
 //! Hardcoded TypeScript-fetch runtime, README, and index files.
 
 use heck::ToKebabCase as _;
+use heck::ToPascalCase as _;
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::ir::types::{IrInfo, IrSpec};
@@ -62,7 +63,15 @@ pub fn render_readme_file(ir: &IrSpec) -> FileInfo {
         .replace("{{DESCRIPTION}}", description)
         .replace("{{VERSION}}", version)
         .replace("{{TITLE}}", title)
-        .replace("{{EXAMPLE_API_CLASS}}", "DefaultApi");
+        .replace("{{EXAMPLE_API_CLASS}}", &pick_example_api_class(ir));
 
     FileInfo::readme("README.md".to_string(), content)
+}
+
+fn pick_example_api_class(ir: &IrSpec) -> String {
+    ir.operations
+        .first()
+        .and_then(|op| op.tags.first())
+        .map(|tag| format!("{}Api", tag.as_str().to_pascal_case()))
+        .unwrap_or_else(|| "DefaultApi".to_string())
 }

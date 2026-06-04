@@ -79,7 +79,9 @@ public class WidgetApi {
             status200 = gson.fromJson(responseBody, new TypeToken<Widget>() {}.getType());
         }
         ErrorResponse default_ = null;
-        default_ = gson.fromJson(responseBody, new TypeToken<ErrorResponse>() {}.getType());
+        if (true) {
+            default_ = gson.fromJson(responseBody, new TypeToken<ErrorResponse>() {}.getType());
+        }
         return new GetWidgetResponse(response.code(), response, status200, default_);
     }
 }

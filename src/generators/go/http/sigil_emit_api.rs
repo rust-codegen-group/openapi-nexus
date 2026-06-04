@@ -806,6 +806,7 @@ fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
         IrTypeExpr::Named(_) => {
             format!("string({value_expr})")
         }
+        IrTypeExpr::Array(_) => format!("strings.Join({value_expr}, \",\")"),
         _ => format!("fmt.Sprintf(\"%%v\", {value_expr})"),
     }
 }

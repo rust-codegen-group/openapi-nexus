@@ -196,7 +196,7 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
             format!("String.valueOf({value_expr})")
         }
         IrTypeExpr::Nullable(inner) => render_value_as_string(value_expr, inner),
-        IrTypeExpr::Array(_) => format!("String.valueOf({value_expr})"),
+        IrTypeExpr::Array(_) => format!("String.join(\",\", {value_expr})"),
         IrTypeExpr::Named(_) => format!("String.valueOf({value_expr})"),
         _ => format!("String.valueOf({value_expr})"),
     }

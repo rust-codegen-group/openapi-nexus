@@ -7,3 +7,4 @@ package models
 
 // Array of references
 type ReferenceArray = []StringType
+

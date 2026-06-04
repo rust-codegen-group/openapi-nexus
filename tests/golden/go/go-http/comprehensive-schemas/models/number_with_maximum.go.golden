@@ -7,3 +7,4 @@ package models
 
 // Number with maximum value
 type NumberWithMaximum = float64
+

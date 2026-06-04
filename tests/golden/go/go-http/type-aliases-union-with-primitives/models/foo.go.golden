@@ -6,3 +6,4 @@
 package models
 
 type Foo = any
+

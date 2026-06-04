@@ -7,3 +7,4 @@ package models
 
 // Array with maximum items constraint
 type ArrayWithMaxItems = []string
+

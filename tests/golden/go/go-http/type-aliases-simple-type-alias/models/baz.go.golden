@@ -7,3 +7,4 @@ package models
 
 // A simple array type alias
 type Baz = []string
+

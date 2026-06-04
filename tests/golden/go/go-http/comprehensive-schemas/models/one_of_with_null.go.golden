@@ -7,3 +7,4 @@ package models
 
 // Union of string, null, and schema reference
 type OneOfWithNull = any
+

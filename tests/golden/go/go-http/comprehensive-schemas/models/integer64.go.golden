@@ -7,3 +7,4 @@ package models
 
 // 64-bit integer
 type Integer64 = int64
+

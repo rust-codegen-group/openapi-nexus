@@ -7,3 +7,4 @@ package models
 
 // Number with minimum value
 type NumberWithMinimum = float64
+

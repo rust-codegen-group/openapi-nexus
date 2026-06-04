@@ -51,7 +51,7 @@ camelCaseNumber *int, singleword *string, id *int) (*GetWithQueryParamsResponse,
 	if kebabCaseParam != nil {
 		query.Set("kebab-case-param", *kebabCaseParam)
 	}
-	query.Set("kebab-case-array", fmt.Sprintf("%v", kebabCaseArray))
+	query.Set("kebab-case-array", strings.Join(kebabCaseArray, ","))
 	if pascalCaseParam != nil {
 		query.Set("PascalCaseParam", *pascalCaseParam)
 	}

@@ -31,7 +31,7 @@ def container_image_to_dict(obj: ContainerImage) -> dict[str, object]:
         result = obj.to_dict()
         result["kind"] = "CONTAINER_IMAGE_MANAGED"
         return result
-    else:
+    elif isinstance(obj, ContainerImageCustom):
         result = obj.to_dict()
         result["kind"] = "CONTAINER_IMAGE_CUSTOM"
         return result

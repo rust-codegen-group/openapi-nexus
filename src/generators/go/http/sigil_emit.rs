@@ -271,7 +271,9 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
 
     })
     .ok()?;
-    cb.render_standalone(&GoLang::new(), RENDER_WIDTH).ok()
+    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+        .ok()
+        .map(|s| s + "\n")
 }
 
 // ---------------------------------------------------------------------------
@@ -371,7 +373,9 @@ fn render_alias_file(name: &str, rhs: &str, doc: Option<&str>) -> Option<String>
         type $L(name) = $L(rhs)
     })
     .ok()?;
-    cb.render_standalone(&GoLang::new(), RENDER_WIDTH).ok()
+    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+        .ok()
+        .map(|s| s + "\n")
 }
 
 /// Map an IR type expression to a sigil `TypeName`.

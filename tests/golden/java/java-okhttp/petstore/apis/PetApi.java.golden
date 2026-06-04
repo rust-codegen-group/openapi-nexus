@@ -309,7 +309,7 @@ public class PetApi {
     public FindPetsByTagsResponse findPetsByTags(List<String> tags) throws IOException {
         String path = "/pet/findByTags";
         Map<String, String> query = new HashMap<>();
-        query.put("tags", String.valueOf(tags));
+        query.put("tags", String.join(",", tags));
         Request request = client.newRequest("GET", path, query, null);
         Response response = client.execute(request);
 

@@ -7,3 +7,4 @@ package models
 
 // Union type with inline object schemas
 type Foo = any
+

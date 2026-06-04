@@ -7,3 +7,4 @@ package models
 
 // A simple number type alias
 type Bar = float64
+

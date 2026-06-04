@@ -7,3 +7,4 @@ package models
 
 // Object without properties
 type EmptyObject = any
+

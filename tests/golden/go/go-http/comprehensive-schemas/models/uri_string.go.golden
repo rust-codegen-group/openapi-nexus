@@ -7,3 +7,4 @@ package models
 
 // String with URI format
 type UriString = string
+

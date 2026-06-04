@@ -7,3 +7,4 @@ package models
 
 // Number divisible by multipleOf
 type NumberWithMultipleOf = float64
+

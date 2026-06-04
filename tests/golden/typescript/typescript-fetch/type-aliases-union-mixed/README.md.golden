@@ -187,7 +187,7 @@ This will compile TypeScript to JavaScript in the `dist/` directory.
 To build ES modules:
 
 ```bash
-npm run build:esm
+npm run build
 ```
 
 ## TypeScript Support

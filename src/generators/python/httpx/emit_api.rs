@@ -131,14 +131,17 @@ fn build_api_method(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> Fu
     // Optional query/header params last
     for p in plan.query_params.iter().chain(&plan.header_params) {
         if !p.param.required {
+            let param_ty = api_type_name(&p.param.type_expr);
+            let param_ty = if is_already_optional(&p.param.type_expr) {
+                param_ty
+            } else {
+                TypeName::optional(param_ty)
+            };
             fun = fun.add_param(
-                ParameterSpec::builder(
-                    &p.var_name,
-                    TypeName::optional(api_type_name(&p.param.type_expr)),
-                )
-                .default_value(CodeBlock::of("None", ()).expect("None"))
-                .build()
-                .expect("optional param"),
+                ParameterSpec::builder(&p.var_name, param_ty)
+                    .default_value(CodeBlock::of("None", ()).expect("None"))
+                    .build()
+                    .expect("optional param"),
             );
         }
     }
@@ -483,4 +486,10 @@ fn sanitize_operation_id(op_id: &str, method: &str, path: &str) -> String {
         .map(|c| if c.is_alphanumeric() { c } else { '_' })
         .collect();
     format!("{method}_{path_part}")
+}
+
+/// Returns true if the type expression is already nullable (wrapped in None),
+/// so that the caller can avoid double-wrapping with TypeName::optional.
+fn is_already_optional(expr: &IrTypeExpr) -> bool {
+    matches!(expr, IrTypeExpr::Nullable(_))
 }
