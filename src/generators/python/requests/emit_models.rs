@@ -64,6 +64,16 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, ir: &IrSpec) -> Option<FileSpe
         file = file.add_import(ImportSpec::named("typing", "Literal"));
     }
 
+    // Import tagged-union helper functions for fields referencing TaggedUnion schemas
+    for (_, prop) in &obj.properties {
+        for named_ref in collect_tagged_union_refs(&prop.type_expr, ir) {
+            let snake = named_ref.to_snake_case();
+            let module = format!(".{snake}");
+            file = file.add_import(ImportSpec::named(&module, &format!("{snake}_from_dict")));
+            file = file.add_import(ImportSpec::named(&module, &format!("{snake}_to_dict")));
+        }
+    }
+
     let dataclass_tn = TypeName::importable("dataclasses", "dataclass");
     let mut cls = TypeSpec::builder(&name, TypeKind::Class)
         .annotate(AnnotationSpec::importable(dataclass_tn));
@@ -520,6 +530,7 @@ fn build_tagged_union_helpers(
 ) -> CodeBlock {
     let tag_field = &tu.discriminator_field;
 
+    // Only generate helpers for variants that resolve to Object schemas
     let resolved_variants: Vec<(&IrTaggedVariant, String)> = tu
         .variants
         .iter()
@@ -600,12 +611,11 @@ fn build_tagged_union_helpers(
         &format!("def {snake_name}_to_dict(obj: {pascal_name}) -> dict[str, object]"),
         (),
     );
-    let last_idx = resolved_variants.len() - 1;
     match &tu.tagging {
         TaggingStyle::Internal => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
                 let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, i == last_idx, &cond);
+                emit_elif(&mut cb, i == 0, false, &cond);
                 cb.add_statement("result = obj.to_dict()", ());
                 cb.add_statement(
                     &format!(
@@ -621,7 +631,7 @@ fn build_tagged_union_helpers(
         TaggingStyle::Adjacent { content_field } => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
                 let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, i == last_idx, &cond);
+                emit_elif(&mut cb, i == 0, false, &cond);
                 cb.add_statement(
                     &format!(
                         "return {{\"{tag_field}\": \"{}\", \"{content_field}\": obj.to_dict()}}",
@@ -635,7 +645,7 @@ fn build_tagged_union_helpers(
         TaggingStyle::External => {
             for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
                 let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, i == last_idx, &cond);
+                emit_elif(&mut cb, i == 0, false, &cond);
                 cb.add_statement(
                     &format!(
                         "return {{\"{}\": obj.to_dict()}}",
@@ -844,6 +854,9 @@ fn render_to_dict_expr(
         Some(IrTypeExpr::Named(ref_name)) => {
             if is_object_schema(ref_name, ir) {
                 format!("{value_expr}.to_dict()")
+            } else if is_tagged_union_schema(ref_name, ir) {
+                let snake = ref_name.to_snake_case();
+                format!("{snake}_to_dict({value_expr})")
             } else {
                 value_expr.to_string()
             }
@@ -854,6 +867,12 @@ fn render_to_dict_expr(
             {
                 return format!("[item.to_dict() for item in {value_expr}]");
             }
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_tagged_union_schema(ref_name, ir)
+            {
+                let snake = ref_name.to_snake_case();
+                return format!("[{snake}_to_dict(item) for item in {value_expr}]");
+            }
             value_expr.to_string()
         }
         Some(IrTypeExpr::Nullable(inner)) => {
@@ -862,6 +881,14 @@ fn render_to_dict_expr(
             {
                 return format!("{value_expr}.to_dict() if {value_expr} is not None else None");
             }
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_tagged_union_schema(ref_name, ir)
+            {
+                let snake = ref_name.to_snake_case();
+                return format!(
+                    "{snake}_to_dict({value_expr}) if {value_expr} is not None else None"
+                );
+            }
             value_expr.to_string()
         }
         Some(IrTypeExpr::Map(inner)) => {
@@ -869,6 +896,12 @@ fn render_to_dict_expr(
                 && is_object_schema(ref_name, ir)
             {
                 return format!("{{k: v.to_dict() for k, v in {value_expr}.items()}}");
+            }
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_tagged_union_schema(ref_name, ir)
+            {
+                let snake = ref_name.to_snake_case();
+                return format!("{{k: {snake}_to_dict(v) for k, v in {value_expr}.items()}}");
             }
             value_expr.to_string()
         }
@@ -889,6 +922,9 @@ fn render_from_dict_expr(
             if is_object_schema(ref_name, ir) {
                 let py_name = ref_name.to_pascal_case();
                 format!("{py_name}.from_dict({accessor})  # type: ignore[arg-type]")
+            } else if is_tagged_union_schema(ref_name, ir) {
+                let snake = ref_name.to_snake_case();
+                format!("{snake}_from_dict({accessor})  # type: ignore[arg-type]")
             } else {
                 format!("{accessor}  # type: ignore[assignment]")
             }
@@ -902,6 +938,14 @@ fn render_from_dict_expr(
                     "[{py_name}.from_dict(item) for item in {accessor}]  # type: ignore[union-attr]"
                 );
             }
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_tagged_union_schema(ref_name, ir)
+            {
+                let snake = ref_name.to_snake_case();
+                return format!(
+                    "[{snake}_from_dict(item) for item in {accessor}]  # type: ignore[union-attr]"
+                );
+            }
             format!("{accessor}  # type: ignore[assignment]")
         }
         Some(IrTypeExpr::Map(inner)) => {
@@ -911,6 +955,14 @@ fn render_from_dict_expr(
                 let py_name = ref_name.to_pascal_case();
                 return format!(
                     "{{k: {py_name}.from_dict(v) for k, v in {accessor}.items()}}  # type: ignore[union-attr]"
+                );
+            }
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_tagged_union_schema(ref_name, ir)
+            {
+                let snake = ref_name.to_snake_case();
+                return format!(
+                    "{{k: {snake}_from_dict(v) for k, v in {accessor}.items()}}  # type: ignore[union-attr]"
                 );
             }
             format!("{accessor}  # type: ignore[assignment]")
@@ -938,6 +990,11 @@ fn render_from_dict_optional_expr(
                 format!(
                     "{py_name}.from_dict({accessor}) if {accessor} is not None else None  # type: ignore[arg-type]"
                 )
+            } else if is_tagged_union_schema(ref_name, ir) {
+                let snake = ref_name.to_snake_case();
+                format!(
+                    "{snake}_from_dict({accessor}) if {accessor} is not None else None  # type: ignore[arg-type]"
+                )
             } else {
                 format!("{accessor}  # type: ignore[assignment]")
             }
@@ -951,6 +1008,14 @@ fn render_from_dict_optional_expr(
                     "[{py_name}.from_dict(item) for item in {accessor}] if {accessor} is not None else None  # type: ignore[union-attr]"
                 );
             }
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_tagged_union_schema(ref_name, ir)
+            {
+                let snake = ref_name.to_snake_case();
+                return format!(
+                    "[{snake}_from_dict(item) for item in {accessor}] if {accessor} is not None else None  # type: ignore[union-attr]"
+                );
+            }
             format!("{accessor}  # type: ignore[assignment]")
         }
         Some(IrTypeExpr::Map(inner)) => {
@@ -960,6 +1025,14 @@ fn render_from_dict_optional_expr(
                 let py_name = ref_name.to_pascal_case();
                 return format!(
                     "{{k: {py_name}.from_dict(v) for k, v in {accessor}.items()}} if {accessor} is not None else None  # type: ignore[union-attr]"
+                );
+            }
+            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
+                && is_tagged_union_schema(ref_name, ir)
+            {
+                let snake = ref_name.to_snake_case();
+                return format!(
+                    "{{k: {snake}_from_dict(v) for k, v in {accessor}.items()}} if {accessor} is not None else None  # type: ignore[union-attr]"
                 );
             }
             format!("{accessor}  # type: ignore[assignment]")
@@ -982,6 +1055,32 @@ pub fn is_object_schema(name: &str, ir: &IrSpec) -> bool {
         }),
         _ => false,
     })
+}
+
+pub fn is_tagged_union_schema(name: &str, ir: &IrSpec) -> bool {
+    ir.schemas
+        .get(name)
+        .is_some_and(|s| matches!(s.kind, IrSchemaKind::TaggedUnion(_)))
+}
+
+/// Collect all tagged-union schema names referenced (directly or nested) in a type expression.
+fn collect_tagged_union_refs(expr: &IrTypeExpr, ir: &IrSpec) -> Vec<String> {
+    let mut refs = Vec::new();
+    match expr {
+        IrTypeExpr::Named(name) => {
+            if is_tagged_union_schema(name, ir) {
+                refs.push(name.clone());
+            }
+        }
+        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) => {
+            refs.extend(collect_tagged_union_refs(inner, ir));
+        }
+        IrTypeExpr::Map(inner) => {
+            refs.extend(collect_tagged_union_refs(inner, ir));
+        }
+        _ => {}
+    }
+    refs
 }
 
 // ---------------------------------------------------------------------------

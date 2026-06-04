@@ -7,3 +7,4 @@ package models
 
 // Array with unique items constraint
 type UniqueItemsArray = []string
+

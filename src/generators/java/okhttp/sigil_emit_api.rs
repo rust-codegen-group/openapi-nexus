@@ -415,7 +415,9 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 );
                 cb.end_control_flow();
             } else {
-                // "default" or wildcard status: populate as fallback
+                // Wildcard status ("4XX", "5XX", "default"): guard by range
+                let guard = wildcard_status_guard_java(&tr.status);
+                cb.begin_control_flow(&format!("if ({guard})"), ());
                 cb.add_statement(
                     &format!(
                         "{} = gson.fromJson(responseBody, {})",
@@ -423,6 +425,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                     ),
                     (),
                 );
+                cb.end_control_flow();
             }
         }
 
@@ -568,6 +571,18 @@ fn response_field_name(status: &str) -> String {
         format!("status{code}")
     } else {
         format!("status{}", status.to_lowercase())
+    }
+}
+
+fn wildcard_status_guard_java(status: &str) -> String {
+    let upper = status.to_uppercase();
+    if upper == "4XX" {
+        "response.code() >= 400 && response.code() < 500".to_string()
+    } else if upper == "5XX" {
+        "response.code() >= 500 && response.code() < 600".to_string()
+    } else {
+        // "default" or unknown wildcard: match everything (fallback response)
+        "true".to_string()
     }
 }
 

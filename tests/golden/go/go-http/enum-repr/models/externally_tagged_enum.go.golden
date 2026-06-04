@@ -12,3 +12,4 @@ package models
 //
 // Discriminator: variant key (external).
 type ExternallyTaggedEnum = any
+

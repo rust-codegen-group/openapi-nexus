@@ -12,3 +12,4 @@ package models
 //
 // Discriminator: ty (internal).
 type InternallyTaggedEnum = any
+

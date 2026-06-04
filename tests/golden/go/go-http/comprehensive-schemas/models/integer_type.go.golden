@@ -7,3 +7,4 @@ package models
 
 // Basic integer type
 type IntegerType = int
+

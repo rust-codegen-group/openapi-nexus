@@ -35,7 +35,7 @@ def internally_tagged_enum_to_dict(obj: InternallyTaggedEnum) -> dict[str, objec
         result = obj.to_dict()
         result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_A"
         return result
-    else:
+    elif isinstance(obj, VariantB):
         result = obj.to_dict()
         result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_B"
         return result

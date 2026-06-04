@@ -7,3 +7,4 @@ package models
 
 // Floating point number
 type FloatType = float32
+

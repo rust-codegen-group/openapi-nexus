@@ -7,3 +7,4 @@ package models
 
 // A simple string type alias
 type Foo = string
+

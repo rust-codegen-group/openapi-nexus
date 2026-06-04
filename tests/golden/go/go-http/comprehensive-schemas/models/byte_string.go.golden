@@ -7,3 +7,4 @@ package models
 
 // String with byte format (base64)
 type ByteString = string
+

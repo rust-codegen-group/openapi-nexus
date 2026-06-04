@@ -286,9 +286,7 @@ fn emit_enum(
         $attr(derive_attr("Debug, Clone, PartialEq, Eq, Serialize, Deserialize", extra))
         pub enum $N(name.as_str()) {
             $for((variant, wire) in variants.iter()) {
-                $if(variant != wire) {
-                    #[serde(rename = $S(wire))]
-                }
+                #[serde(rename = $S(wire))]
                 $N(variant.as_str()),
             }
         }

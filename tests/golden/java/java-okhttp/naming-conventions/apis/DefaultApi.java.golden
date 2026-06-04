@@ -102,7 +102,7 @@ public class DefaultApi {
             query.put("kebab-case-param", kebabCaseParam);
         }
         if (kebabCaseArray != null) {
-            query.put("kebab-case-array", String.valueOf(kebabCaseArray));
+            query.put("kebab-case-array", String.join(",", kebabCaseArray));
         }
         if (pascalCaseParam != null) {
             query.put("PascalCaseParam", pascalCaseParam);

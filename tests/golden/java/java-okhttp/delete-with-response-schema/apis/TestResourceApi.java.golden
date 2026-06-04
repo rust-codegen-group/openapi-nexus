@@ -137,9 +137,13 @@ public class TestResourceApi {
             status200 = gson.fromJson(responseBody, new TypeToken<DeleteTestResourceResponse>() {}.getType());
         }
         HttpErrorResponse status4xx = null;
-        status4xx = gson.fromJson(responseBody, new TypeToken<HttpErrorResponse>() {}.getType());
+        if (response.code() >= 400 && response.code() < 500) {
+            status4xx = gson.fromJson(responseBody, new TypeToken<HttpErrorResponse>() {}.getType());
+        }
         HttpErrorResponse status5xx = null;
-        status5xx = gson.fromJson(responseBody, new TypeToken<HttpErrorResponse>() {}.getType());
+        if (response.code() >= 500 && response.code() < 600) {
+            status5xx = gson.fromJson(responseBody, new TypeToken<HttpErrorResponse>() {}.getType());
+        }
         return new DeleteTestResourceResponse(response.code(), response, status200, status4xx, status5xx);
     }
 }

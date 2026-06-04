@@ -7,3 +7,4 @@ package models
 
 // String with UUID format
 type UuidString = string
+

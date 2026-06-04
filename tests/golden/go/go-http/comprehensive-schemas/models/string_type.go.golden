@@ -7,3 +7,4 @@ package models
 
 // Basic string type
 type StringType = string
+

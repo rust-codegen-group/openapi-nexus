@@ -7,3 +7,4 @@ package models
 
 // Boolean type
 type BooleanType = bool
+

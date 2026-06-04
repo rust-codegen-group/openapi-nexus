@@ -308,6 +308,9 @@ pub fn param_rust_type(p: &IrParameter, ir: &IrSpec) -> (String, bool) {
     let base = rust_type_str_qualified(&p.type_expr, ir);
     if p.required {
         (base, false)
+    } else if matches!(p.type_expr, IrTypeExpr::Nullable(_)) {
+        // Already wrapped in Option by rust_type_str_qualified → avoid double-wrapping
+        (base, true)
     } else {
         (format!("Option<{base}>"), true)
     }

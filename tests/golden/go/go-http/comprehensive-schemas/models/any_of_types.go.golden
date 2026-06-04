@@ -7,3 +7,4 @@ package models
 
 // Any of multiple types
 type AnyOfTypes = any
+

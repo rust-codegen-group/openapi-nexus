@@ -40,7 +40,7 @@ def resource_to_dict(obj: Resource) -> dict[str, object]:
         result = obj.to_dict()
         result["kind"] = "RESOURCE_QUICK"
         return result
-    else:
+    elif isinstance(obj, ResourceCustom):
         result = obj.to_dict()
         result["kind"] = "RESOURCE_CUSTOM"
         return result

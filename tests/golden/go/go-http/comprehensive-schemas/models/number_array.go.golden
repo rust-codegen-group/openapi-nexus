@@ -7,3 +7,4 @@ package models
 
 // Array of numbers
 type NumberArray = []float64
+

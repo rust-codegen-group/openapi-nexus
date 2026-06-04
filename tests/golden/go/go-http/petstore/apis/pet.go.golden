@@ -175,7 +175,7 @@ type FindPetsByTagsResponse struct {
 func (a *PetAPI) FindPetsByTags(ctx context.Context, tags []string) (*FindPetsByTagsResponse, error) {
 	path := "/pet/findByTags"
 	query := url.Values{}
-	query.Set("tags", fmt.Sprintf("%v", tags))
+	query.Set("tags", strings.Join(tags, ","))
 	req, err := a.client.NewRequest(ctx, "GET", path, query, nil)
 	if err != nil {
 		return nil, err

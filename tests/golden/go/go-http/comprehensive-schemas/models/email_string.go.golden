@@ -7,3 +7,4 @@ package models
 
 // String with email format
 type EmailString = string
+

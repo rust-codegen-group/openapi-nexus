@@ -7,3 +7,4 @@ package models
 
 // Request to create a new test resource (type alias - no properties)
 type CreateTestResourceRequest = any
+

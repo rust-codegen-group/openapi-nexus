@@ -8,3 +8,4 @@ package models
 
 // Discriminator: kind (internal).
 type ContainerImage = any
+

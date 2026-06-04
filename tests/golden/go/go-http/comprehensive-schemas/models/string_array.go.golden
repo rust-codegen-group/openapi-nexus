@@ -7,3 +7,4 @@ package models
 
 // Array of strings
 type StringArray = []string
+

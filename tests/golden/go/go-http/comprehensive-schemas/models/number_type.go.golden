@@ -7,3 +7,4 @@ package models
 
 // Basic number type
 type NumberType = float64
+

@@ -7,3 +7,4 @@ package models
 
 // String with regex pattern
 type StringWithPattern = string
+

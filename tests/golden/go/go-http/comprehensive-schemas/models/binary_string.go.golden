@@ -7,3 +7,4 @@ package models
 
 // String with binary format
 type BinaryString = []byte
+

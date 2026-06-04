@@ -7,3 +7,4 @@ package models
 
 // String with minimum length
 type StringWithMinLength = string
+

@@ -10,3 +10,4 @@ package models
 // No tag is used, variants are distinguished by their structure:
 // `{"field1": "...", "field2": 123}` or `{"field3": true, "field4": 1.23}`
 type UntaggedEnum = any
+
