@@ -6,7 +6,7 @@ use crate::ir::types::{
     IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
-use sigil_stitch::lang::java_lang::JavaLang;
+use sigil_stitch::lang::java::Java;
 use sigil_stitch::prelude::*;
 
 use super::util::{
@@ -52,7 +52,7 @@ fn emit_model_body(schema: &IrSchema, package_name: &str) -> Option<String> {
 }
 
 fn package_header(package_name: &str) -> CodeBlock {
-    sigil_quote!(JavaLang {
+    sigil_quote!(Java {
         package $L(format!("{package_name}.models"));
     })
     .expect("package header builds")
@@ -66,7 +66,7 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<
     let name = schema.name.to_pascal_case();
 
     let mut file =
-        FileSpec::builder_with("model.java", JavaLang::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
 
     let needs_serialized_name = obj.properties.iter().any(|(json_name, prop)| {
         let field_name = java_field_name(&prop.name);
@@ -148,13 +148,13 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<
         .iter()
         .map(|(_json_name, prop)| {
             let field_name = java_field_name(&prop.name);
-            sigil_quote!(JavaLang {
+            sigil_quote!(Java {
                 this.$L(field_name.as_str()) = $L(field_name.as_str());
             })
             .expect("assignment")
         })
         .collect();
-    let ctor_body = sigil_quote!(JavaLang {
+    let ctor_body = sigil_quote!(Java {
         $C_each(assignments);
     })
     .expect("ctor body");
@@ -186,7 +186,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum, package_name: &str) -> Option<FileS
     let name = schema.name.to_pascal_case();
 
     let mut file =
-        FileSpec::builder_with("model.java", JavaLang::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
 
     if en.value_type == IrEnumValueType::Mixed {
         return emit_comment_class(&name, "Object", schema.description.as_deref(), package_name);
@@ -259,7 +259,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum, package_name: &str) -> Option<FileS
     ctor = ctor.add_param(
         ParameterSpec::new("value", TypeName::primitive(base_type)).expect("ctor param"),
     );
-    let ctor_body = sigil_quote!(JavaLang {
+    let ctor_body = sigil_quote!(Java {
         this.value = value;
     })
     .expect("ctor body");
@@ -302,7 +302,7 @@ fn emit_intersection(
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let mut file =
-        FileSpec::builder_with("model.java", JavaLang::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
 
     let mut tb = TypeSpec::builder(&name, TypeKind::Struct).visibility(Visibility::Public);
     if let Some(doc) = &schema.description {
@@ -344,13 +344,13 @@ fn emit_intersection(
     let assignments: Vec<CodeBlock> = member_bindings
         .iter()
         .map(|(_member_type, field_name)| {
-            sigil_quote!(JavaLang {
+            sigil_quote!(Java {
                 this.$L(field_name.as_str()) = $L(field_name.as_str());
             })
             .expect("assignment")
         })
         .collect();
-    let ctor_body = sigil_quote!(JavaLang {
+    let ctor_body = sigil_quote!(Java {
         $C_each(assignments);
     })
     .expect("ctor body");
@@ -411,7 +411,7 @@ fn emit_comment_class(
     package_name: &str,
 ) -> Option<FileSpec> {
     let mut file =
-        FileSpec::builder_with("model.java", JavaLang::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
 
     let mut tb = TypeSpec::builder(name, TypeKind::Struct).visibility(Visibility::Public);
     if let Some(d) = doc {
@@ -433,7 +433,7 @@ fn emit_comment_class(
         ParameterSpec::new(&format!("{underlying_type} value"), TypeName::primitive(""))
             .expect("param"),
     );
-    let body = sigil_quote!(JavaLang {
+    let body = sigil_quote!(Java {
         this.value = value;
     })
     .expect("ctor body");

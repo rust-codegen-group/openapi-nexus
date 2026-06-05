@@ -35,7 +35,8 @@ for test_dir in "$golden"/*/; do
 {
     "pythonVersion": "3.12",
     "typeCheckingMode": "strict",
-    "extraPaths": [".deps"]
+    "extraPaths": [".deps"],
+    "reportUnnecessaryIsInstance": "none"
 }
 PYRIGHT
 

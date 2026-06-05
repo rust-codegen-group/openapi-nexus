@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::ir::types::{IrPrimitive, IrTypeExpr};
 use heck::{ToLowerCamelCase, ToPascalCase};
 #[allow(unused_imports)]
-use sigil_stitch::lang::java_lang::JavaLang;
+use sigil_stitch::lang::java::Java;
 use sigil_stitch::prelude::*;
 
 pub fn java_type_str(expr: &IrTypeExpr) -> String {
@@ -222,7 +222,7 @@ pub fn build_java_getter(getter_name: &str, type_str: &str, field_name: &str) ->
     let mut getter = FunSpec::builder(getter_name);
     getter = getter.visibility(Visibility::Public);
     getter = getter.returns(TypeName::primitive(type_str));
-    let body = sigil_quote!(JavaLang {
+    let body = sigil_quote!(Java {
         return this.$L(field_name);
     })
     .expect("getter body");

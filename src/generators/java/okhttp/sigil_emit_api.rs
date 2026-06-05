@@ -5,7 +5,7 @@ use crate::ir::types::{
     IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
-use sigil_stitch::lang::java_lang::JavaLang;
+use sigil_stitch::lang::java::Java;
 use sigil_stitch::prelude::*;
 
 use super::util::{
@@ -56,7 +56,7 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation], package_name: &str) -> String 
     let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op)).collect();
 
     let filename = format!("{class_name}.java");
-    let mut fb = FileSpec::builder_with(&filename, JavaLang::new())
+    let mut fb = FileSpec::builder_with(&filename, Java::new())
         .header(package_header(package_name))
         .add_import(ImportSpec::named(&format!("{package_name}.models"), "*"))
         .add_import(ImportSpec::named(
@@ -110,7 +110,7 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation], package_name: &str) -> String 
     ctor = ctor.add_param(
         ParameterSpec::new("ApiClient client", TypeName::primitive("")).expect("client param"),
     );
-    let ctor_body = sigil_quote!(JavaLang {
+    let ctor_body = sigil_quote!(Java {
         this.client = client;
     })
     .expect("ctor body");
@@ -130,7 +130,7 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation], package_name: &str) -> String 
 }
 
 fn package_header(package_name: &str) -> CodeBlock {
-    sigil_quote!(JavaLang {
+    sigil_quote!(Java {
         package $L(format!("{package_name}.apis"));
     })
     .expect("package header builds")
@@ -199,8 +199,8 @@ fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
         );
     }
     let mut field_assignments: Vec<CodeBlock> = vec![
-        sigil_quote!(JavaLang { this.statusCode = statusCode; }).expect("assign"),
-        sigil_quote!(JavaLang { this.raw = raw; }).expect("assign"),
+        sigil_quote!(Java { this.statusCode = statusCode; }).expect("assign"),
+        sigil_quote!(Java { this.raw = raw; }).expect("assign"),
     ];
     let mut body_seen: HashSet<String> = HashSet::new();
     for tr in &plan.typed_responses {
@@ -208,13 +208,13 @@ fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
             continue;
         }
         field_assignments.push(
-            sigil_quote!(JavaLang {
+            sigil_quote!(Java {
                 this.$L(tr.field_name.as_str()) = $L(tr.field_name.as_str());
             })
             .expect("assign"),
         );
     }
-    let ctor_body = sigil_quote!(JavaLang {
+    let ctor_body = sigil_quote!(Java {
         $C_each(field_assignments);
     })
     .expect("ctor body");
@@ -380,7 +380,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     cb.add_line();
 
     // Error handling
-    let error_block = sigil_quote!(JavaLang {
+    let error_block = sigil_quote!(Java {
         if (!response.isSuccessful()) {
             String errorBody = response.body() != null ? response.body().string() : "";
             throw new ApiException(response.code(), response.message(), errorBody);

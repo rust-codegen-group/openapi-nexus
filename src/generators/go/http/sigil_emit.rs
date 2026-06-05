@@ -22,7 +22,7 @@ use crate::ir::types::{
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
-use sigil_stitch::lang::go_lang::GoLang;
+use sigil_stitch::lang::go::Go;
 use sigil_stitch::prelude::{CodeBlock, sigil_quote};
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
@@ -149,7 +149,7 @@ fn json_tag(json_name: &str, required: bool, nullable: bool) -> String {
 }
 
 fn emit_marshal_json(struct_name: &str) -> String {
-    let cb = sigil_quote!(GoLang {
+    let cb = sigil_quote!(Go {
         func (o $L(struct_name)) MarshalJSON() ([]byte, error) {
             type Plain $L(struct_name)
             data, err := json.Marshal(Plain(o))
@@ -174,7 +174,7 @@ fn emit_marshal_json(struct_name: &str) -> String {
         }
     })
     .expect("MarshalJSON builds");
-    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+    cb.render_standalone(&Go::new(), RENDER_WIDTH)
         .expect("MarshalJSON renders")
 }
 
@@ -188,7 +188,7 @@ fn emit_unmarshal_json(struct_name: &str, obj: &IrObject, value_type: &str) -> S
 
     let known_decl = format!("known := map[string]bool{{{known_map}}}");
     let make_map = format!("o.AdditionalProperties = make(map[string]{value_type})");
-    let cb = sigil_quote!(GoLang {
+    let cb = sigil_quote!(Go {
         func (o *$L(struct_name)) UnmarshalJSON(data []byte) error {
             type Plain $L(struct_name)
             if err := json.Unmarshal(data, (*Plain)(o)); err != nil {
@@ -214,7 +214,7 @@ fn emit_unmarshal_json(struct_name: &str, obj: &IrObject, value_type: &str) -> S
         }
     })
     .expect("UnmarshalJSON builds");
-    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+    cb.render_standalone(&Go::new(), RENDER_WIDTH)
         .expect("UnmarshalJSON renders")
 }
 
@@ -255,7 +255,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
         })
         .collect::<Option<Vec<_>>>()?;
 
-    let cb = sigil_quote!(GoLang {
+    let cb = sigil_quote!(Go {
         package $L(MODELS_PACKAGE)
 
         $if(schema.description.is_some()) {
@@ -271,7 +271,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<String> {
 
     })
     .ok()?;
-    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+    cb.render_standalone(&Go::new(), RENDER_WIDTH)
         .ok()
         .map(|s| s + "\n")
 }
@@ -353,7 +353,7 @@ fn emit_tagged_union(schema: &IrSchema, tu: &IrTaggedUnion) -> Option<String> {
 
 /// Build a `package models` header block.
 fn package_header() -> CodeBlock {
-    sigil_quote!(GoLang {
+    sigil_quote!(Go {
         package $L(MODELS_PACKAGE)
     })
     .expect("package header builds")
@@ -364,7 +364,7 @@ fn package_header() -> CodeBlock {
 /// Used for Alias, mixed-Enum, Union, and TaggedUnion (all reduce to a single
 /// type alias in this pass).
 fn render_alias_file(name: &str, rhs: &str, doc: Option<&str>) -> Option<String> {
-    let cb = sigil_quote!(GoLang {
+    let cb = sigil_quote!(Go {
         package $L(MODELS_PACKAGE)
 
         $if(doc.is_some()) {
@@ -373,7 +373,7 @@ fn render_alias_file(name: &str, rhs: &str, doc: Option<&str>) -> Option<String>
         type $L(name) = $L(rhs)
     })
     .ok()?;
-    cb.render_standalone(&GoLang::new(), RENDER_WIDTH)
+    cb.render_standalone(&Go::new(), RENDER_WIDTH)
         .ok()
         .map(|s| s + "\n")
 }
