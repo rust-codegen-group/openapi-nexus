@@ -210,7 +210,9 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
             ) {
                 format!("String.join(\",\", {value_expr})")
             } else {
-                format!("String.valueOf({value_expr})")
+                format!(
+                    "{value_expr}.stream().map(Object::toString).collect(java.util.stream.Collectors.joining(\",\"))"
+                )
             }
         }
         IrTypeExpr::Named(_) => format!("String.valueOf({value_expr})"),

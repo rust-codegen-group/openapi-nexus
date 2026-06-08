@@ -73,6 +73,7 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation], package_name: &str) -> String 
         .add_import(ImportSpec::named("java.util", "HashMap"))
         .add_import(ImportSpec::named("java.util", "List"))
         .add_import(ImportSpec::named("java.util", "Map"))
+        .add_import(ImportSpec::named("java.util.stream", "Collectors"))
         .add_import(ImportSpec::named("okhttp3", "Request"))
         .add_import(ImportSpec::named("okhttp3", "Response"));
 
