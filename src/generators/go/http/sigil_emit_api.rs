@@ -198,11 +198,11 @@ fn collect_stringify_imports(t: &IrTypeExpr, pkgs: &mut BTreeSet<String>) {
         }
         IrTypeExpr::Nullable(inner) => collect_stringify_imports(inner, pkgs),
         IrTypeExpr::Array(inner) => {
-            if is_stringish_primitive(inner) {
-                pkgs.insert("strings".to_string());
-            } else {
+            pkgs.insert("strings".to_string());
+            if !is_stringish_primitive(inner) {
                 pkgs.insert("fmt".to_string());
             }
+            collect_stringify_imports(inner, pkgs);
         }
         _ => {
             pkgs.insert("fmt".to_string());
@@ -831,7 +831,16 @@ fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
             if is_stringish_primitive(inner) {
                 format!("strings.Join({value_expr}, \",\")")
             } else {
-                format!("fmt.Sprintf(\"%v\", {value_expr})")
+                let (item_expr, item_type) =
+                    if let IrTypeExpr::Nullable(real_inner) = inner.as_ref() {
+                        ("*v", real_inner.as_ref())
+                    } else {
+                        ("v", inner.as_ref())
+                    };
+                let item_fmt = render_value_as_string(item_expr, item_type);
+                format!(
+                    "strings.Join(func() []string {{ parts := make([]string, len({value_expr})); for i, v := range {value_expr} {{ parts[i] = {item_fmt} }}; return parts }}(), \",\")"
+                )
             }
         }
         _ => format!("fmt.Sprintf(\"%%v\", {value_expr})"),
