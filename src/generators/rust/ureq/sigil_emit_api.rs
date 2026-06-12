@@ -1,6 +1,7 @@
 //! Ureq-specific API method body emission (synchronous, ureq 3.x).
 
 use sigil_stitch::code_block::CodeBlock;
+use sigil_stitch::prelude::sigil_quote;
 
 use crate::generators::rust::common::emit_api::{
     BodyEncoding, MultipartPart, OpPlan, RustBackendConfig, binary_field_expr, emit_response_match,
@@ -40,12 +41,7 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         && matches!(&body.encoding, BodyEncoding::Multipart)
         && !body.multipart_supported
     {
-        b.add("let _ = self.client;\n", ());
-        b.add(&format!("let _ = {};\n", body.var_name), ());
-        b.add(
-            "return Err(Error::Unsupported(\"multipart/form-data request bodies must be object schemas\"));\n",
-            (),
-        );
+        b.add_code(unsupported_multipart_body(&body.var_name));
         return b.build().unwrap();
     }
 
@@ -148,63 +144,27 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         if let Some(body) = body {
             match &body.encoding {
                 BodyEncoding::Json => {
-                    b.add(
-                        &format!("let resp = req.send_json(&{})?;\n", body.var_name),
-                        (),
-                    );
+                    b.add_code(json_send(&body.var_name));
                 }
                 BodyEncoding::FormUrlEncoded => {
                     emit_form_body(&mut b, &body.var_name);
-                    b.add("let resp = req.send_form(form_pairs.iter().map(|(key, value)| (key.as_str(), value.as_str())))?;\n", ());
+                    b.add_code(form_send());
                 }
                 BodyEncoding::Xml => {
-                    let media_type = rust_string_literal(&body.media_type);
-                    b.add(
-                        &format!(
-                            "let body_xml = serde_xml_rs::to_string({})?;\n",
-                            body.var_name
-                        ),
-                        (),
-                    );
-                    b.add(
-                        &format!("req = req.header(\"Content-Type\", {media_type});\n"),
-                        (),
-                    );
-                    b.add("let resp = req.send(body_xml)?;\n", ());
+                    b.add_code(xml_send(&body.var_name, &body.media_type));
                 }
                 BodyEncoding::TextPlain => {
-                    let media_type = rust_string_literal(&body.media_type);
-                    b.add(
-                        &format!("req = req.header(\"Content-Type\", {media_type});\n"),
-                        (),
-                    );
-                    b.add(
-                        &format!("let resp = req.send({}.as_str())?;\n", body.var_name),
-                        (),
-                    );
+                    b.add_code(text_send(&body.var_name, &body.media_type));
                 }
                 BodyEncoding::OctetStream => {
-                    let media_type = rust_string_literal(&body.media_type);
-                    b.add(
-                        &format!("req = req.header(\"Content-Type\", {media_type});\n"),
-                        (),
-                    );
-                    b.add(
-                        &format!("let resp = req.send({}.clone())?;\n", body.var_name),
-                        (),
-                    );
+                    b.add_code(octet_stream_send(&body.var_name, &body.media_type));
                 }
                 BodyEncoding::Multipart => {
                     emit_multipart_body(&mut b, &body.var_name, &body.multipart_parts);
-                    b.add("let resp = req.send(multipart_body)?;\n", ());
+                    b.add_code(multipart_send());
                 }
                 BodyEncoding::Other(media_type) => {
-                    b.add(
-                        &format!(
-                            "return Err(Error::Unsupported(\"unsupported request body media type: {media_type}\"));\n"
-                        ),
-                        (),
-                    );
+                    b.add_code(unsupported_media_type_body(media_type));
                 }
             }
         } else {
@@ -230,6 +190,70 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     b.build().unwrap()
 }
 
+fn unsupported_multipart_body(body_var: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        let _ = self.client;
+        let _ = $L(body_var);
+        return Err(Error::Unsupported($S("multipart/form-data request bodies must be object schemas")));
+    })
+    .expect("unsupported multipart body builds")
+}
+
+fn unsupported_media_type_body(media_type: &str) -> CodeBlock {
+    let message = format!("unsupported request body media type: {media_type}");
+    sigil_quote!(RustLang {
+        return Err(Error::Unsupported($S(&message)));
+    })
+    .expect("unsupported media type body builds")
+}
+
+fn json_send(body_var: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        let resp = req.send_json(&$L(body_var))?;
+    })
+    .expect("json send builds")
+}
+
+fn form_send() -> CodeBlock {
+    let pairs_iter = "form_pairs.iter().map(|(key, value)| (key.as_str(), value.as_str()))";
+    sigil_quote!(RustLang {
+        let resp = req.send_form($L(pairs_iter))?;
+    })
+    .expect("form send builds")
+}
+
+fn xml_send(body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        let body_xml = serde_xml_rs::to_string($L(body_var))?;
+        req = req.header("Content-Type", $L(rust_string_literal(media_type)));
+        let resp = req.send(body_xml)?;
+    })
+    .expect("xml send builds")
+}
+
+fn text_send(body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        req = req.header("Content-Type", $L(rust_string_literal(media_type)));
+        let resp = req.send($L(body_var).as_str())?;
+    })
+    .expect("text send builds")
+}
+
+fn octet_stream_send(body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        req = req.header("Content-Type", $L(rust_string_literal(media_type)));
+        let resp = req.send($L(body_var).clone())?;
+    })
+    .expect("octet-stream send builds")
+}
+
+fn multipart_send() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let resp = req.send(multipart_body)?;
+    })
+    .expect("multipart send builds")
+}
+
 fn emit_multipart_body(
     b: &mut sigil_stitch::code_block::CodeBlockBuilder,
     body_var: &str,
@@ -239,29 +263,15 @@ fn emit_multipart_body(
         "let boundary = format!(\"openapi-nexus-{}\", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|duration| duration.as_nanos()).unwrap_or(0));\n",
         (),
     );
-    b.add("let mut multipart_body: Vec<u8> = Vec::new();\n", ());
+    b.add_code(multipart_body_init());
     for part in parts {
         emit_multipart_part(b, body_var, part);
     }
-    b.add(
-        "multipart_body.extend_from_slice(format!(\"--{}--\\r\\n\", boundary).as_bytes());\n",
-        (),
-    );
-    b.add(
-        "req = req.header(\"Content-Type\", &format!(\"multipart/form-data; boundary={}\", boundary));\n",
-        (),
-    );
+    b.add_code(multipart_epilogue());
 }
 
 fn emit_form_body(b: &mut sigil_stitch::code_block::CodeBlockBuilder, body_var: &str) {
-    b.add(
-        &format!("let form_value = serde_json::to_value({body_var})?;\n"),
-        (),
-    );
-    b.add(
-        "let mut form_pairs: Vec<(String, String)> = Vec::new();\n",
-        (),
-    );
+    b.add_code(form_pairs_init(body_var));
     b.begin_control_flow("if let serde_json::Value::Object(fields) = form_value", ());
     b.begin_control_flow("for (key, value) in fields", ());
     b.begin_control_flow("if !value.is_null()", ());
@@ -273,6 +283,29 @@ fn emit_form_body(b: &mut sigil_stitch::code_block::CodeBlockBuilder, body_var: 
     b.end_control_flow();
     b.end_control_flow();
     b.end_control_flow();
+}
+
+fn multipart_body_init() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let mut multipart_body: Vec<u8> = Vec::new();
+    })
+    .expect("multipart body init builds")
+}
+
+fn multipart_epilogue() -> CodeBlock {
+    sigil_quote!(RustLang {
+        multipart_body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
+        req = req.header("Content-Type", &format!("multipart/form-data; boundary={}", boundary));
+    })
+    .expect("multipart epilogue builds")
+}
+
+fn form_pairs_init(body_var: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        let form_value = serde_json::to_value($L(body_var))?;
+        let mut form_pairs: Vec<(String, String)> = Vec::new();
+    })
+    .expect("form pairs init builds")
 }
 
 fn emit_multipart_part(

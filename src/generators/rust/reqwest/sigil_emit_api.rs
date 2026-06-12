@@ -1,6 +1,7 @@
 //! Reqwest-specific API method body emission.
 
 use sigil_stitch::code_block::CodeBlock;
+use sigil_stitch::prelude::sigil_quote;
 
 use crate::generators::rust::common::emit_api::{
     BodyEncoding, MultipartPart, OpPlan, RustBackendConfig, binary_field_expr, emit_response_match,
@@ -36,12 +37,7 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         && matches!(&body.encoding, BodyEncoding::Multipart)
         && !body.multipart_supported
     {
-        b.add("let _ = self.client;\n", ());
-        b.add(&format!("let _ = {};\n", body.var_name), ());
-        b.add(
-            "return Err(Error::Unsupported(\"multipart/form-data request bodies must be object schemas\"));\n",
-            (),
-        );
+        b.add_code(unsupported_multipart_body(&body.var_name));
         return b.build().unwrap();
     }
 
@@ -132,51 +128,25 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     if let Some(body) = body {
         match &body.encoding {
             BodyEncoding::Json => {
-                b.add(&format!("req = req.json(&{});\n", body.var_name), ());
+                b.add_code(json_body(&body.var_name));
             }
             BodyEncoding::FormUrlEncoded => {
-                b.add(&format!("req = req.form(&{});\n", body.var_name), ());
+                b.add_code(form_body(&body.var_name));
             }
             BodyEncoding::Xml => {
-                let media_type = rust_string_literal(&body.media_type);
-                b.add(
-                    &format!(
-                        "let body_xml = serde_xml_rs::to_string({})?;\n",
-                        body.var_name
-                    ),
-                    (),
-                );
-                b.add(
-                    &format!("req = req.header(\"Content-Type\", {media_type}).body(body_xml);\n"),
-                    (),
-                );
+                b.add_code(xml_body(&body.var_name, &body.media_type));
             }
             BodyEncoding::TextPlain => {
-                let media_type = rust_string_literal(&body.media_type);
-                b.add(
-                    &format!("req = req.header(\"Content-Type\", {media_type});\n"),
-                    (),
-                );
-                b.add(&format!("req = req.body({}.clone());\n", body.var_name), ());
+                b.add_code(text_body(&body.var_name, &body.media_type));
             }
             BodyEncoding::OctetStream => {
-                let media_type = rust_string_literal(&body.media_type);
-                b.add(
-                    &format!("req = req.header(\"Content-Type\", {media_type});\n"),
-                    (),
-                );
-                b.add(&format!("req = req.body({}.clone());\n", body.var_name), ());
+                b.add_code(octet_stream_body(&body.var_name, &body.media_type));
             }
             BodyEncoding::Multipart => {
                 emit_multipart_body(&mut b, &body.var_name, &body.multipart_parts);
             }
             BodyEncoding::Other(media_type) => {
-                b.add(
-                    &format!(
-                        "return Err(Error::Unsupported(\"unsupported request body media type: {media_type}\"));\n"
-                    ),
-                    (),
-                );
+                b.add_code(unsupported_media_type_body(media_type));
             }
         }
     }
@@ -201,6 +171,61 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     }
 
     b.build().unwrap()
+}
+
+fn unsupported_multipart_body(body_var: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        let _ = self.client;
+        let _ = $L(body_var);
+        return Err(Error::Unsupported($S("multipart/form-data request bodies must be object schemas")));
+    })
+    .expect("unsupported multipart body builds")
+}
+
+fn unsupported_media_type_body(media_type: &str) -> CodeBlock {
+    let message = format!("unsupported request body media type: {media_type}");
+    sigil_quote!(RustLang {
+        return Err(Error::Unsupported($S(&message)));
+    })
+    .expect("unsupported media type body builds")
+}
+
+fn json_body(body_var: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        req = req.json(&$L(body_var));
+    })
+    .expect("json body builds")
+}
+
+fn form_body(body_var: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        req = req.form(&$L(body_var));
+    })
+    .expect("form body builds")
+}
+
+fn xml_body(body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        let body_xml = serde_xml_rs::to_string($L(body_var))?;
+        req = req.header("Content-Type", $L(rust_string_literal(media_type))).body(body_xml);
+    })
+    .expect("xml body builds")
+}
+
+fn text_body(body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        req = req.header("Content-Type", $L(rust_string_literal(media_type)));
+        req = req.body($L(body_var).clone());
+    })
+    .expect("text body builds")
+}
+
+fn octet_stream_body(body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(RustLang {
+        req = req.header("Content-Type", $L(rust_string_literal(media_type)));
+        req = req.body($L(body_var).clone());
+    })
+    .expect("octet-stream body builds")
 }
 
 fn emit_multipart_body(
