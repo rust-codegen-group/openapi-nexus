@@ -184,7 +184,7 @@ serde_repr.workspace = true
 aioduct = {{ version = "{aioduct_version}", features = {aioduct_features} }}
 serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
-serde-xml-rs = "0.6"
+serde-xml-rs = "0.8.2"
 serde_repr = "0.1"
 {url_explicit}"#
         ),
