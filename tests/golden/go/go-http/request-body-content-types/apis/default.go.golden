@@ -27,6 +27,43 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 	return &DefaultAPI{client: client}
 }
 
+// PostBinaryResponse carries the response from the corresponding operation.
+type PostBinaryResponse struct {
+	StatusCode int
+	Raw *http.Response
+}
+
+// PostBinary calls POST /binary.
+func (a *DefaultAPI) PostBinary(ctx context.Context, body []byte) (*PostBinaryResponse, error) {
+	path := "/binary"
+	var bodyReader io.Reader
+	if body != nil {
+		buf, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("marshal body: %w", err)
+		}
+		bodyReader = bytes.NewReader(buf)
+	}
+	req, err := a.client.NewRequest(ctx, "POST", path, nil, bodyReader)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	httpResp, err := a.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer httpResp.Body.Close()
+
+	resp := &PostBinaryResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
+	if httpResp.StatusCode >= 400 {
+		body, _ := io.ReadAll(httpResp.Body)
+		return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+	}
+	return resp, nil
+}
+
 // PostFormResponse carries the response from the corresponding operation.
 type PostFormResponse struct {
 	StatusCode int
@@ -140,6 +177,43 @@ func (a *DefaultAPI) PostJsonOrXml(ctx context.Context, body *models.Payload) (*
 	return resp, nil
 }
 
+// PatchMergeJsonResponse carries the response from the corresponding operation.
+type PatchMergeJsonResponse struct {
+	StatusCode int
+	Raw *http.Response
+}
+
+// PatchMergeJson calls PATCH /merge-patch.
+func (a *DefaultAPI) PatchMergeJson(ctx context.Context, body *models.Payload) (*PatchMergeJsonResponse, error) {
+	path := "/merge-patch"
+	var bodyReader io.Reader
+	if body != nil {
+		buf, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("marshal body: %w", err)
+		}
+		bodyReader = bytes.NewReader(buf)
+	}
+	req, err := a.client.NewRequest(ctx, "PATCH", path, nil, bodyReader)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	httpResp, err := a.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer httpResp.Body.Close()
+
+	resp := &PatchMergeJsonResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
+	if httpResp.StatusCode >= 400 {
+		body, _ := io.ReadAll(httpResp.Body)
+		return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+	}
+	return resp, nil
+}
+
 // PostTextResponse carries the response from the corresponding operation.
 type PostTextResponse struct {
 	StatusCode int
@@ -210,6 +284,44 @@ func (a *DefaultAPI) PostXml(ctx context.Context, body *models.Payload) (*PostXm
 	if httpResp.StatusCode >= 400 {
 		body, _ := io.ReadAll(httpResp.Body)
 		return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+	}
+	return resp, nil
+}
+
+// GetXmlResponseResponse carries the response from the corresponding operation.
+type GetXmlResponseResponse struct {
+	StatusCode int
+	Raw *http.Response
+	Status200 *models.Payload
+}
+
+// GetXmlResponse calls GET /xml-response.
+func (a *DefaultAPI) GetXmlResponse(ctx context.Context) (*GetXmlResponseResponse, error) {
+	path := "/xml-response"
+	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+	httpResp, err := a.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer httpResp.Body.Close()
+
+	resp := &GetXmlResponseResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
+	switch httpResp.StatusCode {
+		case 200:
+			var payload models.Payload
+			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+				return nil, fmt.Errorf("decode response: %w", err)
+			}
+			resp.Status200 = &payload
+		default:
+			if httpResp.StatusCode >= 400 {
+				body, _ := io.ReadAll(httpResp.Body)
+				return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}
+			}
 	}
 	return resp, nil
 }

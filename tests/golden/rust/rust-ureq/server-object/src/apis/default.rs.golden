@@ -30,11 +30,11 @@ impl<'a> DefaultApi<'a> {
         let req = self.client.get(&path);
         let resp = req.call()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = GetAllUsersResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -53,14 +53,14 @@ impl<'a> DefaultApi<'a> {
         let req = self.client.get(&path);
         let resp = req.call()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = GetUserByIdResponse { status_code, data: None, status_404: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             404 => {
-                result.status_404 = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.status_404 = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }

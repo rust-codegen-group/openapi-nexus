@@ -29,11 +29,11 @@ impl<'a> PetApi<'a> {
         let req = self.client.put(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = UpdatePetResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -49,11 +49,11 @@ impl<'a> PetApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = AddPetResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -70,11 +70,11 @@ impl<'a> PetApi<'a> {
         req = req.query("status", &status.to_string());
         let resp = req.call()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = FindPetsByStatusResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -93,11 +93,11 @@ impl<'a> PetApi<'a> {
         }
         let resp = req.call()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = FindPetsByTagsResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -114,11 +114,11 @@ impl<'a> PetApi<'a> {
         let req = self.client.get(&path);
         let resp = req.call()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = GetPetByIdResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -143,11 +143,11 @@ impl<'a> PetApi<'a> {
         }
         let resp = req.send_empty()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = UpdatePetWithFormResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -181,11 +181,11 @@ impl<'a> PetApi<'a> {
         }
         let resp = req.send_empty()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = UploadFileResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }

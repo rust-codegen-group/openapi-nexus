@@ -31,6 +31,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("multiple-similar-request-schemas", "valid/multiple-similar-request-schemas.yaml"),
         ("naming-conventions", "valid/naming-conventions.yaml"),
         ("request-body-content-types", "valid/request-body-content-types.yaml"),
+        ("binary-transfer-media-types", "valid/binary-transfer-media-types.yaml"),
         ("server-object", "valid/server-object.yaml"),
 
         ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
@@ -111,6 +112,7 @@ generate_golden_tests! {
     test_multiple_similar_request_schemas_golden: "multiple-similar-request-schemas",
     test_naming_conventions_golden: "naming-conventions",
     test_request_body_content_types_golden: "request-body-content-types",
+    test_binary_transfer_media_types_golden: "binary-transfer-media-types",
     test_server_object_golden: "server-object",
 
     test_recursive_json_all_optional_properties_golden: "recursive-json-all-optional-properties",

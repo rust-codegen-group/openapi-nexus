@@ -8,4 +8,5 @@ description = "Test fixture for internally tagged discriminated union where the 
 ureq = { version = "3", features = ["json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde-xml-rs = "0.6"
 serde_repr = "0.1"

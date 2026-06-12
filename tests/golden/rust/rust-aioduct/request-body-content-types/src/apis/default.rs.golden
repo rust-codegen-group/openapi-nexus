@@ -20,6 +20,20 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
         }
     }
 
+    /// POST /binary
+    pub async fn post_binary(
+        &self,
+        body: &Vec<u8>,
+    ) -> Result<PostBinaryResponse, Error> {
+        let path = "/binary".to_string();
+        let mut req = self.client.post(&path)?;
+        req = req.header_str("Content-Type", "application/octet-stream")?;
+        req = req.body(body.clone());
+        let resp = req.send().await?;
+        let status_code = resp.status().as_u16();
+        Ok(PostBinaryResponse { status_code })
+    }
+
     /// POST /form
     pub async fn post_form(
         &self,
@@ -27,7 +41,7 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
     ) -> Result<PostFormResponse, Error> {
         let path = "/form".to_string();
         let mut req = self.client.post(&path)?;
-        req = req.json(&body)?;
+        req = req.form_serde(&body)?;
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(PostFormResponse { status_code })
@@ -61,6 +75,19 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
         Ok(PostJsonOrXmlResponse { status_code })
     }
 
+    /// PATCH /merge-patch
+    pub async fn patch_merge_json(
+        &self,
+        body: &crate::models::Payload,
+    ) -> Result<PatchMergeJsonResponse, Error> {
+        let path = "/merge-patch".to_string();
+        let mut req = self.client.patch(&path)?;
+        req = req.json(&body)?;
+        let resp = req.send().await?;
+        let status_code = resp.status().as_u16();
+        Ok(PatchMergeJsonResponse { status_code })
+    }
+
     /// POST /text
     pub async fn post_text(
         &self,
@@ -68,7 +95,8 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
     ) -> Result<PostTextResponse, Error> {
         let path = "/text".to_string();
         let mut req = self.client.post(&path)?;
-        req = req.json(&body)?;
+        req = req.header_str("Content-Type", "text/plain")?;
+        req = req.body(body.clone().into_bytes());
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(PostTextResponse { status_code })
@@ -81,11 +109,38 @@ impl<'a, R: aioduct::Runtime> DefaultApi<'a, R> {
     ) -> Result<PostXmlResponse, Error> {
         let path = "/xml".to_string();
         let mut req = self.client.post(&path)?;
-        req = req.json(&body)?;
+        req = req.header_str("Content-Type", "application/xml")?;
+        let body_xml = serde_xml_rs::to_string(body)?;
+        req = req.body(body_xml.into_bytes());
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(PostXmlResponse { status_code })
     }
+
+    /// GET /xml-response
+    pub async fn get_xml_response(
+        &self,
+    ) -> Result<GetXmlResponseResponse, Error> {
+        let path = "/xml-response".to_string();
+        let req = self.client.get(&path)?;
+        let resp = req.send().await?;
+        let status_code = resp.status().as_u16();
+        let body_bytes = resp.bytes().await?;
+        let mut result = GetXmlResponseResponse { status_code, data: None };
+        match status_code {
+            200 => {
+                result.data = Some(serde_xml_rs::from_reader(std::io::Cursor::new(&body_bytes)).map_err(Error::Xml)?);
+            }
+            _ => {}
+        }
+        Ok(result)
+    }
+}
+
+/// Response from `post_binary`.
+#[derive(Debug)]
+pub struct PostBinaryResponse {
+    pub status_code: u16,
 }
 
 /// Response from `post_form`.
@@ -106,6 +161,12 @@ pub struct PostJsonOrXmlResponse {
     pub status_code: u16,
 }
 
+/// Response from `patch_merge_json`.
+#[derive(Debug)]
+pub struct PatchMergeJsonResponse {
+    pub status_code: u16,
+}
+
 /// Response from `post_text`.
 #[derive(Debug)]
 pub struct PostTextResponse {
@@ -116,4 +177,11 @@ pub struct PostTextResponse {
 #[derive(Debug)]
 pub struct PostXmlResponse {
     pub status_code: u16,
+}
+
+/// Response from `get_xml_response`.
+#[derive(Debug)]
+pub struct GetXmlResponseResponse {
+    pub status_code: u16,
+    pub data: Option<crate::models::Payload>,
 }

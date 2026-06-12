@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: Binary Transfer Media Types
+  version: 1.0.0
+  description: Covers multipart upload and octet-stream download.
+paths:
+  /uploads:
+    post:
+      tags:
+        - transfer
+      operationId: upload_asset
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - purpose
+                - metadata
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Binary content
+                purpose:
+                  type: string
+                  description: Upload purpose
+                metadata:
+                  $ref: '#/components/schemas/UploadAttributes'
+      responses:
+        '200':
+          description: Upload accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadMetadata'
+        '400':
+          description: Bad request
+  /assets/{asset_id}/content:
+    get:
+      tags:
+        - transfer
+      operationId: download_asset
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Binary content
+          content:
+            application/octet-stream:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int32
+                  minimum: 0
+        '404':
+          description: Not found
+components:
+  schemas:
+    UploadAttributes:
+      type: object
+      required:
+        - label
+      properties:
+        label:
+          type: string
+        retention_days:
+          type: integer
+    UploadMetadata:
+      type: object
+      required:
+        - id
+        - object
+        - bytes
+        - filename
+        - purpose
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        bytes:
+          type: integer
+          format: int64
+        filename:
+          type: string
+        purpose:
+          type: string

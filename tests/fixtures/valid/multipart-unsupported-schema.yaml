@@ -1,0 +1,21 @@
+openapi: 3.1.0
+info:
+  title: Multipart Unsupported Schema
+  version: 1.0.0
+  description: Covers multipart request bodies that are not object-shaped.
+paths:
+  /uploads/raw:
+    post:
+      tags:
+        - transfer
+      operationId: upload_raw_multipart
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '204':
+          description: Uploaded

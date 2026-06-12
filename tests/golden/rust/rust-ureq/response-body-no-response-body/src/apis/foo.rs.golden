@@ -30,14 +30,14 @@ impl<'a> FooApi<'a> {
         let req = self.client.patch(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = UpdateFooBarResponse { status_code, status_400: None, status_500: None };
         match status_code {
             400 => {
-                result.status_400 = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.status_400 = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             500 => {
-                result.status_500 = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.status_500 = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
