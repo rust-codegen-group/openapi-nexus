@@ -20,6 +20,27 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 /**
+ * PostBinaryResponse carries the response from postBinary.
+ */
+public class PostBinaryResponse {
+    private final int statusCode;
+    private final Response raw;
+
+    public PostBinaryResponse(int statusCode, Response raw) {
+        this.statusCode = statusCode;
+        this.raw = raw;
+    }
+
+    public int getStatusCode() {
+        return this.statusCode;
+    }
+
+    public Response getRaw() {
+        return this.raw;
+    }
+}
+
+/**
  * PostFormResponse carries the response from postForm.
  */
 public class PostFormResponse {
@@ -83,6 +104,27 @@ public class PostJsonOrXmlResponse {
 }
 
 /**
+ * PatchMergeJsonResponse carries the response from patchMergeJson.
+ */
+public class PatchMergeJsonResponse {
+    private final int statusCode;
+    private final Response raw;
+
+    public PatchMergeJsonResponse(int statusCode, Response raw) {
+        this.statusCode = statusCode;
+        this.raw = raw;
+    }
+
+    public int getStatusCode() {
+        return this.statusCode;
+    }
+
+    public Response getRaw() {
+        return this.raw;
+    }
+}
+
+/**
  * PostTextResponse carries the response from postText.
  */
 public class PostTextResponse {
@@ -125,6 +167,33 @@ public class PostXmlResponse {
 }
 
 /**
+ * GetXmlResponseResponse carries the response from getXmlResponse.
+ */
+public class GetXmlResponseResponse {
+    private final int statusCode;
+    private final Response raw;
+    private final Payload status200;
+
+    public GetXmlResponseResponse(int statusCode, Response raw, Payload status200) {
+        this.statusCode = statusCode;
+        this.raw = raw;
+        this.status200 = status200;
+    }
+
+    public int getStatusCode() {
+        return this.statusCode;
+    }
+
+    public Response getRaw() {
+        return this.raw;
+    }
+
+    public Payload getStatus200() {
+        return this.status200;
+    }
+}
+
+/**
  * DefaultApi groups operations under the default tag.
  */
 public class DefaultApi {
@@ -133,6 +202,22 @@ public class DefaultApi {
 
     public DefaultApi(ApiClient client) {
         this.client = client;
+    }
+
+    /**
+     * postBinary POST /binary.
+     */
+    public PostBinaryResponse postBinary(byte[] body) throws IOException {
+        String path = "/binary";
+        String jsonBody = gson.toJson(body);
+        Request request = client.newRequest("POST", path, null, jsonBody);
+        Response response = client.execute(request);
+
+        if (!response.isSuccessful()) {
+            String errorBody = response.body() != null ? response.body().string() : "";
+            throw new ApiException(response.code(), response.message(), errorBody);
+        }
+        return new PostBinaryResponse(response.code(), response);
     }
 
     /**
@@ -184,6 +269,22 @@ public class DefaultApi {
     }
 
     /**
+     * patchMergeJson PATCH /merge-patch.
+     */
+    public PatchMergeJsonResponse patchMergeJson(Payload body) throws IOException {
+        String path = "/merge-patch";
+        String jsonBody = gson.toJson(body);
+        Request request = client.newRequest("PATCH", path, null, jsonBody);
+        Response response = client.execute(request);
+
+        if (!response.isSuccessful()) {
+            String errorBody = response.body() != null ? response.body().string() : "";
+            throw new ApiException(response.code(), response.message(), errorBody);
+        }
+        return new PatchMergeJsonResponse(response.code(), response);
+    }
+
+    /**
      * postText POST /text.
      */
     public PostTextResponse postText(String body) throws IOException {
@@ -213,5 +314,25 @@ public class DefaultApi {
             throw new ApiException(response.code(), response.message(), errorBody);
         }
         return new PostXmlResponse(response.code(), response);
+    }
+
+    /**
+     * getXmlResponse GET /xml-response.
+     */
+    public GetXmlResponseResponse getXmlResponse() throws IOException {
+        String path = "/xml-response";
+        Request request = client.newRequest("GET", path, null, null);
+        Response response = client.execute(request);
+
+        if (!response.isSuccessful()) {
+            String errorBody = response.body() != null ? response.body().string() : "";
+            throw new ApiException(response.code(), response.message(), errorBody);
+        }
+        String responseBody = response.body() != null ? response.body().string() : "null";
+        Payload status200 = null;
+        if (response.code() == 200) {
+            status200 = gson.fromJson(responseBody, new TypeToken<Payload>() {}.getType());
+        }
+        return new GetXmlResponseResponse(response.code(), response, status200);
     }
 }

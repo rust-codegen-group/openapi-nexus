@@ -13,6 +13,13 @@ class DefaultApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
+    def post_binary(self, *, body: bytes) -> None:
+        path = "/binary"
+        response = self._client.request("POST", path, json=body)
+        if response.status_code >= 400:
+            raise ApiError(response.status_code, response.reason_phrase, response.content)
+        return None
+
     def post_form(self, *, body: Payload) -> None:
         path = "/form"
         response = self._client.request("POST", path, json=body.to_dict())
@@ -34,6 +41,13 @@ class DefaultApi:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return None
 
+    def patch_merge_json(self, *, body: Payload) -> None:
+        path = "/merge-patch"
+        response = self._client.request("PATCH", path, json=body.to_dict())
+        if response.status_code >= 400:
+            raise ApiError(response.status_code, response.reason_phrase, response.content)
+        return None
+
     def post_text(self, *, body: str) -> None:
         path = "/text"
         response = self._client.request("POST", path, json=body)
@@ -47,3 +61,10 @@ class DefaultApi:
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return None
+
+    def get_xml_response(self) -> Payload:
+        path = "/xml-response"
+        response = self._client.request("GET", path)
+        if response.status_code >= 400:
+            raise ApiError(response.status_code, response.reason_phrase, response.content)
+        return Payload.from_dict(response.json())

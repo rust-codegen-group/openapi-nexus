@@ -3,7 +3,9 @@
 use sigil_stitch::code_block::CodeBlock;
 
 use crate::generators::rust::common::emit_api::{
-    OpPlan, RustBackendConfig, emit_response_match, emit_result_init, render_to_string,
+    BodyEncoding, MultipartPart, OpPlan, RustBackendConfig, binary_field_expr, emit_response_match,
+    emit_result_init, optional_binary_field_expr, optional_text_field_expr, render_to_string,
+    response_value_expr, rust_string_literal, text_field_expr,
 };
 
 /// Backend configuration for aioduct (async, with generic runtime parameter).
@@ -29,6 +31,19 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     } = plan;
 
     let mut b = CodeBlock::builder();
+
+    if let Some(body) = body
+        && matches!(&body.encoding, BodyEncoding::Multipart)
+        && !body.multipart_supported
+    {
+        b.add("let _ = self.client;\n", ());
+        b.add(&format!("let _ = {};\n", body.var_name), ());
+        b.add(
+            "return Err(Error::Unsupported(\"multipart/form-data request bodies must be object schemas\"));\n",
+            (),
+        );
+        return b.build().unwrap();
+    }
 
     // Build path
     let needs_mut_path = !path_params.is_empty() || !query_params.is_empty();
@@ -116,9 +131,61 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         }
     }
 
-    // Body (aioduct .json() is fallible)
+    // Body
     if let Some(body) = body {
-        b.add(&format!("req = req.json(&{})?;\n", body.var_name), ());
+        match &body.encoding {
+            BodyEncoding::Json => {
+                b.add(&format!("req = req.json(&{})?;\n", body.var_name), ());
+            }
+            BodyEncoding::FormUrlEncoded => {
+                b.add(&format!("req = req.form_serde(&{})?;\n", body.var_name), ());
+            }
+            BodyEncoding::Xml => {
+                let media_type = rust_string_literal(&body.media_type);
+                b.add(
+                    &format!("req = req.header_str(\"Content-Type\", {media_type})?;\n"),
+                    (),
+                );
+                b.add(
+                    &format!(
+                        "let body_xml = serde_xml_rs::to_string({})?;\n",
+                        body.var_name
+                    ),
+                    (),
+                );
+                b.add("req = req.body(body_xml.into_bytes());\n", ());
+            }
+            BodyEncoding::TextPlain => {
+                let media_type = rust_string_literal(&body.media_type);
+                b.add(
+                    &format!("req = req.header_str(\"Content-Type\", {media_type})?;\n"),
+                    (),
+                );
+                b.add(
+                    &format!("req = req.body({}.clone().into_bytes());\n", body.var_name),
+                    (),
+                );
+            }
+            BodyEncoding::OctetStream => {
+                let media_type = rust_string_literal(&body.media_type);
+                b.add(
+                    &format!("req = req.header_str(\"Content-Type\", {media_type})?;\n"),
+                    (),
+                );
+                b.add(&format!("req = req.body({}.clone());\n", body.var_name), ());
+            }
+            BodyEncoding::Multipart => {
+                emit_multipart_body(&mut b, &body.var_name, &body.multipart_parts);
+            }
+            BodyEncoding::Other(media_type) => {
+                b.add(
+                    &format!(
+                        "return Err(Error::Unsupported(\"unsupported request body media type: {media_type}\"));\n"
+                    ),
+                    (),
+                );
+            }
+        }
     }
 
     // Send
@@ -131,13 +198,68 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     } else {
         b.add("let body_bytes = resp.bytes().await?;\n", ());
         emit_result_init(&mut b, response_type, typed_responses);
-        emit_response_match(
-            &mut b,
-            typed_responses,
-            "serde_json::from_slice(&body_bytes)",
-        );
+        emit_response_match(&mut b, typed_responses, &|tr| {
+            response_value_expr(tr, "&body_bytes")
+        });
         b.add("Ok(result)\n", ());
     }
 
     b.build().unwrap()
+}
+
+fn emit_multipart_body(
+    b: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    body_var: &str,
+    parts: &[MultipartPart],
+) {
+    b.add(
+        "let mut multipart = aioduct::multipart::Multipart::new();\n",
+        (),
+    );
+    for part in parts {
+        let wire_name = rust_string_literal(&part.wire_name);
+        if part.required {
+            if part.is_binary {
+                b.add(
+                    &format!(
+                        "multipart = multipart.file({wire_name}, {wire_name}, \"application/octet-stream\", {});\n",
+                        binary_field_expr(body_var, part),
+                    ),
+                    (),
+                );
+            } else {
+                b.add(
+                    &format!(
+                        "multipart = multipart.text({wire_name}, {});\n",
+                        text_field_expr(body_var, part),
+                    ),
+                    (),
+                );
+            }
+        } else {
+            b.begin_control_flow(
+                &format!("if let Some(value) = &{body_var}.{}", part.field_name),
+                (),
+            );
+            if part.is_binary {
+                b.add(
+                    &format!(
+                        "multipart = multipart.file({wire_name}, {wire_name}, \"application/octet-stream\", {});\n",
+                        optional_binary_field_expr("value"),
+                    ),
+                    (),
+                );
+            } else {
+                b.add(
+                    &format!(
+                        "multipart = multipart.text({wire_name}, {});\n",
+                        optional_text_field_expr("value", part),
+                    ),
+                    (),
+                );
+            }
+            b.end_control_flow();
+        }
+    }
+    b.add("req = req.multipart(multipart);\n", ());
 }

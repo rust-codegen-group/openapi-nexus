@@ -5,16 +5,21 @@
  * Covers non-JSON request body media types to pin Content-Type emission.
  */
 export type {
+  ApiPostBinaryRequest,
+  PostBinaryRawResponse,
   ApiPostFormRequest,
   PostFormRawResponse,
   ApiPostJsonRequest,
   PostJsonRawResponse,
   ApiPostJsonOrXmlRequest,
   PostJsonOrXmlRawResponse,
+  ApiPatchMergeJsonRequest,
+  PatchMergeJsonRawResponse,
   ApiPostTextRequest,
   PostTextRawResponse,
   ApiPostXmlRequest,
   PostXmlRawResponse,
+  GetXmlResponseRawResponse,
   DefaultApiInterface,
 } from './DefaultApi';
 export { DefaultApi } from './DefaultApi';

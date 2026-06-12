@@ -164,6 +164,7 @@ description = "{description}"
 aioduct.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde-xml-rs.workspace = true
 serde_repr.workspace = true
 {url_full}"#
         ),
@@ -173,6 +174,7 @@ serde_repr.workspace = true
 aioduct = {{ workspace = true, features = {aioduct_features} }}
 serde = {{ workspace = true, features = ["derive"] }}
 serde_json.workspace = true
+serde-xml-rs.workspace = true
 serde_repr.workspace = true
 {url_ws}"#
         ),
@@ -182,6 +184,7 @@ serde_repr.workspace = true
 aioduct = {{ version = "{aioduct_version}", features = {aioduct_features} }}
 serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
+serde-xml-rs = "0.6"
 serde_repr = "0.1"
 {url_explicit}"#
         ),

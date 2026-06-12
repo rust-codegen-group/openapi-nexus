@@ -13,6 +13,12 @@ import com.google.gson.reflect.TypeToken
 import okhttp3.Response
 
 /**
+ * PostBinaryResponse carries the response from postBinary.
+ */
+data class PostBinaryResponse(val statusCode: Int, val raw: Response) {
+}
+
+/**
  * PostFormResponse carries the response from postForm.
  */
 data class PostFormResponse(val statusCode: Int, val raw: Response) {
@@ -31,6 +37,12 @@ data class PostJsonOrXmlResponse(val statusCode: Int, val raw: Response) {
 }
 
 /**
+ * PatchMergeJsonResponse carries the response from patchMergeJson.
+ */
+data class PatchMergeJsonResponse(val statusCode: Int, val raw: Response) {
+}
+
+/**
  * PostTextResponse carries the response from postText.
  */
 data class PostTextResponse(val statusCode: Int, val raw: Response) {
@@ -43,10 +55,33 @@ data class PostXmlResponse(val statusCode: Int, val raw: Response) {
 }
 
 /**
+ * GetXmlResponseResponse carries the response from getXmlResponse.
+ */
+data class GetXmlResponseResponse(val statusCode: Int, val raw: Response,
+val status200: Payload? = null) {
+}
+
+/**
  * DefaultApi groups operations under the default tag.
  */
 class DefaultApi(private val client: ApiClient) {
     private val gson: Gson = Gson()
+
+    /**
+     * postBinary POST /binary.
+     */
+    fun postBinary(body: ByteArray): PostBinaryResponse {
+        val path = "/binary"
+        val jsonBody = gson.toJson(body)
+        val request = client.newRequest("POST", path, null, jsonBody)
+        val response = client.execute(request)
+
+        if (!response.isSuccessful) {
+            val errorBody = response.body?.string() ?: ""
+            throw ApiException(response.code, response.message, errorBody)
+        }
+        return PostBinaryResponse(statusCode = response.code, raw = response)
+    }
 
     /**
      * postForm POST /form.
@@ -97,6 +132,22 @@ class DefaultApi(private val client: ApiClient) {
     }
 
     /**
+     * patchMergeJson PATCH /merge-patch.
+     */
+    fun patchMergeJson(body: Payload): PatchMergeJsonResponse {
+        val path = "/merge-patch"
+        val jsonBody = gson.toJson(body)
+        val request = client.newRequest("PATCH", path, null, jsonBody)
+        val response = client.execute(request)
+
+        if (!response.isSuccessful) {
+            val errorBody = response.body?.string() ?: ""
+            throw ApiException(response.code, response.message, errorBody)
+        }
+        return PatchMergeJsonResponse(statusCode = response.code, raw = response)
+    }
+
+    /**
      * postText POST /text.
      */
     fun postText(body: String): PostTextResponse {
@@ -126,5 +177,23 @@ class DefaultApi(private val client: ApiClient) {
             throw ApiException(response.code, response.message, errorBody)
         }
         return PostXmlResponse(statusCode = response.code, raw = response)
+    }
+
+    /**
+     * getXmlResponse GET /xml-response.
+     */
+    fun getXmlResponse(): GetXmlResponseResponse {
+        val path = "/xml-response"
+        val request = client.newRequest("GET", path, null, null)
+        val response = client.execute(request)
+
+        if (!response.isSuccessful) {
+            val errorBody = response.body?.string() ?: ""
+            throw ApiException(response.code, response.message, errorBody)
+        }
+        val responseBody = response.body?.string()
+
+        val status200 = if (response.code == 200) gson.fromJson<Payload>(responseBody, object : TypeToken<Payload>() {}.type) else null
+        return GetXmlResponseResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

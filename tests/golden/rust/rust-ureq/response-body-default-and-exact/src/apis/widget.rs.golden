@@ -27,14 +27,14 @@ impl<'a> WidgetApi<'a> {
         let req = self.client.get(&path);
         let resp = req.call()?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = GetWidgetResponse { status_code, data: None, error_body: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {
-                result.error_body = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.error_body = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
         }
         Ok(result)

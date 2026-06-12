@@ -20,6 +20,19 @@ impl<'a> DefaultApi<'a> {
         }
     }
 
+    /// POST /binary
+    pub fn post_binary(
+        &self,
+        body: &Vec<u8>,
+    ) -> Result<PostBinaryResponse, Error> {
+        let path = "/binary".to_string();
+        let mut req = self.client.post(&path);
+        req = req.header("Content-Type", "application/octet-stream");
+        let resp = req.send(body.clone())?;
+        let status_code = resp.status().as_u16();
+        Ok(PostBinaryResponse { status_code })
+    }
+
     /// POST /form
     pub fn post_form(
         &self,
@@ -27,7 +40,17 @@ impl<'a> DefaultApi<'a> {
     ) -> Result<PostFormResponse, Error> {
         let path = "/form".to_string();
         let req = self.client.post(&path);
-        let resp = req.send_json(&body)?;
+        let form_value = serde_json::to_value(body)?;
+        let mut form_pairs: Vec<(String, String)> = Vec::new();
+        if let serde_json::Value::Object(fields) = form_value {
+            for (key, value) in fields {
+                if !value.is_null() {
+                    let value = match value { serde_json::Value::String(s) => s, other => other.to_string() };
+                    form_pairs.push((key, value));
+                }
+            }
+        }
+        let resp = req.send_form(form_pairs.iter().map(|(key, value)| (key.as_str(), value.as_str())))?;
         let status_code = resp.status().as_u16();
         Ok(PostFormResponse { status_code })
     }
@@ -58,14 +81,27 @@ impl<'a> DefaultApi<'a> {
         Ok(PostJsonOrXmlResponse { status_code })
     }
 
+    /// PATCH /merge-patch
+    pub fn patch_merge_json(
+        &self,
+        body: &crate::models::Payload,
+    ) -> Result<PatchMergeJsonResponse, Error> {
+        let path = "/merge-patch".to_string();
+        let req = self.client.patch(&path);
+        let resp = req.send_json(&body)?;
+        let status_code = resp.status().as_u16();
+        Ok(PatchMergeJsonResponse { status_code })
+    }
+
     /// POST /text
     pub fn post_text(
         &self,
         body: &String,
     ) -> Result<PostTextResponse, Error> {
         let path = "/text".to_string();
-        let req = self.client.post(&path);
-        let resp = req.send_json(&body)?;
+        let mut req = self.client.post(&path);
+        req = req.header("Content-Type", "text/plain");
+        let resp = req.send(body.as_str())?;
         let status_code = resp.status().as_u16();
         Ok(PostTextResponse { status_code })
     }
@@ -76,11 +112,38 @@ impl<'a> DefaultApi<'a> {
         body: &crate::models::Payload,
     ) -> Result<PostXmlResponse, Error> {
         let path = "/xml".to_string();
-        let req = self.client.post(&path);
-        let resp = req.send_json(&body)?;
+        let mut req = self.client.post(&path);
+        let body_xml = serde_xml_rs::to_string(body)?;
+        req = req.header("Content-Type", "application/xml");
+        let resp = req.send(body_xml)?;
         let status_code = resp.status().as_u16();
         Ok(PostXmlResponse { status_code })
     }
+
+    /// GET /xml-response
+    pub fn get_xml_response(
+        &self,
+    ) -> Result<GetXmlResponseResponse, Error> {
+        let path = "/xml-response".to_string();
+        let req = self.client.get(&path);
+        let resp = req.call()?;
+        let status_code = resp.status().as_u16();
+        let body_bytes = resp.into_body().read_to_vec()?;
+        let mut result = GetXmlResponseResponse { status_code, data: None };
+        match status_code {
+            200 => {
+                result.data = Some(serde_xml_rs::from_reader(std::io::Cursor::new(body_bytes.as_slice())).map_err(Error::Xml)?);
+            }
+            _ => {}
+        }
+        Ok(result)
+    }
+}
+
+/// Response from `post_binary`.
+#[derive(Debug)]
+pub struct PostBinaryResponse {
+    pub status_code: u16,
 }
 
 /// Response from `post_form`.
@@ -101,6 +164,12 @@ pub struct PostJsonOrXmlResponse {
     pub status_code: u16,
 }
 
+/// Response from `patch_merge_json`.
+#[derive(Debug)]
+pub struct PatchMergeJsonResponse {
+    pub status_code: u16,
+}
+
 /// Response from `post_text`.
 #[derive(Debug)]
 pub struct PostTextResponse {
@@ -111,4 +180,11 @@ pub struct PostTextResponse {
 #[derive(Debug)]
 pub struct PostXmlResponse {
     pub status_code: u16,
+}
+
+/// Response from `get_xml_response`.
+#[derive(Debug)]
+pub struct GetXmlResponseResponse {
+    pub status_code: u16,
+    pub data: Option<crate::models::Payload>,
 }

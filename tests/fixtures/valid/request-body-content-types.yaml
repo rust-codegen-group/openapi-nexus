@@ -16,6 +16,18 @@ paths:
       responses:
         '200':
           description: OK
+  /merge-patch:
+    patch:
+      operationId: patchMergeJson
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '200':
+          description: OK
   /form:
     post:
       operationId: postForm
@@ -52,6 +64,19 @@ paths:
       responses:
         '200':
           description: OK
+  /binary:
+    post:
+      operationId: postBinary
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: OK
   /json-or-xml:
     post:
       operationId: postJsonOrXml
@@ -68,6 +93,16 @@ paths:
       responses:
         '200':
           description: OK
+  /xml-response:
+    get:
+      operationId: getXmlResponse
+      responses:
+        '200':
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Payload'
 components:
   schemas:
     Payload:

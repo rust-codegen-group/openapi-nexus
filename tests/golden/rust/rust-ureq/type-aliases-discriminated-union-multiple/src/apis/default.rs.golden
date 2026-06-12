@@ -32,11 +32,11 @@ impl<'a> DefaultApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = CreateContainerResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -52,11 +52,11 @@ impl<'a> DefaultApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = CreateVolumeResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }

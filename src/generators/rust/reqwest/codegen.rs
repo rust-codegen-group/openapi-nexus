@@ -164,24 +164,27 @@ description = "{description}"
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde-xml-rs.workspace = true
 serde_repr.workspace = true
 {url_full}"#
         ),
         WorkspaceDepsMode::WorkspaceVersion => format!(
             r#"
 [dependencies]
-reqwest = {{ workspace = true, features = ["json"] }}
+reqwest = {{ workspace = true, features = ["json", "multipart"] }}
 serde = {{ workspace = true, features = ["derive"] }}
 serde_json.workspace = true
+serde-xml-rs.workspace = true
 serde_repr.workspace = true
 {url_ws}"#
         ),
         WorkspaceDepsMode::Explicit => format!(
             r#"
 [dependencies]
-reqwest = {{ version = "0.12", features = ["json"] }}
+reqwest = {{ version = "0.12", features = ["json", "multipart"] }}
 serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
+serde-xml-rs = "0.6"
 serde_repr = "0.1"
 {url_explicit}"#
         ),

@@ -29,11 +29,11 @@ impl<'a> EnumReprApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = HandleAdjacentlyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -49,11 +49,11 @@ impl<'a> EnumReprApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = HandleExternallyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -69,11 +69,11 @@ impl<'a> EnumReprApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = HandleInternallyTaggedResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -89,11 +89,11 @@ impl<'a> EnumReprApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = HandleMixedResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }
@@ -109,11 +109,11 @@ impl<'a> EnumReprApi<'a> {
         let req = self.client.post(&path);
         let resp = req.send_json(&body)?;
         let status_code = resp.status().as_u16();
-        let body_str = resp.into_body().read_to_string()?;
+        let body_bytes = resp.into_body().read_to_vec()?;
         let mut result = HandleUntaggedResponse { status_code, data: None };
         match status_code {
             200 => {
-                result.data = Some(serde_json::from_str(&body_str).map_err(Error::Deserialize)?);
+                result.data = Some(serde_json::from_slice(body_bytes.as_slice()).map_err(Error::Deserialize)?);
             }
             _ => {}
         }

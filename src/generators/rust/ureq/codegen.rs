@@ -133,6 +133,7 @@ description = "{description}"
 ureq.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde-xml-rs.workspace = true
 serde_repr.workspace = true
 "#
         .to_string(),
@@ -141,6 +142,7 @@ serde_repr.workspace = true
 ureq = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+serde-xml-rs.workspace = true
 serde_repr.workspace = true
 "#
         .to_string(),
@@ -149,6 +151,7 @@ serde_repr.workspace = true
 ureq = { version = "3", features = ["json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde-xml-rs = "0.6"
 serde_repr = "0.1"
 "#
         .to_string(),

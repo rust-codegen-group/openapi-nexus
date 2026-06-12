@@ -20,6 +20,10 @@ pub enum Error {
     Io(std::io::Error),
     /// JSON deserialization error.
     Deserialize(serde_json::Error),
+    /// XML serialization error.
+    Xml(serde_xml_rs::Error),
+    /// Unsupported generated operation.
+    Unsupported(&'static str),
 }
 
 impl fmt::Display for Error {
@@ -28,6 +32,8 @@ impl fmt::Display for Error {
             Error::Http(e) => write!(f, "HTTP error: {e}"),
             Error::Io(e) => write!(f, "IO error: {e}"),
             Error::Deserialize(e) => write!(f, "Deserialization error: {e}"),
+            Error::Xml(e) => write!(f, "XML serialization error: {e}"),
+            Error::Unsupported(e) => write!(f, "Unsupported operation: {e}"),
         }
     }
 }
@@ -38,6 +44,8 @@ impl std::error::Error for Error {
             Error::Http(e) => Some(e),
             Error::Io(e) => Some(e),
             Error::Deserialize(e) => Some(e),
+            Error::Xml(e) => Some(e),
+            Error::Unsupported(_) => None,
         }
     }
 }
@@ -51,5 +59,11 @@ impl From<ureq::Error> for Error {
 impl From<serde_json::Error> for Error {
     fn from(e: serde_json::Error) -> Self {
         Error::Deserialize(e)
+    }
+}
+
+impl From<serde_xml_rs::Error> for Error {
+    fn from(e: serde_xml_rs::Error) -> Self {
+        Error::Xml(e)
     }
 }

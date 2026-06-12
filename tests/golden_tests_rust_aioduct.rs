@@ -33,6 +33,8 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("interface-with-enum-reference", "valid/interface-with-enum-reference.yaml"),
         ("multiple-similar-request-schemas", "valid/multiple-similar-request-schemas.yaml"),
         ("request-body-content-types", "valid/request-body-content-types.yaml"),
+        ("binary-transfer-media-types", "valid/binary-transfer-media-types.yaml"),
+        ("multipart-unsupported-schema", "valid/multipart-unsupported-schema.yaml"),
 
         ("type-aliases-simple-type-alias", "valid/type-aliases/simple-type-alias.yaml"),
         ("type-aliases-complex-union", "valid/type-aliases/complex-union.yaml"),
@@ -112,6 +114,8 @@ generate_golden_tests! {
     test_interface_with_enum_reference_golden: "interface-with-enum-reference",
     test_multiple_similar_request_schemas_golden: "multiple-similar-request-schemas",
     test_request_body_content_types_golden: "request-body-content-types",
+    test_binary_transfer_media_types_golden: "binary-transfer-media-types",
+    test_multipart_unsupported_schema_golden: "multipart-unsupported-schema",
 
     test_type_aliases_simple_type_alias_golden: "type-aliases-simple-type-alias",
     test_type_aliases_complex_union_golden: "type-aliases-complex-union",
