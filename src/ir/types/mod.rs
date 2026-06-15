@@ -10,8 +10,8 @@ mod spec;
 mod type_expr;
 
 pub use operation::{
-    IrHeader, IrOperation, IrParameter, IrRequestBody, IrResponse, IrSecurityRequirement,
-    ParameterLocation,
+    IrHeader, IrOperation, IrParameter, IrRequestBody, IrRequestBodyEncoding, IrResponse,
+    IrSecurityRequirement, ParameterLocation,
 };
 pub use schema::{
     IrEnum, IrEnumValue, IrEnumValueType, IrIntersection, IrObject, IrProperty, IrSchema,

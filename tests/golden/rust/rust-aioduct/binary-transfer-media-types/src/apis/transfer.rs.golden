@@ -50,8 +50,8 @@ impl<'a, R: aioduct::Runtime> TransferApi<'a, R> {
         let mut req = self.client.post(&path)?;
         let mut multipart = aioduct::multipart::Multipart::new();
         multipart = multipart.file("file", "file", "application/octet-stream", body.file.clone());
-        multipart = multipart.text("metadata", serde_json::to_string(&body.metadata)?);
-        multipart = multipart.text("purpose", body.purpose.to_string());
+        multipart = multipart.part(aioduct::multipart::Part::text("metadata", serde_json::to_string(&body.metadata)?).mime_str("application/json"));
+        multipart = multipart.part(aioduct::multipart::Part::text("purpose", body.purpose.to_string()).mime_str("text/plain"));
         req = req.multipart(multipart);
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();

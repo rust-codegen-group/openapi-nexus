@@ -13,6 +13,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 
 	"example.com/sdk/models"
 	"example.com/sdk/runtime"
@@ -79,16 +80,30 @@ func (a *MediaAPI) SendParameterizedMultipart(ctx context.Context, body *models.
 	if body != nil {
 		buf := &bytes.Buffer{}
 		writer := multipart.NewWriter(buf)
-		partWriter, err := writer.CreateFormFile("file", "file")
+		{
+		partHeader := textproto.MIMEHeader{}
+		partHeader.Set("Content-Disposition", "form-data; name=\"file\"; filename=\"file\"")
+		partHeader.Set("Content-Type", "application/octet-stream")
+		partWriter, err := writer.CreatePart(partHeader)
 		if err != nil {
-			return nil, fmt.Errorf("create multipart file: %w", err)
+			return nil, fmt.Errorf("create multipart part: %w", err)
 		}
 		if _, err := partWriter.Write(body.File); err != nil {
 			return nil, fmt.Errorf("write multipart file: %w", err)
 		}
+		}
 		if body.Note != nil {
-			if err := writer.WriteField("note", *body.Note); err != nil {
+			{
+			partHeader := textproto.MIMEHeader{}
+			partHeader.Set("Content-Disposition", "form-data; name=\"note\"")
+			partHeader.Set("Content-Type", "text/plain")
+			partWriter, err := writer.CreatePart(partHeader)
+			if err != nil {
+				return nil, fmt.Errorf("create multipart part: %w", err)
+			}
+			if _, err := io.WriteString(partWriter, *body.Note); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
+			}
 			}
 		}
 		if err := writer.Close(); err != nil {

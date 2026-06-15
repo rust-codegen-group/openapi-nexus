@@ -129,11 +129,19 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     };
 
     // Prepare request body
-    const requestBody = new FormData();
-    requestBody.append('file', requestParameters.body.file);
+    const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
+    const multipartChunks: Array<string | Blob> = [];
+    headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="file"\r\nContent-Type: application/octet-stream\r\n\r\n');
+    multipartChunks.push(requestParameters.body.file);
+    multipartChunks.push('\r\n');
     if (requestParameters.body.note !== undefined && requestParameters.body.note !== null) {
-    requestBody.append('note', String(requestParameters.body.note));
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="note"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.note));
+    multipartChunks.push('\r\n');
     }
+    multipartChunks.push('--' + multipartBoundary + '--\r\n');
+    const requestBody = new Blob(multipartChunks);
     // Make request
     const response = await this.request({
         path: urlPath,

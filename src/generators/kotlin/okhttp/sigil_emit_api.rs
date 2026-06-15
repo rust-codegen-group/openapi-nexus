@@ -1,9 +1,9 @@
 use std::collections::{BTreeMap, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
 use crate::ir::types::{
-    IrObject, IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSchemaKind,
-    IrSpec, IrTypeExpr, ParameterLocation,
+    IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::lang::kotlin::Kotlin;
@@ -77,18 +77,11 @@ fn emit_api_file(tag: &str, ops: &[&IrOperation], ir: &IrSpec, package_name: &st
                 && body.multipart_parts.is_some()
         })
     });
-    let has_binary_multipart_part = plans.iter().any(|plan| {
-        plan.body.as_ref().is_some_and(|body| {
-            body.multipart_parts
-                .as_ref()
-                .is_some_and(|parts| parts.iter().any(|part| part.is_binary))
-        })
-    });
     let has_raw_request_body = plans.iter().any(|plan| plan.body.is_some());
     if has_supported_multipart_body {
         fb = fb.add_import(ImportSpec::named("okhttp3", "MultipartBody"));
     }
-    if has_binary_multipart_part || has_raw_request_body {
+    if has_supported_multipart_body || has_raw_request_body {
         fb = fb
             .add_import(ImportSpec::named(
                 "okhttp3.MediaType.Companion",
@@ -544,29 +537,35 @@ fn emit_required_multipart_part(
     part: &MultipartPart,
     access: &str,
 ) {
+    let wire_name = part.wire_name.as_str();
+    let content_type = part.content_type.as_str();
     if part.is_binary {
-        cb.add(
-            &format!(
-                "multipartBuilder.addFormDataPart(\"{}\", \"{}\", {}.toRequestBody(\"application/octet-stream\".toMediaType()))",
-                part.wire_name, part.wire_name, access
-            ),
-            (),
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                multipartBuilder.addFormDataPart($S(wire_name), $S(wire_name), $L(access).toRequestBody($S(content_type).toMediaType()))
+            })
+            .expect("binary multipart part block builds"),
         );
     } else if part.value_encoding == MultipartValueEncoding::Json {
-        cb.add(
-            &format!(
-                "multipartBuilder.addFormDataPart(\"{}\", gson.toJson({access}))",
-                part.wire_name
-            ),
-            (),
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                multipartBuilder.addFormDataPart($S(wire_name), null, gson.toJson($L(access)).toRequestBody($S(content_type).toMediaType()))
+            })
+            .expect("json multipart part block builds"),
+        );
+    } else if part.value_encoding == MultipartValueEncoding::Unsupported {
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                throw IllegalArgumentException($S("unsupported multipart part content type"))
+            })
+            .expect("unsupported multipart part block builds"),
         );
     } else {
-        cb.add(
-            &format!(
-                "multipartBuilder.addFormDataPart(\"{}\", {}.toString())",
-                part.wire_name, access
-            ),
-            (),
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                multipartBuilder.addFormDataPart($S(wire_name), null, $L(access).toString().toRequestBody($S(content_type).toMediaType()))
+            })
+            .expect("text multipart part block builds"),
         );
     }
     cb.add_line();
@@ -607,13 +606,8 @@ struct MultipartPart {
     field_name: String,
     is_binary: bool,
     required: bool,
+    content_type: String,
     value_encoding: MultipartValueEncoding,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum MultipartValueEncoding {
-    Text,
-    Json,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -707,7 +701,7 @@ fn plan_body(
     }
     let var_name = unique_name("body", used_names);
     let multipart_parts = if media_type_base(&media_type) == "multipart/form-data" {
-        multipart_parts_for(&t, ir)
+        multipart_parts_for(b, &media_type, ir)
     } else {
         None
     };
@@ -875,60 +869,22 @@ fn is_xml_media_type(media_type: &str) -> bool {
     base == "application/xml" || base == "text/xml" || base.ends_with("+xml")
 }
 
-fn multipart_parts_for(t: &IrTypeExpr, ir: &IrSpec) -> Option<Vec<MultipartPart>> {
-    // TODO: Honor OpenAPI multipart encoding metadata once it is represented in the IR.
-    resolve_object(t, ir).map(|obj| {
-        obj.properties
-            .iter()
-            .map(|(wire_name, prop)| MultipartPart {
-                wire_name: wire_name.clone(),
-                field_name: kt_field_name(wire_name),
-                is_binary: is_binary_type(&prop.type_expr, ir),
-                required: prop.required && !prop.nullable,
-                value_encoding: multipart_value_encoding(&prop.type_expr, ir),
+fn multipart_parts_for(
+    body: &IrRequestBody,
+    media_type: &str,
+    ir: &IrSpec,
+) -> Option<Vec<MultipartPart>> {
+    multipart_parts_for_request_body(body, media_type, ir).map(|parts| {
+        parts
+            .into_iter()
+            .map(|part| MultipartPart {
+                field_name: kt_field_name(&part.wire_name),
+                wire_name: part.wire_name,
+                is_binary: part.is_binary,
+                required: part.required,
+                content_type: part.content_type,
+                value_encoding: part.value_encoding,
             })
             .collect()
     })
-}
-
-fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
-    match expr {
-        IrTypeExpr::Named(name) => match ir.schemas.get(name).map(|schema| &schema.kind) {
-            Some(IrSchemaKind::Object(obj)) => Some(obj),
-            Some(IrSchemaKind::Alias(inner)) => resolve_object(inner, ir),
-            _ => None,
-        },
-        IrTypeExpr::Nullable(inner) => resolve_object(inner, ir),
-        _ => None,
-    }
-}
-
-fn is_binary_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
-        IrTypeExpr::Primitive(IrPrimitive::Binary) => true,
-        IrTypeExpr::Nullable(inner) => is_binary_type(inner, ir),
-        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
-            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_binary_type(inner, ir))
-        }),
-        _ => false,
-    }
-}
-
-fn multipart_value_encoding(expr: &IrTypeExpr, ir: &IrSpec) -> MultipartValueEncoding {
-    if is_multipart_text_type(expr, ir) {
-        MultipartValueEncoding::Text
-    } else {
-        MultipartValueEncoding::Json
-    }
-}
-
-fn is_multipart_text_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
-        IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
-        IrTypeExpr::Nullable(inner) => is_multipart_text_type(inner, ir),
-        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
-            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_multipart_text_type(inner, ir))
-        }),
-        _ => false,
-    }
 }

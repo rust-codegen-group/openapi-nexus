@@ -4,9 +4,10 @@ use sigil_stitch::code_block::CodeBlock;
 use sigil_stitch::prelude::sigil_quote;
 
 use crate::generators::rust::common::emit_api::{
-    BodyEncoding, MultipartPart, OpPlan, RustBackendConfig, binary_field_expr, emit_response_match,
-    emit_result_init, optional_binary_field_expr, optional_text_field_expr, render_to_string,
-    response_value_expr, rust_string_literal, text_field_expr,
+    BodyEncoding, MultipartPart, MultipartValueEncoding, OpPlan, RustBackendConfig,
+    binary_field_expr, emit_response_match, emit_result_init, optional_binary_field_expr,
+    optional_text_field_expr, render_to_string, response_value_expr, rust_field_name,
+    rust_string_literal, text_field_expr,
 };
 
 /// Backend configuration for reqwest (async, no extra generics).
@@ -236,11 +237,23 @@ fn emit_multipart_body(
     b.add("let mut multipart = reqwest::multipart::Form::new();\n", ());
     for part in parts {
         let wire_name = rust_string_literal(&part.wire_name);
+        let content_type = rust_string_literal(&part.content_type);
+        if part.value_encoding == MultipartValueEncoding::Unsupported {
+            if part.required {
+                b.add("return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n", ());
+            } else {
+                let field_name = rust_field_name(&part.wire_name);
+                b.begin_control_flow(&format!("if {body_var}.{field_name}.is_some()"), ());
+                b.add("return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n", ());
+                b.end_control_flow();
+            }
+            continue;
+        }
         if part.required {
             if part.is_binary {
                 b.add(
                     &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({wire_name}).mime_str(\"application/octet-stream\").map_err(Error::Network)?);\n",
+                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({wire_name}).mime_str({content_type}).map_err(Error::Network)?);\n",
                         binary_field_expr(body_var, part),
                     ),
                     (),
@@ -248,21 +261,22 @@ fn emit_multipart_body(
             } else {
                 b.add(
                     &format!(
-                        "multipart = multipart.text({wire_name}, {});\n",
+                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::text({}).mime_str({content_type}).map_err(Error::Network)?);\n",
                         text_field_expr(body_var, part),
                     ),
                     (),
                 );
             }
         } else {
+            let field_name = rust_field_name(&part.wire_name);
             b.begin_control_flow(
-                &format!("if let Some(value) = &{body_var}.{}", part.field_name),
+                &format!("if let Some(value) = &{body_var}.{field_name}"),
                 (),
             );
             if part.is_binary {
                 b.add(
                     &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({wire_name}).mime_str(\"application/octet-stream\").map_err(Error::Network)?);\n",
+                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({wire_name}).mime_str({content_type}).map_err(Error::Network)?);\n",
                         optional_binary_field_expr("value"),
                     ),
                     (),
@@ -270,7 +284,7 @@ fn emit_multipart_body(
             } else {
                 b.add(
                     &format!(
-                        "multipart = multipart.text({wire_name}, {});\n",
+                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::text({}).mime_str({content_type}).map_err(Error::Network)?);\n",
                         optional_text_field_expr("value", part),
                     ),
                     (),

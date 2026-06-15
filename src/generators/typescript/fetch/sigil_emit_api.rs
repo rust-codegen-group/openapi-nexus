@@ -19,9 +19,10 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
 use crate::ir::types::{
-    IrObject, IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSchemaKind,
-    IrSpec, IrTypeExpr, ParameterLocation as IrParameterLocation,
+    IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
+    ParameterLocation as IrParameterLocation,
 };
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use sigil_stitch::code_block::{Arg, CodeBlock};
@@ -667,28 +668,28 @@ fn emit_request_body(
         if let Some(media_type) = preferred_request_media_type(body)
             && media_type_base(&media_type) == "multipart/form-data"
         {
-            if let Some(parts) = body
-                .content
-                .get(media_type.as_str())
-                .and_then(|ty| multipart_parts_for(ty, ir, property_naming_camel_case))
+            if let Some(parts) =
+                multipart_parts_for(body, &media_type, ir, property_naming_camel_case)
             {
                 if !body.required {
-                    cb.add(
-                        "let requestBody: FormData | undefined = undefined;\n",
-                        vec![],
+                    cb.add_code(
+                        sigil_quote!(TypeScript {
+                            let requestBody: Blob | undefined = undefined;
+                        })
+                        .expect("optional multipart request body decl builds"),
                     );
                     cb.add(
                         &format!("if ({access} !== undefined && {access} !== null) {{\n"),
                         vec![],
                     );
-                    cb.add("requestBody = new FormData();\n", vec![]);
+                    emit_multipart_blob_setup(cb);
                 } else {
-                    cb.add("const requestBody = new FormData();\n", vec![]);
+                    emit_multipart_blob_setup(cb);
                 }
                 for part in parts {
                     let part_access = format!("{access}{}", ts_property_access(&part.field_name));
                     if part.required {
-                        emit_form_data_append(cb, &part, &part_access, convertible);
+                        emit_multipart_blob_part(cb, &part, &part_access, convertible);
                     } else {
                         cb.add(
                             &format!(
@@ -696,10 +697,11 @@ fn emit_request_body(
                             ),
                             vec![],
                         );
-                        emit_form_data_append(cb, &part, &part_access, convertible);
+                        emit_multipart_blob_part(cb, &part, &part_access, convertible);
                         cb.add("}\n", vec![]);
                     }
                 }
+                emit_multipart_blob_finish(cb, body.required);
                 if !body.required {
                     cb.add("}\n", vec![]);
                 }
@@ -769,12 +771,77 @@ fn is_unsupported_ts_request_media_type(media_type: &str) -> bool {
     is_xml_media_type(media_type) || base == "application/x-www-form-urlencoded"
 }
 
-fn emit_form_data_append(
+fn emit_multipart_blob_setup(cb: &mut sigil_stitch::code_block::CodeBlockBuilder) {
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            const multipartBoundary = $S("----openapi-nexus-") + Math.random().toString(16).slice(2);
+            const multipartChunks: Array<string | Blob> = [];
+            headerParameters[$S("Content-Type")] = $S("multipart/form-data; boundary=") + multipartBoundary;
+        })
+        .expect("multipart setup block builds"),
+    );
+}
+
+fn emit_multipart_blob_finish(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, required: bool) {
+    let closing_boundary_tail = ts_string_literal("--\r\n");
+    if required {
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                multipartChunks.push($S("--") + multipartBoundary + $L(closing_boundary_tail));
+                const requestBody = new Blob(multipartChunks);
+            })
+            .expect("required multipart finish block builds"),
+        );
+    } else {
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                multipartChunks.push($S("--") + multipartBoundary + $L(closing_boundary_tail));
+                requestBody = new Blob(multipartChunks);
+            })
+            .expect("optional multipart finish block builds"),
+        );
+    }
+}
+
+fn emit_multipart_blob_part(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     part: &MultipartPart,
     part_access: &str,
     convertible: &HashSet<String>,
 ) {
+    if part.value_encoding == MultipartValueEncoding::Unsupported {
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                throw new Error($S("unsupported multipart part content type"));
+            })
+            .expect("unsupported multipart part block builds"),
+        );
+        return;
+    }
+    let disposition = if part.is_binary {
+        format!(
+            "form-data; name=\"{}\"; filename=\"{}\"",
+            multipart_header_quoted(&part.wire_name),
+            multipart_header_quoted(&part.wire_name)
+        )
+    } else {
+        format!(
+            "form-data; name=\"{}\"",
+            multipart_header_quoted(&part.wire_name)
+        )
+    };
+    let header_tail = format!(
+        "\r\nContent-Disposition: {}\r\nContent-Type: {}\r\n\r\n",
+        disposition,
+        multipart_header_value(&part.content_type)
+    );
+    let header_tail_literal = ts_string_literal(&header_tail);
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            multipartChunks.push($S("--") + multipartBoundary + $L(header_tail_literal));
+        })
+        .expect("multipart part header block builds"),
+    );
     let value_expr = if part.is_binary {
         part_access.to_string()
     } else if part.value_encoding == MultipartValueEncoding::Json {
@@ -784,12 +851,13 @@ fn emit_form_data_append(
     } else {
         format!("String({part_access})")
     };
-    cb.add(
-        &format!(
-            "requestBody.append({}, {value_expr});\n",
-            ts_string_literal(&part.wire_name)
-        ),
-        vec![],
+    let crlf_literal = ts_string_literal("\r\n");
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            multipartChunks.push($L(value_expr));
+            multipartChunks.push($L(crlf_literal));
+        })
+        .expect("multipart part value block builds"),
     );
 }
 
@@ -1440,80 +1508,34 @@ struct MultipartPart {
     type_expr: IrTypeExpr,
     is_binary: bool,
     required: bool,
+    content_type: String,
     value_encoding: MultipartValueEncoding,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum MultipartValueEncoding {
-    Text,
-    Json,
-}
-
 fn multipart_parts_for(
-    t: &IrTypeExpr,
+    body: &IrRequestBody,
+    media_type: &str,
     ir: &IrSpec,
     property_naming_camel_case: bool,
 ) -> Option<Vec<MultipartPart>> {
-    // TODO: Honor OpenAPI multipart encoding metadata once it is represented in the IR.
-    resolve_object(t, ir).map(|obj| {
-        obj.properties
-            .iter()
-            .map(|(wire_name, prop)| MultipartPart {
-                wire_name: wire_name.clone(),
+    multipart_parts_for_request_body(body, media_type, ir).map(|parts| {
+        parts
+            .into_iter()
+            .map(|part| MultipartPart {
                 field_name: if property_naming_camel_case {
-                    wire_name.to_lower_camel_case()
+                    part.wire_name.to_lower_camel_case()
                 } else {
-                    wire_name.clone()
+                    part.wire_name.clone()
                 },
-                type_expr: prop.type_expr.clone(),
-                is_binary: is_binary_type(&prop.type_expr, ir),
-                required: prop.required && !prop.nullable,
-                value_encoding: multipart_value_encoding(&prop.type_expr, ir),
+                wire_name: part.wire_name,
+                type_expr: part.type_expr,
+                is_binary: part.is_binary,
+                required: part.required,
+                content_type: part.content_type,
+                value_encoding: part.value_encoding,
             })
             .collect()
     })
-}
-
-fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
-    match expr {
-        IrTypeExpr::Named(name) => match ir.schemas.get(name).map(|schema| &schema.kind) {
-            Some(IrSchemaKind::Object(obj)) => Some(obj),
-            Some(IrSchemaKind::Alias(inner)) => resolve_object(inner, ir),
-            _ => None,
-        },
-        IrTypeExpr::Nullable(inner) => resolve_object(inner, ir),
-        _ => None,
-    }
-}
-
-fn is_binary_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
-        IrTypeExpr::Primitive(IrPrimitive::Binary) => true,
-        IrTypeExpr::Nullable(inner) => is_binary_type(inner, ir),
-        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
-            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_binary_type(inner, ir))
-        }),
-        _ => false,
-    }
-}
-
-fn multipart_value_encoding(expr: &IrTypeExpr, ir: &IrSpec) -> MultipartValueEncoding {
-    if is_multipart_text_type(expr, ir) {
-        MultipartValueEncoding::Text
-    } else {
-        MultipartValueEncoding::Json
-    }
-}
-
-fn is_multipart_text_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
-        IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
-        IrTypeExpr::Nullable(inner) => is_multipart_text_type(inner, ir),
-        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
-            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_multipart_text_type(inner, ir))
-        }),
-        _ => false,
-    }
 }
 
 fn ts_property_access(field_name: &str) -> String {
@@ -1525,7 +1547,24 @@ fn ts_property_access(field_name: &str) -> String {
 }
 
 fn ts_string_literal(value: &str) -> String {
-    format!("'{}'", value.replace('\\', "\\\\").replace('\'', "\\'"))
+    format!(
+        "'{}'",
+        value
+            .replace('\\', "\\\\")
+            .replace('\'', "\\'")
+            .replace('\r', "\\r")
+            .replace('\n', "\\n")
+    )
+}
+
+fn multipart_header_quoted(value: &str) -> String {
+    multipart_header_value(value)
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+}
+
+fn multipart_header_value(value: &str) -> String {
+    value.replace(['\r', '\n'], "")
 }
 
 /// Collect unique Named type references from request bodies only
@@ -1546,10 +1585,8 @@ fn collect_request_named_types(
                     collect_convertible_named_refs(ty, convertible, &mut names);
                 }
             } else if media_type_base(&media_type) == "multipart/form-data"
-                && let Some(parts) = body
-                    .content
-                    .get(media_type.as_str())
-                    .and_then(|ty| multipart_parts_for(ty, ir, property_naming_camel_case))
+                && let Some(parts) =
+                    multipart_parts_for(body, &media_type, ir, property_naming_camel_case)
             {
                 for part in parts {
                     if part.value_encoding == MultipartValueEncoding::Json {

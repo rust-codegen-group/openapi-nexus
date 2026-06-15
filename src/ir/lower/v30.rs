@@ -11,9 +11,9 @@ use super::LowerError;
 use crate::ir::types::{
     ApiKeyLocation, IrContact, IrEnum, IrEnumValue, IrEnumValueType, IrHeader, IrInfo,
     IrIntersection, IrLicense, IrOAuth2Flow, IrOAuth2Flows, IrObject, IrOperation, IrParameter,
-    IrPrimitive, IrProperty, IrRequestBody, IrResponse, IrSchema, IrSchemaKind,
-    IrSecurityRequirement, IrSecurityScheme, IrServer, IrSpec, IrTaggedUnion, IrTaggedVariant,
-    IrTypeExpr, IrUnion, IrValidation, ParameterLocation, TaggingStyle,
+    IrPrimitive, IrProperty, IrRequestBody, IrRequestBodyEncoding, IrResponse, IrSchema,
+    IrSchemaKind, IrSecurityRequirement, IrSecurityScheme, IrServer, IrSpec, IrTaggedUnion,
+    IrTaggedVariant, IrTypeExpr, IrUnion, IrValidation, ParameterLocation, TaggingStyle,
 };
 
 // ---------------------------------------------------------------------------
@@ -917,6 +917,7 @@ impl<'a> LowerCtx<'a> {
         rb: &oas::RequestBody,
     ) -> Result<IrRequestBody, LowerError> {
         let mut content = IndexMap::new();
+        let mut encoding = IndexMap::new();
         for (mime, media_type) in &rb.content {
             if let Some(schema_ref) = &media_type.schema {
                 let type_expr = self.lower_schema_ref_with_promotion(
@@ -925,12 +926,27 @@ impl<'a> LowerCtx<'a> {
                 )?;
                 content.insert(mime.clone(), type_expr);
             }
+            let mut media_encoding = IndexMap::new();
+            for (name, enc) in &media_type.encoding {
+                if enc.content_type.is_some() {
+                    media_encoding.insert(
+                        name.clone(),
+                        IrRequestBodyEncoding {
+                            content_type: enc.content_type.clone(),
+                        },
+                    );
+                }
+            }
+            if !media_encoding.is_empty() {
+                encoding.insert(mime.clone(), media_encoding);
+            }
         }
 
         Ok(IrRequestBody {
             required: rb.required.unwrap_or(false),
             description: rb.description.clone(),
             content,
+            encoding,
         })
     }
 

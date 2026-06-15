@@ -42,19 +42,24 @@ class MultipartApi(private val client: ApiClient) {
         if (body != null) {
             val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
             if (body.attributes != null) {
-                multipartBuilder.addFormDataPart("attributes", gson.toJson(body.attributes))
+                multipartBuilder.addFormDataPart("attributes", null, gson.toJson(body.attributes).toRequestBody("application/json".toMediaType()))
+
             }
             if (body.enabled != null) {
-                multipartBuilder.addFormDataPart("enabled", body.enabled.toString())
+                multipartBuilder.addFormDataPart("enabled", null, body.enabled.toString().toRequestBody("text/plain".toMediaType()))
+
             }
             if (body.file != null) {
                 multipartBuilder.addFormDataPart("file", "file", body.file.toRequestBody("application/octet-stream".toMediaType()))
+
             }
             if (body.retryCount != null) {
-                multipartBuilder.addFormDataPart("retry_count", body.retryCount.toString())
+                multipartBuilder.addFormDataPart("retry_count", null, body.retryCount.toString().toRequestBody("text/plain".toMediaType()))
+
             }
             if (body.title != null) {
-                multipartBuilder.addFormDataPart("title", body.title.toString())
+                multipartBuilder.addFormDataPart("title", null, body.title.toString().toRequestBody("text/plain".toMediaType()))
+
             }
             multipartBody = multipartBuilder.build()
         }
@@ -74,9 +79,12 @@ class MultipartApi(private val client: ApiClient) {
     fun sendTextFields(body: TextFields): SendTextFieldsResponse {
         val path = "/multipart/text-only"
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("enabled", body.enabled.toString())
-        multipartBuilder.addFormDataPart("note", body.note.toString())
-        multipartBuilder.addFormDataPart("retry_count", body.retryCount.toString())
+        multipartBuilder.addFormDataPart("enabled", null, body.enabled.toString().toRequestBody("text/plain".toMediaType()))
+
+        multipartBuilder.addFormDataPart("note", null, body.note.toString().toRequestBody("text/plain".toMediaType()))
+
+        multipartBuilder.addFormDataPart("retry_count", null, body.retryCount.toString().toRequestBody("text/plain".toMediaType()))
+
         val multipartBody = multipartBuilder.build()
         val request = client.newRequestWithBody("POST", path, null, multipartBody)
         val response = client.execute(request)

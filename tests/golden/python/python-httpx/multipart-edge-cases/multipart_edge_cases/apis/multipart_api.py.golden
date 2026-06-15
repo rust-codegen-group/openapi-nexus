@@ -24,16 +24,16 @@ class MultipartApi:
                 files["attributes"] = (None, json.dumps(body.attributes.to_dict()), "application/json")
                 
             if body.enabled is not None:
-                files["enabled"] = (None, str(body.enabled))
+                files["enabled"] = (None, str(body.enabled), "text/plain")
                 
             if body.file is not None:
                 files["file"] = ("file", body.file, "application/octet-stream")
                 
             if body.retry_count is not None:
-                files["retry_count"] = (None, str(body.retry_count))
+                files["retry_count"] = (None, str(body.retry_count), "text/plain")
                 
             if body.title is not None:
-                files["title"] = (None, str(body.title))
+                files["title"] = (None, str(body.title), "text/plain")
                 
             
         response = self._client.request("POST", path, files=files if files else None)
@@ -44,9 +44,9 @@ class MultipartApi:
     def send_text_fields(self, *, body: TextFields) -> None:
         path = "/multipart/text-only"
         files: dict[str, object] = {}
-        files["enabled"] = (None, str(body.enabled))
-        files["note"] = (None, str(body.note))
-        files["retry_count"] = (None, str(body.retry_count))
+        files["enabled"] = (None, str(body.enabled), "text/plain")
+        files["note"] = (None, str(body.note), "text/plain")
+        files["retry_count"] = (None, str(body.retry_count), "text/plain")
         response = self._client.request("POST", path, files=files if files else None)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)

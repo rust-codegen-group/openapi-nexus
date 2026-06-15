@@ -28,7 +28,7 @@ class MediaApi:
         files: dict[str, object] = {}
         files["file"] = ("file", body.file, "application/octet-stream")
         if body.note is not None:
-            files["note"] = (None, str(body.note))
+            files["note"] = (None, str(body.note), "text/plain")
             
         response = self._client.request("POST", path, files=files if files else None)
         if response.status_code >= 400:

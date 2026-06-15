@@ -29,7 +29,7 @@ impl<'a> MultipartApi<'a> {
         let mut req = self.client.request(reqwest::Method::POST, &path).await?;
         let mut multipart = reqwest::multipart::Form::new();
         multipart = multipart.part("file", reqwest::multipart::Part::bytes(body.file.clone()).file_name("file").mime_str("application/octet-stream").map_err(Error::Network)?);
-        multipart = multipart.text("item_config", serde_json::to_string(&body.item_config)?);
+        multipart = multipart.part("item_config", reqwest::multipart::Part::text(serde_json::to_string(&body.item_config)?).mime_str("application/json").map_err(Error::Network)?);
         req = req.multipart(multipart);
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();

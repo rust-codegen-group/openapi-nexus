@@ -31,31 +31,31 @@ impl<'a> MultipartApi<'a> {
         let mut multipart_body: Vec<u8> = Vec::new();
         if let Some(value) = &body.attributes {
             multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "attributes").as_bytes());
+            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "attributes", "application/json").as_bytes());
             multipart_body.extend_from_slice(serde_json::to_string(value)?.as_bytes());
             multipart_body.extend_from_slice(b"\r\n");
         }
         if let Some(value) = &body.enabled {
             multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "enabled").as_bytes());
+            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "enabled", "text/plain").as_bytes());
             multipart_body.extend_from_slice(value.to_string().as_bytes());
             multipart_body.extend_from_slice(b"\r\n");
         }
         if let Some(value) = &body.file {
             multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: application/octet-stream\r\n\r\n", "file", "file").as_bytes());
+            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n", "file", "file", "application/octet-stream").as_bytes());
             multipart_body.extend_from_slice(&value.clone());
             multipart_body.extend_from_slice(b"\r\n");
         }
         if let Some(value) = &body.retry_count {
             multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "retry_count").as_bytes());
+            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "retry_count", "text/plain").as_bytes());
             multipart_body.extend_from_slice(value.to_string().as_bytes());
             multipart_body.extend_from_slice(b"\r\n");
         }
         if let Some(value) = &body.title {
             multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "title").as_bytes());
+            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "title", "text/plain").as_bytes());
             multipart_body.extend_from_slice(value.to_string().as_bytes());
             multipart_body.extend_from_slice(b"\r\n");
         }
@@ -76,15 +76,15 @@ impl<'a> MultipartApi<'a> {
         let boundary = format!("openapi-nexus-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|duration| duration.as_nanos()).unwrap_or(0));
         let mut multipart_body: Vec<u8> = Vec::new();
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "enabled").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "enabled", "text/plain").as_bytes());
         multipart_body.extend_from_slice(body.enabled.to_string().as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "note").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "note", "text/plain").as_bytes());
         multipart_body.extend_from_slice(body.note.to_string().as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "retry_count").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "retry_count", "text/plain").as_bytes());
         multipart_body.extend_from_slice(body.retry_count.to_string().as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
