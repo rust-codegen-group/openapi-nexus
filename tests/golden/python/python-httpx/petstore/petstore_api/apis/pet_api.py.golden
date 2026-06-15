@@ -17,7 +17,9 @@ class PetApi:
     def update_pet(self, *, body: Pet) -> Pet:
         """Update an existing pet."""
         path = "/pet"
-        response = self._client.request("PUT", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("PUT", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return Pet.from_dict(response.json())
@@ -25,7 +27,9 @@ class PetApi:
     def add_pet(self, *, body: Pet) -> Pet:
         """Add a new pet to the store."""
         path = "/pet"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return Pet.from_dict(response.json())

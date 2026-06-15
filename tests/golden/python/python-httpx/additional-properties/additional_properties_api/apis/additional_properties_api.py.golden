@@ -18,7 +18,9 @@ class AdditionalPropertiesApi:
     def post_leaf(self, *, body: LeafValue) -> LeafValue:
         """Echo leaf payload (attributes map).."""
         path = "/leaf"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return LeafValue.from_dict(response.json())
@@ -26,7 +28,9 @@ class AdditionalPropertiesApi:
     def post_middle(self, *, body: MiddleLevel) -> MiddleLevel:
         """Echo middle-level payload (nested + extra maps).."""
         path = "/middle"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return MiddleLevel.from_dict(response.json())
@@ -34,7 +38,9 @@ class AdditionalPropertiesApi:
     def post_root(self, *, body: RootLevel) -> RootLevel:
         """Echo root payload (all three levels with additional-properties-style maps).."""
         path = "/root"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return RootLevel.from_dict(response.json())

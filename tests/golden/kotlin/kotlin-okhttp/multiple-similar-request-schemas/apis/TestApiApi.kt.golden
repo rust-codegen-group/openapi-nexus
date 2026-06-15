@@ -10,6 +10,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -38,16 +40,18 @@ class TestApiApi(private val client: ApiClient) {
     fun createTypeA(body: CreateRequestTypeA): CreateTypeAResponse {
         val path = "/api/v1/type-a/resources"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<ResourceTypeA>(responseBody, object : TypeToken<ResourceTypeA>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<ResourceTypeA>(responseText.ifEmpty { "null" }, object : TypeToken<ResourceTypeA>() {}.type) else null
         return CreateTypeAResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -57,16 +61,18 @@ class TestApiApi(private val client: ApiClient) {
     fun createTypeB(body: CreateRequestTypeB): CreateTypeBResponse {
         val path = "/api/v1/type-b/resources"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<ResourceTypeB>(responseBody, object : TypeToken<ResourceTypeB>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<ResourceTypeB>(responseText.ifEmpty { "null" }, object : TypeToken<ResourceTypeB>() {}.type) else null
         return CreateTypeBResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

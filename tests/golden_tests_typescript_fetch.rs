@@ -32,6 +32,10 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("naming-conventions", "valid/naming-conventions.yaml"),
         ("request-body-content-types", "valid/request-body-content-types.yaml"),
         ("binary-transfer-media-types", "valid/binary-transfer-media-types.yaml"),
+        ("media-type-selection", "valid/media-type-selection.yaml"),
+        ("multipart-edge-cases", "valid/multipart-edge-cases.yaml"),
+        ("multipart-nested-object-parts", "valid/multipart-nested-object-parts.yaml"),
+        ("multipart-unsupported-schema", "valid/multipart-unsupported-schema.yaml"),
         ("server-object", "valid/server-object.yaml"),
 
         ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
@@ -112,6 +116,10 @@ generate_golden_tests! {
     test_naming_conventions_golden: "naming-conventions",
     test_request_body_content_types_golden: "request-body-content-types",
     test_binary_transfer_media_types_golden: "binary-transfer-media-types",
+    test_media_type_selection_golden: "media-type-selection",
+    test_multipart_edge_cases_golden: "multipart-edge-cases",
+    test_multipart_nested_object_parts_golden: "multipart-nested-object-parts",
+    test_multipart_unsupported_schema_golden: "multipart-unsupported-schema",
     test_server_object_golden: "server-object",
 
     test_recursive_json_all_optional_properties_golden: "recursive-json-all-optional-properties",
@@ -218,6 +226,25 @@ property_naming = "camelCase"
         golden_dir(),
         "ts-property-naming-camel-case",
         "valid/naming-conventions.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
+fn test_property_naming_camel_case_multipart_parts_golden() {
+    let config: toml::value::Table = toml::from_str(
+        r#"
+property_naming = "camelCase"
+"#,
+    )
+    .unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-property-naming-camel-case-multipart-parts",
+        "valid/multipart-nested-object-parts.yaml",
         UPDATE_HINT,
     );
 }

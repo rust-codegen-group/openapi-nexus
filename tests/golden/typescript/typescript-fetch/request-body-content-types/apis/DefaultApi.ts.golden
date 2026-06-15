@@ -9,7 +9,7 @@ import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/
 import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiPostBinaryRequest {
-  body: string;
+  body: Blob | File;
 }
 
 export interface ApiPostFormRequest {
@@ -157,7 +157,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters.body;
+    const requestBody = (() => {throw new Error('unsupported request body media type: application/x-www-form-urlencoded');})();
     // Make request
     const response = await this.request({
         path: urlPath,
@@ -372,7 +372,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Prepare request body
-    const requestBody = requestParameters.body;
+    const requestBody = (() => {throw new Error('unsupported request body media type: application/xml');})();
     // Make request
     const response = await this.request({
         path: urlPath,

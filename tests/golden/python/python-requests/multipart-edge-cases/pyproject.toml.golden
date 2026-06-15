@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multipart_edge_cases"
+version = "1.0.0"
+description = "Covers optional multipart bodies, optional parts, and text-only multipart fields."
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

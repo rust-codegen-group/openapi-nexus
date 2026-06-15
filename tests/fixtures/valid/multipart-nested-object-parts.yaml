@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: Multipart Nested Object Parts
+  version: 1.0.0
+  description: Covers multipart object parts whose wire names differ from ergonomic names.
+paths:
+  /multipart/nested-object:
+    post:
+      tags:
+        - multipart
+      operationId: send_nested_object_part
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NestedUpload'
+      responses:
+        '204':
+          description: Accepted
+components:
+  schemas:
+    NestedUpload:
+      type: object
+      required:
+        - file
+        - item_config
+      properties:
+        file:
+          type: string
+          format: binary
+        item_config:
+          $ref: '#/components/schemas/ItemConfig'
+    ItemConfig:
+      type: object
+      required:
+        - display_name
+      properties:
+        display_name:
+          type: string
+        retention_days:
+          type: integer

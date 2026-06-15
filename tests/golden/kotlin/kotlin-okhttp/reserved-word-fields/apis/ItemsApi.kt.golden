@@ -36,9 +36,10 @@ class ItemsApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Item>(responseBody, object : TypeToken<Item>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Item>(responseText.ifEmpty { "null" }, object : TypeToken<Item>() {}.type) else null
         return GetItemsResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

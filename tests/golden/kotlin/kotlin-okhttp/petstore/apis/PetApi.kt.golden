@@ -10,6 +10,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -76,16 +78,18 @@ class PetApi(private val client: ApiClient) {
     fun updatePet(body: Pet): UpdatePetResponse {
         val path = "/pet"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("PUT", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("PUT", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseBody, object : TypeToken<Pet>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseText.ifEmpty { "null" }, object : TypeToken<Pet>() {}.type) else null
         return UpdatePetResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -95,16 +99,18 @@ class PetApi(private val client: ApiClient) {
     fun addPet(body: Pet): AddPetResponse {
         val path = "/pet"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseBody, object : TypeToken<Pet>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseText.ifEmpty { "null" }, object : TypeToken<Pet>() {}.type) else null
         return AddPetResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -122,9 +128,10 @@ class PetApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<List<Pet>>(responseBody, object : TypeToken<List<Pet>>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<List<Pet>>(responseText.ifEmpty { "null" }, object : TypeToken<List<Pet>>() {}.type) else null
         return FindPetsByStatusResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -142,9 +149,10 @@ class PetApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<List<Pet>>(responseBody, object : TypeToken<List<Pet>>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<List<Pet>>(responseText.ifEmpty { "null" }, object : TypeToken<List<Pet>>() {}.type) else null
         return FindPetsByTagsResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -160,9 +168,10 @@ class PetApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseBody, object : TypeToken<Pet>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseText.ifEmpty { "null" }, object : TypeToken<Pet>() {}.type) else null
         return GetPetByIdResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -185,9 +194,10 @@ class PetApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseBody, object : TypeToken<Pet>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Pet>(responseText.ifEmpty { "null" }, object : TypeToken<Pet>() {}.type) else null
         return UpdatePetWithFormResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -222,9 +232,10 @@ class PetApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<UploadResponse>(responseBody, object : TypeToken<UploadResponse>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<UploadResponse>(responseText.ifEmpty { "null" }, object : TypeToken<UploadResponse>() {}.type) else null
         return UploadFileResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

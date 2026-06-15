@@ -682,6 +682,7 @@ fn is_xml_media_type(media_type: &str) -> bool {
 }
 
 fn multipart_parts_for(t: &IrTypeExpr, ir: &IrSpec) -> Option<Vec<MultipartPart>> {
+    // TODO: Honor OpenAPI multipart encoding metadata once it is represented in the IR.
     resolve_object(t, ir).map(|obj| multipart_parts_from_object(obj, ir))
 }
 

@@ -30,14 +30,30 @@ class ApiClient(
         query: Map<String, String>? = null,
         body: String? = null,
     ): Request {
+        return buildRequest(method, path, query, body?.toRequestBody("application/json".toMediaType()))
+    }
+
+    fun newRequestWithBody(
+        method: String,
+        path: String,
+        query: Map<String, String>? = null,
+        body: okhttp3.RequestBody?,
+    ): Request {
+        return buildRequest(method, path, query, body)
+    }
+
+    private fun buildRequest(
+        method: String,
+        path: String,
+        query: Map<String, String>? = null,
+        body: okhttp3.RequestBody?,
+    ): Request {
         val urlBuilder: HttpUrl.Builder = (baseUrl.trimEnd('/') + path).toHttpUrl().newBuilder()
         query?.forEach { (k, v) -> urlBuilder.addQueryParameter(k, v) }
 
-        val requestBody = body?.toRequestBody("application/json".toMediaType())
-
         val builder = Request.Builder()
             .url(urlBuilder.build())
-            .method(method, requestBody)
+            .method(method, body)
 
         defaultHeaders.forEach { (k, v) -> builder.header(k, v) }
         authenticator?.authenticate(builder)

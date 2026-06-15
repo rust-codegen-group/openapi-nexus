@@ -6,6 +6,7 @@
 package com.example.sdk.apis;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,9 @@ import com.example.sdk.runtime.ApiClient;
 import com.example.sdk.runtime.ApiException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import okhttp3.MediaType;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -172,9 +175,9 @@ public class PostXmlResponse {
 public class GetXmlResponseResponse {
     private final int statusCode;
     private final Response raw;
-    private final Payload status200;
+    private final String status200;
 
-    public GetXmlResponseResponse(int statusCode, Response raw, Payload status200) {
+    public GetXmlResponseResponse(int statusCode, Response raw, String status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;
@@ -188,7 +191,7 @@ public class GetXmlResponseResponse {
         return this.raw;
     }
 
-    public Payload getStatus200() {
+    public String getStatus200() {
         return this.status200;
     }
 }
@@ -209,8 +212,9 @@ public class DefaultApi {
      */
     public PostBinaryResponse postBinary(byte[] body) throws IOException {
         String path = "/binary";
-        String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("POST", path, null, jsonBody);
+        Request request;
+        RequestBody requestBody = RequestBody.create(body, MediaType.get("application/octet-stream"));
+        request = client.newRequestWithBody("POST", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
@@ -225,8 +229,9 @@ public class DefaultApi {
      */
     public PostFormResponse postForm(Payload body) throws IOException {
         String path = "/form";
-        String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("POST", path, null, jsonBody);
+        Request request;
+        throw new IllegalArgumentException("unsupported request body media type: application/x-www-form-urlencoded");
+        request = client.newRequestWithBody("POST", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
@@ -241,8 +246,10 @@ public class DefaultApi {
      */
     public PostJsonResponse postJson(Payload body) throws IOException {
         String path = "/json";
+        Request request;
         String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("POST", path, null, jsonBody);
+        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get("application/json"));
+        request = client.newRequestWithBody("POST", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
@@ -257,8 +264,10 @@ public class DefaultApi {
      */
     public PostJsonOrXmlResponse postJsonOrXml(Payload body) throws IOException {
         String path = "/json-or-xml";
+        Request request;
         String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("POST", path, null, jsonBody);
+        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get("application/json"));
+        request = client.newRequestWithBody("POST", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
@@ -273,8 +282,10 @@ public class DefaultApi {
      */
     public PatchMergeJsonResponse patchMergeJson(Payload body) throws IOException {
         String path = "/merge-patch";
+        Request request;
         String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("PATCH", path, null, jsonBody);
+        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get("application/merge-patch+json"));
+        request = client.newRequestWithBody("PATCH", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
@@ -289,8 +300,9 @@ public class DefaultApi {
      */
     public PostTextResponse postText(String body) throws IOException {
         String path = "/text";
-        String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("POST", path, null, jsonBody);
+        Request request;
+        RequestBody requestBody = RequestBody.create(body, MediaType.get("text/plain"));
+        request = client.newRequestWithBody("POST", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
@@ -305,8 +317,9 @@ public class DefaultApi {
      */
     public PostXmlResponse postXml(Payload body) throws IOException {
         String path = "/xml";
-        String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("POST", path, null, jsonBody);
+        Request request;
+        throw new IllegalArgumentException("unsupported request body media type: application/xml");
+        request = client.newRequestWithBody("POST", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
@@ -328,10 +341,11 @@ public class DefaultApi {
             String errorBody = response.body() != null ? response.body().string() : "";
             throw new ApiException(response.code(), response.message(), errorBody);
         }
-        String responseBody = response.body() != null ? response.body().string() : "null";
-        Payload status200 = null;
+        byte[] responseBytes = response.body() != null ? response.body().bytes() : new byte[0];
+        String responseText = new String(responseBytes, StandardCharsets.UTF_8);
+        String status200 = null;
         if (response.code() == 200) {
-            status200 = gson.fromJson(responseBody, new TypeToken<Payload>() {}.getType());
+            status200 = responseText;
         }
         return new GetXmlResponseResponse(response.code(), response, status200);
     }

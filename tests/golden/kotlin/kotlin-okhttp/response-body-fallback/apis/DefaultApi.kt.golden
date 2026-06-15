@@ -57,9 +57,10 @@ class DefaultApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<GetFallbackWithBodyResponse200>(responseBody, object : TypeToken<GetFallbackWithBodyResponse200>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<GetFallbackWithBodyResponse200>(responseText.ifEmpty { "null" }, object : TypeToken<GetFallbackWithBodyResponse200>() {}.type) else null
         return GetFallbackWithBodyResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

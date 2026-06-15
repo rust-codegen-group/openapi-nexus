@@ -10,13 +10,16 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
  * DownloadAssetResponse carries the response from downloadAsset.
  */
 data class DownloadAssetResponse(val statusCode: Int, val raw: Response,
-val status200: List<Int>? = null) {
+val status200: ByteArray? = null) {
 }
 
 /**
@@ -44,9 +47,10 @@ class TransferApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<List<Int>>(responseBody, object : TypeToken<List<Int>>() {}.type) else null
+        val status200 = if (response.code == 200) responseBytes else null
         return DownloadAssetResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -55,17 +59,22 @@ class TransferApi(private val client: ApiClient) {
      */
     fun uploadAsset(body: UploadAssetRequest): UploadAssetResponse {
         val path = "/uploads"
-        val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
+        multipartBuilder.addFormDataPart("file", "file", body.file.toRequestBody("application/octet-stream".toMediaType()))
+        multipartBuilder.addFormDataPart("metadata", gson.toJson(body.metadata))
+        multipartBuilder.addFormDataPart("purpose", body.purpose.toString())
+        val multipartBody = multipartBuilder.build()
+        val request = client.newRequestWithBody("POST", path, null, multipartBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<UploadMetadata>(responseBody, object : TypeToken<UploadMetadata>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<UploadMetadata>(responseText.ifEmpty { "null" }, object : TypeToken<UploadMetadata>() {}.type) else null
         return UploadAssetResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

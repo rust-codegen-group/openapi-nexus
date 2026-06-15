@@ -16,7 +16,9 @@ class UserApi:
     def create_user(self, *, body: User) -> User:
         """Create user."""
         path = "/user"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return User.from_dict(response.json())
@@ -24,7 +26,9 @@ class UserApi:
     def create_users_with_list_input(self, *, body: list[User]) -> User:
         """Creates list of users with given input array."""
         path = "/user/createWithList"
-        response = self._client.request("POST", path, json=[item.to_dict() for item in body])
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=[item.to_dict() for item in body], headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return User.from_dict(response.json())
@@ -61,7 +65,9 @@ class UserApi:
     def update_user(self, username: str, *, body: User) -> None:
         """Update user."""
         path = f"/user/{username}"
-        response = self._client.request("PUT", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("PUT", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return None

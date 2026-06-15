@@ -1,0 +1,12 @@
+[package]
+name = "multipart-edge-cases"
+version = "0.1.0"
+edition = "2024"
+description = "Covers optional multipart bodies, optional parts, and text-only multipart fields."
+
+[dependencies]
+aioduct = { version = "0.1.8", features = ["tokio", "rustls", "rustls-ring", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde-xml-rs = "0.8.2"
+serde_repr = "0.1"

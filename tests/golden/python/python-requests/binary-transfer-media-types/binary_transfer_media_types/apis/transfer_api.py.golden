@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import json
+
 from ..models.upload_asset_request import UploadAssetRequest
 from ..models.upload_metadata import UploadMetadata
 from ..runtime.client import Client
@@ -14,16 +16,20 @@ class TransferApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def download_asset(self, asset_id: str) -> list[int]:
+    def download_asset(self, asset_id: str) -> bytes:
         path = f"/assets/{asset_id}/content"
         response = self._client.request("GET", path)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason, response.content)
-        return response.json()  # type: ignore[return-value]
+        return response.content
 
     def upload_asset(self, *, body: UploadAssetRequest) -> UploadMetadata:
         path = "/uploads"
-        response = self._client.request("POST", path, json=body.to_dict())
+        files: dict[str, object] = {}
+        files["file"] = ("file", body.file, "application/octet-stream")
+        files["metadata"] = (None, json.dumps(body.metadata.to_dict()), "application/json")
+        files["purpose"] = (None, str(body.purpose))
+        response = self._client.request("POST", path, files=files if files else None)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason, response.content)
         return UploadMetadata.from_dict(response.json())

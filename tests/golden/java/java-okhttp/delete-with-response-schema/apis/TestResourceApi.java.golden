@@ -6,6 +6,7 @@
 package com.example.sdk.apis;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,9 @@ import com.example.sdk.runtime.ApiClient;
 import com.example.sdk.runtime.ApiException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import okhttp3.MediaType;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -104,18 +107,21 @@ public class TestResourceApi {
      */
     public CreateTestResourceResponse createTestResource(CreateTestResourceRequest body) throws IOException {
         String path = "/v1/api/test-resource";
+        Request request;
         String jsonBody = gson.toJson(body);
-        Request request = client.newRequest("POST", path, null, jsonBody);
+        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get("application/json"));
+        request = client.newRequestWithBody("POST", path, null, requestBody);
         Response response = client.execute(request);
 
         if (!response.isSuccessful()) {
             String errorBody = response.body() != null ? response.body().string() : "";
             throw new ApiException(response.code(), response.message(), errorBody);
         }
-        String responseBody = response.body() != null ? response.body().string() : "null";
+        byte[] responseBytes = response.body() != null ? response.body().bytes() : new byte[0];
+        String responseText = new String(responseBytes, StandardCharsets.UTF_8);
         CreateTestResourceResponse status200 = null;
         if (response.code() == 200) {
-            status200 = gson.fromJson(responseBody, new TypeToken<CreateTestResourceResponse>() {}.getType());
+            status200 = gson.fromJson(responseText.isEmpty() ? "null" : responseText, new TypeToken<CreateTestResourceResponse>() {}.getType());
         }
         return new CreateTestResourceResponse(response.code(), response, status200);
     }
@@ -132,18 +138,19 @@ public class TestResourceApi {
             String errorBody = response.body() != null ? response.body().string() : "";
             throw new ApiException(response.code(), response.message(), errorBody);
         }
-        String responseBody = response.body() != null ? response.body().string() : "null";
+        byte[] responseBytes = response.body() != null ? response.body().bytes() : new byte[0];
+        String responseText = new String(responseBytes, StandardCharsets.UTF_8);
         DeleteTestResourceResponse status200 = null;
         if (response.code() == 200) {
-            status200 = gson.fromJson(responseBody, new TypeToken<DeleteTestResourceResponse>() {}.getType());
+            status200 = gson.fromJson(responseText.isEmpty() ? "null" : responseText, new TypeToken<DeleteTestResourceResponse>() {}.getType());
         }
         HttpErrorResponse status4xx = null;
         if (response.code() >= 400 && response.code() < 500) {
-            status4xx = gson.fromJson(responseBody, new TypeToken<HttpErrorResponse>() {}.getType());
+            status4xx = gson.fromJson(responseText.isEmpty() ? "null" : responseText, new TypeToken<HttpErrorResponse>() {}.getType());
         }
         HttpErrorResponse status5xx = null;
         if (response.code() >= 500 && response.code() < 600) {
-            status5xx = gson.fromJson(responseBody, new TypeToken<HttpErrorResponse>() {}.getType());
+            status5xx = gson.fromJson(responseText.isEmpty() ? "null" : responseText, new TypeToken<HttpErrorResponse>() {}.getType());
         }
         return new DeleteTestResourceResponse(response.code(), response, status200, status4xx, status5xx);
     }
