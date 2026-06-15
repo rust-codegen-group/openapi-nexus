@@ -16,7 +16,9 @@ class DefaultApi:
     def test_nested_union(self, *, body: Foo) -> Foo:
         """Test endpoint with nested union type."""
         path = "/test"
-        response = self._client.request("POST", path, json=body)
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body, headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return response.json()  # type: ignore[return-value]

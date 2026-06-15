@@ -19,7 +19,9 @@ class TestApiApi:
     def create_type_a(self, *, body: CreateRequestTypeA) -> ResourceTypeA:
         """Create TypeA resource."""
         path = "/api/v1/type-a/resources"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason, response.content)
         return ResourceTypeA.from_dict(response.json())
@@ -27,7 +29,9 @@ class TestApiApi:
     def create_type_b(self, *, body: CreateRequestTypeB) -> ResourceTypeB:
         """Create TypeB resource."""
         path = "/api/v1/type-b/resources"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason, response.content)
         return ResourceTypeB.from_dict(response.json())

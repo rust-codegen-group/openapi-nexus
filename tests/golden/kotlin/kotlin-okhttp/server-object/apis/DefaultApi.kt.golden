@@ -45,9 +45,10 @@ class DefaultApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<List<GetAllUsersResponse200Item>>(responseBody, object : TypeToken<List<GetAllUsersResponse200Item>>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<List<GetAllUsersResponse200Item>>(responseText.ifEmpty { "null" }, object : TypeToken<List<GetAllUsersResponse200Item>>() {}.type) else null
         return GetAllUsersResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -63,11 +64,12 @@ class DefaultApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<GetUserByIdResponse200>(responseBody, object : TypeToken<GetUserByIdResponse200>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<GetUserByIdResponse200>(responseText.ifEmpty { "null" }, object : TypeToken<GetUserByIdResponse200>() {}.type) else null
 
-        val status404 = if (response.code == 404) gson.fromJson<GetUserByIdResponse404>(responseBody, object : TypeToken<GetUserByIdResponse404>() {}.type) else null
+        val status404 = if (response.code == 404) gson.fromJson<GetUserByIdResponse404>(responseText.ifEmpty { "null" }, object : TypeToken<GetUserByIdResponse404>() {}.type) else null
         return GetUserByIdResponse(statusCode = response.code, raw = response, status200 = status200, status404 = status404)
     }
 }

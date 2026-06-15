@@ -34,6 +34,9 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("multiple-similar-request-schemas", "valid/multiple-similar-request-schemas.yaml"),
         ("request-body-content-types", "valid/request-body-content-types.yaml"),
         ("binary-transfer-media-types", "valid/binary-transfer-media-types.yaml"),
+        ("media-type-selection", "valid/media-type-selection.yaml"),
+        ("multipart-edge-cases", "valid/multipart-edge-cases.yaml"),
+        ("multipart-nested-object-parts", "valid/multipart-nested-object-parts.yaml"),
         ("multipart-unsupported-schema", "valid/multipart-unsupported-schema.yaml"),
 
         ("type-aliases-simple-type-alias", "valid/type-aliases/simple-type-alias.yaml"),
@@ -115,6 +118,9 @@ generate_golden_tests! {
     test_multiple_similar_request_schemas_golden: "multiple-similar-request-schemas",
     test_request_body_content_types_golden: "request-body-content-types",
     test_binary_transfer_media_types_golden: "binary-transfer-media-types",
+    test_media_type_selection_golden: "media-type-selection",
+    test_multipart_edge_cases_golden: "multipart-edge-cases",
+    test_multipart_nested_object_parts_golden: "multipart-nested-object-parts",
     test_multipart_unsupported_schema_golden: "multipart-unsupported-schema",
 
     test_type_aliases_simple_type_alias_golden: "type-aliases-simple-type-alias",

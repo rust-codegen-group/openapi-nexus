@@ -1852,8 +1852,8 @@ pub fn generate_model_files(
 
 fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
     match p {
+        IrPrimitive::Binary => "Blob | File",
         IrPrimitive::String
-        | IrPrimitive::Binary
         | IrPrimitive::Date
         | IrPrimitive::DateTime
         | IrPrimitive::Uuid

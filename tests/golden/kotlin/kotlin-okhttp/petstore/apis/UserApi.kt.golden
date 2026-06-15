@@ -10,6 +10,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -67,16 +69,18 @@ class UserApi(private val client: ApiClient) {
     fun createUser(body: User): CreateUserResponse {
         val path = "/user"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<User>(responseBody, object : TypeToken<User>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<User>(responseText.ifEmpty { "null" }, object : TypeToken<User>() {}.type) else null
         return CreateUserResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -86,16 +90,18 @@ class UserApi(private val client: ApiClient) {
     fun createUsersWithListInput(body: List<User>): CreateUsersWithListInputResponse {
         val path = "/user/createWithList"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<User>(responseBody, object : TypeToken<User>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<User>(responseText.ifEmpty { "null" }, object : TypeToken<User>() {}.type) else null
         return CreateUsersWithListInputResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -148,9 +154,10 @@ class UserApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<User>(responseBody, object : TypeToken<User>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<User>(responseText.ifEmpty { "null" }, object : TypeToken<User>() {}.type) else null
         return GetUserByNameResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -160,7 +167,8 @@ class UserApi(private val client: ApiClient) {
     fun updateUser(username: String, body: User): UpdateUserResponse {
         val path = "/user/{username}".replace("{username}", username)
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("PUT", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("PUT", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {

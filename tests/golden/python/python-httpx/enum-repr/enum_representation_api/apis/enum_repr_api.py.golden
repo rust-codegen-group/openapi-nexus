@@ -20,7 +20,9 @@ class EnumReprApi:
     def handle_adjacently_tagged(self, *, body: AdjacentlyTaggedEnum) -> AdjacentlyTaggedEnum:
         """Handle adjacently tagged enum."""
         path = "/adjacently-tagged"
-        response = self._client.request("POST", path, json=body)
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body, headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return response.json()  # type: ignore[return-value]
@@ -28,7 +30,9 @@ class EnumReprApi:
     def handle_externally_tagged(self, *, body: ExternallyTaggedEnum) -> ExternallyTaggedEnum:
         """Handle externally tagged enum."""
         path = "/externally-tagged"
-        response = self._client.request("POST", path, json=body)
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body, headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return response.json()  # type: ignore[return-value]
@@ -36,7 +40,9 @@ class EnumReprApi:
     def handle_internally_tagged(self, *, body: InternallyTaggedEnum) -> InternallyTaggedEnum:
         """Handle internally tagged enum."""
         path = "/internally-tagged"
-        response = self._client.request("POST", path, json=body)
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body, headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return response.json()  # type: ignore[return-value]
@@ -44,7 +50,9 @@ class EnumReprApi:
     def handle_mixed(self, *, body: MixedEnum) -> MixedEnum:
         """Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))."""
         path = "/mixed"
-        response = self._client.request("POST", path, json=body)
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body, headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return response.json()  # type: ignore[return-value]
@@ -52,7 +60,9 @@ class EnumReprApi:
     def handle_untagged(self, *, body: UntaggedEnum) -> UntaggedEnum:
         """Handle untagged enum."""
         path = "/untagged"
-        response = self._client.request("POST", path, json=body)
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body, headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return response.json()  # type: ignore[return-value]

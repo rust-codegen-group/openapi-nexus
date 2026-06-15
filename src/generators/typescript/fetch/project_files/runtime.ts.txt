@@ -291,7 +291,7 @@ export type Json = unknown;
 export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
 export type HTTPHeaders = { [key: string]: string };
 export type HTTPQuery = { [key: string]: string | number | null | boolean | Array<string | number | null | boolean> | Set<string | number | null | boolean> | HTTPQuery };
-export type HTTPBody = Json | FormData | URLSearchParams; // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
+export type HTTPBody = Json | Blob | FormData | URLSearchParams; // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
 export type HTTPRequestInit = { headers?: HTTPHeaders; method: HTTPMethod; credentials?: RequestCredentials; body?: HTTPBody; signal?: AbortSignal };
 export type ModelPropertyNaming = 'camelCase' | 'snake_case' | 'PascalCase' | 'original';
 

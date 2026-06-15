@@ -44,6 +44,18 @@ public class ApiClient {
     }
 
     public Request newRequest(String method, String path, Map<String, String> query, String body) {
+        RequestBody requestBody = null;
+        if (body != null) {
+            requestBody = RequestBody.create(body, JSON);
+        }
+        return buildRequest(method, path, query, requestBody);
+    }
+
+    public Request newRequestWithBody(String method, String path, Map<String, String> query, RequestBody body) {
+        return buildRequest(method, path, query, body);
+    }
+
+    private Request buildRequest(String method, String path, Map<String, String> query, RequestBody requestBody) {
         String url = baseUrl.replaceAll("/+$", "") + path;
         HttpUrl parsed = HttpUrl.parse(url);
         if (parsed == null) {
@@ -54,11 +66,6 @@ public class ApiClient {
             for (Map.Entry<String, String> entry : query.entrySet()) {
                 urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
             }
-        }
-
-        RequestBody requestBody = null;
-        if (body != null) {
-            requestBody = RequestBody.create(body, JSON);
         }
 
         Request.Builder builder = new Request.Builder()

@@ -36,11 +36,12 @@ class WidgetApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Widget>(responseBody, object : TypeToken<Widget>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Widget>(responseText.ifEmpty { "null" }, object : TypeToken<Widget>() {}.type) else null
 
-        val default = if (true) gson.fromJson<ErrorResponse>(responseBody, object : TypeToken<ErrorResponse>() {}.type) else null
+        val default = if (true) gson.fromJson<ErrorResponse>(responseText.ifEmpty { "null" }, object : TypeToken<ErrorResponse>() {}.type) else null
         return GetWidgetResponse(statusCode = response.code, raw = response, status200 = status200, default = default)
     }
 }

@@ -15,7 +15,9 @@ class FooApi:
 
     def update_foo_bar(self, foo_id: str, *, body: FooRequest) -> ErrorResponse:
         path = f"/foo/bar"
-        response = self._client.request("PATCH", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("PATCH", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return ErrorResponse.from_dict(response.json())

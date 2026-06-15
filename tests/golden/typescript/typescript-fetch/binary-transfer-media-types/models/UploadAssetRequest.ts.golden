@@ -10,7 +10,7 @@ export interface UploadAssetRequest {
   /**
    * Binary content
    */
-  readonly file: string;
+  readonly file: Blob | File;
   readonly metadata: UploadAttributes;
   /**
    * Upload purpose

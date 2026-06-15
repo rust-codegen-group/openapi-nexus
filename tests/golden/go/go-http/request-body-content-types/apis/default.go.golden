@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"example.com/sdk/models"
 	"example.com/sdk/runtime"
@@ -38,17 +39,13 @@ func (a *DefaultAPI) PostBinary(ctx context.Context, body []byte) (*PostBinaryRe
 	path := "/binary"
 	var bodyReader io.Reader
 	if body != nil {
-		buf, err := json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("marshal body: %w", err)
-		}
-		bodyReader = bytes.NewReader(buf)
+		bodyReader = bytes.NewReader(body)
 	}
 	req, err := a.client.NewRequest(ctx, "POST", path, nil, bodyReader)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("Accept", "application/json")
 	httpResp, err := a.client.Do(req)
 	if err != nil {
@@ -74,18 +71,12 @@ type PostFormResponse struct {
 func (a *DefaultAPI) PostForm(ctx context.Context, body *models.Payload) (*PostFormResponse, error) {
 	path := "/form"
 	var bodyReader io.Reader
-	if body != nil {
-		buf, err := json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("marshal body: %w", err)
-		}
-		bodyReader = bytes.NewReader(buf)
-	}
+	return nil, fmt.Errorf("unsupported request body media type: application/x-www-form-urlencoded")
 	req, err := a.client.NewRequest(ctx, "POST", path, nil, bodyReader)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	httpResp, err := a.client.Do(req)
 	if err != nil {
@@ -198,7 +189,7 @@ func (a *DefaultAPI) PatchMergeJson(ctx context.Context, body *models.Payload) (
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/merge-patch+json")
 	req.Header.Set("Accept", "application/json")
 	httpResp, err := a.client.Do(req)
 	if err != nil {
@@ -225,17 +216,13 @@ func (a *DefaultAPI) PostText(ctx context.Context, body *string) (*PostTextRespo
 	path := "/text"
 	var bodyReader io.Reader
 	if body != nil {
-		buf, err := json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("marshal body: %w", err)
-		}
-		bodyReader = bytes.NewReader(buf)
+		bodyReader = strings.NewReader(*body)
 	}
 	req, err := a.client.NewRequest(ctx, "POST", path, nil, bodyReader)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "text/plain")
 	req.Header.Set("Accept", "application/json")
 	httpResp, err := a.client.Do(req)
 	if err != nil {
@@ -261,18 +248,12 @@ type PostXmlResponse struct {
 func (a *DefaultAPI) PostXml(ctx context.Context, body *models.Payload) (*PostXmlResponse, error) {
 	path := "/xml"
 	var bodyReader io.Reader
-	if body != nil {
-		buf, err := json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("marshal body: %w", err)
-		}
-		bodyReader = bytes.NewReader(buf)
-	}
+	return nil, fmt.Errorf("unsupported request body media type: application/xml")
 	req, err := a.client.NewRequest(ctx, "POST", path, nil, bodyReader)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/xml")
 	req.Header.Set("Accept", "application/json")
 	httpResp, err := a.client.Do(req)
 	if err != nil {
@@ -292,7 +273,7 @@ func (a *DefaultAPI) PostXml(ctx context.Context, body *models.Payload) (*PostXm
 type GetXmlResponseResponse struct {
 	StatusCode int
 	Raw *http.Response
-	Status200 *models.Payload
+	Status200 *string
 }
 
 // GetXmlResponse calls GET /xml-response.
@@ -312,10 +293,11 @@ func (a *DefaultAPI) GetXmlResponse(ctx context.Context) (*GetXmlResponseRespons
 	resp := &GetXmlResponseResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	switch httpResp.StatusCode {
 		case 200:
-			var payload models.Payload
-			if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-				return nil, fmt.Errorf("decode response: %w", err)
+			bodyBytes, err := io.ReadAll(httpResp.Body)
+			if err != nil {
+				return nil, fmt.Errorf("read response: %w", err)
 			}
+			payload := string(bodyBytes)
 			resp.Status200 = &payload
 		default:
 			if httpResp.StatusCode >= 400 {

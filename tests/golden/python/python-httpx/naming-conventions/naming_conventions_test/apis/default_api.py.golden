@@ -53,7 +53,9 @@ class DefaultApi:
     def test_naming_conventions(self, *, body: NamingConventionTest) -> NamingConventionTest:
         """Test endpoint with various parameter naming conventions."""
         path = "/test"
-        response = self._client.request("POST", path, json=body.to_dict())
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return NamingConventionTest.from_dict(response.json())

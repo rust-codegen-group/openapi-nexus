@@ -61,6 +61,8 @@ class Client:
         *,
         params: dict[str, str] | None = None,
         json: Any = None,
+        data: Any = None,
+        files: Any = None,
         headers: dict[str, str] | None = None,
     ) -> Response:
         """Send an HTTP request and return the raw response."""
@@ -79,6 +81,8 @@ class Client:
                 url,
                 params=params,
                 json=json,
+                data=data,
+                files=files,
                 headers=req_headers,
             ),
         )

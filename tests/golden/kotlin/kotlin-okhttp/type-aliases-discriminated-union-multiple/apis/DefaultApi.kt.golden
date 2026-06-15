@@ -13,6 +13,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -41,16 +43,18 @@ class DefaultApi(private val client: ApiClient) {
     fun createContainer(body: ContainerKind): CreateContainerResponse {
         val path = "/container"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<ContainerKind>(responseBody, object : TypeToken<ContainerKind>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<ContainerKind>(responseText.ifEmpty { "null" }, object : TypeToken<ContainerKind>() {}.type) else null
         return CreateContainerResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -60,16 +64,18 @@ class DefaultApi(private val client: ApiClient) {
     fun createVolume(body: VolumeKind): CreateVolumeResponse {
         val path = "/volume"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<VolumeKind>(responseBody, object : TypeToken<VolumeKind>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<VolumeKind>(responseText.ifEmpty { "null" }, object : TypeToken<VolumeKind>() {}.type) else null
         return CreateVolumeResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

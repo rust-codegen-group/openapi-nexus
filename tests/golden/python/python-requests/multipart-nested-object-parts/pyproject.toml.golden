@@ -1,0 +1,10 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multipart_nested_object_parts"
+version = "1.0.0"
+description = "Covers multipart object parts whose wire names differ from ergonomic names."
+requires-python = ">=3.12"
+dependencies = ["requests>=2.32"]

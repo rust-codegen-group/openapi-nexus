@@ -17,7 +17,9 @@ class DefaultApi:
     def create_container(self, *, body: ContainerImage) -> ContainerImage:
         """Create container with discriminated union."""
         path = "/container"
-        response = self._client.request("POST", path, json=body)
+        headers: dict[str, str] = {}
+        headers["Content-Type"] = "application/json"
+        response = self._client.request("POST", path, json=body, headers=headers)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)
         return response.json()  # type: ignore[return-value]

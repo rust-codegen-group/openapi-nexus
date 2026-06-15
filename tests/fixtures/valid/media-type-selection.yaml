@@ -1,0 +1,115 @@
+openapi: 3.1.0
+info:
+  title: Media Type Selection
+  version: 1.0.0
+  description: Covers normalized media-type selection for requests and responses.
+paths:
+  /request/parameterized-multipart:
+    post:
+      tags:
+        - media
+      operationId: send_parameterized_multipart
+      requestBody:
+        required: true
+        content:
+          multipart/form-data; charset=utf-8:
+            schema:
+              $ref: '#/components/schemas/FileEnvelope'
+      responses:
+        '204':
+          description: Accepted
+  /request/json-vs-multipart:
+    post:
+      tags:
+        - media
+      operationId: send_json_preferred
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileEnvelope'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '204':
+          description: Accepted
+  /request/vendor-json:
+    patch:
+      tags:
+        - media
+      operationId: send_vendor_json
+      requestBody:
+        required: true
+        content:
+          application/vnd.example+json; charset=utf-8:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '204':
+          description: Accepted
+  /response/vendor-json:
+    get:
+      tags:
+        - media
+      operationId: get_vendor_json
+      responses:
+        '200':
+          description: OK
+          content:
+            application/vnd.example+json; charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/Payload'
+  /response/octet-before-xml:
+    get:
+      tags:
+        - media
+      operationId: get_octet_preferred
+      responses:
+        '200':
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Payload'
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /response/text-before-xml:
+    get:
+      tags:
+        - media
+      operationId: get_text_preferred
+      responses:
+        '200':
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Payload'
+            text/plain:
+              schema:
+                type: string
+components:
+  schemas:
+    FileEnvelope:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
+        note:
+          type: string
+    Payload:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        count:
+          type: integer

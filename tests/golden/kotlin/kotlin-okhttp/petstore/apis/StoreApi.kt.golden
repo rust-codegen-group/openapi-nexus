@@ -10,6 +10,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -55,9 +57,10 @@ class StoreApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Map<String, Int>>(responseBody, object : TypeToken<Map<String, Int>>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Map<String, Int>>(responseText.ifEmpty { "null" }, object : TypeToken<Map<String, Int>>() {}.type) else null
         return GetInventoryResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -67,16 +70,18 @@ class StoreApi(private val client: ApiClient) {
     fun placeOrder(body: Order): PlaceOrderResponse {
         val path = "/store/order"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Order>(responseBody, object : TypeToken<Order>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Order>(responseText.ifEmpty { "null" }, object : TypeToken<Order>() {}.type) else null
         return PlaceOrderResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -92,9 +97,10 @@ class StoreApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Order>(responseBody, object : TypeToken<Order>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<Order>(responseText.ifEmpty { "null" }, object : TypeToken<Order>() {}.type) else null
         return GetOrderByIdResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 

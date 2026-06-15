@@ -9,6 +9,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -31,18 +33,20 @@ class FooApi(private val client: ApiClient) {
     fun updateFooBar(fooId: String, body: FooRequest): UpdateFooBarResponse {
         val path = "/foo/bar".replace("{foo_id}", fooId)
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("PATCH", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("PATCH", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status400 = if (response.code == 400) gson.fromJson<ErrorResponse>(responseBody, object : TypeToken<ErrorResponse>() {}.type) else null
+        val status400 = if (response.code == 400) gson.fromJson<ErrorResponse>(responseText.ifEmpty { "null" }, object : TypeToken<ErrorResponse>() {}.type) else null
 
-        val status500 = if (response.code == 500) gson.fromJson<ErrorResponse>(responseBody, object : TypeToken<ErrorResponse>() {}.type) else null
+        val status500 = if (response.code == 500) gson.fromJson<ErrorResponse>(responseText.ifEmpty { "null" }, object : TypeToken<ErrorResponse>() {}.type) else null
         return UpdateFooBarResponse(statusCode = response.code, raw = response, status400 = status400, status500 = status500)
     }
 }

@@ -20,8 +20,8 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::ir::types::{
-    IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
-    ParameterLocation as IrParameterLocation,
+    IrObject, IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSchemaKind,
+    IrSpec, IrTypeExpr, ParameterLocation as IrParameterLocation,
 };
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use sigil_stitch::code_block::{Arg, CodeBlock};
@@ -55,7 +55,7 @@ pub fn generate_api_files(
 
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
-        let file_spec = emit_api_file(tag, ops, property_naming_camel_case, &convertible, ts)?;
+        let file_spec = emit_api_file(tag, ops, ir, property_naming_camel_case, &convertible, ts)?;
         let body = file_spec
             .render(100)
             .map_err(|e| format!("sigil_emit_api: render {tag}: {e}"))?;
@@ -129,6 +129,7 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
 fn emit_api_file(
     tag: &str,
     ops: &[&IrOperation],
+    ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
     ts: &TypeScript,
@@ -160,7 +161,8 @@ fn emit_api_file(
     // When property_naming_camel_case is enabled, add explicit imports for
     // converter functions and $Wire types referenced in raw code blocks.
     if property_naming_camel_case {
-        let request_types = collect_request_named_types(ops, convertible);
+        let request_types =
+            collect_request_named_types(ops, ir, property_naming_camel_case, convertible);
         let response_types = collect_response_named_types(ops, convertible);
 
         for name in request_types.union(&response_types) {
@@ -195,6 +197,7 @@ fn emit_api_file(
         &class_name,
         &interface_name,
         ops,
+        ir,
         property_naming_camel_case,
         convertible,
     )?);
@@ -312,17 +315,38 @@ fn build_param_field(param: &IrParameter, name: &str) -> FieldSpec {
 /// `build_body_field`'s type-selection logic so the emitted `Content-Type`
 /// agrees with the schema we typed the body as. Prefers `application/json`
 /// if declared, otherwise the first media type in spec order.
-fn preferred_request_media_type(rb: &IrRequestBody) -> Option<&str> {
-    if rb.content.contains_key("application/json") {
-        Some("application/json")
-    } else {
-        rb.content.keys().next().map(String::as_str)
-    }
+fn preferred_request_media_type(rb: &IrRequestBody) -> Option<String> {
+    pick_media_type(&rb.content, |media_type| {
+        media_type_base(media_type) == "application/json"
+    })
+    .or_else(|| pick_media_type(&rb.content, is_json_media_type))
+    .or_else(|| {
+        pick_media_type(&rb.content, |media_type| {
+            media_type_base(media_type) == "multipart/form-data"
+        })
+    })
+    .or_else(|| {
+        pick_media_type(&rb.content, |media_type| {
+            media_type_base(media_type) == "application/x-www-form-urlencoded"
+        })
+    })
+    .or_else(|| pick_media_type(&rb.content, is_xml_media_type))
+    .or_else(|| {
+        pick_media_type(&rb.content, |media_type| {
+            media_type_base(media_type) == "text/plain"
+        })
+    })
+    .or_else(|| {
+        pick_media_type(&rb.content, |media_type| {
+            media_type_base(media_type) == "application/octet-stream"
+        })
+    })
+    .or_else(|| pick_first_media_type(&rb.content))
 }
 
 fn build_body_field(rb: &IrRequestBody, name: &str) -> FieldSpec {
     let ty = preferred_request_media_type(rb)
-        .and_then(|mt| rb.content.get(mt))
+        .and_then(|mt| rb.content.get(mt.as_str()))
         .map(type_expr_to_typename)
         .unwrap_or_else(|| TypeName::primitive("unknown"));
     let mut fb = FieldSpec::builder(name, ty);
@@ -411,6 +435,7 @@ fn build_api_class(
     class_name: &str,
     interface_name: &str,
     ops: &[&IrOperation],
+    ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
 ) -> Result<TypeSpec, String> {
@@ -423,6 +448,7 @@ fn build_api_class(
     for op in ops {
         tb = tb.add_method(build_raw_method(
             op,
+            ir,
             property_naming_camel_case,
             convertible,
         )?);
@@ -458,6 +484,7 @@ fn build_constructor() -> FunSpec {
 
 fn build_raw_method(
     op: &IrOperation,
+    ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
 ) -> Result<FunSpec, String> {
@@ -476,7 +503,7 @@ fn build_raw_method(
     emit_url_path(&mut body, op);
     emit_query_params(&mut body, op);
     emit_headers(&mut body, op);
-    emit_request_body(&mut body, op, property_naming_camel_case, convertible);
+    emit_request_body(&mut body, op, ir, property_naming_camel_case, convertible);
     emit_make_request(&mut body, op, op.request_body.is_some());
     emit_response_handler(&mut body, op, property_naming_camel_case, convertible);
 
@@ -601,6 +628,7 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOper
     );
     if let Some(rb) = &op.request_body
         && let Some(media_type) = preferred_request_media_type(rb)
+        && media_type_base(&media_type) != "multipart/form-data"
     {
         cb.add(&format!("  'Content-Type': '{}',\n", media_type), vec![]);
     }
@@ -626,6 +654,7 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOper
 fn emit_request_body(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
+    ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
 ) {
@@ -635,8 +664,70 @@ fn emit_request_body(
         let body_name = resolved_body(&names);
         let access = request_parameters_access(&body_name);
 
-        if property_naming_camel_case {
-            let json_type = body.content.get("application/json");
+        if let Some(media_type) = preferred_request_media_type(body)
+            && media_type_base(&media_type) == "multipart/form-data"
+        {
+            if let Some(parts) = body
+                .content
+                .get(media_type.as_str())
+                .and_then(|ty| multipart_parts_for(ty, ir, property_naming_camel_case))
+            {
+                if !body.required {
+                    cb.add(
+                        "let requestBody: FormData | undefined = undefined;\n",
+                        vec![],
+                    );
+                    cb.add(
+                        &format!("if ({access} !== undefined && {access} !== null) {{\n"),
+                        vec![],
+                    );
+                    cb.add("requestBody = new FormData();\n", vec![]);
+                } else {
+                    cb.add("const requestBody = new FormData();\n", vec![]);
+                }
+                for part in parts {
+                    let part_access = format!("{access}{}", ts_property_access(&part.field_name));
+                    if part.required {
+                        emit_form_data_append(cb, &part, &part_access, convertible);
+                    } else {
+                        cb.add(
+                            &format!(
+                                "if ({part_access} !== undefined && {part_access} !== null) {{\n"
+                            ),
+                            vec![],
+                        );
+                        emit_form_data_append(cb, &part, &part_access, convertible);
+                        cb.add("}\n", vec![]);
+                    }
+                }
+                if !body.required {
+                    cb.add("}\n", vec![]);
+                }
+            } else {
+                emit_unsupported_ts_body(
+                    cb,
+                    &access,
+                    body.required,
+                    "unsupported multipart request body: schema must be object-shaped",
+                );
+            }
+        } else if let Some(media_type) = preferred_request_media_type(body)
+            && is_unsupported_ts_request_media_type(&media_type)
+        {
+            emit_unsupported_ts_body(
+                cb,
+                &access,
+                body.required,
+                &format!("unsupported request body media type: {media_type}"),
+            );
+        } else if property_naming_camel_case {
+            let json_type = preferred_request_media_type(body).and_then(|media_type| {
+                if is_json_media_type(&media_type) {
+                    body.content.get(media_type.as_str())
+                } else {
+                    None
+                }
+            });
             if let Some(to_json) =
                 json_type.and_then(|ty| body_to_json_expr(ty, &access, convertible))
             {
@@ -648,6 +739,58 @@ fn emit_request_body(
             cb.add(&format!("const requestBody = {};\n", access), vec![]);
         }
     }
+}
+
+fn emit_unsupported_ts_body(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    access: &str,
+    required: bool,
+    message: &str,
+) {
+    if required {
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                const requestBody = (() => { throw new Error($S(message)); })();
+            })
+            .expect("unsupported request body block builds"),
+        );
+    } else {
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                const requestBody = $L(access) === undefined || $L(access) === null ? undefined : (() => { throw new Error($S(message)); })();
+            })
+            .expect("optional unsupported request body block builds"),
+        );
+    }
+}
+
+fn is_unsupported_ts_request_media_type(media_type: &str) -> bool {
+    let base = media_type_base(media_type);
+    is_xml_media_type(media_type) || base == "application/x-www-form-urlencoded"
+}
+
+fn emit_form_data_append(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    part: &MultipartPart,
+    part_access: &str,
+    convertible: &HashSet<String>,
+) {
+    let value_expr = if part.is_binary {
+        part_access.to_string()
+    } else if part.value_encoding == MultipartValueEncoding::Json {
+        let json_value = multipart_part_to_json_expr(part, part_access, convertible)
+            .unwrap_or_else(|| part_access.to_string());
+        format!("JSON.stringify({json_value})")
+    } else {
+        format!("String({part_access})")
+    };
+    cb.add(
+        &format!(
+            "requestBody.append({}, {value_expr});\n",
+            ts_string_literal(&part.wire_name)
+        ),
+        vec![],
+    );
 }
 
 fn emit_make_request(
@@ -1053,31 +1196,21 @@ enum ResponseKind {
 }
 
 fn classify_response(resp: &IrResponse) -> ResponseKind {
-    if let Some(ty) = resp.content.get("application/json") {
+    let Some((media_type, ty)) = pick_response_content(resp) else {
+        return ResponseKind::None;
+    };
+    if is_json_media_type(&media_type) {
         return ResponseKind::Json(Some(type_expr_to_typename(ty)));
     }
-    if resp.content.keys().any(|k| k.contains("json")) {
-        return ResponseKind::Json(None);
+    match media_type_base(&media_type).as_str() {
+        "text/plain"
+        | "text/html"
+        | "application/xml"
+        | "text/xml"
+        | "application/x-www-form-urlencoded"
+        | "text/event-stream" => ResponseKind::Text,
+        _ => ResponseKind::Blob,
     }
-    let text_types = [
-        "text/plain",
-        "text/html",
-        "application/xml",
-        "text/xml",
-        "application/x-www-form-urlencoded",
-        "text/event-stream",
-    ];
-    if resp
-        .content
-        .keys()
-        .any(|k| text_types.iter().any(|t| k.contains(t)))
-    {
-        return ResponseKind::Text;
-    }
-    if !resp.content.is_empty() {
-        return ResponseKind::Blob;
-    }
-    ResponseKind::None
 }
 
 // ============================================================================
@@ -1217,8 +1350,8 @@ fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName {
 
 fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
     match p {
+        IrPrimitive::Binary => "Blob | File",
         IrPrimitive::String
-        | IrPrimitive::Binary
         | IrPrimitive::Date
         | IrPrimitive::DateTime
         | IrPrimitive::Uuid
@@ -1243,7 +1376,10 @@ fn response_from_json_transformer(
     resp: &IrResponse,
     convertible: &HashSet<String>,
 ) -> Option<String> {
-    let type_expr = resp.content.get("application/json")?;
+    let (media_type, type_expr) = pick_response_content(resp)?;
+    if !is_json_media_type(&media_type) {
+        return None;
+    }
     match type_expr {
         IrTypeExpr::Named(name) if convertible.contains(name) => {
             let pascal = name.to_pascal_case();
@@ -1290,29 +1426,211 @@ fn body_to_json_expr(
     }
 }
 
+fn multipart_part_to_json_expr(
+    part: &MultipartPart,
+    access: &str,
+    convertible: &HashSet<String>,
+) -> Option<String> {
+    body_to_json_expr(&part.type_expr, access, convertible)
+}
+
+struct MultipartPart {
+    wire_name: String,
+    field_name: String,
+    type_expr: IrTypeExpr,
+    is_binary: bool,
+    required: bool,
+    value_encoding: MultipartValueEncoding,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MultipartValueEncoding {
+    Text,
+    Json,
+}
+
+fn multipart_parts_for(
+    t: &IrTypeExpr,
+    ir: &IrSpec,
+    property_naming_camel_case: bool,
+) -> Option<Vec<MultipartPart>> {
+    // TODO: Honor OpenAPI multipart encoding metadata once it is represented in the IR.
+    resolve_object(t, ir).map(|obj| {
+        obj.properties
+            .iter()
+            .map(|(wire_name, prop)| MultipartPart {
+                wire_name: wire_name.clone(),
+                field_name: if property_naming_camel_case {
+                    wire_name.to_lower_camel_case()
+                } else {
+                    wire_name.clone()
+                },
+                type_expr: prop.type_expr.clone(),
+                is_binary: is_binary_type(&prop.type_expr, ir),
+                required: prop.required && !prop.nullable,
+                value_encoding: multipart_value_encoding(&prop.type_expr, ir),
+            })
+            .collect()
+    })
+}
+
+fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
+    match expr {
+        IrTypeExpr::Named(name) => match ir.schemas.get(name).map(|schema| &schema.kind) {
+            Some(IrSchemaKind::Object(obj)) => Some(obj),
+            Some(IrSchemaKind::Alias(inner)) => resolve_object(inner, ir),
+            _ => None,
+        },
+        IrTypeExpr::Nullable(inner) => resolve_object(inner, ir),
+        _ => None,
+    }
+}
+
+fn is_binary_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
+    match expr {
+        IrTypeExpr::Primitive(IrPrimitive::Binary) => true,
+        IrTypeExpr::Nullable(inner) => is_binary_type(inner, ir),
+        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
+            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_binary_type(inner, ir))
+        }),
+        _ => false,
+    }
+}
+
+fn multipart_value_encoding(expr: &IrTypeExpr, ir: &IrSpec) -> MultipartValueEncoding {
+    if is_multipart_text_type(expr, ir) {
+        MultipartValueEncoding::Text
+    } else {
+        MultipartValueEncoding::Json
+    }
+}
+
+fn is_multipart_text_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
+    match expr {
+        IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
+        IrTypeExpr::Nullable(inner) => is_multipart_text_type(inner, ir),
+        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
+            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_multipart_text_type(inner, ir))
+        }),
+        _ => false,
+    }
+}
+
+fn ts_property_access(field_name: &str) -> String {
+    if is_js_identifier(field_name) {
+        format!(".{field_name}")
+    } else {
+        format!("[{}]", ts_string_literal(field_name))
+    }
+}
+
+fn ts_string_literal(value: &str) -> String {
+    format!("'{}'", value.replace('\\', "\\\\").replace('\'', "\\'"))
+}
+
 /// Collect unique Named type references from request bodies only
 /// that are in the convertible set (i.e., have $Wire/fromJSON/toJSON emitted).
 fn collect_request_named_types(
     ops: &[&IrOperation],
+    ir: &IrSpec,
+    property_naming_camel_case: bool,
     convertible: &HashSet<String>,
 ) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
     for op in ops {
-        if let Some(ref body) = op.request_body {
-            if let Some(IrTypeExpr::Named(n)) = body.content.get("application/json")
-                && convertible.contains(n)
+        if let Some(ref body) = op.request_body
+            && let Some(media_type) = preferred_request_media_type(body)
+        {
+            if is_json_media_type(&media_type) {
+                if let Some(ty) = body.content.get(media_type.as_str()) {
+                    collect_convertible_named_refs(ty, convertible, &mut names);
+                }
+            } else if media_type_base(&media_type) == "multipart/form-data"
+                && let Some(parts) = body
+                    .content
+                    .get(media_type.as_str())
+                    .and_then(|ty| multipart_parts_for(ty, ir, property_naming_camel_case))
             {
-                names.insert(n.clone());
-            }
-            if let Some(IrTypeExpr::Array(inner)) = body.content.get("application/json")
-                && let IrTypeExpr::Named(n) = inner.as_ref()
-                && convertible.contains(n)
-            {
-                names.insert(n.clone());
+                for part in parts {
+                    if part.value_encoding == MultipartValueEncoding::Json {
+                        collect_convertible_named_refs(&part.type_expr, convertible, &mut names);
+                    }
+                }
             }
         }
     }
     names
+}
+
+fn pick_response_content(resp: &IrResponse) -> Option<(String, &IrTypeExpr)> {
+    pick_media_type_ref(&resp.content, |media_type| {
+        media_type_base(media_type) == "application/json"
+    })
+    .or_else(|| pick_media_type_ref(&resp.content, is_json_media_type))
+    .or_else(|| {
+        pick_media_type_ref(&resp.content, |media_type| {
+            media_type_base(media_type) == "application/octet-stream"
+        })
+    })
+    .or_else(|| {
+        pick_media_type_ref(&resp.content, |media_type| {
+            media_type_base(media_type) == "text/plain"
+        })
+    })
+    .or_else(|| pick_media_type_ref(&resp.content, is_xml_media_type))
+    .or_else(|| pick_first_media_type_ref(&resp.content))
+}
+
+fn pick_media_type(
+    content: &indexmap::IndexMap<String, IrTypeExpr>,
+    predicate: impl Fn(&str) -> bool,
+) -> Option<String> {
+    content
+        .keys()
+        .find(|media_type| predicate(media_type))
+        .cloned()
+}
+
+fn pick_first_media_type(content: &indexmap::IndexMap<String, IrTypeExpr>) -> Option<String> {
+    content.keys().next().cloned()
+}
+
+fn pick_media_type_ref(
+    content: &indexmap::IndexMap<String, IrTypeExpr>,
+    predicate: impl Fn(&str) -> bool,
+) -> Option<(String, &IrTypeExpr)> {
+    content
+        .iter()
+        .find(|(media_type, _)| predicate(media_type))
+        .map(|(media_type, t)| (media_type.clone(), t))
+}
+
+fn pick_first_media_type_ref(
+    content: &indexmap::IndexMap<String, IrTypeExpr>,
+) -> Option<(String, &IrTypeExpr)> {
+    content
+        .iter()
+        .next()
+        .map(|(media_type, t)| (media_type.clone(), t))
+}
+
+fn media_type_base(media_type: &str) -> String {
+    media_type
+        .split(';')
+        .next()
+        .unwrap_or(media_type)
+        .trim()
+        .to_ascii_lowercase()
+}
+
+fn is_json_media_type(media_type: &str) -> bool {
+    let base = media_type_base(media_type);
+    base == "application/json" || base.ends_with("+json")
+}
+
+fn is_xml_media_type(media_type: &str) -> bool {
+    let base = media_type_base(media_type);
+    base == "application/xml" || base == "text/xml" || base.ends_with("+xml")
 }
 
 /// Collect unique Named type references from JSON responses only
@@ -1324,18 +1642,33 @@ fn collect_response_named_types(
     let mut names = BTreeSet::new();
     for op in ops {
         for resp in &op.responses {
-            if let Some(IrTypeExpr::Named(n)) = resp.content.get("application/json")
-                && convertible.contains(n)
+            if let Some((media_type, ty)) = pick_response_content(resp)
+                && is_json_media_type(&media_type)
             {
-                names.insert(n.clone());
-            }
-            if let Some(IrTypeExpr::Array(inner)) = resp.content.get("application/json")
-                && let IrTypeExpr::Named(n) = inner.as_ref()
-                && convertible.contains(n)
-            {
-                names.insert(n.clone());
+                collect_convertible_named_refs(ty, convertible, &mut names);
             }
         }
     }
     names
+}
+
+fn collect_convertible_named_refs(
+    expr: &IrTypeExpr,
+    convertible: &HashSet<String>,
+    names: &mut BTreeSet<String>,
+) {
+    match expr {
+        IrTypeExpr::Named(name) if convertible.contains(name) => {
+            names.insert(name.clone());
+        }
+        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
+            collect_convertible_named_refs(inner, convertible, names);
+        }
+        IrTypeExpr::Union(members) => {
+            for member in members {
+                collect_convertible_named_refs(member, convertible, names);
+            }
+        }
+        _ => {}
+    }
 }

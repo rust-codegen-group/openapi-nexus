@@ -44,6 +44,9 @@ class Client:
         *,
         params: dict[str, str] | None = None,
         json: Any = None,
+        content: Any = None,
+        data: Any = None,
+        files: Any = None,
         headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         """Send an HTTP request and return the raw response."""
@@ -60,6 +63,9 @@ class Client:
             url,
             params=params,
             json=json,
+            content=content,
+            data=data,
+            files=files,
             headers=req_headers,
         )
 

@@ -10,6 +10,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -58,7 +60,7 @@ data class PostXmlResponse(val statusCode: Int, val raw: Response) {
  * GetXmlResponseResponse carries the response from getXmlResponse.
  */
 data class GetXmlResponseResponse(val statusCode: Int, val raw: Response,
-val status200: Payload? = null) {
+val status200: String? = null) {
 }
 
 /**
@@ -72,8 +74,8 @@ class DefaultApi(private val client: ApiClient) {
      */
     fun postBinary(body: ByteArray): PostBinaryResponse {
         val path = "/binary"
-        val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = body.toRequestBody("application/octet-stream".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
@@ -88,8 +90,8 @@ class DefaultApi(private val client: ApiClient) {
      */
     fun postForm(body: Payload): PostFormResponse {
         val path = "/form"
-        val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        throw IllegalArgumentException("unsupported request body media type: application/x-www-form-urlencoded")
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
@@ -105,7 +107,8 @@ class DefaultApi(private val client: ApiClient) {
     fun postJson(body: Payload): PostJsonResponse {
         val path = "/json"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
@@ -121,7 +124,8 @@ class DefaultApi(private val client: ApiClient) {
     fun postJsonOrXml(body: Payload): PostJsonOrXmlResponse {
         val path = "/json-or-xml"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
@@ -137,7 +141,8 @@ class DefaultApi(private val client: ApiClient) {
     fun patchMergeJson(body: Payload): PatchMergeJsonResponse {
         val path = "/merge-patch"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("PATCH", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/merge-patch+json".toMediaType())
+        val request = client.newRequestWithBody("PATCH", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
@@ -152,8 +157,8 @@ class DefaultApi(private val client: ApiClient) {
      */
     fun postText(body: String): PostTextResponse {
         val path = "/text"
-        val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = body.toRequestBody("text/plain".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
@@ -168,8 +173,8 @@ class DefaultApi(private val client: ApiClient) {
      */
     fun postXml(body: Payload): PostXmlResponse {
         val path = "/xml"
-        val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        throw IllegalArgumentException("unsupported request body media type: application/xml")
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
@@ -191,9 +196,10 @@ class DefaultApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<Payload>(responseBody, object : TypeToken<Payload>() {}.type) else null
+        val status200 = if (response.code == 200) responseText else null
         return GetXmlResponseResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

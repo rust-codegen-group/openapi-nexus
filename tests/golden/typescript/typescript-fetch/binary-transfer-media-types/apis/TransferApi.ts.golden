@@ -101,11 +101,13 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     const queryParameters: HTTPQuery = {};
     // Build headers
     const headerParameters: Record<string, string> = {
-      'Content-Type': 'multipart/form-data',
     };
 
     // Prepare request body
-    const requestBody = requestParameters.body;
+    const requestBody = new FormData();
+    requestBody.append('file', requestParameters.body.file);
+    requestBody.append('metadata', JSON.stringify(requestParameters.body.metadata));
+    requestBody.append('purpose', String(requestParameters.body.purpose));
     // Make request
     const response = await this.request({
         path: urlPath,

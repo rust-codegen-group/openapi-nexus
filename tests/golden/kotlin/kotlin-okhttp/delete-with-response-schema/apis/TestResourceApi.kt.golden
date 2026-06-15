@@ -10,6 +10,8 @@ import com.example.sdk.runtime.ApiClient
 import com.example.sdk.runtime.ApiException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -40,16 +42,18 @@ class TestResourceApi(private val client: ApiClient) {
     fun createTestResource(body: CreateTestResourceRequest): CreateTestResourceResponse {
         val path = "/v1/api/test-resource"
         val jsonBody = gson.toJson(body)
-        val request = client.newRequest("POST", path, null, jsonBody)
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val request = client.newRequestWithBody("POST", path, null, requestBody)
         val response = client.execute(request)
 
         if (!response.isSuccessful) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<CreateTestResourceResponse>(responseBody, object : TypeToken<CreateTestResourceResponse>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<CreateTestResourceResponse>(responseText.ifEmpty { "null" }, object : TypeToken<CreateTestResourceResponse>() {}.type) else null
         return CreateTestResourceResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 
@@ -65,13 +69,14 @@ class TestResourceApi(private val client: ApiClient) {
             val errorBody = response.body?.string() ?: ""
             throw ApiException(response.code, response.message, errorBody)
         }
-        val responseBody = response.body?.string()
+        val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        val responseText = responseBytes.toString(Charsets.UTF_8)
 
-        val status200 = if (response.code == 200) gson.fromJson<DeleteTestResourceResponse>(responseBody, object : TypeToken<DeleteTestResourceResponse>() {}.type) else null
+        val status200 = if (response.code == 200) gson.fromJson<DeleteTestResourceResponse>(responseText.ifEmpty { "null" }, object : TypeToken<DeleteTestResourceResponse>() {}.type) else null
 
-        val status4xx = if (response.code in 400..499) gson.fromJson<HttpErrorResponse>(responseBody, object : TypeToken<HttpErrorResponse>() {}.type) else null
+        val status4xx = if (response.code in 400..499) gson.fromJson<HttpErrorResponse>(responseText.ifEmpty { "null" }, object : TypeToken<HttpErrorResponse>() {}.type) else null
 
-        val status5xx = if (response.code in 500..599) gson.fromJson<HttpErrorResponse>(responseBody, object : TypeToken<HttpErrorResponse>() {}.type) else null
+        val status5xx = if (response.code in 500..599) gson.fromJson<HttpErrorResponse>(responseText.ifEmpty { "null" }, object : TypeToken<HttpErrorResponse>() {}.type) else null
         return DeleteTestResourceResponse(statusCode = response.code, raw = response, status200 = status200, status4xx = status4xx, status5xx = status5xx)
     }
 }

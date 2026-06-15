@@ -20,8 +20,8 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::ir::types::{
-    IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
-    ParameterLocation,
+    IrObject, IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSchemaKind,
+    IrSpec, IrTypeExpr, ParameterLocation,
 };
 use heck::{ToLowerCamelCase, ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::CodeBlock;
@@ -54,7 +54,7 @@ pub fn generate_api_files(
         } else {
             format!("{stem}.go")
         };
-        let body = emit_api_file(tag, ops, module_path);
+        let body = emit_api_file(tag, ops, ir, module_path);
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -80,11 +80,11 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
 // File assembly
 // ---------------------------------------------------------------------------
 
-fn emit_api_file(tag: &str, ops: &[&IrOperation], module_path: &str) -> String {
+fn emit_api_file(tag: &str, ops: &[&IrOperation], ir: &IrSpec, module_path: &str) -> String {
     let struct_name = format!("{}API", tag.to_pascal_case());
 
     // Pre-plan each operation so we can build specs from the plans.
-    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op)).collect();
+    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op, ir)).collect();
 
     let filename = format!("{}.go", tag.to_snake_case());
     let mut fb = FileSpec::builder(&filename)
@@ -134,15 +134,52 @@ fn collect_body_imports(plans: &[OpPlan<'_>], module_path: &str) -> Vec<ImportSp
         }
         if has_body {
             pkgs.insert("io".to_string());
-            pkgs.insert("encoding/json".to_string());
-            pkgs.insert("fmt".to_string());
-            pkgs.insert("bytes".to_string());
+            if let Some(body) = &plan.body {
+                match body.encoding {
+                    BodyEncoding::Multipart => {
+                        pkgs.insert("fmt".to_string());
+                        if let Some(parts) = &body.multipart_parts {
+                            pkgs.insert("bytes".to_string());
+                            pkgs.insert("mime/multipart".to_string());
+                            for part in parts {
+                                collect_stringify_imports(&part.type_expr, &mut pkgs);
+                            }
+                            if parts
+                                .iter()
+                                .any(|part| part.value_encoding == MultipartValueEncoding::Json)
+                            {
+                                pkgs.insert("encoding/json".to_string());
+                            }
+                        }
+                    }
+                    BodyEncoding::Json => {
+                        pkgs.insert("bytes".to_string());
+                        pkgs.insert("encoding/json".to_string());
+                        pkgs.insert("fmt".to_string());
+                    }
+                    BodyEncoding::TextPlain => {
+                        pkgs.insert("strings".to_string());
+                    }
+                    BodyEncoding::OctetStream => {
+                        pkgs.insert("bytes".to_string());
+                    }
+                    BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
+                        pkgs.insert("fmt".to_string());
+                    }
+                }
+            }
         }
         // io.ReadAll used in error handling (4xx branch)
         pkgs.insert("io".to_string());
         if has_typed_responses {
-            pkgs.insert("encoding/json".to_string());
             pkgs.insert("fmt".to_string());
+            if plan
+                .typed_responses
+                .iter()
+                .any(|tr| tr.decoding == ResponseDecoding::Json)
+            {
+                pkgs.insert("encoding/json".to_string());
+            }
         }
 
         // Check if any param stringification needs strconv or fmt
@@ -406,15 +443,52 @@ struct ParamBinding<'a> {
 struct BodyBinding {
     var_name: String,
     go_type: String,
+    media_type: String,
+    encoding: BodyEncoding,
+    multipart_parts: Option<Vec<MultipartPart>>,
+}
+
+struct MultipartPart {
+    wire_name: String,
+    field_name: String,
+    type_expr: IrTypeExpr,
+    is_binary: bool,
+    required: bool,
+    value_encoding: MultipartValueEncoding,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MultipartValueEncoding {
+    Text,
+    Json,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BodyEncoding {
+    Json,
+    Multipart,
+    FormUrlEncoded,
+    Xml,
+    TextPlain,
+    OctetStream,
+    Other,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ResponseDecoding {
+    Json,
+    Text,
+    Bytes,
 }
 
 struct TypedResponse {
     status: String,
     field_name: String,
     go_type: String,
+    decoding: ResponseDecoding,
 }
 
-fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
+fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
     let op_id = sanitize_operation_id(&op.operation_id, &op.method, &op.path);
     let method_name = op_id.to_pascal_case();
     let response_type = format!("{method_name}Response");
@@ -446,7 +520,7 @@ fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
     let body = op
         .request_body
         .as_ref()
-        .and_then(|b| plan_body(b, &mut used_names));
+        .and_then(|b| plan_body(b, ir, &mut used_names));
 
     let typed_responses = op.responses.iter().filter_map(plan_response).collect();
 
@@ -462,9 +536,18 @@ fn plan_operation<'a>(op: &'a IrOperation) -> OpPlan<'a> {
     }
 }
 
-fn plan_body(b: &IrRequestBody, used_names: &mut HashSet<String>) -> Option<BodyBinding> {
-    let t = pick_body_type(b)?;
-    let base_ty = go_type_str(&t);
+fn plan_body(
+    b: &IrRequestBody,
+    ir: &IrSpec,
+    used_names: &mut HashSet<String>,
+) -> Option<BodyBinding> {
+    let (media_type, t) = pick_body_content(b)?;
+    let encoding = body_encoding(&media_type);
+    let base_ty = match encoding {
+        BodyEncoding::TextPlain => "string".to_string(),
+        BodyEncoding::OctetStream => "[]byte".to_string(),
+        _ => go_type_str(&t),
+    };
     let go_type =
         if base_ty.starts_with('[') || base_ty.starts_with("map[") || base_ty.starts_with('*') {
             base_ty
@@ -472,16 +555,33 @@ fn plan_body(b: &IrRequestBody, used_names: &mut HashSet<String>) -> Option<Body
             format!("*{base_ty}")
         };
     let var_name = unique_name("body", used_names);
-    Some(BodyBinding { var_name, go_type })
+    let multipart_parts = if media_type_base(&media_type) == "multipart/form-data" {
+        multipart_parts_for(&t, ir)
+    } else {
+        None
+    };
+    Some(BodyBinding {
+        var_name,
+        go_type,
+        media_type,
+        encoding,
+        multipart_parts,
+    })
 }
 
 fn plan_response(r: &IrResponse) -> Option<TypedResponse> {
-    let t = pick_response_type(r)?;
-    let go_type = go_type_str(&t);
+    let (media_type, t) = pick_response_content(r)?;
+    let decoding = response_decoding(&media_type);
+    let go_type = match decoding {
+        ResponseDecoding::Json => go_type_str(&t),
+        ResponseDecoding::Text => "string".to_string(),
+        ResponseDecoding::Bytes => "[]byte".to_string(),
+    };
     Some(TypedResponse {
         status: r.status.clone(),
         field_name: response_field_name(&r.status),
         go_type,
+        decoding,
     })
 }
 
@@ -564,16 +664,61 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     if let Some(body) = body {
         cb.add("var bodyReader io.Reader", ());
         cb.add_line();
-        cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-        cb.add(&format!("buf, err := json.Marshal({})", body.var_name), ());
-        cb.add_line();
-        cb.begin_control_flow("if err != nil", ());
-        cb.add("return nil, fmt.Errorf(\"marshal body: %%w\", err)", ());
-        cb.add_line();
-        cb.end_control_flow();
-        cb.add("bodyReader = bytes.NewReader(buf)", ());
-        cb.add_line();
-        cb.end_control_flow();
+        match body.encoding {
+            BodyEncoding::Multipart => {
+                cb.add("var multipartContentType string", ());
+                cb.add_line();
+                if let Some(parts) = &body.multipart_parts {
+                    emit_multipart_body(&mut cb, body, parts);
+                } else {
+                    cb.add(
+                        "return nil, fmt.Errorf(\"unsupported multipart request body: schema must be object-shaped\")",
+                        (),
+                    );
+                    cb.add_line();
+                }
+            }
+            BodyEncoding::Json => {
+                cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
+                cb.add(&format!("buf, err := json.Marshal({})", body.var_name), ());
+                cb.add_line();
+                cb.begin_control_flow("if err != nil", ());
+                cb.add("return nil, fmt.Errorf(\"marshal body: %%w\", err)", ());
+                cb.add_line();
+                cb.end_control_flow();
+                cb.add("bodyReader = bytes.NewReader(buf)", ());
+                cb.add_line();
+                cb.end_control_flow();
+            }
+            BodyEncoding::TextPlain => {
+                cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
+                cb.add(
+                    &format!("bodyReader = strings.NewReader(*{})", body.var_name),
+                    (),
+                );
+                cb.add_line();
+                cb.end_control_flow();
+            }
+            BodyEncoding::OctetStream => {
+                cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
+                cb.add(
+                    &format!("bodyReader = bytes.NewReader({})", body.var_name),
+                    (),
+                );
+                cb.add_line();
+                cb.end_control_flow();
+            }
+            BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
+                cb.add(
+                    &format!(
+                        "return nil, fmt.Errorf(\"unsupported request body media type: {}\")",
+                        body.media_type
+                    ),
+                    (),
+                );
+                cb.add_line();
+            }
+        }
     }
 
     // Build request.
@@ -613,9 +758,19 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         }
     }
 
-    if body.is_some() {
-        cb.add("req.Header.Set(\"Content-Type\", \"application/json\")", ());
-        cb.add_line();
+    if let Some(body) = body {
+        if body.encoding == BodyEncoding::Multipart {
+            cb.begin_control_flow("if multipartContentType != \"\"", ());
+            cb.add("req.Header.Set(\"Content-Type\", multipartContentType)", ());
+            cb.add_line();
+            cb.end_control_flow();
+        } else {
+            cb.add(
+                &format!("req.Header.Set(\"Content-Type\", \"{}\")", body.media_type),
+                (),
+            );
+            cb.add_line();
+        }
     }
     cb.add("req.Header.Set(\"Accept\", \"application/json\")", ());
     cb.add_line();
@@ -653,7 +808,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             let code = tr.status.parse::<u16>().unwrap();
             cb.add(&format!("case {code}:"), ());
             cb.add_line();
-            cb.add("%L", emit_decode_into(&tr.field_name, &tr.go_type));
+            cb.add(
+                "%L",
+                emit_decode_into(&tr.field_name, &tr.go_type, tr.decoding),
+            );
         }
         cb.add("default:", ());
         cb.add_line();
@@ -667,7 +825,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 ),
                 (),
             );
-            cb.add("%L", emit_decode_into(&tr.field_name, &tr.go_type));
+            cb.add(
+                "%L",
+                emit_decode_into(&tr.field_name, &tr.go_type, tr.decoding),
+            );
             cb.add(
                 "return resp, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status}",
                 (),
@@ -702,7 +863,113 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     cb.build().expect("method body builds")
 }
 
-fn emit_decode_into(field: &str, go_ty: &str) -> CodeBlock {
+fn emit_multipart_body(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    body: &BodyBinding,
+    parts: &[MultipartPart],
+) {
+    cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
+    cb.add("buf := &bytes.Buffer{}", ());
+    cb.add_line();
+    cb.add("writer := multipart.NewWriter(buf)", ());
+    cb.add_line();
+    for part in parts {
+        let value_expr = format!("{}.{}", body.var_name, part.field_name);
+        if part.required {
+            emit_required_multipart_part(cb, part, &value_expr);
+        } else {
+            cb.begin_control_flow(&format!("if {value_expr} != nil"), ());
+            emit_required_multipart_part(cb, part, &format!("*{value_expr}"));
+            cb.end_control_flow();
+        }
+    }
+    cb.begin_control_flow("if err := writer.Close(); err != nil", ());
+    cb.add(
+        "return nil, fmt.Errorf(\"close multipart writer: %%w\", err)",
+        (),
+    );
+    cb.add_line();
+    cb.end_control_flow();
+    cb.add("bodyReader = buf", ());
+    cb.add_line();
+    cb.add("multipartContentType = writer.FormDataContentType()", ());
+    cb.add_line();
+    cb.end_control_flow();
+}
+
+fn emit_required_multipart_part(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    part: &MultipartPart,
+    value_expr: &str,
+) {
+    if part.is_binary {
+        cb.add(
+            &format!(
+                "partWriter, err := writer.CreateFormFile(\"{}\", \"{}\")",
+                part.wire_name, part.wire_name
+            ),
+            (),
+        );
+        cb.add_line();
+        cb.begin_control_flow("if err != nil", ());
+        cb.add(
+            "return nil, fmt.Errorf(\"create multipart file: %%w\", err)",
+            (),
+        );
+        cb.add_line();
+        cb.end_control_flow();
+        cb.begin_control_flow(
+            &format!("if _, err := partWriter.Write({value_expr}); err != nil"),
+            (),
+        );
+        cb.add(
+            "return nil, fmt.Errorf(\"write multipart file: %%w\", err)",
+            (),
+        );
+        cb.add_line();
+        cb.end_control_flow();
+    } else if part.value_encoding == MultipartValueEncoding::Json {
+        cb.add(&format!("partValue, err := json.Marshal({value_expr})"), ());
+        cb.add_line();
+        cb.begin_control_flow("if err != nil", ());
+        cb.add(
+            "return nil, fmt.Errorf(\"marshal multipart field: %%w\", err)",
+            (),
+        );
+        cb.add_line();
+        cb.end_control_flow();
+        cb.begin_control_flow(
+            &format!(
+                "if err := writer.WriteField(\"{}\", string(partValue)); err != nil",
+                part.wire_name
+            ),
+            (),
+        );
+        cb.add(
+            "return nil, fmt.Errorf(\"write multipart field: %%w\", err)",
+            (),
+        );
+        cb.add_line();
+        cb.end_control_flow();
+    } else {
+        cb.begin_control_flow(
+            &format!(
+                "if err := writer.WriteField(\"{}\", {}); err != nil",
+                part.wire_name,
+                render_value_as_string(value_expr, &part.type_expr)
+            ),
+            (),
+        );
+        cb.add(
+            "return nil, fmt.Errorf(\"write multipart field: %%w\", err)",
+            (),
+        );
+        cb.add_line();
+        cb.end_control_flow();
+    }
+}
+
+fn emit_decode_into(field: &str, go_ty: &str, decoding: ResponseDecoding) -> CodeBlock {
     let (elem_ty, assignment) = if go_ty.starts_with('[') || go_ty.starts_with("map[") {
         (go_ty.to_string(), format!("resp.{field} = payload"))
     } else {
@@ -711,16 +978,39 @@ fn emit_decode_into(field: &str, go_ty: &str) -> CodeBlock {
             format!("resp.{field} = &payload"),
         )
     };
-    sigil_quote!(GoLang {
-        $>
-        var $L("payload @{elem_ty}")
-        if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
-            return nil, fmt.Errorf("decode response: %w", err)
-        }
-        $L(assignment)
-        $<
-    })
-    .expect("decode body builds")
+    match decoding {
+        ResponseDecoding::Json => sigil_quote!(GoLang {
+            $>
+            var $L("payload @{elem_ty}")
+            if err := json.NewDecoder(httpResp.Body).Decode(&payload); err != nil {
+                return nil, fmt.Errorf("decode response: %w", err)
+            }
+            $L(assignment)
+            $<
+        })
+        .expect("decode JSON body builds"),
+        ResponseDecoding::Text => sigil_quote!(GoLang {
+            $>
+            bodyBytes, err := io.ReadAll(httpResp.Body)
+            if err != nil {
+                return nil, fmt.Errorf("read response: %w", err)
+            }
+            payload := string(bodyBytes)
+            $L(assignment)
+            $<
+        })
+        .expect("decode text body builds"),
+        ResponseDecoding::Bytes => sigil_quote!(GoLang {
+            $>
+            payload, err := io.ReadAll(httpResp.Body)
+            if err != nil {
+                return nil, fmt.Errorf("read response: %w", err)
+            }
+            $L(assignment)
+            $<
+        })
+        .expect("decode bytes body builds"),
+    }
 }
 
 fn deref_if_pointer(var: &str, is_pointer: bool) -> String {
@@ -768,18 +1058,179 @@ fn wildcard_range(status: &str) -> (u16, u16) {
     }
 }
 
-fn pick_response_type(r: &IrResponse) -> Option<IrTypeExpr> {
-    r.content
-        .get("application/json")
-        .cloned()
-        .or_else(|| r.content.values().next().cloned())
+fn body_encoding(media_type: &str) -> BodyEncoding {
+    let base = media_type_base(media_type);
+    if base == "multipart/form-data" {
+        BodyEncoding::Multipart
+    } else if is_json_media_type(media_type) {
+        BodyEncoding::Json
+    } else if base == "application/x-www-form-urlencoded" {
+        BodyEncoding::FormUrlEncoded
+    } else if is_xml_media_type(media_type) {
+        BodyEncoding::Xml
+    } else if base == "text/plain" {
+        BodyEncoding::TextPlain
+    } else if base == "application/octet-stream" {
+        BodyEncoding::OctetStream
+    } else {
+        BodyEncoding::Other
+    }
 }
 
-fn pick_body_type(body: &IrRequestBody) -> Option<IrTypeExpr> {
-    body.content
-        .get("application/json")
-        .cloned()
-        .or_else(|| body.content.values().next().cloned())
+fn response_decoding(media_type: &str) -> ResponseDecoding {
+    let base = media_type_base(media_type);
+    if is_json_media_type(media_type) {
+        ResponseDecoding::Json
+    } else if base == "text/plain" || is_xml_media_type(media_type) {
+        ResponseDecoding::Text
+    } else {
+        ResponseDecoding::Bytes
+    }
+}
+
+fn pick_body_content(body: &IrRequestBody) -> Option<(String, IrTypeExpr)> {
+    pick_media_type(&body.content, |media_type| {
+        media_type_base(media_type) == "application/json"
+    })
+    .or_else(|| pick_media_type(&body.content, is_json_media_type))
+    .or_else(|| {
+        pick_media_type(&body.content, |media_type| {
+            media_type_base(media_type) == "multipart/form-data"
+        })
+    })
+    .or_else(|| {
+        pick_media_type(&body.content, |media_type| {
+            media_type_base(media_type) == "application/x-www-form-urlencoded"
+        })
+    })
+    .or_else(|| pick_media_type(&body.content, is_xml_media_type))
+    .or_else(|| {
+        pick_media_type(&body.content, |media_type| {
+            media_type_base(media_type) == "text/plain"
+        })
+    })
+    .or_else(|| {
+        pick_media_type(&body.content, |media_type| {
+            media_type_base(media_type) == "application/octet-stream"
+        })
+    })
+    .or_else(|| pick_first_content(&body.content))
+}
+
+fn pick_response_content(r: &IrResponse) -> Option<(String, IrTypeExpr)> {
+    pick_media_type(&r.content, |media_type| {
+        media_type_base(media_type) == "application/json"
+    })
+    .or_else(|| pick_media_type(&r.content, is_json_media_type))
+    .or_else(|| {
+        pick_media_type(&r.content, |media_type| {
+            media_type_base(media_type) == "application/octet-stream"
+        })
+    })
+    .or_else(|| {
+        pick_media_type(&r.content, |media_type| {
+            media_type_base(media_type) == "text/plain"
+        })
+    })
+    .or_else(|| pick_media_type(&r.content, is_xml_media_type))
+    .or_else(|| pick_first_content(&r.content))
+}
+
+fn pick_media_type(
+    content: &indexmap::IndexMap<String, IrTypeExpr>,
+    predicate: impl Fn(&str) -> bool,
+) -> Option<(String, IrTypeExpr)> {
+    content
+        .iter()
+        .find(|(media_type, _)| predicate(media_type))
+        .map(|(media_type, t)| (media_type.clone(), t.clone()))
+}
+
+fn pick_first_content(
+    content: &indexmap::IndexMap<String, IrTypeExpr>,
+) -> Option<(String, IrTypeExpr)> {
+    content
+        .iter()
+        .next()
+        .map(|(media_type, t)| (media_type.clone(), t.clone()))
+}
+
+fn media_type_base(media_type: &str) -> String {
+    media_type
+        .split(';')
+        .next()
+        .unwrap_or(media_type)
+        .trim()
+        .to_ascii_lowercase()
+}
+
+fn is_json_media_type(media_type: &str) -> bool {
+    let base = media_type_base(media_type);
+    base == "application/json" || base.ends_with("+json")
+}
+
+fn is_xml_media_type(media_type: &str) -> bool {
+    let base = media_type_base(media_type);
+    base == "application/xml" || base == "text/xml" || base.ends_with("+xml")
+}
+
+fn multipart_parts_for(t: &IrTypeExpr, ir: &IrSpec) -> Option<Vec<MultipartPart>> {
+    // TODO: Honor OpenAPI multipart encoding metadata once it is represented in the IR.
+    resolve_object(t, ir).map(|obj| {
+        obj.properties
+            .iter()
+            .map(|(wire_name, prop)| MultipartPart {
+                wire_name: wire_name.clone(),
+                field_name: go_field_name(wire_name),
+                type_expr: prop.type_expr.clone(),
+                is_binary: is_binary_type(&prop.type_expr, ir),
+                required: prop.required && !prop.nullable,
+                value_encoding: multipart_value_encoding(&prop.type_expr, ir),
+            })
+            .collect()
+    })
+}
+
+fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
+    match expr {
+        IrTypeExpr::Named(name) => match ir.schemas.get(name).map(|schema| &schema.kind) {
+            Some(IrSchemaKind::Object(obj)) => Some(obj),
+            Some(IrSchemaKind::Alias(inner)) => resolve_object(inner, ir),
+            _ => None,
+        },
+        IrTypeExpr::Nullable(inner) => resolve_object(inner, ir),
+        _ => None,
+    }
+}
+
+fn is_binary_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
+    match expr {
+        IrTypeExpr::Primitive(IrPrimitive::Binary) => true,
+        IrTypeExpr::Nullable(inner) => is_binary_type(inner, ir),
+        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
+            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_binary_type(inner, ir))
+        }),
+        _ => false,
+    }
+}
+
+fn multipart_value_encoding(expr: &IrTypeExpr, ir: &IrSpec) -> MultipartValueEncoding {
+    if is_multipart_text_type(expr, ir) {
+        MultipartValueEncoding::Text
+    } else {
+        MultipartValueEncoding::Json
+    }
+}
+
+fn is_multipart_text_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
+    match expr {
+        IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
+        IrTypeExpr::Nullable(inner) => is_multipart_text_type(inner, ir),
+        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
+            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_multipart_text_type(inner, ir))
+        }),
+        _ => false,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -799,6 +1250,10 @@ fn go_ident(name: &str) -> String {
         }
         _ => camel,
     }
+}
+
+fn go_field_name(name: &str) -> String {
+    name.to_pascal_case()
 }
 
 fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
