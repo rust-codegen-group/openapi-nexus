@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.14]
+
+### Added
+
+- Multipart request body generation across all generated clients
+  - Supports explicit per-part media types from OpenAPI `encoding.contentType`
+  - Adds multipart fixtures for edge cases, nested object parts, unsupported schemas, and optional bodies
+- Optional request body fixture coverage across all generators
+
+### Fixed
+
+- Rust: preserve `requestBody.required: false` and emit optional request bodies as `Option<&T>`
+  - `reqwest` and `aioduct` omit body setup when optional bodies are absent
+  - `ureq` uses the existing empty-send path for absent optional POST bodies
+- Rust: align JSON, form, multipart, XML, text, and binary request body media-type emission
+- TypeScript and Python: align multipart wire output with current generated clients
+- Go, Java, Kotlin, Python, Rust, and TypeScript: fix SDK generation edge cases around array parameters, tagged unions, type aliases, response matching, path prefixes, and media-type selection
+
+### Changed
+
+- Refactor Rust request body emission around `sigil_quote!`
+- Bump `sigil-stitch` to 0.6.7
+
 ## [0.1.13]
 
 ### Added
