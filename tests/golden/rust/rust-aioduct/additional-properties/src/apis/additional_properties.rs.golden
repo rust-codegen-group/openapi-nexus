@@ -8,13 +8,13 @@ use crate::runtime::client::Client;
 use crate::runtime::error::Error;
 
 /// API operations under the "additional-properties" tag.
-pub struct AdditionalPropertiesApi<'a, R: aioduct::Runtime> {
-    client: &'a Client<R>,
+pub struct AdditionalPropertiesApi<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> {
+    client: &'a Client<R, C>,
 }
 
-impl<'a, R: aioduct::Runtime> AdditionalPropertiesApi<'a, R> {
+impl<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> AdditionalPropertiesApi<'a, R, C> {
     /// Create a new `AdditionalPropertiesApi` bound to the given client.
-    pub fn new(client: &'a Client<R>) -> Self {
+    pub fn new(client: &'a Client<R, C>) -> Self {
         Self {
             client,
         }

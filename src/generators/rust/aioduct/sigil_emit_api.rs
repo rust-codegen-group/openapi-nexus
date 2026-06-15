@@ -14,8 +14,8 @@ use crate::generators::rust::common::emit_api::{
 pub fn aioduct_backend_config() -> RustBackendConfig {
     RustBackendConfig {
         is_async: true,
-        struct_generics: Some("R: aioduct::Runtime".to_string()),
-        client_type_args: Some("<R>".to_string()),
+        struct_generics: Some("R: aioduct::RuntimePoll, C: aioduct::ConnectorSend".to_string()),
+        client_type_args: Some("<R, C>".to_string()),
     }
 }
 

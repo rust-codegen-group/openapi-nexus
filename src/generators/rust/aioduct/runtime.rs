@@ -48,12 +48,12 @@ fn render_client_rs(cfg: &AioductFeatureConfig) -> String {
 
     let constructor = match (tls, has_http3) {
         (AioductTls::RustlsRing | AioductTls::RustlsAwsLcRs, true) => {
-            "aioduct::Client::<R>::with_http3()"
+            "aioduct::HttpEngineSend::<R, C>::with_http3().expect(\"aioduct HTTP/3 client build\")"
         }
         (AioductTls::RustlsRing | AioductTls::RustlsAwsLcRs, false) => {
-            "aioduct::Client::<R>::with_rustls()"
+            "aioduct::HttpEngineSend::<R, C>::with_rustls()"
         }
-        (AioductTls::Disabled, _) => "aioduct::Client::<R>::new()",
+        (AioductTls::Disabled, _) => "aioduct::HttpEngineSend::<R, C>::new()",
     };
 
     CLIENT_RS_TEMPLATE.replace("{{CLIENT_CONSTRUCTOR}}", constructor)

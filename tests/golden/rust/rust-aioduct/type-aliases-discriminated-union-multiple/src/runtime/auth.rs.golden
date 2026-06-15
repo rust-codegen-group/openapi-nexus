@@ -12,12 +12,14 @@ use std::sync::Arc;
 use crate::runtime::error::Error;
 
 /// Trait for authenticating requests.
-pub trait Authenticator<R: aioduct::Runtime>: Send + Sync + std::fmt::Debug {
+pub trait Authenticator<R: aioduct::RuntimePoll, C: aioduct::ConnectorSend>:
+    Send + Sync + std::fmt::Debug
+{
     /// Apply authentication to the request builder.
     fn authenticate<'a>(
         &self,
-        req: aioduct::RequestBuilder<'a, R>,
-    ) -> Result<aioduct::RequestBuilder<'a, R>, Error>;
+        req: aioduct::RequestBuilderSend<'a, R, C>,
+    ) -> Result<aioduct::RequestBuilderSend<'a, R, C>, Error>;
 }
 
 /// Bearer token authentication.
@@ -83,11 +85,11 @@ impl BearerAuth {
     }
 }
 
-impl<R: aioduct::Runtime> Authenticator<R> for BearerAuth {
+impl<R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> Authenticator<R, C> for BearerAuth {
     fn authenticate<'a>(
         &self,
-        req: aioduct::RequestBuilder<'a, R>,
-    ) -> Result<aioduct::RequestBuilder<'a, R>, Error> {
+        req: aioduct::RequestBuilderSend<'a, R, C>,
+    ) -> Result<aioduct::RequestBuilderSend<'a, R, C>, Error> {
         let token = match &self.token {
             TokenSource::Static(t) => t.clone(),
             TokenSource::Dynamic(f) => f(),
@@ -169,11 +171,11 @@ impl ApiKeyAuth {
     }
 }
 
-impl<R: aioduct::Runtime> Authenticator<R> for ApiKeyAuth {
+impl<R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> Authenticator<R, C> for ApiKeyAuth {
     fn authenticate<'a>(
         &self,
-        req: aioduct::RequestBuilder<'a, R>,
-    ) -> Result<aioduct::RequestBuilder<'a, R>, Error> {
+        req: aioduct::RequestBuilderSend<'a, R, C>,
+    ) -> Result<aioduct::RequestBuilderSend<'a, R, C>, Error> {
         let key = match &self.api_key {
             KeySource::Static(k) => k.clone(),
             KeySource::Dynamic(f) => f(),
