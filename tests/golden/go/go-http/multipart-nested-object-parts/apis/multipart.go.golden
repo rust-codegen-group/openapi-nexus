@@ -13,6 +13,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 
 	"example.com/sdk/models"
 	"example.com/sdk/runtime"
@@ -42,19 +43,33 @@ func (a *MultipartAPI) SendNestedObjectPart(ctx context.Context, body *models.Ne
 	if body != nil {
 		buf := &bytes.Buffer{}
 		writer := multipart.NewWriter(buf)
-		partWriter, err := writer.CreateFormFile("file", "file")
+		{
+		partHeader := textproto.MIMEHeader{}
+		partHeader.Set("Content-Disposition", "form-data; name=\"file\"; filename=\"file\"")
+		partHeader.Set("Content-Type", "application/octet-stream")
+		partWriter, err := writer.CreatePart(partHeader)
 		if err != nil {
-			return nil, fmt.Errorf("create multipart file: %w", err)
+			return nil, fmt.Errorf("create multipart part: %w", err)
 		}
 		if _, err := partWriter.Write(body.File); err != nil {
 			return nil, fmt.Errorf("write multipart file: %w", err)
+		}
+		}
+		{
+		partHeader := textproto.MIMEHeader{}
+		partHeader.Set("Content-Disposition", "form-data; name=\"item_config\"")
+		partHeader.Set("Content-Type", "application/json")
+		partWriter, err := writer.CreatePart(partHeader)
+		if err != nil {
+			return nil, fmt.Errorf("create multipart part: %w", err)
 		}
 		partValue, err := json.Marshal(body.ItemConfig)
 		if err != nil {
 			return nil, fmt.Errorf("marshal multipart field: %w", err)
 		}
-		if err := writer.WriteField("item_config", string(partValue)); err != nil {
+		if _, err := partWriter.Write(partValue); err != nil {
 			return nil, fmt.Errorf("write multipart field: %w", err)
+		}
 		}
 		if err := writer.Close(); err != nil {
 			return nil, fmt.Errorf("close multipart writer: %w", err)

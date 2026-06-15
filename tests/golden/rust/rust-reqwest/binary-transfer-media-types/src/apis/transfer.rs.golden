@@ -50,8 +50,8 @@ impl<'a> TransferApi<'a> {
         let mut req = self.client.request(reqwest::Method::POST, &path).await?;
         let mut multipart = reqwest::multipart::Form::new();
         multipart = multipart.part("file", reqwest::multipart::Part::bytes(body.file.clone()).file_name("file").mime_str("application/octet-stream").map_err(Error::Network)?);
-        multipart = multipart.text("metadata", serde_json::to_string(&body.metadata)?);
-        multipart = multipart.text("purpose", body.purpose.to_string());
+        multipart = multipart.part("metadata", reqwest::multipart::Part::text(serde_json::to_string(&body.metadata)?).mime_str("application/json").map_err(Error::Network)?);
+        multipart = multipart.part("purpose", reqwest::multipart::Part::text(body.purpose.to_string()).mime_str("text/plain").map_err(Error::Network)?);
         req = req.multipart(multipart);
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();

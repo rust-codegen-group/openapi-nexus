@@ -51,15 +51,15 @@ impl<'a> TransferApi<'a> {
         let boundary = format!("openapi-nexus-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|duration| duration.as_nanos()).unwrap_or(0));
         let mut multipart_body: Vec<u8> = Vec::new();
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: application/octet-stream\r\n\r\n", "file", "file").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n", "file", "file", "application/octet-stream").as_bytes());
         multipart_body.extend_from_slice(&body.file.clone());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "metadata").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "metadata", "application/json").as_bytes());
         multipart_body.extend_from_slice(serde_json::to_string(&body.metadata)?.as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", "purpose").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "purpose", "text/plain").as_bytes());
         multipart_body.extend_from_slice(body.purpose.to_string().as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());

@@ -52,24 +52,38 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     };
 
     // Prepare request body
-    let requestBody: FormData | undefined = undefined;
+    let requestBody: Blob | undefined = undefined;
     if (requestParameters.body !== undefined && requestParameters.body !== null) {
-    requestBody = new FormData();
+    const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
+    const multipartChunks: Array<string | Blob> = [];
+    headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
     if (requestParameters.body.attributes !== undefined && requestParameters.body.attributes !== null) {
-    requestBody.append('attributes', JSON.stringify(requestParameters.body.attributes));
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="attributes"\r\nContent-Type: application/json\r\n\r\n');
+    multipartChunks.push(JSON.stringify(requestParameters.body.attributes));
+    multipartChunks.push('\r\n');
     }
     if (requestParameters.body.enabled !== undefined && requestParameters.body.enabled !== null) {
-    requestBody.append('enabled', String(requestParameters.body.enabled));
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="enabled"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.enabled));
+    multipartChunks.push('\r\n');
     }
     if (requestParameters.body.file !== undefined && requestParameters.body.file !== null) {
-    requestBody.append('file', requestParameters.body.file);
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="file"\r\nContent-Type: application/octet-stream\r\n\r\n');
+    multipartChunks.push(requestParameters.body.file);
+    multipartChunks.push('\r\n');
     }
     if (requestParameters.body.retry_count !== undefined && requestParameters.body.retry_count !== null) {
-    requestBody.append('retry_count', String(requestParameters.body.retry_count));
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="retry_count"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.retry_count));
+    multipartChunks.push('\r\n');
     }
     if (requestParameters.body.title !== undefined && requestParameters.body.title !== null) {
-    requestBody.append('title', String(requestParameters.body.title));
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="title"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.title));
+    multipartChunks.push('\r\n');
     }
+    multipartChunks.push('--' + multipartBoundary + '--\r\n');
+    requestBody = new Blob(multipartChunks);
     }
     // Make request
     const response = await this.request({
@@ -112,10 +126,20 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     };
 
     // Prepare request body
-    const requestBody = new FormData();
-    requestBody.append('enabled', String(requestParameters.body.enabled));
-    requestBody.append('note', String(requestParameters.body.note));
-    requestBody.append('retry_count', String(requestParameters.body.retry_count));
+    const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
+    const multipartChunks: Array<string | Blob> = [];
+    headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="enabled"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.enabled));
+    multipartChunks.push('\r\n');
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="note"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.note));
+    multipartChunks.push('\r\n');
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="retry_count"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.retry_count));
+    multipartChunks.push('\r\n');
+    multipartChunks.push('--' + multipartBoundary + '--\r\n');
+    const requestBody = new Blob(multipartChunks);
     // Make request
     const response = await this.request({
         path: urlPath,

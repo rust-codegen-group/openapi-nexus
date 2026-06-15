@@ -48,6 +48,14 @@ pub struct IrRequestBody {
     pub description: Option<String>,
     /// Media type -> resolved schema type.
     pub content: IndexMap<String, IrTypeExpr>,
+    /// Media type -> property name -> request-body encoding metadata.
+    pub encoding: IndexMap<String, IndexMap<String, IrRequestBodyEncoding>>,
+}
+
+/// Request-body encoding metadata for a single media-type property.
+#[derive(Debug, Clone, Serialize)]
+pub struct IrRequestBodyEncoding {
+    pub content_type: Option<String>,
 }
 
 /// A fully resolved response.

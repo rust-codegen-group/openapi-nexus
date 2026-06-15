@@ -104,10 +104,20 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     };
 
     // Prepare request body
-    const requestBody = new FormData();
-    requestBody.append('file', requestParameters.body.file);
-    requestBody.append('metadata', JSON.stringify(requestParameters.body.metadata));
-    requestBody.append('purpose', String(requestParameters.body.purpose));
+    const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
+    const multipartChunks: Array<string | Blob> = [];
+    headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="file"\r\nContent-Type: application/octet-stream\r\n\r\n');
+    multipartChunks.push(requestParameters.body.file);
+    multipartChunks.push('\r\n');
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n');
+    multipartChunks.push(JSON.stringify(requestParameters.body.metadata));
+    multipartChunks.push('\r\n');
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="purpose"\r\nContent-Type: text/plain\r\n\r\n');
+    multipartChunks.push(String(requestParameters.body.purpose));
+    multipartChunks.push('\r\n');
+    multipartChunks.push('--' + multipartBoundary + '--\r\n');
+    const requestBody = new Blob(multipartChunks);
     // Make request
     const response = await this.request({
         path: urlPath,

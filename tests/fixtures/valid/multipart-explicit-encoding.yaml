@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: Multipart Explicit Encoding
+  version: 1.0.0
+  description: Covers explicit multipart part content types.
+paths:
+  /uploads/encoded:
+    post:
+      tags:
+        - transfer
+      operationId: upload_encoded_asset
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - purpose
+                - metadata
+                - audit
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Binary content with an explicit content type
+                purpose:
+                  type: string
+                  description: Plain-text upload purpose
+                metadata:
+                  $ref: '#/components/schemas/UploadAttributes'
+                audit:
+                  $ref: '#/components/schemas/AuditAttributes'
+            encoding:
+              file:
+                contentType: application/pdf
+              metadata:
+                contentType: application/vnd.openapi-nexus.metadata+json
+      responses:
+        '204':
+          description: Uploaded
+components:
+  schemas:
+    UploadAttributes:
+      type: object
+      required:
+        - label
+      properties:
+        label:
+          type: string
+        retention_days:
+          type: integer
+    AuditAttributes:
+      type: object
+      required:
+        - request_id
+      properties:
+        request_id:
+          type: string
+        reviewed:
+          type: boolean

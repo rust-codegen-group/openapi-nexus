@@ -13,6 +13,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"strconv"
 
 	"example.com/sdk/models"
@@ -44,36 +45,77 @@ func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.Optio
 		buf := &bytes.Buffer{}
 		writer := multipart.NewWriter(buf)
 		if body.Attributes != nil {
+			{
+			partHeader := textproto.MIMEHeader{}
+			partHeader.Set("Content-Disposition", "form-data; name=\"attributes\"")
+			partHeader.Set("Content-Type", "application/json")
+			partWriter, err := writer.CreatePart(partHeader)
+			if err != nil {
+				return nil, fmt.Errorf("create multipart part: %w", err)
+			}
 			partValue, err := json.Marshal(*body.Attributes)
 			if err != nil {
 				return nil, fmt.Errorf("marshal multipart field: %w", err)
 			}
-			if err := writer.WriteField("attributes", string(partValue)); err != nil {
+			if _, err := partWriter.Write(partValue); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
+			}
 			}
 		}
 		if body.Enabled != nil {
-			if err := writer.WriteField("enabled", strconv.FormatBool(*body.Enabled)); err != nil {
+			{
+			partHeader := textproto.MIMEHeader{}
+			partHeader.Set("Content-Disposition", "form-data; name=\"enabled\"")
+			partHeader.Set("Content-Type", "text/plain")
+			partWriter, err := writer.CreatePart(partHeader)
+			if err != nil {
+				return nil, fmt.Errorf("create multipart part: %w", err)
+			}
+			if _, err := io.WriteString(partWriter, strconv.FormatBool(*body.Enabled)); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
+			}
 			}
 		}
 		if body.File != nil {
-			partWriter, err := writer.CreateFormFile("file", "file")
+			{
+			partHeader := textproto.MIMEHeader{}
+			partHeader.Set("Content-Disposition", "form-data; name=\"file\"; filename=\"file\"")
+			partHeader.Set("Content-Type", "application/octet-stream")
+			partWriter, err := writer.CreatePart(partHeader)
 			if err != nil {
-				return nil, fmt.Errorf("create multipart file: %w", err)
+				return nil, fmt.Errorf("create multipart part: %w", err)
 			}
 			if _, err := partWriter.Write(*body.File); err != nil {
 				return nil, fmt.Errorf("write multipart file: %w", err)
 			}
+			}
 		}
 		if body.RetryCount != nil {
-			if err := writer.WriteField("retry_count", strconv.FormatInt(int64(*body.RetryCount), 10)); err != nil {
+			{
+			partHeader := textproto.MIMEHeader{}
+			partHeader.Set("Content-Disposition", "form-data; name=\"retry_count\"")
+			partHeader.Set("Content-Type", "text/plain")
+			partWriter, err := writer.CreatePart(partHeader)
+			if err != nil {
+				return nil, fmt.Errorf("create multipart part: %w", err)
+			}
+			if _, err := io.WriteString(partWriter, strconv.FormatInt(int64(*body.RetryCount), 10)); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
+			}
 			}
 		}
 		if body.Title != nil {
-			if err := writer.WriteField("title", *body.Title); err != nil {
+			{
+			partHeader := textproto.MIMEHeader{}
+			partHeader.Set("Content-Disposition", "form-data; name=\"title\"")
+			partHeader.Set("Content-Type", "text/plain")
+			partWriter, err := writer.CreatePart(partHeader)
+			if err != nil {
+				return nil, fmt.Errorf("create multipart part: %w", err)
+			}
+			if _, err := io.WriteString(partWriter, *body.Title); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
+			}
 			}
 		}
 		if err := writer.Close(); err != nil {
@@ -118,14 +160,41 @@ func (a *MultipartAPI) SendTextFields(ctx context.Context, body *models.TextFiel
 	if body != nil {
 		buf := &bytes.Buffer{}
 		writer := multipart.NewWriter(buf)
-		if err := writer.WriteField("enabled", strconv.FormatBool(body.Enabled)); err != nil {
+		{
+		partHeader := textproto.MIMEHeader{}
+		partHeader.Set("Content-Disposition", "form-data; name=\"enabled\"")
+		partHeader.Set("Content-Type", "text/plain")
+		partWriter, err := writer.CreatePart(partHeader)
+		if err != nil {
+			return nil, fmt.Errorf("create multipart part: %w", err)
+		}
+		if _, err := io.WriteString(partWriter, strconv.FormatBool(body.Enabled)); err != nil {
 			return nil, fmt.Errorf("write multipart field: %w", err)
 		}
-		if err := writer.WriteField("note", body.Note); err != nil {
+		}
+		{
+		partHeader := textproto.MIMEHeader{}
+		partHeader.Set("Content-Disposition", "form-data; name=\"note\"")
+		partHeader.Set("Content-Type", "text/plain")
+		partWriter, err := writer.CreatePart(partHeader)
+		if err != nil {
+			return nil, fmt.Errorf("create multipart part: %w", err)
+		}
+		if _, err := io.WriteString(partWriter, body.Note); err != nil {
 			return nil, fmt.Errorf("write multipart field: %w", err)
 		}
-		if err := writer.WriteField("retry_count", strconv.FormatInt(int64(body.RetryCount), 10)); err != nil {
+		}
+		{
+		partHeader := textproto.MIMEHeader{}
+		partHeader.Set("Content-Disposition", "form-data; name=\"retry_count\"")
+		partHeader.Set("Content-Type", "text/plain")
+		partWriter, err := writer.CreatePart(partHeader)
+		if err != nil {
+			return nil, fmt.Errorf("create multipart part: %w", err)
+		}
+		if _, err := io.WriteString(partWriter, strconv.FormatInt(int64(body.RetryCount), 10)); err != nil {
 			return nil, fmt.Errorf("write multipart field: %w", err)
+		}
 		}
 		if err := writer.Close(); err != nil {
 			return nil, fmt.Errorf("close multipart writer: %w", err)

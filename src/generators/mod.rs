@@ -1,6 +1,7 @@
 pub mod go;
 pub mod java;
 pub mod kotlin;
+pub mod multipart;
 pub mod python;
 pub mod registry;
 pub mod rust;

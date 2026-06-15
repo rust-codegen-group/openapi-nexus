@@ -28,7 +28,7 @@ class TransferApi:
         files: dict[str, object] = {}
         files["file"] = ("file", body.file, "application/octet-stream")
         files["metadata"] = (None, json.dumps(body.metadata.to_dict()), "application/json")
-        files["purpose"] = (None, str(body.purpose))
+        files["purpose"] = (None, str(body.purpose), "text/plain")
         response = self._client.request("POST", path, files=files if files else None)
         if response.status_code >= 400:
             raise ApiError(response.status_code, response.reason_phrase, response.content)

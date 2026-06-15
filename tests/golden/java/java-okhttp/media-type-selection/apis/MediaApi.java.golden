@@ -205,7 +205,7 @@ public class MediaApi {
         MultipartBody.Builder multipartBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         multipartBuilder.addFormDataPart("file", "file", RequestBody.create(body.getFile(), MediaType.get("application/octet-stream")));
         if (body.getNote() != null) {
-            multipartBuilder.addFormDataPart("note", String.valueOf(body.getNote()));
+            multipartBuilder.addFormDataPart("note", null, RequestBody.create(String.valueOf(body.getNote()), MediaType.get("text/plain")));
         }
         RequestBody multipartBody = multipartBuilder.build();
         request = client.newRequestWithBody("POST", path, null, multipartBody);

@@ -43,7 +43,7 @@ impl<'a, R: aioduct::Runtime> MediaApi<'a, R> {
         let mut multipart = aioduct::multipart::Multipart::new();
         multipart = multipart.file("file", "file", "application/octet-stream", body.file.clone());
         if let Some(value) = &body.note {
-            multipart = multipart.text("note", value.to_string());
+            multipart = multipart.part(aioduct::multipart::Part::text("note", value.to_string()).mime_str("text/plain"));
         }
         req = req.multipart(multipart);
         let resp = req.send().await?;

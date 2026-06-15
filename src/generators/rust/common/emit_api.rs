@@ -10,9 +10,10 @@
 use std::collections::{BTreeMap, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::multipart::multipart_parts_for_request_body;
+pub use crate::generators::multipart::{MultipartPart, MultipartValueEncoding};
 use crate::ir::types::{
-    IrObject, IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSchemaKind,
-    IrSpec, IrTypeExpr, ParameterLocation,
+    IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
 };
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::{CodeBlock, CodeBlockBuilder};
@@ -239,21 +240,6 @@ pub enum BodyEncoding {
     Other(String),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MultipartPart {
-    pub wire_name: String,
-    pub field_name: String,
-    pub is_binary: bool,
-    pub required: bool,
-    pub value_encoding: MultipartValueEncoding,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MultipartValueEncoding {
-    Text,
-    Json,
-}
-
 pub struct TypedResponse {
     pub status: String,
     pub field_name: String,
@@ -334,12 +320,12 @@ pub fn plan_body(
         _ => rust_type_str_qualified(&t, ir),
     };
     let multipart_parts = if encoding == BodyEncoding::Multipart {
-        multipart_parts_for(&t, ir).unwrap_or_default()
+        multipart_parts_for_request_body(b, &media_type, ir).unwrap_or_default()
     } else {
         Vec::new()
     };
-    let multipart_supported =
-        encoding != BodyEncoding::Multipart || multipart_parts_for(&t, ir).is_some();
+    let multipart_supported = encoding != BodyEncoding::Multipart
+        || multipart_parts_for_request_body(b, &media_type, ir).is_some();
     let var_name = unique_name("body", used_names);
     Some(BodyBinding {
         var_name,
@@ -681,67 +667,7 @@ fn is_xml_media_type(media_type: &str) -> bool {
     base == "application/xml" || base == "text/xml" || base.ends_with("+xml")
 }
 
-fn multipart_parts_for(t: &IrTypeExpr, ir: &IrSpec) -> Option<Vec<MultipartPart>> {
-    // TODO: Honor OpenAPI multipart encoding metadata once it is represented in the IR.
-    resolve_object(t, ir).map(|obj| multipart_parts_from_object(obj, ir))
-}
-
-fn multipart_parts_from_object(obj: &IrObject, ir: &IrSpec) -> Vec<MultipartPart> {
-    obj.properties
-        .iter()
-        .map(|(wire_name, prop)| MultipartPart {
-            wire_name: wire_name.clone(),
-            field_name: rust_field_name(wire_name),
-            is_binary: is_binary_type(&prop.type_expr, ir),
-            required: prop.required && !prop.nullable,
-            value_encoding: multipart_value_encoding(&prop.type_expr, ir),
-        })
-        .collect()
-}
-
-fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
-    match expr {
-        IrTypeExpr::Named(name) => match ir.schemas.get(name).map(|schema| &schema.kind) {
-            Some(IrSchemaKind::Object(obj)) => Some(obj),
-            Some(IrSchemaKind::Alias(inner)) => resolve_object(inner, ir),
-            _ => None,
-        },
-        IrTypeExpr::Nullable(inner) => resolve_object(inner, ir),
-        _ => None,
-    }
-}
-
-fn is_binary_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
-        IrTypeExpr::Primitive(IrPrimitive::Binary) => true,
-        IrTypeExpr::Nullable(inner) => is_binary_type(inner, ir),
-        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
-            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_binary_type(inner, ir))
-        }),
-        _ => false,
-    }
-}
-
-fn multipart_value_encoding(expr: &IrTypeExpr, ir: &IrSpec) -> MultipartValueEncoding {
-    if is_multipart_text_type(expr, ir) {
-        MultipartValueEncoding::Text
-    } else {
-        MultipartValueEncoding::Json
-    }
-}
-
-fn is_multipart_text_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
-        IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
-        IrTypeExpr::Nullable(inner) => is_multipart_text_type(inner, ir),
-        IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
-            matches!(&schema.kind, IrSchemaKind::Alias(inner) if is_multipart_text_type(inner, ir))
-        }),
-        _ => false,
-    }
-}
-
-fn rust_field_name(wire_name: &str) -> String {
+pub fn rust_field_name(wire_name: &str) -> String {
     escape_rust_keyword(&wire_name.to_snake_case())
 }
 
@@ -764,22 +690,27 @@ pub fn rust_string_literal(value: &str) -> String {
 }
 
 pub fn text_field_expr(base: &str, part: &MultipartPart) -> String {
+    let field_name = rust_field_name(&part.wire_name);
     match part.value_encoding {
-        MultipartValueEncoding::Text => format!("{base}.{}.to_string()", part.field_name),
-        MultipartValueEncoding::Json => {
-            format!("serde_json::to_string(&{base}.{})?", part.field_name)
+        MultipartValueEncoding::Text => format!("{base}.{field_name}.to_string()"),
+        MultipartValueEncoding::Json => format!("serde_json::to_string(&{base}.{field_name})?"),
+        MultipartValueEncoding::Unsupported => {
+            unreachable!("unsupported multipart parts are emitted before value expressions")
         }
     }
 }
 
 pub fn binary_field_expr(base: &str, part: &MultipartPart) -> String {
-    format!("{base}.{}.clone()", part.field_name)
+    format!("{base}.{}.clone()", rust_field_name(&part.wire_name))
 }
 
 pub fn optional_text_field_expr(value: &str, part: &MultipartPart) -> String {
     match part.value_encoding {
         MultipartValueEncoding::Text => format!("{value}.to_string()"),
         MultipartValueEncoding::Json => format!("serde_json::to_string({value})?"),
+        MultipartValueEncoding::Unsupported => {
+            unreachable!("unsupported multipart parts are emitted before value expressions")
+        }
     }
 }
 

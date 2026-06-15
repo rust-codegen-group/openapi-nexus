@@ -29,19 +29,19 @@ impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
         let mut req = self.client.post(&path)?;
         let mut multipart = aioduct::multipart::Multipart::new();
         if let Some(value) = &body.attributes {
-            multipart = multipart.text("attributes", serde_json::to_string(value)?);
+            multipart = multipart.part(aioduct::multipart::Part::text("attributes", serde_json::to_string(value)?).mime_str("application/json"));
         }
         if let Some(value) = &body.enabled {
-            multipart = multipart.text("enabled", value.to_string());
+            multipart = multipart.part(aioduct::multipart::Part::text("enabled", value.to_string()).mime_str("text/plain"));
         }
         if let Some(value) = &body.file {
             multipart = multipart.file("file", "file", "application/octet-stream", value.clone());
         }
         if let Some(value) = &body.retry_count {
-            multipart = multipart.text("retry_count", value.to_string());
+            multipart = multipart.part(aioduct::multipart::Part::text("retry_count", value.to_string()).mime_str("text/plain"));
         }
         if let Some(value) = &body.title {
-            multipart = multipart.text("title", value.to_string());
+            multipart = multipart.part(aioduct::multipart::Part::text("title", value.to_string()).mime_str("text/plain"));
         }
         req = req.multipart(multipart);
         let resp = req.send().await?;
@@ -57,9 +57,9 @@ impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
         let path = "/multipart/text-only".to_string();
         let mut req = self.client.post(&path)?;
         let mut multipart = aioduct::multipart::Multipart::new();
-        multipart = multipart.text("enabled", body.enabled.to_string());
-        multipart = multipart.text("note", body.note.to_string());
-        multipart = multipart.text("retry_count", body.retry_count.to_string());
+        multipart = multipart.part(aioduct::multipart::Part::text("enabled", body.enabled.to_string()).mime_str("text/plain"));
+        multipart = multipart.part(aioduct::multipart::Part::text("note", body.note.to_string()).mime_str("text/plain"));
+        multipart = multipart.part(aioduct::multipart::Part::text("retry_count", body.retry_count.to_string()).mime_str("text/plain"));
         req = req.multipart(multipart);
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();

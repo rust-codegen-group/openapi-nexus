@@ -4,9 +4,10 @@ use sigil_stitch::code_block::CodeBlock;
 use sigil_stitch::prelude::sigil_quote;
 
 use crate::generators::rust::common::emit_api::{
-    BodyEncoding, MultipartPart, OpPlan, RustBackendConfig, binary_field_expr, emit_response_match,
-    emit_result_init, optional_binary_field_expr, optional_text_field_expr, render_to_string,
-    response_value_expr, rust_string_literal, text_field_expr,
+    BodyEncoding, MultipartPart, MultipartValueEncoding, OpPlan, RustBackendConfig,
+    binary_field_expr, emit_response_match, emit_result_init, optional_binary_field_expr,
+    optional_text_field_expr, render_to_string, response_value_expr, rust_field_name,
+    rust_string_literal, text_field_expr,
 };
 use crate::ir::types::IrTypeExpr;
 
@@ -314,8 +315,26 @@ fn emit_multipart_part(
     part: &MultipartPart,
 ) {
     let wire_name = rust_string_literal(&part.wire_name);
+    let content_type = rust_string_literal(&part.content_type);
+    if part.value_encoding == MultipartValueEncoding::Unsupported {
+        if part.required {
+            b.add(
+                "return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n",
+                (),
+            );
+        } else {
+            let field_name = rust_field_name(&part.wire_name);
+            b.begin_control_flow(&format!("if {body_var}.{field_name}.is_some()"), ());
+            b.add(
+                "return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n",
+                (),
+            );
+            b.end_control_flow();
+        }
+        return;
+    }
     if part.required {
-        emit_part_prefix(b, &wire_name, part.is_binary);
+        emit_part_prefix(b, &wire_name, part.is_binary, &content_type);
         if part.is_binary {
             b.add(
                 &format!(
@@ -335,11 +354,12 @@ fn emit_multipart_part(
         }
         b.add("multipart_body.extend_from_slice(b\"\\r\\n\");\n", ());
     } else {
+        let field_name = rust_field_name(&part.wire_name);
         b.begin_control_flow(
-            &format!("if let Some(value) = &{body_var}.{}", part.field_name),
+            &format!("if let Some(value) = &{body_var}.{field_name}"),
             (),
         );
-        emit_part_prefix(b, &wire_name, part.is_binary);
+        emit_part_prefix(b, &wire_name, part.is_binary, &content_type);
         if part.is_binary {
             b.add(
                 &format!(
@@ -366,6 +386,7 @@ fn emit_part_prefix(
     b: &mut sigil_stitch::code_block::CodeBlockBuilder,
     wire_name: &str,
     is_binary: bool,
+    content_type: &str,
 ) {
     b.add(
         "multipart_body.extend_from_slice(format!(\"--{}\\r\\n\", boundary).as_bytes());\n",
@@ -374,14 +395,14 @@ fn emit_part_prefix(
     if is_binary {
         b.add(
             &format!(
-                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"; filename=\\\"{{}}\\\"\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\n\", {wire_name}, {wire_name}).as_bytes());\n",
+                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"; filename=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", {wire_name}, {wire_name}, {content_type}).as_bytes());\n",
             ),
             (),
         );
     } else {
         b.add(
             &format!(
-                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"\\r\\n\\r\\n\", {wire_name}).as_bytes());\n",
+                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", {wire_name}, {content_type}).as_bytes());\n",
             ),
             (),
         );

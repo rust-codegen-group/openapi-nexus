@@ -56,7 +56,7 @@ fn multipart_wire_construction_is_pinned_across_non_rust_clients() {
         generate_files(&PythonHttpxCodeGenerator::new(empty_config()), &fixture).unwrap();
     let httpx_api = generated_file(&httpx_files, "apis/multipart_api.py");
     assert!(httpx_api.contains("files: dict[str, object] = {}"));
-    assert!(httpx_api.contains("files[\"note\"] = (None, str(body.note))"));
+    assert!(httpx_api.contains("files[\"note\"] = (None, str(body.note), \"text/plain\")"));
     assert!(httpx_api.contains("files=files if files else None"));
     assert!(!httpx_api.contains("data=data"));
 
@@ -64,21 +64,26 @@ fn multipart_wire_construction_is_pinned_across_non_rust_clients() {
         generate_files(&PythonRequestsCodeGenerator::new(empty_config()), &fixture).unwrap();
     let requests_api = generated_file(&requests_files, "apis/multipart_api.py");
     assert!(requests_api.contains("files: dict[str, object] = {}"));
-    assert!(requests_api.contains("files[\"note\"] = (None, str(body.note))"));
+    assert!(requests_api.contains("files[\"note\"] = (None, str(body.note), \"text/plain\")"));
     assert!(requests_api.contains("files=files if files else None"));
     assert!(!requests_api.contains("data=data"));
 
     let ts_files =
         generate_files(&TypeScriptFetchCodeGenerator::new(empty_config()), &fixture).unwrap();
     let ts_api = generated_file(&ts_files, "apis/MultipartApi.ts");
-    assert!(ts_api.contains("let requestBody: FormData | undefined = undefined;"));
+    assert!(ts_api.contains("let requestBody: Blob | undefined = undefined;"));
     assert!(
         ts_api.contains(
             "if (requestParameters.body !== undefined && requestParameters.body !== null)"
         )
     );
-    assert!(ts_api.contains("const requestBody = new FormData();"));
-    assert!(ts_api.contains("requestBody.append('note', String(requestParameters.body.note));"));
+    assert!(ts_api.contains("const multipartChunks: Array<string | Blob> = [];"));
+    assert!(
+        ts_api.contains(
+            "Content-Disposition: form-data; name=\"note\"\\r\\nContent-Type: text/plain"
+        )
+    );
+    assert!(ts_api.contains("multipartChunks.push(String(requestParameters.body.note));"));
 }
 
 #[test]
@@ -251,6 +256,6 @@ property_naming = "camelCase"
 
     assert!(api.contains("itemConfigToJSON"));
     assert!(api.contains(
-        "requestBody.append('item_config', JSON.stringify(itemConfigToJSON(requestParameters.body.itemConfig)));"
+        "multipartChunks.push(JSON.stringify(itemConfigToJSON(requestParameters.body.itemConfig)));"
     ));
 }
