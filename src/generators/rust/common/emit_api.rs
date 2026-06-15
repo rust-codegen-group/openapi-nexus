@@ -224,6 +224,7 @@ pub struct BodyBinding {
     pub var_name: String,
     pub rust_type: String,
     pub media_type: String,
+    pub required: bool,
     pub encoding: BodyEncoding,
     pub multipart_supported: bool,
     pub multipart_parts: Vec<MultipartPart>,
@@ -331,6 +332,7 @@ pub fn plan_body(
         var_name,
         rust_type,
         media_type,
+        required: b.required,
         encoding,
         multipart_supported,
         multipart_parts,
@@ -447,7 +449,12 @@ fn emit_operation(
         params.push(format!("{}: {ty}", p.var_name));
     }
     if let Some(body) = &plan.body {
-        params.push(format!("{}: &{}", body.var_name, body.rust_type));
+        let ty = if body.required {
+            format!("&{}", body.rust_type)
+        } else {
+            format!("Option<&{}>", body.rust_type)
+        };
+        params.push(format!("{}: {ty}", body.var_name));
     }
 
     let async_kw = if config.is_async { "async " } else { "" };

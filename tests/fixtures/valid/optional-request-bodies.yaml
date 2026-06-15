@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: Optional Request Bodies
+  version: 1.0.0
+  description: Covers optional non-multipart request bodies.
+paths:
+  /optional-json:
+    post:
+      operationId: send_optional_json
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '204':
+          description: Accepted
+  /optional-text:
+    post:
+      operationId: send_optional_text
+      requestBody:
+        required: false
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '204':
+          description: Accepted
+  /optional-binary:
+    post:
+      operationId: send_optional_binary
+      requestBody:
+        required: false
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '204':
+          description: Accepted
+  /required-json:
+    post:
+      operationId: send_required_json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payload'
+      responses:
+        '204':
+          description: Accepted
+components:
+  schemas:
+    Payload:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        count:
+          type: integer

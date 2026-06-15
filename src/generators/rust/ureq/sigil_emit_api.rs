@@ -42,8 +42,13 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         && matches!(&body.encoding, BodyEncoding::Multipart)
         && !body.multipart_supported
     {
+        if body.required {
+            b.add_code(unsupported_multipart_body(&body.var_name));
+            return b.build().unwrap();
+        }
+        b.begin_control_flow(&format!("if {}.is_some()", body.var_name), ());
         b.add_code(unsupported_multipart_body(&body.var_name));
-        return b.build().unwrap();
+        b.end_control_flow();
     }
 
     // Build path
@@ -143,30 +148,25 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     // Send
     if is_body_method {
         if let Some(body) = body {
-            match &body.encoding {
-                BodyEncoding::Json => {
-                    b.add_code(json_send(&body.var_name));
+            let can_emit_body =
+                !matches!(&body.encoding, BodyEncoding::Multipart) || body.multipart_supported;
+            if can_emit_body {
+                if body.required {
+                    emit_body_send(&mut b, body, "let resp =");
+                } else {
+                    b.add("let resp;\n", ());
+                    b.begin_control_flow(
+                        &format!("if let Some({}) = {}", body.var_name, body.var_name),
+                        (),
+                    );
+                    emit_body_send(&mut b, body, "resp =");
+                    b.end_control_flow();
+                    b.begin_control_flow("else", ());
+                    b.add("resp = req.send_empty()?;\n", ());
+                    b.end_control_flow();
                 }
-                BodyEncoding::FormUrlEncoded => {
-                    emit_form_body(&mut b, &body.var_name);
-                    b.add_code(form_send());
-                }
-                BodyEncoding::Xml => {
-                    b.add_code(xml_send(&body.var_name, &body.media_type));
-                }
-                BodyEncoding::TextPlain => {
-                    b.add_code(text_send(&body.var_name, &body.media_type));
-                }
-                BodyEncoding::OctetStream => {
-                    b.add_code(octet_stream_send(&body.var_name, &body.media_type));
-                }
-                BodyEncoding::Multipart => {
-                    emit_multipart_body(&mut b, &body.var_name, &body.multipart_parts);
-                    b.add_code(multipart_send());
-                }
-                BodyEncoding::Other(media_type) => {
-                    b.add_code(unsupported_media_type_body(media_type));
-                }
+            } else {
+                b.add("let resp = req.send_empty()?;\n", ());
             }
         } else {
             b.add("let resp = req.send_empty()?;\n", ());
@@ -191,6 +191,42 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     b.build().unwrap()
 }
 
+fn emit_body_send(
+    b: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    body: &crate::generators::rust::common::emit_api::BodyBinding,
+    resp_prefix: &str,
+) {
+    match &body.encoding {
+        BodyEncoding::Json => {
+            b.add_code(json_send(&body.var_name, resp_prefix));
+        }
+        BodyEncoding::FormUrlEncoded => {
+            emit_form_body(b, &body.var_name);
+            b.add_code(form_send(resp_prefix));
+        }
+        BodyEncoding::Xml => {
+            b.add_code(xml_send(&body.var_name, &body.media_type, resp_prefix));
+        }
+        BodyEncoding::TextPlain => {
+            b.add_code(text_send(&body.var_name, &body.media_type, resp_prefix));
+        }
+        BodyEncoding::OctetStream => {
+            b.add_code(octet_stream_send(
+                &body.var_name,
+                &body.media_type,
+                resp_prefix,
+            ));
+        }
+        BodyEncoding::Multipart => {
+            emit_multipart_body(b, &body.var_name, &body.multipart_parts);
+            b.add_code(multipart_send(resp_prefix));
+        }
+        BodyEncoding::Other(media_type) => {
+            b.add_code(unsupported_media_type_body(media_type));
+        }
+    }
+}
+
 fn unsupported_multipart_body(body_var: &str) -> CodeBlock {
     sigil_quote!(RustLang {
         let _ = self.client;
@@ -208,49 +244,49 @@ fn unsupported_media_type_body(media_type: &str) -> CodeBlock {
     .expect("unsupported media type body builds")
 }
 
-fn json_send(body_var: &str) -> CodeBlock {
+fn json_send(body_var: &str, resp_prefix: &str) -> CodeBlock {
     sigil_quote!(RustLang {
-        let resp = req.send_json(&$L(body_var))?;
+        $L(resp_prefix) req.send_json(&$L(body_var))?;
     })
     .expect("json send builds")
 }
 
-fn form_send() -> CodeBlock {
+fn form_send(resp_prefix: &str) -> CodeBlock {
     let pairs_iter = "form_pairs.iter().map(|(key, value)| (key.as_str(), value.as_str()))";
     sigil_quote!(RustLang {
-        let resp = req.send_form($L(pairs_iter))?;
+        $L(resp_prefix) req.send_form($L(pairs_iter))?;
     })
     .expect("form send builds")
 }
 
-fn xml_send(body_var: &str, media_type: &str) -> CodeBlock {
+fn xml_send(body_var: &str, media_type: &str, resp_prefix: &str) -> CodeBlock {
     sigil_quote!(RustLang {
         let body_xml = serde_xml_rs::to_string($L(body_var))?;
         req = req.header("Content-Type", $L(rust_string_literal(media_type)));
-        let resp = req.send(body_xml)?;
+        $L(resp_prefix) req.send(body_xml)?;
     })
     .expect("xml send builds")
 }
 
-fn text_send(body_var: &str, media_type: &str) -> CodeBlock {
+fn text_send(body_var: &str, media_type: &str, resp_prefix: &str) -> CodeBlock {
     sigil_quote!(RustLang {
         req = req.header("Content-Type", $L(rust_string_literal(media_type)));
-        let resp = req.send($L(body_var).as_str())?;
+        $L(resp_prefix) req.send($L(body_var).as_str())?;
     })
     .expect("text send builds")
 }
 
-fn octet_stream_send(body_var: &str, media_type: &str) -> CodeBlock {
+fn octet_stream_send(body_var: &str, media_type: &str, resp_prefix: &str) -> CodeBlock {
     sigil_quote!(RustLang {
         req = req.header("Content-Type", $L(rust_string_literal(media_type)));
-        let resp = req.send($L(body_var).clone())?;
+        $L(resp_prefix) req.send($L(body_var).clone())?;
     })
     .expect("octet-stream send builds")
 }
 
-fn multipart_send() -> CodeBlock {
+fn multipart_send(resp_prefix: &str) -> CodeBlock {
     sigil_quote!(RustLang {
-        let resp = req.send(multipart_body)?;
+        $L(resp_prefix) req.send(multipart_body)?;
     })
     .expect("multipart send builds")
 }

@@ -23,27 +23,29 @@ impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
     /// POST /multipart/optional
     pub async fn send_optional_parts(
         &self,
-        body: &crate::models::OptionalUpload,
+        body: Option<&crate::models::OptionalUpload>,
     ) -> Result<SendOptionalPartsResponse, Error> {
         let path = "/multipart/optional".to_string();
         let mut req = self.client.post(&path)?;
-        let mut multipart = aioduct::multipart::Multipart::new();
-        if let Some(value) = &body.attributes {
-            multipart = multipart.part(aioduct::multipart::Part::text("attributes", serde_json::to_string(value)?).mime_str("application/json"));
+        if let Some(body) = body {
+            let mut multipart = aioduct::multipart::Multipart::new();
+            if let Some(value) = &body.attributes {
+                multipart = multipart.part(aioduct::multipart::Part::text("attributes", serde_json::to_string(value)?).mime_str("application/json"));
+            }
+            if let Some(value) = &body.enabled {
+                multipart = multipart.part(aioduct::multipart::Part::text("enabled", value.to_string()).mime_str("text/plain"));
+            }
+            if let Some(value) = &body.file {
+                multipart = multipart.file("file", "file", "application/octet-stream", value.clone());
+            }
+            if let Some(value) = &body.retry_count {
+                multipart = multipart.part(aioduct::multipart::Part::text("retry_count", value.to_string()).mime_str("text/plain"));
+            }
+            if let Some(value) = &body.title {
+                multipart = multipart.part(aioduct::multipart::Part::text("title", value.to_string()).mime_str("text/plain"));
+            }
+            req = req.multipart(multipart);
         }
-        if let Some(value) = &body.enabled {
-            multipart = multipart.part(aioduct::multipart::Part::text("enabled", value.to_string()).mime_str("text/plain"));
-        }
-        if let Some(value) = &body.file {
-            multipart = multipart.file("file", "file", "application/octet-stream", value.clone());
-        }
-        if let Some(value) = &body.retry_count {
-            multipart = multipart.part(aioduct::multipart::Part::text("retry_count", value.to_string()).mime_str("text/plain"));
-        }
-        if let Some(value) = &body.title {
-            multipart = multipart.part(aioduct::multipart::Part::text("title", value.to_string()).mime_str("text/plain"));
-        }
-        req = req.multipart(multipart);
         let resp = req.send().await?;
         let status_code = resp.status().as_u16();
         Ok(SendOptionalPartsResponse { status_code })
