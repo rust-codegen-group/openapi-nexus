@@ -38,8 +38,13 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         && matches!(&body.encoding, BodyEncoding::Multipart)
         && !body.multipart_supported
     {
+        if body.required {
+            b.add_code(unsupported_multipart_body(&body.var_name));
+            return b.build().unwrap();
+        }
+        b.begin_control_flow(&format!("if {}.is_some()", body.var_name), ());
         b.add_code(unsupported_multipart_body(&body.var_name));
-        return b.build().unwrap();
+        b.end_control_flow();
     }
 
     // Build path
@@ -127,27 +132,18 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
 
     // Body
     if let Some(body) = body {
-        match &body.encoding {
-            BodyEncoding::Json => {
-                b.add_code(json_body(&body.var_name));
+        let can_emit_body =
+            !matches!(&body.encoding, BodyEncoding::Multipart) || body.multipart_supported;
+        if can_emit_body {
+            if !body.required {
+                b.begin_control_flow(
+                    &format!("if let Some({}) = {}", body.var_name, body.var_name),
+                    (),
+                );
             }
-            BodyEncoding::FormUrlEncoded => {
-                b.add_code(form_body(&body.var_name));
-            }
-            BodyEncoding::Xml => {
-                b.add_code(xml_body(&body.var_name, &body.media_type));
-            }
-            BodyEncoding::TextPlain => {
-                b.add_code(text_body(&body.var_name, &body.media_type));
-            }
-            BodyEncoding::OctetStream => {
-                b.add_code(octet_stream_body(&body.var_name, &body.media_type));
-            }
-            BodyEncoding::Multipart => {
-                emit_multipart_body(&mut b, &body.var_name, &body.multipart_parts);
-            }
-            BodyEncoding::Other(media_type) => {
-                b.add_code(unsupported_media_type_body(media_type));
+            emit_body(&mut b, body);
+            if !body.required {
+                b.end_control_flow();
             }
         }
     }
@@ -172,6 +168,35 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     }
 
     b.build().unwrap()
+}
+
+fn emit_body(
+    b: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    body: &crate::generators::rust::common::emit_api::BodyBinding,
+) {
+    match &body.encoding {
+        BodyEncoding::Json => {
+            b.add_code(json_body(&body.var_name));
+        }
+        BodyEncoding::FormUrlEncoded => {
+            b.add_code(form_body(&body.var_name));
+        }
+        BodyEncoding::Xml => {
+            b.add_code(xml_body(&body.var_name, &body.media_type));
+        }
+        BodyEncoding::TextPlain => {
+            b.add_code(text_body(&body.var_name, &body.media_type));
+        }
+        BodyEncoding::OctetStream => {
+            b.add_code(octet_stream_body(&body.var_name, &body.media_type));
+        }
+        BodyEncoding::Multipart => {
+            emit_multipart_body(b, &body.var_name, &body.multipart_parts);
+        }
+        BodyEncoding::Other(media_type) => {
+            b.add_code(unsupported_media_type_body(media_type));
+        }
+    }
 }
 
 fn unsupported_multipart_body(body_var: &str) -> CodeBlock {

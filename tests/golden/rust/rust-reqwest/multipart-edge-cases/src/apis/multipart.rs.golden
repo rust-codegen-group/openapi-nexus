@@ -23,27 +23,29 @@ impl<'a> MultipartApi<'a> {
     /// POST /multipart/optional
     pub async fn send_optional_parts(
         &self,
-        body: &crate::models::OptionalUpload,
+        body: Option<&crate::models::OptionalUpload>,
     ) -> Result<SendOptionalPartsResponse, Error> {
         let path = "/multipart/optional".to_string();
         let mut req = self.client.request(reqwest::Method::POST, &path).await?;
-        let mut multipart = reqwest::multipart::Form::new();
-        if let Some(value) = &body.attributes {
-            multipart = multipart.part("attributes", reqwest::multipart::Part::text(serde_json::to_string(value)?).mime_str("application/json").map_err(Error::Network)?);
+        if let Some(body) = body {
+            let mut multipart = reqwest::multipart::Form::new();
+            if let Some(value) = &body.attributes {
+                multipart = multipart.part("attributes", reqwest::multipart::Part::text(serde_json::to_string(value)?).mime_str("application/json").map_err(Error::Network)?);
+            }
+            if let Some(value) = &body.enabled {
+                multipart = multipart.part("enabled", reqwest::multipart::Part::text(value.to_string()).mime_str("text/plain").map_err(Error::Network)?);
+            }
+            if let Some(value) = &body.file {
+                multipart = multipart.part("file", reqwest::multipart::Part::bytes(value.clone()).file_name("file").mime_str("application/octet-stream").map_err(Error::Network)?);
+            }
+            if let Some(value) = &body.retry_count {
+                multipart = multipart.part("retry_count", reqwest::multipart::Part::text(value.to_string()).mime_str("text/plain").map_err(Error::Network)?);
+            }
+            if let Some(value) = &body.title {
+                multipart = multipart.part("title", reqwest::multipart::Part::text(value.to_string()).mime_str("text/plain").map_err(Error::Network)?);
+            }
+            req = req.multipart(multipart);
         }
-        if let Some(value) = &body.enabled {
-            multipart = multipart.part("enabled", reqwest::multipart::Part::text(value.to_string()).mime_str("text/plain").map_err(Error::Network)?);
-        }
-        if let Some(value) = &body.file {
-            multipart = multipart.part("file", reqwest::multipart::Part::bytes(value.clone()).file_name("file").mime_str("application/octet-stream").map_err(Error::Network)?);
-        }
-        if let Some(value) = &body.retry_count {
-            multipart = multipart.part("retry_count", reqwest::multipart::Part::text(value.to_string()).mime_str("text/plain").map_err(Error::Network)?);
-        }
-        if let Some(value) = &body.title {
-            multipart = multipart.part("title", reqwest::multipart::Part::text(value.to_string()).mime_str("text/plain").map_err(Error::Network)?);
-        }
-        req = req.multipart(multipart);
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         Ok(SendOptionalPartsResponse { status_code })
