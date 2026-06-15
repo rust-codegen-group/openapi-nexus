@@ -38,7 +38,7 @@ use super::emit_models::rust_type_str_qualified;
 pub struct RustBackendConfig {
     /// Whether methods are async (reqwest, aioduct) or sync (ureq).
     pub is_async: bool,
-    /// Extra generic parameters on the Api struct, e.g., `"R: aioduct::Runtime"`.
+    /// Extra generic parameters on the Api struct, e.g., `"R: aioduct::RuntimePoll"`.
     /// `None` for reqwest and ureq.
     pub struct_generics: Option<String>,
     /// Extra generic args for the client field type, e.g., `"<R>"`.
@@ -135,15 +135,19 @@ fn emit_api_file(
     fsb = fsb.add_import(ImportSpec::named("crate::runtime::client", "Client"));
     fsb = fsb.add_import(ImportSpec::named("crate::runtime::error", "Error"));
 
-    // Struct generics (e.g., `<'a, R: aioduct::Runtime>`)
+    // Struct generics (e.g., `<'a, R: aioduct::RuntimePoll>`)
     let (struct_gen, impl_gen, type_args, client_field_args) = match &config.struct_generics {
         Some(g) => {
             let client_args = config.client_type_args.as_deref().unwrap_or("");
-            let param_name = g.split(':').next().unwrap_or(g).trim();
+            let param_names = g
+                .split(',')
+                .map(|param| param.split(':').next().unwrap_or(param).trim())
+                .collect::<Vec<_>>()
+                .join(", ");
             (
                 format!("<'a, {g}>"),
                 format!("<'a, {g}>"),
-                format!("<'a, {param_name}>"),
+                format!("<'a, {param_names}>"),
                 client_args.to_string(),
             )
         }

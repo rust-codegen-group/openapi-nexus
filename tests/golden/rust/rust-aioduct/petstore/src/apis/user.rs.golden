@@ -8,13 +8,13 @@ use crate::runtime::client::Client;
 use crate::runtime::error::Error;
 
 /// API operations under the "user" tag.
-pub struct UserApi<'a, R: aioduct::Runtime> {
-    client: &'a Client<R>,
+pub struct UserApi<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> {
+    client: &'a Client<R, C>,
 }
 
-impl<'a, R: aioduct::Runtime> UserApi<'a, R> {
+impl<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> UserApi<'a, R, C> {
     /// Create a new `UserApi` bound to the given client.
-    pub fn new(client: &'a Client<R>) -> Self {
+    pub fn new(client: &'a Client<R, C>) -> Self {
         Self {
             client,
         }

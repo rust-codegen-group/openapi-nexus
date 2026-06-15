@@ -7,13 +7,13 @@ use crate::runtime::client::Client;
 use crate::runtime::error::Error;
 
 /// API operations under the "Widget" tag.
-pub struct WidgetApi<'a, R: aioduct::Runtime> {
-    client: &'a Client<R>,
+pub struct WidgetApi<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> {
+    client: &'a Client<R, C>,
 }
 
-impl<'a, R: aioduct::Runtime> WidgetApi<'a, R> {
+impl<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> WidgetApi<'a, R, C> {
     /// Create a new `WidgetApi` bound to the given client.
-    pub fn new(client: &'a Client<R>) -> Self {
+    pub fn new(client: &'a Client<R, C>) -> Self {
         Self {
             client,
         }

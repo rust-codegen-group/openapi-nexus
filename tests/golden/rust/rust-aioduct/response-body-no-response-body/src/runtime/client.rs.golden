@@ -6,30 +6,30 @@
 use std::fmt;
 use std::sync::Arc;
 
-use aioduct::Runtime;
-
 use crate::runtime::auth::Authenticator;
 use crate::runtime::error::Error;
 
-/// Async HTTP client wrapping `aioduct::Client<R>`.
-pub struct Client<R: Runtime> {
-    inner: aioduct::Client<R>,
+/// Async HTTP client wrapping `aioduct::HttpEngineSend<R, C>`.
+pub struct Client<R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> {
+    inner: aioduct::HttpEngineSend<R, C>,
     base_url: String,
-    authenticator: Option<Arc<dyn Authenticator<R>>>,
+    authenticator: Option<Arc<dyn Authenticator<R, C>>>,
 }
 
-impl<R: Runtime> Client<R> {
+impl<R: aioduct::RuntimePoll, C: aioduct::ConnectorSend + Default> Client<R, C> {
     /// Create a new client with the given base URL.
     pub fn new(base_url: &str) -> Self {
         Self {
-            inner: aioduct::Client::<R>::with_rustls(),
+            inner: aioduct::HttpEngineSend::<R, C>::with_rustls(),
             base_url: base_url.trim_end_matches('/').to_string(),
             authenticator: None,
         }
     }
+}
 
-    /// Create a client with a custom `aioduct::Client`.
-    pub fn with_client(inner: aioduct::Client<R>, base_url: &str) -> Self {
+impl<R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> Client<R, C> {
+    /// Create a client with a custom `aioduct::HttpEngineSend`.
+    pub fn with_client(inner: aioduct::HttpEngineSend<R, C>, base_url: &str) -> Self {
         Self {
             inner,
             base_url: base_url.trim_end_matches('/').to_string(),
@@ -38,7 +38,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Attach an authenticator to the client.
-    pub fn with_auth(mut self, auth: Arc<dyn Authenticator<R>>) -> Self {
+    pub fn with_auth(mut self, auth: Arc<dyn Authenticator<R, C>>) -> Self {
         self.authenticator = Some(auth);
         self
     }
@@ -48,7 +48,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a GET request.
-    pub fn get(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
+    pub fn get(&self, path: &str) -> Result<aioduct::RequestBuilderSend<'_, R, C>, Error> {
         let mut req = self.inner.get(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -57,7 +57,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a POST request.
-    pub fn post(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
+    pub fn post(&self, path: &str) -> Result<aioduct::RequestBuilderSend<'_, R, C>, Error> {
         let mut req = self.inner.post(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -66,7 +66,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a PUT request.
-    pub fn put(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
+    pub fn put(&self, path: &str) -> Result<aioduct::RequestBuilderSend<'_, R, C>, Error> {
         let mut req = self.inner.put(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -75,7 +75,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a DELETE request.
-    pub fn delete(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
+    pub fn delete(&self, path: &str) -> Result<aioduct::RequestBuilderSend<'_, R, C>, Error> {
         let mut req = self.inner.delete(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -84,7 +84,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a PATCH request.
-    pub fn patch(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
+    pub fn patch(&self, path: &str) -> Result<aioduct::RequestBuilderSend<'_, R, C>, Error> {
         let mut req = self.inner.patch(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -93,7 +93,7 @@ impl<R: Runtime> Client<R> {
     }
 
     /// Build a HEAD request.
-    pub fn head(&self, path: &str) -> Result<aioduct::RequestBuilder<'_, R>, Error> {
+    pub fn head(&self, path: &str) -> Result<aioduct::RequestBuilderSend<'_, R, C>, Error> {
         let mut req = self.inner.head(&self.full_url(path))?;
         if let Some(auth) = &self.authenticator {
             req = auth.authenticate(req)?;
@@ -102,7 +102,7 @@ impl<R: Runtime> Client<R> {
     }
 }
 
-impl<R: Runtime> fmt::Debug for Client<R> {
+impl<R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> fmt::Debug for Client<R, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Client")
             .field("base_url", &self.base_url)

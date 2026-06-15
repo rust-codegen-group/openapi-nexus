@@ -4,7 +4,7 @@ pub use crate::generators::rust::common::config::RustGeneratorConfig as RustAiod
 
 use serde::{Deserialize, Serialize};
 
-const DEFAULT_AIODUCT_VERSION: &str = "0.1.8";
+const DEFAULT_AIODUCT_VERSION: &str = "0.2.0";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -119,7 +119,7 @@ mod tests {
     #[test]
     fn default_version_is_current() {
         let config = AioductFeatureConfig::default();
-        assert_eq!(config.version(), "0.1.8");
+        assert_eq!(config.version(), "0.2.0");
     }
 
     #[test]

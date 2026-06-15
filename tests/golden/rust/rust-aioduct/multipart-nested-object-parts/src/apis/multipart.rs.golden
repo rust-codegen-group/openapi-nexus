@@ -8,13 +8,13 @@ use crate::runtime::client::Client;
 use crate::runtime::error::Error;
 
 /// API operations under the "multipart" tag.
-pub struct MultipartApi<'a, R: aioduct::Runtime> {
-    client: &'a Client<R>,
+pub struct MultipartApi<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> {
+    client: &'a Client<R, C>,
 }
 
-impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
+impl<'a, R: aioduct::RuntimePoll, C: aioduct::ConnectorSend> MultipartApi<'a, R, C> {
     /// Create a new `MultipartApi` bound to the given client.
-    pub fn new(client: &'a Client<R>) -> Self {
+    pub fn new(client: &'a Client<R, C>) -> Self {
         Self {
             client,
         }
