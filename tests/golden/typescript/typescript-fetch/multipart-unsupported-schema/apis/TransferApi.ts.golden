@@ -8,7 +8,7 @@ import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/
 import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse } from '../runtime/runtime';
 
 export interface ApiUploadRawMultipartRequest {
-  body: Blob | File;
+  body: unknown;
 }
 
 export type UploadRawMultipartRawResponse =

@@ -36,7 +36,7 @@ class MultipartApi(private val client: ApiClient) {
     /**
      * sendOptionalParts POST /multipart/optional.
      */
-    fun sendOptionalParts(body: OptionalUpload?): SendOptionalPartsResponse {
+    fun sendOptionalParts(body: SendOptionalPartsMultipartRequestBody?): SendOptionalPartsResponse {
         val path = "/multipart/optional"
         var multipartBody = ByteArray(0).toRequestBody(null)
         if (body != null) {
@@ -50,7 +50,7 @@ class MultipartApi(private val client: ApiClient) {
 
             }
             if (body.file != null) {
-                multipartBuilder.addFormDataPart("file", "file", body.file.toRequestBody("application/octet-stream".toMediaType()))
+                multipartBuilder.addFormDataPart("file", body.file.filenameOrDefault("file"), body.file.data.toRequestBody("application/octet-stream".toMediaType()))
 
             }
             if (body.retryCount != null) {
@@ -76,7 +76,7 @@ class MultipartApi(private val client: ApiClient) {
     /**
      * sendTextFields POST /multipart/text-only.
      */
-    fun sendTextFields(body: TextFields): SendTextFieldsResponse {
+    fun sendTextFields(body: SendTextFieldsMultipartRequestBody): SendTextFieldsResponse {
         val path = "/multipart/text-only"
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
         multipartBuilder.addFormDataPart("enabled", null, body.enabled.toString().toRequestBody("text/plain".toMediaType()))

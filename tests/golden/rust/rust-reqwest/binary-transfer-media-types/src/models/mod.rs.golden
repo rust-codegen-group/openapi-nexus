@@ -10,3 +10,5 @@ mod upload_metadata;
 pub use upload_metadata::*;
 mod upload_asset_request;
 pub use upload_asset_request::*;
+mod upload_asset_multipart_request_body;
+pub use upload_asset_multipart_request_body::*;

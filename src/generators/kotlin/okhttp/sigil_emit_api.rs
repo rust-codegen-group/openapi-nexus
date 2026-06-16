@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
+use crate::generators::request_inputs::{RequestInputPlan, request_input_for_operation};
 use crate::ir::types::{
     IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
 };
@@ -20,13 +21,14 @@ pub fn generate_api_files(
     ir: &IrSpec,
     package_name: &str,
     header: &str,
+    request_inputs: &RequestInputPlan,
 ) -> Result<Vec<FileInfo>, String> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let filename = format!("{class_name}.kt");
-        let body = emit_api_file(tag, ops, ir, package_name);
+        let body = emit_api_file(tag, ops, ir, package_name, request_inputs);
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -52,9 +54,18 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
 // File assembly
 // ---------------------------------------------------------------------------
 
-fn emit_api_file(tag: &str, ops: &[&IrOperation], ir: &IrSpec, package_name: &str) -> String {
+fn emit_api_file(
+    tag: &str,
+    ops: &[&IrOperation],
+    ir: &IrSpec,
+    package_name: &str,
+    request_inputs: &RequestInputPlan,
+) -> String {
     let class_name = format!("{}Api", tag.to_pascal_case());
-    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op, ir)).collect();
+    let plans: Vec<OpPlan> = ops
+        .iter()
+        .map(|op| plan_operation(op, ir, request_inputs))
+        .collect();
 
     let filename = format!("{class_name}.kt");
     let mut fb = FileSpec::builder_with(&filename, Kotlin::new())
@@ -542,7 +553,7 @@ fn emit_required_multipart_part(
     if part.is_binary {
         cb.add_code(
             sigil_quote!(Kotlin {
-                multipartBuilder.addFormDataPart($S(wire_name), $S(wire_name), $L(access).toRequestBody($S(content_type).toMediaType()))
+                multipartBuilder.addFormDataPart($S(wire_name), $L(access).filenameOrDefault($S(wire_name)), $L(access).data.toRequestBody($S(content_type).toMediaType()))
             })
             .expect("binary multipart part block builds"),
         );
@@ -635,7 +646,11 @@ struct TypedResponse {
     decoding: ResponseDecoding,
 }
 
-fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
+fn plan_operation<'a>(
+    op: &'a IrOperation,
+    ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
+) -> OpPlan<'a> {
     let op_id = sanitize_operation_id(&op.operation_id, &op.method, &op.path);
     let method_name = op_id.to_lower_camel_case();
     let response_type = format!("{}Response", op_id.to_pascal_case());
@@ -668,7 +683,7 @@ fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
     let body = op
         .request_body
         .as_ref()
-        .and_then(|b| plan_body(b, ir, &mut used_names));
+        .and_then(|b| plan_body(op, b, ir, request_inputs, &mut used_names));
 
     let typed_responses = op.responses.iter().filter_map(plan_response).collect();
 
@@ -685,8 +700,10 @@ fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
 }
 
 fn plan_body(
+    op: &IrOperation,
     b: &IrRequestBody,
     ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
     used_names: &mut HashSet<String>,
 ) -> Option<BodyBinding> {
     let (media_type, t) = pick_body_content(b)?;
@@ -694,6 +711,9 @@ fn plan_body(
     let mut kt_type = match encoding {
         BodyEncoding::TextPlain => "String".to_string(),
         BodyEncoding::OctetStream => "ByteArray".to_string(),
+        BodyEncoding::Multipart => request_input_for_operation(request_inputs, op, &media_type)
+            .map(|input| input.name.to_pascal_case())
+            .unwrap_or_else(|| kt_type_str(&t)),
         _ => kt_type_str(&t),
     };
     if !b.required {

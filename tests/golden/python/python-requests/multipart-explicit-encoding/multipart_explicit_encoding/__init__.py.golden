@@ -8,3 +8,4 @@ from .runtime import Authenticator as Authenticator
 from .runtime import BearerAuth as BearerAuth
 from .runtime import Client as Client
 from .runtime import ApiError as ApiError
+from .runtime import UploadFile as UploadFile

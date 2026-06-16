@@ -5,6 +5,9 @@ use openapi_nexus::generators::java::okhttp::JavaOkhttpCodeGenerator;
 use openapi_nexus::generators::kotlin::okhttp::KotlinOkhttpCodeGenerator;
 use openapi_nexus::generators::python::httpx::PythonHttpxCodeGenerator;
 use openapi_nexus::generators::python::requests::PythonRequestsCodeGenerator;
+use openapi_nexus::generators::rust::aioduct::RustAioductCodeGenerator;
+use openapi_nexus::generators::rust::reqwest::RustReqwestCodeGenerator;
+use openapi_nexus::generators::rust::ureq::RustUreqCodeGenerator;
 use openapi_nexus::generators::typescript::fetch::TypeScriptFetchCodeGenerator;
 use openapi_nexus::test_utils::{generate_files, read_fixture};
 
@@ -26,51 +29,97 @@ fn generated_file<'a>(files: &'a HashMap<String, String>, suffix: &str) -> &'a s
 }
 
 #[test]
-fn multipart_wire_construction_is_pinned_across_non_rust_clients() {
+fn multipart_wire_construction_is_pinned_across_clients() {
     let fixture = read_fixture("valid/multipart-edge-cases.yaml");
 
     let go_files = generate_files(&GoHttpCodeGenerator::new(empty_config()), &fixture).unwrap();
     let go_api = generated_file(&go_files, "apis/multipart.go");
+    let go_input = generated_file(
+        &go_files,
+        "models/send_optional_parts_multipart_request_body.go",
+    );
     assert!(go_api.contains("multipart.NewWriter(buf)"));
-    assert!(go_api.contains("strconv.FormatInt(int64(*body.RetryCount), 10)"));
-    assert!(go_api.contains("strconv.FormatBool(*body.Enabled)"));
+    assert!(go_api.contains("mime.FormatMediaType(\"form-data\""));
+    assert!(go_api.contains("value.FilenameOrDefault(\"file\")"));
+    assert!(go_api.contains("partWriter.Write(value.Data)"));
+    assert!(go_api.contains("strconv.FormatInt(int64(value), 10)"));
+    assert!(go_api.contains("strconv.FormatBool(value)"));
+    assert!(go_input.contains("File *runtime.UploadFile"));
+    assert!(!go_api.contains("filename=\"file\""));
 
     let java_files =
         generate_files(&JavaOkhttpCodeGenerator::new(empty_config()), &fixture).unwrap();
     let java_api = generated_file(&java_files, "apis/MultipartApi.java");
+    let java_input = generated_file(
+        &java_files,
+        "models/SendOptionalPartsMultipartRequestBody.java",
+    );
     assert!(java_api.contains("client.newRequestWithBody(\"POST\", path, null, multipartBody)"));
     assert!(java_api.contains("RequestBody multipartBody = RequestBody.create(new byte[0], null)"));
     assert!(java_api.contains("if (body != null)"));
     assert!(java_api.contains("if (body.getFile() != null)"));
+    assert!(java_api.contains("body.getFile().filenameOrDefault(\"file\")"));
+    assert!(java_api.contains("body.getFile().getData()"));
+    assert!(java_input.contains("private final UploadFile file;"));
+    assert!(!java_api.contains("addFormDataPart(\"file\", \"file\""));
 
     let kotlin_files =
         generate_files(&KotlinOkhttpCodeGenerator::new(empty_config()), &fixture).unwrap();
     let kotlin_api = generated_file(&kotlin_files, "apis/MultipartApi.kt");
+    let kotlin_input = generated_file(
+        &kotlin_files,
+        "models/SendOptionalPartsMultipartRequestBody.kt",
+    );
     assert!(kotlin_api.contains("client.newRequestWithBody(\"POST\", path, null, multipartBody)"));
-    assert!(kotlin_api.contains("body: OptionalUpload?"));
+    assert!(kotlin_api.contains("body: SendOptionalPartsMultipartRequestBody?"));
     assert!(kotlin_api.contains("var multipartBody = ByteArray(0).toRequestBody(null)"));
     assert!(kotlin_api.contains("if (body != null)"));
     assert!(kotlin_api.contains("if (body.file != null)"));
+    assert!(kotlin_api.contains("body.file.filenameOrDefault(\"file\")"));
+    assert!(kotlin_api.contains("body.file.data.toRequestBody"));
+    assert!(kotlin_input.contains("val file: UploadFile? = null"));
+    assert!(!kotlin_api.contains("addFormDataPart(\"file\", \"file\""));
 
     let httpx_files =
         generate_files(&PythonHttpxCodeGenerator::new(empty_config()), &fixture).unwrap();
     let httpx_api = generated_file(&httpx_files, "apis/multipart_api.py");
+    let httpx_input = generated_file(
+        &httpx_files,
+        "models/send_optional_parts_multipart_request_body.py",
+    );
     assert!(httpx_api.contains("files: dict[str, object] = {}"));
     assert!(httpx_api.contains("files[\"note\"] = (None, str(body.note), \"text/plain\")"));
+    assert!(
+        httpx_api
+            .contains("files[\"file\"] = (body.file.filename_or_default(\"file\"), body.file.data")
+    );
     assert!(httpx_api.contains("files=files if files else None"));
+    assert!(httpx_input.contains("file: UploadFile | None = None"));
     assert!(!httpx_api.contains("data=data"));
+    assert!(!httpx_api.contains("files[\"file\"] = (\"file\""));
 
     let requests_files =
         generate_files(&PythonRequestsCodeGenerator::new(empty_config()), &fixture).unwrap();
     let requests_api = generated_file(&requests_files, "apis/multipart_api.py");
+    let requests_input = generated_file(
+        &requests_files,
+        "models/send_optional_parts_multipart_request_body.py",
+    );
     assert!(requests_api.contains("files: dict[str, object] = {}"));
     assert!(requests_api.contains("files[\"note\"] = (None, str(body.note), \"text/plain\")"));
+    assert!(
+        requests_api
+            .contains("files[\"file\"] = (body.file.filename_or_default(\"file\"), body.file.data")
+    );
     assert!(requests_api.contains("files=files if files else None"));
+    assert!(requests_input.contains("file: UploadFile | None = None"));
     assert!(!requests_api.contains("data=data"));
+    assert!(!requests_api.contains("files[\"file\"] = (\"file\""));
 
     let ts_files =
         generate_files(&TypeScriptFetchCodeGenerator::new(empty_config()), &fixture).unwrap();
     let ts_api = generated_file(&ts_files, "apis/MultipartApi.ts");
+    let ts_input = generated_file(&ts_files, "models/SendOptionalPartsMultipartRequestBody.ts");
     assert!(ts_api.contains("let requestBody: Blob | undefined = undefined;"));
     assert!(
         ts_api.contains(
@@ -83,7 +132,53 @@ fn multipart_wire_construction_is_pinned_across_non_rust_clients() {
             "Content-Disposition: form-data; name=\"note\"\\r\\nContent-Type: text/plain"
         )
     );
+    assert!(ts_api.contains("uploadFileFilename(requestParameters.body.file, 'file')"));
+    assert!(ts_api.contains("uploadFileData(requestParameters.body.file)"));
+    assert!(ts_input.contains("file?: UploadFileInput;"));
     assert!(ts_api.contains("multipartChunks.push(String(requestParameters.body.note));"));
+    assert!(!ts_api.contains("filename=\"file\""));
+
+    let reqwest_files =
+        generate_files(&RustReqwestCodeGenerator::new(empty_config()), &fixture).unwrap();
+    let reqwest_api = generated_file(&reqwest_files, "apis/multipart.rs");
+    let reqwest_input = generated_file(
+        &reqwest_files,
+        "models/send_optional_parts_multipart_request_body.rs",
+    );
+    assert!(
+        reqwest_api.contains("body: Option<&crate::models::SendOptionalPartsMultipartRequestBody>")
+    );
+    assert!(reqwest_api.contains(".file_name(value.filename_or_default(\"file\").to_string())"));
+    assert!(reqwest_api.contains("reqwest::multipart::Part::bytes(value.data.clone())"));
+    assert!(reqwest_input.contains("pub file: Option<UploadFile>"));
+    assert!(!reqwest_api.contains(".file_name(\"file\")"));
+
+    let ureq_files = generate_files(&RustUreqCodeGenerator::new(empty_config()), &fixture).unwrap();
+    let ureq_api = generated_file(&ureq_files, "apis/multipart.rs");
+    let ureq_input = generated_file(
+        &ureq_files,
+        "models/send_optional_parts_multipart_request_body.rs",
+    );
+    assert!(ureq_api.contains(
+        "crate::runtime::multipart_header_value(&value.filename_or_default(\"file\").to_string())"
+    ));
+    assert!(ureq_api.contains("multipart_body.extend_from_slice(&value.data.clone());"));
+    assert!(ureq_input.contains("pub file: Option<UploadFile>"));
+    assert!(!ureq_api.contains("filename=\\\"file\\\""));
+
+    let aioduct_files =
+        generate_files(&RustAioductCodeGenerator::new(empty_config()), &fixture).unwrap();
+    let aioduct_api = generated_file(&aioduct_files, "apis/multipart.rs");
+    let aioduct_input = generated_file(
+        &aioduct_files,
+        "models/send_optional_parts_multipart_request_body.rs",
+    );
+    assert!(
+        aioduct_api.contains(
+            "multipart.file(\"file\", value.filename_or_default(\"file\").to_string(), \"application/octet-stream\", value.data.clone())"
+        )
+    );
+    assert!(aioduct_input.contains("pub file: Option<UploadFile>"));
 }
 
 #[test]

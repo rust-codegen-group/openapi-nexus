@@ -4,6 +4,7 @@ pub mod kotlin;
 pub mod multipart;
 pub mod python;
 pub mod registry;
+pub mod request_inputs;
 pub mod rust;
 pub mod typescript;
 

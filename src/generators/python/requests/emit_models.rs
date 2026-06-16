@@ -5,6 +5,9 @@
 //! Each schema produces one `.py` file via `FileSpec`.
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::request_inputs::{
+    RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
+};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion, TaggingStyle,
@@ -15,7 +18,11 @@ use sigil_stitch::lang::python::Python;
 use sigil_stitch::prelude::*;
 
 /// Generate every model file from the IR.
-pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, String> {
+pub fn generate_model_files(
+    ir: &IrSpec,
+    header: &str,
+    request_inputs: &RequestInputPlan,
+) -> Result<Vec<FileInfo>, String> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
         let body = emit_model_body(schema, ir).ok_or_else(|| {
@@ -31,7 +38,63 @@ pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, 
         content.push_str(&body);
         files.push(FileInfo::model(filename, content));
     }
+    for model in request_inputs.models() {
+        files.push(request_input_model_file(model, header));
+    }
     Ok(files)
+}
+
+fn request_input_model_file(model: &RequestInputModel, header: &str) -> FileInfo {
+    let class_name = model.name.to_pascal_case();
+    let filename = format!("{}.py", model.name.to_snake_case());
+    let mut imports = std::collections::BTreeSet::new();
+    let mut needs_upload = false;
+    for field in &model.fields {
+        if field.is_upload() {
+            needs_upload = true;
+        } else {
+            collect_request_input_imports(&field.type_expr, &mut imports);
+        }
+    }
+
+    let mut content = String::new();
+    content.push_str(header);
+    content.push_str("from __future__ import annotations\n\n");
+    content.push_str("from dataclasses import dataclass\n");
+    if needs_upload {
+        content.push_str("from ..runtime import UploadFile\n");
+    }
+    for import in &imports {
+        content.push_str(import);
+        content.push('\n');
+    }
+    content.push('\n');
+    content.push_str("@dataclass\n");
+    content.push_str(&format!("class {class_name}:\n"));
+    if model.fields.is_empty() {
+        content.push_str("    pass\n");
+    } else {
+        let required = model.fields.iter().filter(|field| field.required);
+        let optional = model.fields.iter().filter(|field| !field.required);
+        for field in required.chain(optional) {
+            let field_name = python_field_name(&field.wire_name);
+            let ty = request_input_python_type(field);
+            if field.required {
+                content.push_str(&format!("    {field_name}: {ty}\n"));
+            } else {
+                content.push_str(&format!("    {field_name}: {ty} | None = None\n"));
+            }
+        }
+    }
+
+    FileInfo::model(filename, content)
+}
+
+fn request_input_python_type(field: &RequestInputField) -> String {
+    match field.kind {
+        RequestInputFieldKind::UploadFile { .. } => "UploadFile".to_string(),
+        RequestInputFieldKind::SchemaValue => python_type_str(&field.type_expr),
+    }
 }
 
 fn emit_model_body(schema: &IrSchema, ir: &IrSpec) -> Option<String> {
@@ -817,6 +880,43 @@ fn python_primitive(p: &IrPrimitive) -> &'static str {
         IrPrimitive::Date => "datetime.date",
         IrPrimitive::DateTime => "datetime.datetime",
         IrPrimitive::Uuid => "uuid.UUID",
+    }
+}
+
+fn collect_request_input_imports(
+    expr: &IrTypeExpr,
+    imports: &mut std::collections::BTreeSet<String>,
+) {
+    match expr {
+        IrTypeExpr::Named(name) => {
+            let py_name = name.to_pascal_case();
+            let module = name.to_snake_case();
+            imports.insert(format!("from .{module} import {py_name}"));
+        }
+        IrTypeExpr::Primitive(IrPrimitive::Date | IrPrimitive::DateTime) => {
+            imports.insert("import datetime".to_string());
+        }
+        IrTypeExpr::Primitive(IrPrimitive::Uuid) => {
+            imports.insert("import uuid".to_string());
+        }
+        IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => {
+            imports.insert("from typing import Literal".to_string());
+        }
+        IrTypeExpr::Union(members) => {
+            if members.is_empty() {
+                imports.insert("from typing import Any".to_string());
+            }
+            for member in members {
+                collect_request_input_imports(member, imports);
+            }
+        }
+        IrTypeExpr::Any => {
+            imports.insert("from typing import Any".to_string());
+        }
+        IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
+            collect_request_input_imports(inner, imports);
+        }
+        _ => {}
     }
 }
 

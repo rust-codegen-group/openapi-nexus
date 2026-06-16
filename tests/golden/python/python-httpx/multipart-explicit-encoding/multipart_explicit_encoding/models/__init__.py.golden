@@ -5,4 +5,5 @@
 
 from .audit_attributes import AuditAttributes as AuditAttributes
 from .upload_attributes import UploadAttributes as UploadAttributes
+from .upload_encoded_asset_multipart_request_body import UploadEncodedAssetMultipartRequestBody as UploadEncodedAssetMultipartRequestBody
 from .upload_encoded_asset_request import UploadEncodedAssetRequest as UploadEncodedAssetRequest

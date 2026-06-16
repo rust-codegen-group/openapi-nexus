@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import json
 
-from ..models.optional_upload import OptionalUpload
-from ..models.text_fields import TextFields
+from ..models.send_optional_parts_multipart_request_body import SendOptionalPartsMultipartRequestBody
+from ..models.send_text_fields_multipart_request_body import SendTextFieldsMultipartRequestBody
 from ..runtime.client import Client
 from ..runtime.errors import ApiError
 
@@ -16,7 +16,7 @@ class MultipartApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def send_optional_parts(self, *, body: OptionalUpload | None = None) -> None:
+    def send_optional_parts(self, *, body: SendOptionalPartsMultipartRequestBody | None = None) -> None:
         path = "/multipart/optional"
         files: dict[str, object] = {}
         if body is not None:
@@ -27,7 +27,7 @@ class MultipartApi:
                 files["enabled"] = (None, str(body.enabled), "text/plain")
                 
             if body.file is not None:
-                files["file"] = ("file", body.file, "application/octet-stream")
+                files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")
                 
             if body.retry_count is not None:
                 files["retry_count"] = (None, str(body.retry_count), "text/plain")
@@ -41,7 +41,7 @@ class MultipartApi:
             raise ApiError(response.status_code, response.reason, response.content)
         return None
 
-    def send_text_fields(self, *, body: TextFields) -> None:
+    def send_text_fields(self, *, body: SendTextFieldsMultipartRequestBody) -> None:
         path = "/multipart/text-only"
         files: dict[str, object] = {}
         files["enabled"] = (None, str(body.enabled), "text/plain")

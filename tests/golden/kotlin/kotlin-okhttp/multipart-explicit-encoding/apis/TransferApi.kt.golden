@@ -30,12 +30,12 @@ class TransferApi(private val client: ApiClient) {
     /**
      * uploadEncodedAsset POST /uploads/encoded.
      */
-    fun uploadEncodedAsset(body: UploadEncodedAssetRequest): UploadEncodedAssetResponse {
+    fun uploadEncodedAsset(body: UploadEncodedAssetMultipartRequestBody): UploadEncodedAssetResponse {
         val path = "/uploads/encoded"
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
         multipartBuilder.addFormDataPart("audit", null, gson.toJson(body.audit).toRequestBody("application/json".toMediaType()))
 
-        multipartBuilder.addFormDataPart("file", "file", body.file.toRequestBody("application/pdf".toMediaType()))
+        multipartBuilder.addFormDataPart("file", body.file.filenameOrDefault("file"), body.file.data.toRequestBody("application/pdf".toMediaType()))
 
         multipartBuilder.addFormDataPart("metadata", null, gson.toJson(body.metadata).toRequestBody("application/vnd.openapi-nexus.metadata+json".toMediaType()))
 

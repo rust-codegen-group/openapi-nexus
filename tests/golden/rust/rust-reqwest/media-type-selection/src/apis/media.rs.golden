@@ -36,12 +36,12 @@ impl<'a> MediaApi<'a> {
     /// POST /request/parameterized-multipart
     pub async fn send_parameterized_multipart(
         &self,
-        body: &crate::models::FileEnvelope,
+        body: &crate::models::SendParameterizedMultipartMultipartRequestBody,
     ) -> Result<SendParameterizedMultipartResponse, Error> {
         let path = "/request/parameterized-multipart".to_string();
         let mut req = self.client.request(reqwest::Method::POST, &path).await?;
         let mut multipart = reqwest::multipart::Form::new();
-        multipart = multipart.part("file", reqwest::multipart::Part::bytes(body.file.clone()).file_name("file").mime_str("application/octet-stream").map_err(Error::Network)?);
+        multipart = multipart.part("file", reqwest::multipart::Part::bytes(body.file.data.clone()).file_name(body.file.filename_or_default("file").to_string()).mime_str("application/octet-stream").map_err(Error::Network)?);
         if let Some(value) = &body.note {
             multipart = multipart.part("note", reqwest::multipart::Part::text(value.to_string()).mime_str("text/plain").map_err(Error::Network)?);
         }

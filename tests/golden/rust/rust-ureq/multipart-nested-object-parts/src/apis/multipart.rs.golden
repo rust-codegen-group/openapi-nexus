@@ -23,18 +23,18 @@ impl<'a> MultipartApi<'a> {
     /// POST /multipart/nested-object
     pub fn send_nested_object_part(
         &self,
-        body: &crate::models::NestedUpload,
+        body: &crate::models::SendNestedObjectPartMultipartRequestBody,
     ) -> Result<SendNestedObjectPartResponse, Error> {
         let path = "/multipart/nested-object".to_string();
         let mut req = self.client.post(&path);
         let boundary = format!("openapi-nexus-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|duration| duration.as_nanos()).unwrap_or(0));
         let mut multipart_body: Vec<u8> = Vec::new();
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n", "file", "file", "application/octet-stream").as_bytes());
-        multipart_body.extend_from_slice(&body.file.clone());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value("file"), crate::runtime::multipart_header_value(&body.file.filename_or_default("file").to_string()), "application/octet-stream").as_bytes());
+        multipart_body.extend_from_slice(&body.file.data.clone());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "item_config", "application/json").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value("item_config"), "application/json").as_bytes());
         multipart_body.extend_from_slice(serde_json::to_string(&body.item_config)?.as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());

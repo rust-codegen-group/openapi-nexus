@@ -5,6 +5,7 @@ use crate::ir::types::{IrObject, IrPrimitive, IrRequestBody, IrSchemaKind, IrSpe
 #[derive(Debug, Clone)]
 pub struct MultipartPart {
     pub wire_name: String,
+    pub default_filename: String,
     pub type_expr: IrTypeExpr,
     pub is_binary: bool,
     pub required: bool,
@@ -75,6 +76,7 @@ fn multipart_part_from_property(
 
     MultipartPart {
         wire_name: wire_name.to_string(),
+        default_filename: wire_name.to_string(),
         type_expr: type_expr.clone(),
         is_binary,
         required,
@@ -122,7 +124,7 @@ pub fn is_json_media_type(media_type: &str) -> bool {
     base == "application/json" || base.ends_with("+json")
 }
 
-fn media_type_base(media_type: &str) -> String {
+pub fn media_type_base(media_type: &str) -> String {
     media_type
         .split(';')
         .next()

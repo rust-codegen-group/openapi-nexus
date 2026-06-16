@@ -6,6 +6,7 @@
 use std::fs;
 use std::path::Path;
 
+use openapi_nexus::generators::request_inputs::RequestInputPlan;
 use openapi_nexus::generators::typescript::fetch::sigil_emit_api::generate_api_files;
 use sigil_stitch::lang::typescript::TypeScript;
 
@@ -30,7 +31,9 @@ fn petstore_api_scaffold_emits_one_file_per_tag() {
     let parsed = openapi_nexus::parser::parse_content_yaml(&yaml).unwrap();
     let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
 
-    let files = generate_api_files(&ir, false, &TypeScript::new()).expect("scaffold renders");
+    let request_inputs = RequestInputPlan::empty();
+    let files = generate_api_files(&ir, false, &request_inputs, &TypeScript::new())
+        .expect("scaffold renders");
     assert!(
         !files.is_empty(),
         "expected at least one API file for petstore"
@@ -74,7 +77,9 @@ fn minimal_api_scaffold_has_no_request_interface_when_op_has_no_params() {
     let parsed = openapi_nexus::parser::parse_content_yaml(&yaml).unwrap();
     let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
 
-    let files = generate_api_files(&ir, false, &TypeScript::new()).expect("scaffold renders");
+    let request_inputs = RequestInputPlan::empty();
+    let files = generate_api_files(&ir, false, &request_inputs, &TypeScript::new())
+        .expect("scaffold renders");
     let default_api = files
         .iter()
         .find(|f| f.filename.ends_with("DefaultApi.ts"))

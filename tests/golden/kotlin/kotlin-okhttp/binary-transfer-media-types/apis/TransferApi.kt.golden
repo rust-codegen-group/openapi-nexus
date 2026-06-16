@@ -57,10 +57,10 @@ class TransferApi(private val client: ApiClient) {
     /**
      * uploadAsset POST /uploads.
      */
-    fun uploadAsset(body: UploadAssetRequest): UploadAssetResponse {
+    fun uploadAsset(body: UploadAssetMultipartRequestBody): UploadAssetResponse {
         val path = "/uploads"
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("file", "file", body.file.toRequestBody("application/octet-stream".toMediaType()))
+        multipartBuilder.addFormDataPart("file", body.file.filenameOrDefault("file"), body.file.data.toRequestBody("application/octet-stream".toMediaType()))
 
         multipartBuilder.addFormDataPart("metadata", null, gson.toJson(body.metadata).toRequestBody("application/json".toMediaType()))
 

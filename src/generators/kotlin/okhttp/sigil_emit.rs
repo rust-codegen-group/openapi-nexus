@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::request_inputs::{
+    RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
+};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrSchema, IrSchemaKind, IrSpec,
     IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
@@ -17,6 +20,7 @@ pub fn generate_model_files(
     ir: &IrSpec,
     package_name: &str,
     header: &str,
+    request_inputs: &RequestInputPlan,
 ) -> Result<Vec<FileInfo>, String> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
@@ -33,7 +37,49 @@ pub fn generate_model_files(
         content.push_str(&body);
         files.push(FileInfo::model(filename, content));
     }
+    for model in request_inputs.models() {
+        files.push(request_input_model_file(model, package_name, header));
+    }
     Ok(files)
+}
+
+fn request_input_model_file(
+    model: &RequestInputModel,
+    package_name: &str,
+    header: &str,
+) -> FileInfo {
+    let class_name = model.name.to_pascal_case();
+    let needs_upload = model.fields.iter().any(RequestInputField::is_upload);
+    let mut content = String::new();
+    content.push_str(header);
+    content.push_str(&format!("package {package_name}.models\n\n"));
+    if needs_upload {
+        content.push_str(&format!("import {package_name}.runtime.UploadFile\n\n"));
+    }
+    content.push_str(&format!("data class {class_name}(\n"));
+    for field in &model.fields {
+        let field_name = kt_field_name(&field.wire_name);
+        let mut field_type = request_input_kt_type(field);
+        let default = if field.required {
+            ""
+        } else {
+            if !field_type.ends_with('?') {
+                field_type.push('?');
+            }
+            " = null"
+        };
+        content.push_str(&format!("    val {field_name}: {field_type}{default},\n"));
+    }
+    content.push_str(")\n");
+
+    FileInfo::model(format!("{class_name}.kt"), content)
+}
+
+fn request_input_kt_type(field: &RequestInputField) -> String {
+    match field.kind {
+        RequestInputFieldKind::UploadFile { .. } => "UploadFile".to_string(),
+        RequestInputFieldKind::SchemaValue => kt_type_str(&field.type_expr),
+    }
 }
 
 fn emit_model_body(schema: &IrSchema, package_name: &str) -> Option<String> {

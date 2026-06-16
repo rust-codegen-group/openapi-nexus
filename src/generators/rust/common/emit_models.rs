@@ -13,6 +13,9 @@
 use std::collections::HashSet;
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::request_inputs::{
+    RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
+};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
     IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
@@ -30,6 +33,7 @@ pub fn generate_model_files(
     ir: &IrSpec,
     header: &str,
     config: &RustGeneratorConfig,
+    request_inputs: &RequestInputPlan,
 ) -> Result<Vec<FileInfo>, String> {
     let mut files = Vec::new();
     let mut mod_entries = Vec::new();
@@ -102,6 +106,12 @@ pub fn generate_model_files(
         files.push(FileInfo::model(filename, content));
     }
 
+    for model in request_inputs.models() {
+        let stem = model.name.to_snake_case();
+        mod_entries.push(stem.clone());
+        files.push(request_input_model_file(model, header, &stem));
+    }
+
     // mod.rs that re-exports all model modules
     let mut mod_content = String::from(header);
     for entry in &mod_entries {
@@ -110,6 +120,38 @@ pub fn generate_model_files(
     files.push(FileInfo::model("mod.rs".to_string(), mod_content));
 
     Ok(files)
+}
+
+fn request_input_model_file(model: &RequestInputModel, header: &str, stem: &str) -> FileInfo {
+    let name = model.name.to_pascal_case();
+    let needs_upload = model.fields.iter().any(RequestInputField::is_upload);
+    let mut body = String::new();
+    if needs_upload {
+        body.push_str("use crate::runtime::UploadFile;\n\n");
+    }
+    body.push_str("#[derive(Debug, Clone)]\n");
+    body.push_str(&format!("pub struct {name} {{\n"));
+    for field in &model.fields {
+        let field_name = escape_rust_keyword(&field.wire_name.to_snake_case());
+        let mut field_type = request_input_rust_type(field);
+        if !field.required && !field_type.starts_with("Option<") {
+            field_type = format!("Option<{field_type}>");
+        }
+        body.push_str(&format!("    pub {field_name}: {field_type},\n"));
+    }
+    body.push_str("}\n");
+
+    let mut content = String::with_capacity(header.len() + body.len());
+    content.push_str(header);
+    content.push_str(&body);
+    FileInfo::model(format!("{stem}.rs"), content)
+}
+
+fn request_input_rust_type(field: &RequestInputField) -> String {
+    match field.kind {
+        RequestInputFieldKind::UploadFile { .. } => "UploadFile".to_string(),
+        RequestInputFieldKind::SchemaValue => rust_type_str_model(&field.type_expr),
+    }
 }
 
 fn emit_model_file(

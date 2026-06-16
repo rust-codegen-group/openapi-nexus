@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
+use crate::generators::request_inputs::{RequestInputPlan, request_input_for_operation};
 use crate::ir::types::{
     IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation,
@@ -22,13 +23,17 @@ use super::emit_models::{
 };
 
 /// Generate every API file from the IR.
-pub fn generate_api_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, String> {
+pub fn generate_api_files(
+    ir: &IrSpec,
+    header: &str,
+    request_inputs: &RequestInputPlan,
+) -> Result<Vec<FileInfo>, String> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
         let stem = tag.to_snake_case();
         let filename = format!("{stem}_api.py");
-        let body = emit_api_file(tag, ops, ir, header);
+        let body = emit_api_file(tag, ops, ir, header, request_inputs);
         files.push(FileInfo::api(filename, body));
     }
     Ok(files)
@@ -49,9 +54,18 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
     out
 }
 
-fn emit_api_file(tag: &str, ops: &[&IrOperation], ir: &IrSpec, header: &str) -> String {
+fn emit_api_file(
+    tag: &str,
+    ops: &[&IrOperation],
+    ir: &IrSpec,
+    header: &str,
+    request_inputs: &RequestInputPlan,
+) -> String {
     let class_name = format!("{}Api", tag.to_pascal_case());
-    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op, ir)).collect();
+    let plans: Vec<OpPlan> = ops
+        .iter()
+        .map(|op| plan_operation(op, ir, request_inputs))
+        .collect();
 
     let client_type = TypeName::importable("..runtime.client", "Client");
     let error_type = TypeName::importable("..runtime.errors", "ApiError");
@@ -380,8 +394,8 @@ fn emit_required_multipart_part(
     if part.is_binary {
         cb.add_statement(
             &format!(
-                "files[\"{}\"] = (\"{}\", {access}, \"{}\")",
-                part.wire_name, part.wire_name, part.content_type
+                "files[\"{}\"] = ({}.filename_or_default(\"{}\"), {}.data, \"{}\")",
+                part.wire_name, access, part.wire_name, access, part.content_type
             ),
             (),
         );
@@ -571,7 +585,11 @@ struct TypedResponse {
     decoding: ResponseDecoding,
 }
 
-fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
+fn plan_operation<'a>(
+    op: &'a IrOperation,
+    ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
+) -> OpPlan<'a> {
     let op_id = sanitize_operation_id(&op.operation_id, &op.method, &op.path);
     let method_name = op_id.to_snake_case();
 
@@ -596,7 +614,7 @@ fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
     let body = op
         .request_body
         .as_ref()
-        .and_then(|b| plan_body(b, ir, &mut used_names));
+        .and_then(|b| plan_body(op, b, ir, request_inputs, &mut used_names));
 
     let typed_responses = op.responses.iter().filter_map(plan_response).collect();
 
@@ -612,8 +630,10 @@ fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
 }
 
 fn plan_body(
+    op: &IrOperation,
     b: &IrRequestBody,
     ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
     used_names: &mut HashSet<String>,
 ) -> Option<BodyBinding> {
     let (media_type, t) = pick_body_content(b)?;
@@ -626,7 +646,13 @@ fn plan_body(
     };
     Some(BodyBinding {
         var_name,
-        type_expr: t,
+        type_expr: if encoding == BodyEncoding::Multipart {
+            request_input_for_operation(request_inputs, op, &media_type)
+                .map(|input| IrTypeExpr::Named(input.name.clone()))
+                .unwrap_or(t)
+        } else {
+            t
+        },
         required: b.required,
         media_type,
         encoding,

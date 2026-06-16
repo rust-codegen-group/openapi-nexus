@@ -78,7 +78,7 @@ export class Configuration {
 }
 
 export const DefaultConfig = new Configuration();
-
+{{UPLOAD_FILE_HELPERS}}
 /**
  * This is the base class for all generated API classes.
  */

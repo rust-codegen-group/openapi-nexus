@@ -23,13 +23,13 @@ impl<'a, R: aioduct::Runtime> TransferApi<'a, R> {
     /// POST /uploads/encoded
     pub async fn upload_encoded_asset(
         &self,
-        body: &crate::models::UploadEncodedAssetRequest,
+        body: &crate::models::UploadEncodedAssetMultipartRequestBody,
     ) -> Result<UploadEncodedAssetResponse, Error> {
         let path = "/uploads/encoded".to_string();
         let mut req = self.client.post(&path)?;
         let mut multipart = aioduct::multipart::Multipart::new();
         multipart = multipart.part(aioduct::multipart::Part::text("audit", serde_json::to_string(&body.audit)?).mime_str("application/json"));
-        multipart = multipart.file("file", "file", "application/pdf", body.file.clone());
+        multipart = multipart.file("file", body.file.filename_or_default("file").to_string(), "application/pdf", body.file.data.clone());
         multipart = multipart.part(aioduct::multipart::Part::text("metadata", serde_json::to_string(&body.metadata)?).mime_str("application/vnd.openapi-nexus.metadata+json"));
         multipart = multipart.part(aioduct::multipart::Part::text("purpose", body.purpose.to_string()).mime_str("text/plain"));
         req = req.multipart(multipart);

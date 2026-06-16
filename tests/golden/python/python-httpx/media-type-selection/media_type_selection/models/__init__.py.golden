@@ -5,3 +5,4 @@
 
 from .file_envelope import FileEnvelope as FileEnvelope
 from .payload import Payload as Payload
+from .send_parameterized_multipart_multipart_request_body import SendParameterizedMultipartMultipartRequestBody as SendParameterizedMultipartMultipartRequestBody

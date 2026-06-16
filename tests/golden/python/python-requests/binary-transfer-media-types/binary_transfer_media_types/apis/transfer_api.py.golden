@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from ..models.upload_asset_request import UploadAssetRequest
+from ..models.upload_asset_multipart_request_body import UploadAssetMultipartRequestBody
 from ..models.upload_metadata import UploadMetadata
 from ..runtime.client import Client
 from ..runtime.errors import ApiError
@@ -23,10 +23,10 @@ class TransferApi:
             raise ApiError(response.status_code, response.reason, response.content)
         return response.content
 
-    def upload_asset(self, *, body: UploadAssetRequest) -> UploadMetadata:
+    def upload_asset(self, *, body: UploadAssetMultipartRequestBody) -> UploadMetadata:
         path = "/uploads"
         files: dict[str, object] = {}
-        files["file"] = ("file", body.file, "application/octet-stream")
+        files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")
         files["metadata"] = (None, json.dumps(body.metadata.to_dict()), "application/json")
         files["purpose"] = (None, str(body.purpose), "text/plain")
         response = self._client.request("POST", path, files=files if files else None)

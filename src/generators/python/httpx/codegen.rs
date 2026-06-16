@@ -11,6 +11,7 @@ use super::{emit_api, emit_models, project_files};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::ir::types::{IrInfo, IrSpec};
 
 /// Python httpx code generator (synchronous).
@@ -48,21 +49,22 @@ impl PythonHttpxCodeGenerator {
         let package_name = self.package_name(&ir.info);
         let _ = self.resolved_package_name.set(package_name.clone());
         let header = render_file_header(&ir.info);
+        let request_inputs = plan_multipart_request_inputs(ir);
 
         let mut files = Vec::new();
 
         files.extend(
-            emit_models::generate_model_files(ir, &header).map_err(|msg| {
+            emit_models::generate_model_files(ir, &header, &request_inputs).map_err(|msg| {
                 Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}"))
             })?,
         );
 
         files.extend(
-            emit_api::generate_api_files(ir, &header)
+            emit_api::generate_api_files(ir, &header, &request_inputs)
                 .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
         );
 
-        files.extend(runtime_files(&header));
+        files.extend(runtime_files(&header, request_inputs.has_uploads()));
 
         files.extend(project_files::generate_project_files(
             &ir.info,
@@ -70,6 +72,8 @@ impl PythonHttpxCodeGenerator {
             &header,
             &ir.schemas,
             &ir.operations,
+            request_inputs.models(),
+            request_inputs.has_uploads(),
         ));
 
         Ok(files)

@@ -44,12 +44,12 @@ impl<'a, R: aioduct::Runtime> TransferApi<'a, R> {
     /// POST /uploads
     pub async fn upload_asset(
         &self,
-        body: &crate::models::UploadAssetRequest,
+        body: &crate::models::UploadAssetMultipartRequestBody,
     ) -> Result<UploadAssetResponse, Error> {
         let path = "/uploads".to_string();
         let mut req = self.client.post(&path)?;
         let mut multipart = aioduct::multipart::Multipart::new();
-        multipart = multipart.file("file", "file", "application/octet-stream", body.file.clone());
+        multipart = multipart.file("file", body.file.filename_or_default("file").to_string(), "application/octet-stream", body.file.data.clone());
         multipart = multipart.part(aioduct::multipart::Part::text("metadata", serde_json::to_string(&body.metadata)?).mime_str("application/json"));
         multipart = multipart.part(aioduct::multipart::Part::text("purpose", body.purpose.to_string()).mime_str("text/plain"));
         req = req.multipart(multipart);

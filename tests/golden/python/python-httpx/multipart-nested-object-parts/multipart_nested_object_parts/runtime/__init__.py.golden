@@ -8,3 +8,4 @@ from .auth import Authenticator as Authenticator
 from .auth import BearerAuth as BearerAuth
 from .client import Client as Client
 from .errors import ApiError as ApiError
+from .upload_file import UploadFile as UploadFile

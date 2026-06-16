@@ -7,3 +7,5 @@
 export type { Attributes } from './Attributes';
 export type { OptionalUpload } from './OptionalUpload';
 export type { TextFields } from './TextFields';
+export type { SendOptionalPartsMultipartRequestBody } from './SendOptionalPartsMultipartRequestBody';
+export type { SendTextFieldsMultipartRequestBody } from './SendTextFieldsMultipartRequestBody';

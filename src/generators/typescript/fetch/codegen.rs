@@ -13,7 +13,11 @@ use crate::codegen::NamingConvention;
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
-use crate::ir::types::IrSpec;
+use crate::generators::request_inputs::{
+    RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
+    plan_multipart_request_inputs,
+};
+use crate::ir::types::{IrPrimitive, IrSpec, IrTypeExpr};
 
 /// TypeScript Fetch code generator
 #[derive(Debug, Clone)]
@@ -51,6 +55,7 @@ impl TypeScriptFetchCodeGenerator {
     pub fn generate_models_from_ir(
         &self,
         ir: &crate::ir::types::IrSpec,
+        request_inputs: &RequestInputPlan,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let ts = TypeScript::new().with_indent(&self.config.indent);
         let flags = super::sigil_emit::EmitFlags {
@@ -63,7 +68,7 @@ impl TypeScriptFetchCodeGenerator {
             Box::<dyn Error + Send + Sync>::from(format!("sigil_emit model generation: {msg}"))
         })?;
 
-        if !ir.schemas.is_empty() {
+        if !ir.schemas.is_empty() || !request_inputs.models().is_empty() {
             let mut names: Vec<String> = ir.schemas.keys().cloned().collect();
             names.sort();
             let mut exports: Vec<String> = Vec::new();
@@ -134,30 +139,99 @@ impl TypeScriptFetchCodeGenerator {
                     }
                 }
             }
+            for model in request_inputs.models() {
+                let type_name = model.name.to_pascal_case();
+                let filename = self.generate_filename(&model.name);
+                let stem = filename.trim_end_matches(".ts");
+                exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+            }
             files.push(render_index_file(&ir.info, "models/index.ts", &exports));
+        }
+
+        for model in request_inputs.models() {
+            files.push(self.request_input_model_file(ir, model));
         }
 
         Ok(files)
     }
 
+    fn request_input_model_file(&self, ir: &IrSpec, model: &RequestInputModel) -> FileInfo {
+        let header = super::project_files::render_file_header(&ir.info);
+        let mut imports: std::collections::BTreeMap<String, std::collections::BTreeSet<String>> =
+            std::collections::BTreeMap::new();
+        let mut needs_upload = false;
+        for field in &model.fields {
+            if field.is_upload() {
+                needs_upload = true;
+            } else {
+                collect_ts_model_imports(&field.type_expr, &mut imports);
+            }
+        }
+
+        let mut content = String::new();
+        content.push_str(&header);
+        if needs_upload {
+            content.push_str("import type { UploadFileInput } from '../runtime/runtime';\n");
+        }
+        for (schema_name, type_names) in imports {
+            let filename = self.generate_filename(&schema_name);
+            let stem = filename.trim_end_matches(".ts");
+            let names = type_names.into_iter().collect::<Vec<_>>().join(", ");
+            content.push_str(&format!("import type {{ {names} }} from './{stem}';\n"));
+        }
+        if needs_upload || !model.fields.is_empty() {
+            content.push('\n');
+        }
+
+        content.push_str(&format!(
+            "export interface {} {{\n",
+            model.name.to_pascal_case()
+        ));
+        for field in &model.fields {
+            let field_name =
+                if self.config.property_naming == super::config::PropertyNaming::CamelCase {
+                    field.wire_name.to_lower_camel_case()
+                } else {
+                    field.wire_name.clone()
+                };
+            let ty = request_input_field_ts_type(field);
+            let optional = if field.required { "" } else { "?" };
+            content.push_str(&format!(
+                "  {}{}: {};\n",
+                ts_property_name(&field_name),
+                optional,
+                ty
+            ));
+        }
+        content.push_str("}\n");
+
+        FileInfo::model(self.generate_filename(&model.name), content)
+    }
+
     /// Generate ALL files from the IR spec.
     fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let mut files = Vec::new();
+        let request_inputs = plan_multipart_request_inputs(ir);
 
-        files.extend(self.generate_apis_from_ir(ir)?);
-        files.extend(self.generate_models_from_ir(ir)?);
+        files.extend(self.generate_apis_from_ir(ir, &request_inputs)?);
+        files.extend(self.generate_models_from_ir(ir, &request_inputs)?);
 
         let base_path = ir
             .servers
             .first()
             .map(|s| s.url.clone())
             .unwrap_or_else(|| "http://localhost".to_string());
-        files.push(render_runtime_file(&ir.info, &base_path));
+        files.push(render_runtime_file(
+            &ir.info,
+            &base_path,
+            request_inputs.has_uploads(),
+        ));
 
         files.push(render_readme_file(ir));
 
         let has_apis = !ir.operations.is_empty();
-        let has_models = ir.schemas.values().any(|s| s.is_component);
+        let has_models =
+            ir.schemas.values().any(|s| s.is_component) || !request_inputs.models().is_empty();
         files.extend(self.generate_project_files_from_ir(ir, has_apis, has_models));
 
         Ok(files)
@@ -170,11 +244,13 @@ impl TypeScriptFetchCodeGenerator {
     fn generate_apis_from_ir(
         &self,
         ir: &crate::ir::types::IrSpec,
+        request_inputs: &RequestInputPlan,
     ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let ts = TypeScript::new().with_indent(&self.config.indent);
         let mut files = super::sigil_emit_api::generate_api_files(
             ir,
             self.config.property_naming == super::config::PropertyNaming::CamelCase,
+            request_inputs,
             &ts,
         )
         .map_err(|msg| {
@@ -398,6 +474,106 @@ export default defineConfig({
 
         render_index_file(&ir.info, "index.ts", &exports)
     }
+}
+
+fn request_input_field_ts_type(field: &RequestInputField) -> String {
+    match field.kind {
+        RequestInputFieldKind::UploadFile { .. } => "UploadFileInput".to_string(),
+        RequestInputFieldKind::SchemaValue => ts_type_string(&field.type_expr),
+    }
+}
+
+fn ts_type_string(expr: &IrTypeExpr) -> String {
+    match expr {
+        IrTypeExpr::Named(name) => name.to_pascal_case(),
+        IrTypeExpr::Primitive(p) => match p {
+            IrPrimitive::Binary => "Blob | File".to_string(),
+            IrPrimitive::String
+            | IrPrimitive::Date
+            | IrPrimitive::DateTime
+            | IrPrimitive::Uuid
+            | IrPrimitive::StringWithFormat(_) => "string".to_string(),
+            IrPrimitive::Integer
+            | IrPrimitive::IntegerWithFormat(_)
+            | IrPrimitive::Number
+            | IrPrimitive::NumberWithFormat(_) => "number".to_string(),
+            IrPrimitive::Boolean => "boolean".to_string(),
+        },
+        IrTypeExpr::Array(inner) => format!("readonly {}[]", ts_type_string_nested(inner)),
+        IrTypeExpr::Nullable(inner) => {
+            format!("{} | null", parenthesize_union(&ts_type_string(inner)))
+        }
+        IrTypeExpr::StringLiteral(value) => {
+            format!("'{}'", value.replace('\\', "\\\\").replace('\'', "\\'"))
+        }
+        IrTypeExpr::StringEnum(values) => values
+            .iter()
+            .map(|value| format!("'{}'", value.replace('\\', "\\\\").replace('\'', "\\'")))
+            .collect::<Vec<_>>()
+            .join(" | "),
+        IrTypeExpr::Map(inner) => format!("Record<string, {}>", ts_type_string(inner)),
+        IrTypeExpr::Union(members) => members
+            .iter()
+            .map(ts_type_string)
+            .collect::<Vec<_>>()
+            .join(" | "),
+        IrTypeExpr::Any => "unknown".to_string(),
+    }
+}
+
+fn ts_type_string_nested(expr: &IrTypeExpr) -> String {
+    match expr {
+        IrTypeExpr::Array(inner) => format!("{}[]", ts_type_string_nested(inner)),
+        other => parenthesize_union(&ts_type_string(other)),
+    }
+}
+
+fn parenthesize_union(ty: &str) -> String {
+    if ty.contains(" | ") {
+        format!("({ty})")
+    } else {
+        ty.to_string()
+    }
+}
+
+fn collect_ts_model_imports(
+    expr: &IrTypeExpr,
+    imports: &mut std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
+) {
+    match expr {
+        IrTypeExpr::Named(name) => {
+            imports
+                .entry(name.clone())
+                .or_default()
+                .insert(name.to_pascal_case());
+        }
+        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
+            collect_ts_model_imports(inner, imports);
+        }
+        IrTypeExpr::Union(members) => {
+            for member in members {
+                collect_ts_model_imports(member, imports);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn ts_property_name(name: &str) -> String {
+    if is_js_identifier(name) {
+        name.to_string()
+    } else {
+        format!("'{}'", name.replace('\\', "\\\\").replace('\'', "\\'"))
+    }
+}
+
+fn is_js_identifier(name: &str) -> bool {
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(c) if c == '_' || c == '$' || c.is_ascii_alphabetic() => {}
+        _ => return false,
+    }
+    chars.all(|c| c == '_' || c == '$' || c.is_ascii_alphanumeric())
 }
 
 impl CodeGenerator for TypeScriptFetchCodeGenerator {

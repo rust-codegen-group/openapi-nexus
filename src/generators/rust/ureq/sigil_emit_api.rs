@@ -5,9 +5,9 @@ use sigil_stitch::prelude::sigil_quote;
 
 use crate::generators::rust::common::emit_api::{
     BodyEncoding, MultipartPart, MultipartValueEncoding, OpPlan, RustBackendConfig,
-    binary_field_expr, emit_response_match, emit_result_init, optional_binary_field_expr,
-    optional_text_field_expr, render_to_string, response_value_expr, rust_field_name,
-    rust_string_literal, text_field_expr,
+    binary_field_expr, binary_filename_expr, emit_response_match, emit_result_init,
+    optional_binary_field_expr, optional_binary_filename_expr, optional_text_field_expr,
+    render_to_string, response_value_expr, rust_field_name, rust_string_literal, text_field_expr,
 };
 use crate::ir::types::IrTypeExpr;
 
@@ -370,7 +370,14 @@ fn emit_multipart_part(
         return;
     }
     if part.required {
-        emit_part_prefix(b, &wire_name, part.is_binary, &content_type);
+        let filename_expr = part.is_binary.then(|| binary_filename_expr(body_var, part));
+        emit_part_prefix(
+            b,
+            &wire_name,
+            part.is_binary,
+            &content_type,
+            filename_expr.as_deref(),
+        );
         if part.is_binary {
             b.add(
                 &format!(
@@ -395,7 +402,16 @@ fn emit_multipart_part(
             &format!("if let Some(value) = &{body_var}.{field_name}"),
             (),
         );
-        emit_part_prefix(b, &wire_name, part.is_binary, &content_type);
+        let filename_expr = part
+            .is_binary
+            .then(|| optional_binary_filename_expr("value", part));
+        emit_part_prefix(
+            b,
+            &wire_name,
+            part.is_binary,
+            &content_type,
+            filename_expr.as_deref(),
+        );
         if part.is_binary {
             b.add(
                 &format!(
@@ -423,22 +439,24 @@ fn emit_part_prefix(
     wire_name: &str,
     is_binary: bool,
     content_type: &str,
+    filename_expr: Option<&str>,
 ) {
     b.add(
         "multipart_body.extend_from_slice(format!(\"--{}\\r\\n\", boundary).as_bytes());\n",
         (),
     );
     if is_binary {
+        let filename_expr = filename_expr.expect("binary multipart part filename");
         b.add(
             &format!(
-                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"; filename=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", {wire_name}, {wire_name}, {content_type}).as_bytes());\n",
+                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"; filename=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", crate::runtime::multipart_header_value({wire_name}), crate::runtime::multipart_header_value(&{filename_expr}), {content_type}).as_bytes());\n",
             ),
             (),
         );
     } else {
         b.add(
             &format!(
-                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", {wire_name}, {content_type}).as_bytes());\n",
+                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", crate::runtime::multipart_header_value({wire_name}), {content_type}).as_bytes());\n",
             ),
             (),
         );
