@@ -23,13 +23,13 @@ impl<'a> TransferApi<'a> {
     /// POST /uploads/encoded
     pub async fn upload_encoded_asset(
         &self,
-        body: &crate::models::UploadEncodedAssetRequest,
+        body: &crate::models::UploadEncodedAssetMultipartRequestBody,
     ) -> Result<UploadEncodedAssetResponse, Error> {
         let path = "/uploads/encoded".to_string();
         let mut req = self.client.request(reqwest::Method::POST, &path).await?;
         let mut multipart = reqwest::multipart::Form::new();
         multipart = multipart.part("audit", reqwest::multipart::Part::text(serde_json::to_string(&body.audit)?).mime_str("application/json").map_err(Error::Network)?);
-        multipart = multipart.part("file", reqwest::multipart::Part::bytes(body.file.clone()).file_name("file").mime_str("application/pdf").map_err(Error::Network)?);
+        multipart = multipart.part("file", reqwest::multipart::Part::bytes(body.file.data.clone()).file_name(body.file.filename_or_default("file").to_string()).mime_str("application/pdf").map_err(Error::Network)?);
         multipart = multipart.part("metadata", reqwest::multipart::Part::text(serde_json::to_string(&body.metadata)?).mime_str("application/vnd.openapi-nexus.metadata+json").map_err(Error::Network)?);
         multipart = multipart.part("purpose", reqwest::multipart::Part::text(body.purpose.to_string()).mime_str("text/plain").map_err(Error::Network)?);
         req = req.multipart(multipart);

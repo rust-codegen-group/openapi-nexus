@@ -79,7 +79,7 @@ public class MultipartApi {
     /**
      * sendOptionalParts POST /multipart/optional.
      */
-    public SendOptionalPartsResponse sendOptionalParts(OptionalUpload body) throws IOException {
+    public SendOptionalPartsResponse sendOptionalParts(SendOptionalPartsMultipartRequestBody body) throws IOException {
         String path = "/multipart/optional";
         Request request;
         RequestBody multipartBody = RequestBody.create(new byte[0], null);
@@ -92,7 +92,7 @@ public class MultipartApi {
                 multipartBuilder.addFormDataPart("enabled", null, RequestBody.create(String.valueOf(body.getEnabled()), MediaType.get("text/plain")));
             }
             if (body.getFile() != null) {
-                multipartBuilder.addFormDataPart("file", "file", RequestBody.create(body.getFile(), MediaType.get("application/octet-stream")));
+                multipartBuilder.addFormDataPart("file", body.getFile().filenameOrDefault("file"), RequestBody.create(body.getFile().getData(), MediaType.get("application/octet-stream")));
             }
             if (body.getRetryCount() != null) {
                 multipartBuilder.addFormDataPart("retry_count", null, RequestBody.create(String.valueOf(body.getRetryCount()), MediaType.get("text/plain")));
@@ -115,7 +115,7 @@ public class MultipartApi {
     /**
      * sendTextFields POST /multipart/text-only.
      */
-    public SendTextFieldsResponse sendTextFields(TextFields body) throws IOException {
+    public SendTextFieldsResponse sendTextFields(SendTextFieldsMultipartRequestBody body) throws IOException {
         String path = "/multipart/text-only";
         Request request;
         MultipartBody.Builder multipartBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);

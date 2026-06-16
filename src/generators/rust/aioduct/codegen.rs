@@ -9,6 +9,7 @@ use super::sigil_emit_api::{aioduct_backend_config, emit_method_body};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::generators::rust::common::{
     config::RustGeneratorConfig, emit_api, emit_models, project_files,
 };
@@ -43,13 +44,14 @@ impl RustAioductCodeGenerator {
         let default_cfg = default_aioduct_features();
         let aioduct_cfg: &AioductFeatureConfig =
             self.config.aioduct.as_ref().unwrap_or(&default_cfg);
+        let request_inputs = plan_multipart_request_inputs(ir);
 
         let mut files = Vec::new();
 
         files.extend(
-            emit_models::generate_model_files(ir, &header, &self.config).map_err(|msg| {
-                Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}"))
-            })?,
+            emit_models::generate_model_files(ir, &header, &self.config, &request_inputs).map_err(
+                |msg| Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}")),
+            )?,
         );
 
         let response_extra = self
@@ -63,12 +65,17 @@ impl RustAioductCodeGenerator {
                 &header,
                 &backend_config,
                 response_extra,
+                &request_inputs,
                 &emit_method_body,
             )
             .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
         );
 
-        files.extend(runtime_files(&header, aioduct_cfg));
+        files.extend(runtime_files(
+            &header,
+            aioduct_cfg,
+            request_inputs.has_uploads(),
+        ));
 
         files.push(cargo_toml_file(&crate_name, ir, &self.config));
         files.push(project_files::lib_rs_file(&header));

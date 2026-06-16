@@ -8,6 +8,39 @@ use crate::ir::types::{IrInfo, IrSpec};
 
 const RUNTIME_TS_BODY: &str = include_str!("project_files/runtime.ts.txt");
 const README_MD_BODY: &str = include_str!("project_files/README.md.txt");
+const UPLOAD_FILE_HELPERS: &str = r#"export interface UploadFile {
+  data: Blob;
+  filename?: string;
+}
+
+export type UploadFileInput = Blob | File | UploadFile;
+
+export function uploadFileData(value: UploadFileInput): Blob {
+  return isUploadFile(value) ? value.data : value;
+}
+
+export function uploadFileFilename(value: UploadFileInput, fallback: string): string {
+  if (isFile(value) && value.name) {
+    return value.name;
+  }
+  if (isUploadFile(value) && value.filename) {
+    return value.filename;
+  }
+  return fallback;
+}
+
+export function multipartHeaderValue(value: string): string {
+  return value.replace(/[\r\n]/g, '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function isUploadFile(value: UploadFileInput): value is UploadFile {
+  return typeof value === 'object' && value !== null && 'data' in value;
+}
+
+function isFile(value: UploadFileInput): value is File {
+  return typeof File !== 'undefined' && value instanceof File;
+}
+"#;
 
 /// Render the `@generated` file header used by all generated TypeScript files.
 /// Terminates with a trailing newline so callers can concatenate body content
@@ -40,10 +73,20 @@ pub fn render_index_file(info: &IrInfo, output_path: &str, exports: &[String]) -
     FileInfo::project(output_path.to_string(), content)
 }
 
-/// Render `runtime/runtime.ts` — fully static except for the base URL.
-pub fn render_runtime_file(info: &IrInfo, base_path: &str) -> FileInfo {
+/// Render `runtime/runtime.ts` — static except for the base URL and conditional
+/// upload helpers used by multipart request input models.
+pub fn render_runtime_file(info: &IrInfo, base_path: &str, include_upload_file: bool) -> FileInfo {
     let mut content = render_file_header(info);
-    content.push_str(&RUNTIME_TS_BODY.replace("{{BASE_PATH}}", base_path));
+    let upload_helpers = if include_upload_file {
+        format!("\n{}\n", UPLOAD_FILE_HELPERS.trim_end())
+    } else {
+        String::new()
+    };
+    content.push_str(
+        &RUNTIME_TS_BODY
+            .replace("{{BASE_PATH}}", base_path)
+            .replace("{{UPLOAD_FILE_HELPERS}}", &upload_helpers),
+    );
     FileInfo::runtime("runtime.ts".to_string(), content)
 }
 

@@ -4,12 +4,12 @@
  * Multipart Explicit Encoding — 1.0.0
  * Covers explicit multipart part content types.
  */
-import type { UploadEncodedAssetRequest } from '../models/UploadEncodedAssetRequest';
+import type { UploadEncodedAssetMultipartRequestBody } from '../models/UploadEncodedAssetMultipartRequestBody';
 import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse } from '../runtime/runtime';
+import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse, multipartHeaderValue, uploadFileData, uploadFileFilename } from '../runtime/runtime';
 
 export interface ApiUploadEncodedAssetRequest {
-  body: UploadEncodedAssetRequest;
+  body: UploadEncodedAssetMultipartRequestBody;
 }
 
 export type UploadEncodedAssetRawResponse =
@@ -53,9 +53,12 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="audit"\r\nContent-Type: application/json\r\n\r\n');
     multipartChunks.push(JSON.stringify(requestParameters.body.audit));
     multipartChunks.push('\r\n');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="file"\r\nContent-Type: application/pdf\r\n\r\n');
-    multipartChunks.push(requestParameters.body.file);
+    {
+    const multipartFilename = uploadFileFilename(requestParameters.body.file, 'file');
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + multipartHeaderValue(multipartFilename) + '"\r\nContent-Type: application/pdf\r\n\r\n');
+    multipartChunks.push(uploadFileData(requestParameters.body.file));
     multipartChunks.push('\r\n');
+    }
     multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/vnd.openapi-nexus.metadata+json\r\n\r\n');
     multipartChunks.push(JSON.stringify(requestParameters.body.metadata));
     multipartChunks.push('\r\n');

@@ -9,6 +9,7 @@ use super::sigil_emit_api::{emit_method_body, ureq_backend_config};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::generators::rust::common::{
     config::RustGeneratorConfig, emit_api, emit_models, project_files,
 };
@@ -38,13 +39,14 @@ impl RustUreqCodeGenerator {
         let header = project_files::render_file_header(&ir.info);
         let crate_name = self.crate_name(&ir.info);
         let backend_config = ureq_backend_config();
+        let request_inputs = plan_multipart_request_inputs(ir);
 
         let mut files = Vec::new();
 
         files.extend(
-            emit_models::generate_model_files(ir, &header, &self.config).map_err(|msg| {
-                Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}"))
-            })?,
+            emit_models::generate_model_files(ir, &header, &self.config, &request_inputs).map_err(
+                |msg| Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}")),
+            )?,
         );
 
         let response_extra = self
@@ -58,12 +60,13 @@ impl RustUreqCodeGenerator {
                 &header,
                 &backend_config,
                 response_extra,
+                &request_inputs,
                 &emit_method_body,
             )
             .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
         );
 
-        files.extend(runtime_files(&header));
+        files.extend(runtime_files(&header, request_inputs.has_uploads()));
 
         files.push(cargo_toml_file(&crate_name, &ir.info, &self.config));
         files.push(project_files::lib_rs_file(&header));

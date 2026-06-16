@@ -7,3 +7,4 @@
 export type { AuditAttributes } from './AuditAttributes';
 export type { UploadAttributes } from './UploadAttributes';
 export type { UploadEncodedAssetRequest } from './UploadEncodedAssetRequest';
+export type { UploadEncodedAssetMultipartRequestBody } from './UploadEncodedAssetMultipartRequestBody';

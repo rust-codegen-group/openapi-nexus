@@ -7,3 +7,5 @@
 pub mod auth;
 pub mod client;
 pub mod error;
+mod upload_file;
+pub use upload_file::{multipart_header_value, UploadFile};

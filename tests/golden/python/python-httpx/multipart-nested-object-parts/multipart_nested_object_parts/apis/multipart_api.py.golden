@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from ..models.nested_upload import NestedUpload
+from ..models.send_nested_object_part_multipart_request_body import SendNestedObjectPartMultipartRequestBody
 from ..runtime.client import Client
 from ..runtime.errors import ApiError
 
@@ -15,10 +15,10 @@ class MultipartApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def send_nested_object_part(self, *, body: NestedUpload) -> None:
+    def send_nested_object_part(self, *, body: SendNestedObjectPartMultipartRequestBody) -> None:
         path = "/multipart/nested-object"
         files: dict[str, object] = {}
-        files["file"] = ("file", body.file, "application/octet-stream")
+        files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")
         files["item_config"] = (None, json.dumps(body.item_config.to_dict()), "application/json")
         response = self._client.request("POST", path, files=files if files else None)
         if response.status_code >= 400:

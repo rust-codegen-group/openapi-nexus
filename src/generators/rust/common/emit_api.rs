@@ -12,6 +12,7 @@ use std::collections::{BTreeMap, HashSet};
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::multipart::multipart_parts_for_request_body;
 pub use crate::generators::multipart::{MultipartPart, MultipartValueEncoding};
+use crate::generators::request_inputs::{RequestInputPlan, request_input_for_operation};
 use crate::ir::types::{
     IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
 };
@@ -55,6 +56,7 @@ pub fn generate_api_files(
     header: &str,
     config: &RustBackendConfig,
     response_extra_derives: Option<&ExtraDeriveConfig>,
+    request_inputs: &RequestInputPlan,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
 ) -> Result<Vec<FileInfo>, String> {
     let by_tag = group_by_tag(&ir.operations);
@@ -65,7 +67,15 @@ pub fn generate_api_files(
         let stem = tag.to_snake_case();
         let filename = format!("{stem}.rs");
         mod_entries.push(stem);
-        let body = emit_api_file(tag, ops, ir, config, response_extra_derives, body_emitter);
+        let body = emit_api_file(
+            tag,
+            ops,
+            ir,
+            config,
+            response_extra_derives,
+            request_inputs,
+            body_emitter,
+        );
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -109,10 +119,14 @@ fn emit_api_file(
     ir: &IrSpec,
     config: &RustBackendConfig,
     response_extra_derives: Option<&ExtraDeriveConfig>,
+    request_inputs: &RequestInputPlan,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
 ) -> String {
     let struct_name = format!("{}Api", tag.to_pascal_case());
-    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op, ir)).collect();
+    let plans: Vec<OpPlan> = ops
+        .iter()
+        .map(|op| plan_operation(op, ir, request_inputs))
+        .collect();
 
     let stem = tag.to_snake_case();
     let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
@@ -257,7 +271,11 @@ pub enum ResponseDecoding {
     Other(String),
 }
 
-pub fn plan_operation<'a>(op: &'a IrOperation, ir: &'a IrSpec) -> OpPlan<'a> {
+pub fn plan_operation<'a>(
+    op: &'a IrOperation,
+    ir: &'a IrSpec,
+    request_inputs: &RequestInputPlan,
+) -> OpPlan<'a> {
     let op_id = sanitize_operation_id(&op.operation_id, &op.method, &op.path);
     let method_name = op_id.to_snake_case();
     let response_type = format!("{}Response", op_id.to_pascal_case());
@@ -288,7 +306,7 @@ pub fn plan_operation<'a>(op: &'a IrOperation, ir: &'a IrSpec) -> OpPlan<'a> {
     let body = op
         .request_body
         .as_ref()
-        .and_then(|b| plan_body(b, &mut used_names, ir));
+        .and_then(|b| plan_body(op, b, &mut used_names, ir, request_inputs));
 
     let typed_responses = op
         .responses
@@ -309,15 +327,20 @@ pub fn plan_operation<'a>(op: &'a IrOperation, ir: &'a IrSpec) -> OpPlan<'a> {
 }
 
 pub fn plan_body(
+    op: &IrOperation,
     b: &IrRequestBody,
     used_names: &mut HashSet<String>,
     ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
 ) -> Option<BodyBinding> {
     let (media_type, t) = pick_body_content(b)?;
     let encoding = body_encoding(&media_type);
     let rust_type = match encoding {
         BodyEncoding::OctetStream => "Vec<u8>".to_string(),
         BodyEncoding::TextPlain => "String".to_string(),
+        BodyEncoding::Multipart => request_input_for_operation(request_inputs, op, &media_type)
+            .map(|input| format!("crate::models::{}", input.name.to_pascal_case()))
+            .unwrap_or_else(|| rust_type_str_qualified(&t, ir)),
         _ => rust_type_str_qualified(&t, ir),
     };
     let multipart_parts = if encoding == BodyEncoding::Multipart {
@@ -708,7 +731,7 @@ pub fn text_field_expr(base: &str, part: &MultipartPart) -> String {
 }
 
 pub fn binary_field_expr(base: &str, part: &MultipartPart) -> String {
-    format!("{base}.{}.clone()", rust_field_name(&part.wire_name))
+    format!("{base}.{}.data.clone()", rust_field_name(&part.wire_name))
 }
 
 pub fn optional_text_field_expr(value: &str, part: &MultipartPart) -> String {
@@ -722,7 +745,22 @@ pub fn optional_text_field_expr(value: &str, part: &MultipartPart) -> String {
 }
 
 pub fn optional_binary_field_expr(value: &str) -> String {
-    format!("{value}.clone()")
+    format!("{value}.data.clone()")
+}
+
+pub fn binary_filename_expr(base: &str, part: &MultipartPart) -> String {
+    format!(
+        "{base}.{}.filename_or_default({}).to_string()",
+        rust_field_name(&part.wire_name),
+        rust_string_literal(&part.default_filename)
+    )
+}
+
+pub fn optional_binary_filename_expr(value: &str, part: &MultipartPart) -> String {
+    format!(
+        "{value}.filename_or_default({}).to_string()",
+        rust_string_literal(&part.default_filename)
+    )
 }
 
 pub fn response_value_expr(tr: &TypedResponse, bytes_var: &str) -> String {

@@ -7,3 +7,4 @@
 export type { UploadAttributes } from './UploadAttributes';
 export type { UploadMetadata } from './UploadMetadata';
 export type { UploadAssetRequest } from './UploadAssetRequest';
+export type { UploadAssetMultipartRequestBody } from './UploadAssetMultipartRequestBody';

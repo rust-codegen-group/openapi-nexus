@@ -8,6 +8,7 @@ use super::{sigil_emit, sigil_emit_api};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::ir::types::{IrInfo, IrSpec};
 
 const DEFAULT_PACKAGE: &str = "com.example.sdk";
@@ -34,22 +35,28 @@ impl JavaOkhttpCodeGenerator {
     fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let package_name = self.package_name();
         let header = render_file_header(&ir.info);
+        let request_inputs = plan_multipart_request_inputs(ir);
 
         let mut files = Vec::new();
 
         files.extend(
-            sigil_emit::generate_model_files(ir, &package_name, &header).map_err(|msg| {
-                Box::<dyn Error + Send + Sync>::from(format!("sigil_emit models: {msg}"))
-            })?,
+            sigil_emit::generate_model_files(ir, &package_name, &header, &request_inputs).map_err(
+                |msg| Box::<dyn Error + Send + Sync>::from(format!("sigil_emit models: {msg}")),
+            )?,
         );
 
         files.extend(
-            sigil_emit_api::generate_api_files(ir, &package_name, &header).map_err(|msg| {
-                Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api: {msg}"))
-            })?,
+            sigil_emit_api::generate_api_files(ir, &package_name, &header, &request_inputs)
+                .map_err(|msg| {
+                    Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api: {msg}"))
+                })?,
         );
 
-        files.extend(runtime_files(&header, &package_name));
+        files.extend(runtime_files(
+            &header,
+            &package_name,
+            request_inputs.has_uploads(),
+        ));
 
         files.push(build_gradle_file(&package_name, &ir.info));
         files.push(readme_file(&ir.info));

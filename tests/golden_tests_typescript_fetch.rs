@@ -9,6 +9,7 @@ use std::path::Path;
 
 use tracing_test::traced_test;
 
+use openapi_nexus::generators::request_inputs::RequestInputPlan;
 use openapi_nexus::generators::typescript::fetch::TypeScriptFetchCodeGenerator;
 use openapi_nexus::test_utils::{run_golden_test, test_cases_from_slice};
 
@@ -442,7 +443,10 @@ components:
     let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
 
     let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
-    let files = generator.generate_models_from_ir(&ir).unwrap();
+    let request_inputs = RequestInputPlan::empty();
+    let files = generator
+        .generate_models_from_ir(&ir, &request_inputs)
+        .unwrap();
 
     assert!(
         files.len() >= 3,
@@ -507,7 +511,10 @@ components:
     let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
 
     let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
-    let files = generator.generate_models_from_ir(&ir).unwrap();
+    let request_inputs = RequestInputPlan::empty();
+    let files = generator
+        .generate_models_from_ir(&ir, &request_inputs)
+        .unwrap();
 
     let profile_file = files
         .iter()
@@ -542,7 +549,10 @@ components:
     let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
 
     let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
-    let files = generator.generate_models_from_ir(&ir).unwrap();
+    let request_inputs = RequestInputPlan::empty();
+    let files = generator
+        .generate_models_from_ir(&ir, &request_inputs)
+        .unwrap();
 
     assert!(
         files.len() >= 3,

@@ -10,3 +10,7 @@ mod optional_upload;
 pub use optional_upload::*;
 mod text_fields;
 pub use text_fields::*;
+mod send_optional_parts_multipart_request_body;
+pub use send_optional_parts_multipart_request_body::*;
+mod send_text_fields_multipart_request_body;
+pub use send_text_fields_multipart_request_body::*;

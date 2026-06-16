@@ -1,6 +1,7 @@
 //! Project-level files: pyproject.toml, README, __init__.py barrels, py.typed.
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::request_inputs::RequestInputModel;
 use crate::ir::types::{IrInfo, IrOperation, IrSchema};
 use heck::{ToPascalCase, ToSnakeCase};
 use indexmap::IndexMap;
@@ -12,13 +13,15 @@ pub fn generate_project_files(
     header: &str,
     schemas: &IndexMap<String, IrSchema>,
     operations: &[IrOperation],
+    request_inputs: &[RequestInputModel],
+    include_upload_file: bool,
 ) -> Vec<FileInfo> {
     let files = vec![
         pyproject_toml(info, package_name),
         readme_file(info, package_name),
         py_typed(package_name),
-        top_level_init(package_name, header),
-        models_init(schemas, header),
+        top_level_init(package_name, header, include_upload_file),
+        models_init(schemas, request_inputs, header),
         apis_init(operations, header),
     ];
 
@@ -67,7 +70,7 @@ fn py_typed(package_name: &str) -> FileInfo {
     FileInfo::project(format!("{package_name}/py.typed"), String::new())
 }
 
-fn top_level_init(package_name: &str, header: &str) -> FileInfo {
+fn top_level_init(package_name: &str, header: &str, include_upload_file: bool) -> FileInfo {
     let mut content = String::new();
     content.push_str(header);
     content.push_str("from .runtime import ApiKeyAuth as ApiKeyAuth\n");
@@ -75,10 +78,17 @@ fn top_level_init(package_name: &str, header: &str) -> FileInfo {
     content.push_str("from .runtime import BearerAuth as BearerAuth\n");
     content.push_str("from .runtime import Client as Client\n");
     content.push_str("from .runtime import ApiError as ApiError\n");
+    if include_upload_file {
+        content.push_str("from .runtime import UploadFile as UploadFile\n");
+    }
     FileInfo::project(format!("{package_name}/__init__.py"), content)
 }
 
-fn models_init(schemas: &IndexMap<String, IrSchema>, header: &str) -> FileInfo {
+fn models_init(
+    schemas: &IndexMap<String, IrSchema>,
+    request_inputs: &[RequestInputModel],
+    header: &str,
+) -> FileInfo {
     let mut content = String::new();
     content.push_str(header);
 
@@ -86,6 +96,11 @@ fn models_init(schemas: &IndexMap<String, IrSchema>, header: &str) -> FileInfo {
     for (_key, schema) in schemas {
         let py_name = schema.name.to_pascal_case();
         let module = schema.name.to_snake_case();
+        entries.push((module, py_name));
+    }
+    for model in request_inputs {
+        let py_name = model.name.to_pascal_case();
+        let module = model.name.to_snake_case();
         entries.push((module, py_name));
     }
 

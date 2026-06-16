@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -77,7 +78,7 @@ type UploadAssetResponse struct {
 }
 
 // UploadAsset calls POST /uploads.
-func (a *TransferAPI) UploadAsset(ctx context.Context, body *models.UploadAssetRequest) (*UploadAssetResponse, error) {
+func (a *TransferAPI) UploadAsset(ctx context.Context, body *models.UploadAssetMultipartRequestBody) (*UploadAssetResponse, error) {
 	path := "/uploads"
 	var bodyReader io.Reader
 	var multipartContentType string
@@ -86,13 +87,14 @@ func (a *TransferAPI) UploadAsset(ctx context.Context, body *models.UploadAssetR
 		writer := multipart.NewWriter(buf)
 		{
 		partHeader := textproto.MIMEHeader{}
-		partHeader.Set("Content-Disposition", "form-data; name=\"file\"; filename=\"file\"")
+		disposition := mime.FormatMediaType("form-data", map[string]string{"name": "file", "filename": body.File.FilenameOrDefault("file")})
+		partHeader.Set("Content-Disposition", disposition)
 		partHeader.Set("Content-Type", "application/octet-stream")
 		partWriter, err := writer.CreatePart(partHeader)
 		if err != nil {
 			return nil, fmt.Errorf("create multipart part: %w", err)
 		}
-		if _, err := partWriter.Write(body.File); err != nil {
+		if _, err := partWriter.Write(body.File.Data); err != nil {
 			return nil, fmt.Errorf("write multipart file: %w", err)
 		}
 		}

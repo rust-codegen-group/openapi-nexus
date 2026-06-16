@@ -5,4 +5,6 @@
 
 from .attributes import Attributes as Attributes
 from .optional_upload import OptionalUpload as OptionalUpload
+from .send_optional_parts_multipart_request_body import SendOptionalPartsMultipartRequestBody as SendOptionalPartsMultipartRequestBody
+from .send_text_fields_multipart_request_body import SendTextFieldsMultipartRequestBody as SendTextFieldsMultipartRequestBody
 from .text_fields import TextFields as TextFields

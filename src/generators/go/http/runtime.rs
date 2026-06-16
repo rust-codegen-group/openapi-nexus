@@ -10,16 +10,24 @@ use crate::codegen::traits::file_writer::FileInfo;
 const CLIENT_GO: &str = include_str!("runtime/client.go.txt");
 const AUTH_GO: &str = include_str!("runtime/auth.go.txt");
 const ERRORS_GO: &str = include_str!("runtime/errors.go.txt");
+const UPLOAD_FILE_GO: &str = include_str!("runtime/upload_file.go.txt");
 
 /// Returns client.go, auth.go, errors.go ready to write.
 ///
 /// The category routes these under `<output>/runtime/` via `FileWriter`.
-pub fn runtime_files(header: &str) -> Vec<FileInfo> {
-    vec![
+pub fn runtime_files(header: &str, include_upload_file: bool) -> Vec<FileInfo> {
+    let mut files = vec![
         FileInfo::runtime("client.go".to_string(), with_header(header, CLIENT_GO)),
         FileInfo::runtime("auth.go".to_string(), with_header(header, AUTH_GO)),
         FileInfo::runtime("errors.go".to_string(), with_header(header, ERRORS_GO)),
-    ]
+    ];
+    if include_upload_file {
+        files.push(FileInfo::runtime(
+            "upload_file.go".to_string(),
+            with_header(header, UPLOAD_FILE_GO),
+        ));
+    }
+    files
 }
 
 fn with_header(header: &str, body: &str) -> String {

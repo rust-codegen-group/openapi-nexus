@@ -58,12 +58,12 @@ public class TransferApi {
     /**
      * uploadEncodedAsset POST /uploads/encoded.
      */
-    public UploadEncodedAssetResponse uploadEncodedAsset(UploadEncodedAssetRequest body) throws IOException {
+    public UploadEncodedAssetResponse uploadEncodedAsset(UploadEncodedAssetMultipartRequestBody body) throws IOException {
         String path = "/uploads/encoded";
         Request request;
         MultipartBody.Builder multipartBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         multipartBuilder.addFormDataPart("audit", null, RequestBody.create(gson.toJson(body.getAudit()), MediaType.get("application/json")));
-        multipartBuilder.addFormDataPart("file", "file", RequestBody.create(body.getFile(), MediaType.get("application/pdf")));
+        multipartBuilder.addFormDataPart("file", body.getFile().filenameOrDefault("file"), RequestBody.create(body.getFile().getData(), MediaType.get("application/pdf")));
         multipartBuilder.addFormDataPart("metadata", null, RequestBody.create(gson.toJson(body.getMetadata()), MediaType.get("application/vnd.openapi-nexus.metadata+json")));
         multipartBuilder.addFormDataPart("purpose", null, RequestBody.create(String.valueOf(body.getPurpose()), MediaType.get("text/plain")));
         RequestBody multipartBody = multipartBuilder.build();

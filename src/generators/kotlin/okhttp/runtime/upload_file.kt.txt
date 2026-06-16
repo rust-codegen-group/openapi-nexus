@@ -1,0 +1,8 @@
+package runtime
+
+data class UploadFile(
+    val data: ByteArray,
+    val filename: String? = null,
+) {
+    fun filenameOrDefault(defaultName: String): String = filename?.takeIf { it.isNotEmpty() } ?: defaultName
+}

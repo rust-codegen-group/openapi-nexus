@@ -6,3 +6,4 @@
  */
 export type { FileEnvelope } from './FileEnvelope';
 export type { Payload } from './Payload';
+export type { SendParameterizedMultipartMultipartRequestBody } from './SendParameterizedMultipartMultipartRequestBody';

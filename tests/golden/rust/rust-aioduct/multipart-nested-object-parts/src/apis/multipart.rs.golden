@@ -23,12 +23,12 @@ impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
     /// POST /multipart/nested-object
     pub async fn send_nested_object_part(
         &self,
-        body: &crate::models::NestedUpload,
+        body: &crate::models::SendNestedObjectPartMultipartRequestBody,
     ) -> Result<SendNestedObjectPartResponse, Error> {
         let path = "/multipart/nested-object".to_string();
         let mut req = self.client.post(&path)?;
         let mut multipart = aioduct::multipart::Multipart::new();
-        multipart = multipart.file("file", "file", "application/octet-stream", body.file.clone());
+        multipart = multipart.file("file", body.file.filename_or_default("file").to_string(), "application/octet-stream", body.file.data.clone());
         multipart = multipart.part(aioduct::multipart::Part::text("item_config", serde_json::to_string(&body.item_config)?).mime_str("application/json"));
         req = req.multipart(multipart);
         let resp = req.send().await?;

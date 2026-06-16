@@ -10,3 +10,5 @@ mod upload_attributes;
 pub use upload_attributes::*;
 mod upload_encoded_asset_request;
 pub use upload_encoded_asset_request::*;
+mod upload_encoded_asset_multipart_request_body;
+pub use upload_encoded_asset_multipart_request_body::*;

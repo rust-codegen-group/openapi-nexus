@@ -199,11 +199,11 @@ public class MediaApi {
     /**
      * sendParameterizedMultipart POST /request/parameterized-multipart.
      */
-    public SendParameterizedMultipartResponse sendParameterizedMultipart(FileEnvelope body) throws IOException {
+    public SendParameterizedMultipartResponse sendParameterizedMultipart(SendParameterizedMultipartMultipartRequestBody body) throws IOException {
         String path = "/request/parameterized-multipart";
         Request request;
         MultipartBody.Builder multipartBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
-        multipartBuilder.addFormDataPart("file", "file", RequestBody.create(body.getFile(), MediaType.get("application/octet-stream")));
+        multipartBuilder.addFormDataPart("file", body.getFile().filenameOrDefault("file"), RequestBody.create(body.getFile().getData(), MediaType.get("application/octet-stream")));
         if (body.getNote() != null) {
             multipartBuilder.addFormDataPart("note", null, RequestBody.create(String.valueOf(body.getNote()), MediaType.get("text/plain")));
         }

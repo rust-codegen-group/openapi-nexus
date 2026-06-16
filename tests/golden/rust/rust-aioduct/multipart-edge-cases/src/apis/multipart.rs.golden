@@ -23,7 +23,7 @@ impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
     /// POST /multipart/optional
     pub async fn send_optional_parts(
         &self,
-        body: Option<&crate::models::OptionalUpload>,
+        body: Option<&crate::models::SendOptionalPartsMultipartRequestBody>,
     ) -> Result<SendOptionalPartsResponse, Error> {
         let path = "/multipart/optional".to_string();
         let mut req = self.client.post(&path)?;
@@ -36,7 +36,7 @@ impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
                 multipart = multipart.part(aioduct::multipart::Part::text("enabled", value.to_string()).mime_str("text/plain"));
             }
             if let Some(value) = &body.file {
-                multipart = multipart.file("file", "file", "application/octet-stream", value.clone());
+                multipart = multipart.file("file", value.filename_or_default("file").to_string(), "application/octet-stream", value.data.clone());
             }
             if let Some(value) = &body.retry_count {
                 multipart = multipart.part(aioduct::multipart::Part::text("retry_count", value.to_string()).mime_str("text/plain"));
@@ -54,7 +54,7 @@ impl<'a, R: aioduct::Runtime> MultipartApi<'a, R> {
     /// POST /multipart/text-only
     pub async fn send_text_fields(
         &self,
-        body: &crate::models::TextFields,
+        body: &crate::models::SendTextFieldsMultipartRequestBody,
     ) -> Result<SendTextFieldsResponse, Error> {
         let path = "/multipart/text-only".to_string();
         let mut req = self.client.post(&path)?;

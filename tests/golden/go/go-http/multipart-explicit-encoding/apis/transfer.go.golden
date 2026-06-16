@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -36,7 +37,8 @@ type UploadEncodedAssetResponse struct {
 }
 
 // UploadEncodedAsset calls POST /uploads/encoded.
-func (a *TransferAPI) UploadEncodedAsset(ctx context.Context, body *models.UploadEncodedAssetRequest) (*UploadEncodedAssetResponse, error) {
+func (a *TransferAPI) UploadEncodedAsset(ctx context.Context,
+body *models.UploadEncodedAssetMultipartRequestBody) (*UploadEncodedAssetResponse, error) {
 	path := "/uploads/encoded"
 	var bodyReader io.Reader
 	var multipartContentType string
@@ -61,13 +63,14 @@ func (a *TransferAPI) UploadEncodedAsset(ctx context.Context, body *models.Uploa
 		}
 		{
 		partHeader := textproto.MIMEHeader{}
-		partHeader.Set("Content-Disposition", "form-data; name=\"file\"; filename=\"file\"")
+		disposition := mime.FormatMediaType("form-data", map[string]string{"name": "file", "filename": body.File.FilenameOrDefault("file")})
+		partHeader.Set("Content-Disposition", disposition)
 		partHeader.Set("Content-Type", "application/pdf")
 		partWriter, err := writer.CreatePart(partHeader)
 		if err != nil {
 			return nil, fmt.Errorf("create multipart part: %w", err)
 		}
-		if _, err := partWriter.Write(body.File); err != nil {
+		if _, err := partWriter.Write(body.File.Data); err != nil {
 			return nil, fmt.Errorf("write multipart file: %w", err)
 		}
 		}

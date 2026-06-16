@@ -20,6 +20,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
+use crate::generators::request_inputs::{RequestInputPlan, request_input_for_operation};
 use crate::ir::types::{
     IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation as IrParameterLocation,
@@ -44,6 +45,7 @@ const RUNTIME_MOD: &str = "../runtime/runtime";
 pub fn generate_api_files(
     ir: &IrSpec,
     property_naming_camel_case: bool,
+    request_inputs: &RequestInputPlan,
     ts: &TypeScript,
 ) -> Result<Vec<FileInfo>, String> {
     let header = super::project_files::render_file_header(&ir.info);
@@ -56,7 +58,15 @@ pub fn generate_api_files(
 
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
-        let file_spec = emit_api_file(tag, ops, ir, property_naming_camel_case, &convertible, ts)?;
+        let file_spec = emit_api_file(
+            tag,
+            ops,
+            ir,
+            property_naming_camel_case,
+            request_inputs,
+            &convertible,
+            ts,
+        )?;
         let body = file_spec
             .render(100)
             .map_err(|e| format!("sigil_emit_api: render {tag}: {e}"))?;
@@ -132,6 +142,7 @@ fn emit_api_file(
     ops: &[&IrOperation],
     ir: &IrSpec,
     property_naming_camel_case: bool,
+    request_inputs: &RequestInputPlan,
     convertible: &HashSet<String>,
     ts: &TypeScript,
 ) -> Result<FileSpec, String> {
@@ -142,7 +153,7 @@ fn emit_api_file(
 
     // Request interfaces — one per op that has at least one parameter / body.
     for op in ops {
-        if let Some(req_iface) = build_request_interface(op) {
+        if let Some(req_iface) = build_request_interface(op, request_inputs) {
             fb = fb.add_type(req_iface);
         }
     }
@@ -274,7 +285,10 @@ fn raw_response_members(op: &IrOperation) -> Vec<TypeName> {
 // Request interfaces
 // ============================================================================
 
-fn build_request_interface(op: &IrOperation) -> Option<TypeSpec> {
+fn build_request_interface(
+    op: &IrOperation,
+    request_inputs: &RequestInputPlan,
+) -> Option<TypeSpec> {
     let has_params = !op.parameters.is_empty() || op.request_body.is_some();
     if !has_params {
         return None;
@@ -294,7 +308,12 @@ fn build_request_interface(op: &IrOperation) -> Option<TypeSpec> {
         tb = tb.add_field(build_param_field(param, &resolved_param(&names, param)));
     }
     if let Some(rb) = &op.request_body {
-        tb = tb.add_field(build_body_field(rb, &resolved_body(&names)));
+        tb = tb.add_field(build_body_field(
+            op,
+            rb,
+            &resolved_body(&names),
+            request_inputs,
+        ));
     }
 
     tb.build().ok()
@@ -345,10 +364,23 @@ fn preferred_request_media_type(rb: &IrRequestBody) -> Option<String> {
     .or_else(|| pick_first_media_type(&rb.content))
 }
 
-fn build_body_field(rb: &IrRequestBody, name: &str) -> FieldSpec {
+fn build_body_field(
+    op: &IrOperation,
+    rb: &IrRequestBody,
+    name: &str,
+    request_inputs: &RequestInputPlan,
+) -> FieldSpec {
     let ty = preferred_request_media_type(rb)
-        .and_then(|mt| rb.content.get(mt.as_str()))
-        .map(type_expr_to_typename)
+        .and_then(|mt| {
+            if media_type_base(&mt) == "multipart/form-data" {
+                request_input_for_operation(request_inputs, op, &mt).map(|input| {
+                    let ts_name = input.name.to_pascal_case();
+                    TypeName::importable_type(&format!("../models/{ts_name}"), &ts_name)
+                })
+            } else {
+                rb.content.get(mt.as_str()).map(type_expr_to_typename)
+            }
+        })
         .unwrap_or_else(|| TypeName::primitive("unknown"));
     let mut fb = FieldSpec::builder(name, ty);
     if !rb.required {
@@ -818,47 +850,79 @@ fn emit_multipart_blob_part(
         );
         return;
     }
-    let disposition = if part.is_binary {
-        format!(
-            "form-data; name=\"{}\"; filename=\"{}\"",
-            multipart_header_quoted(&part.wire_name),
+    if part.is_binary {
+        cb.add("{\n", vec![]);
+        let header_prefix = format!(
+            "\r\nContent-Disposition: form-data; name=\"{}\"; filename=\"",
             multipart_header_quoted(&part.wire_name)
-        )
+        );
+        let header_suffix = format!(
+            "\"\r\nContent-Type: {}\r\n\r\n",
+            multipart_header_value(&part.content_type)
+        );
+        cb.add(
+            &format!(
+                "const multipartFilename = %T({part_access}, {});\n",
+                ts_string_literal(&part.wire_name)
+            ),
+            vec![Arg::TypeName(rt_value("uploadFileFilename"))],
+        );
+        cb.add(
+            &format!(
+                "multipartChunks.push('--' + multipartBoundary + {} + %T(multipartFilename) + {});\n",
+                ts_string_literal(&header_prefix),
+                ts_string_literal(&header_suffix)
+            ),
+            vec![Arg::TypeName(rt_value("multipartHeaderValue"))],
+        );
     } else {
-        format!(
+        let disposition = format!(
             "form-data; name=\"{}\"",
             multipart_header_quoted(&part.wire_name)
-        )
-    };
-    let header_tail = format!(
-        "\r\nContent-Disposition: {}\r\nContent-Type: {}\r\n\r\n",
-        disposition,
-        multipart_header_value(&part.content_type)
-    );
-    let header_tail_literal = ts_string_literal(&header_tail);
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            multipartChunks.push($S("--") + multipartBoundary + $L(header_tail_literal));
-        })
-        .expect("multipart part header block builds"),
-    );
-    let value_expr = if part.is_binary {
-        part_access.to_string()
-    } else if part.value_encoding == MultipartValueEncoding::Json {
-        let json_value = multipart_part_to_json_expr(part, part_access, convertible)
-            .unwrap_or_else(|| part_access.to_string());
-        format!("JSON.stringify({json_value})")
+        );
+        let header_tail = format!(
+            "\r\nContent-Disposition: {}\r\nContent-Type: {}\r\n\r\n",
+            disposition,
+            multipart_header_value(&part.content_type)
+        );
+        let header_tail_literal = ts_string_literal(&header_tail);
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                multipartChunks.push($S("--") + multipartBoundary + $L(header_tail_literal));
+            })
+            .expect("multipart part header block builds"),
+        );
+    }
+    if part.is_binary {
+        cb.add(
+            &format!("multipartChunks.push(%T({part_access}));\n"),
+            vec![Arg::TypeName(rt_value("uploadFileData"))],
+        );
     } else {
-        format!("String({part_access})")
-    };
+        let value_expr = if part.value_encoding == MultipartValueEncoding::Json {
+            let json_value = multipart_part_to_json_expr(part, part_access, convertible)
+                .unwrap_or_else(|| part_access.to_string());
+            format!("JSON.stringify({json_value})")
+        } else {
+            format!("String({part_access})")
+        };
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                multipartChunks.push($L(value_expr));
+            })
+            .expect("multipart part value block builds"),
+        );
+    }
     let crlf_literal = ts_string_literal("\r\n");
     cb.add_code(
         sigil_quote!(TypeScript {
-            multipartChunks.push($L(value_expr));
             multipartChunks.push($L(crlf_literal));
         })
-        .expect("multipart part value block builds"),
+        .expect("multipart part trailing crlf block builds"),
     );
+    if part.is_binary {
+        cb.add("}\n", vec![]);
+    }
 }
 
 fn emit_make_request(

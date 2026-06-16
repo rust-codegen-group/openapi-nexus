@@ -8,3 +8,5 @@ mod file_envelope;
 pub use file_envelope::*;
 mod payload;
 pub use payload::*;
+mod send_parameterized_multipart_multipart_request_body;
+pub use send_parameterized_multipart_multipart_request_body::*;

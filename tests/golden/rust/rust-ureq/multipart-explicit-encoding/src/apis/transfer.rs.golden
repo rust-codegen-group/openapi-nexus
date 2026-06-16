@@ -23,26 +23,26 @@ impl<'a> TransferApi<'a> {
     /// POST /uploads/encoded
     pub fn upload_encoded_asset(
         &self,
-        body: &crate::models::UploadEncodedAssetRequest,
+        body: &crate::models::UploadEncodedAssetMultipartRequestBody,
     ) -> Result<UploadEncodedAssetResponse, Error> {
         let path = "/uploads/encoded".to_string();
         let mut req = self.client.post(&path);
         let boundary = format!("openapi-nexus-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|duration| duration.as_nanos()).unwrap_or(0));
         let mut multipart_body: Vec<u8> = Vec::new();
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "audit", "application/json").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value("audit"), "application/json").as_bytes());
         multipart_body.extend_from_slice(serde_json::to_string(&body.audit)?.as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n", "file", "file", "application/pdf").as_bytes());
-        multipart_body.extend_from_slice(&body.file.clone());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value("file"), crate::runtime::multipart_header_value(&body.file.filename_or_default("file").to_string()), "application/pdf").as_bytes());
+        multipart_body.extend_from_slice(&body.file.data.clone());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "metadata", "application/vnd.openapi-nexus.metadata+json").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value("metadata"), "application/vnd.openapi-nexus.metadata+json").as_bytes());
         multipart_body.extend_from_slice(serde_json::to_string(&body.metadata)?.as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", "purpose", "text/plain").as_bytes());
+        multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value("purpose"), "text/plain").as_bytes());
         multipart_body.extend_from_slice(body.purpose.to_string().as_bytes());
         multipart_body.extend_from_slice(b"\r\n");
         multipart_body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());

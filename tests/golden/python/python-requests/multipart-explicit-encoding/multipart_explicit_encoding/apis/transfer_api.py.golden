@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from ..models.upload_encoded_asset_request import UploadEncodedAssetRequest
+from ..models.upload_encoded_asset_multipart_request_body import UploadEncodedAssetMultipartRequestBody
 from ..runtime.client import Client
 from ..runtime.errors import ApiError
 
@@ -15,11 +15,11 @@ class TransferApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def upload_encoded_asset(self, *, body: UploadEncodedAssetRequest) -> None:
+    def upload_encoded_asset(self, *, body: UploadEncodedAssetMultipartRequestBody) -> None:
         path = "/uploads/encoded"
         files: dict[str, object] = {}
         files["audit"] = (None, json.dumps(body.audit.to_dict()), "application/json")
-        files["file"] = ("file", body.file, "application/pdf")
+        files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/pdf")
         files["metadata"] = (None, json.dumps(body.metadata.to_dict()), "application/vnd.openapi-nexus.metadata+json")
         files["purpose"] = (None, str(body.purpose), "text/plain")
         response = self._client.request("POST", path, files=files if files else None)

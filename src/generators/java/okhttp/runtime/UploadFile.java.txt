@@ -1,0 +1,31 @@
+package runtime;
+
+public final class UploadFile {
+    private final byte[] data;
+    private final String filename;
+
+    public UploadFile(byte[] data, String filename) {
+        this.data = data;
+        this.filename = filename;
+    }
+
+    public static UploadFile of(byte[] data, String filename) {
+        return new UploadFile(data, filename);
+    }
+
+    public static UploadFile ofBytes(byte[] data) {
+        return new UploadFile(data, null);
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public String filenameOrDefault(String defaultName) {
+        return filename != null && !filename.isEmpty() ? filename : defaultName;
+    }
+}

@@ -20,6 +20,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
+use crate::generators::request_inputs::{RequestInputPlan, request_input_for_operation};
 use crate::ir::types::{
     IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation,
@@ -44,6 +45,7 @@ pub fn generate_api_files(
     ir: &IrSpec,
     module_path: &str,
     header: &str,
+    request_inputs: &RequestInputPlan,
 ) -> Result<Vec<FileInfo>, String> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
@@ -55,7 +57,7 @@ pub fn generate_api_files(
         } else {
             format!("{stem}.go")
         };
-        let body = emit_api_file(tag, ops, ir, module_path);
+        let body = emit_api_file(tag, ops, ir, module_path, request_inputs);
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -81,11 +83,20 @@ fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation
 // File assembly
 // ---------------------------------------------------------------------------
 
-fn emit_api_file(tag: &str, ops: &[&IrOperation], ir: &IrSpec, module_path: &str) -> String {
+fn emit_api_file(
+    tag: &str,
+    ops: &[&IrOperation],
+    ir: &IrSpec,
+    module_path: &str,
+    request_inputs: &RequestInputPlan,
+) -> String {
     let struct_name = format!("{}API", tag.to_pascal_case());
 
     // Pre-plan each operation so we can build specs from the plans.
-    let plans: Vec<OpPlan> = ops.iter().map(|op| plan_operation(op, ir)).collect();
+    let plans: Vec<OpPlan> = ops
+        .iter()
+        .map(|op| plan_operation(op, ir, request_inputs))
+        .collect();
 
     let filename = format!("{}.go", tag.to_snake_case());
     let mut fb = FileSpec::builder(&filename)
@@ -141,6 +152,9 @@ fn collect_body_imports(plans: &[OpPlan<'_>], module_path: &str) -> Vec<ImportSp
                         pkgs.insert("fmt".to_string());
                         if let Some(parts) = &body.multipart_parts {
                             pkgs.insert("bytes".to_string());
+                            if parts.iter().any(|part| part.is_binary) {
+                                pkgs.insert("mime".to_string());
+                            }
                             pkgs.insert("mime/multipart".to_string());
                             pkgs.insert("net/textproto".to_string());
                             for part in parts {
@@ -485,7 +499,11 @@ struct TypedResponse {
     decoding: ResponseDecoding,
 }
 
-fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
+fn plan_operation<'a>(
+    op: &'a IrOperation,
+    ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
+) -> OpPlan<'a> {
     let op_id = sanitize_operation_id(&op.operation_id, &op.method, &op.path);
     let method_name = op_id.to_pascal_case();
     let response_type = format!("{method_name}Response");
@@ -517,7 +535,7 @@ fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
     let body = op
         .request_body
         .as_ref()
-        .and_then(|b| plan_body(b, ir, &mut used_names));
+        .and_then(|b| plan_body(op, b, ir, request_inputs, &mut used_names));
 
     let typed_responses = op.responses.iter().filter_map(plan_response).collect();
 
@@ -534,8 +552,10 @@ fn plan_operation<'a>(op: &'a IrOperation, ir: &IrSpec) -> OpPlan<'a> {
 }
 
 fn plan_body(
+    op: &IrOperation,
     b: &IrRequestBody,
     ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
     used_names: &mut HashSet<String>,
 ) -> Option<BodyBinding> {
     let (media_type, t) = pick_body_content(b)?;
@@ -543,6 +563,9 @@ fn plan_body(
     let base_ty = match encoding {
         BodyEncoding::TextPlain => "string".to_string(),
         BodyEncoding::OctetStream => "[]byte".to_string(),
+        BodyEncoding::Multipart => request_input_for_operation(request_inputs, op, &media_type)
+            .map(|input| format!("models.{}", input.name.to_pascal_case()))
+            .unwrap_or_else(|| go_type_str(&t)),
         _ => go_type_str(&t),
     };
     let go_type =
@@ -876,7 +899,9 @@ fn emit_multipart_body(
             emit_required_multipart_part(cb, part, &value_expr);
         } else {
             cb.begin_control_flow(&format!("if {value_expr} != nil"), ());
-            emit_required_multipart_part(cb, part, &format!("*{value_expr}"));
+            cb.add(&format!("value := *{value_expr}"), ());
+            cb.add_line();
+            emit_required_multipart_part(cb, part, "value");
             cb.end_control_flow();
         }
     }
@@ -903,23 +928,29 @@ fn emit_required_multipart_part(
     cb.add_line();
     cb.add("partHeader := textproto.MIMEHeader{}", ());
     cb.add_line();
-    let disposition = if part.is_binary {
-        format!(
-            "form-data; name={}; filename={}",
-            go_string_literal(&part.wire_name),
-            go_string_literal(&part.wire_name)
-        )
+    if part.is_binary {
+        cb.add(
+            &format!(
+                "disposition := mime.FormatMediaType(\"form-data\", map[string]string{{\"name\": {}, \"filename\": {value_expr}.FilenameOrDefault({})}})",
+                go_string_literal(&part.wire_name),
+                go_string_literal(&part.wire_name)
+            ),
+            (),
+        );
+        cb.add_line();
+        cb.add("partHeader.Set(\"Content-Disposition\", disposition)", ());
+        cb.add_line();
     } else {
-        format!("form-data; name={}", go_string_literal(&part.wire_name))
-    };
-    cb.add(
-        &format!(
-            "partHeader.Set(\"Content-Disposition\", {})",
-            go_string_literal(&disposition)
-        ),
-        (),
-    );
-    cb.add_line();
+        let disposition = format!("form-data; name={}", go_string_literal(&part.wire_name));
+        cb.add(
+            &format!(
+                "partHeader.Set(\"Content-Disposition\", {})",
+                go_string_literal(&disposition)
+            ),
+            (),
+        );
+        cb.add_line();
+    }
     cb.add(
         &format!(
             "partHeader.Set(\"Content-Type\", {})",
@@ -939,7 +970,7 @@ fn emit_required_multipart_part(
     cb.end_control_flow();
     if part.is_binary {
         cb.begin_control_flow(
-            &format!("if _, err := partWriter.Write({value_expr}); err != nil"),
+            &format!("if _, err := partWriter.Write({value_expr}.Data); err != nil"),
             (),
         );
         cb.add(

@@ -4,17 +4,17 @@
  * Multipart Edge Cases — 1.0.0
  * Covers optional multipart bodies, optional parts, and text-only multipart fields.
  */
-import type { OptionalUpload } from '../models/OptionalUpload';
-import type { TextFields } from '../models/TextFields';
+import type { SendOptionalPartsMultipartRequestBody } from '../models/SendOptionalPartsMultipartRequestBody';
+import type { SendTextFieldsMultipartRequestBody } from '../models/SendTextFieldsMultipartRequestBody';
 import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse } from '../runtime/runtime';
+import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse, multipartHeaderValue, uploadFileData, uploadFileFilename } from '../runtime/runtime';
 
 export interface ApiSendOptionalPartsRequest {
-  body?: OptionalUpload;
+  body?: SendOptionalPartsMultipartRequestBody;
 }
 
 export interface ApiSendTextFieldsRequest {
-  body: TextFields;
+  body: SendTextFieldsMultipartRequestBody;
 }
 
 export type SendOptionalPartsRawResponse =
@@ -68,9 +68,12 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     multipartChunks.push('\r\n');
     }
     if (requestParameters.body.file !== undefined && requestParameters.body.file !== null) {
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="file"\r\nContent-Type: application/octet-stream\r\n\r\n');
-    multipartChunks.push(requestParameters.body.file);
+    {
+    const multipartFilename = uploadFileFilename(requestParameters.body.file, 'file');
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + multipartHeaderValue(multipartFilename) + '"\r\nContent-Type: application/octet-stream\r\n\r\n');
+    multipartChunks.push(uploadFileData(requestParameters.body.file));
     multipartChunks.push('\r\n');
+    }
     }
     if (requestParameters.body.retry_count !== undefined && requestParameters.body.retry_count !== null) {
     multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="retry_count"\r\nContent-Type: text/plain\r\n\r\n');

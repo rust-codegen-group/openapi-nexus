@@ -16,6 +16,7 @@ use super::{sigil_emit, sigil_emit_api};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::ir::types::{IrInfo, IrSpec};
 
 const DEFAULT_MODULE_PATH: &str = "example.com/sdk";
@@ -45,25 +46,27 @@ impl GoHttpCodeGenerator {
     fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
         let module_path = self.module_path();
         let header = render_file_header(&ir.info);
+        let request_inputs = plan_multipart_request_inputs(ir);
 
         let mut files = Vec::new();
 
         // Models
         files.extend(
-            sigil_emit::generate_model_files(ir, &header).map_err(|msg| {
-                Box::<dyn Error + Send + Sync>::from(format!("sigil_emit models: {msg}"))
-            })?,
+            sigil_emit::generate_model_files(ir, &module_path, &header, &request_inputs).map_err(
+                |msg| Box::<dyn Error + Send + Sync>::from(format!("sigil_emit models: {msg}")),
+            )?,
         );
 
         // APIs
         files.extend(
-            sigil_emit_api::generate_api_files(ir, &module_path, &header).map_err(|msg| {
-                Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api: {msg}"))
-            })?,
+            sigil_emit_api::generate_api_files(ir, &module_path, &header, &request_inputs)
+                .map_err(|msg| {
+                    Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api: {msg}"))
+                })?,
         );
 
         // Runtime (hardcoded)
-        files.extend(runtime_files(&header));
+        files.extend(runtime_files(&header, request_inputs.has_uploads()));
 
         // Project files: go.mod, README.md
         files.push(go_mod_file(&module_path));

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -37,7 +38,8 @@ type SendOptionalPartsResponse struct {
 }
 
 // SendOptionalParts calls POST /multipart/optional.
-func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.OptionalUpload) (*SendOptionalPartsResponse, error) {
+func (a *MultipartAPI) SendOptionalParts(ctx context.Context,
+body *models.SendOptionalPartsMultipartRequestBody) (*SendOptionalPartsResponse, error) {
 	path := "/multipart/optional"
 	var bodyReader io.Reader
 	var multipartContentType string
@@ -45,6 +47,7 @@ func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.Optio
 		buf := &bytes.Buffer{}
 		writer := multipart.NewWriter(buf)
 		if body.Attributes != nil {
+			value := *body.Attributes
 			{
 			partHeader := textproto.MIMEHeader{}
 			partHeader.Set("Content-Disposition", "form-data; name=\"attributes\"")
@@ -53,7 +56,7 @@ func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.Optio
 			if err != nil {
 				return nil, fmt.Errorf("create multipart part: %w", err)
 			}
-			partValue, err := json.Marshal(*body.Attributes)
+			partValue, err := json.Marshal(value)
 			if err != nil {
 				return nil, fmt.Errorf("marshal multipart field: %w", err)
 			}
@@ -63,6 +66,7 @@ func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.Optio
 			}
 		}
 		if body.Enabled != nil {
+			value := *body.Enabled
 			{
 			partHeader := textproto.MIMEHeader{}
 			partHeader.Set("Content-Disposition", "form-data; name=\"enabled\"")
@@ -71,26 +75,29 @@ func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.Optio
 			if err != nil {
 				return nil, fmt.Errorf("create multipart part: %w", err)
 			}
-			if _, err := io.WriteString(partWriter, strconv.FormatBool(*body.Enabled)); err != nil {
+			if _, err := io.WriteString(partWriter, strconv.FormatBool(value)); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
 			}
 			}
 		}
 		if body.File != nil {
+			value := *body.File
 			{
 			partHeader := textproto.MIMEHeader{}
-			partHeader.Set("Content-Disposition", "form-data; name=\"file\"; filename=\"file\"")
+			disposition := mime.FormatMediaType("form-data", map[string]string{"name": "file", "filename": value.FilenameOrDefault("file")})
+			partHeader.Set("Content-Disposition", disposition)
 			partHeader.Set("Content-Type", "application/octet-stream")
 			partWriter, err := writer.CreatePart(partHeader)
 			if err != nil {
 				return nil, fmt.Errorf("create multipart part: %w", err)
 			}
-			if _, err := partWriter.Write(*body.File); err != nil {
+			if _, err := partWriter.Write(value.Data); err != nil {
 				return nil, fmt.Errorf("write multipart file: %w", err)
 			}
 			}
 		}
 		if body.RetryCount != nil {
+			value := *body.RetryCount
 			{
 			partHeader := textproto.MIMEHeader{}
 			partHeader.Set("Content-Disposition", "form-data; name=\"retry_count\"")
@@ -99,12 +106,13 @@ func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.Optio
 			if err != nil {
 				return nil, fmt.Errorf("create multipart part: %w", err)
 			}
-			if _, err := io.WriteString(partWriter, strconv.FormatInt(int64(*body.RetryCount), 10)); err != nil {
+			if _, err := io.WriteString(partWriter, strconv.FormatInt(int64(value), 10)); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
 			}
 			}
 		}
 		if body.Title != nil {
+			value := *body.Title
 			{
 			partHeader := textproto.MIMEHeader{}
 			partHeader.Set("Content-Disposition", "form-data; name=\"title\"")
@@ -113,7 +121,7 @@ func (a *MultipartAPI) SendOptionalParts(ctx context.Context, body *models.Optio
 			if err != nil {
 				return nil, fmt.Errorf("create multipart part: %w", err)
 			}
-			if _, err := io.WriteString(partWriter, *body.Title); err != nil {
+			if _, err := io.WriteString(partWriter, value); err != nil {
 				return nil, fmt.Errorf("write multipart field: %w", err)
 			}
 			}
@@ -153,7 +161,8 @@ type SendTextFieldsResponse struct {
 }
 
 // SendTextFields calls POST /multipart/text-only.
-func (a *MultipartAPI) SendTextFields(ctx context.Context, body *models.TextFields) (*SendTextFieldsResponse, error) {
+func (a *MultipartAPI) SendTextFields(ctx context.Context,
+body *models.SendTextFieldsMultipartRequestBody) (*SendTextFieldsResponse, error) {
 	path := "/multipart/text-only"
 	var bodyReader io.Reader
 	var multipartContentType string

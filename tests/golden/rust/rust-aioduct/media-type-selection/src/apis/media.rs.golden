@@ -36,12 +36,12 @@ impl<'a, R: aioduct::Runtime> MediaApi<'a, R> {
     /// POST /request/parameterized-multipart
     pub async fn send_parameterized_multipart(
         &self,
-        body: &crate::models::FileEnvelope,
+        body: &crate::models::SendParameterizedMultipartMultipartRequestBody,
     ) -> Result<SendParameterizedMultipartResponse, Error> {
         let path = "/request/parameterized-multipart".to_string();
         let mut req = self.client.post(&path)?;
         let mut multipart = aioduct::multipart::Multipart::new();
-        multipart = multipart.file("file", "file", "application/octet-stream", body.file.clone());
+        multipart = multipart.file("file", body.file.filename_or_default("file").to_string(), "application/octet-stream", body.file.data.clone());
         if let Some(value) = &body.note {
             multipart = multipart.part(aioduct::multipart::Part::text("note", value.to_string()).mime_str("text/plain"));
         }

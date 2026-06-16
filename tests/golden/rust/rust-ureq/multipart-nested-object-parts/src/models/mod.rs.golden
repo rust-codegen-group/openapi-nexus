@@ -8,3 +8,5 @@ mod item_config;
 pub use item_config::*;
 mod nested_upload;
 pub use nested_upload::*;
+mod send_nested_object_part_multipart_request_body;
+pub use send_nested_object_part_multipart_request_body::*;

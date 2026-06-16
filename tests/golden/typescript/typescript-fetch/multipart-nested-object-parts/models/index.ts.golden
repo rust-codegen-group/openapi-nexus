@@ -6,3 +6,4 @@
  */
 export type { ItemConfig } from './ItemConfig';
 export type { NestedUpload } from './NestedUpload';
+export type { SendNestedObjectPartMultipartRequestBody } from './SendNestedObjectPartMultipartRequestBody';

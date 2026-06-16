@@ -8,3 +8,4 @@ export type { ItemConfig, ItemConfig$Wire } from './ItemConfig';
 export { itemConfigFromJSON, itemConfigToJSON } from './ItemConfig';
 export type { NestedUpload, NestedUpload$Wire } from './NestedUpload';
 export { nestedUploadFromJSON, nestedUploadToJSON } from './NestedUpload';
+export type { SendNestedObjectPartMultipartRequestBody } from './SendNestedObjectPartMultipartRequestBody';

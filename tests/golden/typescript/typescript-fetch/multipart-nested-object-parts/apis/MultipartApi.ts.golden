@@ -4,12 +4,12 @@
  * Multipart Nested Object Parts — 1.0.0
  * Covers multipart object parts whose wire names differ from ergonomic names.
  */
-import type { NestedUpload } from '../models/NestedUpload';
+import type { SendNestedObjectPartMultipartRequestBody } from '../models/SendNestedObjectPartMultipartRequestBody';
 import type { Configuration, HTTPQuery, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse } from '../runtime/runtime';
+import { BaseAPI, DefaultConfig, RequiredError, VoidApiResponse, multipartHeaderValue, uploadFileData, uploadFileFilename } from '../runtime/runtime';
 
 export interface ApiSendNestedObjectPartRequest {
-  body: NestedUpload;
+  body: SendNestedObjectPartMultipartRequestBody;
 }
 
 export type SendNestedObjectPartRawResponse =
@@ -50,9 +50,12 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
     const multipartChunks: Array<string | Blob> = [];
     headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="file"\r\nContent-Type: application/octet-stream\r\n\r\n');
-    multipartChunks.push(requestParameters.body.file);
+    {
+    const multipartFilename = uploadFileFilename(requestParameters.body.file, 'file');
+    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + multipartHeaderValue(multipartFilename) + '"\r\nContent-Type: application/octet-stream\r\n\r\n');
+    multipartChunks.push(uploadFileData(requestParameters.body.file));
     multipartChunks.push('\r\n');
+    }
     multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="item_config"\r\nContent-Type: application/json\r\n\r\n');
     multipartChunks.push(JSON.stringify(requestParameters.body.item_config));
     multipartChunks.push('\r\n');

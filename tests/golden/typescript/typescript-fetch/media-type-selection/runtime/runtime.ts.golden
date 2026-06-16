@@ -85,6 +85,39 @@ export class Configuration {
 
 export const DefaultConfig = new Configuration();
 
+export interface UploadFile {
+  data: Blob;
+  filename?: string;
+}
+
+export type UploadFileInput = Blob | File | UploadFile;
+
+export function uploadFileData(value: UploadFileInput): Blob {
+  return isUploadFile(value) ? value.data : value;
+}
+
+export function uploadFileFilename(value: UploadFileInput, fallback: string): string {
+  if (isFile(value) && value.name) {
+    return value.name;
+  }
+  if (isUploadFile(value) && value.filename) {
+    return value.filename;
+  }
+  return fallback;
+}
+
+export function multipartHeaderValue(value: string): string {
+  return value.replace(/[\r\n]/g, '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function isUploadFile(value: UploadFileInput): value is UploadFile {
+  return typeof value === 'object' && value !== null && 'data' in value;
+}
+
+function isFile(value: UploadFileInput): value is File {
+  return typeof File !== 'undefined' && value instanceof File;
+}
+
 /**
  * This is the base class for all generated API classes.
  */

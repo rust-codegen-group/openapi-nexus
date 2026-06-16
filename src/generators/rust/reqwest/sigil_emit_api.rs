@@ -5,9 +5,9 @@ use sigil_stitch::prelude::sigil_quote;
 
 use crate::generators::rust::common::emit_api::{
     BodyEncoding, MultipartPart, MultipartValueEncoding, OpPlan, RustBackendConfig,
-    binary_field_expr, emit_response_match, emit_result_init, optional_binary_field_expr,
-    optional_text_field_expr, render_to_string, response_value_expr, rust_field_name,
-    rust_string_literal, text_field_expr,
+    binary_field_expr, binary_filename_expr, emit_response_match, emit_result_init,
+    optional_binary_field_expr, optional_binary_filename_expr, optional_text_field_expr,
+    render_to_string, response_value_expr, rust_field_name, rust_string_literal, text_field_expr,
 };
 
 /// Backend configuration for reqwest (async, no extra generics).
@@ -278,8 +278,9 @@ fn emit_multipart_body(
             if part.is_binary {
                 b.add(
                     &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({wire_name}).mime_str({content_type}).map_err(Error::Network)?);\n",
+                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({}).mime_str({content_type}).map_err(Error::Network)?);\n",
                         binary_field_expr(body_var, part),
+                        binary_filename_expr(body_var, part),
                     ),
                     (),
                 );
@@ -301,8 +302,9 @@ fn emit_multipart_body(
             if part.is_binary {
                 b.add(
                     &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({wire_name}).mime_str({content_type}).map_err(Error::Network)?);\n",
+                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({}).mime_str({content_type}).map_err(Error::Network)?);\n",
                         optional_binary_field_expr("value"),
+                        optional_binary_filename_expr("value", part),
                     ),
                     (),
                 );

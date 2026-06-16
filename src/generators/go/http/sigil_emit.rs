@@ -17,6 +17,9 @@
 //! name directly.
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::request_inputs::{
+    RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
+};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
@@ -36,7 +39,12 @@ const RENDER_WIDTH: usize = 100;
 
 /// Generate every model file from the IR. Each emitted file carries the
 /// passed-in header (e.g., the `// Code generated` banner).
-pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, String> {
+pub fn generate_model_files(
+    ir: &IrSpec,
+    module_path: &str,
+    header: &str,
+    request_inputs: &RequestInputPlan,
+) -> Result<Vec<FileInfo>, String> {
     let mut files = Vec::new();
     for (name, schema) in &ir.schemas {
         let Some(body) = emit_model_body(schema) else {
@@ -46,6 +54,9 @@ pub fn generate_model_files(ir: &IrSpec, header: &str) -> Result<Vec<FileInfo>, 
             ));
         };
         files.push(model_file(&schema.name, header, &body));
+    }
+    for model in request_inputs.models() {
+        files.push(request_input_model_file(model, module_path, header));
     }
     Ok(files)
 }
@@ -64,6 +75,48 @@ fn model_file(name: &str, header: &str, body: &str) -> FileInfo {
     content.push_str(header);
     content.push_str(body);
     FileInfo::model(filename, content)
+}
+
+fn request_input_model_file(
+    model: &RequestInputModel,
+    module_path: &str,
+    header: &str,
+) -> FileInfo {
+    let name = model.name.to_pascal_case();
+    let stem = model.name.to_snake_case();
+    let filename = if stem.ends_with("_test") {
+        format!("{stem}_model.go")
+    } else {
+        format!("{stem}.go")
+    };
+    let needs_runtime = model.fields.iter().any(RequestInputField::is_upload);
+    let mut body = String::new();
+    body.push_str(&format!("package {MODELS_PACKAGE}\n\n"));
+    if needs_runtime {
+        body.push_str(&format!("import \"{module_path}/runtime\"\n\n"));
+    }
+    body.push_str(&format!("type {name} struct {{\n"));
+    for field in &model.fields {
+        let field_name = go_field_name(&field.wire_name);
+        let mut field_type = request_input_go_type(field);
+        if !field.required && !field_type.starts_with('*') {
+            field_type = format!("*{field_type}");
+        }
+        body.push_str(&format!("\t{field_name} {field_type}\n"));
+    }
+    body.push_str("}\n");
+
+    let mut content = String::with_capacity(header.len() + body.len());
+    content.push_str(header);
+    content.push_str(&body);
+    FileInfo::model(filename, content)
+}
+
+fn request_input_go_type(field: &RequestInputField) -> String {
+    match field.kind {
+        RequestInputFieldKind::UploadFile { .. } => "runtime.UploadFile".to_string(),
+        RequestInputFieldKind::SchemaValue => go_type_str(&field.type_expr),
+    }
 }
 
 /// Dispatch on schema kind. Returns the rendered file body (package + imports
