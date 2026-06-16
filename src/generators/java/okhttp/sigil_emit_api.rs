@@ -511,13 +511,20 @@ fn emit_multipart_body(
     parts: &[MultipartPart],
 ) {
     if !body.required {
-        cb.add_statement(
-            "RequestBody multipartBody = RequestBody.create(new byte[0], null)",
-            (),
+        cb.add_code(
+            sigil_quote!(Java {
+                RequestBody multipartBody = RequestBody.create(new byte[0], null);
+            })
+            .expect("default multipart body builds"),
         );
         cb.begin_control_flow(&format!("if ({} != null)", body.var_name), ());
     }
-    cb.add_statement("MultipartBody.Builder multipartBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM)", ());
+    cb.add_code(
+        sigil_quote!(Java {
+            MultipartBody.Builder multipartBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        })
+        .expect("multipart builder builds"),
+    );
     for part in parts {
         let access = format!(
             "{}.get{}()",
@@ -533,61 +540,81 @@ fn emit_multipart_body(
         }
     }
     if body.required {
-        cb.add_statement("RequestBody multipartBody = multipartBuilder.build()", ());
+        cb.add_code(
+            sigil_quote!(Java {
+                RequestBody multipartBody = multipartBuilder.build();
+            })
+            .expect("required multipart body builds"),
+        );
     } else {
-        cb.add_statement("multipartBody = multipartBuilder.build()", ());
+        cb.add_code(
+            sigil_quote!(Java {
+                multipartBody = multipartBuilder.build();
+            })
+            .expect("optional multipart body builds"),
+        );
         cb.end_control_flow();
     }
 }
 
 fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: &BodyBinding) {
     if !body.required {
-        cb.add_statement(
-            "RequestBody requestBody = RequestBody.create(new byte[0], null)",
-            (),
+        cb.add_code(
+            sigil_quote!(Java {
+                RequestBody requestBody = RequestBody.create(new byte[0], null);
+            })
+            .expect("default request body builds"),
         );
         cb.begin_control_flow(&format!("if ({} != null)", body.var_name), ());
     }
     match body.encoding {
         BodyEncoding::Json => {
-            cb.add_statement(
-                &format!("String jsonBody = gson.toJson({})", body.var_name),
-                (),
-            );
-            let prefix = if body.required {
-                "RequestBody requestBody ="
+            let body_var = body.var_name.as_str();
+            let media_type = body.media_type.as_str();
+            if body.required {
+                cb.add_code(
+                    sigil_quote!(Java {
+                        String jsonBody = gson.toJson($L(body_var));
+                        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get($S(media_type)));
+                    })
+                    .expect("required json request body builds"),
+                );
             } else {
-                "requestBody ="
-            };
-            cb.add_statement(
-                &format!(
-                    "{prefix} RequestBody.create(jsonBody, MediaType.get(\"{}\"))",
-                    body.media_type
-                ),
-                (),
-            );
+                cb.add_code(
+                    sigil_quote!(Java {
+                        String jsonBody = gson.toJson($L(body_var));
+                        requestBody = RequestBody.create(jsonBody, MediaType.get($S(media_type)));
+                    })
+                    .expect("optional json request body builds"),
+                );
+            }
         }
         BodyEncoding::TextPlain | BodyEncoding::OctetStream => {
-            let prefix = if body.required {
-                "RequestBody requestBody ="
+            let body_var = body.var_name.as_str();
+            let media_type = body.media_type.as_str();
+            if body.required {
+                cb.add_code(
+                    sigil_quote!(Java {
+                        RequestBody requestBody = RequestBody.create($L(body_var), MediaType.get($S(media_type)));
+                    })
+                    .expect("required raw request body builds"),
+                );
             } else {
-                "requestBody ="
-            };
-            cb.add_statement(
-                &format!(
-                    "{prefix} RequestBody.create({}, MediaType.get(\"{}\"))",
-                    body.var_name, body.media_type
-                ),
-                (),
-            );
+                cb.add_code(
+                    sigil_quote!(Java {
+                        requestBody = RequestBody.create($L(body_var), MediaType.get($S(media_type)));
+                    })
+                    .expect("optional raw request body builds"),
+                );
+            }
         }
         BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
-            cb.add_statement(
-                &format!(
-                    "throw new IllegalArgumentException(\"unsupported request body media type: {}\")",
-                    body.media_type
-                ),
-                (),
+            let message = format!("unsupported request body media type: {}", body.media_type);
+            cb.add_code(
+                sigil_quote!(Java {
+                    throw new IllegalArgumentException($S(message));
+                })
+                .expect("unsupported request body builds"),
             );
         }
         BodyEncoding::Multipart => unreachable!("multipart handled separately"),
