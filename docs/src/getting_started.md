@@ -30,23 +30,39 @@ Generate a TypeScript fetch client:
 openapi-nexus generate \
   --input path/to/openapi.yaml \
   --output generated \
-  --generator typescript-fetch
+  --generators typescript-fetch
 ```
 
-Generate clients for multiple languages at once:
+Generate another target language into a separate directory:
 
 ```bash
 openapi-nexus generate \
   --input spec.yaml \
-  --output output \
-  --generators typescript-fetch,go-http,rust-reqwest,python-httpx
+  --output output/go \
+  --generators go-http
+
+openapi-nexus generate \
+  --input spec.yaml \
+  --output output/python \
+  --generators python-httpx
 ```
 
-All nine generators:
+All nine generators, each with its own output directory:
 
 ```bash
-openapi-nexus generate -i spec.yaml -o output \
-  -g typescript-fetch,go-http,rust-reqwest,rust-ureq,rust-aioduct,python-httpx,python-requests,java-okhttp,kotlin-okhttp
+for generator in \
+  typescript-fetch \
+  go-http \
+  rust-reqwest \
+  rust-ureq \
+  rust-aioduct \
+  python-httpx \
+  python-requests \
+  java-okhttp \
+  kotlin-okhttp
+do
+  openapi-nexus generate -i spec.yaml -o "output/${generator}" -g "${generator}"
+done
 ```
 
 ## Configuration
@@ -63,7 +79,7 @@ Configuration is resolved with the following precedence (highest to lowest):
 ```bash
 export OPENAPI_NEXUS_INPUT="spec.yaml"
 export OPENAPI_NEXUS_OUTPUT="generated"
-export OPENAPI_NEXUS_GENERATOR="typescript-fetch"
+export OPENAPI_NEXUS_GENERATORS="typescript-fetch"
 ```
 
 ### Configuration File

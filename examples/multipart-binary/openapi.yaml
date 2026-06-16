@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Multipart and Binary Example
+  version: 1.0.0
+  description: Shows multipart file uploads and raw octet-stream bodies.
+paths:
+  /avatars:
+    post:
+      tags:
+        - avatars
+      operationId: upload_avatar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - profile
+                - purpose
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Avatar image bytes.
+                profile:
+                  $ref: '#/components/schemas/ProfileAttributes'
+                purpose:
+                  type: string
+                  description: Why the avatar is being uploaded.
+            encoding:
+              file:
+                contentType: image/png
+              profile:
+                contentType: application/json
+              purpose:
+                contentType: text/plain
+      responses:
+        '200':
+          description: Avatar accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvatarUpload'
+  /avatars/{avatar_id}/content:
+    get:
+      tags:
+        - avatars
+      operationId: download_avatar
+      parameters:
+        - name: avatar_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Raw avatar content.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Avatar not found.
+    put:
+      tags:
+        - avatars
+      operationId: replace_avatar_content
+      parameters:
+        - name: avatar_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '204':
+          description: Avatar content replaced.
+components:
+  schemas:
+    ProfileAttributes:
+      type: object
+      required:
+        - display_name
+      properties:
+        display_name:
+          type: string
+        alt_text:
+          type: string
+    AvatarUpload:
+      type: object
+      required:
+        - id
+        - filename
+        - bytes
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        bytes:
+          type: integer
+          format: int64

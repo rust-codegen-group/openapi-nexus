@@ -50,22 +50,23 @@ Requires Rust 1.90+.
 
 ```bash
 # TypeScript client
-openapi-nexus generate -i spec.yaml -o output -g typescript-fetch
+openapi-nexus generate -i spec.yaml -o output --generators typescript-fetch
 
 # Go client
-openapi-nexus generate -i spec.yaml -o output -g go-http
+openapi-nexus generate -i spec.yaml -o output --generators go-http
 
 # Rust client (reqwest)
-openapi-nexus generate -i spec.yaml -o output -g rust-reqwest
+openapi-nexus generate -i spec.yaml -o output --generators rust-reqwest
 
 # Python client (httpx)
-openapi-nexus generate -i spec.yaml -o output -g python-httpx
+openapi-nexus generate -i spec.yaml -o output --generators python-httpx
 
 # Java client
-openapi-nexus generate -i spec.yaml -o output -g java-okhttp
+openapi-nexus generate -i spec.yaml -o output --generators java-okhttp
 
-# Multiple generators at once
-openapi-nexus generate -i spec.yaml -o output -g typescript-fetch,go-http,rust-reqwest
+# Generate another target into its own directory
+openapi-nexus generate -i spec.yaml -o output/go --generators go-http
+openapi-nexus generate -i spec.yaml -o output/rust --generators rust-reqwest
 ```
 
 ## Configuration
@@ -76,7 +77,7 @@ Configuration resolves in order: CLI args > environment variables (`OPENAPI_NEXU
 # Environment variables
 export OPENAPI_NEXUS_INPUT="spec.yaml"
 export OPENAPI_NEXUS_OUTPUT="generated"
-export OPENAPI_NEXUS_GENERATOR="typescript-fetch"
+export OPENAPI_NEXUS_GENERATORS="typescript-fetch"
 ```
 
 Generator-specific options go in the config file:
@@ -120,6 +121,8 @@ Parsing auto-detects OAS version (3.0, 3.1, 3.2). Lowering produces a version-ag
 ## Documentation
 
 Full documentation is available at the [project docs site](https://adamcavendish.github.io/openapi-nexus/).
+
+Examples live under [`examples/`](examples/), including multipart file upload and raw binary body usage in [`examples/multipart-binary`](examples/multipart-binary/).
 
 ## Development
 
