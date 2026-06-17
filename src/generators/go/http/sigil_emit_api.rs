@@ -646,171 +646,118 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     let mut cb = CodeBlock::builder();
 
     // Path.
-    cb.add(&format!("path := \"{}\"", op.path), ());
-    cb.add_line();
+    cb.add_code(path_init(&op.path));
     for p in path_params {
         let placeholder = format!("{{{}}}", p.param.name);
         let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
         let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
-        cb.add(
-            &format!("path = strings.Replace(path, \"{placeholder}\", {stringified}, 1)"),
-            (),
-        );
-        cb.add_line();
+        cb.add_code(path_replace(&placeholder, &stringified));
     }
 
     // Query.
     let has_query = !query_params.is_empty();
     if has_query {
-        cb.add("query := url.Values{}", ());
-        cb.add_line();
+        cb.add_code(query_init());
         for p in query_params {
             let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
             let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
-            let set_line = format!("query.Set(\"{}\", {stringified})", p.param.name);
-            if p.param.required || !p.is_pointer {
-                cb.add(&set_line, ());
-                cb.add_line();
-            } else {
-                cb.begin_control_flow(&format!("if {} != nil", p.var_name), ());
-                cb.add(&set_line, ());
-                cb.add_line();
-                cb.end_control_flow();
-            }
+            cb.add_code(query_set_guarded(
+                p.param.required || !p.is_pointer,
+                &p.var_name,
+                &p.param.name,
+                &stringified,
+            ));
         }
     }
 
     // Body.
     if let Some(body) = body {
-        cb.add("var bodyReader io.Reader", ());
-        cb.add_line();
+        cb.add_code(body_reader_decl());
         match body.encoding {
             BodyEncoding::Multipart => {
-                cb.add("var multipartContentType string", ());
-                cb.add_line();
+                cb.add_code(multipart_content_type_decl());
                 if let Some(parts) = &body.multipart_parts {
                     emit_multipart_body(&mut cb, body, parts);
                 } else {
-                    cb.add(
-                        "return nil, fmt.Errorf(\"unsupported multipart request body: schema must be object-shaped\")",
-                        (),
-                    );
-                    cb.add_line();
+                    cb.add_code(return_unsupported_multipart_request_body());
                 }
             }
             BodyEncoding::Json => {
                 cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-                cb.add(&format!("buf, err := json.Marshal({})", body.var_name), ());
-                cb.add_line();
+                cb.add_code(json_marshal_body(&body.var_name));
                 cb.begin_control_flow("if err != nil", ());
-                cb.add("return nil, fmt.Errorf(\"marshal body: %%w\", err)", ());
-                cb.add_line();
+                cb.add_code(return_marshal_body_error());
                 cb.end_control_flow();
-                cb.add("bodyReader = bytes.NewReader(buf)", ());
-                cb.add_line();
+                cb.add_code(body_reader_bytes_buffer());
                 cb.end_control_flow();
             }
             BodyEncoding::TextPlain => {
                 cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-                cb.add(
-                    &format!("bodyReader = strings.NewReader(*{})", body.var_name),
-                    (),
-                );
-                cb.add_line();
+                cb.add_code(body_reader_string_pointer(&body.var_name));
                 cb.end_control_flow();
             }
             BodyEncoding::OctetStream => {
                 cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-                cb.add(
-                    &format!("bodyReader = bytes.NewReader({})", body.var_name),
-                    (),
-                );
-                cb.add_line();
+                cb.add_code(body_reader_bytes(&body.var_name));
                 cb.end_control_flow();
             }
             BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
-                cb.add(
-                    &format!(
-                        "return nil, fmt.Errorf(\"unsupported request body media type: {}\")",
-                        body.media_type
-                    ),
-                    (),
-                );
-                cb.add_line();
+                cb.add_code(return_unsupported_request_body_media_type(&body.media_type));
             }
         }
     }
 
     // Build request.
-    let query_arg = if has_query { "query" } else { "nil" };
-    let body_arg = if body.is_some() { "bodyReader" } else { "nil" };
-    cb.add(
-        &format!(
-            "req, err := a.client.NewRequest(ctx, \"{}\", path, {query_arg}, {body_arg})",
-            op.method.to_uppercase(),
-        ),
-        (),
-    );
-    cb.add_line();
+    cb.add_code(new_request_stmt(
+        &op.method.to_uppercase(),
+        has_query,
+        body.is_some(),
+    ));
     cb.begin_control_flow("if err != nil", ());
-    cb.add("return nil, err", ());
-    cb.add_line();
+    cb.add_code(return_nil_err());
     cb.end_control_flow();
 
     // Headers.
     for p in header_params {
         let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
         let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
-        if p.param.required || !p.is_pointer {
-            cb.add(
-                &format!("req.Header.Set(\"{}\", {stringified})", p.param.name),
-                (),
-            );
-            cb.add_line();
-        } else {
-            cb.begin_control_flow(&format!("if {} != nil", p.var_name), ());
-            cb.add(
-                &format!("req.Header.Set(\"{}\", {stringified})", p.param.name),
-                (),
-            );
-            cb.add_line();
-            cb.end_control_flow();
-        }
+        cb.add_code(set_header_guarded(
+            p.param.required || !p.is_pointer,
+            &p.var_name,
+            &go_string_literal(&p.param.name),
+            &stringified,
+        ));
     }
 
     if let Some(body) = body {
         if body.encoding == BodyEncoding::Multipart {
             cb.begin_control_flow("if multipartContentType != \"\"", ());
-            cb.add("req.Header.Set(\"Content-Type\", multipartContentType)", ());
-            cb.add_line();
+            cb.add_code(set_header(
+                &go_string_literal("Content-Type"),
+                "multipartContentType",
+            ));
             cb.end_control_flow();
         } else {
-            cb.add(
-                &format!("req.Header.Set(\"Content-Type\", \"{}\")", body.media_type),
-                (),
-            );
-            cb.add_line();
+            cb.add_code(set_header(
+                &go_string_literal("Content-Type"),
+                &go_string_literal(&body.media_type),
+            ));
         }
     }
-    cb.add("req.Header.Set(\"Accept\", \"application/json\")", ());
-    cb.add_line();
+    cb.add_code(set_header(
+        &go_string_literal("Accept"),
+        &go_string_literal("application/json"),
+    ));
 
     // Dispatch.
-    cb.add("httpResp, err := a.client.Do(req)", ());
-    cb.add_line();
+    cb.add_code(do_request());
     cb.begin_control_flow("if err != nil", ());
-    cb.add("return nil, err", ());
-    cb.add_line();
+    cb.add_code(return_nil_err());
     cb.end_control_flow();
-    cb.add("defer httpResp.Body.Close()", ());
-    cb.add_line();
+    cb.add_code(defer_body_close());
     cb.add_line();
 
-    cb.add(
-        &format!("resp := &{response_type}{{StatusCode: httpResp.StatusCode, Raw: httpResp}}"),
-        (),
-    );
-    cb.add_line();
+    cb.add_code(response_init(response_type));
 
     if !plan.typed_responses.is_empty() {
         let mut numeric_responses: Vec<&TypedResponse> = Vec::new();
@@ -849,38 +796,245 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 "%L",
                 emit_decode_into(&tr.field_name, &tr.go_type, tr.decoding),
             );
-            cb.add(
-                "return resp, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status}",
-                (),
-            );
-            cb.add_line();
+            cb.add_code(return_status_api_error());
             cb.end_control_flow();
         }
         cb.begin_control_flow("if httpResp.StatusCode >= 400", ());
-        cb.add("body, _ := io.ReadAll(httpResp.Body)", ());
-        cb.add_line();
-        cb.add(
-            "return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}",
-            (),
-        );
-        cb.add_line();
+        cb.add_code(error_body_read());
+        cb.add_code(return_body_api_error());
         cb.end_control_flow();
         cb.add("%<", ());
         cb.end_control_flow();
     } else {
         cb.begin_control_flow("if httpResp.StatusCode >= 400", ());
-        cb.add("body, _ := io.ReadAll(httpResp.Body)", ());
-        cb.add_line();
-        cb.add(
-            "return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}",
-            (),
-        );
-        cb.add_line();
+        cb.add_code(error_body_read());
+        cb.add_code(return_body_api_error());
         cb.end_control_flow();
     }
 
-    cb.add("return resp, nil", ());
+    cb.add_code(return_resp_nil());
     cb.build().expect("method body builds")
+}
+
+fn path_init(path: &str) -> CodeBlock {
+    let stmt = format!("path := {}", go_string_literal(path));
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("path init builds")
+}
+
+fn path_replace(placeholder: &str, value_expr: &str) -> CodeBlock {
+    let stmt = format!(
+        "path = strings.Replace(path, {}, {value_expr}, 1)",
+        go_string_literal(placeholder)
+    );
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("path replace builds")
+}
+
+fn query_init() -> CodeBlock {
+    let stmt = "query := url.Values{}";
+    sigil_quote!(GoLang {
+        $L(stmt)
+    })
+    .expect("query init builds")
+}
+
+fn query_set_guarded(always_set: bool, var_name: &str, name: &str, value_expr: &str) -> CodeBlock {
+    let stmt = format!("query.Set({}, {value_expr})", go_string_literal(name));
+    let guard = format!("{var_name} != nil");
+    sigil_quote!(GoLang {
+        $if(always_set) {
+            $L(stmt.as_str())
+        } $else {
+            if $L(guard.as_str()) {
+                $L(stmt.as_str())
+            }
+        }
+    })
+    .expect("guarded query set builds")
+}
+
+fn body_reader_decl() -> CodeBlock {
+    sigil_quote!(GoLang {
+        var bodyReader io.Reader
+    })
+    .expect("body reader declaration builds")
+}
+
+fn multipart_content_type_decl() -> CodeBlock {
+    sigil_quote!(GoLang {
+        var multipartContentType string
+    })
+    .expect("multipart content type declaration builds")
+}
+
+fn return_unsupported_multipart_request_body() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf("unsupported multipart request body: schema must be object-shaped")
+    })
+    .expect("unsupported multipart request body builds")
+}
+
+fn json_marshal_body(body_var: &str) -> CodeBlock {
+    let stmt = format!("buf, err := json.Marshal({body_var})");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("JSON marshal body builds")
+}
+
+fn return_marshal_body_error() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf("marshal body: %w", err)
+    })
+    .expect("marshal body error builds")
+}
+
+fn body_reader_bytes_buffer() -> CodeBlock {
+    sigil_quote!(GoLang {
+        bodyReader = bytes.NewReader(buf)
+    })
+    .expect("body reader bytes buffer builds")
+}
+
+fn body_reader_string_pointer(body_var: &str) -> CodeBlock {
+    let stmt = format!("bodyReader = strings.NewReader(*{body_var})");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("body reader string pointer builds")
+}
+
+fn body_reader_bytes(body_var: &str) -> CodeBlock {
+    let stmt = format!("bodyReader = bytes.NewReader({body_var})");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("body reader bytes builds")
+}
+
+fn return_unsupported_request_body_media_type(media_type: &str) -> CodeBlock {
+    let message = format!("unsupported request body media type: {media_type}");
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf($S(message.as_str()))
+    })
+    .expect("unsupported request body media type builds")
+}
+
+fn new_request_stmt(method: &str, has_query: bool, has_body: bool) -> CodeBlock {
+    let query_body_stmt =
+        format!("req, err := a.client.NewRequest(ctx, {method:?}, path, query, bodyReader)");
+    let query_no_body_stmt =
+        format!("req, err := a.client.NewRequest(ctx, {method:?}, path, query, nil)");
+    let no_query_body_stmt =
+        format!("req, err := a.client.NewRequest(ctx, {method:?}, path, nil, bodyReader)");
+    let no_query_no_body_stmt =
+        format!("req, err := a.client.NewRequest(ctx, {method:?}, path, nil, nil)");
+    sigil_quote!(GoLang {
+        $if(has_query && has_body) {
+            $L(query_body_stmt.as_str())
+        } $else_if(has_query) {
+            $L(query_no_body_stmt.as_str())
+        } $else_if(has_body) {
+            $L(no_query_body_stmt.as_str())
+        } $else {
+            $L(no_query_no_body_stmt.as_str())
+        }
+    })
+    .expect("new request statement builds")
+}
+
+fn return_nil_err() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, err
+    })
+    .expect("return nil err builds")
+}
+
+fn set_header(name_expr: &str, value_expr: &str) -> CodeBlock {
+    let stmt = format!("req.Header.Set({name_expr}, {value_expr})");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("set header builds")
+}
+
+fn set_header_guarded(
+    always_set: bool,
+    var_name: &str,
+    name_expr: &str,
+    value_expr: &str,
+) -> CodeBlock {
+    let stmt = format!("req.Header.Set({name_expr}, {value_expr})");
+    let guard = format!("{var_name} != nil");
+    sigil_quote!(GoLang {
+        $if(always_set) {
+            $L(stmt.as_str())
+        } $else {
+            if $L(guard.as_str()) {
+                $L(stmt.as_str())
+            }
+        }
+    })
+    .expect("guarded header set builds")
+}
+
+fn do_request() -> CodeBlock {
+    sigil_quote!(GoLang {
+        httpResp, err := a.client.Do(req)
+    })
+    .expect("do request builds")
+}
+
+fn defer_body_close() -> CodeBlock {
+    sigil_quote!(GoLang {
+        defer httpResp.Body.Close()
+    })
+    .expect("defer body close builds")
+}
+
+fn response_init(response_type: &str) -> CodeBlock {
+    let stmt =
+        format!("resp := &{response_type}{{StatusCode: httpResp.StatusCode, Raw: httpResp}}");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("response init builds")
+}
+
+fn return_status_api_error() -> CodeBlock {
+    let stmt =
+        "return resp, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status}";
+    sigil_quote!(GoLang {
+        $L(stmt)
+    })
+    .expect("return status API error builds")
+}
+
+fn error_body_read() -> CodeBlock {
+    sigil_quote!(GoLang {
+        body, _ := io.ReadAll(httpResp.Body)
+    })
+    .expect("error body read builds")
+}
+
+fn return_body_api_error() -> CodeBlock {
+    let stmt = "return nil, &runtime.APIError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Body: body}";
+    sigil_quote!(GoLang {
+        $L(stmt)
+    })
+    .expect("return body API error builds")
+}
+
+fn return_resp_nil() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return resp, nil
+    })
+    .expect("return response builds")
 }
 
 fn emit_multipart_body(
@@ -889,34 +1043,70 @@ fn emit_multipart_body(
     parts: &[MultipartPart],
 ) {
     cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-    cb.add("buf := &bytes.Buffer{}", ());
-    cb.add_line();
-    cb.add("writer := multipart.NewWriter(buf)", ());
-    cb.add_line();
+    cb.add_code(multipart_buffer_init());
+    cb.add_code(multipart_writer_init());
     for part in parts {
         let value_expr = format!("{}.{}", body.var_name, part.field_name);
         if part.required {
             emit_required_multipart_part(cb, part, &value_expr);
         } else {
             cb.begin_control_flow(&format!("if {value_expr} != nil"), ());
-            cb.add(&format!("value := *{value_expr}"), ());
-            cb.add_line();
+            cb.add_code(optional_multipart_value(&value_expr));
             emit_required_multipart_part(cb, part, "value");
             cb.end_control_flow();
         }
     }
     cb.begin_control_flow("if err := writer.Close(); err != nil", ());
-    cb.add(
-        "return nil, fmt.Errorf(\"close multipart writer: %%w\", err)",
-        (),
-    );
-    cb.add_line();
+    cb.add_code(return_close_multipart_writer_error());
     cb.end_control_flow();
-    cb.add("bodyReader = buf", ());
-    cb.add_line();
-    cb.add("multipartContentType = writer.FormDataContentType()", ());
-    cb.add_line();
+    cb.add_code(multipart_body_reader_assign());
+    cb.add_code(multipart_content_type_assign());
     cb.end_control_flow();
+}
+
+fn multipart_buffer_init() -> CodeBlock {
+    let stmt = "buf := &bytes.Buffer{}";
+    sigil_quote!(GoLang {
+        $L(stmt)
+    })
+    .expect("multipart buffer init builds")
+}
+
+fn multipart_writer_init() -> CodeBlock {
+    sigil_quote!(GoLang {
+        writer := multipart.NewWriter(buf)
+    })
+    .expect("multipart writer init builds")
+}
+
+fn optional_multipart_value(value_expr: &str) -> CodeBlock {
+    let stmt = format!("value := *{value_expr}");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("optional multipart value builds")
+}
+
+fn return_close_multipart_writer_error() -> CodeBlock {
+    let stmt = "return nil, fmt.Errorf(\"close multipart writer: %w\", err)";
+    sigil_quote!(GoLang {
+        $L(stmt)
+    })
+    .expect("close multipart writer error builds")
+}
+
+fn multipart_body_reader_assign() -> CodeBlock {
+    sigil_quote!(GoLang {
+        bodyReader = buf
+    })
+    .expect("multipart body reader assign builds")
+}
+
+fn multipart_content_type_assign() -> CodeBlock {
+    sigil_quote!(GoLang {
+        multipartContentType = writer.FormDataContentType()
+    })
+    .expect("multipart content type assign builds")
 }
 
 fn emit_required_multipart_part(
@@ -926,82 +1116,48 @@ fn emit_required_multipart_part(
 ) {
     cb.add("{", ());
     cb.add_line();
-    cb.add("partHeader := textproto.MIMEHeader{}", ());
-    cb.add_line();
+    cb.add_code(multipart_part_header_init());
     if part.is_binary {
-        cb.add(
-            &format!(
-                "disposition := mime.FormatMediaType(\"form-data\", map[string]string{{\"name\": {}, \"filename\": {value_expr}.FilenameOrDefault({})}})",
-                go_string_literal(&part.wire_name),
-                go_string_literal(&part.wire_name)
-            ),
-            (),
-        );
-        cb.add_line();
-        cb.add("partHeader.Set(\"Content-Disposition\", disposition)", ());
-        cb.add_line();
+        cb.add_code(multipart_binary_disposition(
+            value_expr,
+            &go_string_literal(&part.wire_name),
+        ));
+        cb.add_code(multipart_part_header_set(
+            &go_string_literal("Content-Disposition"),
+            "disposition",
+        ));
     } else {
         let disposition = format!("form-data; name={}", go_string_literal(&part.wire_name));
-        cb.add(
-            &format!(
-                "partHeader.Set(\"Content-Disposition\", {})",
-                go_string_literal(&disposition)
-            ),
-            (),
-        );
-        cb.add_line();
+        cb.add_code(multipart_part_header_set(
+            &go_string_literal("Content-Disposition"),
+            &go_string_literal(&disposition),
+        ));
     }
-    cb.add(
-        &format!(
-            "partHeader.Set(\"Content-Type\", {})",
-            go_string_literal(&part.content_type)
-        ),
-        (),
-    );
-    cb.add_line();
-    cb.add("partWriter, err := writer.CreatePart(partHeader)", ());
-    cb.add_line();
+    cb.add_code(multipart_part_header_set(
+        &go_string_literal("Content-Type"),
+        &go_string_literal(&part.content_type),
+    ));
+    cb.add_code(multipart_part_writer_create());
     cb.begin_control_flow("if err != nil", ());
-    cb.add(
-        "return nil, fmt.Errorf(\"create multipart part: %%w\", err)",
-        (),
-    );
-    cb.add_line();
+    cb.add_code(return_create_multipart_part_error());
     cb.end_control_flow();
     if part.is_binary {
         cb.begin_control_flow(
             &format!("if _, err := partWriter.Write({value_expr}.Data); err != nil"),
             (),
         );
-        cb.add(
-            "return nil, fmt.Errorf(\"write multipart file: %%w\", err)",
-            (),
-        );
-        cb.add_line();
+        cb.add_code(return_write_multipart_file_error());
         cb.end_control_flow();
     } else if part.value_encoding == MultipartValueEncoding::Json {
-        cb.add(&format!("partValue, err := json.Marshal({value_expr})"), ());
-        cb.add_line();
+        cb.add_code(multipart_json_value(value_expr));
         cb.begin_control_flow("if err != nil", ());
-        cb.add(
-            "return nil, fmt.Errorf(\"marshal multipart field: %%w\", err)",
-            (),
-        );
-        cb.add_line();
+        cb.add_code(return_marshal_multipart_field_error());
         cb.end_control_flow();
         cb.begin_control_flow("if _, err := partWriter.Write(partValue); err != nil", ());
-        cb.add(
-            "return nil, fmt.Errorf(\"write multipart field: %%w\", err)",
-            (),
-        );
-        cb.add_line();
+        cb.add_code(return_write_multipart_field_error());
         cb.end_control_flow();
     } else if part.value_encoding == MultipartValueEncoding::Unsupported {
-        cb.add(
-            "return nil, fmt.Errorf(\"unsupported multipart part content type\")",
-            (),
-        );
-        cb.add_line();
+        cb.add_code(return_unsupported_multipart_part_error());
     } else {
         cb.begin_control_flow(
             &format!(
@@ -1010,15 +1166,87 @@ fn emit_required_multipart_part(
             ),
             (),
         );
-        cb.add(
-            "return nil, fmt.Errorf(\"write multipart field: %%w\", err)",
-            (),
-        );
-        cb.add_line();
+        cb.add_code(return_write_multipart_field_error());
         cb.end_control_flow();
     }
     cb.add("}", ());
     cb.add_line();
+}
+
+fn multipart_part_header_init() -> CodeBlock {
+    let stmt = "partHeader := textproto.MIMEHeader{}";
+    sigil_quote!(GoLang {
+        $L(stmt)
+    })
+    .expect("multipart part header init builds")
+}
+
+fn multipart_binary_disposition(value_expr: &str, wire_name: &str) -> CodeBlock {
+    let stmt = format!(
+        "disposition := mime.FormatMediaType(\"form-data\", map[string]string{{\"name\": {wire_name}, \"filename\": {value_expr}.FilenameOrDefault({wire_name})}})"
+    );
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("multipart binary disposition builds")
+}
+
+fn multipart_part_header_set(name_expr: &str, value_expr: &str) -> CodeBlock {
+    let stmt = format!("partHeader.Set({name_expr}, {value_expr})");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("multipart part header set builds")
+}
+
+fn multipart_part_writer_create() -> CodeBlock {
+    sigil_quote!(GoLang {
+        partWriter, err := writer.CreatePart(partHeader)
+    })
+    .expect("multipart part writer create builds")
+}
+
+fn return_create_multipart_part_error() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf("create multipart part: %w", err)
+    })
+    .expect("create multipart part error builds")
+}
+
+fn return_write_multipart_file_error() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf("write multipart file: %w", err)
+    })
+    .expect("write multipart file error builds")
+}
+
+fn multipart_json_value(value_expr: &str) -> CodeBlock {
+    let stmt = format!("partValue, err := json.Marshal({value_expr})");
+    sigil_quote!(GoLang {
+        $L(stmt.as_str())
+    })
+    .expect("multipart JSON value builds")
+}
+
+fn return_marshal_multipart_field_error() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf("marshal multipart field: %w", err)
+    })
+    .expect("marshal multipart field error builds")
+}
+
+fn return_write_multipart_field_error() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf("write multipart field: %w", err)
+    })
+    .expect("write multipart field error builds")
+}
+
+fn return_unsupported_multipart_part_error() -> CodeBlock {
+    sigil_quote!(GoLang {
+        return nil, fmt.Errorf("unsupported multipart part content type")
+    })
+    .expect("unsupported multipart part error builds")
 }
 
 fn emit_decode_into(field: &str, go_ty: &str, decoding: ResponseDecoding) -> CodeBlock {

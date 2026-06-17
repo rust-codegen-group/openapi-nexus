@@ -344,36 +344,27 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         cb.add_statement("Map<String, String> query = new HashMap<>()", ());
         for p in &plan.query_params {
             let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
-            if p.param.required {
-                cb.add_statement(
-                    &format!("query.put(\"{}\", {})", p.param.name, stringified),
-                    (),
-                );
-            } else {
-                cb.begin_control_flow(&format!("if ({} != null)", p.var_name), ());
-                cb.add_statement(
-                    &format!("query.put(\"{}\", {})", p.param.name, stringified),
-                    (),
-                );
-                cb.end_control_flow();
-            }
+            cb.add_code(java_query_param_put(
+                p.param.required,
+                &p.var_name,
+                &p.param.name,
+                &stringified,
+            ));
         }
     }
 
     // Build request
-    let query_arg = if has_query { "query" } else { "null" };
     let method = plan.op.method.to_uppercase();
     if let Some(body) = &plan.body {
         cb.add_statement("Request request", ());
         if body.encoding == BodyEncoding::Multipart {
             if let Some(parts) = &body.multipart_parts {
                 emit_multipart_body(&mut cb, body, parts);
-                cb.add_statement(
-                    &format!(
-                        "request = client.newRequestWithBody(\"{method}\", path, {query_arg}, multipartBody)"
-                    ),
-                    (),
-                );
+                cb.add_code(java_new_request_with_body(
+                    &method,
+                    has_query,
+                    "multipartBody",
+                ));
             } else {
                 cb.add_statement(
                     "throw new IllegalArgumentException(\"unsupported multipart request body: schema must be object-shaped\")",
@@ -382,42 +373,25 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             }
         } else {
             emit_request_body(&mut cb, body);
-            cb.add_statement(
-                &format!(
-                    "request = client.newRequestWithBody(\"{method}\", path, {query_arg}, requestBody)"
-                ),
-                (),
-            );
+            cb.add_code(java_new_request_with_body(
+                &method,
+                has_query,
+                "requestBody",
+            ));
         }
     } else {
-        cb.add_statement(
-            &format!("Request request = client.newRequest(\"{method}\", path, {query_arg}, null)"),
-            (),
-        );
+        cb.add_code(java_new_request(&method, has_query));
     }
 
     // Headers
     for p in &plan.header_params {
         let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
-        if p.param.required {
-            cb.add_statement(
-                &format!(
-                    "request = request.newBuilder().header(\"{}\", {stringified}).build()",
-                    p.param.name
-                ),
-                (),
-            );
-        } else {
-            cb.begin_control_flow(&format!("if ({} != null)", p.var_name), ());
-            cb.add_statement(
-                &format!(
-                    "request = request.newBuilder().header(\"{}\", {stringified}).build()",
-                    p.param.name
-                ),
-                (),
-            );
-            cb.end_control_flow();
-        }
+        cb.add_code(java_header_param_set(
+            p.param.required,
+            &p.var_name,
+            &p.param.name,
+            &stringified,
+        ));
     }
 
     // Execute
@@ -452,23 +426,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 continue;
             }
             cb.add_statement(&format!("{} {} = null", tr.java_type, tr.field_name), ());
-            if let Ok(code) = tr.status.parse::<u16>() {
-                cb.begin_control_flow(&format!("if (response.code() == {code})"), ());
-                cb.add_statement(
-                    &format!("{} = {}", tr.field_name, response_decode_expr(tr)),
-                    (),
-                );
-                cb.end_control_flow();
-            } else {
-                // Wildcard status ("4XX", "5XX", "default"): guard by range
-                let guard = wildcard_status_guard_java(&tr.status);
-                cb.begin_control_flow(&format!("if ({guard})"), ());
-                cb.add_statement(
-                    &format!("{} = {}", tr.field_name, response_decode_expr(tr)),
-                    (),
-                );
-                cb.end_control_flow();
-            }
+            cb.add_code(java_response_decode_assignment(tr));
         }
 
         // Return with typed fields
@@ -505,6 +463,72 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     cb.build().expect("method body builds")
 }
 
+fn java_new_request(method: &str, has_query: bool) -> CodeBlock {
+    let with_query =
+        format!("Request request = client.newRequest(\"{method}\", path, query, null);");
+    let without_query =
+        format!("Request request = client.newRequest(\"{method}\", path, null, null);");
+    sigil_quote!(Java {
+        $if(has_query) {
+            $L(with_query.as_str())
+        } $else {
+            $L(without_query.as_str())
+        }
+    })
+    .expect("Java request construction builds")
+}
+
+fn java_new_request_with_body(method: &str, has_query: bool, body_expr: &str) -> CodeBlock {
+    let with_query =
+        format!("request = client.newRequestWithBody(\"{method}\", path, query, {body_expr});");
+    let without_query =
+        format!("request = client.newRequestWithBody(\"{method}\", path, null, {body_expr});");
+    sigil_quote!(Java {
+        $if(has_query) {
+            $L(with_query.as_str())
+        } $else {
+            $L(without_query.as_str())
+        }
+    })
+    .expect("Java request body construction builds")
+}
+
+fn java_query_param_put(
+    required: bool,
+    var_name: &str,
+    param_name: &str,
+    value_expr: &str,
+) -> CodeBlock {
+    sigil_quote!(Java {
+        $if(required) {
+            query.put($S(param_name), $L(value_expr));
+        } $else {
+            if ($L(var_name) != null) {
+                query.put($S(param_name), $L(value_expr));
+            }
+        }
+    })
+    .expect("Java query param put builds")
+}
+
+fn java_header_param_set(
+    required: bool,
+    var_name: &str,
+    param_name: &str,
+    value_expr: &str,
+) -> CodeBlock {
+    sigil_quote!(Java {
+        $if(required) {
+            request = request.newBuilder().header($S(param_name), $L(value_expr)).build();
+        } $else {
+            if ($L(var_name) != null) {
+                request = request.newBuilder().header($S(param_name), $L(value_expr)).build();
+            }
+        }
+    })
+    .expect("Java header param set builds")
+}
+
 fn emit_multipart_body(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     body: &BodyBinding,
@@ -539,22 +563,21 @@ fn emit_multipart_body(
             cb.end_control_flow();
         }
     }
-    if body.required {
-        cb.add_code(
-            sigil_quote!(Java {
-                RequestBody multipartBody = multipartBuilder.build();
-            })
-            .expect("required multipart body builds"),
-        );
-    } else {
-        cb.add_code(
-            sigil_quote!(Java {
-                multipartBody = multipartBuilder.build();
-            })
-            .expect("optional multipart body builds"),
-        );
+    cb.add_code(java_multipart_body_finish(body.required));
+    if !body.required {
         cb.end_control_flow();
     }
+}
+
+fn java_multipart_body_finish(body_required: bool) -> CodeBlock {
+    sigil_quote!(Java {
+        $if(body_required) {
+            RequestBody multipartBody = multipartBuilder.build();
+        } $else {
+            multipartBody = multipartBuilder.build();
+        }
+    })
+    .expect("multipart body finish builds")
 }
 
 fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: &BodyBinding) {
@@ -571,42 +594,12 @@ fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: 
         BodyEncoding::Json => {
             let body_var = body.var_name.as_str();
             let media_type = body.media_type.as_str();
-            if body.required {
-                cb.add_code(
-                    sigil_quote!(Java {
-                        String jsonBody = gson.toJson($L(body_var));
-                        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get($S(media_type)));
-                    })
-                    .expect("required json request body builds"),
-                );
-            } else {
-                cb.add_code(
-                    sigil_quote!(Java {
-                        String jsonBody = gson.toJson($L(body_var));
-                        requestBody = RequestBody.create(jsonBody, MediaType.get($S(media_type)));
-                    })
-                    .expect("optional json request body builds"),
-                );
-            }
+            cb.add_code(java_json_request_body(body.required, body_var, media_type));
         }
         BodyEncoding::TextPlain | BodyEncoding::OctetStream => {
             let body_var = body.var_name.as_str();
             let media_type = body.media_type.as_str();
-            if body.required {
-                cb.add_code(
-                    sigil_quote!(Java {
-                        RequestBody requestBody = RequestBody.create($L(body_var), MediaType.get($S(media_type)));
-                    })
-                    .expect("required raw request body builds"),
-                );
-            } else {
-                cb.add_code(
-                    sigil_quote!(Java {
-                        requestBody = RequestBody.create($L(body_var), MediaType.get($S(media_type)));
-                    })
-                    .expect("optional raw request body builds"),
-                );
-            }
+            cb.add_code(java_raw_request_body(body.required, body_var, media_type));
         }
         BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
             let message = format!("unsupported request body media type: {}", body.media_type);
@@ -624,6 +617,29 @@ fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: 
     }
 }
 
+fn java_json_request_body(body_required: bool, body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(Java {
+        String jsonBody = gson.toJson($L(body_var));
+        $if(body_required) {
+            RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get($S(media_type)));
+        } $else {
+            requestBody = RequestBody.create(jsonBody, MediaType.get($S(media_type)));
+        }
+    })
+    .expect("json request body builds")
+}
+
+fn java_raw_request_body(body_required: bool, body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(Java {
+        $if(body_required) {
+            RequestBody requestBody = RequestBody.create($L(body_var), MediaType.get($S(media_type)));
+        } $else {
+            requestBody = RequestBody.create($L(body_var), MediaType.get($S(media_type)));
+        }
+    })
+    .expect("raw request body builds")
+}
+
 fn response_decode_expr(tr: &TypedResponse) -> String {
     match tr.decoding {
         ResponseDecoding::Json => {
@@ -635,42 +651,49 @@ fn response_decode_expr(tr: &TypedResponse) -> String {
     }
 }
 
+fn java_response_decode_assignment(tr: &TypedResponse) -> CodeBlock {
+    let exact_status = tr.status.parse::<u16>().ok();
+    let has_exact_status = exact_status.is_some();
+    let status_code = exact_status.unwrap_or_default().to_string();
+    let guard = wildcard_status_guard_java(&tr.status);
+    let assignment = format!("{} = {}", tr.field_name, response_decode_expr(tr));
+    sigil_quote!(Java {
+        $if(has_exact_status) {
+            if (response.code() == $L(status_code.as_str())) {
+                $L(assignment.as_str());
+            }
+        } $else {
+            if ($L(guard.as_str())) {
+                $L(assignment.as_str());
+            }
+        }
+    })
+    .expect("Java response decode assignment builds")
+}
+
 fn emit_required_multipart_part(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     part: &MultipartPart,
     access: &str,
 ) {
+    cb.add_code(java_multipart_part(part, access));
+}
+
+fn java_multipart_part(part: &MultipartPart, access: &str) -> CodeBlock {
     let wire_name = part.wire_name.as_str();
     let content_type = part.content_type.as_str();
-    if part.is_binary {
-        cb.add_code(
-            sigil_quote!(Java {
-                multipartBuilder.addFormDataPart($S(wire_name), $L(access).filenameOrDefault($S(wire_name)), RequestBody.create($L(access).getData(), MediaType.get($S(content_type))));
-            })
-            .expect("binary multipart part block builds"),
-        );
-    } else if part.value_encoding == MultipartValueEncoding::Json {
-        cb.add_code(
-            sigil_quote!(Java {
-                multipartBuilder.addFormDataPart($S(wire_name), null, RequestBody.create(gson.toJson($L(access)), MediaType.get($S(content_type))));
-            })
-            .expect("json multipart part block builds"),
-        );
-    } else if part.value_encoding == MultipartValueEncoding::Unsupported {
-        cb.add_code(
-            sigil_quote!(Java {
-                throw new IllegalArgumentException($S("unsupported multipart part content type"));
-            })
-            .expect("unsupported multipart part block builds"),
-        );
-    } else {
-        cb.add_code(
-            sigil_quote!(Java {
-                multipartBuilder.addFormDataPart($S(wire_name), null, RequestBody.create(String.valueOf($L(access)), MediaType.get($S(content_type))));
-            })
-            .expect("text multipart part block builds"),
-        );
-    }
+    sigil_quote!(Java {
+        $if(part.is_binary) {
+            multipartBuilder.addFormDataPart($S(wire_name), $L(access).filenameOrDefault($S(wire_name)), RequestBody.create($L(access).getData(), MediaType.get($S(content_type))));
+        } $else_if(part.value_encoding == MultipartValueEncoding::Json) {
+            multipartBuilder.addFormDataPart($S(wire_name), null, RequestBody.create(gson.toJson($L(access)), MediaType.get($S(content_type))));
+        } $else_if(part.value_encoding == MultipartValueEncoding::Unsupported) {
+            throw new IllegalArgumentException($S("unsupported multipart part content type"));
+        } $else {
+            multipartBuilder.addFormDataPart($S(wire_name), null, RequestBody.create(String.valueOf($L(access)), MediaType.get($S(content_type))));
+        }
+    })
+    .expect("multipart part block builds")
 }
 
 // ---------------------------------------------------------------------------

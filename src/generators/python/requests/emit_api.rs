@@ -390,37 +390,37 @@ fn emit_required_multipart_part(
     access: &str,
     ir: &IrSpec,
 ) {
-    if part.is_binary {
-        cb.add_statement(
-            &format!(
-                "files[\"{}\"] = ({}.filename_or_default(\"{}\"), {}.data, \"{}\")",
-                part.wire_name, access, part.wire_name, access, part.content_type
-            ),
-            (),
-        );
-    } else if part.value_encoding == MultipartValueEncoding::Json {
-        let json_value = render_multipart_json_value(access, &part.type_expr, ir);
-        cb.add_statement(
-            &format!(
-                "files[\"{}\"] = (None, json.dumps({json_value}), \"{}\")",
-                part.wire_name, part.content_type
-            ),
-            (),
-        );
-    } else if part.value_encoding == MultipartValueEncoding::Unsupported {
-        cb.add_statement(
-            "raise ValueError(\"unsupported multipart part content type\")",
-            (),
-        );
-    } else {
-        cb.add_statement(
-            &format!(
-                "files[\"{}\"] = (None, str({access}), \"{}\")",
-                part.wire_name, part.content_type
-            ),
-            (),
-        );
-    }
+    cb.add_code(multipart_part_assignment(part, access, ir));
+}
+
+fn multipart_part_assignment(part: &MultipartPart, access: &str, ir: &IrSpec) -> CodeBlock {
+    let binary_stmt = format!(
+        "files[\"{}\"] = ({}.filename_or_default(\"{}\"), {}.data, \"{}\")",
+        part.wire_name, access, part.wire_name, access, part.content_type
+    );
+    let json_value = render_multipart_json_value(access, &part.type_expr, ir);
+    let json_stmt = format!(
+        "files[\"{}\"] = (None, json.dumps({json_value}), \"{}\")",
+        part.wire_name, part.content_type
+    );
+    let unsupported_stmt = "raise ValueError(\"unsupported multipart part content type\")";
+    let scalar_stmt = format!(
+        "files[\"{}\"] = (None, str({access}), \"{}\")",
+        part.wire_name, part.content_type
+    );
+
+    sigil_quote!(Python {
+        $if(part.is_binary) {
+            $L(binary_stmt.as_str())
+        } $else_if(part.value_encoding == MultipartValueEncoding::Json) {
+            $L(json_stmt.as_str())
+        } $else_if(part.value_encoding == MultipartValueEncoding::Unsupported) {
+            $L(unsupported_stmt)
+        } $else {
+            $L(scalar_stmt.as_str())
+        }
+    })
+    .expect("multipart part assignment builds")
 }
 
 fn render_multipart_json_value(access: &str, expr: &IrTypeExpr, ir: &IrSpec) -> String {

@@ -260,32 +260,26 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         cb.add_line();
         for p in &plan.query_params {
             let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
-            if p.param.required {
-                cb.add(&format!("query[\"{}\"] = {stringified}", p.param.name), ());
-                cb.add_line();
-            } else {
-                cb.begin_control_flow(&format!("if ({} != null)", p.var_name), ());
-                cb.add(&format!("query[\"{}\"] = {stringified}", p.param.name), ());
-                cb.add_line();
-                cb.end_control_flow();
-            }
+            cb.add_code(kotlin_query_param_put(
+                p.param.required,
+                &p.var_name,
+                &p.param.name,
+                &stringified,
+            ));
         }
     }
 
     // Build request
-    let query_arg = if has_query { "query" } else { "null" };
     let method = plan.op.method.to_uppercase();
     if let Some(body) = &plan.body {
         if body.encoding == BodyEncoding::Multipart {
             if let Some(parts) = &body.multipart_parts {
                 emit_multipart_body(&mut cb, body, parts);
-                cb.add(
-                    &format!(
-                        "val request = client.newRequestWithBody(\"{method}\", path, {query_arg}, multipartBody)"
-                    ),
-                    (),
-                );
-                cb.add_line();
+                cb.add_code(kotlin_new_request_with_body(
+                    &method,
+                    has_query,
+                    "multipartBody",
+                ));
             } else {
                 cb.add(
                     "val request: okhttp3.Request = throw IllegalArgumentException(\"unsupported multipart request body: schema must be object-shaped\")",
@@ -295,20 +289,14 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             }
         } else {
             emit_request_body(&mut cb, body);
-            cb.add(
-                &format!(
-                    "val request = client.newRequestWithBody(\"{method}\", path, {query_arg}, requestBody)"
-                ),
-                (),
-            );
-            cb.add_line();
+            cb.add_code(kotlin_new_request_with_body(
+                &method,
+                has_query,
+                "requestBody",
+            ));
         }
     } else {
-        cb.add(
-            &format!("val request = client.newRequest(\"{method}\", path, {query_arg}, null)"),
-            (),
-        );
-        cb.add_line();
+        cb.add_code(kotlin_new_request(&method, has_query));
     }
 
     // Headers
@@ -317,38 +305,17 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         cb.add_line();
         for p in &plan.header_params {
             let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
-            if p.param.required {
-                cb.add(
-                    &format!(
-                        "finalRequest = finalRequest.newBuilder().header(\"{}\", {stringified}).build()",
-                        p.param.name
-                    ),
-                    (),
-                );
-                cb.add_line();
-            } else {
-                cb.begin_control_flow(&format!("if ({} != null)", p.var_name), ());
-                cb.add(
-                    &format!(
-                        "finalRequest = finalRequest.newBuilder().header(\"{}\", {stringified}).build()",
-                        p.param.name
-                    ),
-                    (),
-                );
-                cb.add_line();
-                cb.end_control_flow();
-            }
+            cb.add_code(kotlin_header_param_set(
+                p.param.required,
+                &p.var_name,
+                &p.param.name,
+                &stringified,
+            ));
         }
     }
 
     // Execute
-    let request_var = if plan.header_params.is_empty() {
-        "request"
-    } else {
-        "finalRequest"
-    };
-    cb.add(&format!("val response = client.execute({request_var})"), ());
-    cb.add_line();
+    cb.add_code(kotlin_execute_request(plan.header_params.is_empty()));
     cb.add_line();
 
     // Error handling
@@ -379,27 +346,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 continue;
             }
             cb.add_line();
-            let deserialize_expr = response_decode_expr(tr);
-            if let Ok(code) = tr.status.parse::<u16>() {
-                cb.add(
-                    &format!(
-                        "val {} = if (response.code == {code}) {} else null",
-                        tr.field_name, deserialize_expr
-                    ),
-                    (),
-                );
-            } else {
-                // Wildcard status ("4XX", "5XX", "default"): guard by range
-                let guard = wildcard_status_guard(&tr.status);
-                cb.add(
-                    &format!(
-                        "val {} = if ({}) {} else null",
-                        tr.field_name, guard, deserialize_expr
-                    ),
-                    (),
-                );
-            }
-            cb.add_line();
+            cb.add_code(kotlin_response_decode_assignment(tr));
         }
 
         // Return with typed fields
@@ -437,6 +384,70 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     cb.build().expect("method body builds")
 }
 
+fn kotlin_new_request(method: &str, has_query: bool) -> CodeBlock {
+    let with_query = format!("val request = client.newRequest(\"{method}\", path, query, null)");
+    let without_query = format!("val request = client.newRequest(\"{method}\", path, null, null)");
+    sigil_quote!(Kotlin {
+        $if(has_query) {
+            $L(with_query.as_str())
+        } $else {
+            $L(without_query.as_str())
+        }
+    })
+    .expect("Kotlin request construction builds")
+}
+
+fn kotlin_new_request_with_body(method: &str, has_query: bool, body_expr: &str) -> CodeBlock {
+    let with_query =
+        format!("val request = client.newRequestWithBody(\"{method}\", path, query, {body_expr})");
+    let without_query =
+        format!("val request = client.newRequestWithBody(\"{method}\", path, null, {body_expr})");
+    sigil_quote!(Kotlin {
+        $if(has_query) {
+            $L(with_query.as_str())
+        } $else {
+            $L(without_query.as_str())
+        }
+    })
+    .expect("Kotlin request body construction builds")
+}
+
+fn kotlin_query_param_put(
+    required: bool,
+    var_name: &str,
+    param_name: &str,
+    value_expr: &str,
+) -> CodeBlock {
+    sigil_quote!(Kotlin {
+        $if(required) {
+            query[$S(param_name)] = $L(value_expr)
+        } $else {
+            if ($L(var_name) != null) {
+                query[$S(param_name)] = $L(value_expr)
+            }
+        }
+    })
+    .expect("Kotlin query param put builds")
+}
+
+fn kotlin_header_param_set(
+    required: bool,
+    var_name: &str,
+    param_name: &str,
+    value_expr: &str,
+) -> CodeBlock {
+    sigil_quote!(Kotlin {
+        $if(required) {
+            finalRequest = finalRequest.newBuilder().header($S(param_name), $L(value_expr)).build()
+        } $else {
+            if ($L(var_name) != null) {
+                finalRequest = finalRequest.newBuilder().header($S(param_name), $L(value_expr)).build()
+            }
+        }
+    })
+    .expect("Kotlin header param set builds")
+}
+
 fn emit_multipart_body(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     body: &BodyBinding,
@@ -467,24 +478,32 @@ fn emit_multipart_body(
             cb.end_control_flow();
         }
     }
-    if body.required {
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                val multipartBody = multipartBuilder.build()
-            })
-            .expect("required multipart body builds"),
-        );
-    } else {
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                multipartBody = multipartBuilder.build()
-            })
-            .expect("optional multipart body builds"),
-        );
-    }
+    cb.add_code(kotlin_multipart_body_finish(body.required));
     if !body.required {
         cb.end_control_flow();
     }
+}
+
+fn kotlin_execute_request(use_request: bool) -> CodeBlock {
+    sigil_quote!(Kotlin {
+        $if(use_request) {
+            val response = client.execute(request)
+        } $else {
+            val response = client.execute(finalRequest)
+        }
+    })
+    .expect("execute request builds")
+}
+
+fn kotlin_multipart_body_finish(body_required: bool) -> CodeBlock {
+    sigil_quote!(Kotlin {
+        $if(body_required) {
+            val multipartBody = multipartBuilder.build()
+        } $else {
+            multipartBody = multipartBuilder.build()
+        }
+    })
+    .expect("multipart body finish builds")
 }
 
 fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: &BodyBinding) {
@@ -501,42 +520,16 @@ fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: 
         BodyEncoding::Json => {
             let body_var = body.var_name.as_str();
             let media_type = body.media_type.as_str();
-            if body.required {
-                cb.add_code(
-                    sigil_quote!(Kotlin {
-                        val jsonBody = gson.toJson($L(body_var))
-                        val requestBody = jsonBody.toRequestBody($S(media_type).toMediaType())
-                    })
-                    .expect("required json request body builds"),
-                );
-            } else {
-                cb.add_code(
-                    sigil_quote!(Kotlin {
-                        val jsonBody = gson.toJson($L(body_var))
-                        requestBody = jsonBody.toRequestBody($S(media_type).toMediaType())
-                    })
-                    .expect("optional json request body builds"),
-                );
-            }
+            cb.add_code(kotlin_json_request_body(
+                body.required,
+                body_var,
+                media_type,
+            ));
         }
         BodyEncoding::TextPlain | BodyEncoding::OctetStream => {
             let body_var = body.var_name.as_str();
             let media_type = body.media_type.as_str();
-            if body.required {
-                cb.add_code(
-                    sigil_quote!(Kotlin {
-                        val requestBody = $L(body_var).toRequestBody($S(media_type).toMediaType())
-                    })
-                    .expect("required raw request body builds"),
-                );
-            } else {
-                cb.add_code(
-                    sigil_quote!(Kotlin {
-                        requestBody = $L(body_var).toRequestBody($S(media_type).toMediaType())
-                    })
-                    .expect("optional raw request body builds"),
-                );
-            }
+            cb.add_code(kotlin_raw_request_body(body.required, body_var, media_type));
         }
         BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
             let message = format!("unsupported request body media type: {}", body.media_type);
@@ -554,6 +547,29 @@ fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: 
     }
 }
 
+fn kotlin_json_request_body(body_required: bool, body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(Kotlin {
+        val jsonBody = gson.toJson($L(body_var))
+        $if(body_required) {
+            val requestBody = jsonBody.toRequestBody($S(media_type).toMediaType())
+        } $else {
+            requestBody = jsonBody.toRequestBody($S(media_type).toMediaType())
+        }
+    })
+    .expect("json request body builds")
+}
+
+fn kotlin_raw_request_body(body_required: bool, body_var: &str, media_type: &str) -> CodeBlock {
+    sigil_quote!(Kotlin {
+        $if(body_required) {
+            val requestBody = $L(body_var).toRequestBody($S(media_type).toMediaType())
+        } $else {
+            requestBody = $L(body_var).toRequestBody($S(media_type).toMediaType())
+        }
+    })
+    .expect("raw request body builds")
+}
+
 fn response_decode_expr(tr: &TypedResponse) -> String {
     match tr.decoding {
         ResponseDecoding::Json => format!(
@@ -565,43 +581,47 @@ fn response_decode_expr(tr: &TypedResponse) -> String {
     }
 }
 
+fn kotlin_response_decode_assignment(tr: &TypedResponse) -> CodeBlock {
+    let exact_status = tr.status.parse::<u16>().ok();
+    let has_exact_status = exact_status.is_some();
+    let status_code = exact_status.unwrap_or_default().to_string();
+    let guard = wildcard_status_guard(&tr.status);
+    let field_name = tr.field_name.as_str();
+    let deserialize_expr = response_decode_expr(tr);
+    sigil_quote!(Kotlin {
+        $if(has_exact_status) {
+            val $L(field_name) = if (response.code == $L(status_code.as_str())) $L(deserialize_expr.as_str()) else null
+        } $else {
+            val $L(field_name) = if ($L(guard.as_str())) $L(deserialize_expr.as_str()) else null
+        }
+    })
+    .expect("Kotlin response decode assignment builds")
+}
+
 fn emit_required_multipart_part(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     part: &MultipartPart,
     access: &str,
 ) {
+    cb.add_code(kotlin_multipart_part(part, access));
+    cb.add_line();
+}
+
+fn kotlin_multipart_part(part: &MultipartPart, access: &str) -> CodeBlock {
     let wire_name = part.wire_name.as_str();
     let content_type = part.content_type.as_str();
-    if part.is_binary {
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                multipartBuilder.addFormDataPart($S(wire_name), $L(access).filenameOrDefault($S(wire_name)), $L(access).data.toRequestBody($S(content_type).toMediaType()))
-            })
-            .expect("binary multipart part block builds"),
-        );
-    } else if part.value_encoding == MultipartValueEncoding::Json {
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                multipartBuilder.addFormDataPart($S(wire_name), null, gson.toJson($L(access)).toRequestBody($S(content_type).toMediaType()))
-            })
-            .expect("json multipart part block builds"),
-        );
-    } else if part.value_encoding == MultipartValueEncoding::Unsupported {
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                throw IllegalArgumentException($S("unsupported multipart part content type"))
-            })
-            .expect("unsupported multipart part block builds"),
-        );
-    } else {
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                multipartBuilder.addFormDataPart($S(wire_name), null, $L(access).toString().toRequestBody($S(content_type).toMediaType()))
-            })
-            .expect("text multipart part block builds"),
-        );
-    }
-    cb.add_line();
+    sigil_quote!(Kotlin {
+        $if(part.is_binary) {
+            multipartBuilder.addFormDataPart($S(wire_name), $L(access).filenameOrDefault($S(wire_name)), $L(access).data.toRequestBody($S(content_type).toMediaType()))
+        } $else_if(part.value_encoding == MultipartValueEncoding::Json) {
+            multipartBuilder.addFormDataPart($S(wire_name), null, gson.toJson($L(access)).toRequestBody($S(content_type).toMediaType()))
+        } $else_if(part.value_encoding == MultipartValueEncoding::Unsupported) {
+            throw IllegalArgumentException($S("unsupported multipart part content type"))
+        } $else {
+            multipartBuilder.addFormDataPart($S(wire_name), null, $L(access).toString().toRequestBody($S(content_type).toMediaType()))
+        }
+    })
+    .expect("multipart part block builds")
 }
 
 // ---------------------------------------------------------------------------
