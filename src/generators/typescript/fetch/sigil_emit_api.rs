@@ -607,10 +607,16 @@ fn emit_url_path(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOpe
         .parameters
         .iter()
         .any(|p| matches!(p.location, IrParameterLocation::Path));
-    let binding = if has_path_params { "let" } else { "const" };
-    cb.add(
-        &format!("{binding} urlPath = %V;\n"),
-        vec![Arg::VerbatimStr(op.path.clone())],
+    let path = op.path.as_str();
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            $if(has_path_params) {
+                let urlPath = $V(path);
+            } $else {
+                const urlPath = $V(path);
+            }
+        })
+        .expect("url path declaration builds"),
     );
 
     let names = resolve_param_names(op);
@@ -643,12 +649,14 @@ fn emit_query_params(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &I
     {
         let resolved = resolved_param(&names, p);
         let access = request_parameters_access(&resolved);
-        cb.add(
-            &format!(
-                "if ({0} !== undefined) {{\n  queryParameters['{1}'] = {0};\n}}\n",
-                access, p.name
-            ),
-            vec![],
+        let key = format!("'{}'", p.name);
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                if ($L(access.as_str()) !== undefined) {
+                    queryParameters[$L(key.as_str())] = $L(access.as_str());
+                }
+            })
+            .expect("query parameter guard builds"),
         );
     }
 }
@@ -674,12 +682,14 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOper
     {
         let resolved = resolved_param(&names, p);
         let access = request_parameters_access(&resolved);
-        cb.add(
-            &format!(
-                "if ({0} !== undefined) {{\n  headerParameters['{1}'] = String({0});\n}}\n",
-                access, p.name
-            ),
-            vec![],
+        let key = format!("'{}'", p.name);
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                if ($L(access.as_str()) !== undefined) {
+                    headerParameters[$L(key.as_str())] = String($L(access.as_str()));
+                }
+            })
+            .expect("header parameter guard builds"),
         );
     }
 }
@@ -781,21 +791,16 @@ fn emit_unsupported_ts_body(
     required: bool,
     message: &str,
 ) {
-    if required {
-        cb.add_code(
-            sigil_quote!(TypeScript {
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            $if(required) {
                 const requestBody = (() => { throw new Error($S(message)); })();
-            })
-            .expect("unsupported request body block builds"),
-        );
-    } else {
-        cb.add_code(
-            sigil_quote!(TypeScript {
+            } $else {
                 const requestBody = $L(access) === undefined || $L(access) === null ? undefined : (() => { throw new Error($S(message)); })();
-            })
-            .expect("optional unsupported request body block builds"),
-        );
-    }
+            }
+        })
+        .expect("unsupported request body block builds"),
+    );
 }
 
 fn is_unsupported_ts_request_media_type(media_type: &str) -> bool {
@@ -816,23 +821,17 @@ fn emit_multipart_blob_setup(cb: &mut sigil_stitch::code_block::CodeBlockBuilder
 
 fn emit_multipart_blob_finish(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, required: bool) {
     let closing_boundary_tail = ts_string_literal("--\r\n");
-    if required {
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                multipartChunks.push($S("--") + multipartBoundary + $L(closing_boundary_tail));
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            multipartChunks.push($S("--") + multipartBoundary + $L(closing_boundary_tail));
+            $if(required) {
                 const requestBody = new Blob(multipartChunks);
-            })
-            .expect("required multipart finish block builds"),
-        );
-    } else {
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                multipartChunks.push($S("--") + multipartBoundary + $L(closing_boundary_tail));
+            } $else {
                 requestBody = new Blob(multipartChunks);
-            })
-            .expect("optional multipart finish block builds"),
-        );
-    }
+            }
+        })
+        .expect("multipart finish block builds"),
+    );
 }
 
 fn emit_multipart_blob_part(
@@ -931,15 +930,26 @@ fn emit_make_request(
     has_body: bool,
 ) {
     let method = op.method.to_uppercase();
-    let body_expr = if has_body { "requestBody" } else { "undefined" };
-    cb.add("// Make request\n", vec![]);
-    cb.add(
-        &format!(
-            "const response = await this.request({{\n    path: urlPath,\n    method: '{}',\n    headers: headerParameters,\n    query: queryParameters,\n    body: {},\n}}, initOverrides);\n\n",
-            method, body_expr
-        ),
-        vec![],
+    let request_with_body = format!(
+        "const response = await this.request({{\n    path: urlPath,\n    method: '{}',\n    headers: headerParameters,\n    query: queryParameters,\n    body: requestBody,\n}}, initOverrides);",
+        method
     );
+    let request_without_body = format!(
+        "const response = await this.request({{\n    path: urlPath,\n    method: '{}',\n    headers: headerParameters,\n    query: queryParameters,\n    body: undefined,\n}}, initOverrides);",
+        method
+    );
+    cb.add("// Make request\n", vec![]);
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            $if(has_body) {
+                $L(request_with_body)
+            } $else {
+                $L(request_without_body)
+            }
+        })
+        .expect("make request block builds"),
+    );
+    cb.add_line();
 }
 
 fn emit_response_handler(
@@ -1094,24 +1104,21 @@ fn emit_fallback_return(
     any_body: bool,
     _inside_block: bool,
 ) {
-    if any_body {
-        cb.add(
-            "return new %T(response) as %T<%T> & { status: number };\n",
-            vec![
-                Arg::TypeName(rt_value("JSONApiResponse")),
-                Arg::TypeName(rt_value("JSONApiResponse")),
-                Arg::TypeName(TypeName::primitive("unknown")),
-            ],
-        );
-    } else {
-        cb.add(
-            "return new %T(response) as %T & { status: number };\n",
-            vec![
-                Arg::TypeName(rt_value("VoidApiResponse")),
-                Arg::TypeName(rt_value("VoidApiResponse")),
-            ],
-        );
-    }
+    let json_response = rt_value("JSONApiResponse");
+    let void_response = rt_value("VoidApiResponse");
+    let unknown = TypeName::primitive("unknown");
+    let json_status_shape = TypeName::raw(" { status: number }");
+    let void_status_shape = TypeName::raw("{ status: number }");
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            $if(any_body) {
+                return new $T(json_response.clone())(response) as $T(json_response)<$T(unknown)> & $T(json_status_shape);
+            } $else {
+                return new $T(void_response.clone())(response) as $T(void_response) & $T(void_status_shape);
+            }
+        })
+        .expect("fallback response return block builds"),
+    );
 }
 
 // ============================================================================
@@ -1136,19 +1143,15 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, String> {
     let args_list = raw_call_args(op);
     let is_void = is_void_type(&body_ty);
     let call_expr = format!("this.{raw_name}({args_list})");
-    let body = if is_void {
-        sigil_quote!(TypeScript {
-            const response = await $L(call_expr.clone());
+    let body = sigil_quote!(TypeScript {
+        const response = await $L(call_expr);
+        $if(is_void) {
             return await response.value();
-        })
-        .expect("CodeBlock builds")
-    } else {
-        sigil_quote!(TypeScript {
-            const response = await $L(call_expr);
+        } $else {
             return await response.value() as $T(body_ty);
-        })
-        .expect("CodeBlock builds")
-    };
+        }
+    })
+    .expect("CodeBlock builds");
     fb = fb.body(body);
 
     fb.build()

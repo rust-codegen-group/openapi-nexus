@@ -73,21 +73,17 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             (),
         );
         for p in query_params {
-            if p.is_optional {
-                let value_expr = render_to_string("v", &p.param.type_expr, false);
-                b.begin_control_flow(&format!("if let Some(v) = &{}", p.var_name), ());
-                b.add(
-                    &format!("query_parts.push((\"{}\", {value_expr}));\n", p.param.name),
-                    (),
-                );
-                b.end_control_flow();
+            let value_expr = if p.is_optional {
+                render_to_string("v", &p.param.type_expr, false)
             } else {
-                let value_expr = render_to_string(&p.var_name, &p.param.type_expr, false);
-                b.add(
-                    &format!("query_parts.push((\"{}\", {value_expr}));\n", p.param.name),
-                    (),
-                );
-            }
+                render_to_string(&p.var_name, &p.param.type_expr, false)
+            };
+            b.add_code(rust_query_part(
+                p.is_optional,
+                &p.var_name,
+                &p.param.name,
+                &value_expr,
+            ));
         }
         b.begin_control_flow("if !query_parts.is_empty()", ());
         b.add(
@@ -101,33 +97,22 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     // Build request
     let method = op.method.to_uppercase();
     let needs_mut_req = !header_params.is_empty() || body.is_some();
-    let req_let = if needs_mut_req {
-        "let mut req"
-    } else {
-        "let req"
-    };
-    b.add(
-        &format!("{req_let} = self.client.request(reqwest::Method::{method}, &path).await?;\n"),
-        (),
-    );
+    b.add_code(reqwest_request(needs_mut_req, &method));
 
     // Headers
     for p in header_params {
-        if p.is_optional {
-            let value_expr = render_to_string("v", &p.param.type_expr, false);
-            b.begin_control_flow(&format!("if let Some(v) = &{}", p.var_name), ());
-            b.add(
-                &format!("req = req.header(\"{}\", {value_expr});\n", p.param.name),
-                (),
-            );
-            b.end_control_flow();
+        let header_name = rust_string_literal(&p.param.name);
+        let value_expr = if p.is_optional {
+            render_to_string("v", &p.param.type_expr, false)
         } else {
-            let value_expr = render_to_string(&p.var_name, &p.param.type_expr, false);
-            b.add(
-                &format!("req = req.header(\"{}\", {value_expr});\n", p.param.name),
-                (),
-            );
-        }
+            render_to_string(&p.var_name, &p.param.type_expr, false)
+        };
+        b.add_code(reqwest_header_guarded(
+            p.is_optional,
+            &p.var_name,
+            &header_name,
+            &value_expr,
+        ));
     }
 
     // Body
@@ -149,25 +134,112 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     }
 
     // Send
-    b.add("let resp = self.client.send(req).await?;\n", ());
-    b.add("let status_code = resp.status().as_u16();\n", ());
+    b.add_code(reqwest_send());
+    b.add_code(status_code_init());
 
     // Parse response
     if typed_responses.is_empty() {
-        b.add(&format!("Ok({response_type} {{ status_code }})\n"), ());
+        b.add_code(empty_response(response_type));
     } else {
-        b.add(
-            "let body_bytes = resp.bytes().await.map_err(Error::Network)?;\n",
-            (),
-        );
+        b.add_code(reqwest_body_bytes_init());
         emit_result_init(&mut b, response_type, typed_responses);
         emit_response_match(&mut b, typed_responses, &|tr| {
             response_value_expr(tr, "&body_bytes")
         });
-        b.add("Ok(result)\n", ());
+        b.add_code(ok_result());
     }
 
     b.build().unwrap()
+}
+
+fn reqwest_request(needs_mut_req: bool, method: &str) -> CodeBlock {
+    let mutable_request_stmt =
+        format!("let mut req = self.client.request(reqwest::Method::{method}, &path).await?;");
+    let request_stmt =
+        format!("let req = self.client.request(reqwest::Method::{method}, &path).await?;");
+    sigil_quote!(RustLang {
+        $if(needs_mut_req) {
+            $L(mutable_request_stmt.as_str())
+        } $else {
+            $L(request_stmt.as_str())
+        }
+    })
+    .expect("reqwest request builds")
+}
+
+fn rust_query_part(
+    is_optional: bool,
+    var_name: &str,
+    param_name: &str,
+    value_expr: &str,
+) -> CodeBlock {
+    let param_name = rust_string_literal(param_name);
+    sigil_quote!(RustLang {
+        $if(is_optional) {
+            if let Some(v) = &$L(var_name) {
+                query_parts.push(($L(param_name.as_str()), $L(value_expr)));
+            }
+        } $else {
+            query_parts.push(($L(param_name.as_str()), $L(value_expr)));
+        }
+    })
+    .expect("Rust query part builds")
+}
+
+fn reqwest_header_guarded(
+    is_optional: bool,
+    var_name: &str,
+    header_name: &str,
+    value_expr: &str,
+) -> CodeBlock {
+    sigil_quote!(RustLang {
+        $if(is_optional) {
+            if let Some(v) = &$L(var_name) {
+                req = req.header($L(header_name), $L(value_expr));
+            }
+        } $else {
+            req = req.header($L(header_name), $L(value_expr));
+        }
+    })
+    .expect("guarded reqwest header builds")
+}
+
+fn reqwest_send() -> CodeBlock {
+    let send_stmt = "let resp = self.client.send(req).await?;";
+    sigil_quote!(RustLang {
+        $L(send_stmt)
+    })
+    .expect("reqwest send builds")
+}
+
+fn status_code_init() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let status_code = resp.status().as_u16();
+    })
+    .expect("status code init builds")
+}
+
+fn empty_response(response_type: &str) -> CodeBlock {
+    let response_expr = format!("{response_type} {{ status_code }}");
+    sigil_quote!(RustLang {
+        Ok($L(response_expr.as_str()))
+    })
+    .expect("empty response builds")
+}
+
+fn reqwest_body_bytes_init() -> CodeBlock {
+    let body_bytes_stmt = "let body_bytes = resp.bytes().await.map_err(Error::Network)?;";
+    sigil_quote!(RustLang {
+        $L(body_bytes_stmt)
+    })
+    .expect("reqwest body bytes init builds")
+}
+
+fn ok_result() -> CodeBlock {
+    sigil_quote!(RustLang {
+        Ok(result)
+    })
+    .expect("ok result builds")
 }
 
 fn emit_body(
@@ -259,66 +331,115 @@ fn emit_multipart_body(
     body_var: &str,
     parts: &[MultipartPart],
 ) {
-    b.add("let mut multipart = reqwest::multipart::Form::new();\n", ());
+    b.add_code(multipart_init());
     for part in parts {
         let wire_name = rust_string_literal(&part.wire_name);
         let content_type = rust_string_literal(&part.content_type);
         if part.value_encoding == MultipartValueEncoding::Unsupported {
             if part.required {
-                b.add("return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n", ());
+                b.add_code(unsupported_multipart_part());
             } else {
                 let field_name = rust_field_name(&part.wire_name);
                 b.begin_control_flow(&format!("if {body_var}.{field_name}.is_some()"), ());
-                b.add("return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n", ());
+                b.add_code(unsupported_multipart_part());
                 b.end_control_flow();
             }
             continue;
         }
         if part.required {
-            if part.is_binary {
-                b.add(
-                    &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({}).mime_str({content_type}).map_err(Error::Network)?);\n",
-                        binary_field_expr(body_var, part),
-                        binary_filename_expr(body_var, part),
-                    ),
-                    (),
-                );
+            let binary_value_expr = if part.is_binary {
+                binary_field_expr(body_var, part)
             } else {
-                b.add(
-                    &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::text({}).mime_str({content_type}).map_err(Error::Network)?);\n",
-                        text_field_expr(body_var, part),
-                    ),
-                    (),
-                );
-            }
+                String::new()
+            };
+            let filename_expr = if part.is_binary {
+                binary_filename_expr(body_var, part)
+            } else {
+                String::new()
+            };
+            let text_value_expr = if part.is_binary {
+                String::new()
+            } else {
+                text_field_expr(body_var, part)
+            };
+            b.add_code(reqwest_multipart_part(
+                part.is_binary,
+                &wire_name,
+                &binary_value_expr,
+                &filename_expr,
+                &text_value_expr,
+                &content_type,
+            ));
         } else {
             let field_name = rust_field_name(&part.wire_name);
             b.begin_control_flow(
                 &format!("if let Some(value) = &{body_var}.{field_name}"),
                 (),
             );
-            if part.is_binary {
-                b.add(
-                    &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::bytes({}).file_name({}).mime_str({content_type}).map_err(Error::Network)?);\n",
-                        optional_binary_field_expr("value"),
-                        optional_binary_filename_expr("value", part),
-                    ),
-                    (),
-                );
+            let binary_value_expr = if part.is_binary {
+                optional_binary_field_expr("value")
             } else {
-                b.add(
-                    &format!(
-                        "multipart = multipart.part({wire_name}, reqwest::multipart::Part::text({}).mime_str({content_type}).map_err(Error::Network)?);\n",
-                        optional_text_field_expr("value", part),
-                    ),
-                    (),
-                );
-            }
+                String::new()
+            };
+            let filename_expr = if part.is_binary {
+                optional_binary_filename_expr("value", part)
+            } else {
+                String::new()
+            };
+            let text_value_expr = if part.is_binary {
+                String::new()
+            } else {
+                optional_text_field_expr("value", part)
+            };
+            b.add_code(reqwest_multipart_part(
+                part.is_binary,
+                &wire_name,
+                &binary_value_expr,
+                &filename_expr,
+                &text_value_expr,
+                &content_type,
+            ));
             b.end_control_flow();
         }
     }
-    b.add("req = req.multipart(multipart);\n", ());
+    b.add_code(multipart_finish());
+}
+
+fn multipart_init() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let mut multipart = reqwest::multipart::Form::new();
+    })
+    .expect("multipart init builds")
+}
+
+fn unsupported_multipart_part() -> CodeBlock {
+    sigil_quote!(RustLang {
+        return Err(Error::Unsupported($S("unsupported multipart part content type")));
+    })
+    .expect("unsupported multipart part builds")
+}
+
+fn reqwest_multipart_part(
+    is_binary: bool,
+    wire_name: &str,
+    binary_value_expr: &str,
+    filename_expr: &str,
+    text_value_expr: &str,
+    content_type: &str,
+) -> CodeBlock {
+    sigil_quote!(RustLang {
+        $if(is_binary) {
+            multipart = multipart.part($L(wire_name), reqwest::multipart::Part::bytes($L(binary_value_expr)).file_name($L(filename_expr)).mime_str($L(content_type)).map_err(Error::Network)?);
+        } $else {
+            multipart = multipart.part($L(wire_name), reqwest::multipart::Part::text($L(text_value_expr)).mime_str($L(content_type)).map_err(Error::Network)?);
+        }
+    })
+    .expect("multipart part builds")
+}
+
+fn multipart_finish() -> CodeBlock {
+    sigil_quote!(RustLang {
+        req = req.multipart(multipart);
+    })
+    .expect("multipart finish builds")
 }

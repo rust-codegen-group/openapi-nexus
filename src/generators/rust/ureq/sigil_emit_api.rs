@@ -81,12 +81,7 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     });
     let needs_mut_req =
         !query_params.is_empty() || !header_params.is_empty() || body_requires_mut_req;
-    let req_let = if needs_mut_req {
-        "let mut req"
-    } else {
-        "let req"
-    };
-    b.add(&format!("{req_let} = self.client.{method}(&path);\n"), ());
+    b.add_code(ureq_request(needs_mut_req, &method));
 
     // Query params via ureq's built-in .query()
     for p in query_params {
@@ -154,7 +149,7 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 if body.required {
                     emit_body_send(&mut b, body, "let resp =");
                 } else {
-                    b.add("let resp;\n", ());
+                    b.add_code(resp_decl());
                     b.begin_control_flow(
                         &format!("if let Some({}) = {}", body.var_name, body.var_name),
                         (),
@@ -162,30 +157,30 @@ pub fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                     emit_body_send(&mut b, body, "resp =");
                     b.end_control_flow();
                     b.begin_control_flow("else", ());
-                    b.add("resp = req.send_empty()?;\n", ());
+                    b.add_code(assign_send_empty());
                     b.end_control_flow();
                 }
             } else {
-                b.add("let resp = req.send_empty()?;\n", ());
+                b.add_code(let_send_empty());
             }
         } else {
-            b.add("let resp = req.send_empty()?;\n", ());
+            b.add_code(let_send_empty());
         }
     } else {
-        b.add("let resp = req.call()?;\n", ());
+        b.add_code(let_call());
     }
-    b.add("let status_code = resp.status().as_u16();\n", ());
+    b.add_code(status_code_init());
 
     // Parse response
     if typed_responses.is_empty() {
-        b.add(&format!("Ok({response_type} {{ status_code }})\n"), ());
+        b.add_code(empty_response(response_type));
     } else {
-        b.add("let body_bytes = resp.into_body().read_to_vec()?;\n", ());
+        b.add_code(body_bytes_init());
         emit_result_init(&mut b, response_type, typed_responses);
         emit_response_match(&mut b, typed_responses, &|tr| {
             response_value_expr(tr, "body_bytes.as_slice()")
         });
-        b.add("Ok(result)\n", ());
+        b.add_code(ok_result());
     }
 
     b.build().unwrap()
@@ -225,6 +220,19 @@ fn emit_body_send(
             b.add_code(unsupported_media_type_body(media_type));
         }
     }
+}
+
+fn ureq_request(needs_mut_req: bool, method: &str) -> CodeBlock {
+    let mutable_request_stmt = format!("let mut req = self.client.{method}(&path);");
+    let request_stmt = format!("let req = self.client.{method}(&path);");
+    sigil_quote!(RustLang {
+        $if(needs_mut_req) {
+            $L(mutable_request_stmt.as_str())
+        } $else {
+            $L(request_stmt.as_str())
+        }
+    })
+    .expect("ureq request builds")
 }
 
 fn unsupported_multipart_body(body_var: &str) -> CodeBlock {
@@ -296,10 +304,7 @@ fn emit_multipart_body(
     body_var: &str,
     parts: &[MultipartPart],
 ) {
-    b.add(
-        "let boundary = format!(\"openapi-nexus-{}\", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|duration| duration.as_nanos()).unwrap_or(0));\n",
-        (),
-    );
+    b.add_code(multipart_boundary_init());
     b.add_code(multipart_body_init());
     for part in parts {
         emit_multipart_part(b, body_var, part);
@@ -312,14 +317,91 @@ fn emit_form_body(b: &mut sigil_stitch::code_block::CodeBlockBuilder, body_var: 
     b.begin_control_flow("if let serde_json::Value::Object(fields) = form_value", ());
     b.begin_control_flow("for (key, value) in fields", ());
     b.begin_control_flow("if !value.is_null()", ());
-    b.add(
-        "let value = match value { serde_json::Value::String(s) => s, other => other.to_string() };\n",
-        (),
-    );
-    b.add("form_pairs.push((key, value));\n", ());
+    b.add_code(form_value_to_string());
+    b.add_code(form_pairs_push());
     b.end_control_flow();
     b.end_control_flow();
     b.end_control_flow();
+}
+
+fn resp_decl() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let resp;
+    })
+    .expect("response declaration builds")
+}
+
+fn assign_send_empty() -> CodeBlock {
+    sigil_quote!(RustLang {
+        resp = req.send_empty()?;
+    })
+    .expect("assign send_empty builds")
+}
+
+fn let_send_empty() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let resp = req.send_empty()?;
+    })
+    .expect("let send_empty builds")
+}
+
+fn let_call() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let resp = req.call()?;
+    })
+    .expect("let call builds")
+}
+
+fn status_code_init() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let status_code = resp.status().as_u16();
+    })
+    .expect("status code init builds")
+}
+
+fn empty_response(response_type: &str) -> CodeBlock {
+    let response_expr = format!("{response_type} {{ status_code }}");
+    sigil_quote!(RustLang {
+        Ok($L(response_expr.as_str()))
+    })
+    .expect("empty response builds")
+}
+
+fn body_bytes_init() -> CodeBlock {
+    sigil_quote!(RustLang {
+        let body_bytes = resp.into_body().read_to_vec()?;
+    })
+    .expect("body bytes init builds")
+}
+
+fn ok_result() -> CodeBlock {
+    sigil_quote!(RustLang {
+        Ok(result)
+    })
+    .expect("ok result builds")
+}
+
+fn form_value_to_string() -> CodeBlock {
+    let value_expr = "let value = match value { serde_json::Value::String(s) => s, other => other.to_string() };";
+    sigil_quote!(RustLang {
+        $L(value_expr)
+    })
+    .expect("form value conversion builds")
+}
+
+fn form_pairs_push() -> CodeBlock {
+    sigil_quote!(RustLang {
+        form_pairs.push((key, value));
+    })
+    .expect("form pairs push builds")
+}
+
+fn multipart_boundary_init() -> CodeBlock {
+    let timestamp_expr = "std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|duration| duration.as_nanos()).unwrap_or(0)";
+    sigil_quote!(RustLang {
+        let boundary = format!("openapi-nexus-{}", $L(timestamp_expr));
+    })
+    .expect("multipart boundary init builds")
 }
 
 fn multipart_body_init() -> CodeBlock {
@@ -354,17 +436,11 @@ fn emit_multipart_part(
     let content_type = rust_string_literal(&part.content_type);
     if part.value_encoding == MultipartValueEncoding::Unsupported {
         if part.required {
-            b.add(
-                "return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n",
-                (),
-            );
+            b.add_code(unsupported_multipart_part());
         } else {
             let field_name = rust_field_name(&part.wire_name);
             b.begin_control_flow(&format!("if {body_var}.{field_name}.is_some()"), ());
-            b.add(
-                "return Err(Error::Unsupported(\"unsupported multipart part content type\"));\n",
-                (),
-            );
+            b.add_code(unsupported_multipart_part());
             b.end_control_flow();
         }
         return;
@@ -378,24 +454,22 @@ fn emit_multipart_part(
             &content_type,
             filename_expr.as_deref(),
         );
-        if part.is_binary {
-            b.add(
-                &format!(
-                    "multipart_body.extend_from_slice(&{});\n",
-                    binary_field_expr(body_var, part),
-                ),
-                (),
-            );
+        let binary_value_expr = if part.is_binary {
+            binary_field_expr(body_var, part)
         } else {
-            b.add(
-                &format!(
-                    "multipart_body.extend_from_slice({}.as_bytes());\n",
-                    text_field_expr(body_var, part),
-                ),
-                (),
-            );
-        }
-        b.add("multipart_body.extend_from_slice(b\"\\r\\n\");\n", ());
+            String::new()
+        };
+        let text_value_expr = if part.is_binary {
+            String::new()
+        } else {
+            text_field_expr(body_var, part)
+        };
+        b.add_code(multipart_part_value(
+            part.is_binary,
+            &binary_value_expr,
+            &text_value_expr,
+        ));
+        b.add_code(multipart_part_crlf());
     } else {
         let field_name = rust_field_name(&part.wire_name);
         b.begin_control_flow(
@@ -412,26 +486,53 @@ fn emit_multipart_part(
             &content_type,
             filename_expr.as_deref(),
         );
-        if part.is_binary {
-            b.add(
-                &format!(
-                    "multipart_body.extend_from_slice(&{});\n",
-                    optional_binary_field_expr("value"),
-                ),
-                (),
-            );
+        let binary_value_expr = if part.is_binary {
+            optional_binary_field_expr("value")
         } else {
-            b.add(
-                &format!(
-                    "multipart_body.extend_from_slice({}.as_bytes());\n",
-                    optional_text_field_expr("value", part),
-                ),
-                (),
-            );
-        }
-        b.add("multipart_body.extend_from_slice(b\"\\r\\n\");\n", ());
+            String::new()
+        };
+        let text_value_expr = if part.is_binary {
+            String::new()
+        } else {
+            optional_text_field_expr("value", part)
+        };
+        b.add_code(multipart_part_value(
+            part.is_binary,
+            &binary_value_expr,
+            &text_value_expr,
+        ));
+        b.add_code(multipart_part_crlf());
         b.end_control_flow();
     }
+}
+
+fn unsupported_multipart_part() -> CodeBlock {
+    sigil_quote!(RustLang {
+        return Err(Error::Unsupported($S("unsupported multipart part content type")));
+    })
+    .expect("unsupported multipart part builds")
+}
+
+fn multipart_part_value(
+    is_binary: bool,
+    binary_value_expr: &str,
+    text_value_expr: &str,
+) -> CodeBlock {
+    sigil_quote!(RustLang {
+        $if(is_binary) {
+            multipart_body.extend_from_slice(&$L(binary_value_expr));
+        } $else {
+            multipart_body.extend_from_slice($L(text_value_expr).as_bytes());
+        }
+    })
+    .expect("multipart part value builds")
+}
+
+fn multipart_part_crlf() -> CodeBlock {
+    sigil_quote!(RustLang {
+        multipart_body.extend_from_slice(b"\r\n");
+    })
+    .expect("multipart part CRLF builds")
 }
 
 fn emit_part_prefix(
@@ -441,24 +542,35 @@ fn emit_part_prefix(
     content_type: &str,
     filename_expr: Option<&str>,
 ) {
-    b.add(
-        "multipart_body.extend_from_slice(format!(\"--{}\\r\\n\", boundary).as_bytes());\n",
-        (),
-    );
-    if is_binary {
-        let filename_expr = filename_expr.expect("binary multipart part filename");
-        b.add(
-            &format!(
-                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"; filename=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", crate::runtime::multipart_header_value({wire_name}), crate::runtime::multipart_header_value(&{filename_expr}), {content_type}).as_bytes());\n",
-            ),
-            (),
-        );
-    } else {
-        b.add(
-            &format!(
-                "multipart_body.extend_from_slice(format!(\"Content-Disposition: form-data; name=\\\"{{}}\\\"\\r\\nContent-Type: {{}}\\r\\n\\r\\n\", crate::runtime::multipart_header_value({wire_name}), {content_type}).as_bytes());\n",
-            ),
-            (),
-        );
-    }
+    b.add_code(multipart_part_boundary());
+    let filename_expr = filename_expr.unwrap_or_default();
+    b.add_code(multipart_part_headers(
+        is_binary,
+        wire_name,
+        filename_expr,
+        content_type,
+    ));
+}
+
+fn multipart_part_boundary() -> CodeBlock {
+    sigil_quote!(RustLang {
+        multipart_body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
+    })
+    .expect("multipart part boundary builds")
+}
+
+fn multipart_part_headers(
+    is_binary: bool,
+    wire_name: &str,
+    filename_expr: &str,
+    content_type: &str,
+) -> CodeBlock {
+    sigil_quote!(RustLang {
+        $if(is_binary) {
+            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value($L(wire_name)), crate::runtime::multipart_header_value(&$L(filename_expr)), $L(content_type)).as_bytes());
+        } $else {
+            multipart_body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{}\"\r\nContent-Type: {}\r\n\r\n", crate::runtime::multipart_header_value($L(wire_name)), $L(content_type)).as_bytes());
+        }
+    })
+    .expect("multipart part headers build")
 }
