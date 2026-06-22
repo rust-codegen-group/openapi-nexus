@@ -13,6 +13,6 @@
 # "EventKindUnspecified" instead of generic "Kind".
 
 from .event import Event as Event
-from .event_member1 import EventMember1 as EventMember1
-from .event_member2 import EventMember2 as EventMember2
-from .event_member3 import EventMember3 as EventMember3
+from .event_event_created import EventEventCreated as EventEventCreated
+from .event_event_unspecified import EventEventUnspecified as EventEventUnspecified
+from .event_event_updated import EventEventUpdated as EventEventUpdated

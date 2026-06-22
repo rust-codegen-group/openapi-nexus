@@ -14,12 +14,42 @@
 
 from __future__ import annotations
 
-from .event_member1 import EventMember1
-from .event_member2 import EventMember2
-from .event_member3 import EventMember3
+from .event_event_created import EventEventCreated
+from .event_event_unspecified import EventEventUnspecified
+from .event_event_updated import EventEventUpdated
+
+# Discriminator: kind (internal).
 
 type Event = (
-    EventMember1
-    | EventMember2
-    | EventMember3
+    EventEventUnspecified
+    | EventEventCreated
+    | EventEventUpdated
 )
+
+
+def event_from_dict(data: dict[str, object]) -> Event:
+    _tag = data["kind"]
+    if _tag == "EVENT_UNSPECIFIED":
+        return EventEventUnspecified.from_dict(data)
+    elif _tag == "EVENT_CREATED":
+        return EventEventCreated.from_dict(data)
+    elif _tag == "EVENT_UPDATED":
+        return EventEventUpdated.from_dict(data)
+    raise ValueError(f"Unknown discriminator value for Event: {data}")
+
+
+def event_to_dict(obj: Event) -> dict[str, object]:
+    if isinstance(obj, EventEventUnspecified):
+        result = obj.to_dict()
+        result["kind"] = "EVENT_UNSPECIFIED"
+        return result
+    elif isinstance(obj, EventEventCreated):
+        result = obj.to_dict()
+        result["kind"] = "EVENT_CREATED"
+        return result
+    elif isinstance(obj, EventEventUpdated):
+        result = obj.to_dict()
+        result["kind"] = "EVENT_UPDATED"
+        return result
+    raise ValueError(f"Unknown variant for Event: {type(obj)}")
+

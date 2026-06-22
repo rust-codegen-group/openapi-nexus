@@ -11,33 +11,33 @@ export interface User {
   /**
    * Email
    */
-  readonly email?: string;
+  readonly email?: string | null;
   /**
    * First name
    */
-  readonly first_name?: string;
+  readonly first_name?: string | null;
   /**
    * User ID
    */
-  readonly id?: number;
+  readonly id?: number | null;
   /**
    * Last name
    */
-  readonly last_name?: string;
+  readonly last_name?: string | null;
   /**
    * Password
    */
-  readonly password?: string;
+  readonly password?: string | null;
   /**
    * Phone
    */
-  readonly phone?: string;
+  readonly phone?: string | null;
   /**
    * User status
    */
-  readonly user_status?: number;
+  readonly user_status?: number | null;
   /**
    * Username
    */
-  readonly username?: string;
+  readonly username?: string | null;
 }

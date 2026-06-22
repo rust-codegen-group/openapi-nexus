@@ -11,9 +11,9 @@ export interface Tag {
   /**
    * Tag ID
    */
-  readonly id?: number;
+  readonly id?: number | null;
   /**
    * Tag name
    */
-  readonly name?: string;
+  readonly name?: string | null;
 }

@@ -14,6 +14,6 @@
  * "EventKindUnspecified" instead of generic "Kind".
  */
 export type { Event } from './Event';
-export type { EventMember1 } from './EventMember1';
-export type { EventMember2 } from './EventMember2';
-export type { EventMember3 } from './EventMember3';
+export type { EventEventCreated } from './EventEventCreated';
+export type { EventEventUnspecified } from './EventEventUnspecified';
+export type { EventEventUpdated } from './EventEventUpdated';

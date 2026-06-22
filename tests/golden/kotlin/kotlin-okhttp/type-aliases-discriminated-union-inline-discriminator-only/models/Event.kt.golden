@@ -14,4 +14,7 @@
 
 package com.example.sdk.models
 
+/**
+ * Discriminator: kind (internal).
+ */
 typealias Event = Any

@@ -369,6 +369,8 @@ impl<'a> LowerCtx<'a> {
             return Ok(None);
         }
 
+        let tagging = classify_tagging_style(&patterns);
+
         // Build variants
         // For variants detected as ExternallyTagged in a mixed union that has a
         // common tag field, re-interpret them as InternallyTagged unit variants.
@@ -376,16 +378,24 @@ impl<'a> LowerCtx<'a> {
         for (member, pattern) in obj.one_of.iter().zip(patterns.iter()) {
             let pattern = pattern.as_ref().unwrap();
             let effective_pattern = match pattern {
-                TaggedEnumPattern::ExternallyTagged { .. } => {
-                    &TaggedEnumPattern::InternallyTagged {
-                        variant_name: pattern.variant_name().to_string(),
-                        tag_field: first_tag.to_string(),
+                TaggedEnumPattern::ExternallyTagged { .. } => TaggedEnumPattern::InternallyTagged {
+                    variant_name: pattern.variant_name().to_string(),
+                    tag_field: first_tag.to_string(),
+                },
+                TaggedEnumPattern::AdjacentlyTagged {
+                    variant_name,
+                    tag_field,
+                    ..
+                } if matches!(tagging, TaggingStyle::Internal) => {
+                    TaggedEnumPattern::InternallyTagged {
+                        variant_name: variant_name.clone(),
+                        tag_field: tag_field.clone(),
                     }
                 }
-                other => other,
+                other => other.clone(),
             };
             let (disc_value, content_type) =
-                self.extract_tagged_variant(parent_name, member, effective_pattern)?;
+                self.extract_tagged_variant(parent_name, member, &effective_pattern)?;
             let description = match member {
                 ObjectOrReference::Object(obj) => obj.description.clone(),
                 _ => None,
@@ -399,7 +409,7 @@ impl<'a> LowerCtx<'a> {
 
         Ok(Some(IrTaggedUnion {
             discriminator_field: first_tag.to_string(),
-            tagging: classify_tagging_style(&patterns),
+            tagging,
             variants,
         }))
     }
@@ -539,7 +549,10 @@ impl<'a> LowerCtx<'a> {
                 // property value is the content type
                 if let ObjectOrReference::Object(obj) = member {
                     if let Some((prop_name, prop_schema)) = obj.properties.iter().next() {
-                        let content_type = self.lower_schema_ref(prop_schema)?;
+                        let content_type = self.lower_schema_ref_with_promotion(
+                            &format!("{parent_name}{}", prop_name.to_pascal_case()),
+                            prop_schema,
+                        )?;
                         Ok((prop_name.clone(), content_type))
                     } else {
                         Ok((pattern.variant_name().to_string(), IrTypeExpr::Any))
@@ -572,7 +585,17 @@ impl<'a> LowerCtx<'a> {
                     let content_type = obj
                         .properties
                         .get(content_field.as_str())
-                        .map(|prop| self.lower_schema_ref(prop))
+                        .map(|prop| {
+                            self.lower_schema_ref_with_promotion(
+                                &format!(
+                                    "{}{}{}",
+                                    parent_name,
+                                    disc_value.to_pascal_case(),
+                                    content_field.to_pascal_case()
+                                ),
+                                prop,
+                            )
+                        })
                         .transpose()?
                         .unwrap_or(IrTypeExpr::Any);
 
@@ -1322,10 +1345,15 @@ fn classify_tagging_style(
     use crate::ir::tagged_enum_pattern::TaggedEnumPattern;
     let mut saw_internal = false;
     let mut saw_adjacent: Option<String> = None;
+    let mut adjacent_consistent = true;
     for p in patterns.iter().flatten() {
         match p {
             TaggedEnumPattern::AdjacentlyTagged { content_field, .. } => {
-                saw_adjacent = Some(content_field.clone());
+                if let Some(existing) = &saw_adjacent {
+                    adjacent_consistent &= existing == content_field;
+                } else {
+                    saw_adjacent = Some(content_field.clone());
+                }
             }
             TaggedEnumPattern::InternallyTagged { .. } => {
                 saw_internal = true;
@@ -1333,7 +1361,10 @@ fn classify_tagging_style(
             TaggedEnumPattern::ExternallyTagged { .. } | TaggedEnumPattern::Untagged { .. } => {}
         }
     }
-    if let Some(content_field) = saw_adjacent {
+    if let Some(content_field) = saw_adjacent
+        && adjacent_consistent
+        && !saw_internal
+    {
         return TaggingStyle::Adjacent { content_field };
     }
     if saw_internal {

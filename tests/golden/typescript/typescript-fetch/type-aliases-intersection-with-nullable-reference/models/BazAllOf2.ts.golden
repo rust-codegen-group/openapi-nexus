@@ -10,5 +10,5 @@ export interface BazAllOf2 {
   /**
    * Metadata (nullable)
    */
-  readonly metaData?: Bar;
+  readonly metaData?: Bar | null;
 }

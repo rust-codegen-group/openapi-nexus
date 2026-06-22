@@ -602,4 +602,9 @@ generate_vp_golden_tests! {
     test_toolchain_vp_camel_case_golden: ("ts-toolchain-vp", "valid/type-aliases/discriminated-union-with-refs.yaml", "property_naming = \"camelCase\""),
     test_toolchain_vp_delete_response_golden: ("ts-toolchain-vp-delete-response", "valid/delete-with-response-schema.yaml", "property_naming = \"camelCase\""),
     test_toolchain_vp_enum_repr_golden: ("ts-toolchain-vp-enum-repr", "valid/enum-repr/enum-repr.yaml", "emit_enum_constants = true"),
+    test_toolchain_vp_camel_case_tagged_nullable_unions_golden: (
+        "ts-toolchain-vp-camel-case-tagged-nullable-unions",
+        "valid/type-aliases/typescript-fetch-vp-camel-case-tagged-nullable-unions.yaml",
+        "emit_enum_constants = true\nemit_type_guards = true\nproperty_naming = \"camelCase\""
+    ),
 }

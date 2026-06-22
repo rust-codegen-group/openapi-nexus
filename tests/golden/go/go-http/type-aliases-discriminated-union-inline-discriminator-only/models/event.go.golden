@@ -14,5 +14,6 @@
 
 package models
 
+// Discriminator: kind (internal).
 type Event = any
 

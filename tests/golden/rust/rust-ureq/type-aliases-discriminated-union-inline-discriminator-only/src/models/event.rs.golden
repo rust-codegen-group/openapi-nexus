@@ -16,9 +16,17 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(tag = "kind")]
 pub enum Event {
-    EventMember1(super::EventMember1),
-    EventMember2(super::EventMember2),
-    EventMember3(super::EventMember3),
+    #[serde(rename = "EVENT_UNSPECIFIED")]
+    EventUnspecified,
+    #[serde(rename = "EVENT_CREATED")]
+    EventCreated {
+        timestamp: String,
+    },
+    #[serde(rename = "EVENT_UPDATED")]
+    EventUpdated {
+        #[serde(rename = "newValue")]
+        new_value: String,
+    },
 }
