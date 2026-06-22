@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15]
+
+### Fixed
+
+- TypeScript Fetch: handle adjacent tagged-union payload keys correctly under camelCase property naming
+- TypeScript Fetch: emit tag-only discriminated union variants without synthetic payload fields
+- TypeScript Fetch: preserve nullable array and reference conversions with explicit null guards
+- TypeScript Fetch: simplify redundant generated union type members
+
 ### Changed
 
 - Bump `sigil-stitch` to 0.6.8
