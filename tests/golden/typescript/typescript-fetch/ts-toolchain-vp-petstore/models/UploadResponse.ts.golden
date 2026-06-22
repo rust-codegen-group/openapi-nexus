@@ -11,13 +11,13 @@ export interface UploadResponse {
   /**
    * Response code
    */
-  readonly code?: number;
+  readonly code?: number | null;
   /**
    * Response message
    */
-  readonly message?: string;
+  readonly message?: string | null;
   /**
    * Response type
    */
-  readonly type?: string;
+  readonly type?: string | null;
 }

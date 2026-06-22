@@ -4,4 +4,4 @@
  * Union Type with Any Test — 1.0.0
  * Test fixture for union types that include the any type
  */
-export type Config = string | number | unknown;
+export type Config = unknown;

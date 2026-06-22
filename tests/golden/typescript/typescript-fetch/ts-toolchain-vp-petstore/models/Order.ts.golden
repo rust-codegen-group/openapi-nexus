@@ -13,22 +13,22 @@ export interface Order {
   /**
    * Complete flag
    */
-  readonly complete?: boolean;
+  readonly complete?: boolean | null;
   /**
    * Order ID
    */
-  readonly id?: number;
+  readonly id?: number | null;
   /**
    * Pet ID
    */
-  readonly pet_id?: number;
+  readonly pet_id?: number | null;
   /**
    * Quantity
    */
-  readonly quantity?: number;
+  readonly quantity?: number | null;
   /**
    * Ship date
    */
-  readonly ship_date?: string;
-  readonly status?: OrderStatus;
+  readonly ship_date?: string | null;
+  readonly status?: OrderStatus | null;
 }

@@ -1,0 +1,250 @@
+openapi: 3.1.0
+info:
+  title: TypeScript Fetch VP CamelCase Masked Regression Test
+  description: Masked fixture for TypeScript Fetch camelCase regression coverage.
+  version: 1.0.0
+
+paths:
+  /foo:
+    post:
+      summary: Create foo envelope
+      operationId: create_foo_envelope
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FooEnvelope'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FooEnvelope'
+
+components:
+  schemas:
+    FooPayloadBody:
+      type: object
+      required:
+        - bar_value
+      properties:
+        bar_value:
+          type: string
+
+    FooTaggedRef:
+      oneOf:
+        - type: object
+          required:
+            - type
+            - bar_payload
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_ref_payload
+            bar_payload:
+              $ref: '#/components/schemas/FooPayloadBody'
+
+    FooObjectPayload:
+      type: object
+      required:
+        - object_name
+      properties:
+        object_name:
+          type: string
+
+    FooTagOnlyUnion:
+      oneOf:
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_unit_alpha
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_unit_beta
+        - type: object
+          required:
+            - type
+            - object_payload
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_object_payload
+            object_payload:
+              $ref: '#/components/schemas/FooObjectPayload'
+
+    FooAdjacentPayload:
+      oneOf:
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_inline_none
+        - type: object
+          required:
+            - type
+            - payload_value
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_inline_text
+            payload_value:
+              type: string
+        - type: object
+          required:
+            - type
+            - payload_value
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_inline_object
+            payload_value:
+              type: object
+              required:
+                - bar_value
+              properties:
+                bar_value:
+                  type: string
+        - type: object
+          required:
+            - type
+            - payload_value
+          properties:
+            type:
+              type: string
+              enum:
+                - foo_inline_list
+            payload_value:
+              type: array
+              items:
+                $ref: '#/components/schemas/FooArrayPart'
+
+    FooArrayPart:
+      type: object
+      required:
+        - bar_text
+      properties:
+        bar_text:
+          type: string
+
+    FooUnionContent:
+      oneOf:
+        - type: string
+        - type: array
+          items:
+            $ref: '#/components/schemas/FooArrayPart'
+
+    FooClosedVariant:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - foo_closed_variant
+
+    FooOpenVariant:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - foo_open_variant
+      additionalProperties:
+        type: string
+
+    FooMappedTagUnion:
+      oneOf:
+        - $ref: '#/components/schemas/FooClosedVariant'
+        - $ref: '#/components/schemas/FooOpenVariant'
+      discriminator:
+        propertyName: type
+        mapping:
+          foo_closed_variant: '#/components/schemas/FooClosedVariant'
+          foo_open_variant: '#/components/schemas/FooOpenVariant'
+
+    FooNullableItem:
+      type: object
+      required:
+        - item_name
+      properties:
+        item_name:
+          type: string
+
+    FooNullableItems:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/FooNullableItem'
+
+    FooNullableRefHolder:
+      type: object
+      required:
+        - maybe_items
+      properties:
+        maybe_items:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/FooNullableItems'
+
+    FooAnyValue:
+      type:
+        - object
+        - array
+        - string
+        - number
+        - integer
+        - boolean
+        - 'null'
+
+    FooEnvelope:
+      type: object
+      required:
+        - tagged_ref
+        - tag_only_union
+        - adjacent_payload
+        - union_content
+        - mapped_tag_union
+        - nullable_ref_holder
+        - any_value
+      properties:
+        tagged_ref:
+          $ref: '#/components/schemas/FooTaggedRef'
+        tag_only_union:
+          $ref: '#/components/schemas/FooTagOnlyUnion'
+        adjacent_payload:
+          $ref: '#/components/schemas/FooAdjacentPayload'
+        union_content:
+          $ref: '#/components/schemas/FooUnionContent'
+        mapped_tag_union:
+          $ref: '#/components/schemas/FooMappedTagUnion'
+        nullable_ref_holder:
+          $ref: '#/components/schemas/FooNullableRefHolder'
+        any_value:
+          $ref: '#/components/schemas/FooAnyValue'

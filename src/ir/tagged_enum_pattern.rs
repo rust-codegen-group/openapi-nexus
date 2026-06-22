@@ -130,9 +130,7 @@ impl TaggedEnumPattern {
                     }
                     match prop_schema {
                         ObjectOrReference::Object(content_obj) => {
-                            if content_obj.enum_values.is_empty()
-                                && !content_obj.properties.is_empty()
-                            {
+                            if content_obj.enum_values.is_empty() {
                                 content_field = Some(prop_name.clone());
                             }
                         }
@@ -245,9 +243,7 @@ impl TaggedEnumPattern {
                     }
                     match prop_schema {
                         ObjectOrReference32::Object(content_obj) => {
-                            if content_obj.enum_values.is_empty()
-                                && !content_obj.properties.is_empty()
-                            {
+                            if content_obj.enum_values.is_empty() {
                                 content_field = Some(prop_name.clone());
                             }
                         }
@@ -341,9 +337,7 @@ impl TaggedEnumPattern {
                     }
                     match prop_schema {
                         ObjectOrReference30::Object(content_obj) => {
-                            if content_obj.enum_values.is_empty()
-                                && !content_obj.properties.is_empty()
-                            {
+                            if content_obj.enum_values.is_empty() {
                                 content_field = Some(prop_name.clone());
                             }
                         }

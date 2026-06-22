@@ -87,7 +87,9 @@ impl TypeScriptFetchCodeGenerator {
                 let value_names = ir
                     .schemas
                     .get(name)
-                    .map(|s| super::sigil_emit::value_exports_for_schema(s, flags, &convertible))
+                    .map(|s| {
+                        super::sigil_emit::value_exports_for_schema(s, flags, &convertible, ir)
+                    })
                     .unwrap_or_default();
                 let extra_types = ir
                     .schemas
