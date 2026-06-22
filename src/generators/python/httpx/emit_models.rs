@@ -387,20 +387,12 @@ fn format_type_alias(name: &str, members: &[TypeName]) -> CodeBlock {
         })
         .unwrap();
     }
-    // Multi-member: CodeBlock::builder() for precise line-break control.
-    // Python sigil_quote! $for merges output inline (no leading \n), unlike
-    // Go mode which preserves template newlines. This is the only case where
-    // we deviate from sigil_quote! — see sigil-stitch issue.
-    let mut cb = CodeBlock::builder();
-    cb.add(
-        "type %N = (\n    %T",
-        (NameArg(name.to_string()), members[0].clone()),
-    );
-    for member in &members[1..] {
-        cb.add("\n    | %T", (member.clone(),));
-    }
-    cb.add("\n)", ());
-    cb.build_unwrap()
+    sigil_quote!(Python {
+        type $N(name) = (
+            $L("    ")$for(member in members; separator = "\n    | ") { $T((*member).clone()) }
+        )
+    })
+    .unwrap()
 }
 
 // ---------------------------------------------------------------------------

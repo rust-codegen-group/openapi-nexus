@@ -228,24 +228,20 @@ fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
             .expect("param"),
         );
     }
-    let mut field_assignments: Vec<CodeBlock> = vec![
-        sigil_quote!(Java { this.statusCode = statusCode; }).expect("assign"),
-        sigil_quote!(Java { this.raw = raw; }).expect("assign"),
-    ];
+    let mut assignment_fields = Vec::new();
     let mut body_seen: HashSet<String> = HashSet::new();
     for tr in &plan.typed_responses {
         if !body_seen.insert(tr.field_name.clone()) {
             continue;
         }
-        field_assignments.push(
-            sigil_quote!(Java {
-                this.$L(tr.field_name.as_str()) = $L(tr.field_name.as_str());
-            })
-            .expect("assign"),
-        );
+        assignment_fields.push(tr.field_name.clone());
     }
     let ctor_body = sigil_quote!(Java {
-        $C_each(field_assignments);
+        this.statusCode = statusCode;
+        this.raw = raw;
+        $for(field_name in &assignment_fields) {
+            this.$L(field_name.as_str()) = $L(field_name.as_str());
+        }
     })
     .expect("ctor body");
     ctor = ctor.body(ctor_body);
@@ -442,13 +438,11 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 dedup_args.push(a);
             }
         }
-        cb.add_statement(
-            &format!(
-                "return new {}({})",
-                plan.response_type,
-                dedup_args.join(", ")
-            ),
-            (),
+        cb.add_code(
+            sigil_quote!(Java {
+                return new $N(plan.response_type.as_str())($for(arg in &dedup_args; separator = ", ") { $L(arg.as_str()) });
+            })
+            .expect("typed response constructor return"),
         );
     } else {
         cb.add_statement(

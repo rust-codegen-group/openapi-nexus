@@ -19,7 +19,7 @@ use crate::ir::types::{
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
-use sigil_stitch::code_block::{Arg, CodeBlock};
+use sigil_stitch::code_block::CodeBlock;
 use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
@@ -875,34 +875,9 @@ fn emit_tagged_union_file(
         return emit_tagged_union_file_camel_case(schema, tu, &name, flags, convertible, ts);
     }
 
-    // Build `export type Name = <piece> | <piece>;` where each piece
-    // carries `%T` slots for the variant's content type. Adjacent / External
-    // shapes don't fit TypeName's structural variants, so the tag wrapping
-    // goes into the literal format fragment and the content rides on %T.
-    let mut format = format!("export type {} = ", name);
-    let mut pieces: Vec<String> = Vec::with_capacity(tu.variants.len());
-    let mut args: Vec<Arg> = Vec::with_capacity(tu.variants.len() * 2);
-
-    for variant in &tu.variants {
-        let content_ty = type_expr_to_typename(&variant.content_type);
-        let (piece, piece_args) = render_variant_piece(
-            &tu.tagging,
-            &tu.discriminator_field,
-            &variant.discriminator_value,
-            content_ty,
-        );
-        pieces.push(piece);
-        args.extend(piece_args);
-    }
-
-    format.push_str(&pieces.join(" | "));
-    format.push(';');
-
-    // sigil_quote! needs compile-time format; fall back to CodeBlock builder
-    // for the dynamic variant count.
-    let mut cb = CodeBlock::builder();
-    cb.add(&format, args);
-    let code = cb.build().ok()?;
+    let code = tagged_union_type_alias_code(&name, tu, &tu.discriminator_field, |expr| {
+        type_expr_to_typename(expr)
+    })?;
 
     let filename = format!("{}.ts", name);
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
@@ -936,46 +911,14 @@ fn emit_tagged_union_file_camel_case(
     let disc_field_camel = disc_field.to_lower_camel_case();
 
     // --- $Wire type (wire discriminator field name + $Wire content refs) ---
-    let mut wire_fmt = format!("export type {wire_name} = ");
-    let mut wire_pieces: Vec<String> = Vec::new();
-    let mut wire_args: Vec<Arg> = Vec::new();
-    for variant in &tu.variants {
-        let content_ty = type_expr_to_typename_wire(&variant.content_type, convertible);
-        let (piece, piece_args) = render_variant_piece(
-            &tu.tagging,
-            disc_field,
-            &variant.discriminator_value,
-            content_ty,
-        );
-        wire_pieces.push(piece);
-        wire_args.extend(piece_args);
-    }
-    wire_fmt.push_str(&wire_pieces.join(" | "));
-    wire_fmt.push(';');
-    let mut wire_cb = CodeBlock::builder();
-    wire_cb.add(&wire_fmt, wire_args);
-    let wire_code = wire_cb.build().ok()?;
+    let wire_code = tagged_union_type_alias_code(&wire_name, tu, disc_field, |expr| {
+        type_expr_to_typename_wire(expr, convertible)
+    })?;
 
     // --- Ergonomic type (camelCase discriminator field name + ergonomic content refs) ---
-    let mut ergo_fmt = format!("export type {name} = ");
-    let mut ergo_pieces: Vec<String> = Vec::new();
-    let mut ergo_args: Vec<Arg> = Vec::new();
-    for variant in &tu.variants {
-        let content_ty = type_expr_to_typename(&variant.content_type);
-        let (piece, piece_args) = render_variant_piece(
-            &tu.tagging,
-            &disc_field_camel,
-            &variant.discriminator_value,
-            content_ty,
-        );
-        ergo_pieces.push(piece);
-        ergo_args.extend(piece_args);
-    }
-    ergo_fmt.push_str(&ergo_pieces.join(" | "));
-    ergo_fmt.push(';');
-    let mut ergo_cb = CodeBlock::builder();
-    ergo_cb.add(&ergo_fmt, ergo_args);
-    let ergo_code = ergo_cb.build().ok()?;
+    let ergo_code = tagged_union_type_alias_code(name, tu, &disc_field_camel, |expr| {
+        type_expr_to_typename(expr)
+    })?;
 
     // --- fromJSON / toJSON ---
     let from_json = build_tagged_union_from_json(name, &wire_name, tu, convertible)?;
@@ -1049,16 +992,12 @@ fn build_tagged_union_from_json(
         );
         case_lines.push(format!("case '{val}': {case_body}"));
     }
-    let cases: Vec<CodeBlock> = case_lines
-        .iter()
-        .map(|l| CodeBlock::of(l, ()))
-        .collect::<Result<_, _>>()
-        .ok()?;
-
     sigil_quote!(TypeScript {
         export function $N(fn_name)(json: $N(wire_name)): $N(name) {
           switch ($L(disc_access)) {
-        $C_each(cases);
+        $for(case_line in &case_lines) {
+            $L(case_line.as_str())
+        }
           }
         }
     })
@@ -1129,15 +1068,11 @@ fn build_external_tagged_from_json(
         body_lines.push(format!("if ('{val}' in json) return {ret_expr};"));
     }
     body_lines.push("throw new Error('Unknown variant');".to_string());
-    let body: Vec<CodeBlock> = body_lines
-        .iter()
-        .map(|l| CodeBlock::of(l, ()))
-        .collect::<Result<_, _>>()
-        .ok()?;
-
     sigil_quote!(TypeScript {
         export function $N(fn_name)(json: $N(wire_name)): $N(name) {
-        $C_each(body);
+        $for(body_line in &body_lines) {
+            $L(body_line.as_str())
+        }
         }
     })
     .ok()
@@ -1198,16 +1133,12 @@ fn build_tagged_union_to_json(
         );
         case_lines.push(format!("case '{val}': {case_body}"));
     }
-    let cases: Vec<CodeBlock> = case_lines
-        .iter()
-        .map(|l| CodeBlock::of(l, ()))
-        .collect::<Result<_, _>>()
-        .ok()?;
-
     sigil_quote!(TypeScript {
         export function $N(fn_name)(value: $N(name)): $N(wire_name) {
           switch ($L(disc_access)) {
-        $C_each(cases);
+        $for(case_line in &case_lines) {
+            $L(case_line.as_str())
+        }
           }
         }
     })
@@ -1286,15 +1217,11 @@ fn build_external_tagged_to_json(
         body_lines.push(format!("if ('{val}' in value) return {ret_expr};"));
     }
     body_lines.push("throw new Error('Unknown variant');".to_string());
-    let body: Vec<CodeBlock> = body_lines
-        .iter()
-        .map(|l| CodeBlock::of(l, ()))
-        .collect::<Result<_, _>>()
-        .ok()?;
-
     sigil_quote!(TypeScript {
         export function $N(fn_name)(value: $N(name)): $N(wire_name) {
-        $C_each(body);
+        $for(body_line in &body_lines) {
+            $L(body_line.as_str())
+        }
         }
     })
     .ok()
@@ -1344,9 +1271,8 @@ fn emit_union_file_camel_case(
     if union.nullable {
         wire_members.push("null".to_string());
     }
-    let wire_body = wire_members.join(" | ");
     let wire_type = sigil_quote!(TypeScript {
-        export type $N(wire_name.as_str()) = $L(wire_body);
+        export type $N(wire_name.as_str()) = $for(member in &wire_members; separator = " | ") { $L(member.as_str()) };
     })
     .ok()?;
     fb = fb.add_code(wire_type);
@@ -1356,9 +1282,8 @@ fn emit_union_file_camel_case(
     if union.nullable {
         ergo_members.push("null".to_string());
     }
-    let ergo_body = ergo_members.join(" | ");
     let ergo_type = sigil_quote!(TypeScript {
-        export type $N(name) = $L(ergo_body);
+        export type $N(name) = $for(member in &ergo_members; separator = " | ") { $L(member.as_str()) };
     })
     .ok()?;
     fb = fb.add_code(ergo_type);
@@ -1429,18 +1354,16 @@ fn emit_intersection_file_camel_case(
         .iter()
         .map(|m| type_expr_str_wire(m, convertible))
         .collect();
-    let wire_body = wire_members.join(" & ");
     let wire_type = sigil_quote!(TypeScript {
-        export type $N(wire_name.as_str()) = $L(wire_body);
+        export type $N(wire_name.as_str()) = $for(member in &wire_members; separator = " & ") { $L(member.as_str()) };
     })
     .ok()?;
     fb = fb.add_code(wire_type);
 
     // Ergonomic type alias: A & B & ...
     let ergo_members: Vec<String> = intersection.members.iter().map(type_expr_str).collect();
-    let ergo_body = ergo_members.join(" & ");
     let ergo_type = sigil_quote!(TypeScript {
-        export type $N(name) = $L(ergo_body);
+        export type $N(name) = $for(member in &ergo_members; separator = " & ") { $L(member.as_str()) };
     })
     .ok()?;
     fb = fb.add_code(ergo_type);
@@ -1469,10 +1392,9 @@ fn emit_intersection_file_camel_case(
         })
         .collect();
 
-    let from_spreads = from_spreads.join(", ");
     let from_json = sigil_quote!(TypeScript {
         export function $N(from_fn)(json: $N(wire_name.as_str())): $N(name) {
-            return $L("{ @{from_spreads} } as @{name};")
+            return $L("{ ")$for(spread in &from_spreads; separator = ", ") { $L(spread.as_str()) }$L(format!(" }} as {name};"))
         }
     })
     .ok()?;
@@ -1497,10 +1419,9 @@ fn emit_intersection_file_camel_case(
         })
         .collect();
 
-    let to_spreads = to_spreads.join(", ");
     let to_json = sigil_quote!(TypeScript {
         export function $N(to_fn)(value: $N(name)): $N(wire_name.as_str()) {
-            return $L("{ @{to_spreads} } as @{name}$Wire;")
+            return $L("{ ")$for(spread in &to_spreads; separator = ", ") { $L(spread.as_str()) }$L(format!(" }} as {name}$Wire;"))
         }
     })
     .ok()?;
@@ -1681,18 +1602,29 @@ fn guard_check_and_type(
     (check, ty)
 }
 
-/// Render one variant of a tagged union as a format fragment + its args.
-///
-/// Returns `(format_piece, args)` where `format_piece` contains `%T` slots
-/// in the same order as `args`. Caller joins pieces with ` | `.
-fn render_variant_piece(
-    tagging: &TaggingStyle,
+fn tagged_union_type_alias_code<F>(
+    name: &str,
+    tu: &IrTaggedUnion,
     discriminator_field: &str,
-    discriminator_value: &str,
-    content_ty: TypeName,
-) -> (String, Vec<Arg>) {
-    let fmt = variant_type_format(tagging, discriminator_field, discriminator_value, "%T");
-    (fmt, vec![Arg::TypeName(content_ty)])
+    type_name_for: F,
+) -> Option<CodeBlock>
+where
+    F: Fn(&IrTypeExpr) -> TypeName,
+{
+    match &tu.tagging {
+        TaggingStyle::Internal => sigil_quote!(TypeScript {
+            export type $N(name) = $for(variant in &tu.variants; separator = " | ") { ($L("{ ")$L(discriminator_field)$L(": ")$L(format!("'{}'", variant.discriminator_value))$L(" } & ")$T(type_name_for(&variant.content_type))) };
+        })
+        .ok(),
+        TaggingStyle::Adjacent { content_field } => sigil_quote!(TypeScript {
+            export type $N(name) = $for(variant in &tu.variants; separator = " | ") { $L(format!("{{ {discriminator_field}: '{}'; {content_field}: ", variant.discriminator_value))$T(type_name_for(&variant.content_type))$L(" }") };
+        })
+        .ok(),
+        TaggingStyle::External => sigil_quote!(TypeScript {
+            export type $N(name) = $for(variant in &tu.variants; separator = " | ") { $L("{ ")$L(format!("'{}'", variant.discriminator_value))$L(": ")$T(type_name_for(&variant.content_type))$L(" }") };
+        })
+        .ok(),
+    }
 }
 
 /// Build the pipe-joined literal body for an enum: `'a' | 1 | true | null`.

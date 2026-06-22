@@ -332,12 +332,11 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> C
         request_args.push("headers=headers".to_string());
     }
 
-    cb.add_statement(
-        &format!(
-            "response = self._client.request({})",
-            request_args.join(", "),
-        ),
-        (),
+    cb.add_code(
+        sigil_quote!(Python {
+            response = self._client.request($for(arg in &request_args; separator = ", ") { $L(arg.as_str()) })
+        })
+        .expect("request call"),
     );
 
     // Error handling
