@@ -9,50 +9,52 @@ if [ ! -d "$golden" ]; then
   exit 1
 fi
 
-total=0; passed=0; failed=0; fails=()
+tmp=$(mktemp -d)
+log=$(mktemp)
+trap 'rm -rf "$tmp" "$log"' EXIT
+
+settings="$tmp/settings.gradle"
+cat > "$settings" <<'SETTINGS'
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+rootProject.name = "golden-java"
+SETTINGS
+
+total=0
+tasks=()
 
 for test_dir in "$golden"/*/; do
   [ -f "$test_dir/build.gradle.golden" ] || continue
   total=$((total + 1))
   name=$(basename "$test_dir")
-  printf "[%d] %s... " "$total" "$name"
+  tasks+=(":$name:compileJava")
 
-  tmp=$(mktemp -d)
-  trap 'rm -rf "$tmp"' EXIT
-
+  mkdir -p "$tmp/$name"
   while IFS= read -r -d '' f; do
     rel="${f#"$test_dir"}"
-    dst="$tmp/${rel%.golden}"
+    dst="$tmp/$name/${rel%.golden}"
     mkdir -p "$(dirname "$dst")"
     cp "$f" "$dst"
   done < <(find "$test_dir" -type f -name '*.golden' -print0)
 
-  cat > "$tmp/settings.gradle" <<'SETTINGS'
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
-rootProject.name = "golden-test"
+  cat >> "$settings" <<SETTINGS
+include(":$name")
+project(":$name").projectDir = file("$name")
 SETTINGS
-
-  log=$(mktemp)
-  if (cd "$tmp" && gradle compileJava --no-daemon --quiet) >"$log" 2>&1; then
-    echo "ok"
-    passed=$((passed + 1))
-  else
-    echo "FAIL"
-    failed=$((failed + 1))
-    fails+=("$name")
-    sed 's/^/    /' "$log" || true
-  fi
-
-  rm -rf "$tmp" "$log"
-  trap - EXIT
 done
 
 echo
-echo "Java: $passed/$total passed"
-if [ "$failed" -gt 0 ]; then
-  echo "failed:"
-  for n in "${fails[@]}"; do echo "  - $n"; done
+if [ "$total" -eq 0 ]; then
+  echo "Java: 0/0 passed"
+  exit 0
+fi
+
+echo "Java: compiling $total golden projects"
+if (cd "$tmp" && gradle --no-daemon --quiet --parallel --continue "${tasks[@]}") >"$log" 2>&1; then
+  echo "Java: $total/$total passed"
+else
+  echo "Java: build failed"
+  sed 's/^/    /' "$log" || true
   exit 1
 fi
