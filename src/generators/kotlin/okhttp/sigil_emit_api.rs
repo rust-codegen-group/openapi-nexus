@@ -367,9 +367,11 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 dedup_fields.push(f);
             }
         }
-        cb.add(
-            &format!("return {}({})", plan.response_type, dedup_fields.join(", ")),
-            (),
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                return $N(plan.response_type.as_str())($for(field in &dedup_fields; separator = ", ") { $L(field.as_str()) })
+            })
+            .expect("typed response constructor return"),
         );
     } else {
         cb.add(

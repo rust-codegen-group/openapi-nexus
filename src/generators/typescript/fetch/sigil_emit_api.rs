@@ -236,19 +236,20 @@ fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock, Strin
     for op in ops {
         let alias = raw_response_alias_name(op);
         let members = raw_response_members(op);
-        if members.len() == 1 {
-            cb.add(
-                &format!("export type {alias} = %T;\n\n"),
-                vec![Arg::TypeName(members.into_iter().next().unwrap())],
-            );
+        let alias_block = if members.len() == 1 {
+            let member = members.into_iter().next().unwrap();
+            sigil_quote!(TypeScript {
+                export type $N(alias.as_str()) = $T(member);
+            })
         } else {
-            cb.add(&format!("export type {alias} =\n"), vec![]);
-            for (i, member) in members.into_iter().enumerate() {
-                let sep = if i == 0 { "  | " } else { "\n  | " };
-                cb.add(&format!("{sep}%T"), vec![Arg::TypeName(member)]);
-            }
-            cb.add(";\n\n", vec![]);
+            sigil_quote!(TypeScript {
+                export type $N(alias.as_str()) =
+                $L("  | ")$for(member in &members; separator = "\n  | ") { $T((*member).clone()) };
+            })
         }
+        .map_err(|e| format!("sigil_emit_api: response alias {alias}: {e}"))?;
+        cb.add_code(alias_block);
+        cb.add_line();
     }
     cb.build()
         .map_err(|e| format!("sigil_emit_api: response aliases block: {e}"))

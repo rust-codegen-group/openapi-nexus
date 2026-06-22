@@ -214,19 +214,15 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<
                 .expect("ctor param"),
         );
     }
-    let assignments: Vec<CodeBlock> = obj
+    let assignment_fields: Vec<String> = obj
         .properties
         .iter()
-        .map(|(_json_name, prop)| {
-            let field_name = java_field_name(&prop.name);
-            sigil_quote!(Java {
-                this.$L(field_name.as_str()) = $L(field_name.as_str());
-            })
-            .expect("assignment")
-        })
+        .map(|(_json_name, prop)| java_field_name(&prop.name))
         .collect();
     let ctor_body = sigil_quote!(Java {
-        $C_each(assignments);
+        $for(field_name in &assignment_fields) {
+            this.$L(field_name.as_str()) = $L(field_name.as_str());
+        }
     })
     .expect("ctor body");
     ctor = ctor.body(ctor_body);
@@ -412,17 +408,14 @@ fn emit_intersection(
             .expect("param"),
         );
     }
-    let assignments: Vec<CodeBlock> = member_bindings
+    let assignment_fields: Vec<String> = member_bindings
         .iter()
-        .map(|(_member_type, field_name)| {
-            sigil_quote!(Java {
-                this.$L(field_name.as_str()) = $L(field_name.as_str());
-            })
-            .expect("assignment")
-        })
+        .map(|(_member_type, field_name)| field_name.clone())
         .collect();
     let ctor_body = sigil_quote!(Java {
-        $C_each(assignments);
+        $for(field_name in &assignment_fields) {
+            this.$L(field_name.as_str()) = $L(field_name.as_str());
+        }
     })
     .expect("ctor body");
     ctor = ctor.body(ctor_body);
