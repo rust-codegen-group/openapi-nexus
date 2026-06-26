@@ -4,7 +4,7 @@ pub use crate::generators::rust::common::config::RustGeneratorConfig as RustAiod
 
 use serde::{Deserialize, Serialize};
 
-const DEFAULT_AIODUCT_VERSION: &str = "0.2.0";
+const DEFAULT_AIODUCT_VERSION: &str = "0.2";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -119,16 +119,16 @@ mod tests {
     #[test]
     fn default_version_is_current() {
         let config = AioductFeatureConfig::default();
-        assert_eq!(config.version(), "0.2.0");
+        assert_eq!(config.version(), "0.2");
     }
 
     #[test]
     fn custom_version_override() {
         let config = AioductFeatureConfig {
-            version: Some("0.2.0".to_string()),
+            version: Some("0.2".to_string()),
             ..Default::default()
         };
-        assert_eq!(config.version(), "0.2.0");
+        assert_eq!(config.version(), "0.2");
     }
 
     #[test]
@@ -221,14 +221,14 @@ mod tests {
     #[test]
     fn deserialize_from_toml() {
         let toml_str = r#"
-            version = "0.2.0"
+            version = "0.2"
             runtime = "smol"
             tls = "rustls-aws-lc-rs"
             compression = ["gzip", "zstd"]
             features = ["tracing"]
         "#;
         let config: AioductFeatureConfig = toml::from_str(toml_str).unwrap();
-        assert_eq!(config.version(), "0.2.0");
+        assert_eq!(config.version(), "0.2");
         assert_eq!(config.runtime, Some(AioductRuntime::Smol));
         assert_eq!(config.tls, Some(AioductTls::RustlsAwsLcRs));
         assert_eq!(
