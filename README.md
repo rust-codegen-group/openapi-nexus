@@ -2,7 +2,8 @@
 
 > OpenAPI 3.0 / 3.1 / 3.2 to multi-language code generator
 
-[![CI](https://github.com/adamcavendish/openapi-nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/adamcavendish/openapi-nexus/actions/workflows/ci.yml)
+[![CI](https://github.com/rust-codegen-group/openapi-nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/rust-codegen-group/openapi-nexus/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/rust-codegen-group/openapi-nexus/branch/main/graph/badge.svg)](https://codecov.io/gh/rust-codegen-group/openapi-nexus)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 [![Rust](https://img.shields.io/badge/rust-1.90+-orange.svg)](https://www.rust-lang.org/)
 
