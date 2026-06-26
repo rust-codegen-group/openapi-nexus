@@ -38,5 +38,5 @@ Parsing and lowering happen once in the orchestrator. Each generator receives a 
 
 ## Links
 
-- [Repository](https://github.com/adamcavendish/openapi-nexus)
-- [Releases](https://github.com/adamcavendish/openapi-nexus/releases)
+- [Repository](https://github.com/rust-codegen-group/openapi-nexus)
+- [Releases](https://github.com/rust-codegen-group/openapi-nexus/releases)

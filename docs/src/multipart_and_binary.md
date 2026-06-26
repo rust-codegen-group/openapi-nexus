@@ -7,7 +7,7 @@ OpenAPI uses the same `type: string`, `format: binary` schema shape in several p
 - Binary response bodies stay as raw bytes or blob values.
 - JSON and text multipart parts keep their normal generated model or scalar types.
 
-See [`examples/multipart-binary/openapi.yaml`](https://github.com/adamcavendish/openapi-nexus/blob/master/examples/multipart-binary/openapi.yaml) for a complete spec.
+See [`examples/multipart-binary/openapi.yaml`](https://github.com/rust-codegen-group/openapi-nexus/blob/main/examples/multipart-binary/openapi.yaml) for a complete spec.
 
 ## Multipart Uploads
 
