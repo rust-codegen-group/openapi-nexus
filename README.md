@@ -30,13 +30,13 @@ OpenAPI Nexus transforms OpenAPI specifications into type-safe client libraries.
 **Shell installer (no Rust toolchain needed):**
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/adamcavendish/openapi-nexus/releases/download/0.1.15/openapi-nexus-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/rust-codegen-group/openapi-nexus/releases/download/0.1.15/openapi-nexus-installer.sh | sh
 ```
 
-**Nightly build (latest master):**
+**Nightly build (latest main):**
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/adamcavendish/openapi-nexus/releases/download/nightly/openapi-nexus-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/rust-codegen-group/openapi-nexus/releases/download/nightly/openapi-nexus-installer.sh | sh
 ```
 
 **Build from source:**

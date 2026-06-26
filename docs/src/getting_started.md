@@ -5,13 +5,13 @@
 **Shell installer (no Rust toolchain needed):**
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/adamcavendish/openapi-nexus/releases/download/0.1.15/openapi-nexus-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/rust-codegen-group/openapi-nexus/releases/download/0.1.15/openapi-nexus-installer.sh | sh
 ```
 
-**Nightly build (latest master):**
+**Nightly build (latest main):**
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/adamcavendish/openapi-nexus/releases/download/nightly/openapi-nexus-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/rust-codegen-group/openapi-nexus/releases/download/nightly/openapi-nexus-installer.sh | sh
 ```
 
 **Build from source:**
@@ -84,7 +84,7 @@ export OPENAPI_NEXUS_GENERATORS="typescript-fetch"
 
 ### Configuration File
 
-Create an `openapi-nexus-config.toml` in your project root. See the [sample configuration file](https://github.com/adamcavendish/openapi-nexus/blob/master/openapi-nexus-config.toml.example) for all available options.
+Create an `openapi-nexus-config.toml` in your project root. See the [sample configuration file](https://github.com/rust-codegen-group/openapi-nexus/blob/main/openapi-nexus-config.toml.example) for all available options.
 
 Generator-specific options live under `[generators.<name>]` sections:
 

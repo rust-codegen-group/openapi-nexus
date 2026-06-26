@@ -12,7 +12,7 @@ edition = "2024"
 rust-version = "1.90"
 description = "OpenAPI 3.x multi-language code generator"
 authors = ["Adam Basfop Cavendish <GetbetterABC@yeah.net>"]
-repository = "https://github.com/adamcavendish/openapi-nexus"
+repository = "https://github.com/rust-codegen-group/openapi-nexus"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 

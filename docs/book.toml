@@ -11,7 +11,7 @@ build-dir = "book"
 [preprocessor.mermaid-mmdr]
 
 [output.html]
-git-repository-url = "https://github.com/adamcavendish/openapi-nexus"
+git-repository-url = "https://github.com/rust-codegen-group/openapi-nexus"
 
 [output.html.search]
 enable = true
