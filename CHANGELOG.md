@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.16]
+
+### Added
+
+- README: add a Codecov coverage badge for the `main` branch
+
+### Changed
+
+- Rust aioduct: support aioduct 0.2 runtime APIs with `HttpEngineSend`, `RuntimePoll`, `ConnectorSend`, and `RequestBuilderSend`
+- Rust aioduct: default generated `Cargo.toml` files to the `aioduct = "0.2"` semver requirement so generated clients can pick up compatible 0.2.x releases
+- Update package metadata, release links, and mdBook links to `rust-codegen-group/openapi-nexus` and the `main` branch
+
 ## [0.1.15]
 
 ### Fixed
