@@ -5,7 +5,7 @@ edition = "2024"
 description = "Test fixture for server URL path prefix stripping in operation paths."
 
 [dependencies]
-aioduct = { version = "0.2.0", features = ["tokio", "rustls", "rustls-ring", "json"] }
+aioduct = { version = "0.2", features = ["tokio", "rustls", "rustls-ring", "json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde-xml-rs = "0.8.2"

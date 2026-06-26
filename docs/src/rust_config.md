@@ -117,7 +117,7 @@ Configure aioduct-specific dependency features for the generated crate. This sec
 
 ```toml
 [generators.rust-aioduct.aioduct]
-version = "0.2.0"
+version = "0.2"
 runtime = "tokio"
 tls = "rustls-ring"
 compression = ["gzip", "brotli", "zstd"]
@@ -128,7 +128,7 @@ All fields are optional. Defaults: `runtime = "tokio"`, `tls = "rustls-ring"`, n
 
 #### `version`
 
-Override the pinned aioduct version. Defaults to `"0.2.0"`.
+Override the aioduct version requirement. Defaults to `"0.2"`.
 
 #### `runtime`
 
