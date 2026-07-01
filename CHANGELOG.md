@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.17]
+
+### Changed
+
+- TypeScript Fetch: emit runtime code without parameter properties so generated clients compile with `erasableSyntaxOnly`
+- TypeScript Fetch: collapse API unions containing `unknown` to plain `unknown`
+
 ## [0.1.16]
 
 ### Added
