@@ -14,9 +14,13 @@ export interface ConfigurationParameters {
 }
 
 export class Configuration {
-  constructor(private configuration: ConfigurationParameters = {}) {}
+  private configuration: ConfigurationParameters;
 
-  set config(configuration: Configuration) {
+  constructor(configuration: ConfigurationParameters = {}) {
+    this.configuration = configuration;
+  }
+
+  set config(configuration: ConfigurationParameters) {
     this.configuration = configuration;
   }
 
@@ -85,9 +89,11 @@ export const DefaultConfig = new Configuration();
 export class BaseAPI {
 
   private static readonly jsonRegex = new RegExp('^(:?application/json|[^;/ \t]+/[^;/ \t]+[+]json)[ \t]*(:?;.*)?$', 'i');
+  protected configuration: Configuration;
   private middleware: Middleware[];
 
-  constructor(protected configuration = DefaultConfig) {
+  constructor(configuration: Configuration = DefaultConfig) {
+    this.configuration = configuration;
     this.middleware = configuration.middleware;
   }
 
@@ -266,22 +272,31 @@ function isFormData(value: unknown): value is FormData {
 
 export class ResponseError extends Error {
   override name = "ResponseError" as const;
-  constructor(public response: Response, msg?: string) {
+  public response: Response;
+
+  constructor(response: Response, msg?: string) {
     super(msg);
+    this.response = response;
   }
 }
 
 export class FetchError extends Error {
   override name = "FetchError" as const;
-  constructor(public cause: Error, msg?: string) {
+  public cause: Error;
+
+  constructor(cause: Error, msg?: string) {
     super(msg);
+    this.cause = cause;
   }
 }
 
 export class RequiredError extends Error {
   override name = "RequiredError" as const;
-  constructor(public field: string, msg?: string) {
+  public field: string;
+
+  constructor(field: string, msg?: string) {
     super(msg);
+    this.field = field;
   }
 }
 
@@ -405,8 +420,10 @@ class ApiResponseBase {
   public readonly ok: boolean;
   public readonly statusText: string;
   public readonly headers: Headers;
+  public readonly raw: Response;
 
-  constructor(public readonly raw: Response) {
+  constructor(raw: Response) {
+    this.raw = raw;
     this.status = raw.status;
     this.ok = raw.ok;
     this.statusText = raw.statusText;
@@ -415,8 +432,11 @@ class ApiResponseBase {
 }
 
 export class JSONApiResponse<T> extends ApiResponseBase {
-  constructor(raw: Response, private transformer: ResponseTransformer<T> = (jsonValue: unknown) => jsonValue as T) {
+  private transformer: ResponseTransformer<T>;
+
+  constructor(raw: Response, transformer: ResponseTransformer<T> = (jsonValue: unknown) => jsonValue as T) {
     super(raw);
+    this.transformer = transformer;
   }
 
   async value(): Promise<T> {

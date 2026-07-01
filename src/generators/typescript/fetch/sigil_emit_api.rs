@@ -1160,13 +1160,21 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, String> {
 }
 
 fn is_void_type(ty: &TypeName) -> bool {
+    is_primitive_type(ty, "void")
+}
+
+fn is_unknown_type(ty: &TypeName) -> bool {
+    is_primitive_type(ty, "unknown")
+}
+
+fn is_primitive_type(ty: &TypeName, primitive: &str) -> bool {
     let Ok(val) = serde_json::to_value(ty) else {
         return false;
     };
-    let Ok(void_val) = serde_json::to_value(TypeName::primitive("void")) else {
+    let Ok(primitive_val) = serde_json::to_value(TypeName::primitive(primitive)) else {
         return false;
     };
-    val == void_val
+    val == primitive_val
 }
 
 // ============================================================================
@@ -1312,6 +1320,9 @@ fn dedup_union_members(members: Vec<TypeName>) -> Vec<TypeName> {
 
 fn dedup_union(members: Vec<TypeName>) -> TypeName {
     let mut out = dedup_union_members(members);
+    if out.iter().any(is_unknown_type) {
+        return TypeName::primitive("unknown");
+    }
     if out.len() == 1 {
         out.pop().unwrap()
     } else {
@@ -1775,5 +1786,24 @@ fn collect_convertible_named_refs(
             }
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn type_json(ty: &TypeName) -> serde_json::Value {
+        serde_json::to_value(ty).expect("TypeName serializes")
+    }
+
+    #[test]
+    fn dedup_union_collapses_unknown_members() {
+        let ty = dedup_union(vec![
+            TypeName::primitive("unknown"),
+            TypeName::importable_type("../models/ErrorResponse", "ErrorResponse"),
+        ]);
+
+        assert_eq!(type_json(&ty), type_json(&TypeName::primitive("unknown")));
     }
 }
