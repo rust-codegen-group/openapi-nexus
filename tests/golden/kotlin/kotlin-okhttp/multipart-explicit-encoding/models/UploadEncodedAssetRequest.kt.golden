@@ -5,6 +5,8 @@
 
 package com.example.sdk.models
 
-data class UploadEncodedAssetRequest(val audit: AuditAttributes, val file: ByteArray,
-val metadata: UploadAttributes, val purpose: String) {
+import com.google.gson.annotations.SerializedName
+
+data class UploadEncodedAssetRequest(val audit: AuditAttributes, @field:SerializedName("file")
+    val file_: ByteArray, val metadata: UploadAttributes, val purpose: String) {
 }

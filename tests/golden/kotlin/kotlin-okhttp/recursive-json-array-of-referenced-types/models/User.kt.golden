@@ -10,7 +10,8 @@ import com.google.gson.annotations.SerializedName
 /**
  * User model with snake_case properties
  */
-data class User(@SerializedName("email_address") val emailAddress: String? = null,
-@SerializedName("user_id") val userId: String,
-@SerializedName("user_name") val userName: String) {
+data class User(@field:SerializedName("email_address")
+    val emailAddress: String? = null, @field:SerializedName("user_id")
+    val userId: String, @field:SerializedName("user_name")
+    val userName: String) {
 }

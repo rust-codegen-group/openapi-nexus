@@ -26,6 +26,7 @@ use crate::generators::response_headers::{
     unique_response_header_accessor_names, unique_response_header_accessor_names_with_used,
 };
 use crate::generators::response_names::response_entry_kind as response_detail_kind;
+use crate::generators::type_application;
 use crate::ir::types::{
     IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation as IrParameterLocation,
@@ -405,10 +406,10 @@ fn build_ts_header_accessor(
     exported: bool,
 ) -> Result<FunSpec, String> {
     let mut accessor = FunSpec::builder(name)
-        .returns(TypeName::union(vec![
+        .returns(vec![TypeName::union(vec![
             ts_header_type(header.value_kind),
             TypeName::primitive("undefined"),
-        ]))
+        ])])
         .body(ts_header_body(header, headers_expr)?);
     if let Some(parameter) = parameter {
         accessor = accessor.add_param(parameter);
@@ -634,7 +635,7 @@ fn build_api_interface_block(
         emit_arrow_signature(
             &mut cb,
             op,
-            TypeName::generic(
+            type_application(
                 TypeName::primitive("Promise"),
                 vec![convenience_body_type(op)],
             ),
@@ -748,7 +749,7 @@ fn build_raw_method(
     for param in method_param_specs(op) {
         fb = fb.add_param(param);
     }
-    fb = fb.returns(raw_return_type(op));
+    fb = fb.returns(vec![raw_return_type(op)]);
 
     let mut body = CodeBlock::builder();
     emit_required_param_checks(&mut body, op, &method_name);
@@ -1381,7 +1382,7 @@ fn error_value_expr(
         && let Some(from_json) = response_from_json_transformer(resp, convertible)
     {
         let wrapper_type =
-            TypeName::generic(rt_value("JSONApiResponse"), vec![response_value_type(resp)]);
+            type_application(rt_value("JSONApiResponse"), vec![response_value_type(resp)]);
         return (
             format!("new %T(errorRaw.clone(), {from_json}).value()"),
             vec![Arg::TypeName(wrapper_type)],
@@ -1390,14 +1391,14 @@ fn error_value_expr(
     match kind {
         ResponseKind::Json(Some(body_ty)) => (
             "new %T(errorRaw.clone()).value()".to_string(),
-            vec![Arg::TypeName(TypeName::generic(
+            vec![Arg::TypeName(type_application(
                 rt_value("JSONApiResponse"),
                 vec![body_ty],
             ))],
         ),
         ResponseKind::Json(None) => (
             "new %T(errorRaw.clone()).value()".to_string(),
-            vec![Arg::TypeName(TypeName::generic(
+            vec![Arg::TypeName(type_application(
                 rt_value("JSONApiResponse"),
                 vec![TypeName::primitive("unknown")],
             ))],
@@ -1439,7 +1440,7 @@ fn emit_response_return(
     {
         let wrapper_type = match kind {
             ResponseKind::Json(Some(body_ty)) => {
-                TypeName::generic(rt_value("JSONApiResponse"), vec![body_ty])
+                type_application(rt_value("JSONApiResponse"), vec![body_ty])
             }
             _ => unreachable!(),
         };
@@ -1465,7 +1466,7 @@ fn emit_response_return(
     let wrapper_type = match kind.clone() {
         ResponseKind::Json(body_ty) => {
             let body = body_ty.unwrap_or_else(|| TypeName::primitive("unknown"));
-            TypeName::generic(rt_value("JSONApiResponse"), vec![body])
+            type_application(rt_value("JSONApiResponse"), vec![body])
         }
         ResponseKind::Text => rt_value("TextApiResponse"),
         ResponseKind::Blob => rt_value("BlobApiResponse"),
@@ -1518,10 +1519,10 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, String> {
         fb = fb.add_param(param);
     }
     let body_ty = convenience_body_type(op);
-    fb = fb.returns(TypeName::generic(
+    fb = fb.returns(vec![type_application(
         TypeName::primitive("Promise"),
         vec![body_ty.clone()],
-    ));
+    )]);
 
     let args_list = raw_call_args(op);
     let is_void = is_void_type(&body_ty);
@@ -1616,7 +1617,7 @@ fn raw_call_args(op: &IrOperation) -> String {
 fn raw_return_type(op: &IrOperation) -> TypeName {
     // Returns `Promise<{OpId}RawResponse>` — the alias itself lives in the
     // same file (see `build_response_aliases_block`) so no import is needed.
-    TypeName::generic(
+    type_application(
         TypeName::primitive("Promise"),
         vec![TypeName::raw(&raw_response_alias_name(op))],
     )
@@ -1632,7 +1633,7 @@ fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName {
     let wrapper_type = match kind.clone() {
         ResponseKind::Json(body_ty) => {
             let body = body_ty.unwrap_or_else(|| TypeName::primitive("unknown"));
-            TypeName::generic(rt_value("JSONApiResponse"), vec![body])
+            type_application(rt_value("JSONApiResponse"), vec![body])
         }
         ResponseKind::Text => rt_value("TextApiResponse"),
         ResponseKind::Blob => rt_value("BlobApiResponse"),
@@ -1643,7 +1644,7 @@ fn raw_response_member(resp: &IrResponse, kind: &ResponseKind) -> TypeName {
 
 fn fallback_member(any_body: bool) -> TypeName {
     let wrapper = if any_body {
-        TypeName::generic(
+        type_application(
             rt_value("JSONApiResponse"),
             vec![TypeName::primitive("unknown")],
         )
@@ -1893,7 +1894,7 @@ fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName {
                 .map(|v| TypeName::raw(&format!("'{v}'")))
                 .collect(),
         ),
-        IrTypeExpr::Map(inner) => TypeName::generic(
+        IrTypeExpr::Map(inner) => type_application(
             TypeName::primitive("Record"),
             vec![TypeName::primitive("string"), type_expr_to_typename(inner)],
         ),

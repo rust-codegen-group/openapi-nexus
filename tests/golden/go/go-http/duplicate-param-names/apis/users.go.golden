@@ -87,7 +87,8 @@ func (d *GetUserByIdDuplicateUnexpected) Body() []byte {
 }
 
 // GetUserByIdDuplicate — Get user by ID with duplicate parameter names
-func (a *UsersAPI) GetUserByIdDuplicate(ctx context.Context, id int64, id2 *int64, id3 *string) (*GetUserByIdDuplicateResponse, error) {
+func (a *UsersAPI) GetUserByIdDuplicate(ctx context.Context, id int64, id2 *int64,
+	id3 *string) (*GetUserByIdDuplicateResponse, error) {
 	path := "/users/{id}"
 	path = strings.Replace(path, "{id}", strconv.FormatInt(int64(id), 10), 1)
 	query := url.Values{}

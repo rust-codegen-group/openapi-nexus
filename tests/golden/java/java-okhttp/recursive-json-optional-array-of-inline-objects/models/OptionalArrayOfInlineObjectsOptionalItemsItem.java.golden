@@ -16,7 +16,7 @@ public class OptionalArrayOfInlineObjectsOptionalItemsItem {
     private String itemName;
 
     public OptionalArrayOfInlineObjectsOptionalItemsItem(Integer itemCount, String itemId,
-    String itemName) {
+        String itemName) {
         this.itemCount = itemCount;
         this.itemId = itemId;
         this.itemName = itemName;

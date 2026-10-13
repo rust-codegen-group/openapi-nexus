@@ -63,7 +63,7 @@ class TransferApi(private val client: ApiClient) {
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
         multipartBuilder.addFormDataPart("audit", null, gson.toJson(body.audit).toRequestBody("application/json".toMediaType()))
 
-        multipartBuilder.addFormDataPart("file", body.file.filenameOrDefault("file"), body.file.data.toRequestBody("application/pdf".toMediaType()))
+        multipartBuilder.addFormDataPart("file", body.file_.filenameOrDefault("file"), body.file_.data.toRequestBody("application/pdf".toMediaType()))
 
         multipartBuilder.addFormDataPart("metadata", null, gson.toJson(body.metadata).toRequestBody("application/vnd.openapi-nexus.metadata+json".toMediaType()))
 

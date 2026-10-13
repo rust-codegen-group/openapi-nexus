@@ -196,7 +196,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async createUserRaw(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateUserRawResponse> {
+    | InitOverrideFunction): Promise<CreateUserRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -240,13 +240,14 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async createUser(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<User> {
+    | InitOverrideFunction): Promise<User> {
     const response = await this.createUserRaw(requestParameters, initOverrides);
     return await response.value() as User;
   }
 
   async createUsersWithListInputRaw(requestParameters: ApiCreateUsersWithListInputRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateUsersWithListInputRawResponse> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<CreateUsersWithListInputRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -290,13 +291,13 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async createUsersWithListInput(requestParameters: ApiCreateUsersWithListInputRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<User> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<User> {
     const response = await this.createUsersWithListInputRaw(requestParameters, initOverrides);
     return await response.value() as User;
   }
 
   async loginUserRaw(requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<LoginUserRawResponse> {
+    | InitOverrideFunction): Promise<LoginUserRawResponse> {
     // Build path with path parameters
     const urlPath = `/user/login`;
     // Build query parameters
@@ -341,12 +342,13 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async loginUser(requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.loginUserRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async logoutUserRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<LogoutUserRawResponse> {
+  async logoutUserRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<LogoutUserRawResponse> {
     // Build path with path parameters
     const urlPath = `/user/logout`;
     // Build query parameters
@@ -386,7 +388,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async getUserByNameRaw(requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetUserByNameRawResponse> {
+    | InitOverrideFunction): Promise<GetUserByNameRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
@@ -436,13 +438,13 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async getUserByName(requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<User> {
+    | InitOverrideFunction): Promise<User> {
     const response = await this.getUserByNameRaw(requestParameters, initOverrides);
     return await response.value() as User;
   }
 
   async updateUserRaw(requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UpdateUserRawResponse> {
+    | InitOverrideFunction): Promise<UpdateUserRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
@@ -501,13 +503,13 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async updateUser(requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.updateUserRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async deleteUserRaw(requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<DeleteUserRawResponse> {
+    | InitOverrideFunction): Promise<DeleteUserRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
@@ -557,7 +559,7 @@ export class UserApi extends BaseAPI implements UserApiInterface {
   }
 
   async deleteUser(requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.deleteUserRaw(requestParameters, initOverrides);
     return await response.value();
   }

@@ -7,5 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class AllOptionalPropertiesOptionalArrayItem(@SerializedName("optional_item_field") val optionalItemField: String? = null) {
+data class AllOptionalPropertiesOptionalArrayItem(@field:SerializedName("optional_item_field")
+    val optionalItemField: String? = null) {
 }

@@ -63,7 +63,8 @@ func (d *SendOptionalBinaryUnexpected) Body() []byte {
 }
 
 // SendOptionalBinary calls POST /optional-binary.
-func (a *DefaultAPI) SendOptionalBinary(ctx context.Context, body []byte) (*SendOptionalBinaryResponse, error) {
+func (a *DefaultAPI) SendOptionalBinary(ctx context.Context,
+	body []byte) (*SendOptionalBinaryResponse, error) {
 	path := "/optional-binary"
 	var bodyReader io.Reader
 	if body != nil {
@@ -130,7 +131,8 @@ func (d *SendOptionalJsonUnexpected) Body() []byte {
 }
 
 // SendOptionalJson calls POST /optional-json.
-func (a *DefaultAPI) SendOptionalJson(ctx context.Context, body *models.Payload) (*SendOptionalJsonResponse, error) {
+func (a *DefaultAPI) SendOptionalJson(ctx context.Context,
+	body *models.Payload) (*SendOptionalJsonResponse, error) {
 	path := "/optional-json"
 	var bodyReader io.Reader
 	if body != nil {
@@ -201,7 +203,8 @@ func (d *SendOptionalTextUnexpected) Body() []byte {
 }
 
 // SendOptionalText calls POST /optional-text.
-func (a *DefaultAPI) SendOptionalText(ctx context.Context, body *string) (*SendOptionalTextResponse, error) {
+func (a *DefaultAPI) SendOptionalText(ctx context.Context,
+	body *string) (*SendOptionalTextResponse, error) {
 	path := "/optional-text"
 	var bodyReader io.Reader
 	if body != nil {
@@ -268,7 +271,8 @@ func (d *SendRequiredJsonUnexpected) Body() []byte {
 }
 
 // SendRequiredJson calls POST /required-json.
-func (a *DefaultAPI) SendRequiredJson(ctx context.Context, body *models.Payload) (*SendRequiredJsonResponse, error) {
+func (a *DefaultAPI) SendRequiredJson(ctx context.Context,
+	body *models.Payload) (*SendRequiredJsonResponse, error) {
 	path := "/required-json"
 	var bodyReader io.Reader
 	if body != nil {

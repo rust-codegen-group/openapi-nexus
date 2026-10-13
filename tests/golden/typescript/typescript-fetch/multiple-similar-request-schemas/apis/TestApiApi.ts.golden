@@ -69,7 +69,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   }
 
   async createTypeARaw(requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateTypeARawResponse> {
+    | InitOverrideFunction): Promise<CreateTypeARawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -113,13 +113,13 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   }
 
   async createTypeA(requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<ResourceTypeA> {
+    | InitOverrideFunction): Promise<ResourceTypeA> {
     const response = await this.createTypeARaw(requestParameters, initOverrides);
     return await response.value() as ResourceTypeA;
   }
 
   async createTypeBRaw(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateTypeBRawResponse> {
+    | InitOverrideFunction): Promise<CreateTypeBRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -163,7 +163,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
   }
 
   async createTypeB(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<ResourceTypeB> {
+    | InitOverrideFunction): Promise<ResourceTypeB> {
     const response = await this.createTypeBRaw(requestParameters, initOverrides);
     return await response.value() as ResourceTypeB;
   }

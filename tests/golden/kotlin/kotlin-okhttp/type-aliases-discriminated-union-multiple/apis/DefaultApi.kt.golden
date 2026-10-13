@@ -21,7 +21,7 @@ import okhttp3.Response
  * CreateContainerResponse carries the response from createContainer.
  */
 data class CreateContainerResponse(val statusCode: Int, val raw: Response,
-val status200: ContainerKind? = null) {
+    val status200: ContainerKind? = null) {
 }
 
 sealed interface CreateContainerExceptionDetail {
@@ -56,7 +56,7 @@ class CreateContainerUnexpected(
  * CreateVolumeResponse carries the response from createVolume.
  */
 data class CreateVolumeResponse(val statusCode: Int, val raw: Response,
-val status200: VolumeKind? = null) {
+    val status200: VolumeKind? = null) {
 }
 
 sealed interface CreateVolumeExceptionDetail {

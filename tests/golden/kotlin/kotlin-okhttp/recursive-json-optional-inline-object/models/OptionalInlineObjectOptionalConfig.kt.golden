@@ -7,6 +7,7 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class OptionalInlineObjectOptionalConfig(@SerializedName("setting_key") val settingKey: String? = null,
-@SerializedName("setting_value") val settingValue: String? = null) {
+data class OptionalInlineObjectOptionalConfig(@field:SerializedName("setting_key")
+    val settingKey: String? = null, @field:SerializedName("setting_value")
+    val settingValue: String? = null) {
 }

@@ -63,7 +63,8 @@ func (d *CreateTypeAUnexpected) Body() []byte {
 }
 
 // CreateTypeA — Create TypeA resource
-func (a *TestApiAPI) CreateTypeA(ctx context.Context, body *models.CreateRequestTypeA) (*CreateTypeAResponse, error) {
+func (a *TestApiAPI) CreateTypeA(ctx context.Context,
+	body *models.CreateRequestTypeA) (*CreateTypeAResponse, error) {
 	path := "/api/v1/type-a/resources"
 	var bodyReader io.Reader
 	if body != nil {
@@ -149,7 +150,8 @@ func (d *CreateTypeBUnexpected) Body() []byte {
 }
 
 // CreateTypeB — Create TypeB resource
-func (a *TestApiAPI) CreateTypeB(ctx context.Context, body *models.CreateRequestTypeB) (*CreateTypeBResponse, error) {
+func (a *TestApiAPI) CreateTypeB(ctx context.Context,
+	body *models.CreateRequestTypeB) (*CreateTypeBResponse, error) {
 	path := "/api/v1/type-b/resources"
 	var bodyReader io.Reader
 	if body != nil {

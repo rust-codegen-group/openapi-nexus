@@ -63,7 +63,8 @@ func (d *TestUnionWithAnyUnexpected) Body() []byte {
 }
 
 // TestUnionWithAny — Test endpoint with union type including any
-func (a *DefaultAPI) TestUnionWithAny(ctx context.Context, body *models.Config) (*TestUnionWithAnyResponse, error) {
+func (a *DefaultAPI) TestUnionWithAny(ctx context.Context,
+	body *models.Config) (*TestUnionWithAnyResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

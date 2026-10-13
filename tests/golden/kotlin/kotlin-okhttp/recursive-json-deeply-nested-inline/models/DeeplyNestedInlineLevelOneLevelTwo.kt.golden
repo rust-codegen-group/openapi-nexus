@@ -7,6 +7,8 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class DeeplyNestedInlineLevelOneLevelTwo(@SerializedName("level_three") val levelThree: DeeplyNestedInlineLevelOneLevelTwoLevelThree? = null,
-@SerializedName("level_two_field") val levelTwoField: Int? = null) {
+data class DeeplyNestedInlineLevelOneLevelTwo(@field:SerializedName("level_three")
+    val levelThree: DeeplyNestedInlineLevelOneLevelTwoLevelThree? = null,
+    @field:SerializedName("level_two_field")
+    val levelTwoField: Int? = null) {
 }

@@ -457,7 +457,8 @@ class ResourcesApi:
     def create_resource(self, *, body: CreateResourceRequest) -> CreatedResource:
         return self.create_resource_with_http_info(body=body).data
 
-    def create_resource_with_wildcard_success_with_http_info(self, *, body: CreateResourceRequest) -> ApiResponse[CreatedResource]:
+    def create_resource_with_wildcard_success_with_http_info(self, *,
+        body: CreateResourceRequest) -> ApiResponse[CreatedResource]:
         path = "/resources-with-wildcard-success"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"

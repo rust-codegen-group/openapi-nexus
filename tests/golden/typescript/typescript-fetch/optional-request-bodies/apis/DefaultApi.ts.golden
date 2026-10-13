@@ -110,7 +110,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async sendOptionalBinaryRaw(requestParameters: ApiSendOptionalBinaryRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalBinaryRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalBinaryRawResponse> {
     // Build path with path parameters
     const urlPath = `/optional-binary`;
     // Build query parameters
@@ -148,13 +148,13 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async sendOptionalBinary(requestParameters: ApiSendOptionalBinaryRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
     const response = await this.sendOptionalBinaryRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async sendOptionalJsonRaw(requestParameters: ApiSendOptionalJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalJsonRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalJsonRawResponse> {
     // Build path with path parameters
     const urlPath = `/optional-json`;
     // Build query parameters
@@ -192,13 +192,13 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async sendOptionalJson(requestParameters: ApiSendOptionalJsonRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.sendOptionalJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async sendOptionalTextRaw(requestParameters: ApiSendOptionalTextRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalTextRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalTextRawResponse> {
     // Build path with path parameters
     const urlPath = `/optional-text`;
     // Build query parameters
@@ -236,13 +236,13 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async sendOptionalText(requestParameters: ApiSendOptionalTextRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.sendOptionalTextRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async sendRequiredJsonRaw(requestParameters: ApiSendRequiredJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<SendRequiredJsonRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendRequiredJsonRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -286,7 +286,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async sendRequiredJson(requestParameters: ApiSendRequiredJsonRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.sendRequiredJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }

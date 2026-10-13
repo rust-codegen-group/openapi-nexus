@@ -63,7 +63,8 @@ func (d *TestUnionWithInlineObjectsUnexpected) Body() []byte {
 }
 
 // TestUnionWithInlineObjects — Test endpoint with union type including inline objects
-func (a *DefaultAPI) TestUnionWithInlineObjects(ctx context.Context, body *models.Foo) (*TestUnionWithInlineObjectsResponse, error) {
+func (a *DefaultAPI) TestUnionWithInlineObjects(ctx context.Context,
+	body *models.Foo) (*TestUnionWithInlineObjectsResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

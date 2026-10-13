@@ -19,7 +19,7 @@ public class GetFallbackWithBodyResponse {
     private final GetFallbackWithBodyResponse200 status200;
 
     public GetFallbackWithBodyResponse(int statusCode, Response raw,
-    GetFallbackWithBodyResponse200 status200) {
+        GetFallbackWithBodyResponse200 status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

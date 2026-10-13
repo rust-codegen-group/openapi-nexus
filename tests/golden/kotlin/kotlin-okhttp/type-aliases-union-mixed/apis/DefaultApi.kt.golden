@@ -17,7 +17,8 @@ import okhttp3.Response
 /**
  * TestMixedUnionResponse carries the response from testMixedUnion.
  */
-data class TestMixedUnionResponse(val statusCode: Int, val raw: Response, val status200: Foo? = null) {
+data class TestMixedUnionResponse(val statusCode: Int, val raw: Response,
+    val status200: Foo? = null) {
 }
 
 sealed interface TestMixedUnionExceptionDetail {

@@ -6,5 +6,5 @@
 package com.example.sdk.models
 
 data class User(val createdAt: String? = null, val email: String, val id: Long, val name: String,
-val updatedAt: String? = null) {
+    val updatedAt: String? = null) {
 }

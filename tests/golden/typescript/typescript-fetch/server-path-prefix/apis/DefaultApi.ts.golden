@@ -78,7 +78,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async healthCheckRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<HealthCheckRawResponse> {
+  async healthCheckRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<HealthCheckRawResponse> {
     // Build path with path parameters
     const urlPath = `/health`;
     // Build query parameters
@@ -117,7 +118,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     return await response.value();
   }
 
-  async listUsersRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<ListUsersRawResponse> {
+  async listUsersRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<ListUsersRawResponse> {
     // Build path with path parameters
     const urlPath = `/users`;
     // Build query parameters
@@ -157,7 +159,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getUserRaw(requestParameters: ApiGetUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetUserRawResponse> {
+    | InitOverrideFunction): Promise<GetUserRawResponse> {
     if (requestParameters.userId === undefined || requestParameters.userId === null) {
       throw new RequiredError(
         'userId',
@@ -199,7 +201,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getUser(requestParameters: ApiGetUserRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.getUserRaw(requestParameters, initOverrides);
     return await response.value();
   }

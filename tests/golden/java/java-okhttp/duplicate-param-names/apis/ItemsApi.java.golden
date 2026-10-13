@@ -37,7 +37,7 @@ public class ItemsApi {
      * Create item with body parameter conflict
      */
     public CreateItemWithBodyConflictResponse createItemWithBodyConflict(String itemId, String body,
-    CreateItemWithBodyConflictRequest body2) throws IOException {
+        CreateItemWithBodyConflictRequest body2) throws IOException {
         String path = "/items/{itemId}".replace("{itemId}", itemId);
         Map<String, String> query = new HashMap<>();
         if (body != null) {

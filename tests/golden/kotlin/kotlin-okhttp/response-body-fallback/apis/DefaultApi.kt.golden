@@ -59,7 +59,7 @@ class GetFallbackNoBodyUnexpected(
  * GetFallbackWithBodyResponse carries the response from getFallbackWithBody.
  */
 data class GetFallbackWithBodyResponse(val statusCode: Int, val raw: Response,
-val status200: GetFallbackWithBodyResponse200? = null) {
+    val status200: GetFallbackWithBodyResponse200? = null) {
 }
 
 sealed interface GetFallbackWithBodyExceptionDetail {

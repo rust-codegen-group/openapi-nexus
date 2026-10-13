@@ -232,7 +232,7 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
 pub fn build_java_getter(getter_name: &str, type_str: &str, field_name: &str) -> FunSpec {
     let mut getter = FunSpec::builder(getter_name);
     getter = getter.visibility(Visibility::Public);
-    getter = getter.returns(TypeName::primitive(type_str));
+    getter = getter.returns(vec![TypeName::primitive(type_str)]);
     let body = sigil_quote!(Java {
         return this.$L(field_name);
     })

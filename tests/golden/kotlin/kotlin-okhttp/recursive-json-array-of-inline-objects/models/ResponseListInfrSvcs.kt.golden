@@ -10,5 +10,6 @@ import com.google.gson.annotations.SerializedName
 /**
  * Response containing a list of inference services - main test case for recursive JSON parsing
  */
-data class ResponseListInfrSvcs(@SerializedName("inference_services") val inferenceServices: List<ResponseListInfrSvcsInferenceServicesItem>) {
+data class ResponseListInfrSvcs(@field:SerializedName("inference_services")
+    val inferenceServices: List<ResponseListInfrSvcsInferenceServicesItem>) {
 }

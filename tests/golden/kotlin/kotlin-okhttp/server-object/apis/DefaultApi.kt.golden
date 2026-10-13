@@ -17,7 +17,7 @@ import okhttp3.Response
  * GetAllUsersResponse carries the response from getAllUsers.
  */
 data class GetAllUsersResponse(val statusCode: Int, val raw: Response,
-val status200: List<GetAllUsersResponse200Item>? = null) {
+    val status200: List<GetAllUsersResponse200Item>? = null) {
 }
 
 sealed interface GetAllUsersExceptionDetail {
@@ -52,7 +52,7 @@ class GetAllUsersUnexpected(
  * GetUserByIdResponse carries the response from getUserById.
  */
 data class GetUserByIdResponse(val statusCode: Int, val raw: Response,
-val status200: GetUserByIdResponse200? = null) {
+    val status200: GetUserByIdResponse200? = null) {
 }
 
 sealed interface GetUserByIdExceptionDetail {

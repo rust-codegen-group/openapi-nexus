@@ -44,7 +44,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
   }
 
   async uploadEncodedAssetRaw(requestParameters: ApiUploadEncodedAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<UploadEncodedAssetRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<UploadEncodedAssetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -106,7 +106,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
   }
 
   async uploadEncodedAsset(requestParameters: ApiUploadEncodedAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
     const response = await this.uploadEncodedAssetRaw(requestParameters, initOverrides);
     return await response.value();
   }

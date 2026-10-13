@@ -68,7 +68,8 @@ func (d *CreateResourceUnexpected) Body() []byte {
 }
 
 // CreateResource — Create resource
-func (a *DefaultAPI) CreateResource(ctx context.Context, body *models.Setup) (*CreateResourceResponse, error) {
+func (a *DefaultAPI) CreateResource(ctx context.Context,
+	body *models.Setup) (*CreateResourceResponse, error) {
 	path := "/resource"
 	var bodyReader io.Reader
 	if body != nil {

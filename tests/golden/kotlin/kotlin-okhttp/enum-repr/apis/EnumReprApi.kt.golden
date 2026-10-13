@@ -18,7 +18,7 @@ import okhttp3.Response
  * HandleAdjacentlyTaggedResponse carries the response from handleAdjacentlyTagged.
  */
 data class HandleAdjacentlyTaggedResponse(val statusCode: Int, val raw: Response,
-val status200: AdjacentlyTaggedEnum? = null) {
+    val status200: AdjacentlyTaggedEnum? = null) {
 }
 
 sealed interface HandleAdjacentlyTaggedExceptionDetail {
@@ -63,7 +63,7 @@ class HandleAdjacentlyTaggedUnexpected(
  * HandleExternallyTaggedResponse carries the response from handleExternallyTagged.
  */
 data class HandleExternallyTaggedResponse(val statusCode: Int, val raw: Response,
-val status200: ExternallyTaggedEnum? = null) {
+    val status200: ExternallyTaggedEnum? = null) {
 }
 
 sealed interface HandleExternallyTaggedExceptionDetail {
@@ -108,7 +108,7 @@ class HandleExternallyTaggedUnexpected(
  * HandleInternallyTaggedResponse carries the response from handleInternallyTagged.
  */
 data class HandleInternallyTaggedResponse(val statusCode: Int, val raw: Response,
-val status200: InternallyTaggedEnum? = null) {
+    val status200: InternallyTaggedEnum? = null) {
 }
 
 sealed interface HandleInternallyTaggedExceptionDetail {
@@ -153,7 +153,7 @@ class HandleInternallyTaggedUnexpected(
  * HandleMixedResponse carries the response from handleMixed.
  */
 data class HandleMixedResponse(val statusCode: Int, val raw: Response,
-val status200: MixedEnum? = null) {
+    val status200: MixedEnum? = null) {
 }
 
 sealed interface HandleMixedExceptionDetail {
@@ -198,7 +198,7 @@ class HandleMixedUnexpected(
  * HandleUntaggedResponse carries the response from handleUntagged.
  */
 data class HandleUntaggedResponse(val statusCode: Int, val raw: Response,
-val status200: UntaggedEnum? = null) {
+    val status200: UntaggedEnum? = null) {
 }
 
 sealed interface HandleUntaggedExceptionDetail {

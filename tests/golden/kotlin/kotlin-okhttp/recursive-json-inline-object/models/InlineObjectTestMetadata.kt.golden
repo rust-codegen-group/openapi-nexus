@@ -7,7 +7,8 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class InlineObjectTestMetadata(@SerializedName("created_at") val createdAt: String,
-@SerializedName("updated_at") val updatedAt: String? = null,
-@SerializedName("version_number") val versionNumber: Int? = null) {
+data class InlineObjectTestMetadata(@field:SerializedName("created_at")
+    val createdAt: String, @field:SerializedName("updated_at")
+    val updatedAt: String? = null, @field:SerializedName("version_number")
+    val versionNumber: Int? = null) {
 }

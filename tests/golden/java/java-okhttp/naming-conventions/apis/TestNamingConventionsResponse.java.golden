@@ -20,7 +20,7 @@ public class TestNamingConventionsResponse {
     private final NamingConventionTest status200;
 
     public TestNamingConventionsResponse(int statusCode, Response raw,
-    NamingConventionTest status200) {
+        NamingConventionTest status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

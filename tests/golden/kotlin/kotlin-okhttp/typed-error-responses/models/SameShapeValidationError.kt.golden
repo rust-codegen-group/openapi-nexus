@@ -4,5 +4,8 @@
 
 package com.example.sdk.models
 
-data class SameShapeValidationError(val field: String, val message: String) {
+import com.google.gson.annotations.SerializedName
+
+data class SameShapeValidationError(@field:SerializedName("field")
+    val field_: String, val message: String) {
 }

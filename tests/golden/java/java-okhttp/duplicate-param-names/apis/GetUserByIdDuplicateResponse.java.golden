@@ -20,7 +20,7 @@ public class GetUserByIdDuplicateResponse {
     private final GetUserByIdDuplicateResponse200 status200;
 
     public GetUserByIdDuplicateResponse(int statusCode, Response raw,
-    GetUserByIdDuplicateResponse200 status200) {
+        GetUserByIdDuplicateResponse200 status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

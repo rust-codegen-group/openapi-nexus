@@ -49,7 +49,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   }
 
   async getItemsRaw(requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetItemsRawResponse> {
+    | InitOverrideFunction): Promise<GetItemsRawResponse> {
     // Build path with path parameters
     const urlPath = `/items`;
     // Build query parameters
@@ -91,7 +91,7 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   }
 
   async getItems(requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetItemsResponse200> {
+    | InitOverrideFunction): Promise<GetItemsResponse200> {
     const response = await this.getItemsRaw(requestParameters, initOverrides);
     return await response.value() as GetItemsResponse200;
   }

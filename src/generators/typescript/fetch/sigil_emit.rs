@@ -14,6 +14,7 @@
 //!   tagging styles, each variant narrows on the discriminator literal.
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::type_application;
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
@@ -372,7 +373,7 @@ fn type_expr_to_typename_wire(
             type_expr_to_typename_wire(inner, current_schema, convertible),
             TypeName::primitive("null"),
         ]),
-        IrTypeExpr::Map(inner) => TypeName::generic(
+        IrTypeExpr::Map(inner) => type_application(
             TypeName::primitive("Record"),
             vec![
                 TypeName::primitive("string"),
@@ -2092,7 +2093,7 @@ fn type_expr_to_typename_with_current(expr: &IrTypeExpr, current_schema: Option<
                 .map(|v| TypeName::raw(&format!("'{v}'")))
                 .collect(),
         ),
-        IrTypeExpr::Map(inner) => TypeName::generic(
+        IrTypeExpr::Map(inner) => type_application(
             TypeName::primitive("Record"),
             vec![
                 TypeName::primitive("string"),

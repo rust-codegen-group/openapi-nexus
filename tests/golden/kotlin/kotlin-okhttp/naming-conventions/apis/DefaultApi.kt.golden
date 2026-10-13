@@ -52,7 +52,7 @@ class GetWithQueryParamsUnexpected(
  * TestNamingConventionsResponse carries the response from testNamingConventions.
  */
 data class TestNamingConventionsResponse(val statusCode: Int, val raw: Response,
-val status200: NamingConventionTest? = null) {
+    val status200: NamingConventionTest? = null) {
 }
 
 sealed interface TestNamingConventionsExceptionDetail {
@@ -93,10 +93,9 @@ class DefaultApi(private val client: ApiClient) {
      * Get with query parameters
      */
     fun getWithQueryParams(snakeCaseParam: String, snakeCaseNumber: Int?, kebabCaseParam: String?,
-    kebabCaseArray: List<String>?, pascalCaseParam: String?,
-    pascalCaseNumber: Int?, screamingSnakeCase: String?,
-    screamingNumber: Int?, camelCaseParam: String?, camelCaseNumber: Int?,
-    singleword: String?, id: Int?): GetWithQueryParamsResponse {
+        kebabCaseArray: List<String>?, pascalCaseParam: String?, pascalCaseNumber: Int?,
+        screamingSnakeCase: String?, screamingNumber: Int?, camelCaseParam: String?,
+        camelCaseNumber: Int?, singleword: String?, id: Int?): GetWithQueryParamsResponse {
         val path = "/test"
         val query = mutableMapOf<String, String>()
         query["snake_case_param"] = snakeCaseParam

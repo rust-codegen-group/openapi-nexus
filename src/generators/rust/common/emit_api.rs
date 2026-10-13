@@ -794,9 +794,9 @@ fn emit_rust_error_header_impl(
     .expect("Rust response headers body builds");
     let response_headers = FunSpec::builder("response_headers")
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
-        .returns(TypeName::optional(TypeName::reference(
+        .returns(vec![TypeName::optional(TypeName::reference(
             response_headers_type.clone(),
-        )))
+        ))])
         .body(response_headers_body)
         .build()
         .expect("Rust response headers method builds");
@@ -835,7 +835,7 @@ fn build_rust_header_accessor(
     FunSpec::builder(method_name)
         .visibility(Visibility::Public)
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
-        .returns(rust_header_return_type(header.value_kind))
+        .returns(vec![rust_header_return_type(header.value_kind)])
         .body(rust_header_accessor_body(header, headers_expr))
         .build()
         .expect("Rust header accessor builds")

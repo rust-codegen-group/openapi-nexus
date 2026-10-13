@@ -25,8 +25,8 @@ public class MixedPropertyTypes {
     private String simpleString;
 
     public MixedPropertyTypes(List<MixedPropertyTypesArrayOfInlineItem> arrayOfInline,
-    MixedPropertyTypesInlineObject inlineObject, User nestedReference,
-    Integer simpleNumber, String simpleString) {
+        MixedPropertyTypesInlineObject inlineObject, User nestedReference, Integer simpleNumber,
+        String simpleString) {
         this.arrayOfInline = arrayOfInline;
         this.inlineObject = inlineObject;
         this.nestedReference = nestedReference;

@@ -13,7 +13,7 @@ public class ComplexNestedObjectUserProfileContact {
     private String phone;
 
     public ComplexNestedObjectUserProfileContact(List<ComplexNestedObjectUserProfileContactAddressesItem> addresses,
-    String email, String phone) {
+        String email, String phone) {
         this.addresses = addresses;
         this.email = email;
         this.phone = phone;

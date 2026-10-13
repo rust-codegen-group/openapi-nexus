@@ -78,7 +78,8 @@ func (d *DownloadAssetUnexpected) Body() []byte {
 }
 
 // DownloadAsset calls GET /assets/{asset_id}/content.
-func (a *TransferAPI) DownloadAsset(ctx context.Context, assetId string) (*DownloadAssetResponse, error) {
+func (a *TransferAPI) DownloadAsset(ctx context.Context,
+	assetId string) (*DownloadAssetResponse, error) {
 	path := "/assets/{asset_id}/content"
 	path = strings.Replace(path, "{asset_id}", assetId, 1)
 	req, err := a.client.NewRequest(ctx, "GET", path, nil, nil)
@@ -167,7 +168,8 @@ func (d *UploadAssetUnexpected) Body() []byte {
 }
 
 // UploadAsset calls POST /uploads.
-func (a *TransferAPI) UploadAsset(ctx context.Context, body *models.UploadAssetMultipartRequestBody) (*UploadAssetResponse, error) {
+func (a *TransferAPI) UploadAsset(ctx context.Context,
+	body *models.UploadAssetMultipartRequestBody) (*UploadAssetResponse, error) {
 	path := "/uploads"
 	var bodyReader io.Reader
 	var multipartContentType string

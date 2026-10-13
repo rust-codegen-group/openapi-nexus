@@ -37,16 +37,10 @@ public class DefaultApi {
      * Get with query parameters
      */
     public GetWithQueryParamsResponse getWithQueryParams(String snakeCaseParam,
-    Integer snakeCaseNumber,
-    String kebabCaseParam,
-    List<String> kebabCaseArray,
-    String pascalCaseParam,
-    Integer pascalCaseNumber,
-    String screamingSnakeCase,
-    Integer screamingNumber,
-    String camelCaseParam,
-    Integer camelCaseNumber, String singleword,
-    Integer id) throws IOException {
+        Integer snakeCaseNumber, String kebabCaseParam, List<String> kebabCaseArray,
+        String pascalCaseParam, Integer pascalCaseNumber, String screamingSnakeCase,
+        Integer screamingNumber, String camelCaseParam, Integer camelCaseNumber, String singleword,
+        Integer id) throws IOException {
         String path = "/test";
         Map<String, String> query = new HashMap<>();
         query.put("snake_case_param", snakeCaseParam);

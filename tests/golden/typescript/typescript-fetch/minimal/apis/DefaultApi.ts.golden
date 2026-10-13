@@ -37,7 +37,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getTestRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetTestRawResponse> {
+  async getTestRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetTestRawResponse> {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters

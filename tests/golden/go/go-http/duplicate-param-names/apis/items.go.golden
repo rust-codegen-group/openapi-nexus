@@ -77,7 +77,7 @@ func (d *CreateItemWithBodyConflictUnexpected) Body() []byte {
 
 // CreateItemWithBodyConflict — Create item with body parameter conflict
 func (a *ItemsAPI) CreateItemWithBodyConflict(ctx context.Context, itemId string, body *string,
-body2 *models.CreateItemWithBodyConflictRequest) (*CreateItemWithBodyConflictResponse, error) {
+	body2 *models.CreateItemWithBodyConflictRequest) (*CreateItemWithBodyConflictResponse, error) {
 	path := "/items/{itemId}"
 	path = strings.Replace(path, "{itemId}", itemId, 1)
 	query := url.Values{}

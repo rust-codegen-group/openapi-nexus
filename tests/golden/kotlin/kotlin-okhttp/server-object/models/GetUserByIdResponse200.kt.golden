@@ -6,5 +6,5 @@
 package com.example.sdk.models
 
 data class GetUserByIdResponse200(val email: String? = null, val id: Long? = null,
-val name: String? = null) {
+    val name: String? = null) {
 }

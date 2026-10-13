@@ -44,7 +44,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testUnionPrimitivesRaw(requestParameters: ApiTestUnionPrimitivesRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<TestUnionPrimitivesRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<TestUnionPrimitivesRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -88,7 +88,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testUnionPrimitives(requestParameters: ApiTestUnionPrimitivesRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<Foo> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<Foo> {
     const response = await this.testUnionPrimitivesRaw(requestParameters, initOverrides);
     return await response.value() as Foo;
   }

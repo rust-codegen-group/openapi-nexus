@@ -64,7 +64,8 @@ func (d *CreateTestUnexpected) Body() []byte {
 }
 
 // CreateTest — Create test with intersection type
-func (a *DefaultAPI) CreateTest(ctx context.Context, body *models.Baz) (*CreateTestResponse, error) {
+func (a *DefaultAPI) CreateTest(ctx context.Context,
+	body *models.Baz) (*CreateTestResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

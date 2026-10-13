@@ -48,7 +48,8 @@ class UsersApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def get_user_by_id_duplicate_with_http_info(self, id: int, *, id2: int | None = None, id3: str | None = None) -> ApiResponse[GetUserByIdDuplicateResponse200]:
+    def get_user_by_id_duplicate_with_http_info(self, id: int, *, id2: int | None = None, id3: str
+        | None = None) -> ApiResponse[GetUserByIdDuplicateResponse200]:
         """Get user by ID with duplicate parameter names, including HTTP response metadata."""
         path = f"/users/{id}"
         params: dict[str, str] = {}
@@ -69,6 +70,7 @@ class UsersApi:
         data = GetUserByIdDuplicateResponse200.from_dict(response.json())
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
-    def get_user_by_id_duplicate(self, id: int, *, id2: int | None = None, id3: str | None = None) -> GetUserByIdDuplicateResponse200:
+    def get_user_by_id_duplicate(self, id: int, *, id2: int | None = None, id3: str
+        | None = None) -> GetUserByIdDuplicateResponse200:
         """Get user by ID with duplicate parameter names."""
         return self.get_user_by_id_duplicate_with_http_info(id, id2=id2, id3=id3).data

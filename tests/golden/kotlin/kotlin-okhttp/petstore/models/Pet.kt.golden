@@ -11,6 +11,6 @@ import com.google.gson.annotations.SerializedName
  * Pet model
  */
 data class Pet(val category: Category? = null, val id: Long? = null, val name: String,
-@SerializedName("photo_urls") val photoUrls: List<String>,
-val status: PetStatus? = null, val tags: List<Tag>? = null) {
+    @field:SerializedName("photo_urls")
+    val photoUrls: List<String>, val status: PetStatus? = null, val tags: List<Tag>? = null) {
 }

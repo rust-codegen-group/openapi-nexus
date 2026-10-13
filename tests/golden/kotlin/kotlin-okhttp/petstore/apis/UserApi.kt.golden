@@ -52,7 +52,7 @@ class CreateUserUnexpected(
  * CreateUsersWithListInputResponse carries the response from createUsersWithListInput.
  */
 data class CreateUsersWithListInputResponse(val statusCode: Int, val raw: Response,
-val status200: User? = null) {
+    val status200: User? = null) {
 }
 
 sealed interface CreateUsersWithListInputExceptionDetail {
@@ -164,7 +164,8 @@ class LogoutUserUnexpected(
 /**
  * GetUserByNameResponse carries the response from getUserByName.
  */
-data class GetUserByNameResponse(val statusCode: Int, val raw: Response, val status200: User? = null) {
+data class GetUserByNameResponse(val statusCode: Int, val raw: Response,
+    val status200: User? = null) {
 }
 
 sealed interface GetUserByNameExceptionDetail {

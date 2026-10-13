@@ -6,6 +6,5 @@
 package com.example.sdk.models
 
 data class ComplexNestedObjectUserProfileContactAddressesItem(val city: String? = null,
-val street: String? = null,
-val zip: String? = null) {
+    val street: String? = null, val zip: String? = null) {
 }

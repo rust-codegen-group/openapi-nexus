@@ -72,7 +72,7 @@ class CheckNoSuccessBodyUnexpected(
  * CreateResourceResponse carries the response from createResource.
  */
 data class CreateResourceResponse(val statusCode: Int, val raw: Response,
-val status201: CreatedResource? = null) {
+    val status201: CreatedResource? = null) {
     fun header1RequestIdHeader(): String? {
         return raw.headers["1-Request-Id"]
     }
@@ -256,8 +256,7 @@ class CreateResourceUnexpected(
  * CreateResourceWithWildcardSuccessResponse carries the response from createResourceWithWildcardSuccess.
  */
 data class CreateResourceWithWildcardSuccessResponse(val statusCode: Int, val raw: Response,
-val status201: CreatedResource? = null,
-val status2xx: CreatedResource? = null) {
+    val status201: CreatedResource? = null, val status2xx: CreatedResource? = null) {
 }
 
 sealed interface CreateResourceWithWildcardSuccessExceptionDetail {

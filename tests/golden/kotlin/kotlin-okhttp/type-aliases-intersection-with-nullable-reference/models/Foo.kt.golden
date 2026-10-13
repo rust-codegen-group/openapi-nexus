@@ -9,5 +9,5 @@ package com.example.sdk.models
  * Base type with common properties
  */
 data class Foo(val count1: Int, val count2: Int, val createdAt: String, val id: String,
-val status: String) {
+    val status: String) {
 }

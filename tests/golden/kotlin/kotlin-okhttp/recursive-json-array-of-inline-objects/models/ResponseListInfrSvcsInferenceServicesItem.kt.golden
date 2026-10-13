@@ -7,8 +7,8 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class ResponseListInfrSvcsInferenceServicesItem(@SerializedName("created_at") val createdAt: String,
-@SerializedName("num_ready_replicas") val numReadyReplicas: Int,
-@SerializedName("num_total_replicas") val numTotalReplicas: Int,
-val status: String, val uid: String) {
+data class ResponseListInfrSvcsInferenceServicesItem(@field:SerializedName("created_at")
+    val createdAt: String, @field:SerializedName("num_ready_replicas")
+    val numReadyReplicas: Int, @field:SerializedName("num_total_replicas")
+    val numTotalReplicas: Int, val status: String, val uid: String) {
 }

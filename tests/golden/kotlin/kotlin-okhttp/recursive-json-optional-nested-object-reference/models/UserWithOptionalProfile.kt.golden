@@ -10,6 +10,7 @@ import com.google.gson.annotations.SerializedName
 /**
  * User with optional nested profile reference
  */
-data class UserWithOptionalProfile(@SerializedName("optional_profile") val optionalProfile: UserProfile? = null,
-@SerializedName("user_id") val userId: String) {
+data class UserWithOptionalProfile(@field:SerializedName("optional_profile")
+    val optionalProfile: UserProfile? = null, @field:SerializedName("user_id")
+    val userId: String) {
 }

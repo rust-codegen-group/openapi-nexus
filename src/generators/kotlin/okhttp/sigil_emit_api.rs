@@ -139,7 +139,10 @@ fn emit_api_file(
         "{class_name} groups operations under the {tag} tag."
     ));
     cls = cls.add_primary_constructor_param(
-        ParameterSpec::new("private val client: ApiClient", TypeName::primitive(""))
+        ParameterSpec::builder("client", TypeName::primitive("ApiClient"))
+            .is_property()
+            .storage_visibility(Visibility::Private)
+            .build()
             .expect("client param"),
     );
 
@@ -191,11 +194,17 @@ fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
     ));
 
     tb = tb.add_primary_constructor_param(
-        ParameterSpec::new("val statusCode: Int", TypeName::primitive("")).expect("param"),
+        ParameterSpec::builder("statusCode", TypeName::primitive("Int"))
+            .is_property()
+            .build()
+            .expect("param"),
     );
 
     tb = tb.add_primary_constructor_param(
-        ParameterSpec::new("val raw: Response", TypeName::primitive("")).expect("param"),
+        ParameterSpec::builder("raw", TypeName::primitive("Response"))
+            .is_property()
+            .build()
+            .expect("param"),
     );
 
     let mut seen: HashSet<String> = HashSet::new();
@@ -205,11 +214,11 @@ fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
         }
         let nullable_type = format!("{}?", tr.kt_type);
         tb = tb.add_primary_constructor_param(
-            ParameterSpec::new(
-                &format!("val {}: {} = null", tr.field_name, nullable_type),
-                TypeName::primitive(""),
-            )
-            .expect("param"),
+            ParameterSpec::builder(&tr.field_name, TypeName::primitive(&nullable_type))
+                .is_property()
+                .default_value(CodeBlock::of("null", ()).expect("nullable default builds"))
+                .build()
+                .expect("param"),
         );
     }
     let header_method_names =
@@ -232,9 +241,9 @@ fn build_kotlin_header_accessor(
 ) -> FunSpec {
     FunSpec::builder(method_name)
         .visibility(Visibility::Public)
-        .returns(TypeName::optional(TypeName::primitive(kotlin_header_type(
-            header.value_kind,
-        ))))
+        .returns(vec![TypeName::optional(TypeName::primitive(
+            kotlin_header_type(header.value_kind),
+        ))])
         .body(kotlin_header_accessor_body(header, headers_expr))
         .build()
         .expect("Kotlin header accessor builds")
@@ -390,25 +399,16 @@ fn build_operation_fun(plan: &OpPlan<'_>) -> FunSpec {
         .chain(&plan.query_params)
         .chain(&plan.header_params)
     {
-        fb = fb.add_param(
-            ParameterSpec::new(
-                &format!("{}: {}", p.var_name, p.kt_type),
-                TypeName::primitive(""),
-            )
-            .expect("param"),
-        );
+        fb = fb
+            .add_param(ParameterSpec::new(&p.var_name, TypeName::raw(&p.kt_type)).expect("param"));
     }
     if let Some(body) = &plan.body {
         fb = fb.add_param(
-            ParameterSpec::new(
-                &format!("{}: {}", body.var_name, body.kt_type),
-                TypeName::primitive(""),
-            )
-            .expect("body param"),
+            ParameterSpec::new(&body.var_name, TypeName::raw(&body.kt_type)).expect("body param"),
         );
     }
 
-    fb = fb.returns(TypeName::primitive(&plan.response_type));
+    fb = fb.returns(vec![TypeName::primitive(&plan.response_type)]);
     fb = fb.body(emit_method_body(plan));
 
     fb.build().expect("operation FunSpec builds")

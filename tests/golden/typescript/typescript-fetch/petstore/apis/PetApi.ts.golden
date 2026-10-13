@@ -240,7 +240,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async updatePetRaw(requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UpdatePetRawResponse> {
+    | InitOverrideFunction): Promise<UpdatePetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -296,13 +296,13 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async updatePet(requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Pet> {
+    | InitOverrideFunction): Promise<Pet> {
     const response = await this.updatePetRaw(requestParameters, initOverrides);
     return await response.value() as Pet;
   }
 
   async addPetRaw(requestParameters: ApiAddPetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<AddPetRawResponse> {
+    | InitOverrideFunction): Promise<AddPetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -354,13 +354,13 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async addPet(requestParameters: ApiAddPetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Pet> {
+    | InitOverrideFunction): Promise<Pet> {
     const response = await this.addPetRaw(requestParameters, initOverrides);
     return await response.value() as Pet;
   }
 
   async findPetsByStatusRaw(requestParameters: ApiFindPetsByStatusRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<FindPetsByStatusRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<FindPetsByStatusRawResponse> {
     if (requestParameters.status === undefined || requestParameters.status === null) {
       throw new RequiredError(
         'status',
@@ -408,13 +408,13 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async findPetsByStatus(requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Pet[]> {
+    | InitOverrideFunction): Promise<Pet[]> {
     const response = await this.findPetsByStatusRaw(requestParameters, initOverrides);
     return await response.value() as Pet[];
   }
 
   async findPetsByTagsRaw(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<FindPetsByTagsRawResponse> {
+    | InitOverrideFunction): Promise<FindPetsByTagsRawResponse> {
     if (requestParameters.tags === undefined || requestParameters.tags === null) {
       throw new RequiredError(
         'tags',
@@ -462,13 +462,13 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async findPetsByTags(requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Pet[]> {
+    | InitOverrideFunction): Promise<Pet[]> {
     const response = await this.findPetsByTagsRaw(requestParameters, initOverrides);
     return await response.value() as Pet[];
   }
 
   async getPetByIdRaw(requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetPetByIdRawResponse> {
+    | InitOverrideFunction): Promise<GetPetByIdRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
@@ -518,13 +518,13 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async getPetById(requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Pet> {
+    | InitOverrideFunction): Promise<Pet> {
     const response = await this.getPetByIdRaw(requestParameters, initOverrides);
     return await response.value() as Pet;
   }
 
   async updatePetWithFormRaw(requestParameters: ApiUpdatePetWithFormRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<UpdatePetWithFormRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<UpdatePetWithFormRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
@@ -576,13 +576,13 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async updatePetWithForm(requestParameters: ApiUpdatePetWithFormRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<Pet> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<Pet> {
     const response = await this.updatePetWithFormRaw(requestParameters, initOverrides);
     return await response.value() as Pet;
   }
 
   async deletePetRaw(requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<DeletePetRawResponse> {
+    | InitOverrideFunction): Promise<DeletePetRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
@@ -628,13 +628,13 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async deletePet(requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.deletePetRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async uploadFileRaw(requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UploadFileRawResponse> {
+    | InitOverrideFunction): Promise<UploadFileRawResponse> {
     if (requestParameters.petId === undefined || requestParameters.petId === null) {
       throw new RequiredError(
         'petId',
@@ -679,7 +679,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
   }
 
   async uploadFile(requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UploadResponse> {
+    | InitOverrideFunction): Promise<UploadResponse> {
     const response = await this.uploadFileRaw(requestParameters, initOverrides);
     return await response.value() as UploadResponse;
   }

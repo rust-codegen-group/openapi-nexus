@@ -54,7 +54,8 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   }
 
   async createItemWithBodyConflictRaw(requestParameters: ApiCreateItemWithBodyConflictRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateItemWithBodyConflictRawResponse> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<CreateItemWithBodyConflictRawResponse> {
     if (requestParameters.itemId === undefined || requestParameters.itemId === null) {
       throw new RequiredError(
         'itemId',
@@ -112,7 +113,8 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
   }
 
   async createItemWithBodyConflict(requestParameters: ApiCreateItemWithBodyConflictRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateItemWithBodyConflictResponse200> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<CreateItemWithBodyConflictResponse200> {
     const response = await this.createItemWithBodyConflictRaw(requestParameters, initOverrides);
     return await response.value() as CreateItemWithBodyConflictResponse200;
   }

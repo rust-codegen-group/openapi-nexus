@@ -36,7 +36,8 @@ class DefaultApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def create_resource_with_http_info(self, *, body: VeryLongDiscriminatedUnionTypeNameForTesting20260630) -> ApiResponse[VeryLongDiscriminatedUnionTypeNameForTesting20260630]:
+    def create_resource_with_http_info(self, *,
+        body: VeryLongDiscriminatedUnionTypeNameForTesting20260630) -> ApiResponse[VeryLongDiscriminatedUnionTypeNameForTesting20260630]:
         """Create resource, including HTTP response metadata."""
         path = "/resource"
         headers: dict[str, str] = {}
@@ -48,6 +49,7 @@ class DefaultApi:
         data = response.json()  # type: ignore[return-value]
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
-    def create_resource(self, *, body: VeryLongDiscriminatedUnionTypeNameForTesting20260630) -> VeryLongDiscriminatedUnionTypeNameForTesting20260630:
+    def create_resource(self, *,
+        body: VeryLongDiscriminatedUnionTypeNameForTesting20260630) -> VeryLongDiscriminatedUnionTypeNameForTesting20260630:
         """Create resource."""
         return self.create_resource_with_http_info(body=body).data

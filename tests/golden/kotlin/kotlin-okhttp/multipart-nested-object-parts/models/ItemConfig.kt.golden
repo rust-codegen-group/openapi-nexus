@@ -7,6 +7,7 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class ItemConfig(@SerializedName("display_name") val displayName: String,
-@SerializedName("retention_days") val retentionDays: Int? = null) {
+data class ItemConfig(@field:SerializedName("display_name")
+    val displayName: String, @field:SerializedName("retention_days")
+    val retentionDays: Int? = null) {
 }

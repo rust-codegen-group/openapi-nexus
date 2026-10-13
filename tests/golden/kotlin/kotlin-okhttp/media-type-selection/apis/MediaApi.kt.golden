@@ -121,7 +121,7 @@ class SendVendorJsonUnexpected(
  * GetOctetPreferredResponse carries the response from getOctetPreferred.
  */
 data class GetOctetPreferredResponse(val statusCode: Int, val raw: Response,
-val status200: ByteArray? = null) {
+    val status200: ByteArray? = null) {
 }
 
 sealed interface GetOctetPreferredExceptionDetail {
@@ -156,7 +156,7 @@ class GetOctetPreferredUnexpected(
  * GetTextPreferredResponse carries the response from getTextPreferred.
  */
 data class GetTextPreferredResponse(val statusCode: Int, val raw: Response,
-val status200: String? = null) {
+    val status200: String? = null) {
 }
 
 sealed interface GetTextPreferredExceptionDetail {
@@ -191,7 +191,7 @@ class GetTextPreferredUnexpected(
  * GetVendorJsonResponse carries the response from getVendorJson.
  */
 data class GetVendorJsonResponse(val statusCode: Int, val raw: Response,
-val status200: Payload? = null) {
+    val status200: Payload? = null) {
 }
 
 sealed interface GetVendorJsonExceptionDetail {
@@ -259,7 +259,7 @@ class MediaApi(private val client: ApiClient) {
     fun sendParameterizedMultipart(body: SendParameterizedMultipartMultipartRequestBody): SendParameterizedMultipartResponse {
         val path = "/request/parameterized-multipart"
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("file", body.file.filenameOrDefault("file"), body.file.data.toRequestBody("application/octet-stream".toMediaType()))
+        multipartBuilder.addFormDataPart("file", body.file_.filenameOrDefault("file"), body.file_.data.toRequestBody("application/octet-stream".toMediaType()))
 
         if (body.note != null) {
             multipartBuilder.addFormDataPart("note", null, body.note.toString().toRequestBody("text/plain".toMediaType()))

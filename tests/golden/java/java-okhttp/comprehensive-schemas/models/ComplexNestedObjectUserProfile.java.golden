@@ -11,7 +11,7 @@ public class ComplexNestedObjectUserProfile {
     private String lastName;
 
     public ComplexNestedObjectUserProfile(ComplexNestedObjectUserProfileContact contact,
-    String firstName, String lastName) {
+        String firstName, String lastName) {
         this.contact = contact;
         this.firstName = firstName;
         this.lastName = lastName;

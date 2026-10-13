@@ -145,7 +145,8 @@ class EnumReprApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def handle_adjacently_tagged_with_http_info(self, *, body: AdjacentlyTaggedEnum) -> ApiResponse[AdjacentlyTaggedEnum]:
+    def handle_adjacently_tagged_with_http_info(self, *,
+        body: AdjacentlyTaggedEnum) -> ApiResponse[AdjacentlyTaggedEnum]:
         """Handle adjacently tagged enum, including HTTP response metadata."""
         path = "/adjacently-tagged"
         headers: dict[str, str] = {}
@@ -164,7 +165,8 @@ class EnumReprApi:
         """Handle adjacently tagged enum."""
         return self.handle_adjacently_tagged_with_http_info(body=body).data
 
-    def handle_externally_tagged_with_http_info(self, *, body: ExternallyTaggedEnum) -> ApiResponse[ExternallyTaggedEnum]:
+    def handle_externally_tagged_with_http_info(self, *,
+        body: ExternallyTaggedEnum) -> ApiResponse[ExternallyTaggedEnum]:
         """Handle externally tagged enum, including HTTP response metadata."""
         path = "/externally-tagged"
         headers: dict[str, str] = {}
@@ -183,7 +185,8 @@ class EnumReprApi:
         """Handle externally tagged enum."""
         return self.handle_externally_tagged_with_http_info(body=body).data
 
-    def handle_internally_tagged_with_http_info(self, *, body: InternallyTaggedEnum) -> ApiResponse[InternallyTaggedEnum]:
+    def handle_internally_tagged_with_http_info(self, *,
+        body: InternallyTaggedEnum) -> ApiResponse[InternallyTaggedEnum]:
         """Handle internally tagged enum, including HTTP response metadata."""
         path = "/internally-tagged"
         headers: dict[str, str] = {}

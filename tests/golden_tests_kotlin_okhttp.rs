@@ -10,7 +10,9 @@ use std::path::Path;
 use tracing_test::traced_test;
 
 use openapi_nexus::generators::kotlin::okhttp::KotlinOkhttpCodeGenerator;
-use openapi_nexus::test_utils::{run_golden_test, test_cases_from_slice};
+use openapi_nexus::test_utils::{
+    generate_files, read_fixture, run_golden_test, test_cases_from_slice,
+};
 
 fn golden_dir() -> &'static Path {
     Path::new("tests/golden/kotlin/kotlin-okhttp")
@@ -176,4 +178,23 @@ generate_golden_tests! {
     test_query_param_enum_golden: "query-param-enum",
     test_server_path_prefix_golden: "server-path-prefix",
     test_reserved_word_fields_golden: "reserved-word-fields",
+}
+
+#[test]
+fn kotlin_primary_constructor_annotations_preserve_wire_names() {
+    let generator = KotlinOkhttpCodeGenerator::new(toml::value::Table::new());
+    let files = generate_files(&generator, &read_fixture("valid/naming-conventions.yaml"))
+        .expect("naming-conventions fixture generates");
+    let model = files
+        .get("models/NamingConventionTest.kt")
+        .expect("NamingConventionTest model is generated");
+
+    assert!(
+        model.contains("@field:SerializedName(\"snake_case_field\")"),
+        "wire-name annotation must target the generated backing field:\n{model}"
+    );
+    assert!(
+        model.contains("val snakeCaseField: String"),
+        "the generated property keeps its Kotlin identifier:\n{model}"
+    );
 }

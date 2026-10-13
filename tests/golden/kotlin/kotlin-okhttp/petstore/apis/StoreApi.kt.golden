@@ -18,7 +18,7 @@ import okhttp3.Response
  * GetInventoryResponse carries the response from getInventory.
  */
 data class GetInventoryResponse(val statusCode: Int, val raw: Response,
-val status200: Map<String, Int>? = null) {
+    val status200: Map<String, Int>? = null) {
 }
 
 sealed interface GetInventoryExceptionDetail {
@@ -52,7 +52,8 @@ class GetInventoryUnexpected(
 /**
  * PlaceOrderResponse carries the response from placeOrder.
  */
-data class PlaceOrderResponse(val statusCode: Int, val raw: Response, val status200: Order? = null) {
+data class PlaceOrderResponse(val statusCode: Int, val raw: Response,
+    val status200: Order? = null) {
 }
 
 sealed interface PlaceOrderExceptionDetail {
@@ -96,7 +97,8 @@ class PlaceOrderUnexpected(
 /**
  * GetOrderByIdResponse carries the response from getOrderById.
  */
-data class GetOrderByIdResponse(val statusCode: Int, val raw: Response, val status200: Order? = null) {
+data class GetOrderByIdResponse(val statusCode: Int, val raw: Response,
+    val status200: Order? = null) {
 }
 
 sealed interface GetOrderByIdExceptionDetail {

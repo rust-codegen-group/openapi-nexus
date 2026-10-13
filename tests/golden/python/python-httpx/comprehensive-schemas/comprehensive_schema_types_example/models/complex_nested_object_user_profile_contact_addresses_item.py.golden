@@ -24,7 +24,8 @@ class ComplexNestedObjectUserProfileContactAddressesItem:
         return result
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> ComplexNestedObjectUserProfileContactAddressesItem:
+    def from_dict(cls, data: dict[str,
+        object]) -> ComplexNestedObjectUserProfileContactAddressesItem:
         return cls(
             city=data.get("city"),  # type: ignore[assignment]
             street=data.get("street"),  # type: ignore[assignment]

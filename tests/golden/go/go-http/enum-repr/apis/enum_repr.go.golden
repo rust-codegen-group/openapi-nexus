@@ -74,7 +74,8 @@ func (d *HandleAdjacentlyTaggedUnexpected) Body() []byte {
 }
 
 // HandleAdjacentlyTagged — Handle adjacently tagged enum
-func (a *EnumReprAPI) HandleAdjacentlyTagged(ctx context.Context, body *models.AdjacentlyTaggedEnum) (*HandleAdjacentlyTaggedResponse, error) {
+func (a *EnumReprAPI) HandleAdjacentlyTagged(ctx context.Context,
+	body *models.AdjacentlyTaggedEnum) (*HandleAdjacentlyTaggedResponse, error) {
 	path := "/adjacently-tagged"
 	var bodyReader io.Reader
 	if body != nil {
@@ -174,7 +175,8 @@ func (d *HandleExternallyTaggedUnexpected) Body() []byte {
 }
 
 // HandleExternallyTagged — Handle externally tagged enum
-func (a *EnumReprAPI) HandleExternallyTagged(ctx context.Context, body *models.ExternallyTaggedEnum) (*HandleExternallyTaggedResponse, error) {
+func (a *EnumReprAPI) HandleExternallyTagged(ctx context.Context,
+	body *models.ExternallyTaggedEnum) (*HandleExternallyTaggedResponse, error) {
 	path := "/externally-tagged"
 	var bodyReader io.Reader
 	if body != nil {
@@ -274,7 +276,8 @@ func (d *HandleInternallyTaggedUnexpected) Body() []byte {
 }
 
 // HandleInternallyTagged — Handle internally tagged enum
-func (a *EnumReprAPI) HandleInternallyTagged(ctx context.Context, body *models.InternallyTaggedEnum) (*HandleInternallyTaggedResponse, error) {
+func (a *EnumReprAPI) HandleInternallyTagged(ctx context.Context,
+	body *models.InternallyTaggedEnum) (*HandleInternallyTaggedResponse, error) {
 	path := "/internally-tagged"
 	var bodyReader io.Reader
 	if body != nil {
@@ -374,7 +377,8 @@ func (d *HandleMixedUnexpected) Body() []byte {
 }
 
 // HandleMixed — Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))
-func (a *EnumReprAPI) HandleMixed(ctx context.Context, body *models.MixedEnum) (*HandleMixedResponse, error) {
+func (a *EnumReprAPI) HandleMixed(ctx context.Context,
+	body *models.MixedEnum) (*HandleMixedResponse, error) {
 	path := "/mixed"
 	var bodyReader io.Reader
 	if body != nil {
@@ -474,7 +478,8 @@ func (d *HandleUntaggedUnexpected) Body() []byte {
 }
 
 // HandleUntagged — Handle untagged enum
-func (a *EnumReprAPI) HandleUntagged(ctx context.Context, body *models.UntaggedEnum) (*HandleUntaggedResponse, error) {
+func (a *EnumReprAPI) HandleUntagged(ctx context.Context,
+	body *models.UntaggedEnum) (*HandleUntaggedResponse, error) {
 	path := "/untagged"
 	var bodyReader io.Reader
 	if body != nil {

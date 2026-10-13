@@ -20,8 +20,7 @@ public class CreateResourceWithWildcardSuccessResponse {
     private final CreatedResource status2xx;
 
     public CreateResourceWithWildcardSuccessResponse(int statusCode, Response raw,
-    CreatedResource status201,
-    CreatedResource status2xx) {
+        CreatedResource status201, CreatedResource status2xx) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status201 = status201;

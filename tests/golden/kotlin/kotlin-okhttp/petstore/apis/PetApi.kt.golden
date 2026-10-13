@@ -136,7 +136,7 @@ class AddPetUnexpected(
  * FindPetsByStatusResponse carries the response from findPetsByStatus.
  */
 data class FindPetsByStatusResponse(val statusCode: Int, val raw: Response,
-val status200: List<Pet>? = null) {
+    val status200: List<Pet>? = null) {
 }
 
 sealed interface FindPetsByStatusExceptionDetail {
@@ -181,7 +181,7 @@ class FindPetsByStatusUnexpected(
  * FindPetsByTagsResponse carries the response from findPetsByTags.
  */
 data class FindPetsByTagsResponse(val statusCode: Int, val raw: Response,
-val status200: List<Pet>? = null) {
+    val status200: List<Pet>? = null) {
 }
 
 sealed interface FindPetsByTagsExceptionDetail {
@@ -280,7 +280,7 @@ class GetPetByIdUnexpected(
  * UpdatePetWithFormResponse carries the response from updatePetWithForm.
  */
 data class UpdatePetWithFormResponse(val statusCode: Int, val raw: Response,
-val status200: Pet? = null) {
+    val status200: Pet? = null) {
 }
 
 sealed interface UpdatePetWithFormExceptionDetail {
@@ -369,7 +369,7 @@ class DeletePetUnexpected(
  * UploadFileResponse carries the response from uploadFile.
  */
 data class UploadFileResponse(val statusCode: Int, val raw: Response,
-val status200: UploadResponse? = null) {
+    val status200: UploadResponse? = null) {
 }
 
 sealed interface UploadFileExceptionDetail {

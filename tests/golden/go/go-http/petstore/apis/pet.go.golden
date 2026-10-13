@@ -319,7 +319,8 @@ func (d *FindPetsByStatusUnexpected) Body() []byte {
 }
 
 // FindPetsByStatus — Find pets by status
-func (a *PetAPI) FindPetsByStatus(ctx context.Context, status string) (*FindPetsByStatusResponse, error) {
+func (a *PetAPI) FindPetsByStatus(ctx context.Context,
+	status string) (*FindPetsByStatusResponse, error) {
 	path := "/pet/findByStatus"
 	query := url.Values{}
 	query.Set("status", status)
@@ -412,7 +413,8 @@ func (d *FindPetsByTagsUnexpected) Body() []byte {
 }
 
 // FindPetsByTags — Find pets by tags
-func (a *PetAPI) FindPetsByTags(ctx context.Context, tags []string) (*FindPetsByTagsResponse, error) {
+func (a *PetAPI) FindPetsByTags(ctx context.Context,
+	tags []string) (*FindPetsByTagsResponse, error) {
 	path := "/pet/findByTags"
 	query := url.Values{}
 	query.Set("tags", strings.Join(tags, ","))
@@ -611,7 +613,8 @@ func (d *UpdatePetWithFormUnexpected) Body() []byte {
 }
 
 // UpdatePetWithForm — Update a pet in the store with form data
-func (a *PetAPI) UpdatePetWithForm(ctx context.Context, petId int64, name *string, status *string) (*UpdatePetWithFormResponse, error) {
+func (a *PetAPI) UpdatePetWithForm(ctx context.Context, petId int64, name *string,
+	status *string) (*UpdatePetWithFormResponse, error) {
 	path := "/pet/{petId}"
 	path = strings.Replace(path, "{petId}", strconv.FormatInt(int64(petId), 10), 1)
 	query := url.Values{}
@@ -776,7 +779,8 @@ func (d *UploadFileUnexpected) Body() []byte {
 }
 
 // UploadFile — Upload an image
-func (a *PetAPI) UploadFile(ctx context.Context, petId int64, additionalMetadata *string) (*UploadFileResponse, error) {
+func (a *PetAPI) UploadFile(ctx context.Context, petId int64,
+	additionalMetadata *string) (*UploadFileResponse, error) {
 	path := "/pet/{petId}/uploadImage"
 	path = strings.Replace(path, "{petId}", strconv.FormatInt(int64(petId), 10), 1)
 	query := url.Values{}

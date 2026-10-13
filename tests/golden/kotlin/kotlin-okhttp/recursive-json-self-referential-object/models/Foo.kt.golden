@@ -6,5 +6,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class Foo(val children: List<Foo>? = null, @SerializedName("related_bar") val relatedBar: Bar) {
+data class Foo(val children: List<Foo>? = null, @field:SerializedName("related_bar")
+    val relatedBar: Bar) {
 }

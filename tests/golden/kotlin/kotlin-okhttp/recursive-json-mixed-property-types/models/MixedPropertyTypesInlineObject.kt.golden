@@ -7,5 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class MixedPropertyTypesInlineObject(@SerializedName("inline_field") val inlineField: String? = null) {
+data class MixedPropertyTypesInlineObject(@field:SerializedName("inline_field")
+    val inlineField: String? = null) {
 }

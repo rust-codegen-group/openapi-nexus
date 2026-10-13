@@ -18,7 +18,7 @@ import okhttp3.Response
  * CreateTypeAResponse carries the response from createTypeA.
  */
 data class CreateTypeAResponse(val statusCode: Int, val raw: Response,
-val status200: ResourceTypeA? = null) {
+    val status200: ResourceTypeA? = null) {
 }
 
 sealed interface CreateTypeAExceptionDetail {
@@ -53,7 +53,7 @@ class CreateTypeAUnexpected(
  * CreateTypeBResponse carries the response from createTypeB.
  */
 data class CreateTypeBResponse(val statusCode: Int, val raw: Response,
-val status200: ResourceTypeB? = null) {
+    val status200: ResourceTypeB? = null) {
 }
 
 sealed interface CreateTypeBExceptionDetail {

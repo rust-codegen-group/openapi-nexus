@@ -65,7 +65,8 @@ func (d *SendJsonPreferredUnexpected) Body() []byte {
 }
 
 // SendJsonPreferred calls POST /request/json-vs-multipart.
-func (a *MediaAPI) SendJsonPreferred(ctx context.Context, body *models.Payload) (*SendJsonPreferredResponse, error) {
+func (a *MediaAPI) SendJsonPreferred(ctx context.Context,
+	body *models.Payload) (*SendJsonPreferredResponse, error) {
 	path := "/request/json-vs-multipart"
 	var bodyReader io.Reader
 	if body != nil {
@@ -137,7 +138,7 @@ func (d *SendParameterizedMultipartUnexpected) Body() []byte {
 
 // SendParameterizedMultipart calls POST /request/parameterized-multipart.
 func (a *MediaAPI) SendParameterizedMultipart(ctx context.Context,
-body *models.SendParameterizedMultipartMultipartRequestBody) (*SendParameterizedMultipartResponse, error) {
+	body *models.SendParameterizedMultipartMultipartRequestBody) (*SendParameterizedMultipartResponse, error) {
 	path := "/request/parameterized-multipart"
 	var bodyReader io.Reader
 	var multipartContentType string
@@ -241,7 +242,8 @@ func (d *SendVendorJsonUnexpected) Body() []byte {
 }
 
 // SendVendorJson calls PATCH /request/vendor-json.
-func (a *MediaAPI) SendVendorJson(ctx context.Context, body *models.Payload) (*SendVendorJsonResponse, error) {
+func (a *MediaAPI) SendVendorJson(ctx context.Context,
+	body *models.Payload) (*SendVendorJsonResponse, error) {
 	path := "/request/vendor-json"
 	var bodyReader io.Reader
 	if body != nil {

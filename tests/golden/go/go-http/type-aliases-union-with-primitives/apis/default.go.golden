@@ -63,7 +63,8 @@ func (d *TestUnionPrimitivesUnexpected) Body() []byte {
 }
 
 // TestUnionPrimitives — Test endpoint with union type
-func (a *DefaultAPI) TestUnionPrimitives(ctx context.Context, body *models.Foo) (*TestUnionPrimitivesResponse, error) {
+func (a *DefaultAPI) TestUnionPrimitives(ctx context.Context,
+	body *models.Foo) (*TestUnionPrimitivesResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

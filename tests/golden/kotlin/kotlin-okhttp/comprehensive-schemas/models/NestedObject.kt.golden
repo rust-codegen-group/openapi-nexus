@@ -9,5 +9,5 @@ package com.example.sdk.models
  * Object with nested object property
  */
 data class NestedObject(val metadata: NestedObjectMetadata? = null,
-val user: NestedObjectUser? = null) {
+    val user: NestedObjectUser? = null) {
 }

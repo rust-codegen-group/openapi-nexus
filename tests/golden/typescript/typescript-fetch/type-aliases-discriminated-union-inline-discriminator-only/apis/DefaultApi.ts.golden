@@ -53,7 +53,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createEventRaw(requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateEventRawResponse> {
+    | InitOverrideFunction): Promise<CreateEventRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -97,7 +97,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createEvent(requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Event> {
+    | InitOverrideFunction): Promise<Event> {
     const response = await this.createEventRaw(requestParameters, initOverrides);
     return await response.value() as Event;
   }

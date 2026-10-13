@@ -157,7 +157,7 @@ fn emit_api_file(
     let mut ctor = FunSpec::builder(&class_name);
     ctor = ctor.visibility(Visibility::Public);
     ctor = ctor.add_param(
-        ParameterSpec::new("ApiClient client", TypeName::primitive("")).expect("client param"),
+        ParameterSpec::new("client", TypeName::primitive("ApiClient")).expect("client param"),
     );
     let ctor_body = sigil_quote!(Java {
         this.client = client;
@@ -381,20 +381,16 @@ fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
     let mut ctor = FunSpec::builder(&plan.response_type);
     ctor = ctor.visibility(Visibility::Public);
     ctor = ctor
-        .add_param(ParameterSpec::new("int statusCode", TypeName::primitive("")).expect("param"));
+        .add_param(ParameterSpec::new("statusCode", TypeName::primitive("int")).expect("param"));
     ctor =
-        ctor.add_param(ParameterSpec::new("Response raw", TypeName::primitive("")).expect("param"));
+        ctor.add_param(ParameterSpec::new("raw", TypeName::primitive("Response")).expect("param"));
     let mut ctor_seen: HashSet<String> = HashSet::new();
     for tr in &plan.typed_responses {
         if !ctor_seen.insert(tr.field_name.clone()) {
             continue;
         }
         ctor = ctor.add_param(
-            ParameterSpec::new(
-                &format!("{} {}", tr.java_type, tr.field_name),
-                TypeName::primitive(""),
-            )
-            .expect("param"),
+            ParameterSpec::new(&tr.field_name, TypeName::primitive(&tr.java_type)).expect("param"),
         );
     }
     let mut assignment_fields = Vec::new();
@@ -455,7 +451,7 @@ fn build_java_header_getter(
     let return_type = java_header_type(header.value_kind);
     FunSpec::builder(method_name)
         .visibility(Visibility::Public)
-        .returns(TypeName::primitive(return_type))
+        .returns(vec![TypeName::primitive(return_type)])
         .body(java_header_accessor_body(
             header.value_kind,
             lookup,
@@ -635,25 +631,17 @@ fn build_operation_fun(plan: &OpPlan<'_>) -> FunSpec {
         .chain(&plan.header_params)
     {
         fb = fb.add_param(
-            ParameterSpec::new(
-                &format!("{} {}", p.java_type, p.var_name),
-                TypeName::primitive(""),
-            )
-            .expect("param"),
+            ParameterSpec::new(&p.var_name, TypeName::raw(&p.java_type)).expect("param"),
         );
     }
     if let Some(body) = &plan.body {
         fb = fb.add_param(
-            ParameterSpec::new(
-                &format!("{} {}", body.java_type, body.var_name),
-                TypeName::primitive(""),
-            )
-            .expect("body param"),
+            ParameterSpec::new(&body.var_name, TypeName::raw(&body.java_type)).expect("body param"),
         );
     }
 
-    fb = fb.returns(TypeName::primitive(&plan.response_type));
-    fb = fb.suffix("throws IOException");
+    fb = fb.returns(vec![TypeName::primitive(&plan.response_type)]);
+    fb = fb.throws(vec![TypeName::importable("java.io", "IOException")]);
     fb = fb.body(emit_method_body(plan));
 
     fb.build().expect("operation FunSpec builds")

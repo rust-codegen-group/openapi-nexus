@@ -7,6 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class ArrayWithReferencePropertyItemsItem(@SerializedName("item_id") val itemId: String,
-val owner: User? = null) {
+data class ArrayWithReferencePropertyItemsItem(@field:SerializedName("item_id")
+    val itemId: String, val owner: User? = null) {
 }

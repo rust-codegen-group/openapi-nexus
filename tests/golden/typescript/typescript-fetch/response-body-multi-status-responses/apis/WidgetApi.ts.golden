@@ -32,7 +32,7 @@ export class ListWidgetsError extends ResponseError {
 export interface WidgetApiInterface {
   listWidgetsRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ListWidgetsRawResponse>;
   listWidgets: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Widget[]
-  | WidgetListPartial>;
+| WidgetListPartial>;
 }
 
 export class WidgetApi extends BaseAPI implements WidgetApiInterface {
@@ -43,7 +43,8 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async listWidgetsRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<ListWidgetsRawResponse> {
+  async listWidgetsRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<ListWidgetsRawResponse> {
     // Build path with path parameters
     const urlPath = `/widgets`;
     // Build query parameters
@@ -85,7 +86,7 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
   }
 
   async listWidgets(initOverrides?: RequestInit | InitOverrideFunction): Promise<Widget[]
-      | WidgetListPartial> {
+  | WidgetListPartial> {
     const response = await this.listWidgetsRaw(initOverrides);
     return await response.value() as Widget[] | WidgetListPartial;
   }

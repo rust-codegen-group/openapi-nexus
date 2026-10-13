@@ -18,7 +18,7 @@ public class ResponseListInfrSvcsInferenceServicesItem {
     private String uid;
 
     public ResponseListInfrSvcsInferenceServicesItem(String createdAt, int numReadyReplicas,
-    int numTotalReplicas, String status, String uid) {
+        int numTotalReplicas, String status, String uid) {
         this.createdAt = createdAt;
         this.numReadyReplicas = numReadyReplicas;
         this.numTotalReplicas = numTotalReplicas;

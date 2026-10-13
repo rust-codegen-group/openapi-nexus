@@ -41,7 +41,7 @@ pub fn kt_field_name(name: &str) -> String {
         return "value".to_string();
     }
     if is_kotlin_reserved(&camel) {
-        format!("`{camel}`")
+        format!("{camel}_")
     } else {
         camel
     }
@@ -53,7 +53,7 @@ pub fn kt_ident(name: &str) -> String {
         return "arg".to_string();
     }
     if is_kotlin_reserved(&camel) {
-        format!("`{camel}`")
+        format!("{camel}_")
     } else {
         camel
     }
@@ -69,6 +69,8 @@ pub fn is_kotlin_reserved(name: &str) -> bool {
             | "else"
             | "false"
             | "for"
+            | "file"
+            | "field"
             | "fun"
             | "if"
             | "in"
@@ -154,5 +156,17 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
         IrTypeExpr::Array(_) => format!("{value_expr}.joinToString(\",\")"),
         IrTypeExpr::Named(_) => format!("{value_expr}.toString()"),
         _ => format!("{value_expr}.toString()"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{is_kotlin_reserved, kt_field_name, kt_ident};
+
+    #[test]
+    fn kotlin_for_is_escaped_for_fields_and_parameters() {
+        assert!(is_kotlin_reserved("for"));
+        assert_eq!(kt_field_name("for"), "for_");
+        assert_eq!(kt_ident("for"), "for_");
     }
 }

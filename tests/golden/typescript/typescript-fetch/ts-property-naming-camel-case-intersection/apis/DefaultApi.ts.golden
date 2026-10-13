@@ -45,7 +45,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testIntersectionRaw(requestParameters: ApiTestIntersectionRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<TestIntersectionRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<TestIntersectionRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -89,7 +89,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testIntersection(requestParameters: ApiTestIntersectionRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Foo> {
+    | InitOverrideFunction): Promise<Foo> {
     const response = await this.testIntersectionRaw(requestParameters, initOverrides);
     return await response.value() as Foo;
   }

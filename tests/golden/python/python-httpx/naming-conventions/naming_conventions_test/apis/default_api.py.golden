@@ -53,12 +53,10 @@ class DefaultApi:
         self._client = client
 
     def get_with_query_params_with_http_info(self, *, snake_case_param: str, snake_case_number: int | None = None,
-    kebab_case_param: str | None = None, kebab_case_array: list[str]
-    | None = None, pascal_case_param: str | None = None,
-    pascal_case_number: int | None = None, screaming_snake_case: str
-    | None = None, screaming_number: int | None = None, camel_case_param: str
-    | None = None, camel_case_number: int | None = None, singleword: str
-    | None = None, id: int | None = None) -> ApiResponse[None]:
+        kebab_case_param: str | None = None, kebab_case_array: list[str] | None = None, pascal_case_param: str
+        | None = None, pascal_case_number: int | None = None, screaming_snake_case: str | None = None,
+        screaming_number: int | None = None, camel_case_param: str | None = None, camel_case_number: int | None = None,
+        singleword: str | None = None, id: int | None = None) -> ApiResponse[None]:
         """Get with query parameters, including HTTP response metadata."""
         path = "/test"
         params: dict[str, str] = {}
@@ -93,15 +91,15 @@ class DefaultApi:
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
     def get_with_query_params(self, *, snake_case_param: str, snake_case_number: int | None = None,
-    kebab_case_param: str | None = None, kebab_case_array: list[str] | None = None,
-    pascal_case_param: str | None = None, pascal_case_number: int | None = None,
-    screaming_snake_case: str | None = None, screaming_number: int | None = None,
-    camel_case_param: str | None = None, camel_case_number: int | None = None, singleword: str
-    | None = None, id: int | None = None) -> None:
+        kebab_case_param: str | None = None, kebab_case_array: list[str] | None = None, pascal_case_param: str
+        | None = None, pascal_case_number: int | None = None, screaming_snake_case: str | None = None,
+        screaming_number: int | None = None, camel_case_param: str | None = None, camel_case_number: int | None = None,
+        singleword: str | None = None, id: int | None = None) -> None:
         """Get with query parameters."""
         return self.get_with_query_params_with_http_info(snake_case_param=snake_case_param, snake_case_number=snake_case_number, kebab_case_param=kebab_case_param, kebab_case_array=kebab_case_array, pascal_case_param=pascal_case_param, pascal_case_number=pascal_case_number, screaming_snake_case=screaming_snake_case, screaming_number=screaming_number, camel_case_param=camel_case_param, camel_case_number=camel_case_number, singleword=singleword, id=id).data
 
-    def test_naming_conventions_with_http_info(self, *, body: NamingConventionTest) -> ApiResponse[NamingConventionTest]:
+    def test_naming_conventions_with_http_info(self, *,
+        body: NamingConventionTest) -> ApiResponse[NamingConventionTest]:
         """Test endpoint with various parameter naming conventions, including HTTP response metadata."""
         path = "/test"
         headers: dict[str, str] = {}

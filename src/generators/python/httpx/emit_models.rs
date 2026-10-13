@@ -10,6 +10,7 @@ use crate::generators::python::type_names::python_type_name_for_schema;
 use crate::generators::request_inputs::{
     RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
 };
+use crate::generators::type_application;
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion, TaggingStyle,
@@ -202,7 +203,7 @@ fn build_to_dict_method(
     properties: &indexmap::IndexMap<String, IrProperty>,
 ) -> FunSpec {
     let self_param = ParameterSpec::of("self", TypeName::primitive(""));
-    let return_type = TypeName::generic(
+    let return_type = type_application(
         TypeName::primitive("dict"),
         vec![TypeName::primitive("str"), TypeName::primitive("object")],
     );
@@ -223,7 +224,7 @@ fn build_to_dict_method(
 
     FunSpec::builder("to_dict")
         .add_param(self_param)
-        .returns(return_type)
+        .returns(vec![return_type])
         .body(body.build().expect("to_dict body"))
         .build()
         .expect("to_dict method")
@@ -238,7 +239,7 @@ fn build_from_dict_method(
     let cls_param = ParameterSpec::of("cls", TypeName::primitive(""));
     let data_param = ParameterSpec::of(
         "data",
-        TypeName::generic(
+        type_application(
             TypeName::primitive("dict"),
             vec![TypeName::primitive("str"), TypeName::primitive("object")],
         ),
@@ -268,7 +269,7 @@ fn build_from_dict_method(
         .annotation(CodeBlock::of("@classmethod", ()).expect("classmethod"))
         .add_param(cls_param)
         .add_param(data_param)
-        .returns(TypeName::primitive(class_name))
+        .returns(vec![TypeName::primitive(class_name)])
         .body(body.build().expect("from_dict body"))
         .build()
         .expect("from_dict method")
@@ -318,7 +319,7 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
         };
         ts = ts.add_variant(
             EnumVariantSpec::builder(&member_name)
-                .value(CodeBlock::of(&value_code, ()).expect("enum value"))
+                .discriminant(CodeBlock::of(&value_code, ()).expect("enum value"))
                 .build()
                 .expect("enum variant"),
         );
@@ -754,9 +755,9 @@ pub fn api_type_name(expr: &IrTypeExpr) -> TypeName {
             TypeName::importable(&module, &py_name)
         }
         IrTypeExpr::Array(inner) => {
-            TypeName::generic(TypeName::primitive("list"), vec![api_type_name(inner)])
+            type_application(TypeName::primitive("list"), vec![api_type_name(inner)])
         }
-        IrTypeExpr::Map(inner) => TypeName::generic(
+        IrTypeExpr::Map(inner) => type_application(
             TypeName::primitive("dict"),
             vec![TypeName::primitive("str"), api_type_name(inner)],
         ),

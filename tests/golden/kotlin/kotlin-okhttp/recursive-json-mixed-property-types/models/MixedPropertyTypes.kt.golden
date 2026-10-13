@@ -10,9 +10,12 @@ import com.google.gson.annotations.SerializedName
 /**
  * Object with mixed property types
  */
-data class MixedPropertyTypes(@SerializedName("array_of_inline") val arrayOfInline: List<MixedPropertyTypesArrayOfInlineItem>,
-@SerializedName("inline_object") val inlineObject: MixedPropertyTypesInlineObject? = null,
-@SerializedName("nested_reference") val nestedReference: User? = null,
-@SerializedName("simple_number") val simpleNumber: Int? = null,
-@SerializedName("simple_string") val simpleString: String) {
+data class MixedPropertyTypes(@field:SerializedName("array_of_inline")
+    val arrayOfInline: List<MixedPropertyTypesArrayOfInlineItem>,
+    @field:SerializedName("inline_object")
+    val inlineObject: MixedPropertyTypesInlineObject? = null,
+    @field:SerializedName("nested_reference")
+    val nestedReference: User? = null, @field:SerializedName("simple_number")
+    val simpleNumber: Int? = null, @field:SerializedName("simple_string")
+    val simpleString: String) {
 }

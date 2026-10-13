@@ -256,7 +256,7 @@ class PostXmlUnexpected(
  * GetXmlResponseResponse carries the response from getXmlResponse.
  */
 data class GetXmlResponseResponse(val statusCode: Int, val raw: Response,
-val status200: String? = null) {
+    val status200: String? = null) {
 }
 
 sealed interface GetXmlResponseExceptionDetail {

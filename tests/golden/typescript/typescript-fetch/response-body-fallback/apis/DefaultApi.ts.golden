@@ -58,7 +58,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getFallbackNoBodyRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetFallbackNoBodyRawResponse> {
+  async getFallbackNoBodyRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetFallbackNoBodyRawResponse> {
     // Build path with path parameters
     const urlPath = `/fallback/no-body`;
     // Build query parameters
@@ -101,7 +102,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     return await response.value();
   }
 
-  async getFallbackWithBodyRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetFallbackWithBodyRawResponse> {
+  async getFallbackWithBodyRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetFallbackWithBodyRawResponse> {
     // Build path with path parameters
     const urlPath = `/fallback/with-body`;
     // Build query parameters
@@ -139,7 +141,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     }
   }
 
-  async getFallbackWithBody(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetFallbackWithBodyResponse200> {
+  async getFallbackWithBody(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetFallbackWithBodyResponse200> {
     const response = await this.getFallbackWithBodyRaw(initOverrides);
     return await response.value() as GetFallbackWithBodyResponse200;
   }

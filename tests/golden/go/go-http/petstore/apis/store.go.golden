@@ -153,7 +153,8 @@ func (d *PlaceOrderUnexpected) Body() []byte {
 }
 
 // PlaceOrder — Place an order for a pet
-func (a *StoreAPI) PlaceOrder(ctx context.Context, body *models.Order) (*PlaceOrderResponse, error) {
+func (a *StoreAPI) PlaceOrder(ctx context.Context,
+	body *models.Order) (*PlaceOrderResponse, error) {
 	path := "/store/order"
 	var bodyReader io.Reader
 	if body != nil {

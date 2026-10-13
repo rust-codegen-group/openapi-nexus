@@ -67,7 +67,7 @@ func (d *SendOptionalPartsUnexpected) Body() []byte {
 
 // SendOptionalParts calls POST /multipart/optional.
 func (a *MultipartAPI) SendOptionalParts(ctx context.Context,
-body *models.SendOptionalPartsMultipartRequestBody) (*SendOptionalPartsResponse, error) {
+	body *models.SendOptionalPartsMultipartRequestBody) (*SendOptionalPartsResponse, error) {
 	path := "/multipart/optional"
 	var bodyReader io.Reader
 	var multipartContentType string
@@ -224,7 +224,7 @@ func (d *SendTextFieldsUnexpected) Body() []byte {
 
 // SendTextFields calls POST /multipart/text-only.
 func (a *MultipartAPI) SendTextFields(ctx context.Context,
-body *models.SendTextFieldsMultipartRequestBody) (*SendTextFieldsResponse, error) {
+	body *models.SendTextFieldsMultipartRequestBody) (*SendTextFieldsResponse, error) {
 	path := "/multipart/text-only"
 	var bodyReader io.Reader
 	var multipartContentType string

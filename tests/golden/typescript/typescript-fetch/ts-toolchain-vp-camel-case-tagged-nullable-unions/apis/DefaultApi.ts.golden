@@ -45,7 +45,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createFooEnvelopeRaw(requestParameters: ApiCreateFooEnvelopeRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateFooEnvelopeRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateFooEnvelopeRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -89,7 +89,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createFooEnvelope(requestParameters: ApiCreateFooEnvelopeRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<FooEnvelope> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<FooEnvelope> {
     const response = await this.createFooEnvelopeRaw(requestParameters, initOverrides);
     return await response.value() as FooEnvelope;
   }

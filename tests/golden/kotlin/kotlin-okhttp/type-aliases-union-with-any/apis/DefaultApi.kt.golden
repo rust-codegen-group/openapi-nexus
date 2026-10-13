@@ -18,7 +18,7 @@ import okhttp3.Response
  * TestUnionWithAnyResponse carries the response from testUnionWithAny.
  */
 data class TestUnionWithAnyResponse(val statusCode: Int, val raw: Response,
-val status200: Config? = null) {
+    val status200: Config? = null) {
 }
 
 sealed interface TestUnionWithAnyExceptionDetail {

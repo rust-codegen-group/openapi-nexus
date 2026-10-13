@@ -1,5 +1,6 @@
 //! Shared structured runtime emission for Rust generators.
 
+use crate::generators::type_application;
 use sigil_stitch::code_block::CodeBlock;
 use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::prelude::sigil_quote;
@@ -11,7 +12,7 @@ use sigil_stitch::spec::fun_spec::FunSpec;
 use sigil_stitch::spec::modifiers::{TypeKind, Visibility};
 use sigil_stitch::spec::parameter_spec::ParameterSpec;
 use sigil_stitch::spec::type_spec::TypeSpec;
-use sigil_stitch::spec::where_spec::TypeParamSpec;
+use sigil_stitch::spec::where_spec::GenericParamSpec;
 use sigil_stitch::type_name::TypeName;
 
 pub(crate) fn render_api_call_error(
@@ -29,14 +30,14 @@ pub(crate) fn render_api_call_error(
 }
 
 fn api_call_http_error(response_headers_type: TypeName) -> Result<TypeSpec, SigilStitchError> {
-    let api_error_of_t = TypeName::generic(
+    let api_error_of_t = type_application(
         TypeName::primitive("ApiError"),
         vec![TypeName::primitive("T")],
     );
     let from_api_error = FunSpec::builder("from_api_error")
-        .add_type_param(TypeParamSpec::new("T"))
+        .add_generic_param(GenericParamSpec::single("T")?)
         .add_param(ParameterSpec::of("error", api_error_of_t))
-        .returns(TypeName::primitive("Self"))
+        .returns(vec![TypeName::primitive("Self")])
         .body(sigil_quote!(RustLang {
             Self {
                 status_code: error.status_code,
@@ -54,7 +55,7 @@ fn api_call_http_error(response_headers_type: TypeName) -> Result<TypeSpec, Sigi
         .add_field(
             FieldSpec::builder(
                 "raw_body",
-                TypeName::generic(TypeName::primitive("Vec"), vec![TypeName::primitive("u8")]),
+                type_application(TypeName::primitive("Vec"), vec![TypeName::primitive("u8")]),
             )
             .build()?,
         )
@@ -71,10 +72,10 @@ fn api_call_http_error(response_headers_type: TypeName) -> Result<TypeSpec, Sigi
 
 fn api_call_error_kind() -> Result<TypeSpec, SigilStitchError> {
     let http = EnumVariantSpec::builder("Http")
-        .associated_type(TypeName::primitive("ApiCallHttpError"))
+        .positional_payload(TypeName::primitive("ApiCallHttpError"))
         .build()?;
     let runtime = EnumVariantSpec::builder("Runtime")
-        .associated_type(TypeName::primitive("Error"))
+        .positional_payload(TypeName::primitive("Error"))
         .build()?;
 
     TypeSpec::builder("ApiCallErrorKind", TypeKind::Enum)
@@ -85,15 +86,15 @@ fn api_call_error_kind() -> Result<TypeSpec, SigilStitchError> {
 }
 
 fn api_call_error_inner() -> Result<TypeSpec, SigilStitchError> {
-    let api_error_of_t = TypeName::generic(
+    let api_error_of_t = type_application(
         TypeName::primitive("ApiError"),
         vec![TypeName::primitive("T")],
     );
     let from_api_error = FunSpec::builder("from_api_error")
-        .add_type_param(TypeParamSpec::new("T"))
+        .add_generic_param(GenericParamSpec::single("T")?)
         .add_param(ParameterSpec::of("operation_id", operation_id_type()))
         .add_param(ParameterSpec::of("error", api_error_of_t))
-        .returns(TypeName::primitive("Self"))
+        .returns(vec![TypeName::primitive("Self")])
         .body(
             sigil_quote!(RustLang {
                 Self {
@@ -110,7 +111,7 @@ fn api_call_error_inner() -> Result<TypeSpec, SigilStitchError> {
     let from_runtime_error = FunSpec::builder("from_runtime_error")
         .add_param(ParameterSpec::of("operation_id", operation_id_type()))
         .add_param(ParameterSpec::of("error", TypeName::primitive("Error")))
-        .returns(TypeName::primitive("Self"))
+        .returns(vec![TypeName::primitive("Self")])
         .body(
             sigil_quote!(RustLang {
                 Self {
@@ -136,7 +137,7 @@ fn api_call_error_inner() -> Result<TypeSpec, SigilStitchError> {
 
 fn api_call_error(response_headers_type: TypeName) -> Result<TypeSpec, SigilStitchError> {
     let static_str = operation_id_type();
-    let api_error_of_t = TypeName::generic(
+    let api_error_of_t = type_application(
         TypeName::primitive("ApiError"),
         vec![TypeName::primitive("T")],
     );
@@ -146,10 +147,10 @@ fn api_call_error(response_headers_type: TypeName) -> Result<TypeSpec, SigilStit
 
     let from_api_error = FunSpec::builder("from_api_error")
         .visibility(Visibility::PublicCrate)
-        .add_type_param(TypeParamSpec::new("T"))
+        .add_generic_param(GenericParamSpec::single("T")?)
         .add_param(ParameterSpec::of("operation_id", static_str.clone()))
         .add_param(ParameterSpec::of("error", api_error_of_t))
-        .returns(TypeName::primitive("Self"))
+        .returns(vec![TypeName::primitive("Self")])
         .body(
             sigil_quote!(RustLang {
                 Self {
@@ -166,7 +167,7 @@ fn api_call_error(response_headers_type: TypeName) -> Result<TypeSpec, SigilStit
         .visibility(Visibility::PublicCrate)
         .add_param(ParameterSpec::of("operation_id", static_str.clone()))
         .add_param(ParameterSpec::of("error", TypeName::primitive("Error")))
-        .returns(TypeName::primitive("Self"))
+        .returns(vec![TypeName::primitive("Self")])
         .body(
             sigil_quote!(RustLang {
                 Self {
@@ -185,14 +186,14 @@ fn api_call_error(response_headers_type: TypeName) -> Result<TypeSpec, SigilStit
             "Operation identifier, generated from the HTTP method and path when OpenAPI omits one.",
         )
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
-        .returns(static_str)
+        .returns(vec![static_str])
         .body(sigil_quote!(RustLang { self.inner.operation_id })?)
         .build()?;
     let status_code = FunSpec::builder("status_code")
         .visibility(Visibility::Public)
         .doc("HTTP response status, if the operation reached the server and received an error response.")
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
-        .returns(optional_status)
+        .returns(vec![optional_status])
         .body(
             sigil_quote!(RustLang {
                 match &self.inner.kind {
@@ -206,7 +207,7 @@ fn api_call_error(response_headers_type: TypeName) -> Result<TypeSpec, SigilStit
         .visibility(Visibility::Public)
         .doc("Native HTTP response headers, if an error response was received.")
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
-        .returns(optional_headers)
+        .returns(vec![optional_headers])
         .body(sigil_quote!(RustLang {
             match &self.inner.kind {
                 ApiCallErrorKind::Http(error) => Some(&error.headers),
@@ -218,7 +219,7 @@ fn api_call_error(response_headers_type: TypeName) -> Result<TypeSpec, SigilStit
         .visibility(Visibility::Public)
         .doc("Raw HTTP response body, if an error response was received.")
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
-        .returns(optional_body)
+        .returns(vec![optional_body])
         .body(sigil_quote!(RustLang {
             match &self.inner.kind {
                 ApiCallErrorKind::Http(error) => Some(&error.raw_body),
@@ -246,7 +247,7 @@ fn operation_id_type() -> TypeName {
 }
 
 fn api_call_error_inner_type() -> TypeName {
-    TypeName::generic(
+    type_application(
         TypeName::primitive("Box"),
         vec![TypeName::primitive("ApiCallErrorInner")],
     )

@@ -23,9 +23,9 @@ pub(super) fn build_header_accessors(
             FunSpec::builder(&method_name)
                 .annotate(AnnotationSpec::new("property"))
                 .add_param(ParameterSpec::of("self", TypeName::primitive("")))
-                .returns(TypeName::optional(TypeName::primitive(header_type(
+                .returns(vec![TypeName::optional(TypeName::primitive(header_type(
                     header.value_kind,
-                ))))
+                )))])
                 .body(header_accessor_body(header, headers_optional))
                 .build()
                 .expect("Python response header accessor builds")

@@ -20,7 +20,7 @@ public class DeleteTestResourceResponse {
     private final DeleteTestResourceResponse status200;
 
     public DeleteTestResourceResponse(int statusCode, Response raw,
-    DeleteTestResourceResponse status200) {
+        DeleteTestResourceResponse status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

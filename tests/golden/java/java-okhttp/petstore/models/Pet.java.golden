@@ -22,7 +22,7 @@ public class Pet {
     private List<Tag> tags;
 
     public Pet(Category category, Long id, String name, List<String> photoUrls, PetStatus status,
-    List<Tag> tags) {
+        List<Tag> tags) {
         this.category = category;
         this.id = id;
         this.name = name;

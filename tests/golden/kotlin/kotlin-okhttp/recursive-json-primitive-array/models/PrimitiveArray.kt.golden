@@ -10,6 +10,7 @@ import com.google.gson.annotations.SerializedName
 /**
  * Arrays with primitive items should remain unchanged
  */
-data class PrimitiveArray(@SerializedName("number_items") val numberItems: List<Int>,
-@SerializedName("string_items") val stringItems: List<String>) {
+data class PrimitiveArray(@field:SerializedName("number_items")
+    val numberItems: List<Int>, @field:SerializedName("string_items")
+    val stringItems: List<String>) {
 }

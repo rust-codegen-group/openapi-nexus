@@ -10,5 +10,6 @@ import com.google.gson.annotations.SerializedName
 /**
  * Object with array that can be empty
  */
-data class EmptyArrayTest(@SerializedName("empty_items") val emptyItems: List<EmptyArrayTestEmptyItemsItem>) {
+data class EmptyArrayTest(@field:SerializedName("empty_items")
+    val emptyItems: List<EmptyArrayTestEmptyItemsItem>) {
 }
