@@ -21,7 +21,7 @@ public class Order {
     private OrderStatus status;
 
     public Order(Boolean complete, Long id, Long petId, Integer quantity, String shipDate,
-    OrderStatus status) {
+        OrderStatus status) {
         this.complete = complete;
         this.id = id;
         this.petId = petId;

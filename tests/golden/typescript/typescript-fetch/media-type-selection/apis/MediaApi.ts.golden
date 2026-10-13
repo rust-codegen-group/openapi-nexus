@@ -143,7 +143,7 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
   }
 
   async sendJsonPreferredRaw(requestParameters: ApiSendJsonPreferredRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<SendJsonPreferredRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendJsonPreferredRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -187,13 +187,14 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
   }
 
   async sendJsonPreferred(requestParameters: ApiSendJsonPreferredRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
     const response = await this.sendJsonPreferredRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async sendParameterizedMultipartRaw(requestParameters: ApiSendParameterizedMultipartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<SendParameterizedMultipartRawResponse> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<SendParameterizedMultipartRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -251,13 +252,13 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
   }
 
   async sendParameterizedMultipart(requestParameters: ApiSendParameterizedMultipartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
     const response = await this.sendParameterizedMultipartRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async sendVendorJsonRaw(requestParameters: ApiSendVendorJsonRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<SendVendorJsonRawResponse> {
+    | InitOverrideFunction): Promise<SendVendorJsonRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -301,12 +302,13 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
   }
 
   async sendVendorJson(requestParameters: ApiSendVendorJsonRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.sendVendorJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async getOctetPreferredRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetOctetPreferredRawResponse> {
+  async getOctetPreferredRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetOctetPreferredRawResponse> {
     // Build path with path parameters
     const urlPath = `/response/octet-before-xml`;
     // Build query parameters
@@ -345,7 +347,8 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     return await response.value() as Blob;
   }
 
-  async getTextPreferredRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetTextPreferredRawResponse> {
+  async getTextPreferredRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetTextPreferredRawResponse> {
     // Build path with path parameters
     const urlPath = `/response/text-before-xml`;
     // Build query parameters
@@ -384,7 +387,8 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     return await response.value() as string;
   }
 
-  async getVendorJsonRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetVendorJsonRawResponse> {
+  async getVendorJsonRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetVendorJsonRawResponse> {
     // Build path with path parameters
     const urlPath = `/response/vendor-json`;
     // Build query parameters

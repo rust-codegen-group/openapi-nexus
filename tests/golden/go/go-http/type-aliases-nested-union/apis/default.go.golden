@@ -63,7 +63,8 @@ func (d *TestNestedUnionUnexpected) Body() []byte {
 }
 
 // TestNestedUnion — Test endpoint with nested union type
-func (a *DefaultAPI) TestNestedUnion(ctx context.Context, body *models.Foo) (*TestNestedUnionResponse, error) {
+func (a *DefaultAPI) TestNestedUnion(ctx context.Context,
+	body *models.Foo) (*TestNestedUnionResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

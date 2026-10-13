@@ -14,7 +14,7 @@ public class DeeplyNestedInlineLevelOneLevelTwo {
     private Integer levelTwoField;
 
     public DeeplyNestedInlineLevelOneLevelTwo(DeeplyNestedInlineLevelOneLevelTwoLevelThree levelThree,
-    Integer levelTwoField) {
+        Integer levelTwoField) {
         this.levelThree = levelThree;
         this.levelTwoField = levelTwoField;
     }

@@ -19,6 +19,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::EmissionError;
 use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
 use crate::generators::request_inputs::{RequestInputPlan, request_input_for_operation};
 use crate::generators::response_headers::{
@@ -44,14 +45,15 @@ use sigil_stitch::type_name::TypeName;
 
 const APIS_PACKAGE: &str = "apis";
 const RENDER_WIDTH: usize = 100;
+type StitchResult<T> = Result<T, sigil_stitch::error::SigilStitchError>;
 
 /// Generate every API file from the IR.
-pub fn generate_api_files(
+pub(crate) fn generate_api_files(
     ir: &IrSpec,
     module_path: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, EmissionError> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
@@ -62,7 +64,8 @@ pub fn generate_api_files(
         } else {
             format!("{stem}.go")
         };
-        let body = emit_api_file(tag, ops, ir, module_path, request_inputs);
+        let body = emit_api_file(tag, ops, ir, module_path, request_inputs)
+            .map_err(|source| EmissionError::api("Go", &format!("{tag} API"), source))?;
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -94,7 +97,7 @@ fn emit_api_file(
     ir: &IrSpec,
     module_path: &str,
     request_inputs: &RequestInputPlan,
-) -> String {
+) -> Result<String, sigil_stitch::error::SigilStitchError> {
     let struct_name = format!("{}API", tag.to_pascal_case());
 
     // Pre-plan each operation so we can build specs from the plans.
@@ -106,11 +109,11 @@ fn emit_api_file(
     let filename = format!("{}.go", tag.to_snake_case());
     let mut fb = FileSpec::builder(&filename)
         // Package header
-        .header(package_header())
+        .header(package_header()?)
         // API struct type
-        .add_type(build_api_struct(&struct_name, module_path))
+        .add_type(build_api_struct(&struct_name, module_path)?)
         // Constructor function
-        .add_function(build_constructor(&struct_name, module_path));
+        .add_function(build_constructor(&struct_name, module_path)?);
 
     // Body-level imports: packages used inside CodeBlock method bodies that
     // sigil can't infer from structural TypeName references.
@@ -120,23 +123,23 @@ fn emit_api_file(
 
     // For each operation: response struct + method
     for plan in &plans {
-        fb = fb.add_type(build_response_struct(plan, module_path));
+        fb = fb.add_type(build_response_struct(plan, module_path)?);
         for accessor in
-            build_go_header_accessors(&plan.response_type, "r.Raw.Header", &plan.success_headers)
+            build_go_header_accessors(&plan.response_type, "r.Raw.Header", &plan.success_headers)?
         {
             fb = fb.add_function(accessor);
         }
-        fb = fb.add_code(build_error_types_block(plan));
-        for accessor in build_go_header_accessors(&plan.error_type, "r.Header", &plan.error_headers)
+        fb = fb.add_code(build_error_types_block(plan)?);
+        for accessor in
+            build_go_header_accessors(&plan.error_type, "r.Header", &plan.error_headers)?
         {
             fb = fb.add_function(accessor);
         }
-        fb = fb.add_function(build_operation_fun(&struct_name, plan));
+        fb = fb.add_function(build_operation_fun(&struct_name, plan)?);
     }
 
-    let file = fb.build().expect("FileSpec builds for API file");
+    let file = fb.build()?;
     file.render(RENDER_WIDTH)
-        .expect("FileSpec renders for API file")
 }
 
 // ---------------------------------------------------------------------------
@@ -326,56 +329,48 @@ fn is_stringish_primitive(t: &IrTypeExpr) -> bool {
 // ---------------------------------------------------------------------------
 
 /// Build a `package apis` header block.
-fn package_header() -> CodeBlock {
+fn package_header() -> StitchResult<CodeBlock> {
     sigil_quote!(GoLang {
         package $L(APIS_PACKAGE)
     })
-    .expect("package header builds")
 }
 
 /// Build the API struct: `type {Name}API struct { client *runtime.Client }`
-fn build_api_struct(struct_name: &str, module_path: &str) -> TypeSpec {
+fn build_api_struct(struct_name: &str, module_path: &str) -> StitchResult<TypeSpec> {
     let runtime_client_ty = TypeName::importable(&format!("{module_path}/runtime"), "Client");
 
     TypeSpec::builder(struct_name, TypeKind::Struct)
         .doc(&format!(
             "{struct_name} groups operations under the corresponding tag."
         ))
-        .add_field(
-            FieldSpec::builder("client", TypeName::pointer(runtime_client_ty))
-                .build()
-                .expect("client field builds"),
-        )
+        .add_field(FieldSpec::builder("client", TypeName::pointer(runtime_client_ty)).build()?)
         .build()
-        .expect("API struct TypeSpec builds")
 }
 
 /// Build the constructor: `func New{Name}(client *runtime.Client) *{Name} { ... }`
-fn build_constructor(struct_name: &str, module_path: &str) -> FunSpec {
+fn build_constructor(struct_name: &str, module_path: &str) -> StitchResult<FunSpec> {
     let runtime_client_ty = TypeName::importable(&format!("{module_path}/runtime"), "Client");
     let func_name = format!("New{struct_name}");
 
     let body = sigil_quote!(GoLang {
         return &$N(struct_name){client: client};
-    })
-    .expect("constructor body builds");
+    })?;
 
     FunSpec::builder(&func_name)
         .doc(&format!(
             "New{struct_name} constructs a {struct_name} bound to client."
         ))
-        .add_param(
-            ParameterSpec::new("client", TypeName::pointer(runtime_client_ty))
-                .expect("param builds"),
-        )
-        .returns(TypeName::pointer(TypeName::primitive(struct_name)))
+        .add_param(ParameterSpec::new(
+            "client",
+            TypeName::pointer(runtime_client_ty),
+        )?)
+        .returns(vec![TypeName::pointer(TypeName::primitive(struct_name))])
         .body(body)
         .build()
-        .expect("constructor FunSpec builds")
 }
 
 /// Build the response struct for an operation.
-fn build_response_struct(plan: &OpPlan<'_>, module_path: &str) -> TypeSpec {
+fn build_response_struct(plan: &OpPlan<'_>, module_path: &str) -> StitchResult<TypeSpec> {
     let _ = module_path;
 
     // Raw *http.Response
@@ -387,17 +382,9 @@ fn build_response_struct(plan: &OpPlan<'_>, module_path: &str) -> TypeSpec {
             plan.response_type
         ))
         // StatusCode int
-        .add_field(
-            FieldSpec::builder("StatusCode", TypeName::primitive("int"))
-                .build()
-                .expect("StatusCode field builds"),
-        )
+        .add_field(FieldSpec::builder("StatusCode", TypeName::primitive("int")).build()?)
         // Raw *http.Response
-        .add_field(
-            FieldSpec::builder("Raw", TypeName::pointer(http_response_ty))
-                .build()
-                .expect("Raw field builds"),
-        );
+        .add_field(FieldSpec::builder("Raw", TypeName::pointer(http_response_ty)).build()?);
 
     // Typed response payload fields
     let mut seen: BTreeSet<String> = BTreeSet::new();
@@ -406,21 +393,17 @@ fn build_response_struct(plan: &OpPlan<'_>, module_path: &str) -> TypeSpec {
             continue;
         }
         let type_name = pointerize_type_name(&tr.go_type);
-        tb = tb.add_field(
-            FieldSpec::builder(&tr.field_name, type_name)
-                .build()
-                .expect("response payload field builds"),
-        );
+        tb = tb.add_field(FieldSpec::builder(&tr.field_name, type_name).build()?);
     }
 
-    tb.build().expect("response struct TypeSpec builds")
+    tb.build()
 }
 
 fn build_go_header_accessors(
     receiver_type: &str,
     headers_expr: &str,
     headers: &[ResponseHeaderPlan],
-) -> Vec<FunSpec> {
+) -> StitchResult<Vec<FunSpec>> {
     let method_names = unique_response_header_accessor_names(headers, |wire_name| {
         let mut base = wire_name.to_pascal_case();
         if base.is_empty() || base.starts_with(|character: char| character.is_ascii_digit()) {
@@ -433,21 +416,20 @@ fn build_go_header_accessors(
         .zip(method_names)
         .map(|(header, method_name)| {
             FunSpec::builder(&method_name)
-                .receiver(
-                    ParameterSpec::new("r", TypeName::pointer(TypeName::primitive(receiver_type)))
-                        .expect("Go response header receiver builds"),
-                )
-                .returns(TypeName::tuple(vec![
+                .receiver(ParameterSpec::new(
+                    "r",
+                    TypeName::pointer(TypeName::primitive(receiver_type)),
+                )?)
+                .returns(vec![
                     TypeName::primitive(go_header_type(header.value_kind)),
                     TypeName::primitive("bool"),
-                ]))
+                ])
                 .body(go_header_accessor_body(
                     header.value_kind,
                     headers_expr,
                     &header.wire_name,
-                ))
+                )?)
                 .build()
-                .expect("Go response header accessor builds")
         })
         .collect()
 }
@@ -456,7 +438,7 @@ fn go_header_accessor_body(
     kind: ResponseHeaderValueKind,
     headers_expr: &str,
     wire_name: &str,
-) -> CodeBlock {
+) -> StitchResult<CodeBlock> {
     let number_pattern = r"^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$";
     match kind {
         ResponseHeaderValueKind::String => sigil_quote!(GoLang {
@@ -501,7 +483,6 @@ fn go_header_accessor_body(
             }
         }),
     }
-    .expect("Go response header accessor body builds")
 }
 
 fn go_header_type(kind: ResponseHeaderValueKind) -> &'static str {
@@ -513,7 +494,7 @@ fn go_header_type(kind: ResponseHeaderValueKind) -> &'static str {
     }
 }
 
-fn build_error_types_block(plan: &OpPlan<'_>) -> CodeBlock {
+fn build_error_types_block(plan: &OpPlan<'_>) -> StitchResult<CodeBlock> {
     let mut cb = CodeBlock::builder();
     let detail_interface = format!("{}Detail", plan.error_type);
     cb.add(
@@ -581,11 +562,11 @@ fn build_error_types_block(plan: &OpPlan<'_>) -> CodeBlock {
         (),
     );
 
-    cb.build().expect("error types block builds")
+    cb.build()
 }
 
 /// Build a FunSpec for an operation method.
-fn build_operation_fun(struct_name: &str, plan: &OpPlan<'_>) -> FunSpec {
+fn build_operation_fun(struct_name: &str, plan: &OpPlan<'_>) -> StitchResult<FunSpec> {
     let OpPlan {
         op,
         method_name,
@@ -613,14 +594,14 @@ fn build_operation_fun(struct_name: &str, plan: &OpPlan<'_>) -> FunSpec {
     }
 
     // Receiver: (a *{StructName})
-    fb = fb.receiver(
-        ParameterSpec::new("a", TypeName::pointer(TypeName::primitive(struct_name)))
-            .expect("receiver builds"),
-    );
+    fb = fb.receiver(ParameterSpec::new(
+        "a",
+        TypeName::pointer(TypeName::primitive(struct_name)),
+    )?);
 
     // Parameters: ctx context.Context, then path/query/header params, then body
     let context_ty = TypeName::importable("context", "Context");
-    fb = fb.add_param(ParameterSpec::new("ctx", context_ty).expect("ctx param builds"));
+    fb = fb.add_param(ParameterSpec::new("ctx", context_ty)?);
 
     for p in plan
         .path_params
@@ -629,21 +610,23 @@ fn build_operation_fun(struct_name: &str, plan: &OpPlan<'_>) -> FunSpec {
         .chain(&plan.header_params)
     {
         let type_name = TypeName::raw(&p.go_type);
-        fb = fb.add_param(ParameterSpec::new(&p.var_name, type_name).expect("param builds"));
+        fb = fb.add_param(ParameterSpec::new(&p.var_name, type_name)?);
     }
     if let Some(body) = &plan.body {
         let type_name = TypeName::raw(&body.go_type);
-        fb =
-            fb.add_param(ParameterSpec::new(&body.var_name, type_name).expect("body param builds"));
+        fb = fb.add_param(ParameterSpec::new(&body.var_name, type_name)?);
     }
 
-    // Return type: (*{Response}, error)
-    fb = fb.returns(TypeName::raw(&format!("(*{response_type}, error)")));
+    // Return slots stay structured so sigil-stitch can lower imports and aliases.
+    fb = fb.returns(vec![
+        TypeName::pointer(TypeName::primitive(response_type)),
+        TypeName::primitive("error"),
+    ]);
 
     // Body
-    fb = fb.body(emit_method_body(plan));
+    fb = fb.body(emit_method_body(plan)?);
 
-    fb.build().expect("operation FunSpec builds")
+    fb.build()
 }
 
 // ---------------------------------------------------------------------------
@@ -908,7 +891,7 @@ fn unique_name(desired: &str, used: &mut HashSet<String>) -> String {
 // Method body emission (CodeBlock)
 // ---------------------------------------------------------------------------
 
-fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
+fn emit_method_body(plan: &OpPlan<'_>) -> StitchResult<CodeBlock> {
     let OpPlan {
         op,
         response_type,
@@ -922,18 +905,18 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     let mut cb = CodeBlock::builder();
 
     // Path.
-    cb.add_code(path_init(&op.path));
+    cb.add_code(path_init(&op.path)?);
     for p in path_params {
         let placeholder = format!("{{{}}}", p.param.name);
         let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
         let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
-        cb.add_code(path_replace(&placeholder, &stringified));
+        cb.add_code(path_replace(&placeholder, &stringified)?);
     }
 
     // Query.
     let has_query = !query_params.is_empty();
     if has_query {
-        cb.add_code(query_init());
+        cb.add_code(query_init()?);
         for p in query_params {
             let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
             let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
@@ -942,43 +925,45 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 &p.var_name,
                 &p.param.name,
                 &stringified,
-            ));
+            )?);
         }
     }
 
     // Body.
     if let Some(body) = body {
-        cb.add_code(body_reader_decl());
+        cb.add_code(body_reader_decl()?);
         match body.encoding {
             BodyEncoding::Multipart => {
-                cb.add_code(multipart_content_type_decl());
+                cb.add_code(multipart_content_type_decl()?);
                 if let Some(parts) = &body.multipart_parts {
                     emit_multipart_body(&mut cb, body, parts);
                 } else {
-                    cb.add_code(return_unsupported_multipart_request_body());
+                    cb.add_code(return_unsupported_multipart_request_body()?);
                 }
             }
             BodyEncoding::Json => {
                 cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-                cb.add_code(json_marshal_body(&body.var_name));
+                cb.add_code(json_marshal_body(&body.var_name)?);
                 cb.begin_control_flow("if err != nil", ());
-                cb.add_code(return_marshal_body_error());
+                cb.add_code(return_marshal_body_error()?);
                 cb.end_control_flow();
-                cb.add_code(body_reader_bytes_buffer());
+                cb.add_code(body_reader_bytes_buffer()?);
                 cb.end_control_flow();
             }
             BodyEncoding::TextPlain => {
                 cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-                cb.add_code(body_reader_string_pointer(&body.var_name));
+                cb.add_code(body_reader_string_pointer(&body.var_name)?);
                 cb.end_control_flow();
             }
             BodyEncoding::OctetStream => {
                 cb.begin_control_flow(&format!("if {} != nil", body.var_name), ());
-                cb.add_code(body_reader_bytes(&body.var_name));
+                cb.add_code(body_reader_bytes(&body.var_name)?);
                 cb.end_control_flow();
             }
             BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
-                cb.add_code(return_unsupported_request_body_media_type(&body.media_type));
+                cb.add_code(return_unsupported_request_body_media_type(
+                    &body.media_type,
+                )?);
             }
         }
     }
@@ -988,12 +973,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         &op.method.to_uppercase(),
         has_query,
         body.is_some(),
-    ));
+    )?);
     cb.begin_control_flow("if err != nil", ());
-    cb.add_code(return_nil_err());
+    cb.add_code(return_nil_err()?);
     cb.end_control_flow();
-
-    // Headers.
     for p in header_params {
         let value_expr = deref_if_pointer(&p.var_name, p.is_pointer);
         let stringified = render_value_as_string(&value_expr, &p.param.type_expr);
@@ -1011,29 +994,29 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             cb.add_code(set_header(
                 &go_string_literal("Content-Type"),
                 "multipartContentType",
-            ));
+            )?);
             cb.end_control_flow();
         } else {
             cb.add_code(set_header(
                 &go_string_literal("Content-Type"),
                 &go_string_literal(&body.media_type),
-            ));
+            )?);
         }
     }
     cb.add_code(set_header(
         &go_string_literal("Accept"),
         &go_string_literal("application/json"),
-    ));
+    )?);
 
     // Dispatch.
     cb.add_code(do_request());
     cb.begin_control_flow("if err != nil", ());
-    cb.add_code(return_nil_err());
+    cb.add_code(return_nil_err()?);
     cb.end_control_flow();
     cb.add_code(defer_body_close());
 
     cb.add_code(response_init(response_type));
-    cb.add_code(return_operation_error(plan));
+    cb.add_code(return_operation_error(plan)?);
 
     if !plan.typed_responses.is_empty() {
         cb.add_code(response_body_read());
@@ -1054,7 +1037,12 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
 
         cb.begin_control_flow("switch httpResp.StatusCode", ());
         for tr in &numeric_responses {
-            let code = tr.status.parse::<u16>().unwrap();
+            let code = tr.status.parse::<u16>().map_err(|_| {
+                sigil_stitch::error::SigilStitchError::Render {
+                    context: format!("Go response status {}", tr.status),
+                    message: "expected a numeric status after planning".into(),
+                }
+            })?;
             cb.add(&format!("case {code}:"), ());
             cb.add_line();
             cb.add(
@@ -1085,18 +1073,17 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     }
 
     cb.add_code(return_resp_nil());
-    cb.build().expect("method body builds")
+    cb.build()
 }
 
-fn path_init(path: &str) -> CodeBlock {
+fn path_init(path: &str) -> StitchResult<CodeBlock> {
     let stmt = format!("path := {}", go_string_literal(path));
     sigil_quote!(GoLang {
         $L(stmt.as_str())
     })
-    .expect("path init builds")
 }
 
-fn path_replace(placeholder: &str, value_expr: &str) -> CodeBlock {
+fn path_replace(placeholder: &str, value_expr: &str) -> StitchResult<CodeBlock> {
     let stmt = format!(
         "path = strings.Replace(path, {}, {value_expr}, 1)",
         go_string_literal(placeholder)
@@ -1104,18 +1091,21 @@ fn path_replace(placeholder: &str, value_expr: &str) -> CodeBlock {
     sigil_quote!(GoLang {
         $L(stmt.as_str())
     })
-    .expect("path replace builds")
 }
 
-fn query_init() -> CodeBlock {
+fn query_init() -> StitchResult<CodeBlock> {
     let stmt = "query := url.Values{}";
     sigil_quote!(GoLang {
         $L(stmt)
     })
-    .expect("query init builds")
 }
 
-fn query_set_guarded(always_set: bool, var_name: &str, name: &str, value_expr: &str) -> CodeBlock {
+fn query_set_guarded(
+    always_set: bool,
+    var_name: &str,
+    name: &str,
+    value_expr: &str,
+) -> StitchResult<CodeBlock> {
     let stmt = format!("query.Set({}, {value_expr})", go_string_literal(name));
     let guard = format!("{var_name} != nil");
     sigil_quote!(GoLang {
@@ -1127,77 +1117,67 @@ fn query_set_guarded(always_set: bool, var_name: &str, name: &str, value_expr: &
             }
         }
     })
-    .expect("guarded query set builds")
 }
 
-fn body_reader_decl() -> CodeBlock {
+fn body_reader_decl() -> StitchResult<CodeBlock> {
     sigil_quote!(GoLang {
         var bodyReader io.Reader
     })
-    .expect("body reader declaration builds")
 }
 
-fn multipart_content_type_decl() -> CodeBlock {
+fn multipart_content_type_decl() -> StitchResult<CodeBlock> {
     sigil_quote!(GoLang {
         var multipartContentType string
     })
-    .expect("multipart content type declaration builds")
 }
 
-fn return_unsupported_multipart_request_body() -> CodeBlock {
+fn return_unsupported_multipart_request_body() -> StitchResult<CodeBlock> {
     sigil_quote!(GoLang {
         return nil, fmt.Errorf("unsupported multipart request body: schema must be object-shaped")
     })
-    .expect("unsupported multipart request body builds")
 }
 
-fn json_marshal_body(body_var: &str) -> CodeBlock {
+fn json_marshal_body(body_var: &str) -> StitchResult<CodeBlock> {
     let stmt = format!("buf, err := json.Marshal({body_var})");
     sigil_quote!(GoLang {
         $L(stmt.as_str())
     })
-    .expect("JSON marshal body builds")
 }
 
-fn return_marshal_body_error() -> CodeBlock {
+fn return_marshal_body_error() -> StitchResult<CodeBlock> {
     sigil_quote!(GoLang {
         return nil, fmt.Errorf("marshal body: %w", err)
     })
-    .expect("marshal body error builds")
 }
 
-fn body_reader_bytes_buffer() -> CodeBlock {
+fn body_reader_bytes_buffer() -> StitchResult<CodeBlock> {
     sigil_quote!(GoLang {
         bodyReader = bytes.NewReader(buf)
     })
-    .expect("body reader bytes buffer builds")
 }
 
-fn body_reader_string_pointer(body_var: &str) -> CodeBlock {
+fn body_reader_string_pointer(body_var: &str) -> StitchResult<CodeBlock> {
     let stmt = format!("bodyReader = strings.NewReader(*{body_var})");
     sigil_quote!(GoLang {
         $L(stmt.as_str())
     })
-    .expect("body reader string pointer builds")
 }
 
-fn body_reader_bytes(body_var: &str) -> CodeBlock {
+fn body_reader_bytes(body_var: &str) -> StitchResult<CodeBlock> {
     let stmt = format!("bodyReader = bytes.NewReader({body_var})");
     sigil_quote!(GoLang {
         $L(stmt.as_str())
     })
-    .expect("body reader bytes builds")
 }
 
-fn return_unsupported_request_body_media_type(media_type: &str) -> CodeBlock {
+fn return_unsupported_request_body_media_type(media_type: &str) -> StitchResult<CodeBlock> {
     let message = format!("unsupported request body media type: {media_type}");
     sigil_quote!(GoLang {
         return nil, fmt.Errorf($S(message.as_str()))
     })
-    .expect("unsupported request body media type builds")
 }
 
-fn new_request_stmt(method: &str, has_query: bool, has_body: bool) -> CodeBlock {
+fn new_request_stmt(method: &str, has_query: bool, has_body: bool) -> StitchResult<CodeBlock> {
     let query_body_stmt =
         format!("req, err := a.client.NewRequest(ctx, {method:?}, path, query, bodyReader)");
     let query_no_body_stmt =
@@ -1217,24 +1197,20 @@ fn new_request_stmt(method: &str, has_query: bool, has_body: bool) -> CodeBlock 
             $L(no_query_no_body_stmt.as_str())
         }
     })
-    .expect("new request statement builds")
 }
 
-fn return_nil_err() -> CodeBlock {
+fn return_nil_err() -> StitchResult<CodeBlock> {
     sigil_quote!(GoLang {
         return nil, err
     })
-    .expect("return nil err builds")
 }
 
-fn set_header(name_expr: &str, value_expr: &str) -> CodeBlock {
+fn set_header(name_expr: &str, value_expr: &str) -> StitchResult<CodeBlock> {
     let stmt = format!("req.Header.Set({name_expr}, {value_expr})");
     sigil_quote!(GoLang {
         $L(stmt.as_str())
     })
-    .expect("set header builds")
 }
-
 fn set_header_guarded(
     always_set: bool,
     var_name: &str,
@@ -1292,7 +1268,7 @@ fn return_read_response_error() -> CodeBlock {
     .expect("read response error builds")
 }
 
-fn return_operation_error(plan: &OpPlan<'_>) -> CodeBlock {
+fn return_operation_error(plan: &OpPlan<'_>) -> StitchResult<CodeBlock> {
     let mut cb = CodeBlock::builder();
     cb.begin_control_flow(
         "if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300",
@@ -1313,11 +1289,16 @@ fn return_operation_error(plan: &OpPlan<'_>) -> CodeBlock {
         if !seen.insert(tr.field_name.clone()) {
             continue;
         }
-        let code = tr.status.parse::<u16>().unwrap();
+        let code = tr.status.parse::<u16>().map_err(|_| {
+            sigil_stitch::error::SigilStitchError::Render {
+                context: format!("Go error response status {}", tr.status),
+                message: "expected a numeric status after planning".into(),
+            }
+        })?;
         cb.add(&format!("case {code}:"), ());
         cb.add_line();
         cb.add("%>", ());
-        cb.add_code(return_operation_error_detail(plan, tr));
+        cb.add_code(return_operation_error_detail(plan, tr)?);
         cb.add("%<", ());
     }
 
@@ -1334,7 +1315,7 @@ fn return_operation_error(plan: &OpPlan<'_>) -> CodeBlock {
             &format!("if httpResp.StatusCode >= {low} && httpResp.StatusCode < {high}"),
             (),
         );
-        cb.add_code(return_operation_error_detail(plan, tr));
+        cb.add_code(return_operation_error_detail(plan, tr)?);
         cb.end_control_flow();
     }
     if let Some(default) = plan
@@ -1342,23 +1323,23 @@ fn return_operation_error(plan: &OpPlan<'_>) -> CodeBlock {
         .iter()
         .find(|tr| tr.status.eq_ignore_ascii_case("default"))
     {
-        cb.add_code(return_operation_error_detail(plan, default));
+        cb.add_code(return_operation_error_detail(plan, default)?);
     } else {
         let detail_name = format!("{}Unexpected", plan.method_name);
         cb.add_code(return_operation_error_expr(
             plan,
             &detail_name,
             "Unexpected",
-        ));
+        )?);
     }
     cb.add("%<", ());
 
     cb.end_control_flow();
     cb.end_control_flow();
-    cb.build().expect("operation error return builds")
+    cb.build()
 }
 
-fn return_operation_error_detail(plan: &OpPlan<'_>, tr: &TypedResponse) -> CodeBlock {
+fn return_operation_error_detail(plan: &OpPlan<'_>, tr: &TypedResponse) -> StitchResult<CodeBlock> {
     let detail_name = format!("{}{}", plan.method_name, tr.field_name);
     return_operation_error_expr(plan, &detail_name, &tr.field_name)
 }
@@ -1367,7 +1348,7 @@ fn return_operation_error_expr(
     plan: &OpPlan<'_>,
     detail_name: &str,
     _variant_name: &str,
-) -> CodeBlock {
+) -> StitchResult<CodeBlock> {
     let stmt = format!(
         "detail := &{detail_name}{{StatusCode: httpResp.StatusCode, Header: httpResp.Header.Clone(), RawBody: append([]byte(nil), responseBody...)}}"
     );
@@ -1379,7 +1360,6 @@ fn return_operation_error_expr(
         $L(stmt.as_str())
         $L(ret.as_str())
     })
-    .expect("operation error expr builds")
 }
 
 fn return_resp_nil() -> CodeBlock {

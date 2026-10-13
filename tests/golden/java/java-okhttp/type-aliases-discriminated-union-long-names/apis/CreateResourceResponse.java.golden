@@ -22,7 +22,7 @@ public class CreateResourceResponse {
     private final VeryLongDiscriminatedUnionTypeNameForTesting20260630 status200;
 
     public CreateResourceResponse(int statusCode, Response raw,
-    VeryLongDiscriminatedUnionTypeNameForTesting20260630 status200) {
+        VeryLongDiscriminatedUnionTypeNameForTesting20260630 status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

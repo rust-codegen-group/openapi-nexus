@@ -20,7 +20,7 @@ public class HandleExternallyTaggedResponse {
     private final ExternallyTaggedEnum status200;
 
     public HandleExternallyTaggedResponse(int statusCode, Response raw,
-    ExternallyTaggedEnum status200) {
+        ExternallyTaggedEnum status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

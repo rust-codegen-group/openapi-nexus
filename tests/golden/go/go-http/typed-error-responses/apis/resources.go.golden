@@ -366,7 +366,8 @@ func (r *CreateResourceError) XRateLimitRemainingHeader() (int64, bool) {
 }
 
 // CreateResource calls POST /resources.
-func (a *ResourcesAPI) CreateResource(ctx context.Context, body *models.CreateResourceRequest) (*CreateResourceResponse, error) {
+func (a *ResourcesAPI) CreateResource(ctx context.Context,
+	body *models.CreateResourceRequest) (*CreateResourceResponse, error) {
 	path := "/resources"
 	var bodyReader io.Reader
 	if body != nil {
@@ -491,7 +492,7 @@ func (d *CreateResourceWithWildcardSuccessUnexpected) Body() []byte {
 
 // CreateResourceWithWildcardSuccess calls POST /resources-with-wildcard-success.
 func (a *ResourcesAPI) CreateResourceWithWildcardSuccess(ctx context.Context,
-body *models.CreateResourceRequest) (*CreateResourceWithWildcardSuccessResponse, error) {
+	body *models.CreateResourceRequest) (*CreateResourceWithWildcardSuccessResponse, error) {
 	path := "/resources-with-wildcard-success"
 	var bodyReader io.Reader
 	if body != nil {

@@ -209,7 +209,8 @@ public class PetApi {
     /**
      * Update a pet in the store with form data
      */
-    public UpdatePetWithFormResponse updatePetWithForm(long petId, String name, String status) throws IOException {
+    public UpdatePetWithFormResponse updatePetWithForm(long petId, String name,
+        String status) throws IOException {
         String path = "/pet/{petId}".replace("{petId}", String.valueOf(petId));
         Map<String, String> query = new HashMap<>();
         if (name != null) {

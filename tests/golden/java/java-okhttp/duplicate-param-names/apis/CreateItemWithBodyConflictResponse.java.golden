@@ -20,7 +20,7 @@ public class CreateItemWithBodyConflictResponse {
     private final CreateItemWithBodyConflictResponse200 status200;
 
     public CreateItemWithBodyConflictResponse(int statusCode, Response raw,
-    CreateItemWithBodyConflictResponse200 status200) {
+        CreateItemWithBodyConflictResponse200 status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

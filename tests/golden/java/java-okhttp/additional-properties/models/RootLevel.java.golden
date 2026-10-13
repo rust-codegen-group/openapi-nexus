@@ -19,7 +19,7 @@ public class RootLevel {
     private String name;
 
     public RootLevel(Map<String, MiddleLevel> children, Map<String, Object> extras, long id,
-    Map<String, List<String>> labels, String name) {
+        Map<String, List<String>> labels, String name) {
         this.children = children;
         this.extras = extras;
         this.id = id;

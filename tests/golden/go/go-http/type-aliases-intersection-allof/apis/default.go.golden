@@ -63,7 +63,8 @@ func (d *TestIntersectionUnexpected) Body() []byte {
 }
 
 // TestIntersection — Test endpoint with intersection type
-func (a *DefaultAPI) TestIntersection(ctx context.Context, body *models.Foo) (*TestIntersectionResponse, error) {
+func (a *DefaultAPI) TestIntersection(ctx context.Context,
+	body *models.Foo) (*TestIntersectionResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

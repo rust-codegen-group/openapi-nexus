@@ -17,7 +17,7 @@ public class NamingConventionTestItemsArrayItem {
     private String itemSnakeCase;
 
     public NamingConventionTestItemsArrayItem(String itemPascalCase, String itemKebabCase,
-    String itemCamelCase, String itemSnakeCase) {
+        String itemCamelCase, String itemSnakeCase) {
         this.itemPascalCase = itemPascalCase;
         this.itemKebabCase = itemKebabCase;
         this.itemCamelCase = itemCamelCase;

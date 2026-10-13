@@ -223,7 +223,8 @@ class UserApi:
         """Creates list of users with given input array."""
         return self.create_users_with_list_input_with_http_info(body=body).data
 
-    def login_user_with_http_info(self, *, username: str | None = None, password: str | None = None) -> ApiResponse[None]:
+    def login_user_with_http_info(self, *, username: str | None = None, password: str
+        | None = None) -> ApiResponse[None]:
         """Logs user into the system, including HTTP response metadata."""
         path = "/user/login"
         params: dict[str, str] = {}

@@ -15,7 +15,8 @@ import okhttp3.Response
 /**
  * GetWidgetResponse carries the response from getWidget.
  */
-data class GetWidgetResponse(val statusCode: Int, val raw: Response, val status200: Widget? = null) {
+data class GetWidgetResponse(val statusCode: Int, val raw: Response,
+    val status200: Widget? = null) {
 }
 
 sealed interface GetWidgetExceptionDetail {

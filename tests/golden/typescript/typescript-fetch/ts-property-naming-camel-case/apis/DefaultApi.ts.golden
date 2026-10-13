@@ -78,7 +78,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getWithQueryParamsRaw(requestParameters: ApiGetWithQueryParamsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<GetWithQueryParamsRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<GetWithQueryParamsRawResponse> {
     if (requestParameters.snakeCaseParam === undefined || requestParameters.snakeCaseParam === null) {
       throw new RequiredError(
         'snakeCaseParam',
@@ -155,13 +155,13 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getWithQueryParams(requestParameters: ApiGetWithQueryParamsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
     const response = await this.getWithQueryParamsRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
   async testNamingConventionsRaw(requestParameters: ApiTestNamingConventionsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<TestNamingConventionsRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<TestNamingConventionsRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -205,7 +205,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async testNamingConventions(requestParameters: ApiTestNamingConventionsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<NamingConventionTest> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<NamingConventionTest> {
     const response = await this.testNamingConventionsRaw(requestParameters, initOverrides);
     return await response.value() as NamingConventionTest;
   }

@@ -9,5 +9,5 @@ package com.example.sdk.models
  * Metadata type
  */
 data class Bar(val field1: String? = null, val field2: String? = null, val field3: String? = null,
-val field4: String? = null) {
+    val field4: String? = null) {
 }

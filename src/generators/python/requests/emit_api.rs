@@ -28,6 +28,7 @@ use super::emit_models::{
 };
 use crate::generators::python::operation_names::plan_python_operation_names;
 use crate::generators::python::response_headers::build_header_accessors;
+use crate::generators::type_application;
 
 /// Generate every API file from the IR.
 pub fn generate_api_files(
@@ -88,7 +89,7 @@ fn emit_api_file(
     let init = FunSpec::builder("__init__")
         .add_param(ParameterSpec::of("self", TypeName::primitive("")))
         .add_param(ParameterSpec::of("client", client_type))
-        .returns(TypeName::primitive("None"))
+        .returns(vec![TypeName::primitive("None")])
         .body(init_body)
         .build()
         .expect("__init__ FunSpec builds");
@@ -161,7 +162,7 @@ fn emit_api_file(
 fn build_api_method(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> FunSpec {
     let mut fun = FunSpec::builder(&plan.method_name);
     fun = add_api_method_params(fun, plan);
-    fun = fun.returns(response_payload_type(plan));
+    fun = fun.returns(vec![response_payload_type(plan)]);
 
     if let Some(summary) = &plan.op.summary {
         fun = fun.doc(&format!("{summary}."));
@@ -203,7 +204,7 @@ fn build_api_method_with_http_info(
 ) -> FunSpec {
     let mut fun = FunSpec::builder(&plan.with_http_info_method_name);
     fun = add_api_method_params(fun, plan);
-    fun = fun.returns(response_metadata_type(plan));
+    fun = fun.returns(vec![response_metadata_type(plan)]);
 
     if let Some(summary) = &plan.op.summary {
         fun = fun.doc(&format!("{summary}, including HTTP response metadata."));
@@ -287,7 +288,7 @@ fn response_payload_type(plan: &OpPlan<'_>) -> TypeName {
 
 fn response_metadata_type(plan: &OpPlan<'_>) -> TypeName {
     if plan.success_headers.is_empty() {
-        TypeName::generic(
+        type_application(
             TypeName::importable("..runtime.client", "ApiResponse"),
             vec![response_payload_type(plan)],
         )
@@ -711,7 +712,7 @@ fn build_error_classes_block(plans: &[OpPlan<'_>], ir: &IrSpec) -> CodeBlock {
 
 fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
     let mut response =
-        TypeSpec::builder(&plan.response_type, TypeKind::Class).extends(TypeName::generic(
+        TypeSpec::builder(&plan.response_type, TypeKind::Class).extends(type_application(
             TypeName::importable("..runtime.client", "ApiResponse"),
             vec![response_payload_type(plan)],
         ));

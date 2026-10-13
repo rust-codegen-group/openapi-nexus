@@ -7,17 +7,19 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class NamingConventionTest(@SerializedName("PascalCaseField") val pascalCaseField: String? = null,
-@SerializedName("PascalCaseObject") val pascalCaseObject: NamingConventionTestPascalCaseObject? = null,
-@SerializedName("SCREAMING_NUMBER") val screamingNumber: Int? = null,
-@SerializedName("SCREAMING_SNAKE_CASE") val screamingSnakeCase: String? = null,
-val camelCaseField: String, val camelCaseNumber: Int? = null,
-val id: Int? = null,
-@SerializedName("items_array") val itemsArray: List<NamingConventionTestItemsArrayItem>? = null,
-@SerializedName("kebab-case-array") val kebabCaseArray: List<String>? = null,
-@SerializedName("kebab-case-field") val kebabCaseField: String? = null,
-@SerializedName("nested_object") val nestedObject: NamingConventionTestNestedObject? = null,
-val singleword: String,
-@SerializedName("snake_case_field") val snakeCaseField: String,
-@SerializedName("snake_case_number") val snakeCaseNumber: Int? = null) {
+data class NamingConventionTest(@field:SerializedName("PascalCaseField")
+    val pascalCaseField: String? = null, @field:SerializedName("PascalCaseObject")
+    val pascalCaseObject: NamingConventionTestPascalCaseObject? = null,
+    @field:SerializedName("SCREAMING_NUMBER")
+    val screamingNumber: Int? = null, @field:SerializedName("SCREAMING_SNAKE_CASE")
+    val screamingSnakeCase: String? = null, val camelCaseField: String,
+    val camelCaseNumber: Int? = null, val id: Int? = null, @field:SerializedName("items_array")
+    val itemsArray: List<NamingConventionTestItemsArrayItem>? = null,
+    @field:SerializedName("kebab-case-array")
+    val kebabCaseArray: List<String>? = null, @field:SerializedName("kebab-case-field")
+    val kebabCaseField: String? = null, @field:SerializedName("nested_object")
+    val nestedObject: NamingConventionTestNestedObject? = null, val singleword: String,
+    @field:SerializedName("snake_case_field")
+    val snakeCaseField: String, @field:SerializedName("snake_case_number")
+    val snakeCaseNumber: Int? = null) {
 }

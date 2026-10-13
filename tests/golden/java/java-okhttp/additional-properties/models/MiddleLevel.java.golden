@@ -18,7 +18,7 @@ public class MiddleLevel {
     private Map<String, LeafValue> nested;
 
     public MiddleLevel(int count, Map<String, Object> extras, Map<String, Boolean> flags,
-    String key, Map<String, LeafValue> nested) {
+        String key, Map<String, LeafValue> nested) {
         this.count = count;
         this.extras = extras;
         this.flags = flags;

@@ -141,7 +141,8 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleAdjacentlyTaggedRaw(requestParameters: ApiHandleAdjacentlyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<HandleAdjacentlyTaggedRawResponse> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<HandleAdjacentlyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -189,13 +190,14 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleAdjacentlyTagged(requestParameters: ApiHandleAdjacentlyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<AdjacentlyTaggedEnum> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<AdjacentlyTaggedEnum> {
     const response = await this.handleAdjacentlyTaggedRaw(requestParameters, initOverrides);
     return await response.value() as AdjacentlyTaggedEnum;
   }
 
   async handleExternallyTaggedRaw(requestParameters: ApiHandleExternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<HandleExternallyTaggedRawResponse> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<HandleExternallyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -243,13 +245,14 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleExternallyTagged(requestParameters: ApiHandleExternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<ExternallyTaggedEnum> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<ExternallyTaggedEnum> {
     const response = await this.handleExternallyTaggedRaw(requestParameters, initOverrides);
     return await response.value() as ExternallyTaggedEnum;
   }
 
   async handleInternallyTaggedRaw(requestParameters: ApiHandleInternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<HandleInternallyTaggedRawResponse> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<HandleInternallyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -297,13 +300,13 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleInternallyTagged(requestParameters: ApiHandleInternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<InternallyTaggedEnum> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<InternallyTaggedEnum> {
     const response = await this.handleInternallyTaggedRaw(requestParameters, initOverrides);
     return await response.value() as InternallyTaggedEnum;
   }
 
   async handleMixedRaw(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<HandleMixedRawResponse> {
+    | InitOverrideFunction): Promise<HandleMixedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -351,13 +354,13 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleMixed(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<MixedEnum> {
+    | InitOverrideFunction): Promise<MixedEnum> {
     const response = await this.handleMixedRaw(requestParameters, initOverrides);
     return await response.value() as MixedEnum;
   }
 
   async handleUntaggedRaw(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<HandleUntaggedRawResponse> {
+    | InitOverrideFunction): Promise<HandleUntaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -405,7 +408,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
   }
 
   async handleUntagged(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UntaggedEnum> {
+    | InitOverrideFunction): Promise<UntaggedEnum> {
     const response = await this.handleUntaggedRaw(requestParameters, initOverrides);
     return await response.value() as UntaggedEnum;
   }

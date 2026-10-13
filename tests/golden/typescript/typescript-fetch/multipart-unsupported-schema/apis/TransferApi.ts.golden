@@ -43,7 +43,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
   }
 
   async uploadRawMultipartRaw(requestParameters: ApiUploadRawMultipartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<UploadRawMultipartRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<UploadRawMultipartRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -86,7 +86,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
   }
 
   async uploadRawMultipart(requestParameters: ApiUploadRawMultipartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
     const response = await this.uploadRawMultipartRaw(requestParameters, initOverrides);
     return await response.value();
   }

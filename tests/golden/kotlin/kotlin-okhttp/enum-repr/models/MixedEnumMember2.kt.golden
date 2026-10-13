@@ -10,5 +10,6 @@ import com.google.gson.annotations.SerializedName
 /**
  * Tuple variant with VariantA payload
  */
-data class MixedEnumMember2(@SerializedName("VariantA") val variantA: VariantA) {
+data class MixedEnumMember2(@field:SerializedName("VariantA")
+    val variantA: VariantA) {
 }

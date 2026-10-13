@@ -15,8 +15,8 @@ public class ComplexArrayStructureItemsItem {
     private ComplexArrayStructureItemsItemNestedData nestedData;
 
     public ComplexArrayStructureItemsItem(String itemId,
-    ComplexArrayStructureItemsItemMetadata metadata,
-    ComplexArrayStructureItemsItemNestedData nestedData) {
+        ComplexArrayStructureItemsItemMetadata metadata,
+        ComplexArrayStructureItemsItemNestedData nestedData) {
         this.itemId = itemId;
         this.metadata = metadata;
         this.nestedData = nestedData;

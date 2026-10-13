@@ -10,10 +10,9 @@ import com.google.gson.annotations.SerializedName
 /**
  * User model
  */
-data class User(val email: String? = null,
-@SerializedName("first_name") val firstName: String? = null, val id: Long? = null,
-@SerializedName("last_name") val lastName: String? = null,
-val password: String? = null, val phone: String? = null,
-@SerializedName("user_status") val userStatus: Int? = null,
-val username: String? = null) {
+data class User(val email: String? = null, @field:SerializedName("first_name")
+    val firstName: String? = null, val id: Long? = null, @field:SerializedName("last_name")
+    val lastName: String? = null, val password: String? = null, val phone: String? = null,
+    @field:SerializedName("user_status")
+    val userStatus: Int? = null, val username: String? = null) {
 }

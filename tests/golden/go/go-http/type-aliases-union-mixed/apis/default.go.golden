@@ -63,7 +63,8 @@ func (d *TestMixedUnionUnexpected) Body() []byte {
 }
 
 // TestMixedUnion — Test endpoint with mixed union type
-func (a *DefaultAPI) TestMixedUnion(ctx context.Context, body *models.Foo) (*TestMixedUnionResponse, error) {
+func (a *DefaultAPI) TestMixedUnion(ctx context.Context,
+	body *models.Foo) (*TestMixedUnionResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

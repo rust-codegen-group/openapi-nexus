@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::EmissionError;
 use crate::generators::request_inputs::{
     RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
 };
@@ -19,20 +20,16 @@ use super::util::{
 
 const RENDER_WIDTH: usize = 100;
 
-pub fn generate_model_files(
+pub(crate) fn generate_model_files(
     ir: &IrSpec,
     package_name: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, EmissionError> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema, package_name).ok_or_else(|| {
-            format!(
-                "unsupported schema kind for {}: {:?}",
-                schema.name, schema.kind
-            )
-        })?;
+        let body = emit_model_body(schema, package_name)
+            .map_err(|error| EmissionError::model("Java", &schema.name, error))?;
         let class_name = schema.name.to_pascal_case();
         let filename = format!("{class_name}.java");
         let mut content = String::with_capacity(header.len() + body.len());
@@ -127,7 +124,7 @@ fn request_input_java_type(field: &RequestInputField) -> String {
     }
 }
 
-fn emit_model_body(schema: &IrSchema, package_name: &str) -> Option<String> {
+fn emit_model_body(schema: &IrSchema, package_name: &str) -> Result<String, SigilStitchError> {
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
@@ -136,25 +133,28 @@ fn emit_model_body(schema: &IrSchema, package_name: &str) -> Option<String> {
         IrSchemaKind::Intersection(i) => emit_intersection(schema, i, package_name),
         IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, package_name),
     }?;
-    file_spec.render(RENDER_WIDTH).ok()
+    file_spec.render(RENDER_WIDTH)
 }
 
-fn package_header(package_name: &str) -> CodeBlock {
+fn package_header(package_name: &str) -> Result<CodeBlock, SigilStitchError> {
     sigil_quote!(Java {
         package $L(format!("{package_name}.models"));
     })
-    .expect("package header builds")
 }
 
 // ---------------------------------------------------------------------------
 // Object -> class with private fields, constructor, getters
 // ---------------------------------------------------------------------------
 
-fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<FileSpec> {
+fn emit_object(
+    schema: &IrSchema,
+    obj: &IrObject,
+    package_name: &str,
+) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
 
     let mut file =
-        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name)?);
 
     let needs_serialized_name = obj.properties.iter().any(|(json_name, prop)| {
         let field_name = java_field_name(&prop.name);
@@ -210,9 +210,9 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<
         let mut fb = FieldSpec::builder(&field_name, TypeName::primitive(&type_str))
             .visibility(Visibility::Private);
         if let Some(ann) = annotation {
-            fb = fb.annotation(CodeBlock::of(&ann, ()).expect("annotation"));
+            fb = fb.annotation(CodeBlock::of(&ann, ())?);
         }
-        tb = tb.add_field(fb.build().expect("field"));
+        tb = tb.add_field(fb.build()?);
     }
 
     // Constructor
@@ -226,10 +226,10 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<
         } else {
             java_boxed_type_str(&prop.type_expr)
         };
-        ctor = ctor.add_param(
-            ParameterSpec::new(&format!("{type_str} {field_name}"), TypeName::primitive(""))
-                .expect("ctor param"),
-        );
+        ctor = ctor.add_param(ParameterSpec::new(
+            &field_name,
+            TypeName::primitive(&type_str),
+        )?);
     }
     let assignment_fields: Vec<String> = obj
         .properties
@@ -240,10 +240,9 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<
         $for(field_name in &assignment_fields) {
             this.$L(field_name.as_str()) = $L(field_name.as_str());
         }
-    })
-    .expect("ctor body");
+    })?;
     ctor = ctor.body(ctor_body);
-    tb = tb.add_method(ctor.build().expect("constructor"));
+    tb = tb.add_method(ctor.build()?);
 
     // Getters
     for (_json_name, prop) in &obj.properties {
@@ -258,19 +257,23 @@ fn emit_object(schema: &IrSchema, obj: &IrObject, package_name: &str) -> Option<
         tb = tb.add_method(build_java_getter(&getter_name, &type_str, &field_name));
     }
 
-    file = file.add_type(tb.build().ok()?);
-    file.build().ok()
+    file = file.add_type(tb.build()?);
+    file.build()
 }
 
 // ---------------------------------------------------------------------------
 // Enum -> enum with value field
 // ---------------------------------------------------------------------------
 
-fn emit_enum(schema: &IrSchema, en: &IrEnum, package_name: &str) -> Option<FileSpec> {
+fn emit_enum(
+    schema: &IrSchema,
+    en: &IrEnum,
+    package_name: &str,
+) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
 
     let mut file =
-        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name)?);
 
     if en.value_type == IrEnumValueType::Mixed {
         return emit_comment_class(&name, "Object", schema.description.as_deref(), package_name);
@@ -296,7 +299,10 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum, package_name: &str) -> Option<FileS
     for v in &en.values {
         let (variant_name, literal, raw_value) = match en.value_type {
             IrEnumValueType::String => {
-                let s = v.value.as_str()?;
+                let s = v.value.as_str().ok_or_else(|| SigilStitchError::Render {
+                    context: format!("enum {name} value"),
+                    message: "expected a string enum value".into(),
+                })?;
                 (
                     enum_variant_name(s),
                     format!("\"{}\"", escape_java_string(s)),
@@ -304,7 +310,13 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum, package_name: &str) -> Option<FileS
                 )
             }
             IrEnumValueType::Integer | IrEnumValueType::Number => {
-                let n = v.value.as_number()?;
+                let n = v
+                    .value
+                    .as_number()
+                    .ok_or_else(|| SigilStitchError::Render {
+                        context: format!("enum {name} value"),
+                        message: "expected a numeric enum value".into(),
+                    })?;
                 let variant = format!("N{}", n.to_string().replace(['-', '.'], "_"));
                 let s = n.to_string();
                 (variant, s.clone(), s)
@@ -319,15 +331,12 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum, package_name: &str) -> Option<FileS
         };
 
         let mut ev = EnumVariantSpec::builder(&variant_name);
-        ev = ev.annotation(
-            CodeBlock::of(
-                &format!("@SerializedName(\"{}\")", escape_java_string(&raw_value)),
-                (),
-            )
-            .expect("annotation"),
-        );
-        ev = ev.value(CodeBlock::of(&literal, ()).expect("literal"));
-        tb = tb.add_variant(ev.build().expect("enum variant"));
+        ev = ev.annotation(CodeBlock::of(
+            &format!("@SerializedName(\"{}\")", escape_java_string(&raw_value)),
+            (),
+        )?);
+        ev = ev.constructor_argument(CodeBlock::of(&literal, ())?);
+        tb = tb.add_variant(ev.build()?);
     }
 
     // Field, constructor, and getter (rendered after variants in Java)
@@ -335,32 +344,32 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum, package_name: &str) -> Option<FileS
         FieldSpec::builder("value", TypeName::primitive(base_type))
             .visibility(Visibility::Private)
             .is_readonly()
-            .build()
-            .expect("value field"),
+            .build()?,
     );
 
     let mut ctor = FunSpec::builder(&name);
-    ctor = ctor.add_param(
-        ParameterSpec::new("value", TypeName::primitive(base_type)).expect("ctor param"),
-    );
+    ctor = ctor.add_param(ParameterSpec::new("value", TypeName::primitive(base_type))?);
     let ctor_body = sigil_quote!(Java {
         this.value = value;
-    })
-    .expect("ctor body");
+    })?;
     ctor = ctor.body(ctor_body);
-    tb = tb.add_method(ctor.build().expect("enum ctor"));
+    tb = tb.add_method(ctor.build()?);
 
     tb = tb.add_method(build_java_getter("getValue", base_type, "value"));
 
-    file = file.add_type(tb.build().ok()?);
-    file.build().ok()
+    file = file.add_type(tb.build()?);
+    file.build()
 }
 
 // ---------------------------------------------------------------------------
 // Alias -> wrapper class (Java has no typealias)
 // ---------------------------------------------------------------------------
 
-fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr, package_name: &str) -> Option<FileSpec> {
+fn emit_alias(
+    schema: &IrSchema,
+    expr: &IrTypeExpr,
+    package_name: &str,
+) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
     let rhs = java_type_str(expr);
     emit_comment_class(&name, &rhs, schema.description.as_deref(), package_name)
@@ -370,7 +379,11 @@ fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr, package_name: &str) -> Optio
 // Union -> Object wrapper class
 // ---------------------------------------------------------------------------
 
-fn emit_union(schema: &IrSchema, _union: &IrUnion, package_name: &str) -> Option<FileSpec> {
+fn emit_union(
+    schema: &IrSchema,
+    _union: &IrUnion,
+    package_name: &str,
+) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
     emit_comment_class(&name, "Object", schema.description.as_deref(), package_name)
 }
@@ -383,10 +396,10 @@ fn emit_intersection(
     schema: &IrSchema,
     inter: &IrIntersection,
     package_name: &str,
-) -> Option<FileSpec> {
+) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
     let mut file =
-        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name)?);
 
     let mut tb = TypeSpec::builder(&name, TypeKind::Struct).visibility(Visibility::Public);
     if let Some(doc) = &schema.description {
@@ -420,8 +433,7 @@ fn emit_intersection(
         tb = tb.add_field(
             FieldSpec::builder(field_name, TypeName::primitive(member_type))
                 .visibility(Visibility::Private)
-                .build()
-                .expect("field"),
+                .build()?,
         );
     }
 
@@ -429,13 +441,10 @@ fn emit_intersection(
     let mut ctor = FunSpec::builder(&name);
     ctor = ctor.visibility(Visibility::Public);
     for (member_type, field_name) in &member_bindings {
-        ctor = ctor.add_param(
-            ParameterSpec::new(
-                &format!("{member_type} {field_name}"),
-                TypeName::primitive(""),
-            )
-            .expect("param"),
-        );
+        ctor = ctor.add_param(ParameterSpec::new(
+            field_name,
+            TypeName::primitive(member_type),
+        )?);
     }
     let assignment_fields: Vec<String> = member_bindings
         .iter()
@@ -445,10 +454,9 @@ fn emit_intersection(
         $for(field_name in &assignment_fields) {
             this.$L(field_name.as_str()) = $L(field_name.as_str());
         }
-    })
-    .expect("ctor body");
+    })?;
     ctor = ctor.body(ctor_body);
-    tb = tb.add_method(ctor.build().expect("constructor"));
+    tb = tb.add_method(ctor.build()?);
 
     // Getters
     for (member_type, field_name) in &member_bindings {
@@ -456,8 +464,8 @@ fn emit_intersection(
         tb = tb.add_method(build_java_getter(&getter_name, member_type, field_name));
     }
 
-    file = file.add_type(tb.build().ok()?);
-    file.build().ok()
+    file = file.add_type(tb.build()?);
+    file.build()
 }
 
 // ---------------------------------------------------------------------------
@@ -468,7 +476,7 @@ fn emit_tagged_union(
     schema: &IrSchema,
     tu: &IrTaggedUnion,
     package_name: &str,
-) -> Option<FileSpec> {
+) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
 
     if tu.variants.is_empty() {
@@ -502,9 +510,9 @@ fn emit_comment_class(
     underlying_type: &str,
     doc: Option<&str>,
     package_name: &str,
-) -> Option<FileSpec> {
+) -> Result<FileSpec, SigilStitchError> {
     let mut file =
-        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name));
+        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name)?);
     if underlying_type.contains("List<") {
         file = file.add_import(ImportSpec::named("java.util", "List"));
     }
@@ -521,29 +529,27 @@ fn emit_comment_class(
     tb = tb.add_field(
         FieldSpec::builder("value", TypeName::primitive(underlying_type))
             .visibility(Visibility::Private)
-            .build()
-            .expect("value field"),
+            .build()?,
     );
 
     // Constructor
     let mut ctor = FunSpec::builder(name);
     ctor = ctor.visibility(Visibility::Public);
-    ctor = ctor.add_param(
-        ParameterSpec::new(&format!("{underlying_type} value"), TypeName::primitive(""))
-            .expect("param"),
-    );
+    ctor = ctor.add_param(ParameterSpec::new(
+        "value",
+        TypeName::primitive(underlying_type),
+    )?);
     let body = sigil_quote!(Java {
         this.value = value;
-    })
-    .expect("ctor body");
+    })?;
     ctor = ctor.body(body);
-    tb = tb.add_method(ctor.build().expect("constructor"));
+    tb = tb.add_method(ctor.build()?);
 
     // Getter
     tb = tb.add_method(build_java_getter("getValue", underlying_type, "value"));
 
-    file = file.add_type(tb.build().ok()?);
-    file.build().ok()
+    file = file.add_type(tb.build()?);
+    file.build()
 }
 
 fn enum_variant_name(s: &str) -> String {
@@ -559,7 +565,7 @@ fn enum_variant_name(s: &str) -> String {
         .collect();
     if upper.is_empty() {
         "UNKNOWN".to_string()
-    } else if upper.chars().next().unwrap().is_ascii_digit() {
+    } else if upper.as_bytes().first().is_some_and(u8::is_ascii_digit) {
         format!("N{upper}")
     } else {
         upper

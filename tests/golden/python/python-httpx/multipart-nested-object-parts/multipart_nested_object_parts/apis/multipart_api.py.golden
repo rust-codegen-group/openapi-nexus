@@ -36,7 +36,8 @@ class MultipartApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def send_nested_object_part_with_http_info(self, *, body: SendNestedObjectPartMultipartRequestBody) -> ApiResponse[None]:
+    def send_nested_object_part_with_http_info(self, *,
+        body: SendNestedObjectPartMultipartRequestBody) -> ApiResponse[None]:
         path = "/multipart/nested-object"
         files: dict[str, object] = {}
         files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")

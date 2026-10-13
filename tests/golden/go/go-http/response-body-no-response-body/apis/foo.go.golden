@@ -92,7 +92,8 @@ func (d *UpdateFooBarUnexpected) Body() []byte {
 }
 
 // UpdateFooBar calls PATCH /foo/bar.
-func (a *FooAPI) UpdateFooBar(ctx context.Context, fooId string, body *models.FooRequest) (*UpdateFooBarResponse, error) {
+func (a *FooAPI) UpdateFooBar(ctx context.Context, fooId string,
+	body *models.FooRequest) (*UpdateFooBarResponse, error) {
 	path := "/foo/bar"
 	path = strings.Replace(path, "{foo_id}", fooId, 1)
 	var bodyReader io.Reader

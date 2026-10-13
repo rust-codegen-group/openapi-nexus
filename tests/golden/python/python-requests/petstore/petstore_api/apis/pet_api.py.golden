@@ -339,7 +339,8 @@ class PetApi:
         """Find pet by ID."""
         return self.get_pet_by_id_with_http_info(pet_id).data
 
-    def update_pet_with_form_with_http_info(self, pet_id: int, *, name: str | None = None, status: str | None = None) -> ApiResponse[Pet]:
+    def update_pet_with_form_with_http_info(self, pet_id: int, *, name: str | None = None, status: str
+        | None = None) -> ApiResponse[Pet]:
         """Update a pet in the store with form data, including HTTP response metadata."""
         path = f"/pet/{pet_id}"
         params: dict[str, str] = {}
@@ -378,7 +379,8 @@ class PetApi:
         """Delete a pet."""
         return self.delete_pet_with_http_info(pet_id).data
 
-    def upload_file_with_http_info(self, pet_id: int, *, additional_metadata: str | None = None) -> ApiResponse[UploadResponse]:
+    def upload_file_with_http_info(self, pet_id: int, *, additional_metadata: str
+        | None = None) -> ApiResponse[UploadResponse]:
         """Upload an image, including HTTP response metadata."""
         path = f"/pet/{pet_id}/uploadImage"
         params: dict[str, str] = {}

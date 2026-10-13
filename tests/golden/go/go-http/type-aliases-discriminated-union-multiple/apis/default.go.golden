@@ -66,7 +66,8 @@ func (d *CreateContainerUnexpected) Body() []byte {
 }
 
 // CreateContainer — Create container with ContainerKind discriminated union
-func (a *DefaultAPI) CreateContainer(ctx context.Context, body *models.ContainerKind) (*CreateContainerResponse, error) {
+func (a *DefaultAPI) CreateContainer(ctx context.Context,
+	body *models.ContainerKind) (*CreateContainerResponse, error) {
 	path := "/container"
 	var bodyReader io.Reader
 	if body != nil {
@@ -152,7 +153,8 @@ func (d *CreateVolumeUnexpected) Body() []byte {
 }
 
 // CreateVolume — Create volume with VolumeKind discriminated union
-func (a *DefaultAPI) CreateVolume(ctx context.Context, body *models.VolumeKind) (*CreateVolumeResponse, error) {
+func (a *DefaultAPI) CreateVolume(ctx context.Context,
+	body *models.VolumeKind) (*CreateVolumeResponse, error) {
 	path := "/volume"
 	var bodyReader io.Reader
 	if body != nil {

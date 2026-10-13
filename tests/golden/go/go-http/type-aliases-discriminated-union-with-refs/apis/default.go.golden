@@ -64,7 +64,8 @@ func (d *CreateContainerUnexpected) Body() []byte {
 }
 
 // CreateContainer — Create container with discriminated union
-func (a *DefaultAPI) CreateContainer(ctx context.Context, body *models.ContainerImage) (*CreateContainerResponse, error) {
+func (a *DefaultAPI) CreateContainer(ctx context.Context,
+	body *models.ContainerImage) (*CreateContainerResponse, error) {
 	path := "/container"
 	var bodyReader io.Reader
 	if body != nil {

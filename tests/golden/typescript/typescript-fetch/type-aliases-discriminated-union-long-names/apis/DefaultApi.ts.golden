@@ -46,7 +46,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createResourceRaw(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateResourceRawResponse> {
+    | InitOverrideFunction): Promise<CreateResourceRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -90,7 +90,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createResource(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VeryLongDiscriminatedUnionTypeNameForTesting20260630> {
+    | InitOverrideFunction): Promise<VeryLongDiscriminatedUnionTypeNameForTesting20260630> {
     const response = await this.createResourceRaw(requestParameters, initOverrides);
     return await response.value() as VeryLongDiscriminatedUnionTypeNameForTesting20260630;
   }

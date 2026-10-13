@@ -18,7 +18,7 @@ import okhttp3.Response
  * TestSimpleAliasResponse carries the response from testSimpleAlias.
  */
 data class TestSimpleAliasResponse(val statusCode: Int, val raw: Response,
-val status200: Foo? = null) {
+    val status200: Foo? = null) {
 }
 
 sealed interface TestSimpleAliasExceptionDetail {

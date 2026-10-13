@@ -15,7 +15,7 @@ public class InlineObjectWithArrayContainerData {
     private List<InlineObjectWithArrayContainerDataItemsItem> items;
 
     public InlineObjectWithArrayContainerData(String containerId,
-    List<InlineObjectWithArrayContainerDataItemsItem> items) {
+        List<InlineObjectWithArrayContainerDataItemsItem> items) {
         this.containerId = containerId;
         this.items = items;
     }

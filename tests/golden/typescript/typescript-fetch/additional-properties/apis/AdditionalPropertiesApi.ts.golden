@@ -93,7 +93,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   }
 
   async postLeafRaw(requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<PostLeafRawResponse> {
+    | InitOverrideFunction): Promise<PostLeafRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -141,13 +141,13 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   }
 
   async postLeaf(requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<LeafValue> {
+    | InitOverrideFunction): Promise<LeafValue> {
     const response = await this.postLeafRaw(requestParameters, initOverrides);
     return await response.value() as LeafValue;
   }
 
   async postMiddleRaw(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<PostMiddleRawResponse> {
+    | InitOverrideFunction): Promise<PostMiddleRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -195,13 +195,13 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   }
 
   async postMiddle(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<MiddleLevel> {
+    | InitOverrideFunction): Promise<MiddleLevel> {
     const response = await this.postMiddleRaw(requestParameters, initOverrides);
     return await response.value() as MiddleLevel;
   }
 
   async postRootRaw(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<PostRootRawResponse> {
+    | InitOverrideFunction): Promise<PostRootRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -249,7 +249,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
   }
 
   async postRoot(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<RootLevel> {
+    | InitOverrideFunction): Promise<RootLevel> {
     const response = await this.postRootRaw(requestParameters, initOverrides);
     return await response.value() as RootLevel;
   }

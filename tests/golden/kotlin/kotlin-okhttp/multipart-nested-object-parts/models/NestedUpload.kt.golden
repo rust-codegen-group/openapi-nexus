@@ -7,6 +7,7 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class NestedUpload(val file: ByteArray,
-@SerializedName("item_config") val itemConfig: ItemConfig) {
+data class NestedUpload(@field:SerializedName("file")
+    val file_: ByteArray, @field:SerializedName("item_config")
+    val itemConfig: ItemConfig) {
 }

@@ -36,13 +36,11 @@ public class NamingConventionTest {
     private Integer snakeCaseNumber;
 
     public NamingConventionTest(String pascalCaseField,
-    NamingConventionTestPascalCaseObject pascalCaseObject,
-    Integer screamingNumber, String screamingSnakeCase,
-    String camelCaseField, Integer camelCaseNumber, Integer id,
-    List<NamingConventionTestItemsArrayItem> itemsArray,
-    List<String> kebabCaseArray, String kebabCaseField,
-    NamingConventionTestNestedObject nestedObject, String singleword,
-    String snakeCaseField, Integer snakeCaseNumber) {
+        NamingConventionTestPascalCaseObject pascalCaseObject, Integer screamingNumber,
+        String screamingSnakeCase, String camelCaseField, Integer camelCaseNumber, Integer id,
+        List<NamingConventionTestItemsArrayItem> itemsArray, List<String> kebabCaseArray,
+        String kebabCaseField, NamingConventionTestNestedObject nestedObject, String singleword,
+        String snakeCaseField, Integer snakeCaseNumber) {
         this.pascalCaseField = pascalCaseField;
         this.pascalCaseObject = pascalCaseObject;
         this.screamingNumber = screamingNumber;

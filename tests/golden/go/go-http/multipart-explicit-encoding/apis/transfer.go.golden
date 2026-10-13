@@ -66,7 +66,7 @@ func (d *UploadEncodedAssetUnexpected) Body() []byte {
 
 // UploadEncodedAsset calls POST /uploads/encoded.
 func (a *TransferAPI) UploadEncodedAsset(ctx context.Context,
-body *models.UploadEncodedAssetMultipartRequestBody) (*UploadEncodedAssetResponse, error) {
+	body *models.UploadEncodedAssetMultipartRequestBody) (*UploadEncodedAssetResponse, error) {
 	path := "/uploads/encoded"
 	var bodyReader io.Reader
 	var multipartContentType string

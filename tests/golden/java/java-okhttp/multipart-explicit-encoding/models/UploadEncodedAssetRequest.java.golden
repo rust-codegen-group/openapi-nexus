@@ -12,7 +12,7 @@ public class UploadEncodedAssetRequest {
     private String purpose;
 
     public UploadEncodedAssetRequest(AuditAttributes audit, byte[] file, UploadAttributes metadata,
-    String purpose) {
+        String purpose) {
         this.audit = audit;
         this.file = file;
         this.metadata = metadata;

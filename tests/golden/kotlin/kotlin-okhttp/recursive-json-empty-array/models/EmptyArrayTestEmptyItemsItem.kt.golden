@@ -7,5 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class EmptyArrayTestEmptyItemsItem(@SerializedName("item_id") val itemId: String? = null) {
+data class EmptyArrayTestEmptyItemsItem(@field:SerializedName("item_id")
+    val itemId: String? = null) {
 }

@@ -1,6 +1,7 @@
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::prelude::TypeName;
 
+use crate::generators::type_application;
 use crate::ir::types::{IrPrimitive, IrTypeExpr};
 
 pub fn python_type_name(expr: &IrTypeExpr) -> TypeName {
@@ -33,11 +34,11 @@ fn python_type_name_with_current(expr: &IrTypeExpr, current_schema: Option<&str>
                 .collect::<Vec<_>>();
             TypeName::raw(&format!("Literal[{}]", members.join(", ")))
         }
-        IrTypeExpr::Array(inner) => TypeName::generic(
+        IrTypeExpr::Array(inner) => type_application(
             TypeName::primitive("list"),
             vec![python_type_name_with_current(inner, current_schema)],
         ),
-        IrTypeExpr::Map(inner) => TypeName::generic(
+        IrTypeExpr::Map(inner) => type_application(
             TypeName::primitive("dict"),
             vec![
                 TypeName::primitive("str"),

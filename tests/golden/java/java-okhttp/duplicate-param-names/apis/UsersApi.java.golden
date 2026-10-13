@@ -34,7 +34,8 @@ public class UsersApi {
     /**
      * Get user by ID with duplicate parameter names
      */
-    public GetUserByIdDuplicateResponse getUserByIdDuplicate(long id, Long id2, String id3) throws IOException {
+    public GetUserByIdDuplicateResponse getUserByIdDuplicate(long id, Long id2,
+        String id3) throws IOException {
         String path = "/users/{id}".replace("{id}", String.valueOf(id));
         Map<String, String> query = new HashMap<>();
         if (id2 != null) {

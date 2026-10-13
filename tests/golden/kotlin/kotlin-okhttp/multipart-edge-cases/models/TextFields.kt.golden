@@ -7,6 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class TextFields(val enabled: Boolean, val note: String,
-@SerializedName("retry_count") val retryCount: Int) {
+data class TextFields(val enabled: Boolean, val note: String, @field:SerializedName("retry_count")
+    val retryCount: Int) {
 }

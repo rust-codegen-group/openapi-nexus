@@ -74,7 +74,8 @@ func (d *GetItemsUnexpected) Body() []byte {
 }
 
 // GetItems — Get items with enum query parameter
-func (a *ItemsAPI) GetItems(ctx context.Context, status *models.FooStatus) (*GetItemsResponse, error) {
+func (a *ItemsAPI) GetItems(ctx context.Context,
+	status *models.FooStatus) (*GetItemsResponse, error) {
 	path := "/items"
 	query := url.Values{}
 	if status != nil {

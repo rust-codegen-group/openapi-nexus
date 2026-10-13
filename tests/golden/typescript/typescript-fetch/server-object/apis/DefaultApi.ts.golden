@@ -67,7 +67,8 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getAllUsersRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetAllUsersRawResponse> {
+  async getAllUsersRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetAllUsersRawResponse> {
     // Build path with path parameters
     const urlPath = `/users`;
     // Build query parameters
@@ -101,13 +102,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     }
   }
 
-  async getAllUsers(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetAllUsersResponse200Item[]> {
+  async getAllUsers(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetAllUsersResponse200Item[]> {
     const response = await this.getAllUsersRaw(initOverrides);
     return await response.value() as GetAllUsersResponse200Item[];
   }
 
   async getUserByIdRaw(requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetUserByIdRawResponse> {
+    | InitOverrideFunction): Promise<GetUserByIdRawResponse> {
     if (requestParameters.id === undefined || requestParameters.id === null) {
       throw new RequiredError(
         'id',
@@ -153,7 +155,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getUserById(requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetUserByIdResponse200> {
+    | InitOverrideFunction): Promise<GetUserByIdResponse200> {
     const response = await this.getUserByIdRaw(requestParameters, initOverrides);
     return await response.value() as GetUserByIdResponse200;
   }

@@ -57,7 +57,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
   }
 
   async getUserByIdDuplicateRaw(requestParameters: ApiGetUserByIdDuplicateRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateRawResponse> {
     if (requestParameters.pathId === undefined || requestParameters.pathId === null) {
       throw new RequiredError(
         'pathId',
@@ -113,7 +113,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
   }
 
   async getUserByIdDuplicate(requestParameters: ApiGetUserByIdDuplicateRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateResponse200> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateResponse200> {
     const response = await this.getUserByIdDuplicateRaw(requestParameters, initOverrides);
     return await response.value() as GetUserByIdDuplicateResponse200;
   }

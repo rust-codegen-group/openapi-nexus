@@ -7,6 +7,7 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class InlineObjectWithArrayContainerDataItemsItem(@SerializedName("item_name") val itemName: String? = null,
-@SerializedName("item_value") val itemValue: Double? = null) {
+data class InlineObjectWithArrayContainerDataItemsItem(@field:SerializedName("item_name")
+    val itemName: String? = null, @field:SerializedName("item_value")
+    val itemValue: Double? = null) {
 }

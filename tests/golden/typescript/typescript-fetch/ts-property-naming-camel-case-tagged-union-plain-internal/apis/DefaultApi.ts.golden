@@ -46,7 +46,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async previewRaw(requestParameters: ApiPreviewRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<PreviewRawResponse> {
+    | InitOverrideFunction): Promise<PreviewRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -90,7 +90,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async preview(requestParameters: ApiPreviewRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<PreviewRequest> {
+    | InitOverrideFunction): Promise<PreviewRequest> {
     const response = await this.previewRaw(requestParameters, initOverrides);
     return await response.value() as PreviewRequest;
   }

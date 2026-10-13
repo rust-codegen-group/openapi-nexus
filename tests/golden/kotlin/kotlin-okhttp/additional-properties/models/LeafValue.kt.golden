@@ -9,5 +9,5 @@ package com.example.sdk.models
  * Leaf level: fixed fields plus maps with string and integer value kinds.
  */
 data class LeafValue(val attributes: Map<String, String>, val extras: Map<String, Any>? = null,
-val label: String? = null, val scores: Map<String, Int>? = null, val value: Int) {
+    val label: String? = null, val scores: Map<String, Int>? = null, val value: Int) {
 }

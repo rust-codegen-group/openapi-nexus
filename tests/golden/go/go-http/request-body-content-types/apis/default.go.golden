@@ -130,7 +130,8 @@ func (d *PostFormUnexpected) Body() []byte {
 }
 
 // PostForm calls POST /form.
-func (a *DefaultAPI) PostForm(ctx context.Context, body *models.Payload) (*PostFormResponse, error) {
+func (a *DefaultAPI) PostForm(ctx context.Context,
+	body *models.Payload) (*PostFormResponse, error) {
 	path := "/form"
 	var bodyReader io.Reader
 	return nil, fmt.Errorf("unsupported request body media type: application/x-www-form-urlencoded")
@@ -195,7 +196,8 @@ func (d *PostJsonUnexpected) Body() []byte {
 }
 
 // PostJson calls POST /json.
-func (a *DefaultAPI) PostJson(ctx context.Context, body *models.Payload) (*PostJsonResponse, error) {
+func (a *DefaultAPI) PostJson(ctx context.Context,
+	body *models.Payload) (*PostJsonResponse, error) {
 	path := "/json"
 	var bodyReader io.Reader
 	if body != nil {
@@ -268,7 +270,8 @@ func (d *PostJsonOrXmlUnexpected) Body() []byte {
 // PostJsonOrXml calls POST /json-or-xml.
 //
 // Multiple media types declared — JSON should be preferred.
-func (a *DefaultAPI) PostJsonOrXml(ctx context.Context, body *models.Payload) (*PostJsonOrXmlResponse, error) {
+func (a *DefaultAPI) PostJsonOrXml(ctx context.Context,
+	body *models.Payload) (*PostJsonOrXmlResponse, error) {
 	path := "/json-or-xml"
 	var bodyReader io.Reader
 	if body != nil {
@@ -339,7 +342,8 @@ func (d *PatchMergeJsonUnexpected) Body() []byte {
 }
 
 // PatchMergeJson calls PATCH /merge-patch.
-func (a *DefaultAPI) PatchMergeJson(ctx context.Context, body *models.Payload) (*PatchMergeJsonResponse, error) {
+func (a *DefaultAPI) PatchMergeJson(ctx context.Context,
+	body *models.Payload) (*PatchMergeJsonResponse, error) {
 	path := "/merge-patch"
 	var bodyReader io.Reader
 	if body != nil {

@@ -63,7 +63,8 @@ func (d *TestComplexUnionUnexpected) Body() []byte {
 }
 
 // TestComplexUnion — Test endpoint with complex union type
-func (a *DefaultAPI) TestComplexUnion(ctx context.Context, body *models.Foo) (*TestComplexUnionResponse, error) {
+func (a *DefaultAPI) TestComplexUnion(ctx context.Context,
+	body *models.Foo) (*TestComplexUnionResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

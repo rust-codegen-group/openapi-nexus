@@ -66,7 +66,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createTestRaw(requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateTestRawResponse> {
+    | InitOverrideFunction): Promise<CreateTestRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -110,13 +110,13 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createTest(requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Baz> {
+    | InitOverrideFunction): Promise<Baz> {
     const response = await this.createTestRaw(requestParameters, initOverrides);
     return await response.value() as Baz;
   }
 
   async getTestRaw(requestParameters: ApiGetTestRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetTestRawResponse> {
+    | InitOverrideFunction): Promise<GetTestRawResponse> {
     if (requestParameters.id === undefined || requestParameters.id === null) {
       throw new RequiredError(
         'id',
@@ -158,7 +158,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async getTest(requestParameters: ApiGetTestRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Baz> {
+    | InitOverrideFunction): Promise<Baz> {
     const response = await this.getTestRaw(requestParameters, initOverrides);
     return await response.value() as Baz;
   }

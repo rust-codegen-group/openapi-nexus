@@ -7,8 +7,9 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class NamingConventionTestNestedObject(@SerializedName("NestedPascalCase") val nestedPascalCase: String? = null,
-@SerializedName("nested-kebab-case") val nestedKebabCase: String? = null,
-val nestedCamelCase: String? = null,
-@SerializedName("nested_snake_case") val nestedSnakeCase: String) {
+data class NamingConventionTestNestedObject(@field:SerializedName("NestedPascalCase")
+    val nestedPascalCase: String? = null, @field:SerializedName("nested-kebab-case")
+    val nestedKebabCase: String? = null, val nestedCamelCase: String? = null,
+    @field:SerializedName("nested_snake_case")
+    val nestedSnakeCase: String) {
 }

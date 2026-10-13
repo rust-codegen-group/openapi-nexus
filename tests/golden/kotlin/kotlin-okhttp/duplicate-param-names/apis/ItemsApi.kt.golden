@@ -18,7 +18,7 @@ import okhttp3.Response
  * CreateItemWithBodyConflictResponse carries the response from createItemWithBodyConflict.
  */
 data class CreateItemWithBodyConflictResponse(val statusCode: Int, val raw: Response,
-val status200: CreateItemWithBodyConflictResponse200? = null) {
+    val status200: CreateItemWithBodyConflictResponse200? = null) {
 }
 
 sealed interface CreateItemWithBodyConflictExceptionDetail {
@@ -69,7 +69,7 @@ class ItemsApi(private val client: ApiClient) {
      * Create item with body parameter conflict
      */
     fun createItemWithBodyConflict(itemId: String, body: String?,
-    body2: CreateItemWithBodyConflictRequest): CreateItemWithBodyConflictResponse {
+        body2: CreateItemWithBodyConflictRequest): CreateItemWithBodyConflictResponse {
         val path = "/items/{itemId}".replace("{itemId}", itemId)
         val query = mutableMapOf<String, String>()
         if (body != null) {

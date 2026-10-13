@@ -10,7 +10,7 @@ import com.example.sdk.runtime.UploadFile
 data class SendOptionalPartsMultipartRequestBody(
     val attributes: Attributes? = null,
     val enabled: Boolean? = null,
-    val file: UploadFile? = null,
+    val file_: UploadFile? = null,
     val retryCount: Int? = null,
     val title: String? = null,
 )

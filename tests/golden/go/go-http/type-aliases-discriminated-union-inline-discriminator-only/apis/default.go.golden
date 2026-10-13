@@ -72,7 +72,8 @@ func (d *CreateEventUnexpected) Body() []byte {
 }
 
 // CreateEvent — Create event with discriminated union
-func (a *DefaultAPI) CreateEvent(ctx context.Context, body *models.Event) (*CreateEventResponse, error) {
+func (a *DefaultAPI) CreateEvent(ctx context.Context,
+	body *models.Event) (*CreateEventResponse, error) {
 	path := "/event"
 	var bodyReader io.Reader
 	if body != nil {

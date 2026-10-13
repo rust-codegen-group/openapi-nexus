@@ -9,6 +9,5 @@ package com.example.sdk.models
  * Middle level: fixed fields plus maps with object ref and boolean value kinds.
  */
 data class MiddleLevel(val count: Int, val extras: Map<String, Any>? = null,
-val flags: Map<String, Boolean>? = null, val key: String,
-val nested: Map<String, LeafValue>) {
+    val flags: Map<String, Boolean>? = null, val key: String, val nested: Map<String, LeafValue>) {
 }

@@ -23,7 +23,7 @@ import okhttp3.Response
  * CreateResourceResponse carries the response from createResource.
  */
 data class CreateResourceResponse(val statusCode: Int, val raw: Response,
-val status200: Setup? = null) {
+    val status200: Setup? = null) {
 }
 
 sealed interface CreateResourceExceptionDetail {

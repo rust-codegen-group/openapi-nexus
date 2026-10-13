@@ -40,7 +40,8 @@ export class WidgetApi extends BaseAPI implements WidgetApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getWidgetRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetWidgetRawResponse> {
+  async getWidgetRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetWidgetRawResponse> {
     // Build path with path parameters
     const urlPath = `/widgets`;
     // Build query parameters

@@ -7,7 +7,8 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class ComplexArrayStructureItemsItem(@SerializedName("item_id") val itemId: String,
-val metadata: ComplexArrayStructureItemsItemMetadata? = null,
-@SerializedName("nested_data") val nestedData: ComplexArrayStructureItemsItemNestedData? = null) {
+data class ComplexArrayStructureItemsItem(@field:SerializedName("item_id")
+    val itemId: String, val metadata: ComplexArrayStructureItemsItemMetadata? = null,
+    @field:SerializedName("nested_data")
+    val nestedData: ComplexArrayStructureItemsItemNestedData? = null) {
 }

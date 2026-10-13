@@ -10,5 +10,6 @@ import com.google.gson.annotations.SerializedName
 /**
  * Object with optional array of inline objects
  */
-data class OptionalArrayOfInlineObjects(@SerializedName("optional_items") val optionalItems: List<OptionalArrayOfInlineObjectsOptionalItemsItem>? = null) {
+data class OptionalArrayOfInlineObjects(@field:SerializedName("optional_items")
+    val optionalItems: List<OptionalArrayOfInlineObjectsOptionalItemsItem>? = null) {
 }

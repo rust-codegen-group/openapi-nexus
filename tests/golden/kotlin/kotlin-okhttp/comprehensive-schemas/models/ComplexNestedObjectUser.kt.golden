@@ -6,5 +6,5 @@
 package com.example.sdk.models
 
 data class ComplexNestedObjectUser(val id: Int? = null,
-val profile: ComplexNestedObjectUserProfile? = null) {
+    val profile: ComplexNestedObjectUserProfile? = null) {
 }

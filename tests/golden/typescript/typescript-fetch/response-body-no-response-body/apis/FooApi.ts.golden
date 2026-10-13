@@ -47,7 +47,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
   }
 
   async updateFooBarRaw(requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UpdateFooBarRawResponse> {
+    | InitOverrideFunction): Promise<UpdateFooBarRawResponse> {
     if (requestParameters.fooId === undefined || requestParameters.fooId === null) {
       throw new RequiredError(
         'fooId',
@@ -106,7 +106,7 @@ export class FooApi extends BaseAPI implements FooApiInterface {
   }
 
   async updateFooBar(requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.updateFooBarRaw(requestParameters, initOverrides);
     return await response.value();
   }

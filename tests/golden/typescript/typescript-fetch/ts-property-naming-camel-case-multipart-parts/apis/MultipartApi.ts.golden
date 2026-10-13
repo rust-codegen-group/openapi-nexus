@@ -45,7 +45,7 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
   }
 
   async sendNestedObjectPartRaw(requestParameters: ApiSendNestedObjectPartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<SendNestedObjectPartRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendNestedObjectPartRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -101,7 +101,7 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
   }
 
   async sendNestedObjectPart(requestParameters: ApiSendNestedObjectPartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
     const response = await this.sendNestedObjectPartRaw(requestParameters, initOverrides);
     return await response.value();
   }

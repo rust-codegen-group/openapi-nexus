@@ -10,7 +10,8 @@ import com.google.gson.annotations.SerializedName
 /**
  * User profile model with snake_case properties
  */
-data class UserProfile(@SerializedName("bio_text") val bioText: String? = null,
-@SerializedName("display_name") val displayName: String? = null,
-@SerializedName("profile_id") val profileId: String) {
+data class UserProfile(@field:SerializedName("bio_text")
+    val bioText: String? = null, @field:SerializedName("display_name")
+    val displayName: String? = null, @field:SerializedName("profile_id")
+    val profileId: String) {
 }

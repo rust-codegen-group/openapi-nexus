@@ -65,7 +65,8 @@ func (d *CreateResourceUnexpected) Body() []byte {
 }
 
 // CreateResource — Create resource with discriminated union
-func (a *DefaultAPI) CreateResource(ctx context.Context, body *models.Resource) (*CreateResourceResponse, error) {
+func (a *DefaultAPI) CreateResource(ctx context.Context,
+	body *models.Resource) (*CreateResourceResponse, error) {
 	path := "/resource"
 	var bodyReader io.Reader
 	if body != nil {

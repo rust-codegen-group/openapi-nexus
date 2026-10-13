@@ -100,7 +100,7 @@ export class DeleteOrderError extends ResponseError {
 export interface StoreApiInterface {
   getInventoryRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetInventoryRawResponse>;
   getInventory: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Record<string,
-    number>>;
+number>>;
   placeOrderRaw: (requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PlaceOrderRawResponse>;
   placeOrder: (requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
   getOrderByIdRaw: (requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetOrderByIdRawResponse>;
@@ -117,7 +117,8 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getInventoryRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<GetInventoryRawResponse> {
+  async getInventoryRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<GetInventoryRawResponse> {
     // Build path with path parameters
     const urlPath = `/store/inventory`;
     // Build query parameters
@@ -144,7 +145,8 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<Record<string, number>> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<Record<string,
+    number>> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
@@ -152,13 +154,13 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   }
 
   async getInventory(initOverrides?: RequestInit | InitOverrideFunction): Promise<Record<string,
-        number>> {
+  number>> {
     const response = await this.getInventoryRaw(initOverrides);
     return await response.value() as Record<string, number>;
   }
 
   async placeOrderRaw(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<PlaceOrderRawResponse> {
+    | InitOverrideFunction): Promise<PlaceOrderRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -206,13 +208,13 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   }
 
   async placeOrder(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Order> {
+    | InitOverrideFunction): Promise<Order> {
     const response = await this.placeOrderRaw(requestParameters, initOverrides);
     return await response.value() as Order;
   }
 
   async getOrderByIdRaw(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<GetOrderByIdRawResponse> {
+    | InitOverrideFunction): Promise<GetOrderByIdRawResponse> {
     if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
       throw new RequiredError(
         'orderId',
@@ -262,13 +264,13 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   }
 
   async getOrderById(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Order> {
+    | InitOverrideFunction): Promise<Order> {
     const response = await this.getOrderByIdRaw(requestParameters, initOverrides);
     return await response.value() as Order;
   }
 
   async deleteOrderRaw(requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<DeleteOrderRawResponse> {
+    | InitOverrideFunction): Promise<DeleteOrderRawResponse> {
     if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
       throw new RequiredError(
         'orderId',
@@ -318,7 +320,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
   }
 
   async deleteOrder(requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<void> {
+    | InitOverrideFunction): Promise<void> {
     const response = await this.deleteOrderRaw(requestParameters, initOverrides);
     return await response.value();
   }

@@ -70,7 +70,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createContainerRaw(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateContainerRawResponse> {
+    | InitOverrideFunction): Promise<CreateContainerRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -114,13 +114,13 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createContainer(requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<ContainerKind> {
+    | InitOverrideFunction): Promise<ContainerKind> {
     const response = await this.createContainerRaw(requestParameters, initOverrides);
     return await response.value() as ContainerKind;
   }
 
   async createVolumeRaw(requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateVolumeRawResponse> {
+    | InitOverrideFunction): Promise<CreateVolumeRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -164,7 +164,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
   }
 
   async createVolume(requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<VolumeKind> {
+    | InitOverrideFunction): Promise<VolumeKind> {
     const response = await this.createVolumeRaw(requestParameters, initOverrides);
     return await response.value() as VolumeKind;
   }

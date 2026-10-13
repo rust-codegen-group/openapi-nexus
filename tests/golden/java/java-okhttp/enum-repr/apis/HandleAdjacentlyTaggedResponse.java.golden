@@ -20,7 +20,7 @@ public class HandleAdjacentlyTaggedResponse {
     private final AdjacentlyTaggedEnum status200;
 
     public HandleAdjacentlyTaggedResponse(int statusCode, Response raw,
-    AdjacentlyTaggedEnum status200) {
+        AdjacentlyTaggedEnum status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

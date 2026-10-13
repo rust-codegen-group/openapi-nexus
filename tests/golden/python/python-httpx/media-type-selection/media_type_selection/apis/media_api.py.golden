@@ -139,7 +139,8 @@ class MediaApi:
     def send_json_preferred(self, *, body: Payload) -> None:
         return self.send_json_preferred_with_http_info(body=body).data
 
-    def send_parameterized_multipart_with_http_info(self, *, body: SendParameterizedMultipartMultipartRequestBody) -> ApiResponse[None]:
+    def send_parameterized_multipart_with_http_info(self, *,
+        body: SendParameterizedMultipartMultipartRequestBody) -> ApiResponse[None]:
         path = "/request/parameterized-multipart"
         files: dict[str, object] = {}
         files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")

@@ -65,7 +65,7 @@ func (d *CreateTestResourceUnexpected) Body() []byte {
 
 // CreateTestResource calls POST /v1/api/test-resource.
 func (a *TestResourceAPI) CreateTestResource(ctx context.Context,
-body *models.CreateTestResourceRequest) (*CreateTestResourceResponse, error) {
+	body *models.CreateTestResourceRequest) (*CreateTestResourceResponse, error) {
 	path := "/v1/api/test-resource"
 	var bodyReader io.Reader
 	if body != nil {
@@ -181,7 +181,8 @@ func (d *DeleteTestResourceUnexpected) Body() []byte {
 }
 
 // DeleteTestResource calls DELETE /v1/api/test-resource/{resource_id}.
-func (a *TestResourceAPI) DeleteTestResource(ctx context.Context, resourceId string) (*DeleteTestResourceResponse, error) {
+func (a *TestResourceAPI) DeleteTestResource(ctx context.Context,
+	resourceId string) (*DeleteTestResourceResponse, error) {
 	path := "/v1/api/test-resource/{resource_id}"
 	path = strings.Replace(path, "{resource_id}", resourceId, 1)
 	req, err := a.client.NewRequest(ctx, "DELETE", path, nil, nil)

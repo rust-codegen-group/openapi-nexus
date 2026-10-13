@@ -8,7 +8,7 @@ package com.example.sdk.models
 import com.example.sdk.runtime.UploadFile
 
 data class UploadAssetMultipartRequestBody(
-    val file: UploadFile,
+    val file_: UploadFile,
     val metadata: UploadAttributes,
     val purpose: String,
 )

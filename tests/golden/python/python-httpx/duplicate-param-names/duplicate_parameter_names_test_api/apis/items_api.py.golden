@@ -43,7 +43,7 @@ class ItemsApi:
         self._client = client
 
     def create_item_with_body_conflict_with_http_info(self, item_id: str, *, body2: CreateItemWithBodyConflictRequest,
-    body: str | None = None) -> ApiResponse[CreateItemWithBodyConflictResponse200]:
+        body: str | None = None) -> ApiResponse[CreateItemWithBodyConflictResponse200]:
         """Create item with body parameter conflict, including HTTP response metadata."""
         path = f"/items/{item_id}"
         params: dict[str, str] = {}
@@ -62,6 +62,6 @@ class ItemsApi:
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
     def create_item_with_body_conflict(self, item_id: str, *, body2: CreateItemWithBodyConflictRequest, body: str
-    | None = None) -> CreateItemWithBodyConflictResponse200:
+        | None = None) -> CreateItemWithBodyConflictResponse200:
         """Create item with body parameter conflict."""
         return self.create_item_with_body_conflict_with_http_info(item_id, body2=body2, body=body).data

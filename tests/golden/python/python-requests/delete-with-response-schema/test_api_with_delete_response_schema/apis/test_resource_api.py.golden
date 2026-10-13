@@ -103,7 +103,8 @@ class TestResourceApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def create_test_resource_with_http_info(self, *, body: CreateTestResourceRequest) -> ApiResponse[CreateTestResourceResponse]:
+    def create_test_resource_with_http_info(self, *,
+        body: CreateTestResourceRequest) -> ApiResponse[CreateTestResourceResponse]:
         path = "/v1/api/test-resource"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"

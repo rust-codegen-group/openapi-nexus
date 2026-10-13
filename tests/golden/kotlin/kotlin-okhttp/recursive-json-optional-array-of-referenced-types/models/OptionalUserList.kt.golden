@@ -10,5 +10,6 @@ import com.google.gson.annotations.SerializedName
 /**
  * Object with optional array of User references
  */
-data class OptionalUserList(@SerializedName("optional_users") val optionalUsers: List<User>? = null) {
+data class OptionalUserList(@field:SerializedName("optional_users")
+    val optionalUsers: List<User>? = null) {
 }

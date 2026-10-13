@@ -7,5 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class NamingConventionTestPascalCaseObject(@SerializedName("nested_property") val nestedProperty: String? = null) {
+data class NamingConventionTestPascalCaseObject(@field:SerializedName("nested_property")
+    val nestedProperty: String? = null) {
 }

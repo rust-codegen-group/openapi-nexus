@@ -10,5 +10,6 @@ import com.google.gson.annotations.SerializedName
 /**
  * Inline object containing array of inline objects
  */
-data class InlineObjectWithArray(@SerializedName("container_data") val containerData: InlineObjectWithArrayContainerData) {
+data class InlineObjectWithArray(@field:SerializedName("container_data")
+    val containerData: InlineObjectWithArrayContainerData) {
 }

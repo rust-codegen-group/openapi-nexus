@@ -59,7 +59,8 @@ func (d *UploadRawMultipartUnexpected) Body() []byte {
 }
 
 // UploadRawMultipart calls POST /uploads/raw.
-func (a *TransferAPI) UploadRawMultipart(ctx context.Context, body []byte) (*UploadRawMultipartResponse, error) {
+func (a *TransferAPI) UploadRawMultipart(ctx context.Context,
+	body []byte) (*UploadRawMultipartResponse, error) {
 	path := "/uploads/raw"
 	var bodyReader io.Reader
 	var multipartContentType string

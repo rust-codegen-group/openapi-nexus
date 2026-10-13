@@ -7,6 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class ComplexArrayStructureItemsItemMetadata(@SerializedName("created_at") val createdAt: String? = null,
-val tags: List<String>? = null) {
+data class ComplexArrayStructureItemsItemMetadata(@field:SerializedName("created_at")
+    val createdAt: String? = null, val tags: List<String>? = null) {
 }

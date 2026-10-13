@@ -16,7 +16,7 @@ import okhttp3.Response
  * GetUserByIdDuplicateResponse carries the response from getUserByIdDuplicate.
  */
 data class GetUserByIdDuplicateResponse(val statusCode: Int, val raw: Response,
-val status200: GetUserByIdDuplicateResponse200? = null) {
+    val status200: GetUserByIdDuplicateResponse200? = null) {
 }
 
 sealed interface GetUserByIdDuplicateExceptionDetail {

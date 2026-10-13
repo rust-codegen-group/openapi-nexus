@@ -20,7 +20,7 @@ public class GetAllUsersResponse {
     private final List<GetAllUsersResponse200Item> status200;
 
     public GetAllUsersResponse(int statusCode, Response raw,
-    List<GetAllUsersResponse200Item> status200) {
+        List<GetAllUsersResponse200Item> status200) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

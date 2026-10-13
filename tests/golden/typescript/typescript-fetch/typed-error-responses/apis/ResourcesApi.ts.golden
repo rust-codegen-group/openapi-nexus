@@ -165,7 +165,8 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async checkNoSuccessBodyRaw(initOverrides?: RequestInit | InitOverrideFunction): Promise<CheckNoSuccessBodyRawResponse> {
+  async checkNoSuccessBodyRaw(initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<CheckNoSuccessBodyRawResponse> {
     // Build path with path parameters
     const urlPath = `/no-success-body`;
     // Build query parameters
@@ -209,7 +210,7 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
   }
 
   async createResourceRaw(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreateResourceRawResponse> {
+    | InitOverrideFunction): Promise<CreateResourceRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -281,13 +282,14 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
   }
 
   async createResource(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<CreatedResource> {
+    | InitOverrideFunction): Promise<CreatedResource> {
     const response = await this.createResourceRaw(requestParameters, initOverrides);
     return await response.value() as CreatedResource;
   }
 
   async createResourceWithWildcardSuccessRaw(requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateResourceWithWildcardSuccessRawResponse> {
+    initOverrides?: RequestInit
+    | InitOverrideFunction): Promise<CreateResourceWithWildcardSuccessRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -338,7 +340,7 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
   }
 
   async createResourceWithWildcardSuccess(requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreatedResource> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<CreatedResource> {
     const response = await this.createResourceWithWildcardSuccessRaw(requestParameters, initOverrides);
     return await response.value() as CreatedResource;
   }

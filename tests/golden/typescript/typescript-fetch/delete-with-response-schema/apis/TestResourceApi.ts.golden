@@ -74,7 +74,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   }
 
   async createTestResourceRaw(requestParameters: ApiCreateTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -118,13 +118,13 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   }
 
   async createTestResource(requestParameters: ApiCreateTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceResponse> {
     const response = await this.createTestResourceRaw(requestParameters, initOverrides);
     return await response.value() as CreateTestResourceResponse;
   }
 
   async deleteTestResourceRaw(requestParameters: ApiDeleteTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceRawResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceRawResponse> {
     if (requestParameters.resourceId === undefined || requestParameters.resourceId === null) {
       throw new RequiredError(
         'resourceId',
@@ -174,7 +174,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
   }
 
   async deleteTestResource(requestParameters: ApiDeleteTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceResponse> {
+    initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceResponse> {
     const response = await this.deleteTestResourceRaw(requestParameters, initOverrides);
     return await response.value() as DeleteTestResourceResponse;
   }

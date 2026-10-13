@@ -69,7 +69,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
   }
 
   async downloadAssetRaw(requestParameters: ApiDownloadAssetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<DownloadAssetRawResponse> {
+    | InitOverrideFunction): Promise<DownloadAssetRawResponse> {
     if (requestParameters.assetId === undefined || requestParameters.assetId === null) {
       throw new RequiredError(
         'assetId',
@@ -115,13 +115,13 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
   }
 
   async downloadAsset(requestParameters: ApiDownloadAssetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<Blob> {
+    | InitOverrideFunction): Promise<Blob> {
     const response = await this.downloadAssetRaw(requestParameters, initOverrides);
     return await response.value() as Blob;
   }
 
   async uploadAssetRaw(requestParameters: ApiUploadAssetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UploadAssetRawResponse> {
+    | InitOverrideFunction): Promise<UploadAssetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
@@ -184,7 +184,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
   }
 
   async uploadAsset(requestParameters: ApiUploadAssetRequest, initOverrides?: RequestInit
-  | InitOverrideFunction): Promise<UploadMetadata> {
+    | InitOverrideFunction): Promise<UploadMetadata> {
     const response = await this.uploadAssetRaw(requestParameters, initOverrides);
     return await response.value() as UploadMetadata;
   }

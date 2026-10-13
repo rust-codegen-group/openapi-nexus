@@ -63,7 +63,8 @@ func (d *TestSimpleAliasUnexpected) Body() []byte {
 }
 
 // TestSimpleAlias — Test endpoint with simple type alias
-func (a *DefaultAPI) TestSimpleAlias(ctx context.Context, body *models.Foo) (*TestSimpleAliasResponse, error) {
+func (a *DefaultAPI) TestSimpleAlias(ctx context.Context,
+	body *models.Foo) (*TestSimpleAliasResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

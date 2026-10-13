@@ -18,7 +18,7 @@ public class LeafValue {
     private int value;
 
     public LeafValue(Map<String, String> attributes, Map<String, Object> extras, String label,
-    Map<String, Integer> scores, int value) {
+        Map<String, Integer> scores, int value) {
         this.attributes = attributes;
         this.extras = extras;
         this.label = label;

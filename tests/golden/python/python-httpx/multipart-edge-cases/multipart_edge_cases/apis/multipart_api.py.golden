@@ -55,7 +55,8 @@ class MultipartApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def send_optional_parts_with_http_info(self, *, body: SendOptionalPartsMultipartRequestBody | None = None) -> ApiResponse[None]:
+    def send_optional_parts_with_http_info(self, *, body: SendOptionalPartsMultipartRequestBody
+        | None = None) -> ApiResponse[None]:
         path = "/multipart/optional"
         files: dict[str, object] = {}
         if body is not None:

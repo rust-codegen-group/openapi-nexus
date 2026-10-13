@@ -10,8 +10,11 @@ import com.google.gson.annotations.SerializedName
 /**
  * Object with all optional properties
  */
-data class AllOptionalProperties(@SerializedName("optional_array") val optionalArray: List<AllOptionalPropertiesOptionalArrayItem>? = null,
-@SerializedName("optional_inline") val optionalInline: AllOptionalPropertiesOptionalInline? = null,
-@SerializedName("optional_reference") val optionalReference: User? = null,
-@SerializedName("optional_string") val optionalString: String? = null) {
+data class AllOptionalProperties(@field:SerializedName("optional_array")
+    val optionalArray: List<AllOptionalPropertiesOptionalArrayItem>? = null,
+    @field:SerializedName("optional_inline")
+    val optionalInline: AllOptionalPropertiesOptionalInline? = null,
+    @field:SerializedName("optional_reference")
+    val optionalReference: User? = null, @field:SerializedName("optional_string")
+    val optionalString: String? = null) {
 }

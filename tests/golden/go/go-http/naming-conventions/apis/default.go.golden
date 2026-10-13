@@ -66,11 +66,9 @@ func (d *GetWithQueryParamsUnexpected) Body() []byte {
 
 // GetWithQueryParams — Get with query parameters
 func (a *DefaultAPI) GetWithQueryParams(ctx context.Context, snakeCaseParam string,
-snakeCaseNumber *int, kebabCaseParam *string,
-kebabCaseArray []string, pascalCaseParam *string,
-pascalCaseNumber *int, screamingSnakeCase *string,
-screamingNumber *int, camelCaseParam *string,
-camelCaseNumber *int, singleword *string, id *int) (*GetWithQueryParamsResponse, error) {
+	snakeCaseNumber *int, kebabCaseParam *string, kebabCaseArray []string, pascalCaseParam *string,
+	pascalCaseNumber *int, screamingSnakeCase *string, screamingNumber *int, camelCaseParam *string,
+	camelCaseNumber *int, singleword *string, id *int) (*GetWithQueryParamsResponse, error) {
 	path := "/test"
 	query := url.Values{}
 	query.Set("snake_case_param", snakeCaseParam)
@@ -166,7 +164,8 @@ func (d *TestNamingConventionsUnexpected) Body() []byte {
 }
 
 // TestNamingConventions — Test endpoint with various parameter naming conventions
-func (a *DefaultAPI) TestNamingConventions(ctx context.Context, body *models.NamingConventionTest) (*TestNamingConventionsResponse, error) {
+func (a *DefaultAPI) TestNamingConventions(ctx context.Context,
+	body *models.NamingConventionTest) (*TestNamingConventionsResponse, error) {
 	path := "/test"
 	var bodyReader io.Reader
 	if body != nil {

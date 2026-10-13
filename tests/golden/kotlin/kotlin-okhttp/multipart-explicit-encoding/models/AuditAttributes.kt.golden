@@ -7,6 +7,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class AuditAttributes(@SerializedName("request_id") val requestId: String,
-val reviewed: Boolean? = null) {
+data class AuditAttributes(@field:SerializedName("request_id")
+    val requestId: String, val reviewed: Boolean? = null) {
 }

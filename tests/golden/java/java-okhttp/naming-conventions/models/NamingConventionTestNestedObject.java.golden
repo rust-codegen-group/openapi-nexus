@@ -17,7 +17,7 @@ public class NamingConventionTestNestedObject {
     private String nestedSnakeCase;
 
     public NamingConventionTestNestedObject(String nestedPascalCase, String nestedKebabCase,
-    String nestedCamelCase, String nestedSnakeCase) {
+        String nestedCamelCase, String nestedSnakeCase) {
         this.nestedPascalCase = nestedPascalCase;
         this.nestedKebabCase = nestedKebabCase;
         this.nestedCamelCase = nestedCamelCase;

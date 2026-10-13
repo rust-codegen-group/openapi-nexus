@@ -26,7 +26,8 @@ import okhttp3.Response
 /**
  * CreateEventResponse carries the response from createEvent.
  */
-data class CreateEventResponse(val statusCode: Int, val raw: Response, val status200: Event? = null) {
+data class CreateEventResponse(val statusCode: Int, val raw: Response,
+    val status200: Event? = null) {
 }
 
 sealed interface CreateEventExceptionDetail {

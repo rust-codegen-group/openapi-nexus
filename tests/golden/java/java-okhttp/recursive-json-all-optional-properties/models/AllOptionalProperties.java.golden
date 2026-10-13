@@ -23,8 +23,8 @@ public class AllOptionalProperties {
     private String optionalString;
 
     public AllOptionalProperties(List<AllOptionalPropertiesOptionalArrayItem> optionalArray,
-    AllOptionalPropertiesOptionalInline optionalInline,
-    User optionalReference, String optionalString) {
+        AllOptionalPropertiesOptionalInline optionalInline, User optionalReference,
+        String optionalString) {
         this.optionalArray = optionalArray;
         this.optionalInline = optionalInline;
         this.optionalReference = optionalReference;

@@ -10,5 +10,6 @@ import com.google.gson.annotations.SerializedName
 /**
  * Response after creating a test resource
  */
-data class CreateTestResourceResponse(@SerializedName("resource_id") val resourceId: String) {
+data class CreateTestResourceResponse(@field:SerializedName("resource_id")
+    val resourceId: String) {
 }

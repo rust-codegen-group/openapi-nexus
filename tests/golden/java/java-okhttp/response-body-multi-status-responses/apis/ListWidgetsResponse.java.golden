@@ -20,7 +20,7 @@ public class ListWidgetsResponse {
     private final WidgetListPartial status206;
 
     public ListWidgetsResponse(int statusCode, Response raw, List<Widget> status200,
-    WidgetListPartial status206) {
+        WidgetListPartial status206) {
         this.statusCode = statusCode;
         this.raw = raw;
         this.status200 = status200;

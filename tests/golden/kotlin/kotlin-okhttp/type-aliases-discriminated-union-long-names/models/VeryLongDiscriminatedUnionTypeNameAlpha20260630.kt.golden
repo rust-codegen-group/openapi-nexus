@@ -9,5 +9,6 @@ package com.example.sdk.models
 
 import com.google.gson.annotations.SerializedName
 
-data class VeryLongDiscriminatedUnionTypeNameAlpha20260630(@SerializedName("alpha_field") val alphaField: String) {
+data class VeryLongDiscriminatedUnionTypeNameAlpha20260630(@field:SerializedName("alpha_field")
+    val alphaField: String) {
 }

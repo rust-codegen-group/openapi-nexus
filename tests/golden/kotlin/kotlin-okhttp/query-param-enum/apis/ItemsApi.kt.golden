@@ -16,7 +16,7 @@ import okhttp3.Response
  * GetItemsResponse carries the response from getItems.
  */
 data class GetItemsResponse(val statusCode: Int, val raw: Response,
-val status200: GetItemsResponse200? = null) {
+    val status200: GetItemsResponse200? = null) {
 }
 
 sealed interface GetItemsExceptionDetail {

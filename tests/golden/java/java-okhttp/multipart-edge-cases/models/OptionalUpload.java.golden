@@ -16,7 +16,7 @@ public class OptionalUpload {
     private String title;
 
     public OptionalUpload(Attributes attributes, Boolean enabled, byte[] file, Integer retryCount,
-    String title) {
+        String title) {
         this.attributes = attributes;
         this.enabled = enabled;
         this.file = file;
