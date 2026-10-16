@@ -8,7 +8,6 @@ package com.example.sdk.models
 import com.google.gson.annotations.SerializedName
 
 data class OptionalUpload(val attributes: Attributes? = null, val enabled: Boolean? = null,
-    @field:SerializedName("file")
-    val file_: ByteArray? = null, @field:SerializedName("retry_count")
+    val `file`: ByteArray? = null, @field:SerializedName("retry_count")
     val retryCount: Int? = null, val title: String? = null) {
 }

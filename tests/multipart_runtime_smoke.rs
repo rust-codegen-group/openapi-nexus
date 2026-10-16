@@ -74,10 +74,10 @@ fn multipart_wire_construction_is_pinned_across_clients() {
     assert!(kotlin_api.contains("body: SendOptionalPartsMultipartRequestBody?"));
     assert!(kotlin_api.contains("var multipartBody = ByteArray(0).toRequestBody(null)"));
     assert!(kotlin_api.contains("if (body != null)"));
-    assert!(kotlin_api.contains("if (body.file_ != null)"));
-    assert!(kotlin_api.contains("body.file_.filenameOrDefault(\"file\")"));
-    assert!(kotlin_api.contains("body.file_.data.toRequestBody"));
-    assert!(kotlin_input.contains("val file_: UploadFile? = null"));
+    assert!(kotlin_api.contains("if (body.`file` != null)"));
+    assert!(kotlin_api.contains("body.`file`.filenameOrDefault(\"file\")"));
+    assert!(kotlin_api.contains("body.`file`.data.toRequestBody"));
+    assert!(kotlin_input.contains("val `file`: UploadFile? = null"));
     assert!(!kotlin_api.contains("addFormDataPart(\"file\", \"file\""));
 
     let httpx_files =

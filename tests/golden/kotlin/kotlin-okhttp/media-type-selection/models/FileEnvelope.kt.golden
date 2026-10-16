@@ -5,8 +5,5 @@
 
 package com.example.sdk.models
 
-import com.google.gson.annotations.SerializedName
-
-data class FileEnvelope(@field:SerializedName("file")
-    val file_: ByteArray, val note: String? = null) {
+data class FileEnvelope(val `file`: ByteArray, val note: String? = null) {
 }

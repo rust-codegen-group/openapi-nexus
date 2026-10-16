@@ -61,7 +61,7 @@ class MultipartApi(private val client: ApiClient) {
     fun sendNestedObjectPart(body: SendNestedObjectPartMultipartRequestBody): SendNestedObjectPartResponse {
         val path = "/multipart/nested-object"
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("file", body.file_.filenameOrDefault("file"), body.file_.data.toRequestBody("application/octet-stream".toMediaType()))
+        multipartBuilder.addFormDataPart("file", body.`file`.filenameOrDefault("file"), body.`file`.data.toRequestBody("application/octet-stream".toMediaType()))
 
         multipartBuilder.addFormDataPart("item_config", null, gson.toJson(body.itemConfig).toRequestBody("application/json".toMediaType()))
 

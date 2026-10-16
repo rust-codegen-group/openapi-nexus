@@ -105,8 +105,8 @@ class MultipartApi(private val client: ApiClient) {
                 multipartBuilder.addFormDataPart("enabled", null, body.enabled.toString().toRequestBody("text/plain".toMediaType()))
 
             }
-            if (body.file_ != null) {
-                multipartBuilder.addFormDataPart("file", body.file_.filenameOrDefault("file"), body.file_.data.toRequestBody("application/octet-stream".toMediaType()))
+            if (body.`file` != null) {
+                multipartBuilder.addFormDataPart("file", body.`file`.filenameOrDefault("file"), body.`file`.data.toRequestBody("application/octet-stream".toMediaType()))
 
             }
             if (body.retryCount != null) {

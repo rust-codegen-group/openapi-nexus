@@ -259,7 +259,7 @@ class MediaApi(private val client: ApiClient) {
     fun sendParameterizedMultipart(body: SendParameterizedMultipartMultipartRequestBody): SendParameterizedMultipartResponse {
         val path = "/request/parameterized-multipart"
         val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("file", body.file_.filenameOrDefault("file"), body.file_.data.toRequestBody("application/octet-stream".toMediaType()))
+        multipartBuilder.addFormDataPart("file", body.`file`.filenameOrDefault("file"), body.`file`.data.toRequestBody("application/octet-stream".toMediaType()))
 
         if (body.note != null) {
             multipartBuilder.addFormDataPart("note", null, body.note.toString().toRequestBody("text/plain".toMediaType()))
