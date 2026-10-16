@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use crate::ir::types::{IrPrimitive, IrTypeExpr};
 use heck::{ToLowerCamelCase, ToPascalCase};
+use sigil_stitch::lang::kotlin::Kotlin;
+use sigil_stitch::prelude::RendererLang;
 
 pub fn kt_type_str(expr: &IrTypeExpr) -> String {
     match expr {
@@ -35,63 +37,34 @@ pub fn kt_primitive(p: &IrPrimitive) -> &'static str {
     }
 }
 
-pub fn kt_field_name(name: &str) -> String {
+/// Raw lower-camel-case identifier for a structured sigil-stitch declaration.
+///
+/// sigil-stitch escapes reserved words when it lowers a primary-constructor
+/// property, so structured specs must receive the unescaped identifier.
+pub fn kt_decl_name(name: &str) -> String {
     let camel = name.to_lower_camel_case();
     if camel.is_empty() {
-        return "value".to_string();
-    }
-    if is_kotlin_reserved(&camel) {
-        format!("{camel}_")
+        "value".to_string()
     } else {
         camel
     }
 }
 
-pub fn kt_ident(name: &str) -> String {
+/// Raw lower-camel-case identifier for an operation parameter.
+pub fn kt_param_name(name: &str) -> String {
     let camel = name.to_lower_camel_case();
     if camel.is_empty() {
-        return "arg".to_string();
-    }
-    if is_kotlin_reserved(&camel) {
-        format!("{camel}_")
+        "arg".to_string()
     } else {
         camel
     }
 }
 
-pub fn is_kotlin_reserved(name: &str) -> bool {
-    matches!(
-        name,
-        "as" | "break"
-            | "class"
-            | "continue"
-            | "do"
-            | "else"
-            | "false"
-            | "for"
-            | "file"
-            | "field"
-            | "fun"
-            | "if"
-            | "in"
-            | "interface"
-            | "is"
-            | "null"
-            | "object"
-            | "package"
-            | "return"
-            | "super"
-            | "this"
-            | "throw"
-            | "true"
-            | "try"
-            | "typealias"
-            | "typeof"
-            | "val"
-            | "var"
-            | "when"
-            | "while"
-    )
+/// Kotlin source spelling of an identifier for raw-string emission and
+/// references. Reserved words are backtick-escaped by sigil-stitch's Kotlin
+/// language rules, matching the spelling sigil-stitch emits for declarations.
+pub fn kt_ref(name: &str) -> String {
+    Kotlin::new().escape_reserved(name)
 }
 
 pub fn escape_kt_string(s: &str) -> String {
@@ -161,12 +134,15 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_kotlin_reserved, kt_field_name, kt_ident};
+    use super::{kt_decl_name, kt_param_name, kt_ref};
 
     #[test]
-    fn kotlin_for_is_escaped_for_fields_and_parameters() {
-        assert!(is_kotlin_reserved("for"));
-        assert_eq!(kt_field_name("for"), "for_");
-        assert_eq!(kt_ident("for"), "for_");
+    fn kotlin_reserved_identifiers_are_escaped_at_emission() {
+        assert_eq!(kt_decl_name("for"), "for");
+        assert_eq!(kt_param_name("for"), "for");
+        assert_eq!(kt_ref("for"), "`for`");
+        assert_eq!(kt_ref("class"), "`class`");
+        assert_eq!(kt_ref("file"), "`file`");
+        assert_eq!(kt_ref("name"), "name");
     }
 }

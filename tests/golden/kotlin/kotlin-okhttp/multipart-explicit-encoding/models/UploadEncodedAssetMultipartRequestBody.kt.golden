@@ -9,7 +9,7 @@ import com.example.sdk.runtime.UploadFile
 
 data class UploadEncodedAssetMultipartRequestBody(
     val audit: AuditAttributes,
-    val file_: UploadFile,
+    val `file`: UploadFile,
     val metadata: UploadAttributes,
     val purpose: String,
 )

@@ -18,8 +18,8 @@ use sigil_stitch::lang::kotlin::Kotlin;
 use sigil_stitch::prelude::*;
 
 use super::util::{
-    kt_field_name, kt_ident, kt_type_str, render_value_as_string, sanitize_operation_id,
-    unique_name,
+    kt_decl_name, kt_param_name, kt_ref, kt_type_str, render_value_as_string,
+    sanitize_operation_id, unique_name,
 };
 
 const RENDER_WIDTH: usize = 100;
@@ -425,7 +425,8 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     let mut path_expr = format!("\"{}\"", plan.op.path);
     for p in &plan.path_params {
         let placeholder = format!("{{{}}}", p.param.name);
-        let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
+        let var_ref = kt_ref(&p.var_name);
+        let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
         path_expr = format!("{path_expr}.replace(\"{placeholder}\", {stringified})");
     }
     cb.add(&format!("val path = {path_expr}"), ());
@@ -437,10 +438,11 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         cb.add("val query = mutableMapOf<String, String>()", ());
         cb.add_line();
         for p in &plan.query_params {
-            let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
+            let var_ref = kt_ref(&p.var_name);
+            let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
             cb.add_code(kotlin_query_param_put(
                 p.param.required,
-                &p.var_name,
+                &var_ref,
                 &p.param.name,
                 &stringified,
             ));
@@ -491,10 +493,11 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         cb.add("var finalRequest = request", ());
         cb.add_line();
         for p in &plan.header_params {
-            let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
+            let var_ref = kt_ref(&p.var_name);
+            let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
             cb.add_code(kotlin_header_param_set(
                 p.param.required,
-                &p.var_name,
+                &var_ref,
                 &p.param.name,
                 &stringified,
             ));
@@ -660,7 +663,7 @@ fn emit_multipart_body(
             })
             .expect("default multipart body builds"),
         );
-        cb.begin_control_flow(&format!("if ({} != null)", body.var_name), ());
+        cb.begin_control_flow(&format!("if ({} != null)", kt_ref(&body.var_name)), ());
     }
     cb.add_code(
         sigil_quote!(Kotlin {
@@ -669,7 +672,7 @@ fn emit_multipart_body(
         .expect("multipart builder builds"),
     );
     for part in parts {
-        let access = format!("{}.{}", body.var_name, part.field_name);
+        let access = format!("{}.{}", kt_ref(&body.var_name), kt_ref(&part.field_name));
         if part.required {
             emit_required_multipart_part(cb, part, &access);
         } else {
@@ -714,22 +717,26 @@ fn emit_request_body(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, body: 
             })
             .expect("default request body builds"),
         );
-        cb.begin_control_flow(&format!("if ({} != null)", body.var_name), ());
+        cb.begin_control_flow(&format!("if ({} != null)", kt_ref(&body.var_name)), ());
     }
     match body.encoding {
         BodyEncoding::Json => {
-            let body_var = body.var_name.as_str();
+            let body_ref = kt_ref(&body.var_name);
             let media_type = body.media_type.as_str();
             cb.add_code(kotlin_json_request_body(
                 body.required,
-                body_var,
+                &body_ref,
                 media_type,
             ));
         }
         BodyEncoding::TextPlain | BodyEncoding::OctetStream => {
-            let body_var = body.var_name.as_str();
+            let body_ref = kt_ref(&body.var_name);
             let media_type = body.media_type.as_str();
-            cb.add_code(kotlin_raw_request_body(body.required, body_var, media_type));
+            cb.add_code(kotlin_raw_request_body(
+                body.required,
+                &body_ref,
+                media_type,
+            ));
         }
         BodyEncoding::FormUrlEncoded | BodyEncoding::Xml | BodyEncoding::Other => {
             let message = format!("unsupported request body media type: {}", body.media_type);
@@ -1019,7 +1026,7 @@ fn plan_operation<'a>(
     let mut query_params = Vec::new();
     let mut header_params = Vec::new();
     for p in &op.parameters {
-        let var_name = unique_name(&kt_ident(&p.name), &mut used_names);
+        let var_name = unique_name(&kt_param_name(&p.name), &mut used_names);
         let kt_type = if p.required {
             kt_type_str(&p.type_expr)
         } else {
@@ -1325,7 +1332,7 @@ fn multipart_parts_for(
         parts
             .into_iter()
             .map(|part| MultipartPart {
-                field_name: kt_field_name(&part.wire_name),
+                field_name: kt_decl_name(&part.wire_name),
                 wire_name: part.wire_name,
                 is_binary: part.is_binary,
                 required: part.required,

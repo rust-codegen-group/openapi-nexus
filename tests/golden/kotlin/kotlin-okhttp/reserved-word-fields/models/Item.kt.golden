@@ -5,10 +5,6 @@
 
 package com.example.sdk.models
 
-import com.google.gson.annotations.SerializedName
-
-data class Item(@field:SerializedName("class")
-    val class_: String, val default: String? = null, val name: String,
-    @field:SerializedName("return")
-    val return_: Boolean) {
+data class Item(val `class`: String, val default: String? = null, val name: String,
+    val `return`: Boolean) {
 }

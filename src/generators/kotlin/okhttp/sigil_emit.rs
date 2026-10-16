@@ -13,7 +13,7 @@ use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::lang::kotlin::Kotlin;
 use sigil_stitch::prelude::*;
 
-use super::util::{escape_kt_string, kt_field_name, kt_type_str, unique_name};
+use super::util::{escape_kt_string, kt_decl_name, kt_ref, kt_type_str, unique_name};
 
 const RENDER_WIDTH: usize = 100;
 
@@ -55,7 +55,7 @@ fn request_input_model_file(
     }
     content.push_str(&format!("data class {class_name}(\n"));
     for field in &model.fields {
-        let field_name = kt_field_name(&field.wire_name);
+        let field_name = kt_ref(&kt_decl_name(&field.wire_name));
         let mut field_type = request_input_kt_type(field);
         let default = if field.required {
             ""
@@ -117,7 +117,7 @@ fn emit_object(
     }
 
     for (_json_name, prop) in &obj.properties {
-        let field_name = kt_field_name(&prop.name);
+        let field_name = kt_decl_name(&prop.name);
         let required = prop.required && !prop.nullable;
         let type_str = if required {
             kt_type_str(&prop.type_expr)

@@ -4,8 +4,5 @@
 
 package com.example.sdk.models
 
-import com.google.gson.annotations.SerializedName
-
-data class ValidationError(@field:SerializedName("field")
-    val field_: String, val message: String) {
+data class ValidationError(val `field`: String, val message: String) {
 }
