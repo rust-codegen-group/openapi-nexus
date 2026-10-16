@@ -98,7 +98,7 @@ fn render_file_header(info: &IrInfo) -> String {
 fn build_gradle_file(package_name: &str, info: &IrInfo) -> FileInfo {
     let content = format!(
         r#"plugins {{
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.2.21"
 }}
 
 group = "{package_name}"
