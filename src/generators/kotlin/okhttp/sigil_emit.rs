@@ -167,11 +167,6 @@ fn emit_enum(
         return emit_typealias(&name, "Any", schema.description.as_deref(), package_name);
     }
 
-    file = file.add_import(ImportSpec::named(
-        "com.google.gson.annotations",
-        "SerializedName",
-    ));
-
     let base_type = match en.value_type {
         IrEnumValueType::String => "String",
         IrEnumValueType::Integer => "Int",
@@ -225,10 +220,7 @@ fn emit_enum(
         };
 
         let mut ev = EnumVariantSpec::builder(&variant_name);
-        ev = ev.annotation(CodeBlock::of(
-            &format!("@SerializedName(\"{}\")", escape_kt_string(&raw_value)),
-            (),
-        )?);
+        ev = ev.annotate(serialized_name_annotation(&raw_value));
         ev = ev.constructor_argument(CodeBlock::of(&literal, ())?);
         tb = tb.add_variant(ev.build()?);
     }

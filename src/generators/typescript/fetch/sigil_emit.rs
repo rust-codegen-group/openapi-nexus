@@ -380,11 +380,11 @@ fn type_expr_to_typename_wire(
                 type_expr_to_typename_wire(inner, current_schema, convertible),
             ],
         ),
-        IrTypeExpr::StringLiteral(s) => TypeName::raw(&format!("'{s}'")),
+        IrTypeExpr::StringLiteral(s) => TypeName::string_literal(s.clone()),
         IrTypeExpr::StringEnum(values) => union_typename(
             values
                 .iter()
-                .map(|v| TypeName::raw(&format!("'{v}'")))
+                .map(|v| TypeName::string_literal(v.clone()))
                 .collect(),
         ),
         IrTypeExpr::Union(members) => union_typename(
@@ -2086,11 +2086,11 @@ fn type_expr_to_typename_with_current(expr: &IrTypeExpr, current_schema: Option<
             type_expr_to_typename_with_current(inner, current_schema),
             TypeName::primitive("null"),
         ]),
-        IrTypeExpr::StringLiteral(s) => TypeName::raw(&format!("'{s}'")),
+        IrTypeExpr::StringLiteral(s) => TypeName::string_literal(s.clone()),
         IrTypeExpr::StringEnum(values) => union_typename(
             values
                 .iter()
-                .map(|v| TypeName::raw(&format!("'{v}'")))
+                .map(|v| TypeName::string_literal(v.clone()))
                 .collect(),
         ),
         IrTypeExpr::Map(inner) => type_application(
