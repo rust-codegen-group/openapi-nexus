@@ -1887,11 +1887,11 @@ fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName {
             type_expr_to_typename(inner),
             TypeName::primitive("null"),
         ]),
-        IrTypeExpr::StringLiteral(s) => TypeName::raw(&format!("'{s}'")),
+        IrTypeExpr::StringLiteral(s) => TypeName::string_literal(s.clone()),
         IrTypeExpr::StringEnum(values) => TypeName::union(
             values
                 .iter()
-                .map(|v| TypeName::raw(&format!("'{v}'")))
+                .map(|v| TypeName::string_literal(v.clone()))
                 .collect(),
         ),
         IrTypeExpr::Map(inner) => type_application(
@@ -2245,5 +2245,23 @@ mod tests {
 
         let integer = render_header_accessor(ResponseHeaderValueKind::Integer);
         assert!(integer.contains("Number.isSafeInteger(parsed)"));
+    }
+
+    #[test]
+    fn string_singletons_use_structured_string_literal_type_names() {
+        assert_eq!(
+            type_expr_to_typename(&IrTypeExpr::StringLiteral("quoted'".to_string())),
+            TypeName::string_literal("quoted'")
+        );
+        assert_eq!(
+            type_expr_to_typename(&IrTypeExpr::StringEnum(vec![
+                "a".to_string(),
+                "b".to_string()
+            ])),
+            TypeName::union(vec![
+                TypeName::string_literal("a"),
+                TypeName::string_literal("b"),
+            ])
+        );
     }
 }
