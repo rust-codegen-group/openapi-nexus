@@ -24,7 +24,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(ContainerKindJsonAdapter::class)
+@JsonAdapter(ContainerKindJsonAdapter::class, nullSafe = false)
 sealed class ContainerKind private constructor() {
     data class VariantContainerKindManaged(val value0: ContainerKindManaged) : ContainerKind()
 

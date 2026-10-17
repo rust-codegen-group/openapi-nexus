@@ -18,7 +18,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 
-@JsonAdapter(FooJsonAdapter::class)
+@JsonAdapter(FooJsonAdapter::class, nullSafe = false)
 sealed class Foo private constructor() {
     data class VariantBar(val value0: Bar) : Foo()
 
@@ -35,16 +35,36 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonObject -> Foo.VariantBar(gson.fromJson(element
+            (((element.isJsonObject
+             && element.asJsonObject.has("bucket")
+            )
+             && element.asJsonObject.has("endpoint")
+            )
+             && element.asJsonObject.has("type")
+            )
+             -> Foo.VariantBar(gson.fromJson(element
             , object: TypeToken<Bar>() {}.type))
 
-            element.isJsonObject -> Foo.VariantBaz(gson.fromJson(element
+            ((element.isJsonObject
+             && element.asJsonObject.has("path")
+            )
+             && element.asJsonObject.has("type")
+            )
+             -> Foo.VariantBaz(gson.fromJson(element
             , object: TypeToken<Baz>() {}.type))
 
-            element.isJsonObject -> Foo.VariantQux(gson.fromJson(element
+            (((element.isJsonObject
+             && element.asJsonObject.has("namespace")
+            )
+             && element.asJsonObject.has("type")
+            )
+             && element.asJsonObject.has("url")
+            )
+             -> Foo.VariantQux(gson.fromJson(element
             , object: TypeToken<Qux>() {}.type))
 
             else -> throw JsonParseException("unknown Foo union value")
+
         }
 
     }

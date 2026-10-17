@@ -18,7 +18,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 
-@JsonAdapter(FooJsonAdapter::class)
+@JsonAdapter(FooJsonAdapter::class, nullSafe = false)
 sealed class Foo private constructor() {
     data class VariantBar(val value0: Bar) : Foo()
 
@@ -35,16 +35,24 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonObject -> Foo.VariantBar(gson.fromJson(element
+            ((element.isJsonObject
+             && element.asJsonObject.has("id")
+            )
+             && element.asJsonObject.has("name")
+            )
+             -> Foo.VariantBar(gson.fromJson(element
             , object: TypeToken<Bar>() {}.type))
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Foo.VariantString(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isString
+             -> Foo.VariantString(element
             .asString)
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> Foo.VariantNumber(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
+             -> Foo.VariantNumber(element
             .asDouble)
 
             else -> throw JsonParseException("unknown Foo union value")
+
         }
 
     }

@@ -23,7 +23,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(ResourceJsonAdapter::class)
+@JsonAdapter(ResourceJsonAdapter::class, nullSafe = false)
 sealed class Resource private constructor() {
     data class VariantResourceUnspecified(val value0: ResourceUnspecified) : Resource()
 

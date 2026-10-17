@@ -20,7 +20,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-@JsonAdapter(ChoiceJsonAdapter.class)
+@JsonAdapter(value = ChoiceJsonAdapter.class, nullSafe = false)
 public sealed interface Choice {
     record VariantString(String value0) implements Choice {}
 
@@ -44,22 +44,26 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
             return Choice.VariantNull.INSTANCE;
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+        ) {
             return new Choice.VariantString(element
             .getAsString());
 
         }
-        if (element.isJsonArray()) {
+        if (element.isJsonArray()
+        ) {
             return new Choice.VariantArray(gson.fromJson(element
             , new TypeToken<List<Integer>>() {}.getType()));
 
         }
-        if (element.isJsonObject()) {
+        if (element.isJsonObject()
+        ) {
             return new Choice.VariantMap(gson.fromJson(element
             , new TypeToken<Map<String, Boolean>>() {}.getType()));
 
         }
         throw new JsonParseException("unknown Choice union value");
+
 
     }
 

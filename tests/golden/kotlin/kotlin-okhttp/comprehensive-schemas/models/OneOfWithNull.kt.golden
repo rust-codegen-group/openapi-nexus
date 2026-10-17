@@ -21,7 +21,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Union of string, null, and schema reference
  */
-@JsonAdapter(OneOfWithNullJsonAdapter::class)
+@JsonAdapter(OneOfWithNullJsonAdapter::class, nullSafe = false)
 sealed class OneOfWithNull private constructor() {
     data class VariantString(val value0: String) : OneOfWithNull()
 
@@ -41,13 +41,20 @@ private class OneOfWithNullJsonAdapter: TypeAdapter<OneOfWithNull>() {
         return when {
             element.isJsonNull -> OneOfWithNull.VariantNull
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> OneOfWithNull.VariantString(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isString
+             -> OneOfWithNull.VariantString(element
             .asString)
 
-            element.isJsonObject -> OneOfWithNull.VariantBasicObject(gson.fromJson(element
+            ((element.isJsonObject
+             && element.asJsonObject.has("id")
+            )
+             && element.asJsonObject.has("name")
+            )
+             -> OneOfWithNull.VariantBasicObject(gson.fromJson(element
             , object: TypeToken<BasicObject>() {}.type))
 
             else -> throw JsonParseException("unknown OneOfWithNull union value")
+
         }
 
     }

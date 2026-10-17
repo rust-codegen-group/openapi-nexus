@@ -21,7 +21,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Union of multiple primitive types
  */
-@JsonAdapter(OneOfTypesJsonAdapter::class)
+@JsonAdapter(OneOfTypesJsonAdapter::class, nullSafe = false)
 sealed class OneOfTypes private constructor() {
     data class VariantString(val value0: String) : OneOfTypes()
 
@@ -38,16 +38,20 @@ private class OneOfTypesJsonAdapter: TypeAdapter<OneOfTypes>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> OneOfTypes.VariantString(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isString
+             -> OneOfTypes.VariantString(element
             .asString)
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> OneOfTypes.VariantNumber(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
+             -> OneOfTypes.VariantNumber(element
             .asDouble)
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isBoolean -> OneOfTypes.VariantBoolean(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isBoolean
+             -> OneOfTypes.VariantBoolean(element
             .asBoolean)
 
             else -> throw JsonParseException("unknown OneOfTypes union value")
+
         }
 
     }

@@ -22,7 +22,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(ResourceJsonAdapter.class)
+@JsonAdapter(value = ResourceJsonAdapter.class, nullSafe = false)
 public sealed interface Resource {
     record VariantResourceUnspecified(ResourceUnspecified value0) implements Resource {}
 

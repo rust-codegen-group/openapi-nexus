@@ -23,7 +23,7 @@ import com.google.gson.stream.JsonWriter;
 Serializes as externally tagged: `{"SimpleA": null}`, `{"VariantA": {"field1": "...", "field2": 123}}`,
 `{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}`
  */
-@JsonAdapter(MixedEnumJsonAdapter.class)
+@JsonAdapter(value = MixedEnumJsonAdapter.class, nullSafe = false)
 public sealed interface MixedEnum {
     record VariantSimpleA(String value0) implements MixedEnum {}
 
@@ -44,27 +44,38 @@ final class MixedEnumJsonAdapter extends TypeAdapter<MixedEnum> {
             return null;
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+         && element.getAsString().equals("SimpleA")
+        ) {
             return new MixedEnum.VariantSimpleA(element
             .getAsString());
 
         }
-        if (element.isJsonObject()) {
+        if ((element.isJsonObject()
+         && element.getAsJsonObject().has("VariantA")
+        )
+        ) {
             return new MixedEnum.VariantMixedEnumMember2(gson.fromJson(element
             , new TypeToken<MixedEnumMember2>() {}.getType()));
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+         && element.getAsString().equals("SimpleB")
+        ) {
             return new MixedEnum.VariantSimpleB(element
             .getAsString());
 
         }
-        if (element.isJsonObject()) {
+        if ((element.isJsonObject()
+         && element.getAsJsonObject().has("VariantB")
+        )
+        ) {
             return new MixedEnum.VariantMixedEnumMember4(gson.fromJson(element
             , new TypeToken<MixedEnumMember4>() {}.getType()));
 
         }
         throw new JsonParseException("unknown MixedEnum union value");
+
 
     }
 

@@ -18,7 +18,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 
-@JsonAdapter(QuxJsonAdapter::class)
+@JsonAdapter(QuxJsonAdapter::class, nullSafe = false)
 sealed class Qux private constructor() {
     data class VariantBar(val value0: Bar) : Qux()
 
@@ -33,13 +33,24 @@ private class QuxJsonAdapter: TypeAdapter<Qux>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonObject -> Qux.VariantBar(gson.fromJson(element
+            ((element.isJsonObject
+             && element.asJsonObject.has("endpoint")
+            )
+             && element.asJsonObject.has("type")
+            )
+             -> Qux.VariantBar(gson.fromJson(element
             , object: TypeToken<Bar>() {}.type))
 
-            element.isJsonObject -> Qux.VariantBaz(gson.fromJson(element
+            ((element.isJsonObject
+             && element.asJsonObject.has("path")
+            )
+             && element.asJsonObject.has("type")
+            )
+             -> Qux.VariantBaz(gson.fromJson(element
             , object: TypeToken<Baz>() {}.type))
 
             else -> throw JsonParseException("unknown Qux union value")
+
         }
 
     }

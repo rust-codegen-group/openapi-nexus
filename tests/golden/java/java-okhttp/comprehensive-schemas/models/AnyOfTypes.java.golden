@@ -20,7 +20,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Any of multiple types
  */
-@JsonAdapter(AnyOfTypesJsonAdapter.class)
+@JsonAdapter(value = AnyOfTypesJsonAdapter.class, nullSafe = false)
 public sealed interface AnyOfTypes {
     record VariantString(String value0) implements AnyOfTypes {}
 
@@ -37,17 +37,20 @@ final class AnyOfTypesJsonAdapter extends TypeAdapter<AnyOfTypes> {
             return null;
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+        ) {
             return new AnyOfTypes.VariantString(element
             .getAsString());
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
+        ) {
             return new AnyOfTypes.VariantNumber(gson.fromJson(element
             , Double.class));
 
         }
         throw new JsonParseException("unknown AnyOfTypes union value");
+
 
     }
 

@@ -17,7 +17,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-@JsonAdapter(FooJsonAdapter.class)
+@JsonAdapter(value = FooJsonAdapter.class, nullSafe = false)
 public sealed interface Foo {
     record VariantString(String value0) implements Foo {}
 
@@ -41,22 +41,26 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
             return Foo.VariantNull.INSTANCE;
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+        ) {
             return new Foo.VariantString(element
             .getAsString());
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
+        ) {
             return new Foo.VariantNumber(gson.fromJson(element
             , Double.class));
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()
+        ) {
             return new Foo.VariantBoolean(element
             .getAsBoolean());
 
         }
         throw new JsonParseException("unknown Foo union value");
+
 
     }
 

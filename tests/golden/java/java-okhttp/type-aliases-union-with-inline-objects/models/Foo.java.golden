@@ -20,7 +20,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Union type with inline object schemas
  */
-@JsonAdapter(FooJsonAdapter.class)
+@JsonAdapter(value = FooJsonAdapter.class, nullSafe = false)
 public sealed interface Foo {
     record VariantFooMember1(FooMember1 value0) implements Foo {}
 
@@ -39,22 +39,32 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
             return null;
 
         }
-        if (element.isJsonObject()) {
+        if ((element.isJsonObject()
+         && element.getAsJsonObject().has("bar")
+        )
+        ) {
             return new Foo.VariantFooMember1(gson.fromJson(element
             , new TypeToken<FooMember1>() {}.getType()));
 
         }
-        if (element.isJsonObject()) {
+        if ((element.isJsonObject()
+         && element.getAsJsonObject().has("quux")
+        )
+        ) {
             return new Foo.VariantFooMember2(gson.fromJson(element
             , new TypeToken<FooMember2>() {}.getType()));
 
         }
-        if (element.isJsonObject()) {
+        if ((element.isJsonObject()
+         && element.getAsJsonObject().has("grault")
+        )
+        ) {
             return new Foo.VariantFooMember3(gson.fromJson(element
             , new TypeToken<FooMember3>() {}.getType()));
 
         }
         throw new JsonParseException("unknown Foo union value");
+
 
     }
 

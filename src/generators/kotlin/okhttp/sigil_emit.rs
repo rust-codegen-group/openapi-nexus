@@ -94,7 +94,7 @@ fn emit_model_body(
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr, package_name),
-        IrSchemaKind::Union(u) => emit_union(schema, u, package_name),
+        IrSchemaKind::Union(u) => emit_union(schema, u, ir, package_name),
         IrSchemaKind::Intersection(i) => emit_intersection(schema, i, package_name),
         IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name),
     }?;
@@ -260,10 +260,12 @@ fn emit_alias(
 fn emit_union(
     schema: &IrSchema,
     union: &IrUnion,
+    ir: &IrSpec,
     package_name: &str,
 ) -> Result<FileSpec, SigilStitchError> {
     emit_closed_sum(
         &plan_union(&schema.name, schema.description.as_deref(), union),
+        &ir.schemas,
         package_name,
     )
 }
@@ -313,11 +315,16 @@ fn emit_tagged_union(
 ) -> Result<FileSpec, SigilStitchError> {
     emit_closed_sum(
         &plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir),
+        &ir.schemas,
         package_name,
     )
 }
 
-fn emit_closed_sum(plan: &ClosedSumPlan, package_name: &str) -> Result<FileSpec, SigilStitchError> {
+fn emit_closed_sum(
+    plan: &ClosedSumPlan,
+    schemas: &indexmap::IndexMap<String, IrSchema>,
+    package_name: &str,
+) -> Result<FileSpec, SigilStitchError> {
     let mut sum = ClosedSumSpec::builder(&plan.name).visibility(Visibility::Public);
     for doc in &plan.docs {
         sum = sum.doc(doc);
@@ -328,7 +335,10 @@ fn emit_closed_sum(plan: &ClosedSumPlan, package_name: &str) -> Result<FileSpec,
             "com.google.gson.annotations",
             "JsonAdapter",
         ))
-        .arg(format!("{adapter_name}::class")),
+        .args([
+            format!("{adapter_name}::class"),
+            "nullSafe = false".to_string(),
+        ]),
     );
     for case in &plan.cases {
         sum = sum.add_case(kotlin_closed_sum_case(case)?);
@@ -340,7 +350,7 @@ fn emit_closed_sum(plan: &ClosedSumPlan, package_name: &str) -> Result<FileSpec,
         file = file.add_import(import);
     }
     file.add_closed_sum(sum.build()?)
-        .add_code(kotlin_closed_sum_adapter(plan)?)
+        .add_code(kotlin_closed_sum_adapter(plan, schemas)?)
         .build()
 }
 
@@ -395,12 +405,24 @@ fn kotlin_adapter_imports() -> [ImportSpec; 12] {
     ]
 }
 
-fn kotlin_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
-    let read_dispatch = kotlin_adapter_read_dispatch(plan)?;
+fn kotlin_closed_sum_adapter(
+    plan: &ClosedSumPlan,
+    schemas: &indexmap::IndexMap<String, IrSchema>,
+) -> Result<CodeBlock, SigilStitchError> {
+    let read_dispatch =
+        kotlin_adapter_read_dispatch(plan, schemas).map_err(|error| SigilStitchError::Render {
+            context: format!("Kotlin {} Gson adapter read dispatch", plan.name),
+            message: error.to_string(),
+        })?;
     let write_cases = plan
         .cases
         .iter()
-        .map(|case| kotlin_adapter_write_case(plan, case))
+        .map(|case| {
+            kotlin_adapter_write_case(plan, case).map_err(|error| SigilStitchError::Render {
+                context: format!("Kotlin {} Gson adapter write case {}", plan.name, case.name),
+                message: error.to_string(),
+            })
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let adapter_name = format!("{}JsonAdapter", plan.name);
     let root_name = plan.name.as_str();
@@ -425,9 +447,16 @@ fn kotlin_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilSti
             }
         }
     })
+    .map_err(|error| SigilStitchError::Render {
+        context: format!("Kotlin {} Gson adapter", plan.name),
+        message: error.to_string(),
+    })
 }
 
-fn kotlin_adapter_read_dispatch(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
+fn kotlin_adapter_read_dispatch(
+    plan: &ClosedSumPlan,
+    schemas: &indexmap::IndexMap<String, IrSchema>,
+) -> Result<CodeBlock, SigilStitchError> {
     match &plan.encoding {
         ClosedSumEncoding::Untagged => {
             let null_case = plan.cases.iter().find(|case| case.is_null);
@@ -440,21 +469,44 @@ fn kotlin_adapter_read_dispatch(plan: &ClosedSumPlan) -> Result<CodeBlock, Sigil
             let mut branches = vec![sigil_quote!(Kotlin {
                 element.isJsonNull -> $C(null_result)
             })?];
-            for case in plan.cases.iter().filter(|case| !case.is_null) {
+            let mut catch_all = None;
+            let cases = plan
+                .cases
+                .iter()
+                .filter(|case| !case.is_null && !is_catch_all_case(case))
+                .chain(
+                    plan.cases
+                        .iter()
+                        .filter(|case| !case.is_null && is_catch_all_case(case)),
+                );
+            for case in cases {
                 let Some(payload) = &case.payload else {
                     continue;
                 };
-                let condition = kotlin_json_condition(payload);
+                let condition = kotlin_json_condition(payload, schemas)?;
                 let source = sigil_quote!(Kotlin { element })?;
                 let result = kotlin_adapter_read_value(plan, case, payload, source)?;
-                branches.push(sigil_quote!(Kotlin {
-                    $L(condition.as_str()) -> $C(result)
-                })?);
+                if is_catch_all_case(case) {
+                    catch_all = Some(result);
+                } else {
+                    branches.push(sigil_quote!(Kotlin {
+                        $C(condition) -> $C(result)
+                    })?);
+                }
             }
+            let fallback = match catch_all {
+                Some(result) => sigil_quote!(Kotlin { else -> $C(result) })?,
+                None => sigil_quote!(Kotlin {
+                    else -> throw JsonParseException($S(format!(
+                        "unknown {} union value",
+                        plan.name
+                    )))
+                })?,
+            };
             sigil_quote!(Kotlin {
                 return when {
                     $C_each(branches)
-                    else -> throw JsonParseException($S(format!("unknown {} union value", plan.name)))
+                    $C(fallback)
                 }
             })
         }
@@ -694,7 +746,10 @@ fn kotlin_adapter_write_case(
     })
 }
 
-fn kotlin_json_condition(expr: &IrTypeExpr) -> String {
+fn kotlin_json_condition(
+    expr: &IrTypeExpr,
+    schemas: &indexmap::IndexMap<String, IrSchema>,
+) -> Result<CodeBlock, SigilStitchError> {
     match expr {
         IrTypeExpr::Primitive(
             IrPrimitive::String
@@ -705,21 +760,123 @@ fn kotlin_json_condition(expr: &IrTypeExpr) -> String {
         )
         | IrTypeExpr::StringLiteral(_)
         | IrTypeExpr::StringEnum(_) => {
-            "element.isJsonPrimitive && element.asJsonPrimitive.isString".to_string()
+            let base = sigil_quote!(Kotlin {
+                element.isJsonPrimitive && element.asJsonPrimitive.isString
+            })?;
+            match expr {
+                IrTypeExpr::StringLiteral(value) => sigil_quote!(Kotlin {
+                    $C(base) && element.asString == $S(value)
+                }),
+                IrTypeExpr::StringEnum(values) => {
+                    let checks = values
+                        .iter()
+                        .map(|value| sigil_quote!(Kotlin { element.asString == $S(value) }))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    let Some((first, rest)) = checks.split_first() else {
+                        return sigil_quote!(Kotlin { false });
+                    };
+                    let values = kotlin_join_conditions(first.clone(), rest.to_vec(), true)?;
+                    sigil_quote!(Kotlin { ($C(base) && $C(values)) })
+                }
+                _ => Ok(base),
+            }
         }
         IrTypeExpr::Primitive(IrPrimitive::Boolean) => {
-            "element.isJsonPrimitive && element.asJsonPrimitive.isBoolean".to_string()
+            sigil_quote!(Kotlin {
+                element.isJsonPrimitive && element.asJsonPrimitive.isBoolean
+            })
         }
         IrTypeExpr::Primitive(
             IrPrimitive::Integer
             | IrPrimitive::IntegerWithFormat(_)
             | IrPrimitive::Number
             | IrPrimitive::NumberWithFormat(_),
-        ) => "element.isJsonPrimitive && element.asJsonPrimitive.isNumber".to_string(),
-        IrTypeExpr::Array(_) => "element.isJsonArray".to_string(),
-        IrTypeExpr::Any | IrTypeExpr::Union(_) => "true".to_string(),
-        _ => "element.isJsonObject".to_string(),
+        ) => sigil_quote!(Kotlin {
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
+        }),
+        IrTypeExpr::Primitive(IrPrimitive::Binary) => {
+            sigil_quote!(Kotlin { element.isJsonPrimitive && element.asJsonPrimitive.isString })
+        }
+        IrTypeExpr::Array(_) => sigil_quote!(Kotlin { element.isJsonArray }),
+        IrTypeExpr::Map(_) => sigil_quote!(Kotlin { element.isJsonObject }),
+        IrTypeExpr::Nullable(inner) => {
+            let inner = kotlin_json_condition(inner, schemas)?;
+            sigil_quote!(Kotlin { element.isJsonNull || $C(inner) })
+        }
+        IrTypeExpr::Any => sigil_quote!(Kotlin { true }),
+        IrTypeExpr::Union(members) => {
+            let conditions = members
+                .iter()
+                .map(|member| kotlin_json_condition(member, schemas))
+                .collect::<Result<Vec<_>, _>>()?;
+            let Some((first, rest)) = conditions.split_first() else {
+                return sigil_quote!(Kotlin { false });
+            };
+            kotlin_join_conditions(first.clone(), rest.to_vec(), true)
+        }
+        IrTypeExpr::Named(name) => match schemas.get(name).map(|schema| &schema.kind) {
+            Some(IrSchemaKind::Object(object)) => {
+                let required = object
+                    .properties
+                    .iter()
+                    .filter(|(_, property)| property.required)
+                    .map(|(wire_name, _)| wire_name)
+                    .collect::<Vec<_>>();
+                let checks = required
+                    .iter()
+                    .map(|wire_name| {
+                        sigil_quote!(Kotlin {
+                            element.asJsonObject.has($S(wire_name.as_str()))
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let object_check = sigil_quote!(Kotlin { element.isJsonObject })?;
+                Ok(kotlin_join_conditions(object_check, checks, false)?)
+            }
+            Some(IrSchemaKind::Enum(en)) => match en.value_type {
+                IrEnumValueType::String => sigil_quote!(Kotlin {
+                    element.isJsonPrimitive && element.asJsonPrimitive.isString
+                }),
+                IrEnumValueType::Integer | IrEnumValueType::Number => sigil_quote!(Kotlin {
+                    element.isJsonPrimitive && element.asJsonPrimitive.isNumber
+                }),
+                IrEnumValueType::Mixed => sigil_quote!(Kotlin { element.isJsonPrimitive }),
+            },
+            Some(IrSchemaKind::Alias(inner)) => kotlin_json_condition(inner, schemas),
+            Some(IrSchemaKind::Union(union)) => {
+                let conditions = union
+                    .members
+                    .iter()
+                    .map(|member| kotlin_json_condition(member, schemas))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let Some((first, rest)) = conditions.split_first() else {
+                    return sigil_quote!(Kotlin { false });
+                };
+                kotlin_join_conditions(first.clone(), rest.to_vec(), true)
+            }
+            _ => sigil_quote!(Kotlin { element.isJsonObject }),
+        },
     }
+}
+
+fn is_catch_all_case(case: &ClosedSumCasePlan) -> bool {
+    matches!(case.payload.as_ref(), Some(IrTypeExpr::Any))
+}
+
+fn kotlin_join_conditions(
+    first: CodeBlock,
+    rest: Vec<CodeBlock>,
+    disjunction: bool,
+) -> Result<CodeBlock, SigilStitchError> {
+    let mut result = first;
+    for condition in rest {
+        result = if disjunction {
+            sigil_quote!(Kotlin { ($C(result) || $C(condition)) })?
+        } else {
+            sigil_quote!(Kotlin { ($C(result) && $C(condition)) })?
+        };
+    }
+    Ok(result)
 }
 
 // ---------------------------------------------------------------------------
@@ -764,7 +921,7 @@ mod tests {
             }],
             encoding: ClosedSumEncoding::Untagged,
         };
-        let adapter = kotlin_closed_sum_adapter(&plan).unwrap();
+        let adapter = kotlin_closed_sum_adapter(&plan, &indexmap::IndexMap::new()).unwrap();
         assert_rendered!(
             Kotlin::new(),
             width = 100,
@@ -777,10 +934,12 @@ mod tests {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Choice.VariantString(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isString
+             -> Choice.VariantString(element
             .asString)
 
             else -> throw JsonParseException("unknown Choice union value")
+
         }
 
     }

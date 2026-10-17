@@ -21,7 +21,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Union of object types
  */
-@JsonAdapter(OneOfObjectsJsonAdapter::class)
+@JsonAdapter(OneOfObjectsJsonAdapter::class, nullSafe = false)
 sealed class OneOfObjects private constructor() {
     data class VariantBasicObject(val value0: BasicObject) : OneOfObjects()
 
@@ -36,13 +36,20 @@ private class OneOfObjectsJsonAdapter: TypeAdapter<OneOfObjects>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonObject -> OneOfObjects.VariantBasicObject(gson.fromJson(element
+            ((element.isJsonObject
+             && element.asJsonObject.has("id")
+            )
+             && element.asJsonObject.has("name")
+            )
+             -> OneOfObjects.VariantBasicObject(gson.fromJson(element
             , object: TypeToken<BasicObject>() {}.type))
 
-            element.isJsonObject -> OneOfObjects.VariantNestedObject(gson.fromJson(element
+            element.isJsonObject
+             -> OneOfObjects.VariantNestedObject(gson.fromJson(element
             , object: TypeToken<NestedObject>() {}.type))
 
             else -> throw JsonParseException("unknown OneOfObjects union value")
+
         }
 
     }

@@ -147,6 +147,49 @@ public final class ClosedSumSmoke {
             throw new AssertionError("expected typed primitive union serialization, got " + choiceJson);
         }
 
+        Choice nullChoice = gson.fromJson("null", Choice.class);
+        if (!(nullChoice instanceof Choice.VariantNull)) {
+            throw new AssertionError("expected typed null union case");
+        }
+        String nullJson = gson.toJson(Choice.VariantNull.INSTANCE, Choice.class);
+        if (!"null".equals(nullJson)) {
+            throw new AssertionError("expected typed null union serialization, got " + nullJson);
+        }
+
+    }
+}
+"#;
+
+const OBJECT_UNION_SMOKE: &str = r#"
+import com.example.sdk.models.OneOfObjects;
+import com.google.gson.Gson;
+
+public final class ObjectUnionSmoke {
+    public static void main(String[] args) {
+        Gson gson = new Gson();
+        OneOfObjects value = gson.fromJson("{\"user\":{\"id\":1}}", OneOfObjects.class);
+        if (!(value instanceof OneOfObjects.VariantNestedObject)) {
+            throw new AssertionError("expected nested object union case");
+        }
+    }
+}
+"#;
+
+const ANY_UNION_SMOKE: &str = r#"
+import com.example.sdk.models.Config;
+import com.google.gson.Gson;
+
+public final class AnyUnionSmoke {
+    public static void main(String[] args) {
+        Gson gson = new Gson();
+        Config booleanValue = gson.fromJson("true", Config.class);
+        if (!(booleanValue instanceof Config.VariantAny)) {
+            throw new AssertionError("expected Any union case for boolean");
+        }
+        Config objectValue = gson.fromJson("{\"key\":1}", Config.class);
+        if (!(objectValue instanceof Config.VariantAny)) {
+            throw new AssertionError("expected Any union case for object");
+        }
     }
 }
 "#;
@@ -168,6 +211,43 @@ public final class TaggedSumSmoke {
         String setupJson = gson.toJson(setup, Setup.class);
         if (!setupJson.contains("\"kind\":\"SETUP_QUICK\"")) {
             throw new AssertionError("expected discriminator serialization, got " + setupJson);
+        }
+    }
+}
+"#;
+
+const TAGGED_SHAPES_SMOKE: &str = r#"
+import com.example.sdk.models.AdjacentlyTaggedEnum;
+import com.example.sdk.models.ExternallyTaggedEnum;
+import com.example.sdk.models.VariantA;
+import com.google.gson.Gson;
+
+public final class TaggedShapesSmoke {
+    public static void main(String[] args) {
+        Gson gson = new Gson();
+        VariantA payload = new VariantA("value", 7);
+
+        AdjacentlyTaggedEnum adjacent =
+            new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(payload);
+        String adjacentJson = gson.toJson(adjacent, AdjacentlyTaggedEnum.class);
+        if (!adjacentJson.contains("\"ty\":\"ADJACENTLY_TAGGED_ENUM_VARIANT_A\"")
+            || !adjacentJson.contains("\"data\"")) {
+            throw new AssertionError("expected adjacent wire shape, got " + adjacentJson);
+        }
+        if (!(gson.fromJson(adjacentJson, AdjacentlyTaggedEnum.class)
+            instanceof AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA)) {
+            throw new AssertionError("expected adjacent union case");
+        }
+
+        ExternallyTaggedEnum external =
+            new ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA(payload);
+        String externalJson = gson.toJson(external, ExternallyTaggedEnum.class);
+        if (!externalJson.contains("\"EXTERNALLY_TAGGED_ENUM_VARIANT_A\"")) {
+            throw new AssertionError("expected external wire shape, got " + externalJson);
+        }
+        if (!(gson.fromJson(externalJson, ExternallyTaggedEnum.class)
+            instanceof ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA)) {
+            throw new AssertionError("expected external union case");
         }
     }
 }
@@ -418,6 +498,102 @@ fn kotlin_closed_sum_round_trip_preserves_union_shapes() {
 }
 
 #[test]
+fn java_untagged_object_union_selects_matching_required_fields() {
+    let fixture = read_fixture("valid/comprehensive-schemas.yaml");
+    let files = generate_files(&JavaOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("comprehensive fixture should generate Java");
+    let temp = TempDir::new("object-union-java");
+    write_generated_project(&files, &temp.path);
+    add_java_closed_sum_smoke(
+        &temp.path,
+        OBJECT_UNION_SMOKE,
+        "ObjectUnionSmoke",
+        "objectUnionSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "objectUnionSmoke");
+    assert!(
+        output.status.success(),
+        "generated Java object-union smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn kotlin_untagged_object_union_selects_matching_required_fields() {
+    let fixture = read_fixture("valid/comprehensive-schemas.yaml");
+    let files = generate_files(&KotlinOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("comprehensive fixture should generate Kotlin");
+    let temp = TempDir::new("object-union-kotlin");
+    write_generated_project(&files, &temp.path);
+    add_kotlin_closed_sum_smoke(
+        &temp.path,
+        OBJECT_UNION_SMOKE,
+        "ObjectUnionSmoke",
+        "objectUnionSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "objectUnionSmoke");
+    assert!(
+        output.status.success(),
+        "generated Kotlin object-union smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn java_any_union_is_a_last_resort_case() {
+    let fixture = read_fixture("valid/type-aliases/union-with-any.yaml");
+    let files = generate_files(&JavaOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("Any union fixture should generate Java");
+    let temp = TempDir::new("any-union-java");
+    write_generated_project(&files, &temp.path);
+    add_java_closed_sum_smoke(
+        &temp.path,
+        ANY_UNION_SMOKE,
+        "AnyUnionSmoke",
+        "anyUnionSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "anyUnionSmoke");
+    assert!(
+        output.status.success(),
+        "generated Java Any-union smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn kotlin_any_union_is_a_last_resort_case() {
+    let fixture = read_fixture("valid/type-aliases/union-with-any.yaml");
+    let files = generate_files(&KotlinOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("Any union fixture should generate Kotlin");
+    let temp = TempDir::new("any-union-kotlin");
+    write_generated_project(&files, &temp.path);
+    add_kotlin_closed_sum_smoke(
+        &temp.path,
+        ANY_UNION_SMOKE,
+        "AnyUnionSmoke",
+        "anyUnionSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "anyUnionSmoke");
+    assert!(
+        output.status.success(),
+        "generated Kotlin Any-union smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
 fn java_tagged_closed_sum_round_trip_preserves_discriminator() {
     let fixture = read_fixture("valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml");
     let files = generate_files(&JavaOkhttpCodeGenerator::new(empty_config()), &fixture)
@@ -459,6 +635,54 @@ fn kotlin_tagged_closed_sum_round_trip_preserves_discriminator() {
     assert!(
         output.status.success(),
         "generated Kotlin tagged closed-sum smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn java_tagged_shapes_round_trip_through_gson() {
+    let fixture = read_fixture("valid/enum-repr/enum-repr.yaml");
+    let files = generate_files(&JavaOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("enum representation fixture should generate Java");
+    let temp = TempDir::new("tagged-shapes-java");
+    write_generated_project(&files, &temp.path);
+    add_java_closed_sum_smoke(
+        &temp.path,
+        TAGGED_SHAPES_SMOKE,
+        "TaggedShapesSmoke",
+        "taggedShapesSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "taggedShapesSmoke");
+    assert!(
+        output.status.success(),
+        "generated Java tagged-shapes smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn kotlin_tagged_shapes_round_trip_through_gson() {
+    let fixture = read_fixture("valid/enum-repr/enum-repr.yaml");
+    let files = generate_files(&KotlinOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("enum representation fixture should generate Kotlin");
+    let temp = TempDir::new("tagged-shapes-kotlin");
+    write_generated_project(&files, &temp.path);
+    add_kotlin_closed_sum_smoke(
+        &temp.path,
+        TAGGED_SHAPES_SMOKE,
+        "TaggedShapesSmoke",
+        "taggedShapesSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "taggedShapesSmoke");
+    assert!(
+        output.status.success(),
+        "generated Kotlin tagged-shapes smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
         output.status,
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)

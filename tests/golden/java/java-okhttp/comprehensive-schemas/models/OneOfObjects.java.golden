@@ -20,7 +20,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Union of object types
  */
-@JsonAdapter(OneOfObjectsJsonAdapter.class)
+@JsonAdapter(value = OneOfObjectsJsonAdapter.class, nullSafe = false)
 public sealed interface OneOfObjects {
     record VariantBasicObject(BasicObject value0) implements OneOfObjects {}
 
@@ -37,17 +37,24 @@ final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
             return null;
 
         }
-        if (element.isJsonObject()) {
+        if (((element.isJsonObject()
+         && element.getAsJsonObject().has("id")
+        )
+         && element.getAsJsonObject().has("name")
+        )
+        ) {
             return new OneOfObjects.VariantBasicObject(gson.fromJson(element
             , new TypeToken<BasicObject>() {}.getType()));
 
         }
-        if (element.isJsonObject()) {
+        if (element.isJsonObject()
+        ) {
             return new OneOfObjects.VariantNestedObject(gson.fromJson(element
             , new TypeToken<NestedObject>() {}.getType()));
 
         }
         throw new JsonParseException("unknown OneOfObjects union value");
+
 
     }
 

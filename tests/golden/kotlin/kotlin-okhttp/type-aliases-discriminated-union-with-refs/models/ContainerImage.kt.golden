@@ -22,7 +22,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(ContainerImageJsonAdapter::class)
+@JsonAdapter(ContainerImageJsonAdapter::class, nullSafe = false)
 sealed class ContainerImage private constructor() {
     data class VariantContainerImageManaged(val value0: ContainerImageManaged) : ContainerImage()
 

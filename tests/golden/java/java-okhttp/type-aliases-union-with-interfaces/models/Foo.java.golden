@@ -17,7 +17,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-@JsonAdapter(FooJsonAdapter.class)
+@JsonAdapter(value = FooJsonAdapter.class, nullSafe = false)
 public sealed interface Foo {
     record VariantBar(Bar value0) implements Foo {}
 
@@ -36,22 +36,42 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
             return null;
 
         }
-        if (element.isJsonObject()) {
+        if ((((element.isJsonObject()
+         && element.getAsJsonObject().has("bucket")
+        )
+         && element.getAsJsonObject().has("endpoint")
+        )
+         && element.getAsJsonObject().has("type")
+        )
+        ) {
             return new Foo.VariantBar(gson.fromJson(element
             , new TypeToken<Bar>() {}.getType()));
 
         }
-        if (element.isJsonObject()) {
+        if (((element.isJsonObject()
+         && element.getAsJsonObject().has("path")
+        )
+         && element.getAsJsonObject().has("type")
+        )
+        ) {
             return new Foo.VariantBaz(gson.fromJson(element
             , new TypeToken<Baz>() {}.getType()));
 
         }
-        if (element.isJsonObject()) {
+        if ((((element.isJsonObject()
+         && element.getAsJsonObject().has("namespace")
+        )
+         && element.getAsJsonObject().has("type")
+        )
+         && element.getAsJsonObject().has("url")
+        )
+        ) {
             return new Foo.VariantQux(gson.fromJson(element
             , new TypeToken<Qux>() {}.getType()));
 
         }
         throw new JsonParseException("unknown Foo union value");
+
 
     }
 
