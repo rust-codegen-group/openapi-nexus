@@ -14,17 +14,91 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Discriminator: kind (internal).
  */
-public class Event {
-    private Object value;
+@JsonAdapter(EventJsonAdapter.class)
+public sealed interface Event {
+    /**
+     * Unspecified event variant (empty)
+     */
+    enum VariantEventUnspecified implements Event { INSTANCE }
 
-    public Event(Object value) {
-        this.value = value;
+    /**
+     * Created event with timestamp
+     */
+    record VariantEventCreated(EventEventCreated value0) implements Event {}
+
+    /**
+     * Updated event with new value
+     */
+    record VariantEventUpdated(EventEventUpdated value0) implements Event {}
+}
+
+final class EventJsonAdapter extends TypeAdapter<Event> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public Event read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        if ("EVENT_UNSPECIFIED".equals(discriminator)) {
+            return Event.VariantEventUnspecified.INSTANCE;
+
+        }
+        if ("EVENT_CREATED".equals(discriminator)) {
+            return new Event.VariantEventCreated(gson.fromJson(object
+            , new TypeToken<EventEventCreated>() {}.getType()));
+
+        }
+        if ("EVENT_UPDATED".equals(discriminator)) {
+            return new Event.VariantEventUpdated(gson.fromJson(object
+            , new TypeToken<EventEventUpdated>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown Event discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, Event value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof Event.VariantEventUnspecified) {
+            JsonObject object = new JsonObject();
+            object.addProperty("kind", "EVENT_UNSPECIFIED");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof Event.VariantEventCreated) {
+            JsonObject object = gson.toJsonTree(((Event.VariantEventCreated) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "EVENT_CREATED");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof Event.VariantEventUpdated) {
+            JsonObject object = gson.toJsonTree(((Event.VariantEventUpdated) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "EVENT_UPDATED");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

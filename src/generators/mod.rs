@@ -1,3 +1,4 @@
+pub(crate) mod closed_sum;
 pub mod go;
 pub mod java;
 pub mod kotlin;

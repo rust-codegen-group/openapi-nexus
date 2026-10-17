@@ -5,6 +5,18 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Adjacently tagged enum
 
@@ -13,14 +25,62 @@ The tag and content are separate fields:
 
 Discriminator: ty / content: data (adjacent).
  */
-public class AdjacentlyTaggedEnum {
-    private Object value;
+@JsonAdapter(AdjacentlyTaggedEnumJsonAdapter.class)
+public sealed interface AdjacentlyTaggedEnum {
+    /**
+     * Variant A with string and integer fields
+     */
+    record VariantAdjacentlyTaggedEnumVariantA(VariantA value0) implements AdjacentlyTaggedEnum {}
 
-    public AdjacentlyTaggedEnum(Object value) {
-        this.value = value;
+    /**
+     * Variant B with boolean and float fields
+     */
+    record VariantAdjacentlyTaggedEnumVariantB(VariantB value0) implements AdjacentlyTaggedEnum {}
+}
+
+final class AdjacentlyTaggedEnumJsonAdapter extends TypeAdapter<AdjacentlyTaggedEnum> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public AdjacentlyTaggedEnum read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("ty") ? object.get("ty").getAsString() : null;
+        if ("ADJACENTLY_TAGGED_ENUM_VARIANT_A".equals(discriminator)) {
+            return new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(object.get("data")
+            , new TypeToken<VariantA>() {}.getType()));
+
+        }
+        if ("ADJACENTLY_TAGGED_ENUM_VARIANT_B".equals(discriminator)) {
+            return new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB(gson.fromJson(object.get("data")
+            , new TypeToken<VariantB>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown AdjacentlyTaggedEnum discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, AdjacentlyTaggedEnum value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA) {
+            JsonObject object = new JsonObject();
+            object.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_A");
+            object.add("data", gson.toJsonTree(((AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA) value).value0()));
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB) {
+            JsonObject object = new JsonObject();
+            object.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_B");
+            object.add("data", gson.toJsonTree(((AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB) value).value0()));
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

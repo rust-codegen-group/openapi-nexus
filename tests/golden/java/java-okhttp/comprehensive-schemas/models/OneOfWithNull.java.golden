@@ -5,17 +5,77 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Union of string, null, and schema reference
  */
-public class OneOfWithNull {
-    private Object value;
+@JsonAdapter(OneOfWithNullJsonAdapter.class)
+public sealed interface OneOfWithNull {
+    record VariantString(String value0) implements OneOfWithNull {}
 
-    public OneOfWithNull(Object value) {
-        this.value = value;
+    record VariantBasicObject(BasicObject value0) implements OneOfWithNull {}
+
+    /**
+     * The union's null value.
+     */
+    enum VariantNull implements OneOfWithNull { INSTANCE }
+}
+
+final class OneOfWithNullJsonAdapter extends TypeAdapter<OneOfWithNull> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public OneOfWithNull read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        if (element.isJsonNull()) {
+            return OneOfWithNull.VariantNull.INSTANCE;
+
+        }
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new OneOfWithNull.VariantString(element
+            .getAsString());
+
+        }
+        if (element.isJsonObject()) {
+            return new OneOfWithNull.VariantBasicObject(gson.fromJson(element
+            , new TypeToken<BasicObject>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown OneOfWithNull union value");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, OneOfWithNull value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof OneOfWithNull.VariantString) {
+            gson.toJson(gson.toJsonTree(((OneOfWithNull.VariantString) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof OneOfWithNull.VariantBasicObject) {
+            gson.toJson(gson.toJsonTree(((OneOfWithNull.VariantBasicObject) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof OneOfWithNull.VariantNull) {
+            writer.nullValue();
+
+            return;
+        }
     }
 }

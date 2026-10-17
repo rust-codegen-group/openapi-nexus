@@ -8,17 +8,69 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Discriminator: kind (internal).
  */
-public class ContainerKind {
-    private Object value;
+@JsonAdapter(ContainerKindJsonAdapter.class)
+public sealed interface ContainerKind {
+    record VariantContainerKindManaged(ContainerKindManaged value0) implements ContainerKind {}
 
-    public ContainerKind(Object value) {
-        this.value = value;
+    record VariantContainerKindCustom(ContainerKindCustom value0) implements ContainerKind {}
+}
+
+final class ContainerKindJsonAdapter extends TypeAdapter<ContainerKind> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public ContainerKind read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        if ("CONTAINER_KIND_MANAGED".equals(discriminator)) {
+            return new ContainerKind.VariantContainerKindManaged(gson.fromJson(object
+            , new TypeToken<ContainerKindManaged>() {}.getType()));
+
+        }
+        if ("CONTAINER_KIND_CUSTOM".equals(discriminator)) {
+            return new ContainerKind.VariantContainerKindCustom(gson.fromJson(object
+            , new TypeToken<ContainerKindCustom>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown ContainerKind discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, ContainerKind value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof ContainerKind.VariantContainerKindManaged) {
+            JsonObject object = gson.toJsonTree(((ContainerKind.VariantContainerKindManaged) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "CONTAINER_KIND_MANAGED");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof ContainerKind.VariantContainerKindCustom) {
+            JsonObject object = gson.toJsonTree(((ContainerKind.VariantContainerKindCustom) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "CONTAINER_KIND_CUSTOM");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

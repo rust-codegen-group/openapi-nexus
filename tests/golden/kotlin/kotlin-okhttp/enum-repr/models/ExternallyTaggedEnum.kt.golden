@@ -5,6 +5,19 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Externally tagged enum (default Serde representation)
 
@@ -13,4 +26,55 @@ and the content is the value: `{"VariantA": {"field1": "...", "field2": 123}}`
 
 Discriminator: variant key (external).
  */
-typealias ExternallyTaggedEnum = Any
+@JsonAdapter(ExternallyTaggedEnumJsonAdapter::class)
+sealed class ExternallyTaggedEnum private constructor() {
+    /**
+     * Variant A with string and integer fields
+     */
+    data class VariantExternallyTaggedEnumVariantA(val value0: VariantA) : ExternallyTaggedEnum()
+
+    /**
+     * Variant B with boolean and float fields
+     */
+    data class VariantExternallyTaggedEnumVariantB(val value0: VariantB) : ExternallyTaggedEnum()
+}
+
+private class ExternallyTaggedEnumJsonAdapter: TypeAdapter<ExternallyTaggedEnum>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): ExternallyTaggedEnum? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when {
+            jsonObject.has("EXTERNALLY_TAGGED_ENUM_VARIANT_A") -> ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA(gson.fromJson(jsonObject["EXTERNALLY_TAGGED_ENUM_VARIANT_A"]
+            , object: TypeToken<VariantA>() {}.type))
+
+            jsonObject.has("EXTERNALLY_TAGGED_ENUM_VARIANT_B") -> ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB(gson.fromJson(jsonObject["EXTERNALLY_TAGGED_ENUM_VARIANT_B"]
+            , object: TypeToken<VariantB>() {}.type))
+
+            else -> throw JsonParseException("unknown ExternallyTaggedEnum variant")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: ExternallyTaggedEnum?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA -> {
+                val jsonObject = JsonObject()
+                jsonObject.add("EXTERNALLY_TAGGED_ENUM_VARIANT_A", gson.toJsonTree(value.value0))
+                gson.toJson(jsonObject, writer)
+
+            }
+            is ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB -> {
+                val jsonObject = JsonObject()
+                jsonObject.add("EXTERNALLY_TAGGED_ENUM_VARIANT_B", gson.toJsonTree(value.value0))
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

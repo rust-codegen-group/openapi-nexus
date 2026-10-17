@@ -5,7 +5,71 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Union type with inline object schemas
  */
-typealias Foo = Any
+@JsonAdapter(FooJsonAdapter::class)
+sealed class Foo private constructor() {
+    data class VariantFooMember1(val value0: FooMember1) : Foo()
+
+    data class VariantFooMember2(val value0: FooMember2) : Foo()
+
+    data class VariantFooMember3(val value0: FooMember3) : Foo()
+}
+
+private class FooJsonAdapter: TypeAdapter<Foo>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): Foo? {
+        val element = JsonParser.parseReader(reader)
+        return when {
+            element.isJsonNull -> null
+
+            element.isJsonObject -> Foo.VariantFooMember1(gson.fromJson(element
+            , object: TypeToken<FooMember1>() {}.type))
+
+            element.isJsonObject -> Foo.VariantFooMember2(gson.fromJson(element
+            , object: TypeToken<FooMember2>() {}.type))
+
+            element.isJsonObject -> Foo.VariantFooMember3(gson.fromJson(element
+            , object: TypeToken<FooMember3>() {}.type))
+
+            else -> throw JsonParseException("unknown Foo union value")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: Foo?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is Foo.VariantFooMember1 -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is Foo.VariantFooMember2 -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is Foo.VariantFooMember3 -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+        }
+    }
+}

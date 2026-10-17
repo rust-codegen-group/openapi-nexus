@@ -5,4 +5,77 @@
 
 package com.example.sdk.models
 
-typealias Foo = Any
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
+@JsonAdapter(FooJsonAdapter::class)
+sealed class Foo private constructor() {
+    data class VariantString(val value0: String) : Foo()
+
+    data class VariantNumber(val value0: Double) : Foo()
+
+    data class VariantBoolean(val value0: Boolean) : Foo()
+
+    /**
+     * The union's null value.
+     */
+    data object VariantNull : Foo()
+}
+
+private class FooJsonAdapter: TypeAdapter<Foo>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): Foo? {
+        val element = JsonParser.parseReader(reader)
+        return when {
+            element.isJsonNull -> Foo.VariantNull
+
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Foo.VariantString(element
+            .asString)
+
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> Foo.VariantNumber(element
+            .asDouble)
+
+            element.isJsonPrimitive && element.asJsonPrimitive.isBoolean -> Foo.VariantBoolean(element
+            .asBoolean)
+
+            else -> throw JsonParseException("unknown Foo union value")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: Foo?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is Foo.VariantString -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is Foo.VariantNumber -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is Foo.VariantBoolean -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is Foo.VariantNull -> {
+                writer.nullValue()
+
+            }
+        }
+    }
+}

@@ -1,0 +1,36 @@
+openapi: 3.1.0
+info:
+  title: Closed Sum Payload Shapes Test
+  description: Verify that Kotlin and Java closed-sum cases retain structured payload types.
+  version: 1.0.0
+
+paths:
+  /choice:
+    post:
+      operationId: choose_payload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Choice'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Choice'
+
+components:
+  schemas:
+    Choice:
+      anyOf:
+        - type: string
+        - type: array
+          items:
+            type: integer
+        - type: object
+          additionalProperties:
+            type: boolean
+        - type: 'null'

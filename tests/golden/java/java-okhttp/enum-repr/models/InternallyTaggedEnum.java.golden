@@ -5,6 +5,18 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Internally tagged enum
 
@@ -13,14 +25,60 @@ The tag is a field inside the object alongside other fields:
 
 Discriminator: ty (internal).
  */
-public class InternallyTaggedEnum {
-    private Object value;
+@JsonAdapter(InternallyTaggedEnumJsonAdapter.class)
+public sealed interface InternallyTaggedEnum {
+    /**
+     * Variant A with string and integer fields
+     */
+    record VariantInternallyTaggedEnumVariantA(VariantA value0) implements InternallyTaggedEnum {}
 
-    public InternallyTaggedEnum(Object value) {
-        this.value = value;
+    /**
+     * Variant B with boolean and float fields
+     */
+    record VariantInternallyTaggedEnumVariantB(VariantB value0) implements InternallyTaggedEnum {}
+}
+
+final class InternallyTaggedEnumJsonAdapter extends TypeAdapter<InternallyTaggedEnum> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public InternallyTaggedEnum read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("ty") ? object.get("ty").getAsString() : null;
+        if ("INTERNALLY_TAGGED_ENUM_VARIANT_A".equals(discriminator)) {
+            return new InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA(gson.fromJson(object
+            , new TypeToken<VariantA>() {}.getType()));
+
+        }
+        if ("INTERNALLY_TAGGED_ENUM_VARIANT_B".equals(discriminator)) {
+            return new InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB(gson.fromJson(object
+            , new TypeToken<VariantB>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown InternallyTaggedEnum discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, InternallyTaggedEnum value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA) {
+            JsonObject object = gson.toJsonTree(((InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA) value).value0()).getAsJsonObject();
+            object.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_A");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB) {
+            JsonObject object = gson.toJsonTree(((InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB) value).value0()).getAsJsonObject();
+            object.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_B");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

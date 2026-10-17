@@ -5,4 +5,59 @@
 
 package com.example.sdk.models
 
-typealias Qux = Any
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
+@JsonAdapter(QuxJsonAdapter::class)
+sealed class Qux private constructor() {
+    data class VariantBar(val value0: Bar) : Qux()
+
+    data class VariantBaz(val value0: Baz) : Qux()
+}
+
+private class QuxJsonAdapter: TypeAdapter<Qux>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): Qux? {
+        val element = JsonParser.parseReader(reader)
+        return when {
+            element.isJsonNull -> null
+
+            element.isJsonObject -> Qux.VariantBar(gson.fromJson(element
+            , object: TypeToken<Bar>() {}.type))
+
+            element.isJsonObject -> Qux.VariantBaz(gson.fromJson(element
+            , object: TypeToken<Baz>() {}.type))
+
+            else -> throw JsonParseException("unknown Qux union value")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: Qux?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is Qux.VariantBar -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is Qux.VariantBaz -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+        }
+    }
+}

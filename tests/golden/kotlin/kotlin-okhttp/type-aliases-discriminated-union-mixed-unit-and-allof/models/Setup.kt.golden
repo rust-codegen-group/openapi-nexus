@@ -10,9 +10,77 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Setup: quick (managed), custom, or unspecified.
 
 Discriminator: kind (internal).
  */
-typealias Setup = Any
+@JsonAdapter(SetupJsonAdapter::class)
+sealed class Setup private constructor() {
+    data object VariantSetupUnspecified : Setup()
+
+    data class VariantSetupQuick(val value0: SetupQuick) : Setup()
+
+    data class VariantSetupCustom(val value0: SetupCustom) : Setup()
+}
+
+private class SetupJsonAdapter: TypeAdapter<Setup>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): Setup? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["kind"]?.asString) {
+            "SETUP_UNSPECIFIED" -> Setup.VariantSetupUnspecified
+
+            "SETUP_QUICK" -> Setup.VariantSetupQuick(gson.fromJson(jsonObject
+            , object: TypeToken<SetupQuick>() {}.type))
+
+            "SETUP_CUSTOM" -> Setup.VariantSetupCustom(gson.fromJson(jsonObject
+            , object: TypeToken<SetupCustom>() {}.type))
+
+            else -> throw JsonParseException("unknown Setup discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: Setup?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is Setup.VariantSetupUnspecified -> {
+                val jsonObject = JsonObject()
+                jsonObject.addProperty("kind", "SETUP_UNSPECIFIED")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is Setup.VariantSetupQuick -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "SETUP_QUICK")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is Setup.VariantSetupCustom -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "SETUP_CUSTOM")
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

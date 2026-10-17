@@ -6,7 +6,65 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Discriminator: kind (internal).
  */
-typealias ContainerImage = Any
+@JsonAdapter(ContainerImageJsonAdapter::class)
+sealed class ContainerImage private constructor() {
+    data class VariantContainerImageManaged(val value0: ContainerImageManaged) : ContainerImage()
+
+    data class VariantContainerImageCustom(val value0: ContainerImageCustom) : ContainerImage()
+}
+
+private class ContainerImageJsonAdapter: TypeAdapter<ContainerImage>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): ContainerImage? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["kind"]?.asString) {
+            "CONTAINER_IMAGE_MANAGED" -> ContainerImage.VariantContainerImageManaged(gson.fromJson(jsonObject
+            , object: TypeToken<ContainerImageManaged>() {}.type))
+
+            "CONTAINER_IMAGE_CUSTOM" -> ContainerImage.VariantContainerImageCustom(gson.fromJson(jsonObject
+            , object: TypeToken<ContainerImageCustom>() {}.type))
+
+            else -> throw JsonParseException("unknown ContainerImage discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: ContainerImage?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is ContainerImage.VariantContainerImageManaged -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "CONTAINER_IMAGE_MANAGED")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is ContainerImage.VariantContainerImageCustom -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "CONTAINER_IMAGE_CUSTOM")
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

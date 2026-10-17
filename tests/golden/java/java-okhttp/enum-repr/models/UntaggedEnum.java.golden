@@ -5,20 +5,70 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Untagged enum
 
 No tag is used, variants are distinguished by their structure:
 `{"field1": "...", "field2": 123}` or `{"field3": true, "field4": 1.23}`
  */
-public class UntaggedEnum {
-    private Object value;
+@JsonAdapter(UntaggedEnumJsonAdapter.class)
+public sealed interface UntaggedEnum {
+    record VariantVariantA(VariantA value0) implements UntaggedEnum {}
 
-    public UntaggedEnum(Object value) {
-        this.value = value;
+    record VariantVariantB(VariantB value0) implements UntaggedEnum {}
+}
+
+final class UntaggedEnumJsonAdapter extends TypeAdapter<UntaggedEnum> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public UntaggedEnum read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        if (element.isJsonNull()) {
+            return null;
+
+        }
+        if (element.isJsonObject()) {
+            return new UntaggedEnum.VariantVariantA(gson.fromJson(element
+            , new TypeToken<VariantA>() {}.getType()));
+
+        }
+        if (element.isJsonObject()) {
+            return new UntaggedEnum.VariantVariantB(gson.fromJson(element
+            , new TypeToken<VariantB>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown UntaggedEnum union value");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, UntaggedEnum value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof UntaggedEnum.VariantVariantA) {
+            gson.toJson(gson.toJsonTree(((UntaggedEnum.VariantVariantA) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof UntaggedEnum.VariantVariantB) {
+            gson.toJson(gson.toJsonTree(((UntaggedEnum.VariantVariantB) value).value0()), writer);
+
+            return;
+        }
     }
 }

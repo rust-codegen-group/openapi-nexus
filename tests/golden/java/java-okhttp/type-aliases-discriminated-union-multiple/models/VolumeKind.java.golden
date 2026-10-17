@@ -8,17 +8,69 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Discriminator: kind (internal).
  */
-public class VolumeKind {
-    private Object value;
+@JsonAdapter(VolumeKindJsonAdapter.class)
+public sealed interface VolumeKind {
+    record VariantVolumeKindLocal(VolumeKindLocal value0) implements VolumeKind {}
 
-    public VolumeKind(Object value) {
-        this.value = value;
+    record VariantVolumeKindRemote(VolumeKindRemote value0) implements VolumeKind {}
+}
+
+final class VolumeKindJsonAdapter extends TypeAdapter<VolumeKind> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public VolumeKind read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        if ("VOLUME_KIND_LOCAL".equals(discriminator)) {
+            return new VolumeKind.VariantVolumeKindLocal(gson.fromJson(object
+            , new TypeToken<VolumeKindLocal>() {}.getType()));
+
+        }
+        if ("VOLUME_KIND_REMOTE".equals(discriminator)) {
+            return new VolumeKind.VariantVolumeKindRemote(gson.fromJson(object
+            , new TypeToken<VolumeKindRemote>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown VolumeKind discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, VolumeKind value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof VolumeKind.VariantVolumeKindLocal) {
+            JsonObject object = gson.toJsonTree(((VolumeKind.VariantVolumeKindLocal) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "VOLUME_KIND_LOCAL");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof VolumeKind.VariantVolumeKindRemote) {
+            JsonObject object = gson.toJsonTree(((VolumeKind.VariantVolumeKindRemote) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "VOLUME_KIND_REMOTE");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

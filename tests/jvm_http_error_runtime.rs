@@ -131,6 +131,48 @@ public final class CharsetSmoke {
 }
 "#;
 
+const CLOSED_SUM_SMOKE: &str = r#"
+import com.example.sdk.models.Choice;
+import com.google.gson.Gson;
+
+public final class ClosedSumSmoke {
+    public static void main(String[] args) {
+        Gson gson = new Gson();
+        Choice choice = gson.fromJson("[1,2]", Choice.class);
+        if (!(choice instanceof Choice.VariantArray array) || array.value0().size() != 2) {
+            throw new AssertionError("expected typed array union case");
+        }
+        String choiceJson = gson.toJson(new Choice.VariantString("ok"), Choice.class);
+        if (!"\"ok\"".equals(choiceJson)) {
+            throw new AssertionError("expected typed primitive union serialization, got " + choiceJson);
+        }
+
+    }
+}
+"#;
+
+const TAGGED_SUM_SMOKE: &str = r#"
+import com.example.sdk.models.Setup;
+import com.google.gson.Gson;
+
+public final class TaggedSumSmoke {
+    public static void main(String[] args) {
+        Gson gson = new Gson();
+        Setup setup = gson.fromJson(
+            "{\"kind\":\"SETUP_QUICK\",\"name\":\"x\",\"engine\":\"e\"}",
+            Setup.class
+        );
+        if (!(setup instanceof Setup.VariantSetupQuick)) {
+            throw new AssertionError("expected typed discriminator case");
+        }
+        String setupJson = gson.toJson(setup, Setup.class);
+        if (!setupJson.contains("\"kind\":\"SETUP_QUICK\"")) {
+            throw new AssertionError("expected discriminator serialization, got " + setupJson);
+        }
+    }
+}
+"#;
+
 fn add_java_charset_smoke(root: &Path) {
     let smoke_dir = root.join("smoke");
     fs::create_dir_all(&smoke_dir).expect("smoke source directory should be created");
@@ -194,13 +236,74 @@ tasks.register<JavaExec>("charsetSmoke") {
     fs::write(build_gradle, build).expect("build.gradle.kts should be updated");
 }
 
+fn add_java_closed_sum_smoke(root: &Path, source: &str, class_name: &str, task_name: &str) {
+    let smoke_dir = root.join("smoke");
+    fs::create_dir_all(&smoke_dir).expect("smoke source directory should be created");
+    fs::write(smoke_dir.join(format!("{class_name}.java")), source)
+        .expect("closed-sum Java smoke test should be written");
+
+    let build_gradle = root.join("build.gradle");
+    let mut build = fs::read_to_string(&build_gradle).expect("build.gradle should be readable");
+    let gradle = r#"
+
+sourceSets {
+    smoke {
+        java {
+            srcDirs("smoke")
+        }
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+    tasks.register("{task_name}", JavaExec) {
+        dependsOn("compileSmokeJava")
+        classpath = sourceSets.smoke.runtimeClasspath
+        mainClass = "{class_name}"
+}
+"#
+    .replace("{task_name}", task_name)
+    .replace("{class_name}", class_name);
+    build.push_str(&gradle);
+    fs::write(build_gradle, build).expect("build.gradle should be updated");
+}
+
+fn add_kotlin_closed_sum_smoke(root: &Path, source: &str, class_name: &str, task_name: &str) {
+    let smoke_dir = root.join("smoke");
+    fs::create_dir_all(&smoke_dir).expect("smoke source directory should be created");
+    let source = source.replace(".value0()", ".getValue0()");
+    fs::write(smoke_dir.join(format!("{class_name}.java")), source)
+        .expect("closed-sum Kotlin smoke test should be written");
+
+    let build_gradle = root.join("build.gradle.kts");
+    let mut build = fs::read_to_string(&build_gradle).expect("build.gradle.kts should be readable");
+    let gradle = r#"
+
+sourceSets {
+    create("smoke") {
+        java.srcDirs("smoke")
+        compileClasspath += sourceSets["main"].output + sourceSets["main"].compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+    tasks.register<JavaExec>("{task_name}") {
+        dependsOn("compileSmokeJava")
+        classpath = sourceSets["smoke"].runtimeClasspath
+        mainClass.set("{class_name}")
+}
+"#
+    .replace("{task_name}", task_name)
+    .replace("{class_name}", class_name);
+    build.push_str(&gradle);
+    fs::write(build_gradle, build).expect("build.gradle.kts should be updated");
+}
+
 fn gradle_charset_smoke(root: &Path) -> std::process::Output {
     let _lock = LockDir::acquire("gradle-charset-smoke");
     let mut cmd = Command::new("gradle");
-    let homebrew_jdk21 =
-        Path::new("/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home");
-    if homebrew_jdk21.exists() {
-        cmd.env("JAVA_HOME", homebrew_jdk21);
+    if let Some(java_home) = std::env::var_os("JAVA_HOME") {
+        cmd.env("JAVA_HOME", java_home);
     }
     cmd.arg("--no-daemon")
         .arg("--max-workers=1")
@@ -210,6 +313,22 @@ fn gradle_charset_smoke(root: &Path) -> std::process::Output {
         .current_dir(root)
         .output()
         .expect("generated JVM charset smoke should run")
+}
+
+fn gradle_closed_sum_smoke(root: &Path, task_name: &str) -> std::process::Output {
+    let _lock = LockDir::acquire("gradle-closed-sum-smoke");
+    let mut cmd = Command::new("gradle");
+    if let Some(java_home) = std::env::var_os("JAVA_HOME") {
+        cmd.env("JAVA_HOME", java_home);
+    }
+    cmd.arg("--no-daemon")
+        .arg("--max-workers=1")
+        .arg("--quiet")
+        .arg(task_name)
+        .env("GRADLE_OPTS", "-Dorg.gradle.daemon=false")
+        .current_dir(root)
+        .output()
+        .expect("generated JVM closed-sum smoke should run")
 }
 
 #[test]
@@ -244,6 +363,102 @@ fn kotlin_error_detail_body_honors_response_charset() {
     assert!(
         output.status.success(),
         "generated Kotlin charset smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn java_closed_sum_round_trip_preserves_union_shapes() {
+    let fixture = read_fixture("valid/type-aliases/closed-sum-payload-shapes.yaml");
+    let files = generate_files(&JavaOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("closed-sum fixture should generate Java");
+    let temp = TempDir::new("closed-sum-java");
+    write_generated_project(&files, &temp.path);
+    add_java_closed_sum_smoke(
+        &temp.path,
+        CLOSED_SUM_SMOKE,
+        "ClosedSumSmoke",
+        "closedSumSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "closedSumSmoke");
+    assert!(
+        output.status.success(),
+        "generated Java closed-sum smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn kotlin_closed_sum_round_trip_preserves_union_shapes() {
+    let fixture = read_fixture("valid/type-aliases/closed-sum-payload-shapes.yaml");
+    let files = generate_files(&KotlinOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("closed-sum fixture should generate Kotlin");
+    let temp = TempDir::new("closed-sum-kotlin");
+    write_generated_project(&files, &temp.path);
+    add_kotlin_closed_sum_smoke(
+        &temp.path,
+        CLOSED_SUM_SMOKE,
+        "ClosedSumSmoke",
+        "closedSumSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "closedSumSmoke");
+    assert!(
+        output.status.success(),
+        "generated Kotlin closed-sum smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn java_tagged_closed_sum_round_trip_preserves_discriminator() {
+    let fixture = read_fixture("valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml");
+    let files = generate_files(&JavaOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("tagged closed-sum fixture should generate Java");
+    let temp = TempDir::new("tagged-closed-sum-java");
+    write_generated_project(&files, &temp.path);
+    add_java_closed_sum_smoke(
+        &temp.path,
+        TAGGED_SUM_SMOKE,
+        "TaggedSumSmoke",
+        "taggedSumSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "taggedSumSmoke");
+    assert!(
+        output.status.success(),
+        "generated Java tagged closed-sum smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn kotlin_tagged_closed_sum_round_trip_preserves_discriminator() {
+    let fixture = read_fixture("valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml");
+    let files = generate_files(&KotlinOkhttpCodeGenerator::new(empty_config()), &fixture)
+        .expect("tagged closed-sum fixture should generate Kotlin");
+    let temp = TempDir::new("tagged-closed-sum-kotlin");
+    write_generated_project(&files, &temp.path);
+    add_kotlin_closed_sum_smoke(
+        &temp.path,
+        TAGGED_SUM_SMOKE,
+        "TaggedSumSmoke",
+        "taggedSumSmoke",
+    );
+
+    let output = gradle_closed_sum_smoke(&temp.path, "taggedSumSmoke");
+    assert!(
+        output.status.success(),
+        "generated Kotlin tagged closed-sum smoke failed\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
         output.status,
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)

@@ -5,6 +5,18 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Externally tagged enum (default Serde representation)
 
@@ -13,14 +25,59 @@ and the content is the value: `{"VariantA": {"field1": "...", "field2": 123}}`
 
 Discriminator: variant key (external).
  */
-public class ExternallyTaggedEnum {
-    private Object value;
+@JsonAdapter(ExternallyTaggedEnumJsonAdapter.class)
+public sealed interface ExternallyTaggedEnum {
+    /**
+     * Variant A with string and integer fields
+     */
+    record VariantExternallyTaggedEnumVariantA(VariantA value0) implements ExternallyTaggedEnum {}
 
-    public ExternallyTaggedEnum(Object value) {
-        this.value = value;
+    /**
+     * Variant B with boolean and float fields
+     */
+    record VariantExternallyTaggedEnumVariantB(VariantB value0) implements ExternallyTaggedEnum {}
+}
+
+final class ExternallyTaggedEnumJsonAdapter extends TypeAdapter<ExternallyTaggedEnum> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public ExternallyTaggedEnum read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        if (object.has("EXTERNALLY_TAGGED_ENUM_VARIANT_A")) {
+            return new ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA(gson.fromJson(object.get("EXTERNALLY_TAGGED_ENUM_VARIANT_A")
+            , new TypeToken<VariantA>() {}.getType()));
+
+        }
+        if (object.has("EXTERNALLY_TAGGED_ENUM_VARIANT_B")) {
+            return new ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB(gson.fromJson(object.get("EXTERNALLY_TAGGED_ENUM_VARIANT_B")
+            , new TypeToken<VariantB>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown ExternallyTaggedEnum variant");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, ExternallyTaggedEnum value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA) {
+            JsonObject object = new JsonObject();
+            object.add("EXTERNALLY_TAGGED_ENUM_VARIANT_A", gson.toJsonTree(((ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA) value).value0()));
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB) {
+            JsonObject object = new JsonObject();
+            object.add("EXTERNALLY_TAGGED_ENUM_VARIANT_B", gson.toJsonTree(((ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB) value).value0()));
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

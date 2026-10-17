@@ -8,7 +8,65 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Discriminator: kind (internal).
  */
-typealias VolumeKind = Any
+@JsonAdapter(VolumeKindJsonAdapter::class)
+sealed class VolumeKind private constructor() {
+    data class VariantVolumeKindLocal(val value0: VolumeKindLocal) : VolumeKind()
+
+    data class VariantVolumeKindRemote(val value0: VolumeKindRemote) : VolumeKind()
+}
+
+private class VolumeKindJsonAdapter: TypeAdapter<VolumeKind>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): VolumeKind? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["kind"]?.asString) {
+            "VOLUME_KIND_LOCAL" -> VolumeKind.VariantVolumeKindLocal(gson.fromJson(jsonObject
+            , object: TypeToken<VolumeKindLocal>() {}.type))
+
+            "VOLUME_KIND_REMOTE" -> VolumeKind.VariantVolumeKindRemote(gson.fromJson(jsonObject
+            , object: TypeToken<VolumeKindRemote>() {}.type))
+
+            else -> throw JsonParseException("unknown VolumeKind discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: VolumeKind?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is VolumeKind.VariantVolumeKindLocal -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "VOLUME_KIND_LOCAL")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is VolumeKind.VariantVolumeKindRemote -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "VOLUME_KIND_REMOTE")
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

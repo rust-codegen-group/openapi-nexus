@@ -14,7 +14,84 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Discriminator: kind (internal).
  */
-typealias Event = Any
+@JsonAdapter(EventJsonAdapter::class)
+sealed class Event private constructor() {
+    /**
+     * Unspecified event variant (empty)
+     */
+    data object VariantEventUnspecified : Event()
+
+    /**
+     * Created event with timestamp
+     */
+    data class VariantEventCreated(val value0: EventEventCreated) : Event()
+
+    /**
+     * Updated event with new value
+     */
+    data class VariantEventUpdated(val value0: EventEventUpdated) : Event()
+}
+
+private class EventJsonAdapter: TypeAdapter<Event>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): Event? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["kind"]?.asString) {
+            "EVENT_UNSPECIFIED" -> Event.VariantEventUnspecified
+
+            "EVENT_CREATED" -> Event.VariantEventCreated(gson.fromJson(jsonObject
+            , object: TypeToken<EventEventCreated>() {}.type))
+
+            "EVENT_UPDATED" -> Event.VariantEventUpdated(gson.fromJson(jsonObject
+            , object: TypeToken<EventEventUpdated>() {}.type))
+
+            else -> throw JsonParseException("unknown Event discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: Event?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is Event.VariantEventUnspecified -> {
+                val jsonObject = JsonObject()
+                jsonObject.addProperty("kind", "EVENT_UNSPECIFIED")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is Event.VariantEventCreated -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "EVENT_CREATED")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is Event.VariantEventUpdated -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "EVENT_UPDATED")
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}
