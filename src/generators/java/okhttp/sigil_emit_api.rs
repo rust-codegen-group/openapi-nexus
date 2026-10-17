@@ -37,7 +37,8 @@ pub fn generate_api_files(
     for (tag, ops) in &by_tag {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let filename = format!("{class_name}.java");
-        let body = emit_api_file(tag, ops, ir, package_name, request_inputs, has_models);
+        let body = emit_api_file(tag, ops, ir, package_name, request_inputs, has_models)
+            .map_err(|error| format!("Java API file for tag {tag}: {error}"))?;
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
         for op in ops {
@@ -82,7 +83,7 @@ fn emit_api_file(
     package_name: &str,
     request_inputs: &RequestInputPlan,
     has_models: bool,
-) -> String {
+) -> Result<String, String> {
     let class_name = format!("{}Api", tag.to_pascal_case());
     let plans: Vec<OpPlan> = ops
         .iter()
@@ -168,14 +169,14 @@ fn emit_api_file(
 
     // API methods
     for plan in &plans {
-        cls = cls.add_method(build_operation_fun(plan));
+        cls = cls.add_method(build_operation_fun(plan)?);
     }
 
     fb = fb.add_type(cls.build().expect("API class builds"));
 
     let file = fb.build().expect("FileSpec builds for API file");
     file.render(RENDER_WIDTH)
-        .expect("FileSpec renders for API file")
+        .map_err(|error| format!("render Java API file: {error}"))
 }
 
 fn package_header(package_name: &str) -> CodeBlock {
@@ -608,7 +609,7 @@ fn java_error_body_method(response: &TypedResponse) -> String {
 // Operation method
 // ---------------------------------------------------------------------------
 
-fn build_operation_fun(plan: &OpPlan<'_>) -> FunSpec {
+fn build_operation_fun(plan: &OpPlan<'_>) -> Result<FunSpec, String> {
     let mut fb = FunSpec::builder(&plan.method_name);
     fb = fb.visibility(Visibility::Public);
 
@@ -642,16 +643,17 @@ fn build_operation_fun(plan: &OpPlan<'_>) -> FunSpec {
 
     fb = fb.returns(vec![TypeName::primitive(&plan.response_type)]);
     fb = fb.throws(vec![TypeName::importable("java.io", "IOException")]);
-    fb = fb.body(emit_method_body(plan));
+    fb = fb.body(emit_method_body(plan)?);
 
-    fb.build().expect("operation FunSpec builds")
+    fb.build()
+        .map_err(|error| format!("build Java operation {}: {error}", plan.method_name))
 }
 
 // ---------------------------------------------------------------------------
 // Method body
 // ---------------------------------------------------------------------------
 
-fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
+fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
     let mut cb = CodeBlock::builder();
 
     // Path
@@ -671,7 +673,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 .replace($S(placeholder.as_str()), $L(stringified.as_str()))
             };
         })
-        .expect("Java path construction builds"),
+        .map_err(|error| format!("build Java path construction: {error}"))?,
     );
 
     // Query
@@ -681,7 +683,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             sigil_quote!(Java {
                 Map<String, String> query = new HashMap<>();
             })
-            .expect("Java query initialization builds"),
+            .map_err(|error| format!("build Java query initialization: {error}"))?,
         );
         for p in &plan.query_params {
             let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
@@ -702,12 +704,15 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 sigil_quote!(Java {
                     throw new IllegalArgumentException($S(message));
                 })
-                .expect("unsupported request body builds"),
+                .map_err(|error| format!("build unsupported Java request body: {error}"))?,
             );
-            return cb.build().expect("method body builds");
+            return cb
+                .build()
+                .map_err(|error| format!("build Java method body: {error}"));
         }
         cb.add_code(
-            sigil_quote!(Java { Request request; }).expect("Java request declaration builds"),
+            sigil_quote!(Java { Request request; })
+                .map_err(|error| format!("build Java request declaration: {error}"))?,
         );
         if body.encoding == BodyEncoding::Multipart {
             if let Some(parts) = &body.multipart_parts {
@@ -716,13 +721,13 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                     &method,
                     has_query,
                     "multipartBody",
-                ));
+                )?);
             } else {
                 cb.add_code(
                     sigil_quote!(Java {
                         throw new IllegalArgumentException("unsupported multipart request body: schema must be object-shaped");
                     })
-                    .expect("unsupported multipart request body builds"),
+                    .map_err(|error| format!("build unsupported Java multipart body: {error}"))?,
                 );
             }
         } else {
@@ -731,10 +736,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 &method,
                 has_query,
                 "requestBody",
-            ));
+            )?);
         }
     } else {
-        cb.add_code(java_new_request(&method, has_query));
+        cb.add_code(java_new_request(&method, has_query)?);
     }
 
     // Headers
@@ -753,10 +758,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
         sigil_quote!(Java {
             Response response = client.execute(request);
         })
-        .expect("Java request execution builds"),
+        .map_err(|error| format!("build Java request execution: {error}"))?,
     );
     cb.add_line();
-    cb.add_code(java_error_throw(plan));
+    cb.add_code(java_error_throw(plan)?);
 
     // Response parsing
     if !plan.typed_responses.is_empty() {
@@ -764,13 +769,13 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             sigil_quote!(Java {
                 byte[] responseBytes = response.body() != null ? response.body().bytes() : new byte[0];
             })
-            .expect("Java response bytes decode builds"),
+            .map_err(|error| format!("build Java response bytes decode: {error}"))?,
         );
         cb.add_code(
             sigil_quote!(Java {
                 String responseText = new String(responseBytes, StandardCharsets.UTF_8);
             })
-            .expect("Java response text decode builds"),
+            .map_err(|error| format!("build Java response text decode: {error}"))?,
         );
         let mut seen: HashSet<String> = HashSet::new();
 
@@ -784,10 +789,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                 sigil_quote!(Java {
                     $T(response_type) $N(tr.field_name.as_str()) = null;
                 })
-                .expect("Java typed response declaration builds"),
+                .map_err(|error| format!("build Java typed response declaration: {error}"))?,
             );
         }
-        cb.add_code(java_response_decode_assignments(&plan.typed_responses));
+        cb.add_code(java_response_decode_assignments(&plan.typed_responses)?);
 
         // Return with typed fields
         let args: Vec<String> = std::iter::once("response.code()".to_string())
@@ -806,18 +811,19 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             sigil_quote!(Java {
                 return new $N(plan.response_type.as_str())($for(arg in &dedup_args; separator = ", ") { $L(arg.as_str()) });
             })
-            .expect("typed response constructor return"),
+            .map_err(|error| format!("build Java typed response return: {error}"))?,
         );
     } else {
         cb.add_code(
             sigil_quote!(Java {
                 return new $N(plan.response_type.as_str())(response.code(), response);
             })
-            .expect("Java untyped response return builds"),
+            .map_err(|error| format!("build Java untyped response return: {error}"))?,
         );
     }
 
-    cb.build().expect("method body builds")
+    cb.build()
+        .map_err(|error| format!("build Java method body: {error}"))
 }
 
 fn unsupported_request_body_message(body: &BodyBinding) -> Option<String> {
@@ -835,7 +841,7 @@ fn unsupported_request_body_message(body: &BodyBinding) -> Option<String> {
     }
 }
 
-fn java_new_request(method: &str, has_query: bool) -> CodeBlock {
+fn java_new_request(method: &str, has_query: bool) -> Result<CodeBlock, String> {
     sigil_quote!(Java {
         $if(has_query) {
             Request request = client.newRequest($S(method), path, query, null);
@@ -843,10 +849,14 @@ fn java_new_request(method: &str, has_query: bool) -> CodeBlock {
             Request request = client.newRequest($S(method), path, null, null);
         }
     })
-    .expect("Java request construction builds")
+    .map_err(|error| format!("build Java request construction: {error}"))
 }
 
-fn java_new_request_with_body(method: &str, has_query: bool, body_expr: &str) -> CodeBlock {
+fn java_new_request_with_body(
+    method: &str,
+    has_query: bool,
+    body_expr: &str,
+) -> Result<CodeBlock, String> {
     sigil_quote!(Java {
         $if(has_query) {
             request = client.newRequestWithBody($S(method), path, query, $L(body_expr));
@@ -854,7 +864,7 @@ fn java_new_request_with_body(method: &str, has_query: bool, body_expr: &str) ->
             request = client.newRequestWithBody($S(method), path, null, $L(body_expr));
         }
     })
-    .expect("Java request body construction builds")
+    .map_err(|error| format!("build Java request body construction: {error}"))
 }
 
 fn java_query_param_put(
@@ -1015,7 +1025,9 @@ fn response_decode_expr(tr: &TypedResponse) -> String {
     }
 }
 
-fn java_response_decode_assignments(typed_responses: &[TypedResponse]) -> CodeBlock {
+fn java_response_decode_assignments(
+    typed_responses: &[TypedResponse],
+) -> Result<CodeBlock, String> {
     let mut cb = CodeBlock::builder();
     let mut seen: HashSet<String> = HashSet::new();
     let mut emitted_any = false;
@@ -1039,14 +1051,15 @@ fn java_response_decode_assignments(typed_responses: &[TypedResponse]) -> CodeBl
                 }
             })
         }
-        .expect("Java response decode branch builds");
+        .map_err(|error| format!("build Java response decode branch: {error}"))?;
         cb.add_code(branch);
         emitted_any = true;
     }
-    cb.build().expect("Java response decode assignments build")
+    cb.build()
+        .map_err(|error| format!("build Java response decode assignments: {error}"))
 }
 
-fn java_error_throw(plan: &OpPlan<'_>) -> CodeBlock {
+fn java_error_throw(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
     let mut cb = CodeBlock::builder();
     let detail_type = format!("{}Detail", plan.error_type);
     cb.begin_control_flow("if (!response.isSuccessful())", ());
@@ -1057,13 +1070,13 @@ fn java_error_throw(plan: &OpPlan<'_>) -> CodeBlock {
             byte[] responseBytes = responseBody != null ? responseBody.bytes() : new byte[0];
             String responseText = new String(responseBytes, responseCharset);
         })
-        .expect("Java error response decoding builds"),
+        .map_err(|error| format!("build Java error response decoding: {error}"))?,
     );
     cb.add_code(
         sigil_quote!(Java {
             $N(detail_type.as_str()) detail;
         })
-        .expect("Java error detail declaration builds"),
+        .map_err(|error| format!("build Java error detail declaration: {error}"))?,
     );
     cb.begin_control_flow("switch (response.code())", ());
     let mut seen = HashSet::new();
@@ -1121,7 +1134,8 @@ fn java_error_throw(plan: &OpPlan<'_>) -> CodeBlock {
         (),
     );
     cb.end_control_flow();
-    cb.build().expect("Java error throw builds")
+    cb.build()
+        .map_err(|error| format!("build Java error throw: {error}"))
 }
 
 fn java_error_detail_assign(plan: &OpPlan<'_>, response: &TypedResponse) -> CodeBlock {
