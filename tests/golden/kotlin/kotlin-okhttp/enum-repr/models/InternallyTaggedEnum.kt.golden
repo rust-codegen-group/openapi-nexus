@@ -5,6 +5,19 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Internally tagged enum
 
@@ -13,4 +26,55 @@ The tag is a field inside the object alongside other fields:
 
 Discriminator: ty (internal).
  */
-typealias InternallyTaggedEnum = Any
+@JsonAdapter(InternallyTaggedEnumJsonAdapter::class)
+sealed class InternallyTaggedEnum private constructor() {
+    /**
+     * Variant A with string and integer fields
+     */
+    data class VariantInternallyTaggedEnumVariantA(val value0: VariantA) : InternallyTaggedEnum()
+
+    /**
+     * Variant B with boolean and float fields
+     */
+    data class VariantInternallyTaggedEnumVariantB(val value0: VariantB) : InternallyTaggedEnum()
+}
+
+private class InternallyTaggedEnumJsonAdapter: TypeAdapter<InternallyTaggedEnum>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): InternallyTaggedEnum? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["ty"]?.asString) {
+            "INTERNALLY_TAGGED_ENUM_VARIANT_A" -> InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA(gson.fromJson(jsonObject
+            , object: TypeToken<VariantA>() {}.type))
+
+            "INTERNALLY_TAGGED_ENUM_VARIANT_B" -> InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB(gson.fromJson(jsonObject
+            , object: TypeToken<VariantB>() {}.type))
+
+            else -> throw JsonParseException("unknown InternallyTaggedEnum discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: InternallyTaggedEnum?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_A")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_B")
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

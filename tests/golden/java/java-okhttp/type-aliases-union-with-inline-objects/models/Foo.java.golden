@@ -5,17 +5,79 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Union type with inline object schemas
  */
-public class Foo {
-    private Object value;
+@JsonAdapter(FooJsonAdapter.class)
+public sealed interface Foo {
+    record VariantFooMember1(FooMember1 value0) implements Foo {}
 
-    public Foo(Object value) {
-        this.value = value;
+    record VariantFooMember2(FooMember2 value0) implements Foo {}
+
+    record VariantFooMember3(FooMember3 value0) implements Foo {}
+}
+
+final class FooJsonAdapter extends TypeAdapter<Foo> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public Foo read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        if (element.isJsonNull()) {
+            return null;
+
+        }
+        if (element.isJsonObject()) {
+            return new Foo.VariantFooMember1(gson.fromJson(element
+            , new TypeToken<FooMember1>() {}.getType()));
+
+        }
+        if (element.isJsonObject()) {
+            return new Foo.VariantFooMember2(gson.fromJson(element
+            , new TypeToken<FooMember2>() {}.getType()));
+
+        }
+        if (element.isJsonObject()) {
+            return new Foo.VariantFooMember3(gson.fromJson(element
+            , new TypeToken<FooMember3>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown Foo union value");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, Foo value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof Foo.VariantFooMember1) {
+            gson.toJson(gson.toJsonTree(((Foo.VariantFooMember1) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof Foo.VariantFooMember2) {
+            gson.toJson(gson.toJsonTree(((Foo.VariantFooMember2) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof Foo.VariantFooMember3) {
+            gson.toJson(gson.toJsonTree(((Foo.VariantFooMember3) value).value0()), writer);
+
+            return;
+        }
     }
 }

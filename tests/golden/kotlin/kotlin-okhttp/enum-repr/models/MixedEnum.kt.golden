@@ -5,10 +5,83 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
 
 Serializes as externally tagged: `{"SimpleA": null}`, `{"VariantA": {"field1": "...", "field2": 123}}`,
 `{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}`
  */
-typealias MixedEnum = Any
+@JsonAdapter(MixedEnumJsonAdapter::class)
+sealed class MixedEnum private constructor() {
+    data class VariantSimpleA(val value0: String) : MixedEnum()
+
+    data class VariantMixedEnumMember2(val value0: MixedEnumMember2) : MixedEnum()
+
+    data class VariantSimpleB(val value0: String) : MixedEnum()
+
+    data class VariantMixedEnumMember4(val value0: MixedEnumMember4) : MixedEnum()
+}
+
+private class MixedEnumJsonAdapter: TypeAdapter<MixedEnum>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): MixedEnum? {
+        val element = JsonParser.parseReader(reader)
+        return when {
+            element.isJsonNull -> null
+
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> MixedEnum.VariantSimpleA(element
+            .asString)
+
+            element.isJsonObject -> MixedEnum.VariantMixedEnumMember2(gson.fromJson(element
+            , object: TypeToken<MixedEnumMember2>() {}.type))
+
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> MixedEnum.VariantSimpleB(element
+            .asString)
+
+            element.isJsonObject -> MixedEnum.VariantMixedEnumMember4(gson.fromJson(element
+            , object: TypeToken<MixedEnumMember4>() {}.type))
+
+            else -> throw JsonParseException("unknown MixedEnum union value")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: MixedEnum?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is MixedEnum.VariantSimpleA -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is MixedEnum.VariantMixedEnumMember2 -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is MixedEnum.VariantSimpleB -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is MixedEnum.VariantMixedEnumMember4 -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+        }
+    }
+}

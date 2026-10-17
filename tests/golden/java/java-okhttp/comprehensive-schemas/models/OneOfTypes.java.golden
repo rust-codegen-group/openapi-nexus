@@ -5,17 +5,79 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Union of multiple primitive types
  */
-public class OneOfTypes {
-    private Object value;
+@JsonAdapter(OneOfTypesJsonAdapter.class)
+public sealed interface OneOfTypes {
+    record VariantString(String value0) implements OneOfTypes {}
 
-    public OneOfTypes(Object value) {
-        this.value = value;
+    record VariantNumber(double value0) implements OneOfTypes {}
+
+    record VariantBoolean(boolean value0) implements OneOfTypes {}
+}
+
+final class OneOfTypesJsonAdapter extends TypeAdapter<OneOfTypes> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public OneOfTypes read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        if (element.isJsonNull()) {
+            return null;
+
+        }
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new OneOfTypes.VariantString(element
+            .getAsString());
+
+        }
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+            return new OneOfTypes.VariantNumber(gson.fromJson(element
+            , Double.class));
+
+        }
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
+            return new OneOfTypes.VariantBoolean(element
+            .getAsBoolean());
+
+        }
+        throw new JsonParseException("unknown OneOfTypes union value");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, OneOfTypes value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof OneOfTypes.VariantString) {
+            gson.toJson(gson.toJsonTree(((OneOfTypes.VariantString) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof OneOfTypes.VariantNumber) {
+            gson.toJson(gson.toJsonTree(((OneOfTypes.VariantNumber) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof OneOfTypes.VariantBoolean) {
+            gson.toJson(gson.toJsonTree(((OneOfTypes.VariantBoolean) value).value0()), writer);
+
+            return;
+        }
     }
 }

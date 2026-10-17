@@ -61,6 +61,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("recursive-json-self-referential-object", "valid/recursive-json/self-referential-object.yaml"),
 
         ("type-aliases-complex-union", "valid/type-aliases/complex-union.yaml"),
+        ("type-aliases-closed-sum-payload-shapes", "valid/type-aliases/closed-sum-payload-shapes.yaml"),
         ("type-aliases-intersection-allof", "valid/type-aliases/intersection-allof.yaml"),
         ("type-aliases-intersection-with-nullable-reference", "valid/type-aliases/intersection-with-nullable-reference.yaml"),
         ("type-aliases-nested-union", "valid/type-aliases/nested-union.yaml"),
@@ -150,6 +151,7 @@ generate_golden_tests! {
     test_recursive_json_self_referential_object_golden: "recursive-json-self-referential-object",
 
     test_type_aliases_complex_union_golden: "type-aliases-complex-union",
+    test_type_aliases_closed_sum_payload_shapes_golden: "type-aliases-closed-sum-payload-shapes",
     test_type_aliases_intersection_allof_golden: "type-aliases-intersection-allof",
     test_type_aliases_intersection_with_nullable_reference_golden: "type-aliases-intersection-with-nullable-reference",
     test_type_aliases_nested_union_golden: "type-aliases-nested-union",

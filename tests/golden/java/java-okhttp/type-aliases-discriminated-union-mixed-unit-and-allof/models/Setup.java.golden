@@ -10,19 +10,84 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Setup: quick (managed), custom, or unspecified.
 
 Discriminator: kind (internal).
  */
-public class Setup {
-    private Object value;
+@JsonAdapter(SetupJsonAdapter.class)
+public sealed interface Setup {
+    enum VariantSetupUnspecified implements Setup { INSTANCE }
 
-    public Setup(Object value) {
-        this.value = value;
+    record VariantSetupQuick(SetupQuick value0) implements Setup {}
+
+    record VariantSetupCustom(SetupCustom value0) implements Setup {}
+}
+
+final class SetupJsonAdapter extends TypeAdapter<Setup> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public Setup read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        if ("SETUP_UNSPECIFIED".equals(discriminator)) {
+            return Setup.VariantSetupUnspecified.INSTANCE;
+
+        }
+        if ("SETUP_QUICK".equals(discriminator)) {
+            return new Setup.VariantSetupQuick(gson.fromJson(object
+            , new TypeToken<SetupQuick>() {}.getType()));
+
+        }
+        if ("SETUP_CUSTOM".equals(discriminator)) {
+            return new Setup.VariantSetupCustom(gson.fromJson(object
+            , new TypeToken<SetupCustom>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown Setup discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, Setup value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof Setup.VariantSetupUnspecified) {
+            JsonObject object = new JsonObject();
+            object.addProperty("kind", "SETUP_UNSPECIFIED");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof Setup.VariantSetupQuick) {
+            JsonObject object = gson.toJsonTree(((Setup.VariantSetupQuick) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "SETUP_QUICK");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof Setup.VariantSetupCustom) {
+            JsonObject object = gson.toJsonTree(((Setup.VariantSetupCustom) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "SETUP_CUSTOM");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

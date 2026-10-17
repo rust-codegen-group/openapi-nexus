@@ -5,14 +5,76 @@
 
 package com.example.sdk.models;
 
-public class Foo {
-    private Object value;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
-    public Foo(Object value) {
-        this.value = value;
+@JsonAdapter(FooJsonAdapter.class)
+public sealed interface Foo {
+    record VariantBar(Bar value0) implements Foo {}
+
+    record VariantBaz(Baz value0) implements Foo {}
+
+    record VariantQux(Qux value0) implements Foo {}
+}
+
+final class FooJsonAdapter extends TypeAdapter<Foo> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public Foo read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        if (element.isJsonNull()) {
+            return null;
+
+        }
+        if (element.isJsonObject()) {
+            return new Foo.VariantBar(gson.fromJson(element
+            , new TypeToken<Bar>() {}.getType()));
+
+        }
+        if (element.isJsonObject()) {
+            return new Foo.VariantBaz(gson.fromJson(element
+            , new TypeToken<Baz>() {}.getType()));
+
+        }
+        if (element.isJsonObject()) {
+            return new Foo.VariantQux(gson.fromJson(element
+            , new TypeToken<Qux>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown Foo union value");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, Foo value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof Foo.VariantBar) {
+            gson.toJson(gson.toJsonTree(((Foo.VariantBar) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof Foo.VariantBaz) {
+            gson.toJson(gson.toJsonTree(((Foo.VariantBaz) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof Foo.VariantQux) {
+            gson.toJson(gson.toJsonTree(((Foo.VariantQux) value).value0()), writer);
+
+            return;
+        }
     }
 }

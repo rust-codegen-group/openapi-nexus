@@ -5,7 +5,62 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Any of multiple types
  */
-typealias AnyOfTypes = Any
+@JsonAdapter(AnyOfTypesJsonAdapter::class)
+sealed class AnyOfTypes private constructor() {
+    data class VariantString(val value0: String) : AnyOfTypes()
+
+    data class VariantNumber(val value0: Double) : AnyOfTypes()
+}
+
+private class AnyOfTypesJsonAdapter: TypeAdapter<AnyOfTypes>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): AnyOfTypes? {
+        val element = JsonParser.parseReader(reader)
+        return when {
+            element.isJsonNull -> null
+
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> AnyOfTypes.VariantString(element
+            .asString)
+
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> AnyOfTypes.VariantNumber(element
+            .asDouble)
+
+            else -> throw JsonParseException("unknown AnyOfTypes union value")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: AnyOfTypes?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is AnyOfTypes.VariantString -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is AnyOfTypes.VariantNumber -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+        }
+    }
+}

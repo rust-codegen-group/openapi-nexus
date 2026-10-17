@@ -7,17 +7,83 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Discriminator: kind (internal).
  */
-public class VeryLongDiscriminatedUnionTypeNameForTesting20260630 {
-    private Object value;
+@JsonAdapter(VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter.class)
+public sealed interface VeryLongDiscriminatedUnionTypeNameForTesting20260630 {
+    record VariantAlpha(VeryLongDiscriminatedUnionTypeNameAlpha20260630 value0) implements VeryLongDiscriminatedUnionTypeNameForTesting20260630 {}
 
-    public VeryLongDiscriminatedUnionTypeNameForTesting20260630(Object value) {
-        this.value = value;
+    record VariantBeta(VeryLongDiscriminatedUnionTypeNameBeta20260630 value0) implements VeryLongDiscriminatedUnionTypeNameForTesting20260630 {}
+
+    record VariantGamma(VeryLongDiscriminatedUnionTypeNameGamma20260630 value0) implements VeryLongDiscriminatedUnionTypeNameForTesting20260630 {}
+}
+
+final class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter extends TypeAdapter<VeryLongDiscriminatedUnionTypeNameForTesting20260630> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public VeryLongDiscriminatedUnionTypeNameForTesting20260630 read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        if ("ALPHA".equals(discriminator)) {
+            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha(gson.fromJson(object
+            , new TypeToken<VeryLongDiscriminatedUnionTypeNameAlpha20260630>() {}.getType()));
+
+        }
+        if ("BETA".equals(discriminator)) {
+            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta(gson.fromJson(object
+            , new TypeToken<VeryLongDiscriminatedUnionTypeNameBeta20260630>() {}.getType()));
+
+        }
+        if ("GAMMA".equals(discriminator)) {
+            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma(gson.fromJson(object
+            , new TypeToken<VeryLongDiscriminatedUnionTypeNameGamma20260630>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown VeryLongDiscriminatedUnionTypeNameForTesting20260630 discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, VeryLongDiscriminatedUnionTypeNameForTesting20260630 value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha) {
+            JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "ALPHA");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta) {
+            JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "BETA");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma) {
+            JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "GAMMA");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

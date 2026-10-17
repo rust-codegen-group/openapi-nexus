@@ -5,10 +5,65 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Untagged enum
 
 No tag is used, variants are distinguished by their structure:
 `{"field1": "...", "field2": 123}` or `{"field3": true, "field4": 1.23}`
  */
-typealias UntaggedEnum = Any
+@JsonAdapter(UntaggedEnumJsonAdapter::class)
+sealed class UntaggedEnum private constructor() {
+    data class VariantVariantA(val value0: VariantA) : UntaggedEnum()
+
+    data class VariantVariantB(val value0: VariantB) : UntaggedEnum()
+}
+
+private class UntaggedEnumJsonAdapter: TypeAdapter<UntaggedEnum>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): UntaggedEnum? {
+        val element = JsonParser.parseReader(reader)
+        return when {
+            element.isJsonNull -> null
+
+            element.isJsonObject -> UntaggedEnum.VariantVariantA(gson.fromJson(element
+            , object: TypeToken<VariantA>() {}.type))
+
+            element.isJsonObject -> UntaggedEnum.VariantVariantB(gson.fromJson(element
+            , object: TypeToken<VariantB>() {}.type))
+
+            else -> throw JsonParseException("unknown UntaggedEnum union value")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: UntaggedEnum?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is UntaggedEnum.VariantVariantA -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is UntaggedEnum.VariantVariantB -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+        }
+    }
+}

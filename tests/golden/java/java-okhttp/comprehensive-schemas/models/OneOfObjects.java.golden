@@ -5,17 +5,67 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Union of object types
  */
-public class OneOfObjects {
-    private Object value;
+@JsonAdapter(OneOfObjectsJsonAdapter.class)
+public sealed interface OneOfObjects {
+    record VariantBasicObject(BasicObject value0) implements OneOfObjects {}
 
-    public OneOfObjects(Object value) {
-        this.value = value;
+    record VariantNestedObject(NestedObject value0) implements OneOfObjects {}
+}
+
+final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public OneOfObjects read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        if (element.isJsonNull()) {
+            return null;
+
+        }
+        if (element.isJsonObject()) {
+            return new OneOfObjects.VariantBasicObject(gson.fromJson(element
+            , new TypeToken<BasicObject>() {}.getType()));
+
+        }
+        if (element.isJsonObject()) {
+            return new OneOfObjects.VariantNestedObject(gson.fromJson(element
+            , new TypeToken<NestedObject>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown OneOfObjects union value");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, OneOfObjects value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof OneOfObjects.VariantBasicObject) {
+            gson.toJson(gson.toJsonTree(((OneOfObjects.VariantBasicObject) value).value0()), writer);
+
+            return;
+        }
+        if (value instanceof OneOfObjects.VariantNestedObject) {
+            gson.toJson(gson.toJsonTree(((OneOfObjects.VariantNestedObject) value).value0()), writer);
+
+            return;
+        }
     }
 }

@@ -7,7 +7,76 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Discriminator: kind (internal).
  */
-typealias Resource = Any
+@JsonAdapter(ResourceJsonAdapter::class)
+sealed class Resource private constructor() {
+    data class VariantResourceUnspecified(val value0: ResourceUnspecified) : Resource()
+
+    data class VariantResourceQuick(val value0: ResourceQuick) : Resource()
+
+    data class VariantResourceCustom(val value0: ResourceCustom) : Resource()
+}
+
+private class ResourceJsonAdapter: TypeAdapter<Resource>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): Resource? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["kind"]?.asString) {
+            "RESOURCE_UNSPECIFIED" -> Resource.VariantResourceUnspecified(gson.fromJson(jsonObject
+            , object: TypeToken<ResourceUnspecified>() {}.type))
+
+            "RESOURCE_QUICK" -> Resource.VariantResourceQuick(gson.fromJson(jsonObject
+            , object: TypeToken<ResourceQuick>() {}.type))
+
+            "RESOURCE_CUSTOM" -> Resource.VariantResourceCustom(gson.fromJson(jsonObject
+            , object: TypeToken<ResourceCustom>() {}.type))
+
+            else -> throw JsonParseException("unknown Resource discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: Resource?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is Resource.VariantResourceUnspecified -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "RESOURCE_UNSPECIFIED")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is Resource.VariantResourceQuick -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "RESOURCE_QUICK")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is Resource.VariantResourceCustom -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "RESOURCE_CUSTOM")
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

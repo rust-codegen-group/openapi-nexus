@@ -5,6 +5,19 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Adjacently tagged enum
 
@@ -13,4 +26,57 @@ The tag and content are separate fields:
 
 Discriminator: ty / content: data (adjacent).
  */
-typealias AdjacentlyTaggedEnum = Any
+@JsonAdapter(AdjacentlyTaggedEnumJsonAdapter::class)
+sealed class AdjacentlyTaggedEnum private constructor() {
+    /**
+     * Variant A with string and integer fields
+     */
+    data class VariantAdjacentlyTaggedEnumVariantA(val value0: VariantA) : AdjacentlyTaggedEnum()
+
+    /**
+     * Variant B with boolean and float fields
+     */
+    data class VariantAdjacentlyTaggedEnumVariantB(val value0: VariantB) : AdjacentlyTaggedEnum()
+}
+
+private class AdjacentlyTaggedEnumJsonAdapter: TypeAdapter<AdjacentlyTaggedEnum>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): AdjacentlyTaggedEnum? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["ty"]?.asString) {
+            "ADJACENTLY_TAGGED_ENUM_VARIANT_A" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(jsonObject["data"]
+            , object: TypeToken<VariantA>() {}.type))
+
+            "ADJACENTLY_TAGGED_ENUM_VARIANT_B" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB(gson.fromJson(jsonObject["data"]
+            , object: TypeToken<VariantB>() {}.type))
+
+            else -> throw JsonParseException("unknown AdjacentlyTaggedEnum discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: AdjacentlyTaggedEnum?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA -> {
+                val jsonObject = JsonObject()
+                jsonObject.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_A")
+                jsonObject.add("data", gson.toJsonTree(value.value0))
+                gson.toJson(jsonObject, writer)
+
+            }
+            is AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB -> {
+                val jsonObject = JsonObject()
+                jsonObject.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_B")
+                jsonObject.add("data", gson.toJsonTree(value.value0))
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

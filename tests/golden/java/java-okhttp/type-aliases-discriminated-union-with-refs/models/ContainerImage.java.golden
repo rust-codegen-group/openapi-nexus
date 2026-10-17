@@ -6,17 +6,69 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Discriminator: kind (internal).
  */
-public class ContainerImage {
-    private Object value;
+@JsonAdapter(ContainerImageJsonAdapter.class)
+public sealed interface ContainerImage {
+    record VariantContainerImageManaged(ContainerImageManaged value0) implements ContainerImage {}
 
-    public ContainerImage(Object value) {
-        this.value = value;
+    record VariantContainerImageCustom(ContainerImageCustom value0) implements ContainerImage {}
+}
+
+final class ContainerImageJsonAdapter extends TypeAdapter<ContainerImage> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public ContainerImage read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        if ("CONTAINER_IMAGE_MANAGED".equals(discriminator)) {
+            return new ContainerImage.VariantContainerImageManaged(gson.fromJson(object
+            , new TypeToken<ContainerImageManaged>() {}.getType()));
+
+        }
+        if ("CONTAINER_IMAGE_CUSTOM".equals(discriminator)) {
+            return new ContainerImage.VariantContainerImageCustom(gson.fromJson(object
+            , new TypeToken<ContainerImageCustom>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown ContainerImage discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, ContainerImage value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof ContainerImage.VariantContainerImageManaged) {
+            JsonObject object = gson.toJsonTree(((ContainerImage.VariantContainerImageManaged) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "CONTAINER_IMAGE_MANAGED");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof ContainerImage.VariantContainerImageCustom) {
+            JsonObject object = gson.toJsonTree(((ContainerImage.VariantContainerImageCustom) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "CONTAINER_IMAGE_CUSTOM");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }

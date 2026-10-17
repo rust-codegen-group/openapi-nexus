@@ -8,7 +8,65 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Discriminator: kind (internal).
  */
-typealias ContainerKind = Any
+@JsonAdapter(ContainerKindJsonAdapter::class)
+sealed class ContainerKind private constructor() {
+    data class VariantContainerKindManaged(val value0: ContainerKindManaged) : ContainerKind()
+
+    data class VariantContainerKindCustom(val value0: ContainerKindCustom) : ContainerKind()
+}
+
+private class ContainerKindJsonAdapter: TypeAdapter<ContainerKind>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): ContainerKind? {
+        val element = JsonParser.parseReader(reader)
+        val jsonObject = element.asJsonObject
+        return when (jsonObject["kind"]?.asString) {
+            "CONTAINER_KIND_MANAGED" -> ContainerKind.VariantContainerKindManaged(gson.fromJson(jsonObject
+            , object: TypeToken<ContainerKindManaged>() {}.type))
+
+            "CONTAINER_KIND_CUSTOM" -> ContainerKind.VariantContainerKindCustom(gson.fromJson(jsonObject
+            , object: TypeToken<ContainerKindCustom>() {}.type))
+
+            else -> throw JsonParseException("unknown ContainerKind discriminator")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: ContainerKind?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is ContainerKind.VariantContainerKindManaged -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "CONTAINER_KIND_MANAGED")
+                gson.toJson(jsonObject, writer)
+
+            }
+            is ContainerKind.VariantContainerKindCustom -> {
+                val jsonObject = gson.toJsonTree(value.value0).asJsonObject
+                jsonObject.addProperty("kind", "CONTAINER_KIND_CUSTOM")
+                gson.toJson(jsonObject, writer)
+
+            }
+        }
+    }
+}

@@ -5,7 +5,62 @@
 
 package com.example.sdk.models
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.JsonAdapter
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+
 /**
  * Union of object types
  */
-typealias OneOfObjects = Any
+@JsonAdapter(OneOfObjectsJsonAdapter::class)
+sealed class OneOfObjects private constructor() {
+    data class VariantBasicObject(val value0: BasicObject) : OneOfObjects()
+
+    data class VariantNestedObject(val value0: NestedObject) : OneOfObjects()
+}
+
+private class OneOfObjectsJsonAdapter: TypeAdapter<OneOfObjects>() {
+    private val gson = Gson()
+
+    override fun read (reader: JsonReader): OneOfObjects? {
+        val element = JsonParser.parseReader(reader)
+        return when {
+            element.isJsonNull -> null
+
+            element.isJsonObject -> OneOfObjects.VariantBasicObject(gson.fromJson(element
+            , object: TypeToken<BasicObject>() {}.type))
+
+            element.isJsonObject -> OneOfObjects.VariantNestedObject(gson.fromJson(element
+            , object: TypeToken<NestedObject>() {}.type))
+
+            else -> throw JsonParseException("unknown OneOfObjects union value")
+        }
+
+    }
+
+    override fun write(writer: JsonWriter, value: OneOfObjects?) {
+        if (value == null) {
+            writer.nullValue()
+            return
+        }
+        when (value) {
+            is OneOfObjects.VariantBasicObject -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+            is OneOfObjects.VariantNestedObject -> {
+                gson.toJson(gson.toJsonTree(value.value0), writer)
+
+            }
+        }
+    }
+}

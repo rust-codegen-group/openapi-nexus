@@ -7,17 +7,83 @@
 
 package com.example.sdk.models;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * Discriminator: kind (internal).
  */
-public class Resource {
-    private Object value;
+@JsonAdapter(ResourceJsonAdapter.class)
+public sealed interface Resource {
+    record VariantResourceUnspecified(ResourceUnspecified value0) implements Resource {}
 
-    public Resource(Object value) {
-        this.value = value;
+    record VariantResourceQuick(ResourceQuick value0) implements Resource {}
+
+    record VariantResourceCustom(ResourceCustom value0) implements Resource {}
+}
+
+final class ResourceJsonAdapter extends TypeAdapter<Resource> {
+    private final Gson gson = new Gson();
+
+    @Override
+    public Resource read (JsonReader reader) throws java.io.IOException {
+        JsonElement element = JsonParser.parseReader(reader);
+        JsonObject object = element.getAsJsonObject();
+        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        if ("RESOURCE_UNSPECIFIED".equals(discriminator)) {
+            return new Resource.VariantResourceUnspecified(gson.fromJson(object
+            , new TypeToken<ResourceUnspecified>() {}.getType()));
+
+        }
+        if ("RESOURCE_QUICK".equals(discriminator)) {
+            return new Resource.VariantResourceQuick(gson.fromJson(object
+            , new TypeToken<ResourceQuick>() {}.getType()));
+
+        }
+        if ("RESOURCE_CUSTOM".equals(discriminator)) {
+            return new Resource.VariantResourceCustom(gson.fromJson(object
+            , new TypeToken<ResourceCustom>() {}.getType()));
+
+        }
+        throw new JsonParseException("unknown Resource discriminator");
+
     }
 
-    public Object getValue() {
-        return this.value;
+    @Override
+    public void write(JsonWriter writer, Resource value) throws java.io.IOException {
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        if (value instanceof Resource.VariantResourceUnspecified) {
+            JsonObject object = gson.toJsonTree(((Resource.VariantResourceUnspecified) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "RESOURCE_UNSPECIFIED");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof Resource.VariantResourceQuick) {
+            JsonObject object = gson.toJsonTree(((Resource.VariantResourceQuick) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "RESOURCE_QUICK");
+            gson.toJson(object, writer);
+
+            return;
+        }
+        if (value instanceof Resource.VariantResourceCustom) {
+            JsonObject object = gson.toJsonTree(((Resource.VariantResourceCustom) value).value0()).getAsJsonObject();
+            object.addProperty("kind", "RESOURCE_CUSTOM");
+            gson.toJson(object, writer);
+
+            return;
+        }
     }
 }
