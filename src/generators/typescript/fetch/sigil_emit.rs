@@ -570,7 +570,9 @@ fn build_from_json_fn(
                 prop.nullable,
                 convertible,
             );
-            CodeBlock::of(&format!("{ergo_key}: {conv},"), ())
+            sigil_quote!(TypeScript {
+                $L(ergo_key.as_str()): $L(conv.as_str()),
+            })
         })
         .collect::<Result<_, _>>()
         .ok()?;
@@ -616,7 +618,9 @@ fn build_to_json_fn(
                 prop.nullable,
                 convertible,
             );
-            CodeBlock::of(&format!("{wire_key}: {conv},"), ())
+            sigil_quote!(TypeScript {
+                $L(wire_key.as_str()): $L(conv.as_str()),
+            })
         })
         .collect::<Result<_, _>>()
         .ok()?;
@@ -932,12 +936,17 @@ fn build_enum_const_object(name: &str, en: &IrEnum) -> Option<CodeBlock> {
                 }
             };
             // Quote keys that aren't valid JS identifiers (e.g. dotted resource types).
+            // The TypeScript renderer does not re-indent nested object entries;
+            // retain this minimal static prefix to preserve the existing output.
             let key_lit = if is_valid_ts_identifier(&key) {
-                key.clone()
+                format!("  {key}")
             } else {
-                format!("'{key}'")
+                format!("  '{key}'")
             };
-            CodeBlock::of(&format!("  {key_lit}: {val_literal},"), ()).ok()
+            sigil_quote!(TypeScript {
+                $L(key_lit.as_str()): $L(val_literal.as_str()),
+            })
+            .ok()
         })
         .collect();
 

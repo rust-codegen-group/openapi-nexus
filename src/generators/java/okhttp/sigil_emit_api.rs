@@ -655,18 +655,34 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     let mut cb = CodeBlock::builder();
 
     // Path
-    let mut path_expr = format!("\"{}\"", plan.op.path);
-    for p in &plan.path_params {
-        let placeholder = format!("{{{}}}", p.param.name);
-        let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
-        path_expr = format!("{path_expr}.replace(\"{placeholder}\", {stringified})");
-    }
-    cb.add_statement(&format!("String path = {path_expr}"), ());
+    let path_replacements: Vec<(String, String)> = plan
+        .path_params
+        .iter()
+        .map(|p| {
+            (
+                format!("{{{}}}", p.param.name),
+                render_value_as_string(&p.var_name, &p.param.type_expr),
+            )
+        })
+        .collect();
+    cb.add_code(
+        sigil_quote!(Java {
+            String path = $S(plan.op.path)$for((placeholder, stringified) in &path_replacements) {
+                .replace($S(placeholder.as_str()), $L(stringified.as_str()))
+            };
+        })
+        .expect("Java path construction builds"),
+    );
 
     // Query
     let has_query = !plan.query_params.is_empty();
     if has_query {
-        cb.add_statement("Map<String, String> query = new HashMap<>()", ());
+        cb.add_code(
+            sigil_quote!(Java {
+                Map<String, String> query = new HashMap<>();
+            })
+            .expect("Java query initialization builds"),
+        );
         for p in &plan.query_params {
             let stringified = render_value_as_string(&p.var_name, &p.param.type_expr);
             cb.add_code(java_query_param_put(
@@ -690,7 +706,9 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             );
             return cb.build().expect("method body builds");
         }
-        cb.add_statement("Request request", ());
+        cb.add_code(
+            sigil_quote!(Java { Request request; }).expect("Java request declaration builds"),
+        );
         if body.encoding == BodyEncoding::Multipart {
             if let Some(parts) = &body.multipart_parts {
                 emit_multipart_body(&mut cb, body, parts);
@@ -700,9 +718,11 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                     "multipartBody",
                 ));
             } else {
-                cb.add_statement(
-                    "throw new IllegalArgumentException(\"unsupported multipart request body: schema must be object-shaped\")",
-                    (),
+                cb.add_code(
+                    sigil_quote!(Java {
+                        throw new IllegalArgumentException("unsupported multipart request body: schema must be object-shaped");
+                    })
+                    .expect("unsupported multipart request body builds"),
                 );
             }
         } else {
@@ -729,19 +749,28 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     }
 
     // Execute
-    cb.add_statement("Response response = client.execute(request)", ());
+    cb.add_code(
+        sigil_quote!(Java {
+            Response response = client.execute(request);
+        })
+        .expect("Java request execution builds"),
+    );
     cb.add_line();
     cb.add_code(java_error_throw(plan));
 
     // Response parsing
     if !plan.typed_responses.is_empty() {
-        cb.add_statement(
-            "byte[] responseBytes = response.body() != null ? response.body().bytes() : new byte[0]",
-            (),
+        cb.add_code(
+            sigil_quote!(Java {
+                byte[] responseBytes = response.body() != null ? response.body().bytes() : new byte[0];
+            })
+            .expect("Java response bytes decode builds"),
         );
-        cb.add_statement(
-            "String responseText = new String(responseBytes, StandardCharsets.UTF_8)",
-            (),
+        cb.add_code(
+            sigil_quote!(Java {
+                String responseText = new String(responseBytes, StandardCharsets.UTF_8);
+            })
+            .expect("Java response text decode builds"),
         );
         let mut seen: HashSet<String> = HashSet::new();
 
@@ -750,7 +779,13 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             if !seen.insert(tr.field_name.clone()) {
                 continue;
             }
-            cb.add_statement(&format!("{} {} = null", tr.java_type, tr.field_name), ());
+            let response_type = TypeName::raw(&tr.java_type);
+            cb.add_code(
+                sigil_quote!(Java {
+                    $T(response_type) $N(tr.field_name.as_str()) = null;
+                })
+                .expect("Java typed response declaration builds"),
+            );
         }
         cb.add_code(java_response_decode_assignments(&plan.typed_responses));
 
@@ -774,12 +809,11 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
             .expect("typed response constructor return"),
         );
     } else {
-        cb.add_statement(
-            &format!(
-                "return new {}(response.code(), response)",
-                plan.response_type
-            ),
-            (),
+        cb.add_code(
+            sigil_quote!(Java {
+                return new $N(plan.response_type.as_str())(response.code(), response);
+            })
+            .expect("Java untyped response return builds"),
         );
     }
 
@@ -802,30 +836,22 @@ fn unsupported_request_body_message(body: &BodyBinding) -> Option<String> {
 }
 
 fn java_new_request(method: &str, has_query: bool) -> CodeBlock {
-    let with_query =
-        format!("Request request = client.newRequest(\"{method}\", path, query, null);");
-    let without_query =
-        format!("Request request = client.newRequest(\"{method}\", path, null, null);");
     sigil_quote!(Java {
         $if(has_query) {
-            $L(with_query.as_str())
+            Request request = client.newRequest($S(method), path, query, null);
         } $else {
-            $L(without_query.as_str())
+            Request request = client.newRequest($S(method), path, null, null);
         }
     })
     .expect("Java request construction builds")
 }
 
 fn java_new_request_with_body(method: &str, has_query: bool, body_expr: &str) -> CodeBlock {
-    let with_query =
-        format!("request = client.newRequestWithBody(\"{method}\", path, query, {body_expr});");
-    let without_query =
-        format!("request = client.newRequestWithBody(\"{method}\", path, null, {body_expr});");
     sigil_quote!(Java {
         $if(has_query) {
-            $L(with_query.as_str())
+            request = client.newRequestWithBody($S(method), path, query, $L(body_expr));
         } $else {
-            $L(without_query.as_str())
+            request = client.newRequestWithBody($S(method), path, null, $L(body_expr));
         }
     })
     .expect("Java request body construction builds")
@@ -997,12 +1023,24 @@ fn java_response_decode_assignments(typed_responses: &[TypedResponse]) -> CodeBl
         if !seen.insert(tr.field_name.clone()) {
             continue;
         }
-        let keyword = if emitted_any { "else if" } else { "if" };
         let guard = response_status_guard_java(&tr.status);
-        let assignment = format!("{} = {}", tr.field_name, response_decode_expr(tr));
-        cb.begin_control_flow(&format!("{keyword} ({guard})"), ());
-        cb.add(&format!("{assignment};\n"), ());
-        cb.end_control_flow();
+        let field_name = tr.field_name.as_str();
+        let deserialize_expr = response_decode_expr(tr);
+        let branch = if emitted_any {
+            sigil_quote!(Java {
+                else if ($L(guard.as_str())) {
+                    $N(field_name) = $L(deserialize_expr.as_str());
+                }
+            })
+        } else {
+            sigil_quote!(Java {
+                if ($L(guard.as_str())) {
+                    $N(field_name) = $L(deserialize_expr.as_str());
+                }
+            })
+        }
+        .expect("Java response decode branch builds");
+        cb.add_code(branch);
         emitted_any = true;
     }
     cb.build().expect("Java response decode assignments build")
@@ -1010,21 +1048,23 @@ fn java_response_decode_assignments(typed_responses: &[TypedResponse]) -> CodeBl
 
 fn java_error_throw(plan: &OpPlan<'_>) -> CodeBlock {
     let mut cb = CodeBlock::builder();
+    let detail_type = format!("{}Detail", plan.error_type);
     cb.begin_control_flow("if (!response.isSuccessful())", ());
-    cb.add_statement("okhttp3.ResponseBody responseBody = response.body()", ());
-    cb.add_statement(
-        "java.nio.charset.Charset responseCharset = responseBody != null && responseBody.contentType() != null ? responseBody.contentType().charset(StandardCharsets.UTF_8) : StandardCharsets.UTF_8",
-        (),
+    cb.add_code(
+        sigil_quote!(Java {
+            okhttp3.ResponseBody responseBody = response.body();
+            java.nio.charset.Charset responseCharset = responseBody != null && responseBody.contentType() != null ? responseBody.contentType().charset(StandardCharsets.UTF_8) : StandardCharsets.UTF_8;
+            byte[] responseBytes = responseBody != null ? responseBody.bytes() : new byte[0];
+            String responseText = new String(responseBytes, responseCharset);
+        })
+        .expect("Java error response decoding builds"),
     );
-    cb.add_statement(
-        "byte[] responseBytes = responseBody != null ? responseBody.bytes() : new byte[0]",
-        (),
+    cb.add_code(
+        sigil_quote!(Java {
+            $N(detail_type.as_str()) detail;
+        })
+        .expect("Java error detail declaration builds"),
     );
-    cb.add_statement(
-        "String responseText = new String(responseBytes, responseCharset)",
-        (),
-    );
-    cb.add(&format!("{}Detail detail;\n", plan.error_type), ());
     cb.begin_control_flow("switch (response.code())", ());
     let mut seen = HashSet::new();
     for response in plan

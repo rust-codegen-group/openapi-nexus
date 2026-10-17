@@ -422,21 +422,35 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     let mut cb = CodeBlock::builder();
 
     // Path
-    let mut path_expr = format!("\"{}\"", plan.op.path);
-    for p in &plan.path_params {
-        let placeholder = format!("{{{}}}", p.param.name);
-        let var_ref = kt_ref(&p.var_name);
-        let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
-        path_expr = format!("{path_expr}.replace(\"{placeholder}\", {stringified})");
-    }
-    cb.add(&format!("val path = {path_expr}"), ());
-    cb.add_line();
+    let path_replacements: Vec<(String, String)> = plan
+        .path_params
+        .iter()
+        .map(|p| {
+            let var_ref = kt_ref(&p.var_name);
+            (
+                format!("{{{}}}", p.param.name),
+                render_value_as_string(&var_ref, &p.param.type_expr),
+            )
+        })
+        .collect();
+    cb.add_code(
+        sigil_quote!(Kotlin {
+            val path = $S(plan.op.path)$for((placeholder, stringified) in &path_replacements) {
+                .replace($S(placeholder.as_str()), $L(stringified.as_str()))
+            }
+        })
+        .expect("Kotlin path construction builds"),
+    );
 
     // Query
     let has_query = !plan.query_params.is_empty();
     if has_query {
-        cb.add("val query = mutableMapOf<String, String>()", ());
-        cb.add_line();
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                val query = mutableMapOf<String, String>()
+            })
+            .expect("Kotlin query initialization builds"),
+        );
         for p in &plan.query_params {
             let var_ref = kt_ref(&p.var_name);
             let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
@@ -470,11 +484,12 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
                     "multipartBody",
                 ));
             } else {
-                cb.add(
-                    "val request: okhttp3.Request = throw IllegalArgumentException(\"unsupported multipart request body: schema must be object-shaped\")",
-                    (),
+                cb.add_code(
+                    sigil_quote!(Kotlin {
+                        val request: okhttp3.Request = throw IllegalArgumentException("unsupported multipart request body: schema must be object-shaped")
+                    })
+                    .expect("unsupported multipart request body builds"),
                 );
-                cb.add_line();
             }
         } else {
             emit_request_body(&mut cb, body);
@@ -490,8 +505,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
 
     // Headers
     if !plan.header_params.is_empty() {
-        cb.add("var finalRequest = request", ());
-        cb.add_line();
+        cb.add_code(
+            sigil_quote!(Kotlin { var finalRequest = request })
+                .expect("Kotlin final request declaration builds"),
+        );
         for p in &plan.header_params {
             let var_ref = kt_ref(&p.var_name);
             let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
@@ -512,25 +529,35 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
     // Response parsing
     if !plan.typed_responses.is_empty() {
         cb.add_line();
-        cb.add(
-            "val responseBytes = response.body?.bytes() ?: ByteArray(0)",
-            (),
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                val responseBytes = response.body?.bytes() ?: ByteArray(0)
+            })
+            .expect("Kotlin response bytes decode builds"),
         );
-        cb.add_line();
-        cb.add(
-            "val responseText = responseBytes.toString(Charsets.UTF_8)",
-            (),
+        cb.add_code(
+            sigil_quote!(Kotlin {
+                val responseText = responseBytes.toString(Charsets.UTF_8)
+            })
+            .expect("Kotlin response text decode builds"),
         );
         let mut seen: HashSet<String> = HashSet::new();
+        let mut emitted_response_variable = false;
         for tr in &plan.typed_responses {
             if !seen.insert(tr.field_name.clone()) {
                 continue;
             }
-            cb.add_line();
-            cb.add(
-                &format!("var {}: {}? = null\n", tr.field_name, tr.kt_type),
-                (),
+            if emitted_response_variable {
+                cb.add_line();
+            }
+            let response_type = TypeName::raw(&tr.kt_type);
+            cb.add_code(
+                sigil_quote!(Kotlin {
+                    var $N(tr.field_name.as_str()): $T(response_type)? = null
+                })
+                .expect("Kotlin typed response declaration builds"),
             );
+            emitted_response_variable = true;
         }
         cb.add_line();
         cb.add_code(kotlin_response_decode_assignments(&plan.typed_responses));
@@ -573,13 +600,11 @@ fn emit_method_body(plan: &OpPlan<'_>) -> CodeBlock {
 }
 
 fn kotlin_new_request(method: &str, has_query: bool) -> CodeBlock {
-    let with_query = format!("val request = client.newRequest(\"{method}\", path, query, null)");
-    let without_query = format!("val request = client.newRequest(\"{method}\", path, null, null)");
     sigil_quote!(Kotlin {
         $if(has_query) {
-            $L(with_query.as_str())
+            val request = client.newRequest($S(method), path, query, null)
         } $else {
-            $L(without_query.as_str())
+            val request = client.newRequest($S(method), path, null, null)
         }
     })
     .expect("Kotlin request construction builds")
@@ -601,15 +626,11 @@ fn unsupported_request_body_message(body: &BodyBinding) -> Option<String> {
 }
 
 fn kotlin_new_request_with_body(method: &str, has_query: bool, body_expr: &str) -> CodeBlock {
-    let with_query =
-        format!("val request = client.newRequestWithBody(\"{method}\", path, query, {body_expr})");
-    let without_query =
-        format!("val request = client.newRequestWithBody(\"{method}\", path, null, {body_expr})");
     sigil_quote!(Kotlin {
         $if(has_query) {
-            $L(with_query.as_str())
+            val request = client.newRequestWithBody($S(method), path, query, $L(body_expr))
         } $else {
-            $L(without_query.as_str())
+            val request = client.newRequestWithBody($S(method), path, null, $L(body_expr))
         }
     })
     .expect("Kotlin request body construction builds")
@@ -796,13 +817,24 @@ fn kotlin_response_decode_assignments(typed_responses: &[TypedResponse]) -> Code
         if !seen.insert(tr.field_name.clone()) {
             continue;
         }
-        let keyword = if emitted_any { "else if" } else { "if" };
         let guard = response_status_guard(&tr.status);
         let field_name = tr.field_name.as_str();
         let deserialize_expr = response_decode_expr(tr);
-        cb.begin_control_flow(&format!("{keyword} ({guard})"), ());
-        cb.add(&format!("{field_name} = {deserialize_expr}\n"), ());
-        cb.end_control_flow();
+        let branch = if emitted_any {
+            sigil_quote!(Kotlin {
+                else if ($L(guard.as_str())) {
+                    $N(field_name) = $L(deserialize_expr.as_str())
+                }
+            })
+        } else {
+            sigil_quote!(Kotlin {
+                if ($L(guard.as_str())) {
+                    $N(field_name) = $L(deserialize_expr.as_str())
+                }
+            })
+        }
+        .expect("Kotlin response decode branch builds");
+        cb.add_code(branch);
         emitted_any = true;
     }
     cb.build()
