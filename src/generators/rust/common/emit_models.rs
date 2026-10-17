@@ -24,6 +24,7 @@ use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::prelude::{CodeBlock, sigil_quote};
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::import_spec::ImportSpec;
+use sigil_stitch::spec::where_spec::TypeArgument;
 use sigil_stitch::type_name::TypeName;
 
 use super::config::{ExtraDeriveConfig, RustGeneratorConfig};
@@ -629,49 +630,61 @@ fn emit_tagged_union(
                             let ty = rust_type_str_model(&prop.type_expr);
                             let needs_rename = field_name != **json_name;
                             let optional = !prop.required || prop.nullable;
+                            let field_type = if optional {
+                                TypeName::optional(TypeName::raw(&ty))
+                            } else {
+                                TypeName::raw(&ty)
+                            };
                             sigil_quote!(RustLang {
                                 $if(needs_rename) {
                                     #[serde(rename = $S(json_name.as_str()))]
                                 }
                                 $if(optional) {
                                     #[serde(skip_serializing_if = "Option::is_none", default)]
-                                    $L(format!("{field_name}: Option<{ty}>,"))
                                 }
-                                $if(!optional) {
-                                    $L(format!("{field_name}: {ty},"))
-                                }
+                                $N(field_name.as_str()): $T(field_type),
                             })
                             .ok()
                         })
                         .collect::<Option<_>>()?;
 
-                    let additional_blocks: Vec<CodeBlock> = if let Some(ap) =
-                        &obj.additional_properties
-                    {
-                        let ty = rust_type_str_model(ap);
-                        vec![sigil_quote!(RustLang {
-                                #[serde(flatten)]
-                                $L(format!("additional_properties: std::collections::HashMap<String, {ty}>,"))
-                            })
-                            .ok()?]
-                    } else {
-                        vec![]
-                    };
+                    let additional_blocks: Vec<CodeBlock> =
+                        if let Some(ap) = &obj.additional_properties {
+                            let ty = rust_type_str_model(ap);
+                            let additional_type = TypeName::application(
+                                TypeName::importable("std::collections", "HashMap"),
+                                vec![
+                                    TypeArgument::Single(TypeName::primitive("String")),
+                                    TypeArgument::Single(TypeName::raw(&ty)),
+                                ],
+                            );
+                            vec![
+                                sigil_quote!(RustLang {
+                                    #[serde(flatten)]
+                                    additional_properties: $T(additional_type),
+                                })
+                                .ok()?,
+                            ]
+                        } else {
+                            vec![]
+                        };
 
-                    let mut cb = CodeBlock::builder();
-                    if !rename_attr.is_empty() {
-                        cb.add(&format!("#[{rename_attr}]"), ());
-                        cb.add_line();
-                    }
-                    cb.add(&format!("{variant_name} {{\n%>"), ());
-                    for fb in &field_blocks {
-                        cb.add_code(fb.clone());
-                    }
-                    for ab in &additional_blocks {
-                        cb.add_code(ab.clone());
-                    }
-                    cb.add("%<},", ());
-                    cb.build().ok()?
+                    let variant_body = sigil_quote!(RustLang {
+                        $if(!rename_attr.is_empty()) {
+                            $attr(rename_attr.as_str())
+                        }
+                        $N(variant_name.as_str()) {
+                            $C_each(field_blocks)
+                            $C_each(additional_blocks)
+                        }
+                    })
+                    .ok()?;
+                    // The renderer's structured block emits a trailing newline;
+                    // trim it so the static enum-item comma stays adjacent.
+                    let mut variant_block = CodeBlock::builder();
+                    variant_block.add_code(variant_body.__sigil_trim_trailing_newline());
+                    variant_block.add(",", ());
+                    variant_block.build().ok()?
                 }
             } else {
                 let content_ty = rust_type_str_model(&variant.content_type);
