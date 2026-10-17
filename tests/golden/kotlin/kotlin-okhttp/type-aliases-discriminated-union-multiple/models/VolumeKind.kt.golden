@@ -24,7 +24,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(VolumeKindJsonAdapter::class)
+@JsonAdapter(VolumeKindJsonAdapter::class, nullSafe = false)
 sealed class VolumeKind private constructor() {
     data class VariantVolumeKindLocal(val value0: VolumeKindLocal) : VolumeKind()
 

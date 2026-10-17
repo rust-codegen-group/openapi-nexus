@@ -23,7 +23,7 @@ import com.google.gson.stream.JsonWriter;
 No tag is used, variants are distinguished by their structure:
 `{"field1": "...", "field2": 123}` or `{"field3": true, "field4": 1.23}`
  */
-@JsonAdapter(UntaggedEnumJsonAdapter.class)
+@JsonAdapter(value = UntaggedEnumJsonAdapter.class, nullSafe = false)
 public sealed interface UntaggedEnum {
     record VariantVariantA(VariantA value0) implements UntaggedEnum {}
 
@@ -40,17 +40,28 @@ final class UntaggedEnumJsonAdapter extends TypeAdapter<UntaggedEnum> {
             return null;
 
         }
-        if (element.isJsonObject()) {
+        if (((element.isJsonObject()
+         && element.getAsJsonObject().has("field1")
+        )
+         && element.getAsJsonObject().has("field2")
+        )
+        ) {
             return new UntaggedEnum.VariantVariantA(gson.fromJson(element
             , new TypeToken<VariantA>() {}.getType()));
 
         }
-        if (element.isJsonObject()) {
+        if (((element.isJsonObject()
+         && element.getAsJsonObject().has("field3")
+        )
+         && element.getAsJsonObject().has("field4")
+        )
+        ) {
             return new UntaggedEnum.VariantVariantB(gson.fromJson(element
             , new TypeToken<VariantB>() {}.getType()));
 
         }
         throw new JsonParseException("unknown UntaggedEnum union value");
+
 
     }
 

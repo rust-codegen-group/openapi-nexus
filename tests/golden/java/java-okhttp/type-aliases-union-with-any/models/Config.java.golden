@@ -17,7 +17,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-@JsonAdapter(ConfigJsonAdapter.class)
+@JsonAdapter(value = ConfigJsonAdapter.class, nullSafe = false)
 public sealed interface Config {
     record VariantString(String value0) implements Config {}
 
@@ -36,22 +36,21 @@ final class ConfigJsonAdapter extends TypeAdapter<Config> {
             return null;
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+        ) {
             return new Config.VariantString(element
             .getAsString());
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
+        ) {
             return new Config.VariantNumber(gson.fromJson(element
             , Double.class));
 
         }
-        if (true) {
-            return new Config.VariantAny(gson.fromJson(element
-            , new TypeToken<JsonElement>() {}.getType()));
+        return new Config.VariantAny(gson.fromJson(element
+        , new TypeToken<JsonElement>() {}.getType()));
 
-        }
-        throw new JsonParseException("unknown Config union value");
 
     }
 

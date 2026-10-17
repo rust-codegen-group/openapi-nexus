@@ -18,7 +18,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 
-@JsonAdapter(ConfigJsonAdapter::class)
+@JsonAdapter(ConfigJsonAdapter::class, nullSafe = false)
 sealed class Config private constructor() {
     data class VariantString(val value0: String) : Config()
 
@@ -35,16 +35,18 @@ private class ConfigJsonAdapter: TypeAdapter<Config>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Config.VariantString(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isString
+             -> Config.VariantString(element
             .asString)
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> Config.VariantNumber(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
+             -> Config.VariantNumber(element
             .asDouble)
 
-            true -> Config.VariantAny(gson.fromJson(element
+            else -> Config.VariantAny(gson.fromJson(element
             , object: TypeToken<JsonElement>() {}.type))
 
-            else -> throw JsonParseException("unknown Config union value")
+
         }
 
     }

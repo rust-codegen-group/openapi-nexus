@@ -18,7 +18,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 
-@JsonAdapter(ChoiceJsonAdapter::class)
+@JsonAdapter(ChoiceJsonAdapter::class, nullSafe = false)
 sealed class Choice private constructor() {
     data class VariantString(val value0: String) : Choice()
 
@@ -40,16 +40,20 @@ private class ChoiceJsonAdapter: TypeAdapter<Choice>() {
         return when {
             element.isJsonNull -> Choice.VariantNull
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Choice.VariantString(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isString
+             -> Choice.VariantString(element
             .asString)
 
-            element.isJsonArray -> Choice.VariantArray(gson.fromJson(element
+            element.isJsonArray
+             -> Choice.VariantArray(gson.fromJson(element
             , object: TypeToken<List<Int>>() {}.type))
 
-            element.isJsonObject -> Choice.VariantMap(gson.fromJson(element
+            element.isJsonObject
+             -> Choice.VariantMap(gson.fromJson(element
             , object: TypeToken<Map<String, Boolean>>() {}.type))
 
             else -> throw JsonParseException("unknown Choice union value")
+
         }
 
     }

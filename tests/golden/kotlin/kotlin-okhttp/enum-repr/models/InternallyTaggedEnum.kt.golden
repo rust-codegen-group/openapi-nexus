@@ -26,7 +26,7 @@ The tag is a field inside the object alongside other fields:
 
 Discriminator: ty (internal).
  */
-@JsonAdapter(InternallyTaggedEnumJsonAdapter::class)
+@JsonAdapter(InternallyTaggedEnumJsonAdapter::class, nullSafe = false)
 sealed class InternallyTaggedEnum private constructor() {
     /**
      * Variant A with string and integer fields

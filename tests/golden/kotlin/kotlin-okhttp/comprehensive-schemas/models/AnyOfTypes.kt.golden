@@ -21,7 +21,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Any of multiple types
  */
-@JsonAdapter(AnyOfTypesJsonAdapter::class)
+@JsonAdapter(AnyOfTypesJsonAdapter::class, nullSafe = false)
 sealed class AnyOfTypes private constructor() {
     data class VariantString(val value0: String) : AnyOfTypes()
 
@@ -36,13 +36,16 @@ private class AnyOfTypesJsonAdapter: TypeAdapter<AnyOfTypes>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> AnyOfTypes.VariantString(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isString
+             -> AnyOfTypes.VariantString(element
             .asString)
 
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> AnyOfTypes.VariantNumber(element
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
+             -> AnyOfTypes.VariantNumber(element
             .asDouble)
 
             else -> throw JsonParseException("unknown AnyOfTypes union value")
+
         }
 
     }

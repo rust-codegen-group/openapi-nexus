@@ -22,7 +22,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter.class)
+@JsonAdapter(value = VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter.class, nullSafe = false)
 public sealed interface VeryLongDiscriminatedUnionTypeNameForTesting20260630 {
     record VariantAlpha(VeryLongDiscriminatedUnionTypeNameAlpha20260630 value0) implements VeryLongDiscriminatedUnionTypeNameForTesting20260630 {}
 

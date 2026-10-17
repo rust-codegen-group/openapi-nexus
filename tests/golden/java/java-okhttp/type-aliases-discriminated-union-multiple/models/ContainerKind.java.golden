@@ -23,7 +23,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(ContainerKindJsonAdapter.class)
+@JsonAdapter(value = ContainerKindJsonAdapter.class, nullSafe = false)
 public sealed interface ContainerKind {
     record VariantContainerKindManaged(ContainerKindManaged value0) implements ContainerKind {}
 

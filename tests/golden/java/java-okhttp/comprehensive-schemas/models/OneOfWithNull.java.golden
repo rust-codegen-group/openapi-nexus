@@ -20,7 +20,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Union of string, null, and schema reference
  */
-@JsonAdapter(OneOfWithNullJsonAdapter.class)
+@JsonAdapter(value = OneOfWithNullJsonAdapter.class, nullSafe = false)
 public sealed interface OneOfWithNull {
     record VariantString(String value0) implements OneOfWithNull {}
 
@@ -42,17 +42,24 @@ final class OneOfWithNullJsonAdapter extends TypeAdapter<OneOfWithNull> {
             return OneOfWithNull.VariantNull.INSTANCE;
 
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+        ) {
             return new OneOfWithNull.VariantString(element
             .getAsString());
 
         }
-        if (element.isJsonObject()) {
+        if (((element.isJsonObject()
+         && element.getAsJsonObject().has("id")
+        )
+         && element.getAsJsonObject().has("name")
+        )
+        ) {
             return new OneOfWithNull.VariantBasicObject(gson.fromJson(element
             , new TypeToken<BasicObject>() {}.getType()));
 
         }
         throw new JsonParseException("unknown OneOfWithNull union value");
+
 
     }
 

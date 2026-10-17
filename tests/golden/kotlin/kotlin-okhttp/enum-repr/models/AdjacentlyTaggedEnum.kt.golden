@@ -26,7 +26,7 @@ The tag and content are separate fields:
 
 Discriminator: ty / content: data (adjacent).
  */
-@JsonAdapter(AdjacentlyTaggedEnumJsonAdapter::class)
+@JsonAdapter(AdjacentlyTaggedEnumJsonAdapter::class, nullSafe = false)
 sealed class AdjacentlyTaggedEnum private constructor() {
     /**
      * Variant A with string and integer fields

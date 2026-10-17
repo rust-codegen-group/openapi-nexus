@@ -23,7 +23,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter::class)
+@JsonAdapter(VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter::class, nullSafe = false)
 sealed class VeryLongDiscriminatedUnionTypeNameForTesting20260630 private constructor() {
     data class VariantAlpha(val value0: VeryLongDiscriminatedUnionTypeNameAlpha20260630) : VeryLongDiscriminatedUnionTypeNameForTesting20260630()
 

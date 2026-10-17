@@ -29,7 +29,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(EventJsonAdapter.class)
+@JsonAdapter(value = EventJsonAdapter.class, nullSafe = false)
 public sealed interface Event {
     /**
      * Unspecified event variant (empty)

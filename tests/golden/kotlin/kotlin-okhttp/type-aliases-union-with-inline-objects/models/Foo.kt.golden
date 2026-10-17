@@ -21,7 +21,7 @@ import com.google.gson.stream.JsonWriter
 /**
  * Union type with inline object schemas
  */
-@JsonAdapter(FooJsonAdapter::class)
+@JsonAdapter(FooJsonAdapter::class, nullSafe = false)
 sealed class Foo private constructor() {
     data class VariantFooMember1(val value0: FooMember1) : Foo()
 
@@ -38,16 +38,26 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         return when {
             element.isJsonNull -> null
 
-            element.isJsonObject -> Foo.VariantFooMember1(gson.fromJson(element
+            (element.isJsonObject
+             && element.asJsonObject.has("bar")
+            )
+             -> Foo.VariantFooMember1(gson.fromJson(element
             , object: TypeToken<FooMember1>() {}.type))
 
-            element.isJsonObject -> Foo.VariantFooMember2(gson.fromJson(element
+            (element.isJsonObject
+             && element.asJsonObject.has("quux")
+            )
+             -> Foo.VariantFooMember2(gson.fromJson(element
             , object: TypeToken<FooMember2>() {}.type))
 
-            element.isJsonObject -> Foo.VariantFooMember3(gson.fromJson(element
+            (element.isJsonObject
+             && element.asJsonObject.has("grault")
+            )
+             -> Foo.VariantFooMember3(gson.fromJson(element
             , object: TypeToken<FooMember3>() {}.type))
 
             else -> throw JsonParseException("unknown Foo union value")
+
         }
 
     }

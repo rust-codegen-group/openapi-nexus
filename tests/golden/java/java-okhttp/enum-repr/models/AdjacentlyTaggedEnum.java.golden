@@ -25,7 +25,7 @@ The tag and content are separate fields:
 
 Discriminator: ty / content: data (adjacent).
  */
-@JsonAdapter(AdjacentlyTaggedEnumJsonAdapter.class)
+@JsonAdapter(value = AdjacentlyTaggedEnumJsonAdapter.class, nullSafe = false)
 public sealed interface AdjacentlyTaggedEnum {
     /**
      * Variant A with string and integer fields

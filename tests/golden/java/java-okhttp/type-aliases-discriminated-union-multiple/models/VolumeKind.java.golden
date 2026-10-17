@@ -23,7 +23,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(VolumeKindJsonAdapter.class)
+@JsonAdapter(value = VolumeKindJsonAdapter.class, nullSafe = false)
 public sealed interface VolumeKind {
     record VariantVolumeKindLocal(VolumeKindLocal value0) implements VolumeKind {}
 

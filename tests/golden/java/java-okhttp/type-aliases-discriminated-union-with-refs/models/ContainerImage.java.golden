@@ -21,7 +21,7 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Discriminator: kind (internal).
  */
-@JsonAdapter(ContainerImageJsonAdapter.class)
+@JsonAdapter(value = ContainerImageJsonAdapter.class, nullSafe = false)
 public sealed interface ContainerImage {
     record VariantContainerImageManaged(ContainerImageManaged value0) implements ContainerImage {}
 

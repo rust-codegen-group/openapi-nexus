@@ -26,7 +26,7 @@ and the content is the value: `{"VariantA": {"field1": "...", "field2": 123}}`
 
 Discriminator: variant key (external).
  */
-@JsonAdapter(ExternallyTaggedEnumJsonAdapter::class)
+@JsonAdapter(ExternallyTaggedEnumJsonAdapter::class, nullSafe = false)
 sealed class ExternallyTaggedEnum private constructor() {
     /**
      * Variant A with string and integer fields
