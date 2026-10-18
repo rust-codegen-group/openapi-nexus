@@ -8,12 +8,6 @@
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/rust-codegen-group/openapi-nexus/releases/download/0.2.3/openapi-nexus-installer.sh | sh
 ```
 
-**Nightly build (latest main):**
-
-```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/rust-codegen-group/openapi-nexus/releases/download/nightly/openapi-nexus-installer.sh | sh
-```
-
 **Build from source:**
 
 ```bash
