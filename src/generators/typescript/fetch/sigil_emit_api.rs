@@ -1509,10 +1509,6 @@ fn emit_response_return(
         Err(_) => "number".to_string(),
     };
 
-    // Keep this inline intersection as a bounded raw fragment because the
-    // TypeScript renderer normalizes spaces inside `{ status: ... }`, changing
-    // the established golden output.
-
     // When camelCase is enabled and the response is JSON with a Named type,
     // inject a fromJSON transformer: `new JSONApiResponse<Pet>(response, (json) => petFromJSON(json as Pet$Wire))`
     if property_naming_camel_case
@@ -1526,9 +1522,10 @@ fn emit_response_return(
             _ => unreachable!(),
         };
         // The transformer is a complete target-language callback expression.
+        let status_type = response_status_type(&status_ty);
         cb.add_code(
             sigil_quote!(TypeScript {
-                return new $T(rt_value("JSONApiResponse"))(response, $L(from_json.as_str())) as $T(wrapper_type)$L(format!(" & {{ status: {status_ty} }}"));
+                return new $T(rt_value("JSONApiResponse"))(response, $L(from_json.as_str())) as $T(wrapper_type)$L(" & ")$T(status_type);
             })
             .map_err(|error| format!("sigil_emit_api: transformed response return: {error}"))?,
         );
@@ -1550,14 +1547,21 @@ fn emit_response_return(
         ResponseKind::Blob => rt_value("BlobApiResponse"),
         ResponseKind::None => rt_value("VoidApiResponse"),
     };
+    let status_type = response_status_type(&status_ty);
 
     cb.add_code(
         sigil_quote!(TypeScript {
-            return new $T(wrapper_value)(response) as $T(wrapper_type)$L(format!(" & {{ status: {status_ty} }}"));
+            return new $T(wrapper_value)(response) as $T(wrapper_type)$L(" & ")$T(status_type);
         })
         .map_err(|error| format!("sigil_emit_api: response return: {error}"))?,
     );
     Ok(())
+}
+
+fn response_status_type(status_ty: &str) -> TypeName {
+    // TypeName has no inline object-type variant yet. Keep this raw member
+    // narrow so the response wrapper remains a semantic imported type.
+    TypeName::raw(&format!("{{ status: {status_ty} }}"))
 }
 
 /// `return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: 2xx };`
@@ -2281,6 +2285,7 @@ fn collect_convertible_named_refs(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sigil_stitch::assert_rendered;
 
     fn render_header_accessor(kind: ResponseHeaderValueKind) -> String {
         let header = ResponseHeaderPlan {
@@ -2342,5 +2347,23 @@ mod tests {
                 TypeName::string_literal("b"),
             ])
         );
+    }
+
+    #[test]
+    fn response_status_type_keeps_inline_object_spacing() -> Result<(), String> {
+        let wrapper = TypeName::primitive("JSONApiResponse<Foo>");
+        let status_type = response_status_type("200");
+        let block = sigil_quote!(TypeScript {
+            return new $T(wrapper.clone())(response) as $T(wrapper)$L(" & ")$T(status_type);
+        })
+        .map_err(|error| error.to_string())?;
+
+        assert_rendered!(
+            TypeScript::new(),
+            width = 100,
+            block,
+            "return new JSONApiResponse<Foo>(response) as JSONApiResponse<Foo> & { status: 200 };\n"
+        );
+        Ok(())
     }
 }
