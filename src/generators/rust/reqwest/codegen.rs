@@ -6,8 +6,6 @@
 //! 3. Hardcoded runtime (`client.rs`, `error.rs`, `auth.rs`).
 //! 4. `Cargo.toml`, `lib.rs`, and `README.md`.
 
-use std::error::Error;
-
 use heck::ToKebabCase as _;
 
 use super::runtime::runtime_files;
@@ -15,6 +13,7 @@ use super::sigil_emit_api::{emit_method_body, reqwest_backend_config};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::GeneratorError;
 use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::generators::rust::common::{
     config::RustGeneratorConfig, emit_api, emit_models, project_files,
@@ -42,7 +41,7 @@ impl RustReqwestCodeGenerator {
             .unwrap_or_else(|| info.title.to_kebab_case())
     }
 
-    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         let header = project_files::render_file_header(&ir.info);
         let crate_name = self.crate_name(&ir.info);
         let backend_config = reqwest_backend_config();
@@ -51,11 +50,12 @@ impl RustReqwestCodeGenerator {
         let mut files = Vec::new();
 
         // Models (shared)
-        files.extend(
-            emit_models::generate_model_files(ir, &header, &self.config, &request_inputs).map_err(
-                |msg| Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}")),
-            )?,
-        );
+        files.extend(emit_models::generate_model_files(
+            ir,
+            &header,
+            &self.config,
+            &request_inputs,
+        )?);
 
         // APIs (shared planning + reqwest body emitter)
         let response_extra = self
@@ -63,17 +63,14 @@ impl RustReqwestCodeGenerator {
             .extra_derives
             .as_ref()
             .and_then(|e| e.response_structs.as_ref());
-        files.extend(
-            emit_api::generate_api_files(
-                ir,
-                &header,
-                &backend_config,
-                response_extra,
-                &request_inputs,
-                &emit_method_body,
-            )
-            .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
-        );
+        files.extend(emit_api::generate_api_files(
+            ir,
+            &header,
+            &backend_config,
+            response_extra,
+            &request_inputs,
+            &emit_method_body,
+        ));
 
         // Runtime (reqwest-specific)
         files.extend(runtime_files(
@@ -100,7 +97,7 @@ impl CodeGenerator for RustReqwestCodeGenerator {
         GeneratorType::RustReqwest
     }
 
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         self.generate_ir(ir)
     }
 }

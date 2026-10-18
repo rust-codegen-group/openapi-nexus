@@ -8,15 +8,15 @@ use super::{reference::ErrorRef, schema::ErrorSchema};
 #[snafu(visibility(pub))]
 pub enum ErrorSpec {
     /// Reference error.
-    #[snafu(display("Reference error"))]
+    #[snafu(display("Reference error: {source}"))]
     Ref { source: ErrorRef },
 
     /// Schema error.
-    #[snafu(display("Schema error"))]
+    #[snafu(display("Schema error: {source}"))]
     Schema { source: ErrorSchema },
 
     /// Semver error.
-    #[snafu(display("Semver error"))]
+    #[snafu(display("Semver error: {source}"))]
     Semver { source: SemverError },
 
     /// Unsupported spec file version.

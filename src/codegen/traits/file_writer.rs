@@ -2,6 +2,9 @@
 
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
+
+use super::error::WriteError;
 
 /// File category for organizing generated files
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -80,11 +83,7 @@ pub trait FileWriter {
     }
 
     /// Write generated files to the output directory
-    fn write_files(
-        &self,
-        output_dir: &std::path::Path,
-        files: &[FileInfo],
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn write_files(&self, output_dir: &Path, files: &[FileInfo]) -> Result<(), WriteError> {
         // Group files by category
         let mut files_by_category: HashMap<FileCategory, Vec<&FileInfo>> = HashMap::new();
         for file in files {
@@ -112,7 +111,12 @@ pub trait FileWriter {
 
             // Create directory if it doesn't exist
             if !category_dir.exists() {
-                fs::create_dir_all(&category_dir)?;
+                fs::create_dir_all(&category_dir).map_err(|source| {
+                    WriteError::CreateDirectory {
+                        path: category_dir.clone(),
+                        source,
+                    }
+                })?;
             }
 
             // Write files in this category
@@ -121,10 +125,16 @@ pub trait FileWriter {
 
                 // Create parent directories if they don't exist (for subdirectories)
                 if let Some(parent) = file_path.parent() {
-                    fs::create_dir_all(parent)?;
+                    fs::create_dir_all(parent).map_err(|source| WriteError::CreateDirectory {
+                        path: parent.to_path_buf(),
+                        source,
+                    })?;
                 }
 
-                fs::write(&file_path, &file.content)?;
+                fs::write(&file_path, &file.content).map_err(|source| WriteError::WriteFile {
+                    path: file_path.clone(),
+                    source,
+                })?;
             }
         }
 

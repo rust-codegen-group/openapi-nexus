@@ -1,6 +1,6 @@
 //! Main code generation orchestrator
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use tracing::{error, info};
 
@@ -8,6 +8,7 @@ use super::registry::GeneratorRegistry;
 use crate::codegen::GeneratorType;
 use crate::codegen::traits::{CodeGenerator, FileWriter};
 use crate::config::Config;
+use crate::error::{GenerationFailure, GenerationReport, PipelineError};
 use crate::generators::go::http::GoHttpCodeGenerator;
 use crate::generators::java::okhttp::JavaOkhttpCodeGenerator;
 use crate::generators::kotlin::okhttp::KotlinOkhttpCodeGenerator;
@@ -131,9 +132,13 @@ impl OpenApiCodeGenerator {
             .register_generator(generator_type, generator)
     }
 
-    /// Generate code from the configuration
-    /// Logs errors and continues to generate the next generator instead of returning errors
-    pub fn generate(&self, config: &Config) {
+    /// Generate code from the configuration.
+    ///
+    /// Parsing and lowering are fatal because every generator depends on the
+    /// shared IR. Individual generators and file writes are collected in the
+    /// report so one failed target does not prevent the remaining targets from
+    /// running.
+    pub fn generate(&self, config: &Config) -> Result<GenerationReport, PipelineError> {
         info!("Parsing OpenAPI specification from: {}", config.input);
         let parsed = match parse_file(Path::new(&config.input)) {
             Ok(parsed) => parsed,
@@ -142,7 +147,7 @@ impl OpenApiCodeGenerator {
                     "Failed to parse OpenAPI file {:?}: {}. Skipping code generation.",
                     config.input, e
                 );
-                return;
+                return Err(PipelineError::Parse { source: e });
             }
         };
 
@@ -150,7 +155,7 @@ impl OpenApiCodeGenerator {
             Ok(ir) => ir,
             Err(e) => {
                 error!("Failed to lower OpenAPI spec to IR: {}. Skipping.", e);
-                return;
+                return Err(PipelineError::Lower { source: e });
             }
         };
         info!(
@@ -166,6 +171,8 @@ impl OpenApiCodeGenerator {
             .as_ref()
             .cloned()
             .unwrap_or_default();
+
+        let mut report = GenerationReport::default();
 
         // Generate code for each generator
         for generator_type in generators {
@@ -196,6 +203,10 @@ impl OpenApiCodeGenerator {
                         "Failed to generate code with generator {}: {}. Continuing to next generator.",
                         generator_type, e
                     );
+                    report.failures.push(GenerationFailure::Generate {
+                        generator: generator_type,
+                        source: e,
+                    });
                     continue;
                 }
             };
@@ -209,6 +220,11 @@ impl OpenApiCodeGenerator {
                     "Failed to write files for generator {}: {}. Continuing to next generator.",
                     generator_type, e
                 );
+                report.failures.push(GenerationFailure::Write {
+                    generator: generator_type,
+                    output_dir: PathBuf::from(output_dir),
+                    source: e,
+                });
                 continue;
             }
 
@@ -217,6 +233,9 @@ impl OpenApiCodeGenerator {
                 files.len(),
                 generator_type
             );
+            report.succeeded.push(generator_type);
         }
+
+        Ok(report)
     }
 }

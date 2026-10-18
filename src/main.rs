@@ -47,9 +47,21 @@ fn main() -> process::ExitCode {
             info!("Input: {}", config.input);
 
             let code_generator = OpenApiCodeGenerator::new(&config);
-            code_generator.generate(&config);
+            match code_generator.generate(&config) {
+                Ok(report) if report.is_success() => {}
+                Ok(report) => {
+                    for failure in report.failures {
+                        error!("{}", failure);
+                    }
+                    return process::ExitCode::FAILURE;
+                }
+                Err(error) => {
+                    error!("{}", error);
+                    return process::ExitCode::FAILURE;
+                }
+            }
 
-            info!("Code generation completed");
+            info!("Code generation completed successfully");
         }
     };
 

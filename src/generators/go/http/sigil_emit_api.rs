@@ -19,7 +19,6 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use crate::codegen::traits::file_writer::FileInfo;
-use crate::generators::EmissionError;
 use crate::generators::multipart::{MultipartValueEncoding, multipart_parts_for_request_body};
 use crate::generators::request_inputs::{RequestInputPlan, request_input_for_operation};
 use crate::generators::response_headers::{
@@ -27,6 +26,7 @@ use crate::generators::response_headers::{
     unique_response_header_accessor_names,
 };
 use crate::generators::response_names::response_entry_name as response_variant_name;
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation,
@@ -53,7 +53,7 @@ pub(crate) fn generate_api_files(
     module_path: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, EmissionError> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
@@ -64,8 +64,9 @@ pub(crate) fn generate_api_files(
         } else {
             format!("{stem}.go")
         };
-        let body = emit_api_file(tag, ops, ir, module_path, request_inputs)
-            .map_err(|source| EmissionError::api("Go", &format!("{tag} API"), source))?;
+        let body = emit_api_file(tag, ops, ir, module_path, request_inputs).map_err(|source| {
+            GeneratorError::emission(ArtifactKind::Api, format!("{tag} API"), source)
+        })?;
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }

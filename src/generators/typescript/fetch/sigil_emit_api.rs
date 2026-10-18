@@ -27,12 +27,14 @@ use crate::generators::response_headers::{
 };
 use crate::generators::response_names::response_entry_kind as response_detail_kind;
 use crate::generators::type_application;
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation as IrParameterLocation,
 };
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
 use sigil_stitch::code_block::{Arg, CodeBlock};
+use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
@@ -53,7 +55,7 @@ pub fn generate_api_files(
     property_naming_camel_case: bool,
     request_inputs: &RequestInputPlan,
     ts: &TypeScript,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let header = super::project_files::render_file_header(&ir.info);
     let by_tag = group_by_tag(&ir.operations);
     let flags = EmitFlags {
@@ -72,10 +74,13 @@ pub fn generate_api_files(
             request_inputs,
             &convertible,
             ts,
-        )?;
-        let body = file_spec
-            .render(100)
-            .map_err(|e| format!("sigil_emit_api: render {tag}: {e}"))?;
+        )
+        .map_err(|source| {
+            GeneratorError::emission(ArtifactKind::Api, format!("{tag} API"), source)
+        })?;
+        let body = file_spec.render(100).map_err(|source| {
+            GeneratorError::emission(ArtifactKind::Api, format!("{tag} API"), source)
+        })?;
         let filename = format!("{}Api.ts", tag.to_pascal_case());
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
@@ -154,7 +159,7 @@ fn emit_api_file(
     request_inputs: &RequestInputPlan,
     convertible: &HashSet<String>,
     ts: &TypeScript,
-) -> Result<FileSpec, String> {
+) -> Result<FileSpec, SigilStitchError> {
     let class_name = format!("{}Api", tag.to_pascal_case());
     let interface_name = format!("{}Interface", class_name);
 
@@ -228,7 +233,6 @@ fn emit_api_file(
     )?);
 
     fb.build()
-        .map_err(|e| format!("sigil_emit_api: FileSpec build {tag}: {e}"))
 }
 
 /// Name of the exported type alias holding the raw (wrapped) response union
@@ -255,7 +259,7 @@ fn error_detail_alias_name(op: &IrOperation) -> String {
 /// Each member is a `%T` slot so imports still flow through the collector,
 /// and each sits on its own line so intersections (`Wrapper & { status: N }`)
 /// stay intact.
-fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock, String> {
+fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
     for op in ops {
         let alias = raw_response_alias_name(op);
@@ -270,19 +274,17 @@ fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock, Strin
                 export type $N(alias.as_str()) =
                 $L("  | ")$for(member in &members; separator = "\n  | ") { $T((*member).clone()) };
             })
-        }
-        .map_err(|e| format!("sigil_emit_api: response alias {alias}: {e}"))?;
+        }?;
         cb.add_code(alias_block);
         cb.add_line();
     }
     cb.build()
-        .map_err(|e| format!("sigil_emit_api: response aliases block: {e}"))
 }
 
 fn build_success_header_accessors(
     ops: &[&IrOperation],
     ir: &IrSpec,
-) -> Result<Vec<FunSpec>, String> {
+) -> Result<Vec<FunSpec>, SigilStitchError> {
     let mut accessors = Vec::new();
     let mut used_accessor_names = HashSet::new();
     for op in ops {
@@ -317,7 +319,10 @@ fn build_success_header_accessors(
     Ok(accessors)
 }
 
-fn build_error_types_block(ops: &[&IrOperation], ir: &IrSpec) -> Result<CodeBlock, String> {
+fn build_error_types_block(
+    ops: &[&IrOperation],
+    ir: &IrSpec,
+) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
     for op in ops {
         let detail_alias = error_detail_alias_name(op);
@@ -386,16 +391,12 @@ fn build_error_types_block(ops: &[&IrOperation], ir: &IrSpec) -> Result<CodeBloc
                     "this.response.headers",
                     false,
                 )?
-                .emit(&TypeScript::new(), DeclarationContext::Member)
-                .map_err(|error| {
-                    format!("sigil_emit_api: error header accessor {method_name}: {error}")
-                })?,
+                .emit(&TypeScript::new(), DeclarationContext::Member)?,
             );
         }
         cb.add("%<}\n\n", ());
     }
     cb.build()
-        .map_err(|e| format!("sigil_emit_api: error types block: {e}"))
 }
 
 fn build_ts_header_accessor(
@@ -404,7 +405,7 @@ fn build_ts_header_accessor(
     header: &ResponseHeaderPlan,
     headers_expr: &str,
     exported: bool,
-) -> Result<FunSpec, String> {
+) -> Result<FunSpec, SigilStitchError> {
     let mut accessor = FunSpec::builder(name)
         .returns(vec![TypeName::union(vec![
             ts_header_type(header.value_kind),
@@ -417,9 +418,7 @@ fn build_ts_header_accessor(
     if exported {
         accessor = accessor.visibility(Visibility::Public);
     }
-    accessor
-        .build()
-        .map_err(|error| format!("sigil_emit_api: response header accessor {name}: {error}"))
+    accessor.build()
 }
 
 fn ts_header_type(kind: ResponseHeaderValueKind) -> TypeName {
@@ -432,11 +431,14 @@ fn ts_header_type(kind: ResponseHeaderValueKind) -> TypeName {
     }
 }
 
-fn ts_header_body(header: &ResponseHeaderPlan, headers_expr: &str) -> Result<CodeBlock, String> {
+fn ts_header_body(
+    header: &ResponseHeaderPlan,
+    headers_expr: &str,
+) -> Result<CodeBlock, SigilStitchError> {
     let wire_name = header.wire_name.as_str();
     let integer_regex = r"/^[+-]?\d+$/";
     let number_regex = r"/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/";
-    let body = match header.value_kind {
+    match header.value_kind {
         ResponseHeaderValueKind::String => sigil_quote!(TypeScript {
             return $L(headers_expr).get($S(wire_name)) ?? undefined;
         }),
@@ -466,8 +468,7 @@ fn ts_header_body(header: &ResponseHeaderPlan, headers_expr: &str) -> Result<Cod
             }
             return undefined;
         }),
-    };
-    body.map_err(|error| format!("sigil_emit_api: response header accessor body: {error}"))
+    }
 }
 
 /// Compute the deduplicated list of union members for an operation's raw
@@ -619,7 +620,7 @@ fn build_body_field(
 fn build_api_interface_block(
     interface_name: &str,
     ops: &[&IrOperation],
-) -> Result<CodeBlock, String> {
+) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
     cb.add(&format!("export interface {} {{\n", interface_name), vec![]);
 
@@ -645,7 +646,6 @@ fn build_api_interface_block(
 
     cb.add("}", vec![]);
     cb.build()
-        .map_err(|e| format!("sigil_emit_api: ApiInterface {interface_name}: {e}"))
 }
 
 /// Append `(requestParameters: ApiXRequest, initOverrides?: RequestInit | InitOverrideFunction) => %T`
@@ -691,7 +691,7 @@ fn build_api_class(
     ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) -> Result<TypeSpec, String> {
+) -> Result<TypeSpec, SigilStitchError> {
     let mut tb = TypeSpec::builder(class_name, TypeKind::Class)
         .visibility(Visibility::Public)
         .extends(rt_value("BaseAPI"))
@@ -709,7 +709,6 @@ fn build_api_class(
     }
 
     tb.build()
-        .map_err(|e| format!("sigil_emit_api: ApiClass {class_name}: {e}"))
 }
 
 fn build_constructor() -> FunSpec {
@@ -740,7 +739,7 @@ fn build_raw_method(
     ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) -> Result<FunSpec, String> {
+) -> Result<FunSpec, SigilStitchError> {
     let method_base = op.operation_id.to_lower_camel_case();
     let method_name = format!("{}Raw", method_base);
 
@@ -760,10 +759,9 @@ fn build_raw_method(
     emit_make_request(&mut body, op, op.request_body.is_some());
     emit_response_handler(&mut body, op, property_naming_camel_case, convertible)?;
 
-    fb = fb.body(body.build().map_err(|e| format!("body build: {e}"))?);
+    fb = fb.body(body.build()?);
 
     fb.build()
-        .map_err(|e| format!("sigil_emit_api: raw method {method_name}: {e}"))
 }
 
 /// True if `s` is shaped like a JS identifier — safe to use with dot access.
@@ -824,23 +822,20 @@ fn emit_required_param_checks(
 fn emit_url_path(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     cb.add("// Build path with path parameters\n", vec![]);
     let has_path_params = op
         .parameters
         .iter()
         .any(|p| matches!(p.location, IrParameterLocation::Path));
     let path = op.path.as_str();
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            $if(has_path_params) {
-                let urlPath = $V(path);
-            } $else {
-                const urlPath = $V(path);
-            }
-        })
-        .map_err(|error| format!("sigil_emit_api: url path declaration: {error}"))?,
-    );
+    cb.add_code(sigil_quote!(TypeScript {
+        $if(has_path_params) {
+            let urlPath = $V(path);
+        } $else {
+            const urlPath = $V(path);
+        }
+    })?);
 
     let names = resolve_param_names(op);
     for p in op
@@ -856,7 +851,7 @@ fn emit_url_path(
             sigil_quote!(TypeScript {
                 urlPath = urlPath.replace($V(placeholder.as_str()), encodeURIComponent(String($L(access.as_str()))));
             })
-            .map_err(|error| format!("sigil_emit_api: path parameter {original}: {error}"))?,
+            ?,
         );
     }
     Ok(())
@@ -865,14 +860,11 @@ fn emit_url_path(
 fn emit_query_params(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     cb.add("// Build query parameters\n", vec![]);
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            const queryParameters: $T(rt_type("HTTPQuery")) = {};
-        })
-        .map_err(|error| format!("sigil_emit_api: query parameter declaration: {error}"))?,
-    );
+    cb.add_code(sigil_quote!(TypeScript {
+        const queryParameters: $T(rt_type("HTTPQuery")) = {};
+    })?);
     let names = resolve_param_names(op);
     for p in op
         .parameters
@@ -882,14 +874,11 @@ fn emit_query_params(
         let resolved = resolved_param(&names, p);
         let access = request_parameters_access(&resolved);
         let key = p.name.as_str();
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                if ($L(access.as_str()) !== undefined) {
-                    queryParameters[$S(key)] = $L(access.as_str());
-                }
-            })
-            .map_err(|error| format!("sigil_emit_api: query parameter {}: {error}", p.name))?,
-        );
+        cb.add_code(sigil_quote!(TypeScript {
+            if ($L(access.as_str()) !== undefined) {
+                queryParameters[$S(key)] = $L(access.as_str());
+            }
+        })?);
     }
     Ok(())
 }
@@ -897,7 +886,7 @@ fn emit_query_params(
 fn emit_headers(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     cb.add("// Build headers\n", vec![]);
     cb.add(
         "const headerParameters: Record<string, string> = {\n",
@@ -919,14 +908,11 @@ fn emit_headers(
         let resolved = resolved_param(&names, p);
         let access = request_parameters_access(&resolved);
         let key = p.name.as_str();
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                if ($L(access.as_str()) !== undefined) {
-                    headerParameters[$S(key)] = String($L(access.as_str()));
-                }
-            })
-            .map_err(|error| format!("sigil_emit_api: header parameter {}: {error}", p.name))?,
-        );
+        cb.add_code(sigil_quote!(TypeScript {
+            if ($L(access.as_str()) !== undefined) {
+                headerParameters[$S(key)] = String($L(access.as_str()));
+            }
+        })?);
     }
     Ok(())
 }
@@ -937,7 +923,7 @@ fn emit_request_body(
     ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     if let Some(ref body) = op.request_body {
         cb.add("// Prepare request body\n", vec![]);
         let names = resolve_param_names(op);
@@ -951,14 +937,9 @@ fn emit_request_body(
                 multipart_parts_for(body, &media_type, ir, property_naming_camel_case)
             {
                 if !body.required {
-                    cb.add_code(
-                        sigil_quote!(TypeScript {
-                            let requestBody: Blob | undefined = undefined;
-                        })
-                        .map_err(|error| {
-                            format!("sigil_emit_api: optional multipart body declaration: {error}")
-                        })?,
-                    );
+                    cb.add_code(sigil_quote!(TypeScript {
+                        let requestBody: Blob | undefined = undefined;
+                    })?);
                     cb.add(
                         &format!("if ({access} !== undefined && {access} !== null) {{\n"),
                         vec![],
@@ -1014,31 +995,18 @@ fn emit_request_body(
             if let Some(to_json) =
                 json_type.and_then(|ty| body_to_json_expr(ty, &access, convertible))
             {
-                cb.add_code(
-                    sigil_quote!(TypeScript {
-                        const requestBody = $L(to_json.as_str());
-                    })
-                    .map_err(|error| {
-                        format!("sigil_emit_api: JSON request body declaration: {error}")
-                    })?,
-                );
+                cb.add_code(sigil_quote!(TypeScript {
+                    const requestBody = $L(to_json.as_str());
+                })?);
             } else {
-                cb.add_code(
-                    sigil_quote!(TypeScript {
-                        const requestBody = $L(access.as_str());
-                    })
-                    .map_err(|error| {
-                        format!("sigil_emit_api: request body declaration: {error}")
-                    })?,
-                );
+                cb.add_code(sigil_quote!(TypeScript {
+                    const requestBody = $L(access.as_str());
+                })?);
             }
         } else {
-            cb.add_code(
-                sigil_quote!(TypeScript {
-                    const requestBody = $L(access.as_str());
-                })
-                .map_err(|error| format!("sigil_emit_api: request body declaration: {error}"))?,
-            );
+            cb.add_code(sigil_quote!(TypeScript {
+                const requestBody = $L(access.as_str());
+            })?);
         }
     }
     Ok(())
@@ -1049,7 +1017,7 @@ fn emit_unsupported_ts_body(
     access: &str,
     required: bool,
     message: &str,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     cb.add_code(
         sigil_quote!(TypeScript {
             $if(required) {
@@ -1058,7 +1026,7 @@ fn emit_unsupported_ts_body(
                 const requestBody = $L(access) === undefined || $L(access) === null ? undefined : (() => { throw new Error($S(message)); })();
             }
         })
-        .map_err(|error| format!("sigil_emit_api: unsupported request body block: {error}"))?,
+        ?,
     );
     Ok(())
 }
@@ -1070,14 +1038,14 @@ fn is_unsupported_ts_request_media_type(media_type: &str) -> bool {
 
 fn emit_multipart_blob_setup(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     cb.add_code(
         sigil_quote!(TypeScript {
             const multipartBoundary = $S("----openapi-nexus-") + Math.random().toString(16).slice(2);
             const multipartChunks: Array<string | Blob> = [];
             headerParameters[$S("Content-Type")] = $S("multipart/form-data; boundary=") + multipartBoundary;
         })
-        .map_err(|error| format!("sigil_emit_api: multipart setup block: {error}"))?,
+        ?,
     );
     Ok(())
 }
@@ -1085,19 +1053,16 @@ fn emit_multipart_blob_setup(
 fn emit_multipart_blob_finish(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     required: bool,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     let closing_boundary_tail = ts_string_literal("--\r\n");
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            multipartChunks.push($S("--") + multipartBoundary + $L(closing_boundary_tail));
-            $if(required) {
-                const requestBody = new Blob(multipartChunks);
-            } $else {
-                requestBody = new Blob(multipartChunks);
-            }
-        })
-        .map_err(|error| format!("sigil_emit_api: multipart finish block: {error}"))?,
-    );
+    cb.add_code(sigil_quote!(TypeScript {
+        multipartChunks.push($S("--") + multipartBoundary + $L(closing_boundary_tail));
+        $if(required) {
+            const requestBody = new Blob(multipartChunks);
+        } $else {
+            requestBody = new Blob(multipartChunks);
+        }
+    })?);
     Ok(())
 }
 
@@ -1106,16 +1071,11 @@ fn emit_multipart_blob_part(
     part: &MultipartPart,
     part_access: &str,
     convertible: &HashSet<String>,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     if part.value_encoding == MultipartValueEncoding::Unsupported {
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                throw new Error($S("unsupported multipart part content type"));
-            })
-            .map_err(|error| {
-                format!("sigil_emit_api: unsupported multipart part block: {error}")
-            })?,
-        );
+        cb.add_code(sigil_quote!(TypeScript {
+            throw new Error($S("unsupported multipart part content type"));
+        })?);
         return Ok(());
     }
     if part.is_binary {
@@ -1133,9 +1093,7 @@ fn emit_multipart_blob_part(
             sigil_quote!(TypeScript {
                 const multipartFilename = $T(rt_value("uploadFileFilename"))($L(part_access), $L(filename_literal.as_str()));
             })
-            .map_err(|error| {
-                format!("sigil_emit_api: multipart filename for {}: {error}", part.wire_name)
-            })?,
+            ?,
         );
         let header_prefix_literal = ts_string_literal(&header_prefix);
         let header_suffix_literal = ts_string_literal(&header_suffix);
@@ -1143,9 +1101,7 @@ fn emit_multipart_blob_part(
             sigil_quote!(TypeScript {
                 multipartChunks.push($S("--") + multipartBoundary + $L(header_prefix_literal.as_str()) + $T(rt_value("multipartHeaderValue"))(multipartFilename) + $L(header_suffix_literal.as_str()));
             })
-            .map_err(|error| {
-                format!("sigil_emit_api: multipart binary header for {}: {error}", part.wire_name)
-            })?,
+            ?,
         );
     } else {
         let disposition = format!(
@@ -1158,30 +1114,14 @@ fn emit_multipart_blob_part(
             multipart_header_value(&part.content_type)
         );
         let header_tail_literal = ts_string_literal(&header_tail);
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                multipartChunks.push($S("--") + multipartBoundary + $L(header_tail_literal));
-            })
-            .map_err(|error| {
-                format!(
-                    "sigil_emit_api: multipart part header for {}: {error}",
-                    part.wire_name
-                )
-            })?,
-        );
+        cb.add_code(sigil_quote!(TypeScript {
+            multipartChunks.push($S("--") + multipartBoundary + $L(header_tail_literal));
+        })?);
     }
     if part.is_binary {
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                multipartChunks.push($T(rt_value("uploadFileData"))($L(part_access)));
-            })
-            .map_err(|error| {
-                format!(
-                    "sigil_emit_api: multipart binary value for {}: {error}",
-                    part.wire_name
-                )
-            })?,
-        );
+        cb.add_code(sigil_quote!(TypeScript {
+            multipartChunks.push($T(rt_value("uploadFileData"))($L(part_access)));
+        })?);
     } else {
         let value_expr = if part.value_encoding == MultipartValueEncoding::Json {
             let json_value = multipart_part_to_json_expr(part, part_access, convertible)
@@ -1190,30 +1130,14 @@ fn emit_multipart_blob_part(
         } else {
             format!("String({part_access})")
         };
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                multipartChunks.push($L(value_expr));
-            })
-            .map_err(|error| {
-                format!(
-                    "sigil_emit_api: multipart part value for {}: {error}",
-                    part.wire_name
-                )
-            })?,
-        );
+        cb.add_code(sigil_quote!(TypeScript {
+            multipartChunks.push($L(value_expr));
+        })?);
     }
     let crlf_literal = ts_string_literal("\r\n");
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            multipartChunks.push($L(crlf_literal));
-        })
-        .map_err(|error| {
-            format!(
-                "sigil_emit_api: multipart trailing CRLF for {}: {error}",
-                part.wire_name
-            )
-        })?,
-    );
+    cb.add_code(sigil_quote!(TypeScript {
+        multipartChunks.push($L(crlf_literal));
+    })?);
     if part.is_binary {
         cb.add("}\n", vec![]);
     }
@@ -1253,7 +1177,7 @@ fn emit_response_handler(
     op: &IrOperation,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     cb.add("// Handle responses\n", vec![]);
     emit_error_throw(cb, op, property_naming_camel_case, convertible);
 
@@ -1502,7 +1426,7 @@ fn emit_response_return(
     _inside_block: bool,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     let kind = classify_response(resp);
     let status_ty = match resp.status.parse::<u16>() {
         Ok(n) => n.to_string(),
@@ -1527,7 +1451,7 @@ fn emit_response_return(
             sigil_quote!(TypeScript {
                 return new $T(rt_value("JSONApiResponse"))(response, $L(from_json.as_str())) as $T(wrapper_type)$L(" & ")$T(status_type);
             })
-            .map_err(|error| format!("sigil_emit_api: transformed response return: {error}"))?,
+            ?,
         );
         return Ok(());
     }
@@ -1549,12 +1473,9 @@ fn emit_response_return(
     };
     let status_type = response_status_type(&status_ty);
 
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            return new $T(wrapper_value)(response) as $T(wrapper_type)$L(" & ")$T(status_type);
-        })
-        .map_err(|error| format!("sigil_emit_api: response return: {error}"))?,
-    );
+    cb.add_code(sigil_quote!(TypeScript {
+        return new $T(wrapper_value)(response) as $T(wrapper_type)$L(" & ")$T(status_type);
+    })?);
     Ok(())
 }
 
@@ -1570,7 +1491,7 @@ fn emit_fallback_return(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     any_body: bool,
     _inside_block: bool,
-) -> Result<(), String> {
+) -> Result<(), SigilStitchError> {
     let json_response = rt_value("JSONApiResponse");
     let void_response = rt_value("VoidApiResponse");
     let unknown = TypeName::primitive("unknown");
@@ -1583,7 +1504,7 @@ fn emit_fallback_return(
                 return new $T(void_response.clone())(response) as $T(void_response) & $T(success_response);
             }
         })
-        .map_err(|error| format!("sigil_emit_api: fallback response return: {error}"))?,
+        ?,
     );
     Ok(())
 }
@@ -1592,7 +1513,7 @@ fn emit_fallback_return(
 // Convenience method
 // ============================================================================
 
-fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, String> {
+fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, SigilStitchError> {
     let method_base = op.operation_id.to_lower_camel_case();
     let raw_name = format!("{}Raw", method_base);
 
@@ -1622,7 +1543,6 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, String> {
     fb = fb.body(body);
 
     fb.build()
-        .map_err(|e| format!("sigil_emit_api: convenience method {method_base}: {e}"))
 }
 
 fn is_void_type(ty: &TypeName) -> bool {
@@ -2350,13 +2270,12 @@ mod tests {
     }
 
     #[test]
-    fn response_status_type_keeps_inline_object_spacing() -> Result<(), String> {
+    fn response_status_type_keeps_inline_object_spacing() -> Result<(), SigilStitchError> {
         let wrapper = TypeName::primitive("JSONApiResponse<Foo>");
         let status_type = response_status_type("200");
         let block = sigil_quote!(TypeScript {
             return new $T(wrapper.clone())(response) as $T(wrapper)$L(" & ")$T(status_type);
-        })
-        .map_err(|error| error.to_string())?;
+        })?;
 
         assert_rendered!(
             TypeScript::new(),

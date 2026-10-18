@@ -72,7 +72,7 @@ pub fn generate_api_files(
     response_extra_derives: Option<&ExtraDeriveConfig>,
     request_inputs: &RequestInputPlan,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
-) -> Result<Vec<FileInfo>, String> {
+) -> Vec<FileInfo> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     let mut mod_entries = Vec::new();
@@ -101,7 +101,7 @@ pub fn generate_api_files(
     }
     files.push(FileInfo::api("mod.rs".to_string(), mod_content));
 
-    Ok(files)
+    files
 }
 
 // ---------------------------------------------------------------------------

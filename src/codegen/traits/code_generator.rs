@@ -1,8 +1,7 @@
 //! Trait for language-specific code generators
 
-use std::error::Error;
-
 use super::file_writer::FileInfo;
+use crate::generators::GeneratorError;
 use crate::ir::types::IrSpec;
 use crate::{GeneratorType, Language};
 
@@ -19,5 +18,5 @@ pub trait CodeGenerator {
     fn generator_type(&self) -> GeneratorType;
 
     /// Generate files from a lowered IR specification.
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError>;
 }

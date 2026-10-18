@@ -1,7 +1,5 @@
 //! TypeScript Fetch code generator
 
-use std::error::Error;
-
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 
 use sigil_stitch::lang::typescript::TypeScript;
@@ -13,6 +11,7 @@ use crate::codegen::NamingConvention;
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::GeneratorError;
 use crate::generators::request_inputs::{
     RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
     plan_multipart_request_inputs,
@@ -56,7 +55,7 @@ impl TypeScriptFetchCodeGenerator {
         &self,
         ir: &crate::ir::types::IrSpec,
         request_inputs: &RequestInputPlan,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Vec<FileInfo>, GeneratorError> {
         let ts = TypeScript::new().with_indent(&self.config.indent);
         let flags = super::sigil_emit::EmitFlags {
             emit_enum_constants: self.config.emit_enum_constants,
@@ -64,9 +63,7 @@ impl TypeScriptFetchCodeGenerator {
             property_naming_camel_case: self.config.property_naming
                 == super::config::PropertyNaming::CamelCase,
         };
-        let mut files = super::sigil_emit::generate_model_files(ir, flags, &ts).map_err(|msg| {
-            Box::<dyn Error + Send + Sync>::from(format!("sigil_emit model generation: {msg}"))
-        })?;
+        let mut files = super::sigil_emit::generate_model_files(ir, flags, &ts)?;
 
         if !ir.schemas.is_empty() || !request_inputs.models().is_empty() {
             let mut names: Vec<String> = ir.schemas.keys().cloned().collect();
@@ -211,7 +208,7 @@ impl TypeScriptFetchCodeGenerator {
     }
 
     /// Generate ALL files from the IR spec.
-    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         let mut files = Vec::new();
         let request_inputs = plan_multipart_request_inputs(ir);
 
@@ -247,17 +244,14 @@ impl TypeScriptFetchCodeGenerator {
         &self,
         ir: &crate::ir::types::IrSpec,
         request_inputs: &RequestInputPlan,
-    ) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Vec<FileInfo>, GeneratorError> {
         let ts = TypeScript::new().with_indent(&self.config.indent);
         let mut files = super::sigil_emit_api::generate_api_files(
             ir,
             self.config.property_naming == super::config::PropertyNaming::CamelCase,
             request_inputs,
             &ts,
-        )
-        .map_err(|msg| {
-            Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api generation: {msg}"))
-        })?;
+        )?;
 
         if !files.is_empty() {
             let mut plans = super::sigil_emit_api::collect_api_file_exports(ir);
@@ -587,7 +581,7 @@ impl CodeGenerator for TypeScriptFetchCodeGenerator {
         GeneratorType::TypeScriptFetch
     }
 
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         self.generate_ir(ir)
     }
 }

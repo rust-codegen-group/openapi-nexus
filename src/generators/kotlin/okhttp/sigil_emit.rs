@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
 use crate::codegen::traits::file_writer::FileInfo;
-use crate::generators::EmissionError;
 use crate::generators::closed_sum::{
     ClosedSumCasePlan, ClosedSumEncoding, ClosedSumPlan, plan_tagged_union, plan_union,
 };
 use crate::generators::request_inputs::{
     RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
 };
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
     IrTaggedUnion, IrTypeExpr, IrUnion,
@@ -28,11 +28,11 @@ pub(crate) fn generate_model_files(
     package_name: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, EmissionError> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
         let body = emit_model_body(schema, ir, package_name)
-            .map_err(|error| EmissionError::model("Kotlin", &schema.name, error))?;
+            .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
         let class_name = schema.name.to_pascal_case();
         let filename = format!("{class_name}.kt");
         let mut content = String::with_capacity(header.len() + body.len());

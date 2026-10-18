@@ -20,6 +20,7 @@ use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::request_inputs::{
     RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
 };
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
@@ -44,14 +45,11 @@ pub fn generate_model_files(
     module_path: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema).map_err(|error| {
-            format!(
-                "Go model {}: build/lower/import/render: {error}",
-                schema.name
-            )
+        let body = emit_model_body(schema).map_err(|source| {
+            GeneratorError::emission(ArtifactKind::Model, &schema.name, source)
         })?;
         files.push(model_file(&schema.name, header, &body));
     }

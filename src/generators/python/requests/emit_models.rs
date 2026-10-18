@@ -5,6 +5,7 @@
 //! Each schema produces one `.py` file via `FileSpec`.
 
 use crate::codegen::traits::file_writer::FileInfo;
+use crate::generators::GeneratorError;
 pub use crate::generators::python::type_names::python_type_name;
 use crate::generators::python::type_names::python_type_name_for_schema;
 use crate::generators::request_inputs::{
@@ -25,15 +26,14 @@ pub fn generate_model_files(
     ir: &IrSpec,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema, ir).ok_or_else(|| {
-            format!(
-                "unsupported schema kind for {}: {:?}",
-                schema.name, schema.kind
-            )
-        })?;
+        let body =
+            emit_model_body(schema, ir).ok_or_else(|| GeneratorError::UnsupportedSchema {
+                schema: schema.name.clone(),
+                kind: format!("{:?}", schema.kind),
+            })?;
         let stem = schema.name.to_snake_case();
         let filename = format!("{stem}.py");
         let mut content = String::with_capacity(header.len() + body.len());

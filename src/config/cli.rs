@@ -67,10 +67,12 @@ impl Commands {
             // Parse format: generator.key=value
             let parts: Vec<&str> = config_str.splitn(2, '=').collect();
             if parts.len() != 2 {
-                return Err(ConfigError::ParseOverrides(format!(
-                    "Invalid generator config format: '{}'. Expected format: <generator>.<key>=<value>",
-                    config_str
-                )));
+                return Err(ConfigError::ParseOverrides {
+                    message: format!(
+                        "Invalid generator config format: '{}'. Expected format: <generator>.<key>=<value>",
+                        config_str
+                    ),
+                });
             }
 
             let key_part = parts[0];
@@ -79,10 +81,12 @@ impl Commands {
             // Split generator and key
             let key_parts: Vec<&str> = key_part.splitn(2, '.').collect();
             if key_parts.len() != 2 {
-                return Err(ConfigError::ParseOverrides(format!(
-                    "Invalid generator config format: '{}'. Expected format: <generator>.<key>=<value>",
-                    config_str
-                )));
+                return Err(ConfigError::ParseOverrides {
+                    message: format!(
+                        "Invalid generator config format: '{}'. Expected format: <generator>.<key>=<value>",
+                        config_str
+                    ),
+                });
             }
 
             let generator_str = key_parts[0];
@@ -90,10 +94,9 @@ impl Commands {
 
             // Parse generator
             let generator = GeneratorType::from_str(generator_str).map_err(|e| {
-                ConfigError::ParseOverrides(format!(
-                    "Invalid generator name '{}': {}",
-                    generator_str, e
-                ))
+                ConfigError::ParseOverrides {
+                    message: format!("Invalid generator name '{}': {}", generator_str, e),
+                }
             })?;
 
             // Parse value as TOML value

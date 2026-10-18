@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use heck::ToKebabCase as _;
 
 use super::config::JavaOkhttpConfig;
@@ -8,6 +6,7 @@ use super::{sigil_emit, sigil_emit_api};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::GeneratorError;
 use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::ir::types::{IrInfo, IrSpec};
 
@@ -32,25 +31,26 @@ impl JavaOkhttpCodeGenerator {
             .unwrap_or_else(|| DEFAULT_PACKAGE.to_string())
     }
 
-    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         let package_name = self.package_name();
         let header = render_file_header(&ir.info);
         let request_inputs = plan_multipart_request_inputs(ir);
 
         let mut files = Vec::new();
 
-        files.extend(
-            sigil_emit::generate_model_files(ir, &package_name, &header, &request_inputs).map_err(
-                |msg| Box::<dyn Error + Send + Sync>::from(format!("sigil_emit models: {msg}")),
-            )?,
-        );
+        files.extend(sigil_emit::generate_model_files(
+            ir,
+            &package_name,
+            &header,
+            &request_inputs,
+        )?);
 
-        files.extend(
-            sigil_emit_api::generate_api_files(ir, &package_name, &header, &request_inputs)
-                .map_err(|msg| {
-                    Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api: {msg}"))
-                })?,
-        );
+        files.extend(sigil_emit_api::generate_api_files(
+            ir,
+            &package_name,
+            &header,
+            &request_inputs,
+        )?);
 
         files.extend(runtime_files(
             &header,
@@ -74,7 +74,7 @@ impl CodeGenerator for JavaOkhttpCodeGenerator {
         GeneratorType::JavaOkhttp
     }
 
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         self.generate_ir(ir)
     }
 }
