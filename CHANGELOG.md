@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Breaking Changes
+
+- Replace generator and file-writer dynamic error returns with typed
+  `GeneratorError` and `WriteError` interfaces.
+- Make the orchestration API return `PipelineError` and `GenerationReport`, and
+  make the CLI exit unsuccessfully when a selected generator or file write fails.
+
+### Changed
+
+- Upgrade `snafu` to 0.9.2 and use Snafu-derived errors throughout the parsing,
+  lowering, configuration, generation, and writing pipeline.
+- Preserve sigil-stitch diagnostics instead of converting emission failures to
+  plain strings.
+
 ## [0.2.3]
 
 ### Added

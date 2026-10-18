@@ -35,7 +35,7 @@ pub fn generate_api_files(
     ir: &IrSpec,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, String> {
+) -> Vec<FileInfo> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
@@ -44,7 +44,7 @@ pub fn generate_api_files(
         let body = emit_api_file(tag, ops, ir, header, request_inputs);
         files.push(FileInfo::api(filename, body));
     }
-    Ok(files)
+    files
 }
 
 fn group_by_tag(operations: &[IrOperation]) -> BTreeMap<String, Vec<&IrOperation>> {

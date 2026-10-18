@@ -62,9 +62,9 @@ impl Config {
             Commands::Generate { input, global, .. } => (input, global),
         };
         if input.is_empty() {
-            return Err(ConfigError::Validation(
-                "Input is required and cannot be empty".to_string(),
-            ));
+            return Err(ConfigError::Validation {
+                message: "Input is required and cannot be empty".to_string(),
+            });
         }
         let generator_overrides = cli_args.command.parse_generator_overrides()?;
 

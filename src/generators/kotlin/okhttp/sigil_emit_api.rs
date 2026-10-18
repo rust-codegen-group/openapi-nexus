@@ -10,10 +10,12 @@ use crate::generators::response_headers::{
 use crate::generators::response_names::{
     response_entry_name as response_variant_name, response_match_rank,
 };
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
+use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::lang::kotlin::Kotlin;
 use sigil_stitch::prelude::*;
 
@@ -29,15 +31,16 @@ pub fn generate_api_files(
     package_name: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     let has_models = has_kotlin_models(ir, request_inputs);
     for (tag, ops) in &by_tag {
         let class_name = format!("{}Api", tag.to_pascal_case());
         let filename = format!("{class_name}.kt");
-        let body = emit_api_file(tag, ops, ir, package_name, request_inputs, has_models)
-            .map_err(|error| format!("Kotlin API file for tag {tag}: {error}"))?;
+        let body = emit_api_file(tag, ops, ir, package_name, request_inputs, has_models).map_err(
+            |source| GeneratorError::emission(ArtifactKind::Api, format!("{tag} API"), source),
+        )?;
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -74,7 +77,7 @@ fn emit_api_file(
     package_name: &str,
     request_inputs: &RequestInputPlan,
     has_models: bool,
-) -> Result<String, String> {
+) -> Result<String, SigilStitchError> {
     let class_name = format!("{}Api", tag.to_pascal_case());
     let plans: Vec<OpPlan> = ops
         .iter()
@@ -172,7 +175,6 @@ fn emit_api_file(
 
     let file = fb.build().expect("FileSpec builds for API file");
     file.render(RENDER_WIDTH)
-        .map_err(|error| format!("render Kotlin API file: {error}"))
 }
 
 fn package_header(package_name: &str) -> CodeBlock {
@@ -378,7 +380,7 @@ fn kotlin_error_body_method(response: &TypedResponse) -> String {
 // Operation method
 // ---------------------------------------------------------------------------
 
-fn build_operation_fun(plan: &OpPlan<'_>) -> Result<FunSpec, String> {
+fn build_operation_fun(plan: &OpPlan<'_>) -> Result<FunSpec, SigilStitchError> {
     let mut fb = FunSpec::builder(&plan.method_name);
     fb = fb.visibility(Visibility::Public);
 
@@ -413,14 +415,13 @@ fn build_operation_fun(plan: &OpPlan<'_>) -> Result<FunSpec, String> {
     fb = fb.body(emit_method_body(plan)?);
 
     fb.build()
-        .map_err(|error| format!("build Kotlin operation {}: {error}", plan.method_name))
 }
 
 // ---------------------------------------------------------------------------
 // Method body
 // ---------------------------------------------------------------------------
 
-fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
+fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
 
     // Path
@@ -435,24 +436,18 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
             )
         })
         .collect();
-    cb.add_code(
-        sigil_quote!(Kotlin {
-            val path = $S(plan.op.path)$for((placeholder, stringified) in &path_replacements) {
-                .replace($S(placeholder.as_str()), $L(stringified.as_str()))
-            }
-        })
-        .map_err(|error| format!("build Kotlin path construction: {error}"))?,
-    );
+    cb.add_code(sigil_quote!(Kotlin {
+        val path = $S(plan.op.path)$for((placeholder, stringified) in &path_replacements) {
+            .replace($S(placeholder.as_str()), $L(stringified.as_str()))
+        }
+    })?);
 
     // Query
     let has_query = !plan.query_params.is_empty();
     if has_query {
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                val query = mutableMapOf<String, String>()
-            })
-            .map_err(|error| format!("build Kotlin query initialization: {error}"))?,
-        );
+        cb.add_code(sigil_quote!(Kotlin {
+            val query = mutableMapOf<String, String>()
+        })?);
         for p in &plan.query_params {
             let var_ref = kt_ref(&p.var_name);
             let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
@@ -469,15 +464,10 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
     let method = plan.op.method.to_uppercase();
     if let Some(body) = &plan.body {
         if let Some(message) = unsupported_request_body_message(body) {
-            cb.add_code(
-                sigil_quote!(Kotlin {
-                    throw IllegalArgumentException($S(message))
-                })
-                .map_err(|error| format!("build unsupported Kotlin request body: {error}"))?,
-            );
-            return cb
-                .build()
-                .map_err(|error| format!("build Kotlin method body: {error}"));
+            cb.add_code(sigil_quote!(Kotlin {
+                throw IllegalArgumentException($S(message))
+            })?);
+            return cb.build();
         }
         if body.encoding == BodyEncoding::Multipart {
             if let Some(parts) = &body.multipart_parts {
@@ -492,7 +482,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
                     sigil_quote!(Kotlin {
                         val request: okhttp3.Request = throw IllegalArgumentException("unsupported multipart request body: schema must be object-shaped")
                     })
-                    .map_err(|error| format!("build unsupported Kotlin multipart body: {error}"))?,
+                    ?,
                 );
             }
         } else {
@@ -509,10 +499,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
 
     // Headers
     if !plan.header_params.is_empty() {
-        cb.add_code(
-            sigil_quote!(Kotlin { var finalRequest = request })
-                .map_err(|error| format!("build Kotlin final request declaration: {error}"))?,
-        );
+        cb.add_code(sigil_quote!(Kotlin { var finalRequest = request })?);
         for p in &plan.header_params {
             let var_ref = kt_ref(&p.var_name);
             let stringified = render_value_as_string(&var_ref, &p.param.type_expr);
@@ -533,18 +520,12 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
     // Response parsing
     if !plan.typed_responses.is_empty() {
         cb.add_line();
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                val responseBytes = response.body?.bytes() ?: ByteArray(0)
-            })
-            .map_err(|error| format!("build Kotlin response bytes decode: {error}"))?,
-        );
-        cb.add_code(
-            sigil_quote!(Kotlin {
-                val responseText = responseBytes.toString(Charsets.UTF_8)
-            })
-            .map_err(|error| format!("build Kotlin response text decode: {error}"))?,
-        );
+        cb.add_code(sigil_quote!(Kotlin {
+            val responseBytes = response.body?.bytes() ?: ByteArray(0)
+        })?);
+        cb.add_code(sigil_quote!(Kotlin {
+            val responseText = responseBytes.toString(Charsets.UTF_8)
+        })?);
         let mut seen: HashSet<String> = HashSet::new();
         let mut emitted_response_variable = false;
         for tr in &plan.typed_responses {
@@ -555,12 +536,9 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
                 cb.add_line();
             }
             let response_type = TypeName::raw(&tr.kt_type);
-            cb.add_code(
-                sigil_quote!(Kotlin {
-                    var $N(tr.field_name.as_str()): $T(response_type)? = null
-                })
-                .map_err(|error| format!("build Kotlin typed response declaration: {error}"))?,
-            );
+            cb.add_code(sigil_quote!(Kotlin {
+                var $N(tr.field_name.as_str()): $T(response_type)? = null
+            })?);
             emitted_response_variable = true;
         }
         cb.add_line();
@@ -588,7 +566,7 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
             sigil_quote!(Kotlin {
                 return $N(plan.response_type.as_str())($for(field in &dedup_fields; separator = ", ") { $L(field.as_str()) })
             })
-            .map_err(|error| format!("build Kotlin typed response return: {error}"))?,
+            ?,
         );
     } else {
         cb.add(
@@ -601,10 +579,9 @@ fn emit_method_body(plan: &OpPlan<'_>) -> Result<CodeBlock, String> {
     }
 
     cb.build()
-        .map_err(|error| format!("build Kotlin method body: {error}"))
 }
 
-fn kotlin_new_request(method: &str, has_query: bool) -> Result<CodeBlock, String> {
+fn kotlin_new_request(method: &str, has_query: bool) -> Result<CodeBlock, SigilStitchError> {
     sigil_quote!(Kotlin {
         $if(has_query) {
             val request = client.newRequest($S(method), path, query, null)
@@ -612,7 +589,6 @@ fn kotlin_new_request(method: &str, has_query: bool) -> Result<CodeBlock, String
             val request = client.newRequest($S(method), path, null, null)
         }
     })
-    .map_err(|error| format!("build Kotlin request construction: {error}"))
 }
 
 fn unsupported_request_body_message(body: &BodyBinding) -> Option<String> {
@@ -634,7 +610,7 @@ fn kotlin_new_request_with_body(
     method: &str,
     has_query: bool,
     body_expr: &str,
-) -> Result<CodeBlock, String> {
+) -> Result<CodeBlock, SigilStitchError> {
     sigil_quote!(Kotlin {
         $if(has_query) {
             val request = client.newRequestWithBody($S(method), path, query, $L(body_expr))
@@ -642,7 +618,6 @@ fn kotlin_new_request_with_body(
             val request = client.newRequestWithBody($S(method), path, null, $L(body_expr))
         }
     })
-    .map_err(|error| format!("build Kotlin request body construction: {error}"))
 }
 
 fn kotlin_query_param_put(
@@ -820,7 +795,7 @@ fn response_decode_expr(tr: &TypedResponse) -> String {
 
 fn kotlin_response_decode_assignments(
     typed_responses: &[TypedResponse],
-) -> Result<CodeBlock, String> {
+) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
     let mut seen: HashSet<String> = HashSet::new();
     let mut emitted_any = false;
@@ -843,13 +818,11 @@ fn kotlin_response_decode_assignments(
                     $N(field_name) = $L(deserialize_expr.as_str())
                 }
             })
-        }
-        .map_err(|error| format!("build Kotlin response decode branch: {error}"))?;
+        }?;
         cb.add_code(branch);
         emitted_any = true;
     }
     cb.build()
-        .map_err(|error| format!("build Kotlin response decode assignments: {error}"))
 }
 
 fn kotlin_error_throw(plan: &OpPlan<'_>) -> CodeBlock {

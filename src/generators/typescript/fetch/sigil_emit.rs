@@ -15,6 +15,7 @@
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::type_application;
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
@@ -2184,7 +2185,7 @@ pub fn generate_model_files(
     ir: &IrSpec,
     flags: EmitFlags,
     ts: &TypeScript,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let header = super::project_files::render_file_header(&ir.info);
     let convertible = build_convertible_set(ir, flags);
     let unknown_aliases = build_unknown_alias_set(ir);
@@ -2192,15 +2193,13 @@ pub fn generate_model_files(
 
     for (name, schema) in &ir.schemas {
         let file_spec = emit_model_file(schema, ir, flags, &convertible, &unknown_aliases, ts)
-            .ok_or_else(|| {
-                format!(
-                    "sigil_emit: unsupported schema kind for {name}: {:?}",
-                    schema.kind
-                )
+            .ok_or_else(|| GeneratorError::UnsupportedSchema {
+                schema: name.clone(),
+                kind: format!("{:?}", schema.kind),
             })?;
         let body = file_spec
             .render(100)
-            .map_err(|e| format!("sigil_emit: render {name}: {e}"))?;
+            .map_err(|source| GeneratorError::emission(ArtifactKind::Model, name, source))?;
         let content = format!("{header}{body}");
         let filename = format!("{}.ts", schema.name.to_pascal_case());
         files.push(FileInfo::model(filename, content));

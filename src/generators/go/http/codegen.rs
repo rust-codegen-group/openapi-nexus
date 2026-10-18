@@ -6,8 +6,6 @@
 //! 3. Hardcoded runtime (`client.go`, `auth.go`, `errors.go`).
 //! 4. `go.mod` and `README.md`.
 
-use std::error::Error;
-
 use heck::ToKebabCase as _;
 
 use super::config::GoHttpConfig;
@@ -16,6 +14,7 @@ use super::{sigil_emit, sigil_emit_api};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::GeneratorError;
 use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::ir::types::{IrInfo, IrSpec};
 
@@ -43,7 +42,7 @@ impl GoHttpCodeGenerator {
     }
 
     /// Orchestrate emission from the lowered IR.
-    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         let module_path = self.module_path();
         let header = render_file_header(&ir.info);
         let request_inputs = plan_multipart_request_inputs(ir);
@@ -51,19 +50,20 @@ impl GoHttpCodeGenerator {
         let mut files = Vec::new();
 
         // Models
-        files.extend(
-            sigil_emit::generate_model_files(ir, &module_path, &header, &request_inputs).map_err(
-                |msg| Box::<dyn Error + Send + Sync>::from(format!("sigil_emit models: {msg}")),
-            )?,
-        );
+        files.extend(sigil_emit::generate_model_files(
+            ir,
+            &module_path,
+            &header,
+            &request_inputs,
+        )?);
 
         // APIs
-        files.extend(
-            sigil_emit_api::generate_api_files(ir, &module_path, &header, &request_inputs)
-                .map_err(|msg| {
-                    Box::<dyn Error + Send + Sync>::from(format!("sigil_emit_api: {msg}"))
-                })?,
-        );
+        files.extend(sigil_emit_api::generate_api_files(
+            ir,
+            &module_path,
+            &header,
+            &request_inputs,
+        )?);
 
         // Runtime (hardcoded)
         files.extend(runtime_files(&header, request_inputs.has_uploads()));
@@ -85,7 +85,7 @@ impl CodeGenerator for GoHttpCodeGenerator {
         GeneratorType::GoHttp
     }
 
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         self.generate_ir(ir)
     }
 }

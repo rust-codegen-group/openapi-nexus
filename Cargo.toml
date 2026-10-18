@@ -7,7 +7,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.3"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.90"
 description = "OpenAPI 3.x multi-language code generator"
@@ -32,7 +32,7 @@ serde_norway = "0.9.42"
 serde_plain = "1.0.2"
 sigil-stitch = "0.7.3"
 similar = "2.7.0"
-snafu = "0.8.9"
+snafu = "0.9.2"
 toml = "0.9.8"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }

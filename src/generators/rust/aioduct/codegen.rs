@@ -1,7 +1,5 @@
 //! Rust aioduct code generator: IR → idiomatic Rust + aioduct (hyper 1.x).
 
-use std::error::Error;
-
 use heck::ToKebabCase as _;
 
 use super::runtime::runtime_files;
@@ -9,6 +7,7 @@ use super::sigil_emit_api::{aioduct_backend_config, emit_method_body};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
+use crate::generators::GeneratorError;
 use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::generators::rust::common::{
     config::RustGeneratorConfig, emit_api, emit_models, project_files,
@@ -35,7 +34,7 @@ impl RustAioductCodeGenerator {
             .unwrap_or_else(|| info.title.to_kebab_case())
     }
 
-    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         use super::config::{AioductFeatureConfig, default_aioduct_features};
 
         let header = project_files::render_file_header(&ir.info);
@@ -48,28 +47,26 @@ impl RustAioductCodeGenerator {
 
         let mut files = Vec::new();
 
-        files.extend(
-            emit_models::generate_model_files(ir, &header, &self.config, &request_inputs).map_err(
-                |msg| Box::<dyn Error + Send + Sync>::from(format!("emit_models: {msg}")),
-            )?,
-        );
+        files.extend(emit_models::generate_model_files(
+            ir,
+            &header,
+            &self.config,
+            &request_inputs,
+        )?);
 
         let response_extra = self
             .config
             .extra_derives
             .as_ref()
             .and_then(|e| e.response_structs.as_ref());
-        files.extend(
-            emit_api::generate_api_files(
-                ir,
-                &header,
-                &backend_config,
-                response_extra,
-                &request_inputs,
-                &emit_method_body,
-            )
-            .map_err(|msg| Box::<dyn Error + Send + Sync>::from(format!("emit_api: {msg}")))?,
-        );
+        files.extend(emit_api::generate_api_files(
+            ir,
+            &header,
+            &backend_config,
+            response_extra,
+            &request_inputs,
+            &emit_method_body,
+        ));
 
         files.extend(runtime_files(
             &header,
@@ -95,7 +92,7 @@ impl CodeGenerator for RustAioductCodeGenerator {
         GeneratorType::RustAioduct
     }
 
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         self.generate_ir(ir)
     }
 }

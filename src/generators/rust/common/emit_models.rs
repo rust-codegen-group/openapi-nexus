@@ -16,6 +16,7 @@ use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::request_inputs::{
     RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
 };
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
     IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
@@ -35,7 +36,7 @@ pub fn generate_model_files(
     header: &str,
     config: &RustGeneratorConfig,
     request_inputs: &RequestInputPlan,
-) -> Result<Vec<FileInfo>, String> {
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     let mut mod_entries = Vec::new();
 
@@ -97,9 +98,9 @@ pub fn generate_model_files(
         let filename = format!("{stem}.rs");
         mod_entries.push(stem);
 
-        let rendered = file_spec
-            .render(100)
-            .map_err(|e| format!("render error for {}: {e}", schema.name))?;
+        let rendered = file_spec.render(100).map_err(|source| {
+            GeneratorError::emission(ArtifactKind::Model, &schema.name, source)
+        })?;
 
         let mut content = String::with_capacity(header.len() + rendered.len());
         content.push_str(header);
