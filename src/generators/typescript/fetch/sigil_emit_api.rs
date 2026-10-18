@@ -753,9 +753,9 @@ fn build_raw_method(
 
     let mut body = CodeBlock::builder();
     emit_required_param_checks(&mut body, op, &method_name);
-    emit_url_path(&mut body, op);
-    emit_query_params(&mut body, op);
-    emit_headers(&mut body, op);
+    emit_url_path(&mut body, op)?;
+    emit_query_params(&mut body, op)?;
+    emit_headers(&mut body, op)?;
     emit_request_body(&mut body, op, ir, property_naming_camel_case, convertible);
     emit_make_request(&mut body, op, op.request_body.is_some());
     emit_response_handler(&mut body, op, property_naming_camel_case, convertible);
@@ -821,7 +821,10 @@ fn emit_required_param_checks(
     }
 }
 
-fn emit_url_path(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
+fn emit_url_path(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    op: &IrOperation,
+) -> Result<(), String> {
     cb.add("// Build path with path parameters\n", vec![]);
     let has_path_params = op
         .parameters
@@ -836,7 +839,7 @@ fn emit_url_path(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOpe
                 const urlPath = $V(path);
             }
         })
-        .expect("url path declaration builds"),
+        .map_err(|error| format!("sigil_emit_api: url path declaration: {error}"))?,
     );
 
     let names = resolve_param_names(op);
@@ -848,18 +851,27 @@ fn emit_url_path(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOpe
         let resolved = resolved_param(&names, p);
         let original = &p.name;
         let access = request_parameters_access(&resolved);
-        cb.add(
-            &format!("urlPath = urlPath.replace(%V, encodeURIComponent(String({access})));\n"),
-            vec![Arg::VerbatimStr(format!("{{{original}}}"))],
+        let placeholder = format!("{{{original}}}");
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                urlPath = urlPath.replace($V(placeholder.as_str()), encodeURIComponent(String($L(access.as_str()))));
+            })
+            .map_err(|error| format!("sigil_emit_api: path parameter {original}: {error}"))?,
         );
     }
+    Ok(())
 }
 
-fn emit_query_params(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
+fn emit_query_params(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    op: &IrOperation,
+) -> Result<(), String> {
     cb.add("// Build query parameters\n", vec![]);
-    cb.add(
-        "const queryParameters: %T = {};\n",
-        vec![Arg::TypeName(rt_type("HTTPQuery"))],
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            const queryParameters: $T(rt_type("HTTPQuery")) = {};
+        })
+        .map_err(|error| format!("sigil_emit_api: query parameter declaration: {error}"))?,
     );
     let names = resolve_param_names(op);
     for p in op
@@ -869,19 +881,23 @@ fn emit_query_params(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &I
     {
         let resolved = resolved_param(&names, p);
         let access = request_parameters_access(&resolved);
-        let key = format!("'{}'", p.name);
+        let key = p.name.as_str();
         cb.add_code(
             sigil_quote!(TypeScript {
                 if ($L(access.as_str()) !== undefined) {
-                    queryParameters[$L(key.as_str())] = $L(access.as_str());
+                    queryParameters[$S(key)] = $L(access.as_str());
                 }
             })
-            .expect("query parameter guard builds"),
+            .map_err(|error| format!("sigil_emit_api: query parameter {}: {error}", p.name))?,
         );
     }
+    Ok(())
 }
 
-fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOperation) {
+fn emit_headers(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    op: &IrOperation,
+) -> Result<(), String> {
     cb.add("// Build headers\n", vec![]);
     cb.add(
         "const headerParameters: Record<string, string> = {\n",
@@ -902,16 +918,17 @@ fn emit_headers(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, op: &IrOper
     {
         let resolved = resolved_param(&names, p);
         let access = request_parameters_access(&resolved);
-        let key = format!("'{}'", p.name);
+        let key = p.name.as_str();
         cb.add_code(
             sigil_quote!(TypeScript {
                 if ($L(access.as_str()) !== undefined) {
-                    headerParameters[$L(key.as_str())] = String($L(access.as_str()));
+                    headerParameters[$S(key)] = String($L(access.as_str()));
                 }
             })
-            .expect("header parameter guard builds"),
+            .map_err(|error| format!("sigil_emit_api: header parameter {}: {error}", p.name))?,
         );
     }
+    Ok(())
 }
 
 fn emit_request_body(
