@@ -758,7 +758,7 @@ fn build_raw_method(
     emit_headers(&mut body, op)?;
     emit_request_body(&mut body, op, ir, property_naming_camel_case, convertible)?;
     emit_make_request(&mut body, op, op.request_body.is_some());
-    emit_response_handler(&mut body, op, property_naming_camel_case, convertible);
+    emit_response_handler(&mut body, op, property_naming_camel_case, convertible)?;
 
     fb = fb.body(body.build().map_err(|e| format!("body build: {e}"))?);
 
@@ -1253,7 +1253,7 @@ fn emit_response_handler(
     op: &IrOperation,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) {
+) -> Result<(), String> {
     cb.add("// Handle responses\n", vec![]);
     emit_error_throw(cb, op, property_naming_camel_case, convertible);
 
@@ -1283,9 +1283,9 @@ fn emit_response_handler(
 
     if numeric.is_empty() && wildcards.is_empty() {
         if let Some(d) = default {
-            emit_response_return(cb, d, false, property_naming_camel_case, convertible);
+            emit_response_return(cb, d, false, property_naming_camel_case, convertible)?;
         } else {
-            emit_fallback_return(cb, fallback_has_body, false);
+            emit_fallback_return(cb, fallback_has_body, false)?;
         }
     } else {
         for (i, (code, resp)) in numeric.iter().enumerate() {
@@ -1294,7 +1294,7 @@ fn emit_response_handler(
                 &format!("{keyword} (response.status === {code}) {{\n  "),
                 vec![],
             );
-            emit_response_return(cb, resp, true, property_naming_camel_case, convertible);
+            emit_response_return(cb, resp, true, property_naming_camel_case, convertible)?;
             cb.add("}\n", vec![]);
         }
 
@@ -1310,7 +1310,7 @@ fn emit_response_handler(
                     ),
                     vec![],
                 );
-                emit_response_return(cb, resp, true, property_naming_camel_case, convertible);
+                emit_response_return(cb, resp, true, property_naming_camel_case, convertible)?;
                 cb.add("}\n", vec![]);
             }
             cb.add("else {\n  ", vec![]);
@@ -1319,12 +1319,13 @@ fn emit_response_handler(
         }
 
         if let Some(d) = default {
-            emit_response_return(cb, d, true, property_naming_camel_case, convertible);
+            emit_response_return(cb, d, true, property_naming_camel_case, convertible)?;
         } else {
-            emit_fallback_return(cb, fallback_has_body, true);
+            emit_fallback_return(cb, fallback_has_body, true)?;
         }
         cb.add("}\n", vec![]);
     }
+    Ok(())
 }
 
 fn wildcard_status_range(status: &str) -> (u16, u16) {
@@ -1501,12 +1502,16 @@ fn emit_response_return(
     _inside_block: bool,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) {
+) -> Result<(), String> {
     let kind = classify_response(resp);
     let status_ty = match resp.status.parse::<u16>() {
         Ok(n) => n.to_string(),
         Err(_) => "number".to_string(),
     };
+
+    // Keep this inline intersection as a bounded raw fragment because the
+    // TypeScript renderer normalizes spaces inside `{ status: ... }`, changing
+    // the established golden output.
 
     // When camelCase is enabled and the response is JSON with a Named type,
     // inject a fromJSON transformer: `new JSONApiResponse<Pet>(response, (json) => petFromJSON(json as Pet$Wire))`
@@ -1520,17 +1525,14 @@ fn emit_response_return(
             }
             _ => unreachable!(),
         };
-        cb.add(
-            &format!(
-                "return new %T(response, {}) as %T & {{ status: {} }};\n",
-                from_json, status_ty
-            ),
-            vec![
-                Arg::TypeName(rt_value("JSONApiResponse")),
-                Arg::TypeName(wrapper_type),
-            ],
+        // The transformer is a complete target-language callback expression.
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                return new $T(rt_value("JSONApiResponse"))(response, $L(from_json.as_str())) as $T(wrapper_type)$L(format!(" & {{ status: {status_ty} }}"));
+            })
+            .map_err(|error| format!("sigil_emit_api: transformed response return: {error}"))?,
         );
-        return;
+        return Ok(());
     }
 
     let wrapper_value = match kind {
@@ -1549,13 +1551,13 @@ fn emit_response_return(
         ResponseKind::None => rt_value("VoidApiResponse"),
     };
 
-    cb.add(
-        &format!(
-            "return new %T(response) as %T & {{ status: {} }};\n",
-            status_ty
-        ),
-        vec![Arg::TypeName(wrapper_value), Arg::TypeName(wrapper_type)],
+    cb.add_code(
+        sigil_quote!(TypeScript {
+            return new $T(wrapper_value)(response) as $T(wrapper_type)$L(format!(" & {{ status: {status_ty} }}"));
+        })
+        .map_err(|error| format!("sigil_emit_api: response return: {error}"))?,
     );
+    Ok(())
 }
 
 /// `return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: 2xx };`
@@ -1564,7 +1566,7 @@ fn emit_fallback_return(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     any_body: bool,
     _inside_block: bool,
-) {
+) -> Result<(), String> {
     let json_response = rt_value("JSONApiResponse");
     let void_response = rt_value("VoidApiResponse");
     let unknown = TypeName::primitive("unknown");
@@ -1577,8 +1579,9 @@ fn emit_fallback_return(
                 return new $T(void_response.clone())(response) as $T(void_response) & $T(success_response);
             }
         })
-        .expect("fallback response return block builds"),
+        .map_err(|error| format!("sigil_emit_api: fallback response return: {error}"))?,
     );
+    Ok(())
 }
 
 // ============================================================================
