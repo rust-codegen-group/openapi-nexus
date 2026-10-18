@@ -756,7 +756,7 @@ fn build_raw_method(
     emit_url_path(&mut body, op)?;
     emit_query_params(&mut body, op)?;
     emit_headers(&mut body, op)?;
-    emit_request_body(&mut body, op, ir, property_naming_camel_case, convertible);
+    emit_request_body(&mut body, op, ir, property_naming_camel_case, convertible)?;
     emit_make_request(&mut body, op, op.request_body.is_some());
     emit_response_handler(&mut body, op, property_naming_camel_case, convertible);
 
@@ -937,7 +937,7 @@ fn emit_request_body(
     ir: &IrSpec,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) {
+) -> Result<(), String> {
     if let Some(ref body) = op.request_body {
         cb.add("// Prepare request body\n", vec![]);
         let names = resolve_param_names(op);
@@ -955,20 +955,22 @@ fn emit_request_body(
                         sigil_quote!(TypeScript {
                             let requestBody: Blob | undefined = undefined;
                         })
-                        .expect("optional multipart request body decl builds"),
+                        .map_err(|error| {
+                            format!("sigil_emit_api: optional multipart body declaration: {error}")
+                        })?,
                     );
                     cb.add(
                         &format!("if ({access} !== undefined && {access} !== null) {{\n"),
                         vec![],
                     );
-                    emit_multipart_blob_setup(cb);
+                    emit_multipart_blob_setup(cb)?;
                 } else {
-                    emit_multipart_blob_setup(cb);
+                    emit_multipart_blob_setup(cb)?;
                 }
                 for part in parts {
                     let part_access = format!("{access}{}", ts_property_access(&part.field_name));
                     if part.required {
-                        emit_multipart_blob_part(cb, &part, &part_access, convertible);
+                        emit_multipart_blob_part(cb, &part, &part_access, convertible)?;
                     } else {
                         cb.add(
                             &format!(
@@ -976,11 +978,11 @@ fn emit_request_body(
                             ),
                             vec![],
                         );
-                        emit_multipart_blob_part(cb, &part, &part_access, convertible);
+                        emit_multipart_blob_part(cb, &part, &part_access, convertible)?;
                         cb.add("}\n", vec![]);
                     }
                 }
-                emit_multipart_blob_finish(cb, body.required);
+                emit_multipart_blob_finish(cb, body.required)?;
                 if !body.required {
                     cb.add("}\n", vec![]);
                 }
@@ -990,7 +992,7 @@ fn emit_request_body(
                     &access,
                     body.required,
                     "unsupported multipart request body: schema must be object-shaped",
-                );
+                )?;
             }
         } else if let Some(media_type) = preferred_request_media_type(body)
             && is_unsupported_ts_request_media_type(&media_type)
@@ -1000,7 +1002,7 @@ fn emit_request_body(
                 &access,
                 body.required,
                 &format!("unsupported request body media type: {media_type}"),
-            );
+            )?;
         } else if property_naming_camel_case {
             let json_type = preferred_request_media_type(body).and_then(|media_type| {
                 if is_json_media_type(&media_type) {
@@ -1012,14 +1014,34 @@ fn emit_request_body(
             if let Some(to_json) =
                 json_type.and_then(|ty| body_to_json_expr(ty, &access, convertible))
             {
-                cb.add(&format!("const requestBody = {};\n", to_json), vec![]);
+                cb.add_code(
+                    sigil_quote!(TypeScript {
+                        const requestBody = $L(to_json.as_str());
+                    })
+                    .map_err(|error| {
+                        format!("sigil_emit_api: JSON request body declaration: {error}")
+                    })?,
+                );
             } else {
-                cb.add(&format!("const requestBody = {};\n", access), vec![]);
+                cb.add_code(
+                    sigil_quote!(TypeScript {
+                        const requestBody = $L(access.as_str());
+                    })
+                    .map_err(|error| {
+                        format!("sigil_emit_api: request body declaration: {error}")
+                    })?,
+                );
             }
         } else {
-            cb.add(&format!("const requestBody = {};\n", access), vec![]);
+            cb.add_code(
+                sigil_quote!(TypeScript {
+                    const requestBody = $L(access.as_str());
+                })
+                .map_err(|error| format!("sigil_emit_api: request body declaration: {error}"))?,
+            );
         }
     }
+    Ok(())
 }
 
 fn emit_unsupported_ts_body(
@@ -1027,7 +1049,7 @@ fn emit_unsupported_ts_body(
     access: &str,
     required: bool,
     message: &str,
-) {
+) -> Result<(), String> {
     cb.add_code(
         sigil_quote!(TypeScript {
             $if(required) {
@@ -1036,8 +1058,9 @@ fn emit_unsupported_ts_body(
                 const requestBody = $L(access) === undefined || $L(access) === null ? undefined : (() => { throw new Error($S(message)); })();
             }
         })
-        .expect("unsupported request body block builds"),
+        .map_err(|error| format!("sigil_emit_api: unsupported request body block: {error}"))?,
     );
+    Ok(())
 }
 
 fn is_unsupported_ts_request_media_type(media_type: &str) -> bool {
@@ -1045,18 +1068,24 @@ fn is_unsupported_ts_request_media_type(media_type: &str) -> bool {
     is_xml_media_type(media_type) || base == "application/x-www-form-urlencoded"
 }
 
-fn emit_multipart_blob_setup(cb: &mut sigil_stitch::code_block::CodeBlockBuilder) {
+fn emit_multipart_blob_setup(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+) -> Result<(), String> {
     cb.add_code(
         sigil_quote!(TypeScript {
             const multipartBoundary = $S("----openapi-nexus-") + Math.random().toString(16).slice(2);
             const multipartChunks: Array<string | Blob> = [];
             headerParameters[$S("Content-Type")] = $S("multipart/form-data; boundary=") + multipartBoundary;
         })
-        .expect("multipart setup block builds"),
+        .map_err(|error| format!("sigil_emit_api: multipart setup block: {error}"))?,
     );
+    Ok(())
 }
 
-fn emit_multipart_blob_finish(cb: &mut sigil_stitch::code_block::CodeBlockBuilder, required: bool) {
+fn emit_multipart_blob_finish(
+    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+    required: bool,
+) -> Result<(), String> {
     let closing_boundary_tail = ts_string_literal("--\r\n");
     cb.add_code(
         sigil_quote!(TypeScript {
@@ -1067,8 +1096,9 @@ fn emit_multipart_blob_finish(cb: &mut sigil_stitch::code_block::CodeBlockBuilde
                 requestBody = new Blob(multipartChunks);
             }
         })
-        .expect("multipart finish block builds"),
+        .map_err(|error| format!("sigil_emit_api: multipart finish block: {error}"))?,
     );
+    Ok(())
 }
 
 fn emit_multipart_blob_part(
@@ -1076,15 +1106,17 @@ fn emit_multipart_blob_part(
     part: &MultipartPart,
     part_access: &str,
     convertible: &HashSet<String>,
-) {
+) -> Result<(), String> {
     if part.value_encoding == MultipartValueEncoding::Unsupported {
         cb.add_code(
             sigil_quote!(TypeScript {
                 throw new Error($S("unsupported multipart part content type"));
             })
-            .expect("unsupported multipart part block builds"),
+            .map_err(|error| {
+                format!("sigil_emit_api: unsupported multipart part block: {error}")
+            })?,
         );
-        return;
+        return Ok(());
     }
     if part.is_binary {
         cb.add("{\n", vec![]);
@@ -1096,20 +1128,24 @@ fn emit_multipart_blob_part(
             "\"\r\nContent-Type: {}\r\n\r\n",
             multipart_header_value(&part.content_type)
         );
-        cb.add(
-            &format!(
-                "const multipartFilename = %T({part_access}, {});\n",
-                ts_string_literal(&part.wire_name)
-            ),
-            vec![Arg::TypeName(rt_value("uploadFileFilename"))],
+        let filename_literal = ts_string_literal(&part.wire_name);
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                const multipartFilename = $T(rt_value("uploadFileFilename"))($L(part_access), $L(filename_literal.as_str()));
+            })
+            .map_err(|error| {
+                format!("sigil_emit_api: multipart filename for {}: {error}", part.wire_name)
+            })?,
         );
-        cb.add(
-            &format!(
-                "multipartChunks.push('--' + multipartBoundary + {} + %T(multipartFilename) + {});\n",
-                ts_string_literal(&header_prefix),
-                ts_string_literal(&header_suffix)
-            ),
-            vec![Arg::TypeName(rt_value("multipartHeaderValue"))],
+        let header_prefix_literal = ts_string_literal(&header_prefix);
+        let header_suffix_literal = ts_string_literal(&header_suffix);
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                multipartChunks.push($S("--") + multipartBoundary + $L(header_prefix_literal.as_str()) + $T(rt_value("multipartHeaderValue"))(multipartFilename) + $L(header_suffix_literal.as_str()));
+            })
+            .map_err(|error| {
+                format!("sigil_emit_api: multipart binary header for {}: {error}", part.wire_name)
+            })?,
         );
     } else {
         let disposition = format!(
@@ -1126,13 +1162,25 @@ fn emit_multipart_blob_part(
             sigil_quote!(TypeScript {
                 multipartChunks.push($S("--") + multipartBoundary + $L(header_tail_literal));
             })
-            .expect("multipart part header block builds"),
+            .map_err(|error| {
+                format!(
+                    "sigil_emit_api: multipart part header for {}: {error}",
+                    part.wire_name
+                )
+            })?,
         );
     }
     if part.is_binary {
-        cb.add(
-            &format!("multipartChunks.push(%T({part_access}));\n"),
-            vec![Arg::TypeName(rt_value("uploadFileData"))],
+        cb.add_code(
+            sigil_quote!(TypeScript {
+                multipartChunks.push($T(rt_value("uploadFileData"))($L(part_access)));
+            })
+            .map_err(|error| {
+                format!(
+                    "sigil_emit_api: multipart binary value for {}: {error}",
+                    part.wire_name
+                )
+            })?,
         );
     } else {
         let value_expr = if part.value_encoding == MultipartValueEncoding::Json {
@@ -1146,7 +1194,12 @@ fn emit_multipart_blob_part(
             sigil_quote!(TypeScript {
                 multipartChunks.push($L(value_expr));
             })
-            .expect("multipart part value block builds"),
+            .map_err(|error| {
+                format!(
+                    "sigil_emit_api: multipart part value for {}: {error}",
+                    part.wire_name
+                )
+            })?,
         );
     }
     let crlf_literal = ts_string_literal("\r\n");
@@ -1154,11 +1207,17 @@ fn emit_multipart_blob_part(
         sigil_quote!(TypeScript {
             multipartChunks.push($L(crlf_literal));
         })
-        .expect("multipart part trailing crlf block builds"),
+        .map_err(|error| {
+            format!(
+                "sigil_emit_api: multipart trailing CRLF for {}: {error}",
+                part.wire_name
+            )
+        })?,
     );
     if part.is_binary {
         cb.add("}\n", vec![]);
     }
+    Ok(())
 }
 
 fn emit_make_request(
