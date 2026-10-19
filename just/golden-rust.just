@@ -31,3 +31,19 @@ build: build-reqwest build-ureq build-aioduct
 # Compile-check Rust aioduct goldens
 @build-aioduct:
     ./scripts/golden-build-rust.sh aioduct
+
+# Generate fresh clients and run their consumer test projects
+test: test-reqwest test-ureq test-aioduct
+
+# Prepare generated dependencies for direct Cargo/IDE use
+@prepare BACKEND:
+    bash ./scripts/generate-rust-client-fixtures.sh {{ BACKEND }}
+
+@test-reqwest: (prepare "reqwest")
+    cargo test --locked --manifest-path tests/generated-clients/rust/reqwest/Cargo.toml
+
+@test-ureq: (prepare "ureq")
+    cargo test --locked --manifest-path tests/generated-clients/rust/ureq/Cargo.toml
+
+@test-aioduct: (prepare "aioduct")
+    cargo test --locked --manifest-path tests/generated-clients/rust/aioduct/Cargo.toml
