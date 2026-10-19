@@ -37,6 +37,7 @@ Add the module to `src/generators/mod.rs`.
 ```rust
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
+use crate::generators::GeneratorError;
 use crate::ir::types::IrSpec;
 
 pub struct MyLangCodeGenerator { /* config fields */ }
@@ -45,7 +46,7 @@ impl CodeGenerator for MyLangCodeGenerator {
     fn language(&self) -> Language { Language::MyLang }
     fn generator_type(&self) -> GeneratorType { GeneratorType::MyLang }
 
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>> {
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         // Transform IrSpec into generated source files
         todo!()
     }

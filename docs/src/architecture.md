@@ -65,7 +65,7 @@ src/
 pub trait CodeGenerator {
     fn language(&self) -> Language;
     fn generator_type(&self) -> GeneratorType;
-    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, Box<dyn Error + Send + Sync>>;
+    fn generate(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError>;
 }
 ```
 

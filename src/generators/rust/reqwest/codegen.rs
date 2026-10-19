@@ -70,7 +70,7 @@ impl RustReqwestCodeGenerator {
             response_extra,
             &request_inputs,
             &emit_method_body,
-        ));
+        )?);
 
         // Runtime (reqwest-specific)
         files.extend(runtime_files(
