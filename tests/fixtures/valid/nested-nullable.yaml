@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: Nested Nullable API
+  version: 1.0.0
+paths:
+  /values:
+    get:
+      tags: [Values]
+      operationId: getValues
+      responses:
+        '200':
+          description: Nullable model properties.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NullablePayload'
+        '400':
+          description: Map with nullable array values.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  nullable: true
+                  items:
+                    type: string
+        '401':
+          description: Array with nullable map items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  nullable: true
+                  additionalProperties:
+                    type: string
+        '402':
+          description: Nullable array with non-nullable string items.
+          content:
+            application/json:
+              schema:
+                type: array
+                nullable: true
+                items:
+                  type: string
+        '403':
+          description: Non-nullable map with non-nullable arrays.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+        '404':
+          description: Named model alias payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailAlias'
+        '410':
+          description: Array of named model aliases.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DetailAlias'
+components:
+  schemas:
+    MaybeMatrix:
+      type: array
+      nullable: true
+      items:
+        type: array
+        items:
+          type: string
+    MatrixContainer:
+      type: object
+      required: [matrix]
+      properties:
+        matrix:
+          type: array
+          nullable: true
+          items:
+            type: array
+            items:
+              type: string
+    Detail:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    DetailAlias:
+      $ref: '#/components/schemas/Detail'
+    NullablePayload:
+      type: object
+      required: [mapValues, arrayItems, arrayMaps, nullableArray, strictValues]
+      properties:
+        mapValues:
+          type: object
+          additionalProperties:
+            type: array
+            nullable: true
+            items:
+              type: string
+        arrayItems:
+          type: array
+          items:
+            type: string
+            nullable: true
+        arrayMaps:
+          type: array
+          items:
+            type: object
+            nullable: true
+            additionalProperties:
+              type: string
+        nullableArray:
+          type: array
+          nullable: true
+          items:
+            type: string
+        strictValues:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
