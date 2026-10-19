@@ -115,6 +115,31 @@ just golden-kotlin::build
 just golden-build-all           # all languages
 ```
 
+## Rust Client Runtime Tests
+
+Generated Rust clients also have standalone consumer test projects under
+`tests/generated-clients/rust/`. Unlike golden comparison, these tests call real
+generated clients over local HTTP and check decoding, error metadata, response
+dispatch, and strict non-nullable controls.
+
+```bash
+just golden-rust::test          # reqwest, ureq, and aioduct
+just golden-rust::test-reqwest  # one backend
+```
+
+Preparation runs the public generator CLI against the fixtures. Each consumer
+project has its own checked-in manifest, lockfile, and ordinary Rust test files;
+generated clients are unmodified path dependencies in an ignored directory. One
+Cargo invocation runs all cases for a backend, with a persistent dependency cache.
+
+These projects are intentionally outside the generator workspace. `just test-all`
+and generator coverage do not recursively build client crates. CI has a separate
+Rust Client Tests matrix, and `just ci` includes these tests. They complement,
+rather than replace, snapshot comparison and the all-golden compile checks.
+
+See [the consumer test README](https://github.com/rust-codegen-group/openapi-nexus/tree/main/tests/generated-clients/rust)
+for direct Cargo/IDE use and the retained coverage per fixture.
+
 ## Extra File Detection
 
 The test harness detects when a generator produces files that have no corresponding `.golden` file. This prevents regressions where new output silently goes untested. If a generator adds a new file, the test will fail with a clear message listing the unmatched files and instructing you to run `UPDATE_GOLDEN=1`.

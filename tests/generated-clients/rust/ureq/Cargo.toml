@@ -1,0 +1,14 @@
+[package]
+name = "ureq-client-tests"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+resolver = "3"
+
+[dev-dependencies]
+typed-error-responses-api = { path = "generated/typed-error-responses" }
+rust-error-payload-shapes-api = { path = "generated/rust-error-payload-shapes" }
+nested-nullable-api = { path = "generated/nested-nullable" }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

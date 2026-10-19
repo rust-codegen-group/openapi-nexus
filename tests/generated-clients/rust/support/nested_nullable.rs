@@ -1,7 +1,8 @@
-// Compiled inside each freshly generated Rust client crate.
+//! Shared consumer tests against each backend's freshly generated client.
 
-use nested_nullable_api::apis::{GetValuesError, GetValuesResponse, ValuesApi};
-use nested_nullable_api::runtime::client::Client;
+use super::request;
+
+use nested_nullable_api::apis::GetValuesError;
 use nested_nullable_api::runtime::error::{ApiCallError, ApiError, Error};
 
 fn check_metadata<T>(error: &ApiError<T>, status: u16, body: &str) {

@@ -36,10 +36,12 @@ msrv:
 # Apply formatting
 fmt:
     cargo fmt --all
+    rustfmt --edition 2024 tests/generated-clients/rust/support/*.rs tests/generated-clients/rust/*/tests/*.rs
 
 # Check formatting
 fmt-check:
     cargo fmt --all -- --check
+    rustfmt --edition 2024 --check tests/generated-clients/rust/support/*.rs tests/generated-clients/rust/*/tests/*.rs
 
 # Run clippy with warnings as errors
 clippy:
@@ -162,4 +164,4 @@ publish:
 # ---------- CI (run everything locally) ----------
 
 # Run the full CI pipeline locally
-ci: fmt-check clippy doc-check book msrv test-all coverage-lcov golden-check
+ci: fmt-check clippy doc-check book msrv test-all coverage-lcov golden-check golden-rust::test
