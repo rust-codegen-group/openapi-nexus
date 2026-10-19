@@ -21,10 +21,12 @@ use crate::generators::response_names::{
     response_entry_name as response_variant_name, response_match_rank,
 };
 use crate::ir::types::{
-    IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr, ParameterLocation,
+    IrOperation, IrParameter, IrRequestBody, IrResponse, IrSchemaKind, IrSpec, IrTypeExpr,
+    ParameterLocation,
 };
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::{CodeBlock, CodeBlockBuilder};
+use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::lang::rust::Rust;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::annotation_spec::AnnotationSpec;
@@ -38,7 +40,7 @@ use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
 use super::config::ExtraDeriveConfig;
-use super::emit_models::rust_type_str_qualified;
+use super::emit_models::{rust_type_str, rust_type_str_qualified};
 
 // ---------------------------------------------------------------------------
 // Backend configuration
@@ -72,7 +74,7 @@ pub fn generate_api_files(
     response_extra_derives: Option<&ExtraDeriveConfig>,
     request_inputs: &RequestInputPlan,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
-) -> Vec<FileInfo> {
+) -> Result<Vec<FileInfo>, crate::generators::GeneratorError> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     let mut mod_entries = Vec::new();
@@ -89,7 +91,14 @@ pub fn generate_api_files(
             response_extra_derives,
             request_inputs,
             body_emitter,
-        );
+        )
+        .map_err(|error| {
+            crate::generators::GeneratorError::emission(
+                crate::generators::ArtifactKind::Api,
+                format!("{tag} API"),
+                error,
+            )
+        })?;
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
     }
@@ -101,7 +110,7 @@ pub fn generate_api_files(
     }
     files.push(FileInfo::api("mod.rs".to_string(), mod_content));
 
-    files
+    Ok(files)
 }
 
 // ---------------------------------------------------------------------------
@@ -135,7 +144,7 @@ fn emit_api_file(
     response_extra_derives: Option<&ExtraDeriveConfig>,
     request_inputs: &RequestInputPlan,
     body_emitter: &dyn Fn(&OpPlan<'_>) -> CodeBlock,
-) -> String {
+) -> Result<String, SigilStitchError> {
     let struct_name = format!("{}Api", tag.to_pascal_case());
     let plans: Vec<OpPlan> = ops
         .iter()
@@ -226,16 +235,34 @@ fn emit_api_file(
     for plan in &plans {
         let response_headers_type =
             TypeName::qualified(config.response_headers_module, config.response_headers_name);
-        fsb = fsb.add_type(emit_response_struct(
-            plan,
-            &response_headers_type,
-            response_extra_derives,
-        ));
-        fsb = fsb.add_code(emit_error_enum(plan, &response_headers_type));
+        let response_struct =
+            emit_response_struct(plan, &response_headers_type, response_extra_derives).map_err(
+                |error| {
+                    with_rust_emission_context(
+                        format!("Rust response struct {}", plan.response_type),
+                        error,
+                    )
+                },
+            )?;
+        fsb = fsb.add_type(response_struct);
+        let error_enum = emit_error_enum(plan, &response_headers_type).map_err(|error| {
+            with_rust_emission_context(format!("Rust error enum {}", plan.error_type), error)
+        })?;
+        fsb = fsb.add_code(error_enum);
     }
 
-    let file = fsb.build().expect("FileSpec builds");
-    file.render(100).expect("FileSpec renders")
+    let file = fsb.build()?;
+    file.render(100)
+}
+
+fn with_rust_emission_context(
+    context: impl Into<String>,
+    source: SigilStitchError,
+) -> SigilStitchError {
+    SigilStitchError::Render {
+        context: context.into(),
+        message: source.to_string(),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -295,7 +322,7 @@ pub struct TypedResponse {
 pub struct ErrorResponse {
     pub status: String,
     pub variant_name: String,
-    pub rust_type: String,
+    pub rust_type: TypeName,
     pub decoding: Option<ResponseDecoding>,
 }
 
@@ -445,19 +472,51 @@ pub fn plan_error_response(r: &IrResponse, ir: &IrSpec) -> ErrorResponse {
         Some((media_type, t)) => {
             let decoding = response_decoding(&media_type);
             let rust_type = match decoding {
-                ResponseDecoding::OctetStream => "Vec<u8>".to_string(),
-                ResponseDecoding::TextPlain => "String".to_string(),
-                _ => rust_type_str_qualified(&t, ir),
+                ResponseDecoding::OctetStream => TypeName::array(TypeName::primitive("u8")),
+                ResponseDecoding::TextPlain => TypeName::primitive("String"),
+                _ => rust_type_name_qualified(&t, ir),
             };
             (rust_type, Some(decoding))
         }
-        None => ("()".to_string(), None),
+        None => (TypeName::primitive("()"), None),
     };
     ErrorResponse {
         status: r.status.clone(),
         variant_name: response_variant_name(&r.status),
         rust_type,
         decoding,
+    }
+}
+
+fn rust_type_name_qualified(expr: &IrTypeExpr, ir: &IrSpec) -> TypeName {
+    rust_type_name(expr, ir, true)
+}
+
+fn rust_type_name(expr: &IrTypeExpr, ir: &IrSpec, qualify_named: bool) -> TypeName {
+    match expr {
+        IrTypeExpr::Named(name) => {
+            if qualify_named
+                && let Some(schema) = ir.schemas.get(name)
+                && let IrSchemaKind::Alias(inner) = &schema.kind
+                && !matches!(inner, IrTypeExpr::Named(_))
+                && name.to_pascal_case() == rust_type_str(inner)
+            {
+                return rust_type_name(inner, ir, false);
+            }
+            if qualify_named {
+                TypeName::qualified("crate::models", &name.to_pascal_case())
+            } else {
+                TypeName::primitive(&name.to_pascal_case())
+            }
+        }
+        IrTypeExpr::Array(inner) => TypeName::array(rust_type_name(inner, ir, qualify_named)),
+        IrTypeExpr::Map(_) => {
+            // sigil-stitch 0.7.3 may soft-wrap long generic applications; this
+            // fully-qualified raw fragment preserves the existing Rust output.
+            TypeName::raw(&rust_type_str_qualified(expr, ir))
+        }
+        IrTypeExpr::Nullable(inner) => TypeName::optional(rust_type_name(inner, ir, qualify_named)),
+        other => TypeName::primitive(&rust_type_str(other)),
     }
 }
 
@@ -592,7 +651,7 @@ pub fn emit_response_struct(
     plan: &OpPlan<'_>,
     response_headers_type: &TypeName,
     extra: Option<&ExtraDeriveConfig>,
-) -> TypeSpec {
+) -> Result<TypeSpec, SigilStitchError> {
     let mut tb = TypeSpec::builder(&plan.response_type, TypeKind::Struct);
     tb = tb.visibility(Visibility::Public);
     tb = tb.doc(&format!("Response from `{}`.", plan.method_name));
@@ -607,14 +666,14 @@ pub fn emit_response_struct(
     {
         let fb = FieldSpec::builder("status_code", TypeName::primitive("u16"));
         let fb = fb.visibility(Visibility::Public);
-        tb = tb.add_field(fb.build().expect("FieldSpec builds"));
+        tb = tb.add_field(fb.build()?);
     }
 
     // native response headers
     {
         let fb = FieldSpec::builder("headers", response_headers_type.clone());
         let fb = fb.visibility(Visibility::Public);
-        tb = tb.add_field(fb.build().expect("FieldSpec builds"));
+        tb = tb.add_field(fb.build()?);
     }
 
     // typed response fields
@@ -628,7 +687,7 @@ pub fn emit_response_struct(
             TypeName::raw(&format!("Option<{}>", tr.rust_type)),
         );
         let fb = fb.visibility(Visibility::Public);
-        tb = tb.add_field(fb.build().expect("FieldSpec builds"));
+        tb = tb.add_field(fb.build()?);
     }
 
     let method_names = rust_header_accessor_names(&plan.success_headers);
@@ -637,15 +696,17 @@ pub fn emit_response_struct(
             header,
             &method_name,
             "self.headers",
-        ));
+        )?);
     }
 
-    tb.build().expect("TypeSpec builds")
+    tb.build()
 }
 
-pub fn emit_error_enum(plan: &OpPlan<'_>, response_headers_type: &TypeName) -> CodeBlock {
-    let mut cb = CodeBlock::builder();
-    let mut variants = Vec::new();
+pub fn emit_error_enum(
+    plan: &OpPlan<'_>,
+    response_headers_type: &TypeName,
+) -> Result<CodeBlock, SigilStitchError> {
+    let mut variants: Vec<(String, TypeName)> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
     for er in &plan.error_responses {
         let variant = unique_variant_name(&er.variant_name, &mut seen);
@@ -654,27 +715,30 @@ pub fn emit_error_enum(plan: &OpPlan<'_>, response_headers_type: &TypeName) -> C
     let unexpected_variant = unique_variant_name("Unexpected", &mut seen);
     let transport_variant = unique_variant_name("Transport", &mut seen);
 
-    cb.add(&format!("/// Error from `{}`.\n", plan.method_name), ());
-    cb.add("#[derive(Debug)]\n", ());
-    cb.add(&format!("pub enum {} {{\n", plan.error_type), ());
-    for (variant, rust_type) in &variants {
-        cb.add(&format!("    {variant}(ApiError<{rust_type}>),\n"), ());
-    }
-    cb.add(
-        &format!("    {unexpected_variant}(ApiError<Vec<u8>>),\n"),
-        (),
-    );
-    cb.add(&format!("    {transport_variant}(Error),\n"), ());
-    cb.add("}\n\n", ());
-
-    cb.add(
-        &format!("impl From<Error> for {} {{\n", plan.error_type),
-        (),
-    );
-    cb.add("    fn from(error: Error) -> Self {\n", ());
-    cb.add(&format!("        Self::{transport_variant}(error)\n"), ());
-    cb.add("    }\n", ());
-    cb.add("}\n\n", ());
+    let mut cb = CodeBlock::builder();
+    // sigil-stitch has no doc-comment interpolation; keep the delimiters bounded and splice only the identifier.
+    cb.add_code(sigil_quote!(RustLang {
+        $L("/// Error from `")$N(plan.method_name.as_str())$L("`.")
+        $attr("derive(Debug)")
+        pub enum $N(plan.error_type.as_str()) {
+            $for((variant, rust_type) in &variants) {
+                $N(variant.as_str())($T(rust_api_error_type(rust_type))),
+            }
+            $N(unexpected_variant.as_str())($T(rust_api_error_type(
+                &TypeName::array(TypeName::primitive("u8"))
+            ))),
+            $N(transport_variant.as_str())($T(rust_runtime_error_type())),
+        }
+    })?);
+    cb.add_line();
+    cb.add_code(sigil_quote!(RustLang {
+        impl From<$T(rust_runtime_error_type())> for $N(plan.error_type.as_str()) {
+            fn from(error: $T(rust_runtime_error_type())) -> Self {
+                Self::$N(transport_variant.as_str())(error)
+            }
+        }
+    })?);
+    cb.add_line();
 
     let operation_id = if plan.op.operation_id.is_empty() {
         plan.method_name.as_str()
@@ -687,7 +751,7 @@ pub fn emit_error_enum(plan: &OpPlan<'_>, response_headers_type: &TypeName) -> C
         &variants,
         &unexpected_variant,
         &transport_variant,
-    ));
+    )?);
     cb.add_line();
 
     cb.add_code(emit_rust_error_header_impl(
@@ -696,62 +760,54 @@ pub fn emit_error_enum(plan: &OpPlan<'_>, response_headers_type: &TypeName) -> C
         &variants,
         &unexpected_variant,
         &transport_variant,
-    ));
+    )?);
 
-    cb.add(
-        &format!("impl std::fmt::Display for {} {{\n", plan.error_type),
-        (),
-    );
-    cb.add(
-        "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n",
-        (),
-    );
-    cb.add("        match self {\n", ());
-    for (variant, _) in &variants {
-        cb.add(
-            &format!("            Self::{variant}(err) => write!(f, \"HTTP error {{}}\", err.status_code()),\n"),
-            (),
-        );
-    }
-    cb.add(&format!(
-        "            Self::{unexpected_variant}(err) => write!(f, \"unexpected HTTP error {{}}\", err.status_code()),\n"
-    ), ());
-    cb.add(
-        &format!("            Self::{transport_variant}(err) => std::fmt::Display::fmt(err, f),\n"),
-        (),
-    );
-    cb.add("        }\n", ());
-    cb.add("    }\n", ());
-    cb.add("}\n\n", ());
+    cb.add_code(sigil_quote!(RustLang {
+        impl std::fmt::Display for $N(plan.error_type.as_str()) {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $for((variant, _) in &variants) {
+                        Self::$N(variant.as_str())(err) => write!(f, "HTTP error {}", err.status_code()),
+                    }
+                    Self::$N(unexpected_variant.as_str())(err) => write!(f, "unexpected HTTP error {}", err.status_code()),
+                    Self::$N(transport_variant.as_str())(err) => std::fmt::Display::fmt(err, f),
+                }
+            }
+        }
+    })?);
+    cb.add_line();
+    cb.add_code(sigil_quote!(RustLang {
+        impl std::error::Error for $N(plan.error_type.as_str()) {
+            fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+                match self {
+                    Self::$N(transport_variant.as_str())(err) => Some(err),
+                    _ => None,
+                }
+            }
+        }
+    })?);
 
-    cb.add(
-        &format!("impl std::error::Error for {} {{\n", plan.error_type),
-        (),
-    );
-    cb.add(
-        "    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {\n",
-        (),
-    );
-    cb.add("        match self {\n", ());
-    cb.add(
-        &format!("            Self::{transport_variant}(err) => Some(err),\n"),
-        (),
-    );
-    cb.add("            _ => None,\n", ());
-    cb.add("        }\n", ());
-    cb.add("    }\n", ());
-    cb.add("}\n", ());
+    cb.build()
+}
 
-    cb.build().expect("error enum builds")
+fn rust_runtime_error_type() -> TypeName {
+    TypeName::importable("crate::runtime::error", "Error")
+}
+
+fn rust_api_error_type(rust_type: &TypeName) -> TypeName {
+    crate::generators::type_application(
+        TypeName::importable("crate::runtime::error", "ApiError"),
+        vec![rust_type.clone()],
+    )
 }
 
 fn emit_api_call_error_conversion(
     operation_error_type: &str,
     operation_id: &str,
-    variants: &[(String, String)],
+    variants: &[(String, TypeName)],
     unexpected_variant: &str,
     transport_variant: &str,
-) -> CodeBlock {
+) -> Result<CodeBlock, SigilStitchError> {
     let operation_error_type = TypeName::primitive(operation_error_type);
     let api_call_error_type = TypeName::importable("crate::runtime::error", "ApiCallError");
 
@@ -768,18 +824,17 @@ fn emit_api_call_error_conversion(
             }
         }
     })
-    .expect("Rust API call error conversion builds")
 }
 
 fn emit_rust_error_header_impl(
     plan: &OpPlan<'_>,
     response_headers_type: &TypeName,
-    variants: &[(String, String)],
+    variants: &[(String, TypeName)],
     unexpected_variant: &str,
     transport_variant: &str,
-) -> CodeBlock {
+) -> Result<CodeBlock, SigilStitchError> {
     if plan.error_headers.is_empty() {
-        return sigil_quote!(RustLang {}).expect("empty Rust error header impl builds");
+        return sigil_quote!(RustLang {});
     }
 
     let response_headers_body = sigil_quote!(RustLang {
@@ -790,32 +845,27 @@ fn emit_rust_error_header_impl(
             Self::$N(unexpected_variant)(err) => Some(err.headers()),
             Self::$N(transport_variant)(_) => None,
         }
-    })
-    .expect("Rust response headers body builds");
+    })?;
     let response_headers = FunSpec::builder("response_headers")
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
         .returns(vec![TypeName::optional(TypeName::reference(
             response_headers_type.clone(),
         ))])
         .body(response_headers_body)
-        .build()
-        .expect("Rust response headers method builds");
+        .build()?;
 
     let lang = Rust::new();
-    let response_headers = response_headers
-        .emit(&lang, DeclarationContext::Member)
-        .expect("Rust response headers method emits");
+    let response_headers = response_headers.emit(&lang, DeclarationContext::Member)?;
     let method_names = rust_header_accessor_names(&plan.error_headers);
     let header_accessors = plan
         .error_headers
         .iter()
         .zip(method_names)
         .map(|(header, method_name)| {
-            build_rust_header_accessor(header, &method_name, "self.response_headers()?")
+            build_rust_header_accessor(header, &method_name, "self.response_headers()?")?
                 .emit(&lang, DeclarationContext::Member)
-                .expect("Rust error header accessor emits")
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, _>>()?;
     sigil_quote!(RustLang {
         impl $N(plan.error_type.as_str()) {
             $L(response_headers)
@@ -824,24 +874,25 @@ fn emit_rust_error_header_impl(
             }
         }
     })
-    .expect("Rust error header impl builds")
 }
 
 fn build_rust_header_accessor(
     header: &ResponseHeaderPlan,
     method_name: &str,
     headers_expr: &str,
-) -> FunSpec {
+) -> Result<FunSpec, SigilStitchError> {
     FunSpec::builder(method_name)
         .visibility(Visibility::Public)
         .add_param(ParameterSpec::of("&self", TypeName::primitive("")))
         .returns(vec![rust_header_return_type(header.value_kind)])
-        .body(rust_header_accessor_body(header, headers_expr))
+        .body(rust_header_accessor_body(header, headers_expr)?)
         .build()
-        .expect("Rust header accessor builds")
 }
 
-fn rust_header_accessor_body(header: &ResponseHeaderPlan, headers_expr: &str) -> CodeBlock {
+fn rust_header_accessor_body(
+    header: &ResponseHeaderPlan,
+    headers_expr: &str,
+) -> Result<CodeBlock, SigilStitchError> {
     let wire_name = header.wire_name.as_str();
     match header.value_kind {
         ResponseHeaderValueKind::String => sigil_quote!(RustLang {
@@ -856,7 +907,6 @@ fn rust_header_accessor_body(header: &ResponseHeaderPlan, headers_expr: &str) ->
             $L(headers_expr).get($S(wire_name))?.to_str().ok()?.parse().ok().filter(|value: &f64| value.is_finite())
         }),
     }
-    .expect("Rust header accessor body builds")
 }
 
 fn rust_header_return_type(kind: ResponseHeaderValueKind) -> TypeName {
@@ -1374,8 +1424,11 @@ mod tests {
     #[test]
     fn api_call_error_conversion_renders_structured_rust() {
         let variants = vec![
-            ("BadRequest".to_string(), "BadRequestError".to_string()),
-            ("Conflict".to_string(), "ConflictError".to_string()),
+            (
+                "BadRequest".to_string(),
+                TypeName::primitive("BadRequestError"),
+            ),
+            ("Conflict".to_string(), TypeName::primitive("ConflictError")),
         ];
         let conversion = emit_api_call_error_conversion(
             "CreateResourceError",
@@ -1383,7 +1436,8 @@ mod tests {
             &variants,
             "Unexpected",
             "Transport",
-        );
+        )
+        .expect("API call error conversion test builds");
 
         assert_rendered!(
             Rust::new(),
@@ -1402,6 +1456,132 @@ impl From<CreateResourceError> for ApiCallError {
     }
 }
 "#,
+        );
+    }
+
+    #[test]
+    fn error_enum_renders_structured_rust() {
+        let operation = IrOperation {
+            operation_id: "getWidget".to_string(),
+            tags: vec!["widget".to_string()],
+            method: "get".to_string(),
+            path: "/widgets/{id}".to_string(),
+            summary: None,
+            description: None,
+            deprecated: false,
+            parameters: Vec::new(),
+            request_body: None,
+            responses: Vec::new(),
+            security: Vec::new(),
+        };
+        let plan = OpPlan {
+            op: &operation,
+            method_name: "get_widget".to_string(),
+            response_type: "GetWidgetResponse".to_string(),
+            error_type: "GetWidgetError".to_string(),
+            path_params: Vec::new(),
+            query_params: Vec::new(),
+            header_params: Vec::new(),
+            body: None,
+            typed_responses: Vec::new(),
+            error_responses: vec![ErrorResponse {
+                status: "default".to_string(),
+                variant_name: "Default".to_string(),
+                rust_type: TypeName::qualified("crate::models", "ErrorResponse"),
+                decoding: Some(ResponseDecoding::Json),
+            }],
+            success_headers: Vec::new(),
+            error_headers: Vec::new(),
+        };
+        let error_enum =
+            emit_error_enum(&plan, &TypeName::qualified("reqwest::header", "HeaderMap"))
+                .expect("error enum test builds");
+
+        assert_rendered!(
+            Rust::new(),
+            width = 100,
+            error_enum,
+            r#"use crate::runtime::error::{ApiCallError, ApiError, Error};
+
+/// Error from `get_widget`.
+#[derive(Debug)]
+pub enum GetWidgetError {
+    Default(ApiError<crate::models::ErrorResponse>),
+    Unexpected(ApiError<Vec<u8>>),
+    Transport(Error),
+}
+
+impl From<Error> for GetWidgetError {
+    fn from(error: Error) -> Self {
+        Self::Transport(error)
+    }
+}
+
+impl From<GetWidgetError> for ApiCallError {
+    fn from(error: GetWidgetError) -> Self {
+        match error {
+            GetWidgetError::Default(error) => Self::from_api_error("getWidget", error),
+            GetWidgetError::Unexpected(error) => Self::from_api_error("getWidget", error),
+            GetWidgetError::Transport(error) => Self::from_runtime_error("getWidget", error),
+        }
+    }
+}
+
+impl std::fmt::Display for GetWidgetError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Default(err) => write!(f, "HTTP error {}", err.status_code()),
+            Self::Unexpected(err) => write!(f, "unexpected HTTP error {}", err.status_code()),
+            Self::Transport(err) => std::fmt::Display::fmt(err, f),
+        }
+    }
+}
+
+impl std::error::Error for GetWidgetError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Transport(err) => Some(err),
+            _ => None,
+        }
+    }
+}
+"#,
+        );
+    }
+
+    #[test]
+    fn long_map_error_payload_preserves_flat_rendering() {
+        let ir = IrSpec {
+            info: crate::ir::types::IrInfo {
+                title: "test".to_string(),
+                description: None,
+                version: "1".to_string(),
+                terms_of_service: None,
+                contact: None,
+                license: None,
+            },
+            servers: Vec::new(),
+            schemas: indexmap::IndexMap::new(),
+            operations: Vec::new(),
+            security_schemes: indexmap::IndexMap::new(),
+            security: Vec::new(),
+        };
+        let payload = rust_type_name_qualified(
+            &IrTypeExpr::Map(Box::new(IrTypeExpr::Named(
+                "VeryLongErrorPayloadModelNameThatFillsTheRenderWidth".to_string(),
+            ))),
+            &ir,
+        );
+        let block = sigil_quote!(RustLang {
+            $T(rust_api_error_type(&payload))
+        })
+        .expect("semantic map payload test builds");
+
+        assert_rendered!(
+            Rust::new(),
+            width = 100,
+            block,
+            "use crate::runtime::error::ApiError;\n\nApiError<std::collections::HashMap<String, crate::models::VeryLongErrorPayloadModelNameThatFillsTheRenderWidth>>\n",
         );
     }
 }

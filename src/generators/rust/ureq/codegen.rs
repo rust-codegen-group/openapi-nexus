@@ -61,7 +61,7 @@ impl RustUreqCodeGenerator {
             response_extra,
             &request_inputs,
             &emit_method_body,
-        ));
+        )?);
 
         files.extend(runtime_files(
             &header,
