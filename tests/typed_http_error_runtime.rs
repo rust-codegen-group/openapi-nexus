@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+use openapi_nexus::codegen::traits::file_writer::FileWriter;
 use openapi_nexus::generators::rust::aioduct::RustAioductCodeGenerator;
 use openapi_nexus::generators::rust::reqwest::RustReqwestCodeGenerator;
 use openapi_nexus::generators::rust::ureq::RustUreqCodeGenerator;
@@ -607,4 +609,53 @@ fn aioduct_api_call_error_is_pointer_sized() {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
+}
+
+fn check_error_payload_crate(generator: &(impl CodeGenerator + FileWriter)) {
+    let fixture = read_fixture("valid/rust-error-payload-shapes.yaml");
+    let files = generate_files(generator, &fixture).expect("composite error fixture generates");
+    let temp = TempDir::new(&format!("error-payload-{}", generator.generator_type()));
+    write_generated_crate(&files, &temp.path);
+
+    let output = Command::new("cargo")
+        .arg("check")
+        .arg("--quiet")
+        .current_dir(&temp.path)
+        .output()
+        .expect("generated error payload crate cargo check should run");
+    assert!(
+        output.status.success(),
+        "{} error payload crate failed to compile\nstatus: {}\nstdout:\n{}\nstderr:\n{}",
+        generator.generator_type(),
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+// Value: protects=reqwest generated composite error payloads compile;
+// fails_when=payload type syntax, imports, aliases, or decode inference is invalid;
+// why_new=existing compiled fixtures only cover named error model payloads;
+// seam=CodeGenerator::generate and cargo check; no_claim=live HTTP decoding.
+#[test]
+fn reqwest_composite_error_payloads_compile() {
+    check_error_payload_crate(&RustReqwestCodeGenerator::new(empty_config()));
+}
+
+// Value: protects=ureq generated composite error payloads compile;
+// fails_when=payload type syntax, imports, aliases, or decode inference is invalid;
+// why_new=existing compiled fixtures only cover named error model payloads;
+// seam=CodeGenerator::generate and cargo check; no_claim=live HTTP decoding.
+#[test]
+fn ureq_composite_error_payloads_compile() {
+    check_error_payload_crate(&RustUreqCodeGenerator::new(empty_config()));
+}
+
+// Value: protects=aioduct generated composite error payloads compile;
+// fails_when=payload types or generic backend bodies cannot type-check;
+// why_new=existing aioduct layout test only covers named error payloads;
+// seam=CodeGenerator::generate and cargo check; no_claim=live HTTP decoding.
+#[test]
+fn aioduct_composite_error_payloads_compile() {
+    check_error_payload_crate(&RustAioductCodeGenerator::new(empty_config()));
 }

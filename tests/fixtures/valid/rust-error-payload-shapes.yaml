@@ -1,0 +1,117 @@
+openapi: 3.0.3
+info:
+  title: Rust Error Payload Shapes API
+  version: 1.0.0
+paths:
+  /payloads:
+    get:
+      tags: [Payloads]
+      operationId: getPayloads
+      responses:
+        '204':
+          description: Success without a body.
+        '410':
+          description: Array of named models.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ErrorDetail'
+        '411':
+          description: Nullable array of named models.
+          content:
+            application/json:
+              schema:
+                type: array
+                nullable: true
+                items:
+                  $ref: '#/components/schemas/ErrorDetail'
+        '412':
+          description: Map of arrays of named models.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ErrorDetail'
+        '413':
+          description: Primitive alias suppressed because it shadows String.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/String'
+        '414':
+          description: Integer format is preserved.
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+        '415':
+          description: Model alias remains qualified rather than unwrapped.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorAlias'
+        '416':
+          description: Long map payload remains flat at render width 100.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/VeryLongErrorPayloadModelNameThatFillsTheRenderWidth'
+        '417':
+          description: Documented error without a body.
+        '418':
+          description: Text media type overrides its schema payload type.
+          content:
+            text/plain:
+              schema:
+                type: integer
+        '419':
+          description: Binary media type overrides its schema payload type.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+        '420':
+          description: Dynamic JSON escape hatch.
+          content:
+            application/json:
+              schema: {}
+        '421':
+          description: Inline string enum payload.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: [missing, expired]
+        '422':
+          description: Binary primitive under a JSON media type.
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+components:
+  schemas:
+    ErrorDetail:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    ErrorAlias:
+      $ref: '#/components/schemas/ErrorDetail'
+    String:
+      type: string
+    VeryLongErrorPayloadModelNameThatFillsTheRenderWidth:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
