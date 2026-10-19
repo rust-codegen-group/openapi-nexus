@@ -106,14 +106,31 @@ Alias(IrTypeExpr)
 pub enum IrTypeExpr {
     Named(String),
     Primitive(IrPrimitive),
+    StringLiteral(String),
+    StringEnum(Vec<String>),
     Array(Box<IrTypeExpr>),
     Map(Box<IrTypeExpr>),
     Nullable(Box<IrTypeExpr>),
     Union(Vec<IrTypeExpr>),
-    Literal(serde_json::Value),
-    Unknown,
+    Any,
 }
 ```
+
+Nullability belongs to the node that declares it. OpenAPI 3.0 `nullable: true`
+and OpenAPI 3.1/3.2 type sets containing `null` retain that distinction in nested
+arrays and maps:
+
+| Schema meaning | IR shape |
+| --- | --- |
+| Map whose values may be null | `Map(Nullable(T))` |
+| Array whose items may be null | `Array(Nullable(T))` |
+| Array that may itself be null | `Nullable(Array(T))` |
+
+Array aliases and references to promoted inline items preserve these wrappers.
+For object properties, the outer nullable wrapper is recorded in
+`IrProperty.nullable`; nested wrappers remain in `type_expr`. A nullable
+container does not make its contents nullable, and nullability is independent
+of whether a property is required.
 
 ## Operations
 

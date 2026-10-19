@@ -659,3 +659,80 @@ fn ureq_composite_error_payloads_compile() {
 fn aioduct_composite_error_payloads_compile() {
     check_error_payload_crate(&RustAioductCodeGenerator::new(empty_config()));
 }
+
+fn check_nested_nullable_runtime(generator: &(impl CodeGenerator + FileWriter), request: &str) {
+    let fixture = read_fixture("valid/nested-nullable.yaml");
+    let files = generate_files(generator, &fixture).expect("nested nullable fixture generates");
+    let temp = TempDir::new(&format!("nested-nullable-{}", generator.generator_type()));
+    write_generated_crate(&files, &temp.path);
+    let manifest = temp.path.join("Cargo.toml");
+    let mut contents = fs::read_to_string(&manifest).expect("generated manifest exists");
+    contents.push_str("\n[dev-dependencies]\ntokio = { version = \"1\", features = [\"macros\", \"rt-multi-thread\"] }\n");
+    fs::write(manifest, contents).expect("test runtime dependency is written");
+    let tests = temp.path.join("tests");
+    fs::create_dir_all(&tests).expect("test directory is created");
+    fs::write(
+        tests.join("nested_nullable.rs"),
+        [
+            RUST_TEST_SERVER,
+            request,
+            include_str!("support/nested_nullable_runtime.rs"),
+        ]
+        .join("\n"),
+    )
+    .expect("generated client runtime suite is written");
+    let output = Command::new("cargo")
+        .args(["test", "--quiet", "--test", "nested_nullable"])
+        .current_dir(&temp.path)
+        .output()
+        .expect("generated client tests run");
+    assert!(
+        output.status.success(),
+        "{} nested nullable runtime failed\nstdout:\n{}\nstderr:\n{}",
+        generator.generator_type(),
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn reqwest_nested_nullable_http_runtime() {
+    check_nested_nullable_runtime(
+        &RustReqwestCodeGenerator::new(empty_config()),
+        r#"
+async fn request(status: &str, body: &'static str) -> Result<GetValuesResponse, GetValuesError> {
+    let url = spawn_one_response_server(status, body);
+    let client = Client::new(&url);
+    ValuesApi::new(&client).get_values().await
+}
+"#,
+    );
+}
+
+#[test]
+fn ureq_nested_nullable_http_runtime() {
+    check_nested_nullable_runtime(
+        &RustUreqCodeGenerator::new(empty_config()),
+        r#"
+async fn request(status: &str, body: &'static str) -> Result<GetValuesResponse, GetValuesError> {
+    let url = spawn_one_response_server(status, body);
+    let client = Client::new(&url);
+    ValuesApi::new(&client).get_values()
+}
+"#,
+    );
+}
+
+#[test]
+fn aioduct_nested_nullable_http_runtime() {
+    check_nested_nullable_runtime(
+        &RustAioductCodeGenerator::new(empty_config()),
+        r#"
+async fn request(status: &str, body: &'static str) -> Result<GetValuesResponse, GetValuesError> {
+    let url = spawn_one_response_server(status, body);
+    let client = Client::<aioduct::runtime::TokioRuntime, aioduct::runtime::tokio_rt::TcpConnector>::new(&url);
+    ValuesApi::new(&client).get_values().await
+}
+"#,
+    );
+}

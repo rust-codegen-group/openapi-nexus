@@ -63,6 +63,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("response-body-multi-status-responses", "valid/response-body/multi-status-responses.yaml"),
         ("response-body-no-response-body", "valid/response-body/no-response-body.yaml"),
         ("typed-error-responses", "valid/typed-error-responses.yaml"),
+        ("nested-nullable", "valid/nested-nullable.yaml"),
 
         ("recursive-json-all-optional-properties", "valid/recursive-json/all-optional-properties.yaml"),
         ("recursive-json-array-of-inline-objects", "valid/recursive-json/array-of-inline-objects.yaml"),
@@ -109,6 +110,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_nested_nullable_golden: "nested-nullable",
     test_petstore_golden: "petstore",
     test_minimal_golden: "minimal",
     test_comprehensive_schemas_golden: "comprehensive-schemas",

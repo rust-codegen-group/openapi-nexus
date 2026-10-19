@@ -294,12 +294,7 @@ fn build_field_wire(
     };
     let inner_ty = type_expr_to_typename_wire(&prop.type_expr, current_schema, convertible);
     let field_ty = if prop.nullable {
-        nullable_field_type_name(
-            &prop.type_expr,
-            inner_ty,
-            type_expr_str_wire(&prop.type_expr, convertible),
-            unknown_aliases,
-        )
+        nullable_field_type_name(&prop.type_expr, inner_ty, unknown_aliases)
     } else {
         inner_ty
     };
@@ -328,12 +323,7 @@ fn build_field_camel(
     };
     let inner_ty = type_expr_to_typename_for_schema(&prop.type_expr, current_schema);
     let field_ty = if prop.nullable {
-        nullable_field_type_name(
-            &prop.type_expr,
-            inner_ty,
-            type_expr_str(&prop.type_expr),
-            unknown_aliases,
-        )
+        nullable_field_type_name(&prop.type_expr, inner_ty, unknown_aliases)
     } else {
         inner_ty
     };
@@ -527,18 +517,12 @@ fn type_name_is_unknown(type_name: &TypeName) -> bool {
 fn nullable_field_type_name(
     expr: &IrTypeExpr,
     inner_ty: TypeName,
-    rendered_inner: String,
     unknown_aliases: &HashSet<String>,
 ) -> TypeName {
     if type_expr_collapses_to_unknown(expr, unknown_aliases) {
         inner_ty
-    } else if contains_any_named_ref(expr) {
-        union_typename(vec![inner_ty, TypeName::primitive("null")])
     } else {
-        TypeName::raw(&simplify_union_strings(vec![
-            rendered_inner,
-            "null".to_string(),
-        ]))
+        union_typename(vec![inner_ty, TypeName::primitive("null")])
     }
 }
 
@@ -2047,12 +2031,7 @@ fn build_field(
     };
     let inner_ty = type_expr_to_typename_for_schema(&prop.type_expr, current_schema);
     let field_ty = if prop.nullable {
-        nullable_field_type_name(
-            &prop.type_expr,
-            inner_ty,
-            type_expr_str(&prop.type_expr),
-            unknown_aliases,
-        )
+        nullable_field_type_name(&prop.type_expr, inner_ty, unknown_aliases)
     } else {
         inner_ty
     };
@@ -2088,9 +2067,6 @@ fn type_expr_to_typename_with_current(expr: &IrTypeExpr, current_schema: Option<
         // by `FieldSpec::is_readonly()` elsewhere.
         IrTypeExpr::Array(inner) => {
             TypeName::readonly_array(type_expr_to_typename_nested(inner, current_schema))
-        }
-        IrTypeExpr::Nullable(inner) if !contains_any_named_ref(inner) => {
-            TypeName::raw(&type_expr_str(expr))
         }
         IrTypeExpr::Nullable(inner) => union_typename(vec![
             type_expr_to_typename_with_current(inner, current_schema),
@@ -2142,6 +2118,18 @@ fn type_expr_to_typename_nested(expr: &IrTypeExpr, current_schema: Option<&str>)
         IrTypeExpr::Array(inner) => {
             TypeName::array(type_expr_to_typename_nested(inner, current_schema))
         }
+        // Array element unions must stay structured so the renderer can add
+        // parentheses; a raw `T | null` would render as `T | null[]`.
+        IrTypeExpr::Nullable(inner) => union_typename(vec![
+            type_expr_to_typename_nested(inner, current_schema),
+            TypeName::primitive("null"),
+        ]),
+        IrTypeExpr::Union(members) => union_typename(
+            members
+                .iter()
+                .map(|member| type_expr_to_typename_nested(member, current_schema))
+                .collect(),
+        ),
         other => type_expr_to_typename_with_current(other, current_schema),
     }
 }
@@ -2221,5 +2209,51 @@ fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
         | IrPrimitive::IntegerWithFormat(_)
         | IrPrimitive::NumberWithFormat(_) => "number",
         IrPrimitive::Boolean => "boolean",
+    }
+}
+
+#[cfg(test)]
+mod render_tests {
+    use super::*;
+    use sigil_stitch::assert_rendered;
+
+    #[test]
+    fn nullable_and_union_array_types_keep_precedence_and_imports() {
+        let string = IrTypeExpr::Primitive(IrPrimitive::String);
+        let cases = [
+            (
+                IrTypeExpr::Nullable(Box::new(IrTypeExpr::Array(Box::new(IrTypeExpr::Array(
+                    Box::new(string.clone()),
+                ))))),
+                "export type Values = readonly string[][] | null;\n",
+            ),
+            (
+                IrTypeExpr::Array(Box::new(IrTypeExpr::Nullable(Box::new(IrTypeExpr::Array(
+                    Box::new(string.clone()),
+                ))))),
+                "export type Values = readonly (string[] | null)[];\n",
+            ),
+            (
+                IrTypeExpr::Array(Box::new(IrTypeExpr::Union(vec![
+                    string,
+                    IrTypeExpr::Primitive(IrPrimitive::Number),
+                ]))),
+                "export type Values = readonly (string | number)[];\n",
+            ),
+            (
+                IrTypeExpr::Array(Box::new(IrTypeExpr::Nullable(Box::new(IrTypeExpr::Named(
+                    "Detail".to_string(),
+                ))))),
+                "import type { Detail } from './Detail';\n\nexport type Values = readonly (Detail | null)[];\n",
+            ),
+        ];
+        for (expr, expected) in cases {
+            let ty = type_expr_to_typename(&expr);
+            let block = sigil_quote!(TypeScript {
+                export type Values = $T(ty);
+            })
+            .expect("array type render test quote builds");
+            assert_rendered!(TypeScript::new(), width = 100, block, expected);
+        }
     }
 }

@@ -273,7 +273,10 @@ impl<'a> LowerCtx<'a> {
         if let Some(items) = &obj.items {
             let items_candidate = format!("{name}Items");
             let inner = self.lower_schema_value_with_promotion(&items_candidate, items)?;
-            return Ok(IrSchemaKind::Alias(IrTypeExpr::Array(Box::new(inner))));
+            return Ok(IrSchemaKind::Alias(with_schema_nullability(
+                obj,
+                IrTypeExpr::Array(Box::new(inner)),
+            )));
         }
 
         // Simple type → alias
@@ -690,11 +693,14 @@ impl<'a> LowerCtx<'a> {
                     let mut schema = self.lower_object_schema_to_ir_schema(&name, obj)?;
                     schema.is_component = self.in_component_phase;
                     self.schemas.insert(name.clone(), schema);
-                    Ok(IrTypeExpr::Named(name))
+                    Ok(with_schema_nullability(obj, IrTypeExpr::Named(name)))
                 } else if is_array_with_promotable_items(obj) {
                     let items_name = format!("{candidate_name}Item");
                     let inner = self.lower_array_items_with_promotion(&items_name, obj)?;
-                    Ok(IrTypeExpr::Array(Box::new(inner)))
+                    Ok(with_schema_nullability(
+                        obj,
+                        IrTypeExpr::Array(Box::new(inner)),
+                    ))
                 } else {
                     Ok(self.lower_type_from_schema(obj))
                 }
@@ -759,13 +765,7 @@ impl<'a> LowerCtx<'a> {
                 }
             }
         };
-
-        // OAS 3.0 nullable: wrap in Nullable if nullable: true
-        if obj.nullable == Some(true) {
-            IrTypeExpr::Nullable(Box::new(base))
-        } else {
-            base
-        }
+        with_schema_nullability(obj, base)
     }
 
     fn lower_schema_value_with_promotion(
@@ -1105,6 +1105,20 @@ fn extract_component_name(ref_path: &str) -> String {
     ref_path.rsplit('/').next().unwrap_or(ref_path).to_string()
 }
 
+/// Preserve nullability without changing the existing untyped-schema fallback.
+fn nested_type_to_expr(obj: &ObjectSchema) -> IrTypeExpr {
+    let base = type_string_to_type_expr(obj.schema_type.as_deref().unwrap_or("string"), obj);
+    with_schema_nullability(obj, base)
+}
+
+fn with_schema_nullability(obj: &ObjectSchema, base: IrTypeExpr) -> IrTypeExpr {
+    if obj.nullable == Some(true) {
+        IrTypeExpr::Nullable(Box::new(base))
+    } else {
+        base
+    }
+}
+
 /// OAS 3.0: schema type is a single string, not a typed enum.
 fn type_string_to_type_expr(type_str: &str, obj: &ObjectSchema) -> IrTypeExpr {
     match type_str {
@@ -1133,10 +1147,7 @@ fn type_string_to_type_expr(type_str: &str, obj: &ObjectSchema) -> IrTypeExpr {
                             IrTypeExpr::Named(extract_schema_name(ref_path)),
                         )),
                         ObjectOrReference::Object(inner) => {
-                            let inner_type = type_string_to_type_expr(
-                                inner.schema_type.as_deref().unwrap_or("string"),
-                                inner,
-                            );
+                            let inner_type = nested_type_to_expr(inner);
                             IrTypeExpr::Array(Box::new(inner_type))
                         }
                     },
@@ -1163,10 +1174,7 @@ fn type_string_to_type_expr(type_str: &str, obj: &ObjectSchema) -> IrTypeExpr {
                                 IrTypeExpr::Named(extract_schema_name(ref_path)),
                             )),
                             ObjectOrReference::Object(inner) => {
-                                let inner_type = type_string_to_type_expr(
-                                    inner.schema_type.as_deref().unwrap_or("string"),
-                                    inner,
-                                );
+                                let inner_type = nested_type_to_expr(inner);
                                 IrTypeExpr::Map(Box::new(inner_type))
                             }
                         },

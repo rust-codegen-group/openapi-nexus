@@ -282,7 +282,10 @@ impl<'a> LowerCtx<'a> {
         if let Some(items) = &obj.items {
             let items_candidate = format!("{name}Items");
             let inner = self.lower_schema_value_with_promotion(&items_candidate, items)?;
-            return Ok(IrSchemaKind::Alias(IrTypeExpr::Array(Box::new(inner))));
+            return Ok(IrSchemaKind::Alias(with_schema_nullability(
+                obj,
+                IrTypeExpr::Array(Box::new(inner)),
+            )));
         }
 
         // Simple type → alias
@@ -692,7 +695,14 @@ impl<'a> LowerCtx<'a> {
                 }
                 Ok(IrTypeExpr::Named(extract_schema_name(ref_path)))
             }
-            ObjectOrReference::Object(obj) => Ok(self.lower_type_from_schema(obj)),
+            ObjectOrReference::Object(obj) => {
+                if let Some(inner) = nullable_wrapper_inner(obj) {
+                    return Ok(IrTypeExpr::Nullable(Box::new(
+                        self.lower_schema_ref(inner)?,
+                    )));
+                }
+                Ok(self.lower_type_from_schema(obj))
+            }
         }
     }
 
@@ -716,12 +726,15 @@ impl<'a> LowerCtx<'a> {
                     let mut schema = self.lower_object_schema_to_ir_schema(&name, obj)?;
                     schema.is_component = self.in_component_phase;
                     self.schemas.insert(name.clone(), schema);
-                    Ok(IrTypeExpr::Named(name))
+                    Ok(with_schema_nullability(obj, IrTypeExpr::Named(name)))
                 } else if is_array_with_promotable_items(obj) {
                     // Array with inline object items: promote the items schema
                     let items_name = format!("{candidate_name}Item");
                     let inner = self.lower_array_items_with_promotion(&items_name, obj)?;
-                    Ok(IrTypeExpr::Array(Box::new(inner)))
+                    Ok(with_schema_nullability(
+                        obj,
+                        IrTypeExpr::Array(Box::new(inner)),
+                    ))
                 } else {
                     Ok(self.lower_type_from_schema(obj))
                 }
@@ -736,32 +749,9 @@ impl<'a> LowerCtx<'a> {
         candidate_name: &str,
         obj: &ObjectSchema,
     ) -> Result<Option<IrTypeExpr>, LowerError> {
-        // Check oneOf and anyOf for nullable pattern
-        let members = if !obj.one_of.is_empty() {
-            &obj.one_of
-        } else if !obj.any_of.is_empty() {
-            &obj.any_of
-        } else {
+        let Some(inner_ref) = nullable_wrapper_inner(obj) else {
             return Ok(None);
         };
-
-        // Count null members and non-null members
-        let mut null_count = 0;
-        let mut non_null: Vec<&ObjectOrReference<ObjectSchema>> = Vec::new();
-        for m in members {
-            if is_null_schema(m) {
-                null_count += 1;
-            } else {
-                non_null.push(m);
-            }
-        }
-
-        // Only handle the case: exactly 1 null + 1 non-null member → Nullable(inner)
-        if null_count != 1 || non_null.len() != 1 {
-            return Ok(None);
-        }
-
-        let inner_ref = non_null[0];
         let inner = self.lower_schema_ref_with_promotion(candidate_name, inner_ref)?;
         Ok(Some(IrTypeExpr::Nullable(Box::new(inner))))
     }
@@ -1235,21 +1225,7 @@ fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
                             IrTypeExpr::Named(extract_schema_name(ref_path)),
                         )),
                         ObjectOrReference::Object(inner) => {
-                            let inner_type = single_type_to_expr(
-                                inner
-                                    .schema_type
-                                    .as_ref()
-                                    .map(|ts| match ts {
-                                        oas::SchemaTypeSet::Single(t) => *t,
-                                        oas::SchemaTypeSet::Multiple(ts) => ts
-                                            .iter()
-                                            .copied()
-                                            .find(|t| *t != oas::SchemaType::Null)
-                                            .unwrap_or(oas::SchemaType::String),
-                                    })
-                                    .unwrap_or(oas::SchemaType::String),
-                                inner,
-                            );
+                            let inner_type = nested_type_to_expr(inner);
                             IrTypeExpr::Array(Box::new(inner_type))
                         }
                     },
@@ -1274,21 +1250,7 @@ fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
                             IrTypeExpr::Named(extract_schema_name(ref_path)),
                         )),
                         ObjectOrReference::Object(inner) => {
-                            let inner_type = single_type_to_expr(
-                                inner
-                                    .schema_type
-                                    .as_ref()
-                                    .map(|ts| match ts {
-                                        oas::SchemaTypeSet::Single(t) => *t,
-                                        oas::SchemaTypeSet::Multiple(ts) => ts
-                                            .iter()
-                                            .copied()
-                                            .find(|t| *t != oas::SchemaType::Null)
-                                            .unwrap_or(oas::SchemaType::String),
-                                    })
-                                    .unwrap_or(oas::SchemaType::String),
-                                inner,
-                            );
+                            let inner_type = nested_type_to_expr(inner);
                             IrTypeExpr::Map(Box::new(inner_type))
                         }
                     },
@@ -1298,6 +1260,35 @@ fn single_type_to_expr(t: SchemaType, obj: &ObjectSchema) -> IrTypeExpr {
             }
         }
         SchemaType::Null => IrTypeExpr::Primitive(IrPrimitive::String), // standalone null, unusual
+    }
+}
+
+/// Preserve the complete type set, including null, at nested schema nodes.
+fn nested_type_to_expr(obj: &ObjectSchema) -> IrTypeExpr {
+    if let Some(inner) = nullable_wrapper_inner(obj) {
+        let inner = match inner {
+            ObjectOrReference::Ref { ref_path, .. } => {
+                IrTypeExpr::Named(extract_schema_name(ref_path))
+            }
+            ObjectOrReference::Object(inner) => nested_type_to_expr(inner),
+        };
+        return IrTypeExpr::Nullable(Box::new(inner));
+    }
+    match &obj.schema_type {
+        Some(types) => type_set_to_type_expr(types, obj),
+        None => single_type_to_expr(SchemaType::String, obj),
+    }
+}
+
+fn with_schema_nullability(obj: &ObjectSchema, base: IrTypeExpr) -> IrTypeExpr {
+    if obj
+        .schema_type
+        .as_ref()
+        .is_some_and(|types| types.contains(SchemaType::Null))
+    {
+        IrTypeExpr::Nullable(Box::new(base))
+    } else {
+        base
     }
 }
 
@@ -1342,6 +1333,20 @@ fn should_promote_to_named(obj: &ObjectSchema) -> bool {
         || !obj.one_of.is_empty()
 }
 
+/// Share the supported two-member nullable pattern across schema depths.
+fn nullable_wrapper_inner(obj: &ObjectSchema) -> Option<&ObjectOrReference<ObjectSchema>> {
+    let members = if !obj.one_of.is_empty() {
+        &obj.one_of
+    } else {
+        &obj.any_of
+    };
+    match members.as_slice() {
+        [left, right] if is_null_schema(left) && !is_null_schema(right) => Some(right),
+        [left, right] if !is_null_schema(left) && is_null_schema(right) => Some(left),
+        _ => None,
+    }
+}
+
 /// Check if a schema reference is a null type (used for nullable oneOf detection).
 fn is_null_schema(schema_ref: &ObjectOrReference<ObjectSchema>) -> bool {
     match schema_ref {
@@ -1360,7 +1365,7 @@ fn is_array_with_promotable_items(obj: &ObjectSchema) -> bool {
     let is_array = obj
         .schema_type
         .as_ref()
-        .is_some_and(|t| matches!(t, oas::SchemaTypeSet::Single(oas::SchemaType::Array)));
+        .is_some_and(|t| t.is_array_or_nullable_array());
     if !is_array {
         return false;
     }
