@@ -8,6 +8,7 @@ mod golden-rust 'just/golden-rust.just'
 mod golden-python 'just/golden-python.just'
 mod golden-java 'just/golden-java.just'
 mod golden-kotlin 'just/golden-kotlin.just'
+mod golden-jvm 'just/golden-jvm.just'
 
 # ---------- Build ----------
 
