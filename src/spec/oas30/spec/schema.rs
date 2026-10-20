@@ -32,6 +32,24 @@ pub enum AdditionalProperties {
     Schema(Box<Schema>),
 }
 
+/// OpenAPI 3.0 uses boolean exclusivity flags. Retain the previously accepted
+/// numeric representation for compatibility with generated specifications.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum ExclusiveBound {
+    Boolean(bool),
+    Number(serde_json::Number),
+}
+
+impl ExclusiveBound {
+    pub fn is_exclusive(&self) -> bool {
+        match self {
+            Self::Boolean(value) => *value,
+            Self::Number(_) => true,
+        }
+    }
+}
+
 /// A schema object allows the definition of input and output data types.
 /// OAS 3.0 uses a single `type` string and optional `nullable` boolean.
 #[derive(Debug, Clone, PartialEq, Default, Deserialize, Serialize)]
@@ -71,13 +89,13 @@ pub struct ObjectSchema {
     pub maximum: Option<serde_json::Number>,
 
     #[serde(rename = "exclusiveMaximum", skip_serializing_if = "Option::is_none")]
-    pub exclusive_maximum: Option<serde_json::Number>,
+    pub exclusive_maximum: Option<ExclusiveBound>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub minimum: Option<serde_json::Number>,
 
     #[serde(rename = "exclusiveMinimum", skip_serializing_if = "Option::is_none")]
-    pub exclusive_minimum: Option<serde_json::Number>,
+    pub exclusive_minimum: Option<ExclusiveBound>,
 
     #[serde(rename = "maxLength", skip_serializing_if = "Option::is_none")]
     pub max_length: Option<u64>,
