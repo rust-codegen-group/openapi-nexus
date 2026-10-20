@@ -132,6 +132,12 @@ For object properties, the outer nullable wrapper is recorded in
 container does not make its contents nullable, and nullability is independent
 of whether a property is required.
 
+OpenAPI 3.0 boolean `exclusiveMinimum` / `exclusiveMaximum` flags retain both
+`true` and `false` in validation metadata. The public 3.0 `ObjectSchema` fields
+use `ExclusiveBound` to preserve those booleans as well as the legacy numeric
+form already accepted by the parser. The numeric form retains its previous
+lowering behavior; OpenAPI 3.1/3.2 numeric-bound handling is unchanged.
+
 ## Operations
 
 Each `IrOperation` represents one HTTP method + path:

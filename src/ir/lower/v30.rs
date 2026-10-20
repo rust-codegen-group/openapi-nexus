@@ -1291,9 +1291,15 @@ fn extract_validation(obj: &ObjectSchema) -> Option<IrValidation> {
         min_length: obj.min_length,
         pattern: obj.pattern.clone(),
         maximum: obj.maximum.as_ref().and_then(|n| n.as_f64()),
-        exclusive_maximum: obj.exclusive_maximum.as_ref().map(|_| true),
+        exclusive_maximum: obj
+            .exclusive_maximum
+            .as_ref()
+            .map(|bound| bound.is_exclusive()),
         minimum: obj.minimum.as_ref().and_then(|n| n.as_f64()),
-        exclusive_minimum: obj.exclusive_minimum.as_ref().map(|_| true),
+        exclusive_minimum: obj
+            .exclusive_minimum
+            .as_ref()
+            .map(|bound| bound.is_exclusive()),
         multiple_of: obj.multiple_of.as_ref().and_then(|n| n.as_f64()),
         max_items: obj.max_items,
         min_items: obj.min_items,
