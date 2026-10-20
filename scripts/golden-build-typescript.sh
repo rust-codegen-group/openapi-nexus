@@ -4,10 +4,9 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 golden="$root/tests/golden/typescript/typescript-fetch"
 
-if [ ! -d "$golden" ]; then
-  echo "error: golden dir not found: $golden" >&2
-  exit 1
-fi
+# shellcheck source=./scripts/golden-build-common.sh
+source "$root/scripts/golden-build-common.sh"
+golden_require_projects "$golden" tsconfig.json.golden
 
 toolchain="${1:-}"
 if [ "$toolchain" != "tsc" ] && [ "$toolchain" != "vp" ]; then
@@ -73,6 +72,7 @@ for test_dir in "$golden"/*/; do
 done
 
 echo
+golden_require_selection "$total"
 echo "TypeScript ($toolchain): $passed/$total passed"
 if [ "$failed" -gt 0 ]; then
   echo "failed:"

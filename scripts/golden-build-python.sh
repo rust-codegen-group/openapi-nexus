@@ -6,9 +6,24 @@ backend="${1:?Usage: golden-build-python.sh <httpx|requests>}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 golden="$root/tests/golden/python/python-$backend"
 
-if [ ! -d "$golden" ]; then
-  echo "error: golden dir not found: $golden" >&2
-  exit 1
+# shellcheck source=./scripts/golden-build-common.sh
+source "$root/scripts/golden-build-common.sh"
+golden_require_projects "$golden" pyproject.toml.golden
+
+# One dependency installation and checker resolution per backend, not per fixture.
+deps=$(mktemp -d)
+tmp=""; log=""
+cleanup() {
+  rm -rf "$deps"
+  [ -z "$tmp" ] || rm -rf "$tmp"
+  [ -z "$log" ] || rm -f "$log"
+}
+trap cleanup EXIT
+"${PYTHON:-python3}" -m pip install "$backend" --quiet --target "$deps"
+if command -v pyright >/dev/null 2>&1; then
+  checker=$(command -v pyright)
+else
+  checker=$(npm exec --yes --package pyright -- which pyright)
 fi
 
 total=0; passed=0; failed=0; fails=()
@@ -20,7 +35,6 @@ for test_dir in "$golden"/*/; do
   printf "[%d] %s... " "$total" "$name"
 
   tmp=$(mktemp -d)
-  trap 'rm -rf "$tmp"' EXIT
 
   while IFS= read -r -d '' f; do
     rel="${f#"$test_dir"}"
@@ -29,19 +43,17 @@ for test_dir in "$golden"/*/; do
     cp "$f" "$dst"
   done < <(find "$test_dir" -type f -name '*.golden' -print0)
 
-  pip3 install "$backend" --quiet --target "$tmp/.deps" 2>/dev/null
-
   cat > "$tmp/pyrightconfig.json" <<PYRIGHT
 {
     "pythonVersion": "3.12",
     "typeCheckingMode": "strict",
-    "extraPaths": [".deps"],
+    "extraPaths": ["$deps"],
     "reportUnnecessaryIsInstance": "none"
 }
 PYRIGHT
 
   log=$(mktemp)
-  if (cd "$tmp" && npx pyright) >"$log" 2>&1; then
+  if (cd "$tmp" && "$checker") >"$log" 2>&1; then
     echo "ok"
     passed=$((passed + 1))
   else
@@ -52,10 +64,11 @@ PYRIGHT
   fi
 
   rm -rf "$tmp" "$log"
-  trap - EXIT
+  tmp=""; log=""
 done
 
 echo
+golden_require_selection "$total"
 echo "Python-$backend: $passed/$total passed"
 if [ "$failed" -gt 0 ]; then
   echo "failed:"
