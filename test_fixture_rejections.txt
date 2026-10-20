@@ -1,0 +1,28 @@
+# Explicit rejection cases: these files are exercised, not silently skipped.
+# Each registered test must fail during spec parsing, not file loading.
+
+# Swagger 2 documents placed in the upstream oas30 tree (no openapi field).
+oas30/cpp-ue4/petstore.yaml
+oas30/spring/petstore-with-spring-provide-args.yaml
+# Schema fragment without required document-level info/paths.
+oas30/csharp/composed-enum.yaml
+# Invalid string values `required: optional` where OpenAPI requires booleans.
+oas30/dart/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/elixir/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/javascript/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/jaxrs-spec/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/k6/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/perl/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/php-nextgen/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/php/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/python/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/ruby/petstore-with-fake-endpoints-models-for-testing.yaml
+oas30/spring/petstore-with-fake-endpoints-models-for-testing-x-implements.yaml
+# Empty/null response objects rather than Response Objects.
+oas30/kotlin/issue21238_queryParam_validation.yaml
+# Schema.required is a boolean, not a list of required property names.
+oas30/kotlin/petstore-with-tags.yaml
+# Unquoted YAML null key where a string property name is required.
+oas30/kotlin/reserved_words.yaml
+# Numeric YAML parameter names where OpenAPI requires string names.
+oas30/python/petstore-with-fake-endpoints-models-for-testing-with-http-signature.yaml
