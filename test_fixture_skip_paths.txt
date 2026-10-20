@@ -27,14 +27,7 @@ oas30/v1beta3.yaml
 oas30/validation.yaml
 oas31/exclusive-min-max.yaml
 #
-# Stale / wrong spec (e.g. cpp-ue4/petstore is Swagger 2.0)
-oas30/cpp-ue4/cpp-ue4/petstore.yaml
-oas30/csharp/csharp/composed-enum.yaml
-oas30/csharp/csharp/composed_enum.yaml
-#
-# asciidoc (and stale duplicated-path variants if present)
-oas30/asciidoc/asciidoc/api-docs.json
-oas30/asciidoc/generated-snippets/rest/project/GET/asciidoc/generated-snippets/rest/project/GET/GET.json
+# asciidoc fragments (malformed complete documents are in test_fixture_rejections.txt)
 oas30/asciidoc/api-docs.json
 oas30/asciidoc/generated-snippets/rest/project/GET/GET.json
 #
