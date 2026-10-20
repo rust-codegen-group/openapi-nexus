@@ -64,6 +64,10 @@ test-doc:
 # Run all tests (nextest + doctests)
 test-all: test test-doc
 
+# Lint native validation entrypoints
+script-check:
+    shellcheck scripts/golden-build-*.sh scripts/generate-*-client-fixtures.sh
+
 # Run a specific test by name
 test-specific TEST_NAME:
     cargo test {{ TEST_NAME }}
@@ -165,4 +169,4 @@ publish:
 # ---------- CI (run everything locally) ----------
 
 # Run the full CI pipeline locally
-ci: fmt-check clippy doc-check book msrv test-all coverage-lcov golden-check golden-rust::test
+ci: fmt-check clippy doc-check book msrv script-check test-all coverage-lcov golden-build-all golden-rust::test golden-jvm::test
