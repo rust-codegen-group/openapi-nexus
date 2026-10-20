@@ -1,0 +1,7 @@
+# Consumer project name and input under tests/fixtures/.
+typed-error-responses valid/typed-error-responses.yaml
+closed-sum valid/type-aliases/closed-sum-payload-shapes.yaml
+object-union valid/comprehensive-schemas.yaml
+any-union valid/type-aliases/union-with-any.yaml
+tagged-union valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml
+tagged-shapes valid/enum-repr/enum-repr.yaml

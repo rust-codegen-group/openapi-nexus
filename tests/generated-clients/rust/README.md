@@ -47,4 +47,5 @@ errors, thiserror, and Snafu; ureq retains its synchronous propagation check.
 The root `just test-all` and `just coverage-lcov` cover the generator workspace,
 not these projects. CI runs a separate Rust Client Tests matrix, and `just ci`
 includes `just golden-rust::test`. Golden comparison and all-golden compilation
-remain separate checks. JVM runtime tests are unchanged by this separation.
+remain separate checks. JVM consumer tests have their own Gradle projects under
+`tests/generated-clients/jvm/` and run through `just golden-jvm::test`.

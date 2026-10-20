@@ -1,0 +1,11 @@
+rootProject.name = "${settingsDir.name}-client-tests"
+include(":clients")
+project(":clients").projectDir = new File(settingsDir, "generated")
+new File(settingsDir, "../fixtures.txt").eachLine { line ->
+    if (line.trim() && !line.startsWith("#")) {
+        def name = line.tokenize()[0]
+        include(":clients:${name}", ":cases:${name}")
+        project(":clients:${name}").projectDir = new File(settingsDir, "generated/${name}")
+        project(":cases:${name}").projectDir = new File(settingsDir, "cases/${name}")
+    }
+}

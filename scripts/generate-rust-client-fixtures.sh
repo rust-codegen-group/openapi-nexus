@@ -16,7 +16,7 @@ for fixture in typed-error-responses rust-error-payload-shapes nested-nullable; 
   # Remove stale source files so a deleted declaration cannot pass unnoticed.
   rm -rf "$output"
   cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-    --config "$root/tests/generated-clients/rust/config.toml" \
+    --config "$root/tests/generated-clients/config.toml" \
     --input "$root/tests/fixtures/valid/$fixture.yaml" \
     --output "$output" \
     --generators "rust-$backend"

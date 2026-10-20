@@ -1,0 +1,28 @@
+apply plugin: "java"
+
+subprojects {
+    if (path.startsWith(":cases:")) {
+        apply plugin: "java"
+        if (fileTree("src/test/java").matching { include "**/*Test.java" }.isEmpty()) {
+            throw new GradleException("No consumer tests found in ${projectDir}")
+        }
+        repositories { mavenCentral() }
+        dependencyLocking { lockAllConfigurations() }
+        dependencies {
+            testImplementation project(":clients:${project.name}")
+            testImplementation platform("org.junit:junit-bom:5.12.2")
+            testImplementation "org.junit.jupiter:junit-jupiter"
+            testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+            testImplementation "com.google.code.gson:gson:2.11.0"
+            testImplementation "com.squareup.okhttp3:okhttp:4.12.0"
+        }
+        tasks.named("test") {
+            useJUnitPlatform()
+            testLogging { events "passed", "skipped", "failed" }
+        }
+    }
+}
+
+tasks.named("test") {
+    dependsOn subprojects.findAll { it.path.startsWith(":cases:") }.collect { "${it.path}:test" }
+}
