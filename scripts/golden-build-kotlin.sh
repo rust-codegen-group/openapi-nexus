@@ -4,10 +4,9 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 golden="$root/tests/golden/kotlin/kotlin-okhttp"
 
-if [ ! -d "$golden" ]; then
-  echo "error: golden dir not found: $golden" >&2
-  exit 1
-fi
+# shellcheck source=./scripts/golden-build-common.sh
+source "$root/scripts/golden-build-common.sh"
+golden_require_projects "$golden" build.gradle.kts.golden
 
 tmp=$(mktemp -d)
 log=$(mktemp)
@@ -45,10 +44,7 @@ SETTINGS
 done
 
 echo
-if [ "$total" -eq 0 ]; then
-  echo "Kotlin: 0/0 passed"
-  exit 0
-fi
+golden_require_selection "$total"
 
 echo "Kotlin: compiling $total golden projects"
 if (cd "$tmp" && gradle --no-daemon --quiet --parallel --continue "${tasks[@]}") >"$log" 2>&1; then

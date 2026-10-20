@@ -6,12 +6,16 @@ backend="${1:?Usage: golden-build-rust.sh <reqwest|ureq|aioduct>}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 golden="$root/tests/golden/rust/rust-$backend"
 
-if [ ! -d "$golden" ]; then
-  echo "error: golden dir not found: $golden" >&2
-  exit 1
-fi
+# shellcheck source=./scripts/golden-build-common.sh
+source "$root/scripts/golden-build-common.sh"
+golden_require_projects "$golden" Cargo.toml.golden
 
-shared_target=$(mktemp -d)
+shared_target="${CARGO_TARGET_DIR:-$root/target/golden-build/rust-$backend}"
+case "$shared_target" in
+  /*) ;;
+  *) shared_target="$PWD/$shared_target" ;;
+esac
+mkdir -p "$shared_target"
 total=0; passed=0; failed=0; fails=()
 
 for test_dir in "$golden"/*/; do
@@ -45,7 +49,7 @@ for test_dir in "$golden"/*/; do
   trap - EXIT
 done
 
-rm -rf "$shared_target"
+golden_require_selection "$total"
 
 echo
 echo "Rust-$backend: $passed/$total passed"

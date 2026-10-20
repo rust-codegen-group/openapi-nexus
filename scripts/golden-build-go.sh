@@ -4,10 +4,9 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 golden="$root/tests/golden/go/go-http"
 
-if [ ! -d "$golden" ]; then
-  echo "error: golden dir not found: $golden" >&2
-  exit 1
-fi
+# shellcheck source=./scripts/golden-build-common.sh
+source "$root/scripts/golden-build-common.sh"
+golden_require_projects "$golden" go.mod.golden
 
 total=0; passed=0; failed=0; fails=()
 
@@ -43,6 +42,7 @@ for test_dir in "$golden"/*/; do
 done
 
 echo
+golden_require_selection "$total"
 echo "Go: $passed/$total passed"
 if [ "$failed" -gt 0 ]; then
   echo "failed:"
