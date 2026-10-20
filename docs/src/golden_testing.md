@@ -140,6 +140,49 @@ rather than replace, snapshot comparison and the all-golden compile checks.
 See [the consumer test README](https://github.com/rust-codegen-group/openapi-nexus/tree/main/tests/generated-clients/rust)
 for direct Cargo/IDE use and the retained coverage per fixture.
 
+## JVM Client Runtime Tests
+
+Java and Kotlin runtime checks are standalone Gradle consumer builds under
+`tests/generated-clients/jvm/`. `just golden-jvm::test` prepares fresh generated
+dependencies and runs normal JUnit tests, one Gradle invocation per backend.
+Generated manifests are never patched. Each fixture has an isolated consumer
+classpath, and both backends assert union precedence and complete payload
+round-trips, not only wrapper identity or discriminator substrings.
+
+There are no JVM build subprocesses or global directory locks in the Rust test
+suite. The independent JVM Client Tests CI matrix and `just ci` run these checks.
+
+## Validation Contracts and Toolchains
+
+- Missing fixture files fail their parser tests. Nested fixture paths are relative
+  to the fixture tree exactly once; an empty discovery produces a failing test,
+  not a green placeholder. Known malformed upstream documents are executed as
+  explicit expected parse failures in `test_fixture_rejections.txt`. Missing
+  files or read errors cannot satisfy those rejection expectations.
+- Every golden directory must have its build manifest. Native validators reject
+  empty selections and missing manifests instead of reporting `0/0 passed`.
+- Rust golden builds retain their cache under `target/golden-build/rust-<backend>`
+  or the explicitly configured `CARGO_TARGET_DIR`. CI caches the same directory.
+- Python prepares dependencies and resolves pyright once per backend, sharing
+  that environment across its fixtures. `PYTHON` selects the install interpreter;
+  the active `pyright` is used when available, otherwise npm resolves it once.
+- Development and ordinary CI validation select current Rust `stable` (locally
+  validated with Rust 1.99.0). MSRV checks explicitly select Rust 1.90.0; they do
+  not substitute for stable validation.
+- Current local JVM validation uses Homebrew JDK 27 with Gradle 9.8.1, respecting
+  `JAVA_HOME` or the active JVM. CI validates on JDK 27. Generated libraries may
+  still declare a Java 17 compile target, independently of the consumer test JVM.
+
+Fixture discovery is tested in-process through the same build-support module
+used by `build.rs`. Cargo compiles and executes the registered parser tests
+normally; no test harness launches a compiler, build tool, or validation script.
+`just script-check` lints the native build entrypoints. Tool orchestration belongs
+to just/CI, which directly run the golden builds and ordinary consumer projects.
+
+`just ci` includes generator tests and coverage, all nine generators' native
+golden builds, and Rust/JVM consumer tests. Golden comparison is already included
+in `test-all`, so the full recipe does not repeat it as another standalone step.
+
 ## Extra File Detection
 
 The test harness detects when a generator produces files that have no corresponding `.golden` file. This prevents regressions where new output silently goes untested. If a generator adds a new file, the test will fail with a clear message listing the unmatched files and instructing you to run `UPDATE_GOLDEN=1`.
