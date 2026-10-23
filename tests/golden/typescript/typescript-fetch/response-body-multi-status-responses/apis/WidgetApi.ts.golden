@@ -30,9 +30,10 @@ export class ListWidgetsError extends ResponseError {
 
 
 export interface WidgetApiInterface {
-  listWidgetsRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ListWidgetsRawResponse>;
+  listWidgetsRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<ListWidgetsRawResponse>;
   listWidgets: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Widget[]
-| WidgetListPartial>;
+  | WidgetListPartial>;
 }
 
 export class WidgetApi extends BaseAPI implements WidgetApiInterface {

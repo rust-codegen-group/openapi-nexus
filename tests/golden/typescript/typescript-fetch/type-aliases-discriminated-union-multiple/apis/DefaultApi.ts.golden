@@ -55,10 +55,14 @@ export class CreateVolumeError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  createContainerRaw: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateContainerRawResponse>;
-  createContainer: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ContainerKind>;
-  createVolumeRaw: (requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateVolumeRawResponse>;
-  createVolume: (requestParameters: ApiCreateVolumeRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<VolumeKind>;
+  createContainerRaw: (requestParameters: ApiCreateContainerRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateContainerRawResponse>;
+  createContainer: (requestParameters: ApiCreateContainerRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<ContainerKind>;
+  createVolumeRaw: (requestParameters: ApiCreateVolumeRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateVolumeRawResponse>;
+  createVolume: (requestParameters: ApiCreateVolumeRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<VolumeKind>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

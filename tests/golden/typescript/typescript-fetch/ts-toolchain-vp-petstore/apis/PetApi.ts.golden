@@ -213,22 +213,38 @@ export class UploadFileError extends ResponseError {
 
 
 export interface PetApiInterface {
-  updatePetRaw: (requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdatePetRawResponse>;
-  updatePet: (requestParameters: ApiUpdatePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  addPetRaw: (requestParameters: ApiAddPetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<AddPetRawResponse>;
-  addPet: (requestParameters: ApiAddPetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  findPetsByStatusRaw: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<FindPetsByStatusRawResponse>;
-  findPetsByStatus: (requestParameters: ApiFindPetsByStatusRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet[]>;
-  findPetsByTagsRaw: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<FindPetsByTagsRawResponse>;
-  findPetsByTags: (requestParameters: ApiFindPetsByTagsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet[]>;
-  getPetByIdRaw: (requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetPetByIdRawResponse>;
-  getPetById: (requestParameters: ApiGetPetByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  updatePetWithFormRaw: (requestParameters: ApiUpdatePetWithFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdatePetWithFormRawResponse>;
-  updatePetWithForm: (requestParameters: ApiUpdatePetWithFormRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
-  deletePetRaw: (requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeletePetRawResponse>;
-  deletePet: (requestParameters: ApiDeletePetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  uploadFileRaw: (requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadFileRawResponse>;
-  uploadFile: (requestParameters: ApiUploadFileRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadResponse>;
+  updatePetRaw: (requestParameters: ApiUpdatePetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdatePetRawResponse>;
+  updatePet: (requestParameters: ApiUpdatePetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
+  addPetRaw: (requestParameters: ApiAddPetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<AddPetRawResponse>;
+  addPet: (requestParameters: ApiAddPetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
+  findPetsByStatusRaw: (requestParameters: ApiFindPetsByStatusRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<FindPetsByStatusRawResponse>;
+  findPetsByStatus: (requestParameters: ApiFindPetsByStatusRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet[]>;
+  findPetsByTagsRaw: (requestParameters: ApiFindPetsByTagsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<FindPetsByTagsRawResponse>;
+  findPetsByTags: (requestParameters: ApiFindPetsByTagsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet[]>;
+  getPetByIdRaw: (requestParameters: ApiGetPetByIdRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetPetByIdRawResponse>;
+  getPetById: (requestParameters: ApiGetPetByIdRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
+  updatePetWithFormRaw: (requestParameters: ApiUpdatePetWithFormRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdatePetWithFormRawResponse>;
+  updatePetWithForm: (requestParameters: ApiUpdatePetWithFormRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Pet>;
+  deletePetRaw: (requestParameters: ApiDeletePetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeletePetRawResponse>;
+  deletePet: (requestParameters: ApiDeletePetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  uploadFileRaw: (requestParameters: ApiUploadFileRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadFileRawResponse>;
+  uploadFile: (requestParameters: ApiUploadFileRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadResponse>;
 }
 
 export class PetApi extends BaseAPI implements PetApiInterface {

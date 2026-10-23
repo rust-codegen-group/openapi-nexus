@@ -44,8 +44,10 @@ export class GetUserByIdDuplicateError extends ResponseError {
 
 
 export interface UsersApiInterface {
-  getUserByIdDuplicateRaw: (requestParameters: ApiGetUserByIdDuplicateRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateRawResponse>;
-  getUserByIdDuplicate: (requestParameters: ApiGetUserByIdDuplicateRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateResponse200>;
+  getUserByIdDuplicateRaw: (requestParameters: ApiGetUserByIdDuplicateRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateRawResponse>;
+  getUserByIdDuplicate: (requestParameters: ApiGetUserByIdDuplicateRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateResponse200>;
 }
 
 export class UsersApi extends BaseAPI implements UsersApiInterface {

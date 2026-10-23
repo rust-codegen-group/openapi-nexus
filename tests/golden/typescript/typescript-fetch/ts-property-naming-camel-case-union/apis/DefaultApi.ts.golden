@@ -32,8 +32,10 @@ export class TestUnionError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  testUnionRaw: (requestParameters: ApiTestUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestUnionRawResponse>;
-  testUnion: (requestParameters: ApiTestUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testUnionRaw: (requestParameters: ApiTestUnionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestUnionRawResponse>;
+  testUnion: (requestParameters: ApiTestUnionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

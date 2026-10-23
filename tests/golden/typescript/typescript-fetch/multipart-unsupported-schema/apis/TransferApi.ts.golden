@@ -30,8 +30,10 @@ export class UploadRawMultipartError extends ResponseError {
 
 
 export interface TransferApiInterface {
-  uploadRawMultipartRaw: (requestParameters: ApiUploadRawMultipartRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadRawMultipartRawResponse>;
-  uploadRawMultipart: (requestParameters: ApiUploadRawMultipartRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  uploadRawMultipartRaw: (requestParameters: ApiUploadRawMultipartRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadRawMultipartRawResponse>;
+  uploadRawMultipart: (requestParameters: ApiUploadRawMultipartRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class TransferApi extends BaseAPI implements TransferApiInterface {

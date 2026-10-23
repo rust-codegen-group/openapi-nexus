@@ -149,12 +149,18 @@ export class CreateResourceWithWildcardSuccessError extends ResponseError {
 
 
 export interface ResourcesApiInterface {
-  checkNoSuccessBodyRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<CheckNoSuccessBodyRawResponse>;
+  checkNoSuccessBodyRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<CheckNoSuccessBodyRawResponse>;
   checkNoSuccessBody: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  createResourceRaw: (requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateResourceRawResponse>;
-  createResource: (requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreatedResource>;
-  createResourceWithWildcardSuccessRaw: (requestParameters: ApiCreateResourceWithWildcardSuccessRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateResourceWithWildcardSuccessRawResponse>;
-  createResourceWithWildcardSuccess: (requestParameters: ApiCreateResourceWithWildcardSuccessRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreatedResource>;
+  createResourceRaw: (requestParameters: ApiCreateResourceRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateResourceRawResponse>;
+  createResource: (requestParameters: ApiCreateResourceRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreatedResource>;
+  createResourceWithWildcardSuccessRaw: (requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
+  initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<CreateResourceWithWildcardSuccessRawResponse>;
+  createResourceWithWildcardSuccess: (requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreatedResource>;
 }
 
 export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {

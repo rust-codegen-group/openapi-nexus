@@ -51,10 +51,14 @@ export class GetTestError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  createTestRaw: (requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestRawResponse>;
-  createTest: (requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
-  getTestRaw: (requestParameters: ApiGetTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetTestRawResponse>;
-  getTest: (requestParameters: ApiGetTestRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
+  createTestRaw: (requestParameters: ApiCreateTestRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestRawResponse>;
+  createTest: (requestParameters: ApiCreateTestRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
+  getTestRaw: (requestParameters: ApiGetTestRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetTestRawResponse>;
+  getTest: (requestParameters: ApiGetTestRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

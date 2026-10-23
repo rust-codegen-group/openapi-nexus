@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info:
+  title: TypeScript API Interface
+  version: 1.0.0
+paths:
+  /no-input:
+    get:
+      tags: [Entries]
+      operationId: noInput
+      responses:
+        '204':
+          description: No payload.
+  /cookie-input:
+    get:
+      tags: [Entries]
+      operationId: cookieInput
+      parameters:
+        - name: session
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Cookies do not add a request argument.
+  /optional-input:
+    get:
+      tags: [Entries]
+      operationId: optionalInput
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A typed payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+  /submit:
+    post:
+      tags: [Entries]
+      operationId: submit
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Entry'
+      responses:
+        '200':
+          description: The submitted payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+  /entries/{id}:
+    get:
+      tags: [Entries]
+      operationId: getEntries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Named array items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+        '206':
+          description: A text alternative.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '207':
+          description: Nullable array items retain their parentheses.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  nullable: true
+components:
+  schemas:
+    Entry:
+      type: object
+      required: [display_name]
+      properties:
+        display_name:
+          type: string
