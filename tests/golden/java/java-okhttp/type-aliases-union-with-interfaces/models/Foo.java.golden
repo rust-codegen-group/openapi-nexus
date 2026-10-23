@@ -34,45 +34,17 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if ((((element.isJsonObject()
-         && element.getAsJsonObject().has("bucket")
-        )
-         && element.getAsJsonObject().has("endpoint")
-        )
-         && element.getAsJsonObject().has("type")
-        )
-        ) {
-            return new Foo.VariantBar(gson.fromJson(element
-            , new TypeToken<Bar>() {}.getType()));
-
+        if ((((element.isJsonObject() && element.getAsJsonObject().has("bucket")) && element.getAsJsonObject().has("endpoint")) && element.getAsJsonObject().has("type"))) {
+            return new Foo.VariantBar(gson.fromJson(element, new TypeToken<Bar>() {}.getType()));
         }
-        if (((element.isJsonObject()
-         && element.getAsJsonObject().has("path")
-        )
-         && element.getAsJsonObject().has("type")
-        )
-        ) {
-            return new Foo.VariantBaz(gson.fromJson(element
-            , new TypeToken<Baz>() {}.getType()));
-
+        if (((element.isJsonObject() && element.getAsJsonObject().has("path")) && element.getAsJsonObject().has("type"))) {
+            return new Foo.VariantBaz(gson.fromJson(element, new TypeToken<Baz>() {}.getType()));
         }
-        if ((((element.isJsonObject()
-         && element.getAsJsonObject().has("namespace")
-        )
-         && element.getAsJsonObject().has("type")
-        )
-         && element.getAsJsonObject().has("url")
-        )
-        ) {
-            return new Foo.VariantQux(gson.fromJson(element
-            , new TypeToken<Qux>() {}.getType()));
-
+        if ((((element.isJsonObject() && element.getAsJsonObject().has("namespace")) && element.getAsJsonObject().has("type")) && element.getAsJsonObject().has("url"))) {
+            return new Foo.VariantQux(gson.fromJson(element, new TypeToken<Qux>() {}.getType()));
         }
         throw new JsonParseException("unknown Foo union value");
-
-
     }
 
     @Override
@@ -83,17 +55,14 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         }
         if (value instanceof Foo.VariantBar) {
             gson.toJson(gson.toJsonTree(((Foo.VariantBar) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantBaz) {
             gson.toJson(gson.toJsonTree(((Foo.VariantBaz) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantQux) {
             gson.toJson(gson.toJsonTree(((Foo.VariantQux) value).value0()), writer);
-
             return;
         }
     }

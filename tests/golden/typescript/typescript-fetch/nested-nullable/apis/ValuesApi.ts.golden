@@ -72,23 +72,23 @@ export class ValuesApi extends BaseAPI implements ValuesApiInterface {
       if (response.status === 400) {
         let errorValue: Promise<Record<string, string[] | null>> | undefined;
         throw new GetValuesError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new JSONApiResponse<Record<string,
-    string[] | null>>(errorRaw.clone()).value() });
+        string[] | null>>(errorRaw.clone()).value() });
       }
       else if (response.status === 401) {
         let errorValue: Promise<(Record<string, string> | null)[]> | undefined;
         throw new GetValuesError(response, { kind: 'unauthorized', status: response.status as 401, raw: response, value: () => errorValue ??= new JSONApiResponse<(Record<string,
-    string>
-    | null)[]>(errorRaw.clone()).value() });
+        string>
+        | null)[]>(errorRaw.clone()).value() });
       }
       else if (response.status === 402) {
         let errorValue: Promise<string[] | null> | undefined;
         throw new GetValuesError(response, { kind: 'status402', status: response.status as 402, raw: response, value: () => errorValue ??= new JSONApiResponse<string[]
-    | null>(errorRaw.clone()).value() });
+        | null>(errorRaw.clone()).value() });
       }
       else if (response.status === 403) {
         let errorValue: Promise<Record<string, string[]>> | undefined;
         throw new GetValuesError(response, { kind: 'forbidden', status: response.status as 403, raw: response, value: () => errorValue ??= new JSONApiResponse<Record<string,
-    string[]>>(errorRaw.clone()).value() });
+        string[]>>(errorRaw.clone()).value() });
       }
       else if (response.status === 404) {
         let errorValue: Promise<DetailAlias> | undefined;

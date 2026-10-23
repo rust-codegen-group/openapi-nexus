@@ -34,27 +34,11 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("id")
-            )
-             && element.asJsonObject.has("name")
-            )
-             -> Foo.VariantBar(gson.fromJson(element
-            , object: TypeToken<Bar>() {}.type))
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             -> Foo.VariantString(element
-            .asString)
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
-             -> Foo.VariantNumber(element
-            .asDouble)
-
+            ((element.isJsonObject && element.asJsonObject.has("id")) && element.asJsonObject.has("name")) -> Foo.VariantBar(gson.fromJson(element, object: TypeToken<Bar>() {}.type))
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Foo.VariantString(element.asString)
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> Foo.VariantNumber(element.asDouble)
             else -> throw JsonParseException("unknown Foo union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Foo?) {
@@ -65,15 +49,12 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         when (value) {
             is Foo.VariantBar -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Foo.VariantString -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Foo.VariantNumber -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

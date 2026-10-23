@@ -169,6 +169,10 @@ suite. The independent JVM Client Tests CI matrix and `just ci` run these checks
 - Development and ordinary CI validation select current Rust `stable` (locally
   validated with Rust 1.99.0). MSRV checks explicitly select Rust 1.90.0; they do
   not substitute for stable validation.
+- Local TypeScript validation uses TypeScript 7.0.2 and Vite+ 1.3.0 on Node
+  24.22.1. The native validators use the active `tsc` and `vp` on `PATH`; when
+  `tsc` is not globally installed, `npm exec --package typescript -- just
+  golden-typescript::build-tsc` supplies it without changing generated packages.
 - Current local JVM validation uses Homebrew JDK 27 with Gradle 9.8.1, respecting
   `JAVA_HOME` or the active JVM. CI validates on JDK 27. Generated libraries may
   still declare a Java 17 compile target, independently of the consumer test JVM.

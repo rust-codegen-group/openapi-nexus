@@ -57,20 +57,14 @@ final class EventJsonAdapter extends TypeAdapter<Event> {
         String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
         if ("EVENT_UNSPECIFIED".equals(discriminator)) {
             return Event.VariantEventUnspecified.INSTANCE;
-
         }
         if ("EVENT_CREATED".equals(discriminator)) {
-            return new Event.VariantEventCreated(gson.fromJson(object
-            , new TypeToken<EventEventCreated>() {}.getType()));
-
+            return new Event.VariantEventCreated(gson.fromJson(object, new TypeToken<EventEventCreated>() {}.getType()));
         }
         if ("EVENT_UPDATED".equals(discriminator)) {
-            return new Event.VariantEventUpdated(gson.fromJson(object
-            , new TypeToken<EventEventUpdated>() {}.getType()));
-
+            return new Event.VariantEventUpdated(gson.fromJson(object, new TypeToken<EventEventUpdated>() {}.getType()));
         }
         throw new JsonParseException("unknown Event discriminator");
-
     }
 
     @Override
@@ -83,21 +77,18 @@ final class EventJsonAdapter extends TypeAdapter<Event> {
             JsonObject object = new JsonObject();
             object.addProperty("kind", "EVENT_UNSPECIFIED");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof Event.VariantEventCreated) {
             JsonObject object = gson.toJsonTree(((Event.VariantEventCreated) value).value0()).getAsJsonObject();
             object.addProperty("kind", "EVENT_CREATED");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof Event.VariantEventUpdated) {
             JsonObject object = gson.toJsonTree(((Event.VariantEventUpdated) value).value0()).getAsJsonObject();
             object.addProperty("kind", "EVENT_UPDATED");
             gson.toJson(object, writer);
-
             return;
         }
     }

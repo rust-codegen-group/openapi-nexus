@@ -46,15 +46,10 @@ private class ExternallyTaggedEnumJsonAdapter: TypeAdapter<ExternallyTaggedEnum>
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when {
-            jsonObject.has("EXTERNALLY_TAGGED_ENUM_VARIANT_A") -> ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA(gson.fromJson(jsonObject["EXTERNALLY_TAGGED_ENUM_VARIANT_A"]
-            , object: TypeToken<VariantA>() {}.type))
-
-            jsonObject.has("EXTERNALLY_TAGGED_ENUM_VARIANT_B") -> ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB(gson.fromJson(jsonObject["EXTERNALLY_TAGGED_ENUM_VARIANT_B"]
-            , object: TypeToken<VariantB>() {}.type))
-
+            jsonObject.has("EXTERNALLY_TAGGED_ENUM_VARIANT_A") -> ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA(gson.fromJson(jsonObject["EXTERNALLY_TAGGED_ENUM_VARIANT_A"], object: TypeToken<VariantA>() {}.type))
+            jsonObject.has("EXTERNALLY_TAGGED_ENUM_VARIANT_B") -> ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB(gson.fromJson(jsonObject["EXTERNALLY_TAGGED_ENUM_VARIANT_B"], object: TypeToken<VariantB>() {}.type))
             else -> throw JsonParseException("unknown ExternallyTaggedEnum variant")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: ExternallyTaggedEnum?) {
@@ -67,13 +62,11 @@ private class ExternallyTaggedEnumJsonAdapter: TypeAdapter<ExternallyTaggedEnum>
                 val jsonObject = JsonObject()
                 jsonObject.add("EXTERNALLY_TAGGED_ENUM_VARIANT_A", gson.toJsonTree(value.value0))
                 gson.toJson(jsonObject, writer)
-
             }
             is ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB -> {
                 val jsonObject = JsonObject()
                 jsonObject.add("EXTERNALLY_TAGGED_ENUM_VARIANT_B", gson.toJsonTree(value.value0))
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

@@ -47,17 +47,12 @@ final class InternallyTaggedEnumJsonAdapter extends TypeAdapter<InternallyTagged
         JsonObject object = element.getAsJsonObject();
         String discriminator = object.has("ty") ? object.get("ty").getAsString() : null;
         if ("INTERNALLY_TAGGED_ENUM_VARIANT_A".equals(discriminator)) {
-            return new InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA(gson.fromJson(object
-            , new TypeToken<VariantA>() {}.getType()));
-
+            return new InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA(gson.fromJson(object, new TypeToken<VariantA>() {}.getType()));
         }
         if ("INTERNALLY_TAGGED_ENUM_VARIANT_B".equals(discriminator)) {
-            return new InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB(gson.fromJson(object
-            , new TypeToken<VariantB>() {}.getType()));
-
+            return new InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB(gson.fromJson(object, new TypeToken<VariantB>() {}.getType()));
         }
         throw new JsonParseException("unknown InternallyTaggedEnum discriminator");
-
     }
 
     @Override
@@ -70,14 +65,12 @@ final class InternallyTaggedEnumJsonAdapter extends TypeAdapter<InternallyTagged
             JsonObject object = gson.toJsonTree(((InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA) value).value0()).getAsJsonObject();
             object.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_A");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB) {
             JsonObject object = gson.toJsonTree(((InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB) value).value0()).getAsJsonObject();
             object.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_B");
             gson.toJson(object, writer);
-
             return;
         }
     }

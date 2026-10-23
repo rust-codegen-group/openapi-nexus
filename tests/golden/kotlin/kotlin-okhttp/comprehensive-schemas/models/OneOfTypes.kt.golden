@@ -37,23 +37,11 @@ private class OneOfTypesJsonAdapter: TypeAdapter<OneOfTypes>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             -> OneOfTypes.VariantString(element
-            .asString)
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
-             -> OneOfTypes.VariantNumber(element
-            .asDouble)
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isBoolean
-             -> OneOfTypes.VariantBoolean(element
-            .asBoolean)
-
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> OneOfTypes.VariantString(element.asString)
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> OneOfTypes.VariantNumber(element.asDouble)
+            element.isJsonPrimitive && element.asJsonPrimitive.isBoolean -> OneOfTypes.VariantBoolean(element.asBoolean)
             else -> throw JsonParseException("unknown OneOfTypes union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: OneOfTypes?) {
@@ -64,15 +52,12 @@ private class OneOfTypesJsonAdapter: TypeAdapter<OneOfTypes>() {
         when (value) {
             is OneOfTypes.VariantString -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is OneOfTypes.VariantNumber -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is OneOfTypes.VariantBoolean -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

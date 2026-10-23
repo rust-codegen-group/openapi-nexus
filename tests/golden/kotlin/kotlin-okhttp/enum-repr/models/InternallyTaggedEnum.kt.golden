@@ -46,15 +46,10 @@ private class InternallyTaggedEnumJsonAdapter: TypeAdapter<InternallyTaggedEnum>
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when (jsonObject["ty"]?.asString) {
-            "INTERNALLY_TAGGED_ENUM_VARIANT_A" -> InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA(gson.fromJson(jsonObject
-            , object: TypeToken<VariantA>() {}.type))
-
-            "INTERNALLY_TAGGED_ENUM_VARIANT_B" -> InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB(gson.fromJson(jsonObject
-            , object: TypeToken<VariantB>() {}.type))
-
+            "INTERNALLY_TAGGED_ENUM_VARIANT_A" -> InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA(gson.fromJson(jsonObject, object: TypeToken<VariantA>() {}.type))
+            "INTERNALLY_TAGGED_ENUM_VARIANT_B" -> InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB(gson.fromJson(jsonObject, object: TypeToken<VariantB>() {}.type))
             else -> throw JsonParseException("unknown InternallyTaggedEnum discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: InternallyTaggedEnum?) {
@@ -67,13 +62,11 @@ private class InternallyTaggedEnumJsonAdapter: TypeAdapter<InternallyTaggedEnum>
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_A")
                 gson.toJson(jsonObject, writer)
-
             }
             is InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_B")
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

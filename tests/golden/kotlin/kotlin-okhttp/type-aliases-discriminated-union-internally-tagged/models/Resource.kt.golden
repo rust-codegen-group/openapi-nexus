@@ -39,18 +39,11 @@ private class ResourceJsonAdapter: TypeAdapter<Resource>() {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when (jsonObject["kind"]?.asString) {
-            "RESOURCE_UNSPECIFIED" -> Resource.VariantResourceUnspecified(gson.fromJson(jsonObject
-            , object: TypeToken<ResourceUnspecified>() {}.type))
-
-            "RESOURCE_QUICK" -> Resource.VariantResourceQuick(gson.fromJson(jsonObject
-            , object: TypeToken<ResourceQuick>() {}.type))
-
-            "RESOURCE_CUSTOM" -> Resource.VariantResourceCustom(gson.fromJson(jsonObject
-            , object: TypeToken<ResourceCustom>() {}.type))
-
+            "RESOURCE_UNSPECIFIED" -> Resource.VariantResourceUnspecified(gson.fromJson(jsonObject, object: TypeToken<ResourceUnspecified>() {}.type))
+            "RESOURCE_QUICK" -> Resource.VariantResourceQuick(gson.fromJson(jsonObject, object: TypeToken<ResourceQuick>() {}.type))
+            "RESOURCE_CUSTOM" -> Resource.VariantResourceCustom(gson.fromJson(jsonObject, object: TypeToken<ResourceCustom>() {}.type))
             else -> throw JsonParseException("unknown Resource discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Resource?) {
@@ -63,19 +56,16 @@ private class ResourceJsonAdapter: TypeAdapter<Resource>() {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "RESOURCE_UNSPECIFIED")
                 gson.toJson(jsonObject, writer)
-
             }
             is Resource.VariantResourceQuick -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "RESOURCE_QUICK")
                 gson.toJson(jsonObject, writer)
-
             }
             is Resource.VariantResourceCustom -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "RESOURCE_CUSTOM")
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

@@ -37,29 +37,17 @@ final class OneOfTypesJsonAdapter extends TypeAdapter<OneOfTypes> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-        ) {
-            return new OneOfTypes.VariantString(element
-            .getAsString());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new OneOfTypes.VariantString(element.getAsString());
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
-        ) {
-            return new OneOfTypes.VariantNumber(gson.fromJson(element
-            , Double.class));
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+            return new OneOfTypes.VariantNumber(gson.fromJson(element, Double.class));
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()
-        ) {
-            return new OneOfTypes.VariantBoolean(element
-            .getAsBoolean());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
+            return new OneOfTypes.VariantBoolean(element.getAsBoolean());
         }
         throw new JsonParseException("unknown OneOfTypes union value");
-
-
     }
 
     @Override
@@ -70,17 +58,14 @@ final class OneOfTypesJsonAdapter extends TypeAdapter<OneOfTypes> {
         }
         if (value instanceof OneOfTypes.VariantString) {
             gson.toJson(gson.toJsonTree(((OneOfTypes.VariantString) value).value0()), writer);
-
             return;
         }
         if (value instanceof OneOfTypes.VariantNumber) {
             gson.toJson(gson.toJsonTree(((OneOfTypes.VariantNumber) value).value0()), writer);
-
             return;
         }
         if (value instanceof OneOfTypes.VariantBoolean) {
             gson.toJson(gson.toJsonTree(((OneOfTypes.VariantBoolean) value).value0()), writer);
-
             return;
         }
     }
