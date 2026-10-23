@@ -39,7 +39,7 @@ use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
 use sigil_stitch::spec::fun_spec::FunSpec;
-use sigil_stitch::spec::modifiers::{DeclarationContext, TypeKind, Visibility};
+use sigil_stitch::spec::modifiers::{TypeKind, Visibility};
 use sigil_stitch::spec::parameter_spec::ParameterSpec;
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::spec::where_spec::{CallableParam, CallableParamPresence};
@@ -179,7 +179,10 @@ fn emit_api_file(
     for accessor in build_success_header_accessors(ops, ir)? {
         fb = fb.add_function(accessor);
     }
-    fb = fb.add_code(build_error_types_block(ops, ir)?);
+    for (detail_alias, error_class) in build_error_types(ops, ir)? {
+        fb = fb.add_code(detail_alias);
+        fb = fb.add_type(error_class);
+    }
 
     fb = fb.add_type(build_api_interface(&interface_name, ops)?);
 
@@ -314,11 +317,11 @@ fn build_success_header_accessors(
     Ok(accessors)
 }
 
-fn build_error_types_block(
+fn build_error_types(
     ops: &[&IrOperation],
     ir: &IrSpec,
-) -> Result<CodeBlock, SigilStitchError> {
-    let mut cb = CodeBlock::builder();
+) -> Result<Vec<(CodeBlock, TypeSpec)>, SigilStitchError> {
+    let mut error_types = Vec::new();
     for op in ops {
         let detail_alias = error_detail_alias_name(op);
         let class_name = error_class_name(op);
@@ -327,71 +330,114 @@ fn build_error_types_block(
             .iter()
             .filter(|resp| !is_success_status(&resp.status))
             .collect();
-        cb.add(&format!("export type {detail_alias} =\n"), vec![]);
-        let mut used = HashSet::new();
-        for (idx, resp) in error_responses.iter().enumerate() {
-            let prefix = if idx == 0 { "  " } else { "  | " };
-            let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
-            let status_ty = resp
-                .status
-                .parse::<u16>()
-                .ok()
-                .map(|n| n.to_string())
-                .unwrap_or_else(|| "number".to_string());
-            let value_ty = response_value_type(resp);
-            cb.add(prefix, vec![]);
-            cb.add(
-                &format!(
-                    "{{ kind: '{}'; status: {}; raw: Response; value(): Promise<%T> }}\n",
-                    kind, status_ty
-                ),
-                vec![Arg::TypeName(value_ty)],
-            );
-        }
-        let prefix = if error_responses.is_empty() {
-            "  "
-        } else {
-            "  | "
-        };
-        cb.add(
-            &format!(
-                "{prefix}{{ kind: 'unexpected'; status: number; raw: Response; value(): Promise<%T> }};\n"
-            ),
-            vec![Arg::TypeName(TypeName::primitive("Blob"))],
-        );
-        cb.add_line();
-        cb.add(
-            &format!(
-                "export class {class_name} extends %T {{\n  readonly detail: {detail_alias};\n\n  constructor(response: Response, detail: {detail_alias}, msg = 'Response returned an error code') {{\n    super(response, msg);\n    this.detail = detail;\n  }}\n"
-            ),
-            vec![Arg::TypeName(rt_value("ResponseError"))],
-        );
-        cb.add("%>", ());
-        let headers = collect_response_headers(
-            op.responses
-                .iter()
-                .filter(|response| !is_success_status(&response.status)),
-            ir,
-        );
-        let method_names = unique_response_header_accessor_names(&headers, |wire_name| {
-            format!("get{}Header", wire_name.to_pascal_case())
-        });
-        for (header, method_name) in headers.iter().zip(method_names) {
-            cb.add_line();
-            cb.add_code(
-                build_ts_header_accessor(
-                    &method_name,
-                    None,
-                    header,
-                    "this.response.headers",
-                    false,
-                )?
-                .emit(&TypeScript::new(), DeclarationContext::Member)?,
-            );
-        }
-        cb.add("%<}\n\n", ());
+        let detail_alias_block = build_error_detail_alias_block(&detail_alias, &error_responses)?;
+        let error_class = build_error_class(&class_name, &detail_alias, op, ir)?;
+        error_types.push((detail_alias_block, error_class));
     }
+    Ok(error_types)
+}
+
+fn build_error_detail_alias_block(
+    detail_alias: &str,
+    error_responses: &[&IrResponse],
+) -> Result<CodeBlock, SigilStitchError> {
+    let mut cb = CodeBlock::builder();
+    cb.add(&format!("export type {detail_alias} =\n"), vec![]);
+    let mut used = HashSet::new();
+    for (idx, resp) in error_responses.iter().enumerate() {
+        let prefix = if idx == 0 { "  " } else { "  | " };
+        let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
+        let status_ty = resp
+            .status
+            .parse::<u16>()
+            .ok()
+            .map(|n| n.to_string())
+            .unwrap_or_else(|| "number".to_string());
+        let value_ty = response_value_type(resp);
+        cb.add(prefix, vec![]);
+        cb.add(
+            &format!(
+                "{{ kind: '{}'; status: {}; raw: Response; value(): Promise<%T> }}\n",
+                kind, status_ty
+            ),
+            vec![Arg::TypeName(value_ty)],
+        );
+    }
+    let prefix = if error_responses.is_empty() {
+        "  "
+    } else {
+        "  | "
+    };
+    cb.add(
+        &format!(
+            "{prefix}{{ kind: 'unexpected'; status: number; raw: Response; value(): Promise<%T> }};\n"
+        ),
+        vec![Arg::TypeName(TypeName::primitive("Blob"))],
+    );
     cb.build()
+}
+
+fn build_error_class(
+    class_name: &str,
+    detail_alias: &str,
+    op: &IrOperation,
+    ir: &IrSpec,
+) -> Result<TypeSpec, SigilStitchError> {
+    let constructor_body = sigil_quote!(TypeScript {
+        super(response, msg);
+        this.detail = detail;
+    })?;
+    let default_message = sigil_quote!(TypeScript {
+        $S("Response returned an error code")
+    })?;
+    let constructor = FunSpec::builder("constructor")
+        .is_constructor()
+        .add_param(ParameterSpec::of(
+            "response",
+            TypeName::primitive("Response"),
+        ))
+        .add_param(ParameterSpec::of(
+            "detail",
+            TypeName::primitive(detail_alias),
+        ))
+        .add_param(
+            ParameterSpec::builder("msg", TypeName::primitive(""))
+                .default_value(default_message)
+                .build()?,
+        )
+        .body(constructor_body)
+        .build()?;
+
+    let mut class = TypeSpec::builder(class_name, TypeKind::Class)
+        .visibility(Visibility::Public)
+        .extends(rt_value("ResponseError"))
+        .add_field(
+            FieldSpec::builder("detail", TypeName::primitive(detail_alias))
+                .is_readonly()
+                .build()?,
+        )
+        .add_method(constructor);
+
+    let headers = collect_response_headers(
+        op.responses
+            .iter()
+            .filter(|response| !is_success_status(&response.status)),
+        ir,
+    );
+    let method_names = unique_response_header_accessor_names(&headers, |wire_name| {
+        format!("get{}Header", wire_name.to_pascal_case())
+    });
+    for (header, method_name) in headers.iter().zip(method_names) {
+        class = class.add_method(build_ts_header_accessor(
+            &method_name,
+            None,
+            header,
+            "this.response.headers",
+            false,
+        )?);
+    }
+
+    class.build()
 }
 
 fn build_ts_header_accessor(
@@ -2285,6 +2331,14 @@ mod tests {
         crate::ir::lower::lower(parsed).expect("API interface fixture lowers")
     }
 
+    fn typed_error_ir() -> IrSpec {
+        let parsed = crate::parser::parse_content_yaml(include_str!(
+            "../../../../tests/fixtures/valid/typed-error-responses.yaml"
+        ))
+        .expect("typed error fixture parses");
+        crate::ir::lower::lower(parsed).expect("typed error fixture lowers")
+    }
+
     #[test]
     fn api_callable_parameters_preserve_request_and_override_presence() {
         let ir = api_interface_ir();
@@ -2388,6 +2442,80 @@ export interface EntriesApiInterface {
   initOverrides?: RequestInit | InitOverrideFunction) => Promise<Entry[]
   | string
   | (string | null)[]>;
+}
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn error_class_uses_structured_declaration_and_header_methods() -> Result<(), SigilStitchError>
+    {
+        let ir = typed_error_ir();
+        let op = ir
+            .operations
+            .iter()
+            .find(|op| op.operation_id == "createResource")
+            .expect("typed error operation exists");
+        let class = build_error_class("CreateResourceError", "CreateResourceErrorDetail", op, &ir)?;
+        let fragments = class.emit(&TypeScript::new())?;
+        let block = sigil_quote!(TypeScript { $C_each(fragments) })?;
+        assert_rendered!(
+            TypeScript::new(),
+            width = 100,
+            block,
+            r#"import { ResponseError } from '../runtime/runtime';
+
+export class CreateResourceError extends ResponseError {
+  readonly detail: CreateResourceErrorDetail;
+
+  constructor(response: Response, detail: CreateResourceErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
+    super(response, msg);
+    this.detail = detail;
+  }
+
+  get1RetryAfterHeader(): string | undefined {
+    return this.response.headers.get('1-Retry-After') ?? undefined;
+  }
+
+  getRetryAfterHeader(): string | undefined {
+    return this.response.headers.get('Retry-After') ?? undefined;
+  }
+
+  getRetryAfterHeader2(): string | undefined {
+    return this.response.headers.get('Retry_After') ?? undefined;
+  }
+
+  getXRateLimitEnabledHeader(): boolean | undefined {
+    const value = this.response.headers.get('X-Rate-Limit-Enabled');
+    if (value === 'true') {
+      return true;
+    }
+    if (value === 'false') {
+      return false;
+    }
+    return undefined;
+  }
+
+  getXRateLimitRatioHeader(): number | undefined {
+    const value = this.response.headers.get('X-Rate-Limit-Ratio');
+    if (value === null || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)) {
+      return undefined;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  getXRateLimitRemainingHeader(): number | undefined {
+    const value = this.response.headers.get('X-Rate-Limit-Remaining');
+    if (value === null || !/^[+-]?\d+$/.test(value)) {
+      return undefined;
+    }
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) ? parsed : undefined;
+  }
 }
 "#
         );

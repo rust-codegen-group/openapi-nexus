@@ -42,7 +42,9 @@ export type PostLeafErrorDetail =
 export class PostLeafError extends ResponseError {
   readonly detail: PostLeafErrorDetail;
 
-  constructor(response: Response, detail: PostLeafErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostLeafErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -55,7 +57,9 @@ export type PostMiddleErrorDetail =
 export class PostMiddleError extends ResponseError {
   readonly detail: PostMiddleErrorDetail;
 
-  constructor(response: Response, detail: PostMiddleErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostMiddleErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -68,12 +72,13 @@ export type PostRootErrorDetail =
 export class PostRootError extends ResponseError {
   readonly detail: PostRootErrorDetail;
 
-  constructor(response: Response, detail: PostRootErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostRootErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface AdditionalPropertiesApiInterface {
   postLeafRaw: (requestParameters: ApiPostLeafRequest,

@@ -37,7 +37,9 @@ export type CreateTestResourceErrorDetail =
 export class CreateTestResourceError extends ResponseError {
   readonly detail: CreateTestResourceErrorDetail;
 
-  constructor(response: Response, detail: CreateTestResourceErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateTestResourceErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -51,12 +53,13 @@ export type DeleteTestResourceErrorDetail =
 export class DeleteTestResourceError extends ResponseError {
   readonly detail: DeleteTestResourceErrorDetail;
 
-  constructor(response: Response, detail: DeleteTestResourceErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: DeleteTestResourceErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface TestResourceApiInterface {
   createTestResourceRaw: (requestParameters: ApiCreateTestResourceRequest,

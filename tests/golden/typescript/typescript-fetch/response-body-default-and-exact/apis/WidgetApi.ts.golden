@@ -20,12 +20,13 @@ export type GetWidgetErrorDetail =
 export class GetWidgetError extends ResponseError {
   readonly detail: GetWidgetErrorDetail;
 
-  constructor(response: Response, detail: GetWidgetErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetWidgetErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface WidgetApiInterface {
   getWidgetRaw: (initOverrides?: RequestInit

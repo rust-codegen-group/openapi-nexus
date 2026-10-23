@@ -33,7 +33,9 @@ export type DownloadAssetErrorDetail =
 export class DownloadAssetError extends ResponseError {
   readonly detail: DownloadAssetErrorDetail;
 
-  constructor(response: Response, detail: DownloadAssetErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: DownloadAssetErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -46,12 +48,13 @@ export type UploadAssetErrorDetail =
 export class UploadAssetError extends ResponseError {
   readonly detail: UploadAssetErrorDetail;
 
-  constructor(response: Response, detail: UploadAssetErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: UploadAssetErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface TransferApiInterface {
   downloadAssetRaw: (requestParameters: ApiDownloadAssetRequest,

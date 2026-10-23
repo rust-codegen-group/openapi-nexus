@@ -23,12 +23,13 @@ export type TestMixedUnionErrorDetail =
 export class TestMixedUnionError extends ResponseError {
   readonly detail: TestMixedUnionErrorDetail;
 
-  constructor(response: Response, detail: TestMixedUnionErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestMixedUnionErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   testMixedUnionRaw: (requestParameters: ApiTestMixedUnionRequest,

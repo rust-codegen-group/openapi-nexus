@@ -34,7 +34,9 @@ export type CreateTypeAErrorDetail =
 export class CreateTypeAError extends ResponseError {
   readonly detail: CreateTypeAErrorDetail;
 
-  constructor(response: Response, detail: CreateTypeAErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateTypeAErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -46,12 +48,13 @@ export type CreateTypeBErrorDetail =
 export class CreateTypeBError extends ResponseError {
   readonly detail: CreateTypeBErrorDetail;
 
-  constructor(response: Response, detail: CreateTypeBErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateTypeBErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface TestApiApiInterface {
   createTypeARaw: (requestParameters: ApiCreateTypeARequest,

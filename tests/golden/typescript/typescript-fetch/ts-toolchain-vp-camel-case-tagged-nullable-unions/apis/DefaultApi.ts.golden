@@ -24,12 +24,13 @@ export type CreateFooEnvelopeErrorDetail =
 export class CreateFooEnvelopeError extends ResponseError {
   readonly detail: CreateFooEnvelopeErrorDetail;
 
-  constructor(response: Response, detail: CreateFooEnvelopeErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateFooEnvelopeErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   createFooEnvelopeRaw: (requestParameters: ApiCreateFooEnvelopeRequest,

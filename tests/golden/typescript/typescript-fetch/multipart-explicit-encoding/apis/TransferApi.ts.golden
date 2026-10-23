@@ -23,12 +23,13 @@ export type UploadEncodedAssetErrorDetail =
 export class UploadEncodedAssetError extends ResponseError {
   readonly detail: UploadEncodedAssetErrorDetail;
 
-  constructor(response: Response, detail: UploadEncodedAssetErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: UploadEncodedAssetErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface TransferApiInterface {
   uploadEncodedAssetRaw: (requestParameters: ApiUploadEncodedAssetRequest,

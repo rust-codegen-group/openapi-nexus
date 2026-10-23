@@ -47,7 +47,9 @@ export type SendOptionalBinaryErrorDetail =
 export class SendOptionalBinaryError extends ResponseError {
   readonly detail: SendOptionalBinaryErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalBinaryErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendOptionalBinaryErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -59,7 +61,9 @@ export type SendOptionalJsonErrorDetail =
 export class SendOptionalJsonError extends ResponseError {
   readonly detail: SendOptionalJsonErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalJsonErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendOptionalJsonErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -71,7 +75,9 @@ export type SendOptionalTextErrorDetail =
 export class SendOptionalTextError extends ResponseError {
   readonly detail: SendOptionalTextErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalTextErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendOptionalTextErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -83,12 +89,13 @@ export type SendRequiredJsonErrorDetail =
 export class SendRequiredJsonError extends ResponseError {
   readonly detail: SendRequiredJsonErrorDetail;
 
-  constructor(response: Response, detail: SendRequiredJsonErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendRequiredJsonErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   sendOptionalBinaryRaw: (requestParameters: ApiSendOptionalBinaryRequest,

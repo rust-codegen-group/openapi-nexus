@@ -19,12 +19,12 @@ export type GetFooErrorDetail =
 export class GetFooError extends ResponseError {
   readonly detail: GetFooErrorDetail;
 
-  constructor(response: Response, detail: GetFooErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetFooErrorDetail, msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   getFooRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetFooRawResponse>;

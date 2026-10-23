@@ -23,12 +23,13 @@ export type TestNestedUnionErrorDetail =
 export class TestNestedUnionError extends ResponseError {
   readonly detail: TestNestedUnionErrorDetail;
 
-  constructor(response: Response, detail: TestNestedUnionErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestNestedUnionErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   testNestedUnionRaw: (requestParameters: ApiTestNestedUnionRequest,

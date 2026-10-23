@@ -22,12 +22,13 @@ export type ListWidgetsErrorDetail =
 export class ListWidgetsError extends ResponseError {
   readonly detail: ListWidgetsErrorDetail;
 
-  constructor(response: Response, detail: ListWidgetsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: ListWidgetsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface WidgetApiInterface {
   listWidgetsRaw: (initOverrides?: RequestInit

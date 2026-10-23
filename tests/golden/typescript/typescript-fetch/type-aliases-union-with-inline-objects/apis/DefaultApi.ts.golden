@@ -23,12 +23,13 @@ export type TestUnionWithInlineObjectsErrorDetail =
 export class TestUnionWithInlineObjectsError extends ResponseError {
   readonly detail: TestUnionWithInlineObjectsErrorDetail;
 
-  constructor(response: Response, detail: TestUnionWithInlineObjectsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestUnionWithInlineObjectsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   testUnionWithInlineObjectsRaw: (requestParameters: ApiTestUnionWithInlineObjectsRequest,

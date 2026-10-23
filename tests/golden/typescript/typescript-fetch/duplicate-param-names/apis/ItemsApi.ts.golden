@@ -33,12 +33,13 @@ export type CreateItemWithBodyConflictErrorDetail =
 export class CreateItemWithBodyConflictError extends ResponseError {
   readonly detail: CreateItemWithBodyConflictErrorDetail;
 
-  constructor(response: Response, detail: CreateItemWithBodyConflictErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateItemWithBodyConflictErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface ItemsApiInterface {
   createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest,

@@ -60,7 +60,9 @@ export type HandleAdjacentlyTaggedErrorDetail =
 export class HandleAdjacentlyTaggedError extends ResponseError {
   readonly detail: HandleAdjacentlyTaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleAdjacentlyTaggedErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: HandleAdjacentlyTaggedErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -73,7 +75,9 @@ export type HandleExternallyTaggedErrorDetail =
 export class HandleExternallyTaggedError extends ResponseError {
   readonly detail: HandleExternallyTaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleExternallyTaggedErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: HandleExternallyTaggedErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -86,7 +90,9 @@ export type HandleInternallyTaggedErrorDetail =
 export class HandleInternallyTaggedError extends ResponseError {
   readonly detail: HandleInternallyTaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleInternallyTaggedErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: HandleInternallyTaggedErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -99,7 +105,9 @@ export type HandleMixedErrorDetail =
 export class HandleMixedError extends ResponseError {
   readonly detail: HandleMixedErrorDetail;
 
-  constructor(response: Response, detail: HandleMixedErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: HandleMixedErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -112,12 +120,13 @@ export type HandleUntaggedErrorDetail =
 export class HandleUntaggedError extends ResponseError {
   readonly detail: HandleUntaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleUntaggedErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: HandleUntaggedErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface EnumReprApiInterface {
   handleAdjacentlyTaggedRaw: (requestParameters: ApiHandleAdjacentlyTaggedRequest,
