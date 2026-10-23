@@ -35,27 +35,14 @@ final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if (((element.isJsonObject()
-         && element.getAsJsonObject().has("id")
-        )
-         && element.getAsJsonObject().has("name")
-        )
-        ) {
-            return new OneOfObjects.VariantBasicObject(gson.fromJson(element
-            , new TypeToken<BasicObject>() {}.getType()));
-
+        if (((element.isJsonObject() && element.getAsJsonObject().has("id")) && element.getAsJsonObject().has("name"))) {
+            return new OneOfObjects.VariantBasicObject(gson.fromJson(element, new TypeToken<BasicObject>() {}.getType()));
         }
-        if (element.isJsonObject()
-        ) {
-            return new OneOfObjects.VariantNestedObject(gson.fromJson(element
-            , new TypeToken<NestedObject>() {}.getType()));
-
+        if (element.isJsonObject()) {
+            return new OneOfObjects.VariantNestedObject(gson.fromJson(element, new TypeToken<NestedObject>() {}.getType()));
         }
         throw new JsonParseException("unknown OneOfObjects union value");
-
-
     }
 
     @Override
@@ -66,12 +53,10 @@ final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
         }
         if (value instanceof OneOfObjects.VariantBasicObject) {
             gson.toJson(gson.toJsonTree(((OneOfObjects.VariantBasicObject) value).value0()), writer);
-
             return;
         }
         if (value instanceof OneOfObjects.VariantNestedObject) {
             gson.toJson(gson.toJsonTree(((OneOfObjects.VariantNestedObject) value).value0()), writer);
-
             return;
         }
     }

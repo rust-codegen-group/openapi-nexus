@@ -47,17 +47,12 @@ final class AdjacentlyTaggedEnumJsonAdapter extends TypeAdapter<AdjacentlyTagged
         JsonObject object = element.getAsJsonObject();
         String discriminator = object.has("ty") ? object.get("ty").getAsString() : null;
         if ("ADJACENTLY_TAGGED_ENUM_VARIANT_A".equals(discriminator)) {
-            return new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(object.get("data")
-            , new TypeToken<VariantA>() {}.getType()));
-
+            return new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(object.get("data"), new TypeToken<VariantA>() {}.getType()));
         }
         if ("ADJACENTLY_TAGGED_ENUM_VARIANT_B".equals(discriminator)) {
-            return new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB(gson.fromJson(object.get("data")
-            , new TypeToken<VariantB>() {}.getType()));
-
+            return new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB(gson.fromJson(object.get("data"), new TypeToken<VariantB>() {}.getType()));
         }
         throw new JsonParseException("unknown AdjacentlyTaggedEnum discriminator");
-
     }
 
     @Override
@@ -71,7 +66,6 @@ final class AdjacentlyTaggedEnumJsonAdapter extends TypeAdapter<AdjacentlyTagged
             object.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_A");
             object.add("data", gson.toJsonTree(((AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA) value).value0()));
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB) {
@@ -79,7 +73,6 @@ final class AdjacentlyTaggedEnumJsonAdapter extends TypeAdapter<AdjacentlyTagged
             object.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_B");
             object.add("data", gson.toJsonTree(((AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB) value).value0()));
             gson.toJson(object, writer);
-
             return;
         }
     }

@@ -35,19 +35,10 @@ private class AnyOfTypesJsonAdapter: TypeAdapter<AnyOfTypes>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             -> AnyOfTypes.VariantString(element
-            .asString)
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber
-             -> AnyOfTypes.VariantNumber(element
-            .asDouble)
-
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> AnyOfTypes.VariantString(element.asString)
+            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> AnyOfTypes.VariantNumber(element.asDouble)
             else -> throw JsonParseException("unknown AnyOfTypes union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: AnyOfTypes?) {
@@ -58,11 +49,9 @@ private class AnyOfTypesJsonAdapter: TypeAdapter<AnyOfTypes>() {
         when (value) {
             is AnyOfTypes.VariantString -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is AnyOfTypes.VariantNumber -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

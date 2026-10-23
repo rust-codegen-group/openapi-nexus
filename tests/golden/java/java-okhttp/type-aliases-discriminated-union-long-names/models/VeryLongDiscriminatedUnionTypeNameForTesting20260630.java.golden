@@ -40,22 +40,15 @@ final class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter exte
         JsonObject object = element.getAsJsonObject();
         String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
         if ("ALPHA".equals(discriminator)) {
-            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha(gson.fromJson(object
-            , new TypeToken<VeryLongDiscriminatedUnionTypeNameAlpha20260630>() {}.getType()));
-
+            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha(gson.fromJson(object, new TypeToken<VeryLongDiscriminatedUnionTypeNameAlpha20260630>() {}.getType()));
         }
         if ("BETA".equals(discriminator)) {
-            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta(gson.fromJson(object
-            , new TypeToken<VeryLongDiscriminatedUnionTypeNameBeta20260630>() {}.getType()));
-
+            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta(gson.fromJson(object, new TypeToken<VeryLongDiscriminatedUnionTypeNameBeta20260630>() {}.getType()));
         }
         if ("GAMMA".equals(discriminator)) {
-            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma(gson.fromJson(object
-            , new TypeToken<VeryLongDiscriminatedUnionTypeNameGamma20260630>() {}.getType()));
-
+            return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma(gson.fromJson(object, new TypeToken<VeryLongDiscriminatedUnionTypeNameGamma20260630>() {}.getType()));
         }
         throw new JsonParseException("unknown VeryLongDiscriminatedUnionTypeNameForTesting20260630 discriminator");
-
     }
 
     @Override
@@ -68,21 +61,18 @@ final class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter exte
             JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha) value).value0()).getAsJsonObject();
             object.addProperty("kind", "ALPHA");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta) {
             JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta) value).value0()).getAsJsonObject();
             object.addProperty("kind", "BETA");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma) {
             JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma) value).value0()).getAsJsonObject();
             object.addProperty("kind", "GAMMA");
             gson.toJson(object, writer);
-
             return;
         }
     }

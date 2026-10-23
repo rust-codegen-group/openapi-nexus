@@ -42,33 +42,12 @@ private class MixedEnumJsonAdapter: TypeAdapter<MixedEnum>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             && element.asString == "SimpleA"
-             -> MixedEnum.VariantSimpleA(element
-            .asString)
-
-            (element.isJsonObject
-             && element.asJsonObject.has("VariantA")
-            )
-             -> MixedEnum.VariantMixedEnumMember2(gson.fromJson(element
-            , object: TypeToken<MixedEnumMember2>() {}.type))
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             && element.asString == "SimpleB"
-             -> MixedEnum.VariantSimpleB(element
-            .asString)
-
-            (element.isJsonObject
-             && element.asJsonObject.has("VariantB")
-            )
-             -> MixedEnum.VariantMixedEnumMember4(gson.fromJson(element
-            , object: TypeToken<MixedEnumMember4>() {}.type))
-
+            element.isJsonPrimitive && element.asJsonPrimitive.isString && element.asString == "SimpleA" -> MixedEnum.VariantSimpleA(element.asString)
+            (element.isJsonObject && element.asJsonObject.has("VariantA")) -> MixedEnum.VariantMixedEnumMember2(gson.fromJson(element, object: TypeToken<MixedEnumMember2>() {}.type))
+            element.isJsonPrimitive && element.asJsonPrimitive.isString && element.asString == "SimpleB" -> MixedEnum.VariantSimpleB(element.asString)
+            (element.isJsonObject && element.asJsonObject.has("VariantB")) -> MixedEnum.VariantMixedEnumMember4(gson.fromJson(element, object: TypeToken<MixedEnumMember4>() {}.type))
             else -> throw JsonParseException("unknown MixedEnum union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: MixedEnum?) {
@@ -79,19 +58,15 @@ private class MixedEnumJsonAdapter: TypeAdapter<MixedEnum>() {
         when (value) {
             is MixedEnum.VariantSimpleA -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is MixedEnum.VariantMixedEnumMember2 -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is MixedEnum.VariantSimpleB -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is MixedEnum.VariantMixedEnumMember4 -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

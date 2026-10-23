@@ -1173,17 +1173,11 @@ mod tests {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-        ) {
-            return new Choice.VariantString(element
-            .getAsString());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new Choice.VariantString(element.getAsString());
         }
         throw new JsonParseException("unknown Choice union value");
-
-
     }
 
     @Override
@@ -1194,7 +1188,6 @@ mod tests {
         }
         if (value instanceof Choice.VariantString) {
             gson.toJson(gson.toJsonTree(((Choice.VariantString) value).value0()), writer);
-
             return;
         }
     }

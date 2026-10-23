@@ -36,15 +36,10 @@ private class ContainerImageJsonAdapter: TypeAdapter<ContainerImage>() {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when (jsonObject["kind"]?.asString) {
-            "CONTAINER_IMAGE_MANAGED" -> ContainerImage.VariantContainerImageManaged(gson.fromJson(jsonObject
-            , object: TypeToken<ContainerImageManaged>() {}.type))
-
-            "CONTAINER_IMAGE_CUSTOM" -> ContainerImage.VariantContainerImageCustom(gson.fromJson(jsonObject
-            , object: TypeToken<ContainerImageCustom>() {}.type))
-
+            "CONTAINER_IMAGE_MANAGED" -> ContainerImage.VariantContainerImageManaged(gson.fromJson(jsonObject, object: TypeToken<ContainerImageManaged>() {}.type))
+            "CONTAINER_IMAGE_CUSTOM" -> ContainerImage.VariantContainerImageCustom(gson.fromJson(jsonObject, object: TypeToken<ContainerImageCustom>() {}.type))
             else -> throw JsonParseException("unknown ContainerImage discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: ContainerImage?) {
@@ -57,13 +52,11 @@ private class ContainerImageJsonAdapter: TypeAdapter<ContainerImage>() {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "CONTAINER_IMAGE_MANAGED")
                 gson.toJson(jsonObject, writer)
-
             }
             is ContainerImage.VariantContainerImageCustom -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "CONTAINER_IMAGE_CUSTOM")
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

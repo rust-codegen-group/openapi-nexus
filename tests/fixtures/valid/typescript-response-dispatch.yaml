@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: TypeScript Response Dispatch
+  version: 1.0.0
+paths:
+  /mixed:
+    get:
+      tags: [Responses]
+      operationId: readMixed
+      responses:
+        5XX:
+          description: Wildcard errors precede exact errors in the document.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+        '409':
+          description: Text error.
+          content:
+            text/plain:
+              schema:
+                type: string
+        2XX:
+          description: Wildcard success precedes exact successes in the document.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Detail'
+        '201':
+          description: Named JSON success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+        '202':
+          description: Text success.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '204':
+          description: Bodyless success.
+        '206':
+          description: Binary success.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Named JSON error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+        '401':
+          description: Array JSON error.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Detail'
+        '410':
+          description: Bodyless error.
+        '415':
+          description: Binary error.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          description: Unknown JSON fallback.
+          content:
+            application/json:
+              schema: {}
+  /wildcards:
+    get:
+      tags: [Responses]
+      operationId: readWildcards
+      responses:
+        2XX:
+          description: Bodyless wildcard success.
+        4XX:
+          description: Text wildcard error without exact errors or default.
+          content:
+            text/plain:
+              schema:
+                type: string
+        5XX:
+          description: Binary wildcard error.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /default:
+    get:
+      tags: [Responses]
+      operationId: readDefault
+      responses:
+        default:
+          description: Default only, with no exact or wildcard branches.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+  /success:
+    get:
+      tags: [Responses]
+      operationId: readSuccessOnly
+      responses:
+        '204':
+          description: No documented errors.
+  /error:
+    get:
+      tags: [Responses]
+      operationId: readErrorOnly
+      responses:
+        '400':
+          description: No documented successes.
+          content:
+            text/plain:
+              schema:
+                type: string
+components:
+  schemas:
+    Detail:
+      type: object
+      required: [error_message]
+      properties:
+        error_message:
+          type: string

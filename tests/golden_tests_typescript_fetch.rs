@@ -81,6 +81,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("response-body-multi-status-responses", "valid/response-body/multi-status-responses.yaml"),
         ("response-body-no-response-body", "valid/response-body/no-response-body.yaml"),
         ("typed-error-responses", "valid/typed-error-responses.yaml"),
+        ("response-dispatch", "valid/typescript-response-dispatch.yaml"),
         ("nested-nullable", "valid/nested-nullable.yaml"),
 
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
@@ -172,6 +173,7 @@ generate_golden_tests! {
     test_response_body_multi_status_responses_golden: "response-body-multi-status-responses",
     test_response_body_no_response_body_golden: "response-body-no-response-body",
     test_typed_error_responses_golden: "typed-error-responses",
+    test_response_dispatch_golden: "response-dispatch",
 
     test_enum_repr_golden: "enum-repr",
     test_additional_properties_golden: "additional-properties",
@@ -275,6 +277,20 @@ property_naming = "camelCase"
         golden_dir(),
         "ts-property-naming-camel-case-response-only-types",
         "valid/delete-with-response-schema.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
+fn test_property_naming_camel_case_response_dispatch_golden() {
+    let config = toml::from_str("property_naming = 'camelCase'").unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-property-naming-camel-case-response-dispatch",
+        "valid/typescript-response-dispatch.yaml",
         UPDATE_HINT,
     );
 }
@@ -655,6 +671,56 @@ fn test_self_referential_object_keeps_self_references_local() {
                 foo_file.content
             );
         }
+    }
+}
+
+// Deliberately invalid lowered IR, not a valid OpenAPI input or a production hook.
+#[test]
+fn test_invalid_error_payload_retains_api_emission_context() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+    use openapi_nexus::generators::{ArtifactKind, GeneratorError};
+    use openapi_nexus::ir::types::IrTypeExpr;
+    use sigil_stitch::error::SigilStitchError;
+
+    let parsed = openapi_nexus::parser::parse_content_yaml(include_str!(
+        "fixtures/valid/typescript-response-dispatch.yaml"
+    ))
+    .expect("response dispatch fixture parses");
+    let mut ir = openapi_nexus::ir::lower::lower(parsed).expect("response dispatch fixture lowers");
+    let response = ir
+        .operations
+        .iter_mut()
+        .find(|op| op.operation_id == "readMixed")
+        .expect("mixed response operation exists")
+        .responses
+        .iter_mut()
+        .find(|response| response.status == "400")
+        .expect("named error response exists");
+    response.content.insert(
+        "application/json".to_string(),
+        IrTypeExpr::Named(String::new()),
+    );
+    let generator = TypeScriptFetchCodeGenerator::new(toml::value::Table::new());
+    let error = generator
+        .generate(&ir)
+        .expect_err("invalid error payload must return an error, not panic");
+    match error {
+        GeneratorError::Emission {
+            artifact,
+            name,
+            source,
+        } => {
+            assert!(matches!(artifact, ArtifactKind::Api));
+            assert_eq!(name, "Responses API");
+            match *source {
+                SigilStitchError::InvalidTypeName { context, reason } => {
+                    assert!(!context.is_empty(), "original render context is retained");
+                    assert_eq!(reason, "imported name must not be blank");
+                }
+                other => panic!("original type diagnostic was lost: {other:?}"),
+            }
+        }
+        other => panic!("expected a contextual API emission error, got {other:?}"),
     }
 }
 

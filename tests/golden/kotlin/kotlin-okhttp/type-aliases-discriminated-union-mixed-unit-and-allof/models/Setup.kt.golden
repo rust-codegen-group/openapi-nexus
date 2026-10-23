@@ -45,16 +45,10 @@ private class SetupJsonAdapter: TypeAdapter<Setup>() {
         val jsonObject = element.asJsonObject
         return when (jsonObject["kind"]?.asString) {
             "SETUP_UNSPECIFIED" -> Setup.VariantSetupUnspecified
-
-            "SETUP_QUICK" -> Setup.VariantSetupQuick(gson.fromJson(jsonObject
-            , object: TypeToken<SetupQuick>() {}.type))
-
-            "SETUP_CUSTOM" -> Setup.VariantSetupCustom(gson.fromJson(jsonObject
-            , object: TypeToken<SetupCustom>() {}.type))
-
+            "SETUP_QUICK" -> Setup.VariantSetupQuick(gson.fromJson(jsonObject, object: TypeToken<SetupQuick>() {}.type))
+            "SETUP_CUSTOM" -> Setup.VariantSetupCustom(gson.fromJson(jsonObject, object: TypeToken<SetupCustom>() {}.type))
             else -> throw JsonParseException("unknown Setup discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Setup?) {
@@ -67,19 +61,16 @@ private class SetupJsonAdapter: TypeAdapter<Setup>() {
                 val jsonObject = JsonObject()
                 jsonObject.addProperty("kind", "SETUP_UNSPECIFIED")
                 gson.toJson(jsonObject, writer)
-
             }
             is Setup.VariantSetupQuick -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "SETUP_QUICK")
                 gson.toJson(jsonObject, writer)
-
             }
             is Setup.VariantSetupCustom -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "SETUP_CUSTOM")
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

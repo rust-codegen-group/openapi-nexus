@@ -38,15 +38,10 @@ private class VolumeKindJsonAdapter: TypeAdapter<VolumeKind>() {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when (jsonObject["kind"]?.asString) {
-            "VOLUME_KIND_LOCAL" -> VolumeKind.VariantVolumeKindLocal(gson.fromJson(jsonObject
-            , object: TypeToken<VolumeKindLocal>() {}.type))
-
-            "VOLUME_KIND_REMOTE" -> VolumeKind.VariantVolumeKindRemote(gson.fromJson(jsonObject
-            , object: TypeToken<VolumeKindRemote>() {}.type))
-
+            "VOLUME_KIND_LOCAL" -> VolumeKind.VariantVolumeKindLocal(gson.fromJson(jsonObject, object: TypeToken<VolumeKindLocal>() {}.type))
+            "VOLUME_KIND_REMOTE" -> VolumeKind.VariantVolumeKindRemote(gson.fromJson(jsonObject, object: TypeToken<VolumeKindRemote>() {}.type))
             else -> throw JsonParseException("unknown VolumeKind discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: VolumeKind?) {
@@ -59,13 +54,11 @@ private class VolumeKindJsonAdapter: TypeAdapter<VolumeKind>() {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "VOLUME_KIND_LOCAL")
                 gson.toJson(jsonObject, writer)
-
             }
             is VolumeKind.VariantVolumeKindRemote -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "VOLUME_KIND_REMOTE")
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }
