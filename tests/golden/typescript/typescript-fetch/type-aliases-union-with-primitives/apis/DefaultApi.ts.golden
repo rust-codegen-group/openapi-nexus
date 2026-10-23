@@ -31,8 +31,10 @@ export class TestUnionPrimitivesError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  testUnionPrimitivesRaw: (requestParameters: ApiTestUnionPrimitivesRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestUnionPrimitivesRawResponse>;
-  testUnionPrimitives: (requestParameters: ApiTestUnionPrimitivesRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testUnionPrimitivesRaw: (requestParameters: ApiTestUnionPrimitivesRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestUnionPrimitivesRawResponse>;
+  testUnionPrimitives: (requestParameters: ApiTestUnionPrimitivesRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

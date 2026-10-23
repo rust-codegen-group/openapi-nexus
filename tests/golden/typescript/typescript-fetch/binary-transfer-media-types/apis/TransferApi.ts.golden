@@ -54,10 +54,14 @@ export class UploadAssetError extends ResponseError {
 
 
 export interface TransferApiInterface {
-  downloadAssetRaw: (requestParameters: ApiDownloadAssetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DownloadAssetRawResponse>;
-  downloadAsset: (requestParameters: ApiDownloadAssetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Blob>;
-  uploadAssetRaw: (requestParameters: ApiUploadAssetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadAssetRawResponse>;
-  uploadAsset: (requestParameters: ApiUploadAssetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadMetadata>;
+  downloadAssetRaw: (requestParameters: ApiDownloadAssetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DownloadAssetRawResponse>;
+  downloadAsset: (requestParameters: ApiDownloadAssetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Blob>;
+  uploadAssetRaw: (requestParameters: ApiUploadAssetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadAssetRawResponse>;
+  uploadAsset: (requestParameters: ApiUploadAssetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadMetadata>;
 }
 
 export class TransferApi extends BaseAPI implements TransferApiInterface {

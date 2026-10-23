@@ -82,6 +82,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("response-body-no-response-body", "valid/response-body/no-response-body.yaml"),
         ("typed-error-responses", "valid/typed-error-responses.yaml"),
         ("response-dispatch", "valid/typescript-response-dispatch.yaml"),
+        ("api-interface", "valid/typescript-api-interface.yaml"),
         ("nested-nullable", "valid/nested-nullable.yaml"),
 
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
@@ -174,6 +175,7 @@ generate_golden_tests! {
     test_response_body_no_response_body_golden: "response-body-no-response-body",
     test_typed_error_responses_golden: "typed-error-responses",
     test_response_dispatch_golden: "response-dispatch",
+    test_api_interface_golden: "api-interface",
 
     test_enum_repr_golden: "enum-repr",
     test_additional_properties_golden: "additional-properties",

@@ -101,18 +101,23 @@ export class ReadWildcardsError extends ResponseError {
 
 
 export interface ResponsesApiInterface {
-  readDefaultRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ReadDefaultRawResponse>;
+  readDefaultRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<ReadDefaultRawResponse>;
   readDefault: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  readErrorOnlyRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ReadErrorOnlyRawResponse>;
+  readErrorOnlyRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<ReadErrorOnlyRawResponse>;
   readErrorOnly: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  readMixedRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ReadMixedRawResponse>;
+  readMixedRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<ReadMixedRawResponse>;
   readMixed: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Detail
-| string
-| Blob
-| Detail[]>;
-  readSuccessOnlyRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ReadSuccessOnlyRawResponse>;
+  | string
+  | Blob
+  | Detail[]>;
+  readSuccessOnlyRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<ReadSuccessOnlyRawResponse>;
   readSuccessOnly: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  readWildcardsRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ReadWildcardsRawResponse>;
+  readWildcardsRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<ReadWildcardsRawResponse>;
   readWildcards: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 

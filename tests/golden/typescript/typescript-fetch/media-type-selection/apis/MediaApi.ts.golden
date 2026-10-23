@@ -120,17 +120,27 @@ export class GetVendorJsonError extends ResponseError {
 
 
 export interface MediaApiInterface {
-  sendJsonPreferredRaw: (requestParameters: ApiSendJsonPreferredRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendJsonPreferredRawResponse>;
-  sendJsonPreferred: (requestParameters: ApiSendJsonPreferredRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendParameterizedMultipartRaw: (requestParameters: ApiSendParameterizedMultipartRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendParameterizedMultipartRawResponse>;
-  sendParameterizedMultipart: (requestParameters: ApiSendParameterizedMultipartRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendVendorJsonRaw: (requestParameters: ApiSendVendorJsonRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendVendorJsonRawResponse>;
-  sendVendorJson: (requestParameters: ApiSendVendorJsonRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getOctetPreferredRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetOctetPreferredRawResponse>;
+  sendJsonPreferredRaw: (requestParameters: ApiSendJsonPreferredRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendJsonPreferredRawResponse>;
+  sendJsonPreferred: (requestParameters: ApiSendJsonPreferredRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  sendParameterizedMultipartRaw: (requestParameters: ApiSendParameterizedMultipartRequest,
+  initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<SendParameterizedMultipartRawResponse>;
+  sendParameterizedMultipart: (requestParameters: ApiSendParameterizedMultipartRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  sendVendorJsonRaw: (requestParameters: ApiSendVendorJsonRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendVendorJsonRawResponse>;
+  sendVendorJson: (requestParameters: ApiSendVendorJsonRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  getOctetPreferredRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetOctetPreferredRawResponse>;
   getOctetPreferred: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Blob>;
-  getTextPreferredRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetTextPreferredRawResponse>;
+  getTextPreferredRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetTextPreferredRawResponse>;
   getTextPreferred: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<string>;
-  getVendorJsonRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetVendorJsonRawResponse>;
+  getVendorJsonRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetVendorJsonRawResponse>;
   getVendorJson: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Payload>;
 }
 

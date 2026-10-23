@@ -36,8 +36,10 @@ export class CreateResourceError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  createResourceRaw: (requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateResourceRawResponse>;
-  createResource: (requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Setup>;
+  createResourceRaw: (requestParameters: ApiCreateResourceRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateResourceRawResponse>;
+  createResource: (requestParameters: ApiCreateResourceRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Setup>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

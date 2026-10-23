@@ -31,8 +31,10 @@ export class SendNestedObjectPartError extends ResponseError {
 
 
 export interface MultipartApiInterface {
-  sendNestedObjectPartRaw: (requestParameters: ApiSendNestedObjectPartRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendNestedObjectPartRawResponse>;
-  sendNestedObjectPart: (requestParameters: ApiSendNestedObjectPartRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  sendNestedObjectPartRaw: (requestParameters: ApiSendNestedObjectPartRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendNestedObjectPartRawResponse>;
+  sendNestedObjectPart: (requestParameters: ApiSendNestedObjectPartRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class MultipartApi extends BaseAPI implements MultipartApiInterface {
