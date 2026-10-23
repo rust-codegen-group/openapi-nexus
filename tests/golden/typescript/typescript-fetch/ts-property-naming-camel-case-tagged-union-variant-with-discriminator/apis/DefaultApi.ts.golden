@@ -27,12 +27,13 @@ export type CreateSetupErrorDetail =
 export class CreateSetupError extends ResponseError {
   readonly detail: CreateSetupErrorDetail;
 
-  constructor(response: Response, detail: CreateSetupErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateSetupErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   createSetupRaw: (requestParameters: ApiCreateSetupRequest,

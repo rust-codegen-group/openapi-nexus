@@ -26,12 +26,13 @@ export type UpdateFooBarErrorDetail =
 export class UpdateFooBarError extends ResponseError {
   readonly detail: UpdateFooBarErrorDetail;
 
-  constructor(response: Response, detail: UpdateFooBarErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: UpdateFooBarErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface FooApiInterface {
   updateFooBarRaw: (requestParameters: ApiUpdateFooBarRequest,

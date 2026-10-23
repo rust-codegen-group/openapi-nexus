@@ -17,12 +17,13 @@ export type GetTestErrorDetail =
 export class GetTestError extends ResponseError {
   readonly detail: GetTestErrorDetail;
 
-  constructor(response: Response, detail: GetTestErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetTestErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   getTestRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetTestRawResponse>;

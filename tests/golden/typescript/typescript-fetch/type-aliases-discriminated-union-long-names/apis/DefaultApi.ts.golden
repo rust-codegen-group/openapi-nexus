@@ -25,12 +25,13 @@ export type CreateResourceErrorDetail =
 export class CreateResourceError extends ResponseError {
   readonly detail: CreateResourceErrorDetail;
 
-  constructor(response: Response, detail: CreateResourceErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateResourceErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   createResourceRaw: (requestParameters: ApiCreateResourceRequest,

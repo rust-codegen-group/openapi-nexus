@@ -23,12 +23,13 @@ export type TestSimpleAliasErrorDetail =
 export class TestSimpleAliasError extends ResponseError {
   readonly detail: TestSimpleAliasErrorDetail;
 
-  constructor(response: Response, detail: TestSimpleAliasErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestSimpleAliasErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   testSimpleAliasRaw: (requestParameters: ApiTestSimpleAliasRequest,

@@ -24,12 +24,13 @@ export type SendNestedObjectPartErrorDetail =
 export class SendNestedObjectPartError extends ResponseError {
   readonly detail: SendNestedObjectPartErrorDetail;
 
-  constructor(response: Response, detail: SendNestedObjectPartErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendNestedObjectPartErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface MultipartApiInterface {
   sendNestedObjectPartRaw: (requestParameters: ApiSendNestedObjectPartRequest,

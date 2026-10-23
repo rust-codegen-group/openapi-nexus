@@ -42,7 +42,9 @@ export type GetWithQueryParamsErrorDetail =
 export class GetWithQueryParamsError extends ResponseError {
   readonly detail: GetWithQueryParamsErrorDetail;
 
-  constructor(response: Response, detail: GetWithQueryParamsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetWithQueryParamsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -54,12 +56,13 @@ export type TestNamingConventionsErrorDetail =
 export class TestNamingConventionsError extends ResponseError {
   readonly detail: TestNamingConventionsErrorDetail;
 
-  constructor(response: Response, detail: TestNamingConventionsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestNamingConventionsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   getWithQueryParamsRaw: (requestParameters: ApiGetWithQueryParamsRequest,

@@ -24,12 +24,13 @@ export type TestIntersectionErrorDetail =
 export class TestIntersectionError extends ResponseError {
   readonly detail: TestIntersectionErrorDetail;
 
-  constructor(response: Response, detail: TestIntersectionErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestIntersectionErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   testIntersectionRaw: (requestParameters: ApiTestIntersectionRequest,

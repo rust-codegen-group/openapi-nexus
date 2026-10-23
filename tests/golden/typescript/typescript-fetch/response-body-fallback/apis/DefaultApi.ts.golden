@@ -23,7 +23,9 @@ export type GetFallbackNoBodyErrorDetail =
 export class GetFallbackNoBodyError extends ResponseError {
   readonly detail: GetFallbackNoBodyErrorDetail;
 
-  constructor(response: Response, detail: GetFallbackNoBodyErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetFallbackNoBodyErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -36,12 +38,13 @@ export type GetFallbackWithBodyErrorDetail =
 export class GetFallbackWithBodyError extends ResponseError {
   readonly detail: GetFallbackWithBodyErrorDetail;
 
-  constructor(response: Response, detail: GetFallbackWithBodyErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetFallbackWithBodyErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   getFallbackNoBodyRaw: (initOverrides?: RequestInit

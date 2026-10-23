@@ -113,7 +113,9 @@ export type UpdatePetErrorDetail =
 export class UpdatePetError extends ResponseError {
   readonly detail: UpdatePetErrorDetail;
 
-  constructor(response: Response, detail: UpdatePetErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: UpdatePetErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -127,7 +129,8 @@ export type AddPetErrorDetail =
 export class AddPetError extends ResponseError {
   readonly detail: AddPetErrorDetail;
 
-  constructor(response: Response, detail: AddPetErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: AddPetErrorDetail, msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -140,7 +143,9 @@ export type FindPetsByStatusErrorDetail =
 export class FindPetsByStatusError extends ResponseError {
   readonly detail: FindPetsByStatusErrorDetail;
 
-  constructor(response: Response, detail: FindPetsByStatusErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: FindPetsByStatusErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -153,7 +158,9 @@ export type FindPetsByTagsErrorDetail =
 export class FindPetsByTagsError extends ResponseError {
   readonly detail: FindPetsByTagsErrorDetail;
 
-  constructor(response: Response, detail: FindPetsByTagsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: FindPetsByTagsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -167,7 +174,9 @@ export type GetPetByIdErrorDetail =
 export class GetPetByIdError extends ResponseError {
   readonly detail: GetPetByIdErrorDetail;
 
-  constructor(response: Response, detail: GetPetByIdErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetPetByIdErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -180,7 +189,9 @@ export type UpdatePetWithFormErrorDetail =
 export class UpdatePetWithFormError extends ResponseError {
   readonly detail: UpdatePetWithFormErrorDetail;
 
-  constructor(response: Response, detail: UpdatePetWithFormErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: UpdatePetWithFormErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -193,7 +204,9 @@ export type DeletePetErrorDetail =
 export class DeletePetError extends ResponseError {
   readonly detail: DeletePetErrorDetail;
 
-  constructor(response: Response, detail: DeletePetErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: DeletePetErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -205,12 +218,13 @@ export type UploadFileErrorDetail =
 export class UploadFileError extends ResponseError {
   readonly detail: UploadFileErrorDetail;
 
-  constructor(response: Response, detail: UploadFileErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: UploadFileErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface PetApiInterface {
   updatePetRaw: (requestParameters: ApiUpdatePetRequest,

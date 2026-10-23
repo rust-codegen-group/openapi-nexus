@@ -52,7 +52,9 @@ export type SendJsonPreferredErrorDetail =
 export class SendJsonPreferredError extends ResponseError {
   readonly detail: SendJsonPreferredErrorDetail;
 
-  constructor(response: Response, detail: SendJsonPreferredErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendJsonPreferredErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -64,7 +66,9 @@ export type SendParameterizedMultipartErrorDetail =
 export class SendParameterizedMultipartError extends ResponseError {
   readonly detail: SendParameterizedMultipartErrorDetail;
 
-  constructor(response: Response, detail: SendParameterizedMultipartErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendParameterizedMultipartErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -76,7 +80,9 @@ export type SendVendorJsonErrorDetail =
 export class SendVendorJsonError extends ResponseError {
   readonly detail: SendVendorJsonErrorDetail;
 
-  constructor(response: Response, detail: SendVendorJsonErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendVendorJsonErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -88,7 +94,9 @@ export type GetOctetPreferredErrorDetail =
 export class GetOctetPreferredError extends ResponseError {
   readonly detail: GetOctetPreferredErrorDetail;
 
-  constructor(response: Response, detail: GetOctetPreferredErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetOctetPreferredErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -100,7 +108,9 @@ export type GetTextPreferredErrorDetail =
 export class GetTextPreferredError extends ResponseError {
   readonly detail: GetTextPreferredErrorDetail;
 
-  constructor(response: Response, detail: GetTextPreferredErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetTextPreferredErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -112,12 +122,13 @@ export type GetVendorJsonErrorDetail =
 export class GetVendorJsonError extends ResponseError {
   readonly detail: GetVendorJsonErrorDetail;
 
-  constructor(response: Response, detail: GetVendorJsonErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetVendorJsonErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface MediaApiInterface {
   sendJsonPreferredRaw: (requestParameters: ApiSendJsonPreferredRequest,

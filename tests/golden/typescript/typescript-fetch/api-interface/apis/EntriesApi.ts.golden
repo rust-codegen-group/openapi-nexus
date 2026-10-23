@@ -51,7 +51,9 @@ export type CookieInputErrorDetail =
 export class CookieInputError extends ResponseError {
   readonly detail: CookieInputErrorDetail;
 
-  constructor(response: Response, detail: CookieInputErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CookieInputErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -63,7 +65,9 @@ export type GetEntriesErrorDetail =
 export class GetEntriesError extends ResponseError {
   readonly detail: GetEntriesErrorDetail;
 
-  constructor(response: Response, detail: GetEntriesErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetEntriesErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -75,7 +79,9 @@ export type NoInputErrorDetail =
 export class NoInputError extends ResponseError {
   readonly detail: NoInputErrorDetail;
 
-  constructor(response: Response, detail: NoInputErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: NoInputErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -87,7 +93,9 @@ export type OptionalInputErrorDetail =
 export class OptionalInputError extends ResponseError {
   readonly detail: OptionalInputErrorDetail;
 
-  constructor(response: Response, detail: OptionalInputErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: OptionalInputErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -99,12 +107,12 @@ export type SubmitErrorDetail =
 export class SubmitError extends ResponseError {
   readonly detail: SubmitErrorDetail;
 
-  constructor(response: Response, detail: SubmitErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SubmitErrorDetail, msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface EntriesApiInterface {
   cookieInputRaw: (initOverrides?: RequestInit

@@ -63,7 +63,9 @@ export type CheckNoSuccessBodyErrorDetail =
 export class CheckNoSuccessBodyError extends ResponseError {
   readonly detail: CheckNoSuccessBodyErrorDetail;
 
-  constructor(response: Response, detail: CheckNoSuccessBodyErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CheckNoSuccessBodyErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -87,7 +89,9 @@ export type CreateResourceErrorDetail =
 export class CreateResourceError extends ResponseError {
   readonly detail: CreateResourceErrorDetail;
 
-  constructor(response: Response, detail: CreateResourceErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateResourceErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -141,12 +145,13 @@ export type CreateResourceWithWildcardSuccessErrorDetail =
 export class CreateResourceWithWildcardSuccessError extends ResponseError {
   readonly detail: CreateResourceWithWildcardSuccessErrorDetail;
 
-  constructor(response: Response, detail: CreateResourceWithWildcardSuccessErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateResourceWithWildcardSuccessErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface ResourcesApiInterface {
   checkNoSuccessBodyRaw: (initOverrides?: RequestInit

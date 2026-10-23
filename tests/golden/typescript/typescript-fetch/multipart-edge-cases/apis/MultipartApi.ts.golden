@@ -32,7 +32,9 @@ export type SendOptionalPartsErrorDetail =
 export class SendOptionalPartsError extends ResponseError {
   readonly detail: SendOptionalPartsErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalPartsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendOptionalPartsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -44,12 +46,13 @@ export type SendTextFieldsErrorDetail =
 export class SendTextFieldsError extends ResponseError {
   readonly detail: SendTextFieldsErrorDetail;
 
-  constructor(response: Response, detail: SendTextFieldsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: SendTextFieldsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface MultipartApiInterface {
   sendOptionalPartsRaw: (requestParameters: ApiSendOptionalPartsRequest,

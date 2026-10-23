@@ -18,12 +18,13 @@ export type GetItemsErrorDetail =
 export class GetItemsError extends ResponseError {
   readonly detail: GetItemsErrorDetail;
 
-  constructor(response: Response, detail: GetItemsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetItemsErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   getItemsRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetItemsRawResponse>;

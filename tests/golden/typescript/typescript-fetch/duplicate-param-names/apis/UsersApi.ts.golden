@@ -36,12 +36,13 @@ export type GetUserByIdDuplicateErrorDetail =
 export class GetUserByIdDuplicateError extends ResponseError {
   readonly detail: GetUserByIdDuplicateErrorDetail;
 
-  constructor(response: Response, detail: GetUserByIdDuplicateErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetUserByIdDuplicateErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface UsersApiInterface {
   getUserByIdDuplicateRaw: (requestParameters: ApiGetUserByIdDuplicateRequest,

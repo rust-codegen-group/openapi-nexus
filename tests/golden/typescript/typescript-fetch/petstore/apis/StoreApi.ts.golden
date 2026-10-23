@@ -49,7 +49,9 @@ export type GetInventoryErrorDetail =
 export class GetInventoryError extends ResponseError {
   readonly detail: GetInventoryErrorDetail;
 
-  constructor(response: Response, detail: GetInventoryErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetInventoryErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -62,7 +64,9 @@ export type PlaceOrderErrorDetail =
 export class PlaceOrderError extends ResponseError {
   readonly detail: PlaceOrderErrorDetail;
 
-  constructor(response: Response, detail: PlaceOrderErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PlaceOrderErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -76,7 +80,9 @@ export type GetOrderByIdErrorDetail =
 export class GetOrderByIdError extends ResponseError {
   readonly detail: GetOrderByIdErrorDetail;
 
-  constructor(response: Response, detail: GetOrderByIdErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetOrderByIdErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -90,12 +96,13 @@ export type DeleteOrderErrorDetail =
 export class DeleteOrderError extends ResponseError {
   readonly detail: DeleteOrderErrorDetail;
 
-  constructor(response: Response, detail: DeleteOrderErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: DeleteOrderErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface StoreApiInterface {
   getInventoryRaw: (initOverrides?: RequestInit

@@ -18,12 +18,12 @@ export type TestErrorDetail =
 export class TestError extends ResponseError {
   readonly detail: TestErrorDetail;
 
-  constructor(response: Response, detail: TestErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestErrorDetail, msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   testRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestRawResponse>;

@@ -32,7 +32,9 @@ export type GetAllUsersErrorDetail =
 export class GetAllUsersError extends ResponseError {
   readonly detail: GetAllUsersErrorDetail;
 
-  constructor(response: Response, detail: GetAllUsersErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetAllUsersErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -45,12 +47,13 @@ export type GetUserByIdErrorDetail =
 export class GetUserByIdError extends ResponseError {
   readonly detail: GetUserByIdErrorDetail;
 
-  constructor(response: Response, detail: GetUserByIdErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetUserByIdErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   getAllUsersRaw: (initOverrides?: RequestInit

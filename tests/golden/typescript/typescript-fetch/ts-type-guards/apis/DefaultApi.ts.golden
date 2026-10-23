@@ -22,12 +22,13 @@ export type HandleEventErrorDetail =
 export class HandleEventError extends ResponseError {
   readonly detail: HandleEventErrorDetail;
 
-  constructor(response: Response, detail: HandleEventErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: HandleEventErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   handleEventRaw: (requestParameters: ApiHandleEventRequest,

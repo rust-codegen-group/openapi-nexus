@@ -25,12 +25,13 @@ export type PreviewErrorDetail =
 export class PreviewError extends ResponseError {
   readonly detail: PreviewErrorDetail;
 
-  constructor(response: Response, detail: PreviewErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PreviewErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   previewRaw: (requestParameters: ApiPreviewRequest,

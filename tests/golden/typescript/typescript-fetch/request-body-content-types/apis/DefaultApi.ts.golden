@@ -75,7 +75,9 @@ export type PostBinaryErrorDetail =
 export class PostBinaryError extends ResponseError {
   readonly detail: PostBinaryErrorDetail;
 
-  constructor(response: Response, detail: PostBinaryErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostBinaryErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -87,7 +89,9 @@ export type PostFormErrorDetail =
 export class PostFormError extends ResponseError {
   readonly detail: PostFormErrorDetail;
 
-  constructor(response: Response, detail: PostFormErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostFormErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -99,7 +103,9 @@ export type PostJsonErrorDetail =
 export class PostJsonError extends ResponseError {
   readonly detail: PostJsonErrorDetail;
 
-  constructor(response: Response, detail: PostJsonErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostJsonErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -111,7 +117,9 @@ export type PostJsonOrXmlErrorDetail =
 export class PostJsonOrXmlError extends ResponseError {
   readonly detail: PostJsonOrXmlErrorDetail;
 
-  constructor(response: Response, detail: PostJsonOrXmlErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostJsonOrXmlErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -123,7 +131,9 @@ export type PatchMergeJsonErrorDetail =
 export class PatchMergeJsonError extends ResponseError {
   readonly detail: PatchMergeJsonErrorDetail;
 
-  constructor(response: Response, detail: PatchMergeJsonErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PatchMergeJsonErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -135,7 +145,9 @@ export type PostTextErrorDetail =
 export class PostTextError extends ResponseError {
   readonly detail: PostTextErrorDetail;
 
-  constructor(response: Response, detail: PostTextErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostTextErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -147,7 +159,9 @@ export type PostXmlErrorDetail =
 export class PostXmlError extends ResponseError {
   readonly detail: PostXmlErrorDetail;
 
-  constructor(response: Response, detail: PostXmlErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: PostXmlErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -159,12 +173,13 @@ export type GetXmlResponseErrorDetail =
 export class GetXmlResponseError extends ResponseError {
   readonly detail: GetXmlResponseErrorDetail;
 
-  constructor(response: Response, detail: GetXmlResponseErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetXmlResponseErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   postBinaryRaw: (requestParameters: ApiPostBinaryRequest,

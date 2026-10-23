@@ -23,12 +23,13 @@ export type TestUnionWithAnyErrorDetail =
 export class TestUnionWithAnyError extends ResponseError {
   readonly detail: TestUnionWithAnyErrorDetail;
 
-  constructor(response: Response, detail: TestUnionWithAnyErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: TestUnionWithAnyErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   testUnionWithAnyRaw: (requestParameters: ApiTestUnionWithAnyRequest,

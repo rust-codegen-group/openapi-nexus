@@ -30,7 +30,9 @@ export type HealthCheckErrorDetail =
 export class HealthCheckError extends ResponseError {
   readonly detail: HealthCheckErrorDetail;
 
-  constructor(response: Response, detail: HealthCheckErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: HealthCheckErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -42,7 +44,9 @@ export type ListUsersErrorDetail =
 export class ListUsersError extends ResponseError {
   readonly detail: ListUsersErrorDetail;
 
-  constructor(response: Response, detail: ListUsersErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: ListUsersErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -54,12 +58,13 @@ export type GetUserErrorDetail =
 export class GetUserError extends ResponseError {
   readonly detail: GetUserErrorDetail;
 
-  constructor(response: Response, detail: GetUserErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetUserErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   healthCheckRaw: (initOverrides?: RequestInit

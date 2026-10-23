@@ -27,12 +27,13 @@ string[] | null>> }
 export class GetValuesError extends ResponseError {
   readonly detail: GetValuesErrorDetail;
 
-  constructor(response: Response, detail: GetValuesErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetValuesErrorDetail,
+    msg = 'Response returned an error code'
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface ValuesApiInterface {
   getValuesRaw: (initOverrides?: RequestInit
