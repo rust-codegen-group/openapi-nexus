@@ -98,15 +98,22 @@ export class DeleteOrderError extends ResponseError {
 
 
 export interface StoreApiInterface {
-  getInventoryRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetInventoryRawResponse>;
+  getInventoryRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetInventoryRawResponse>;
   getInventory: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Record<string,
-number>>;
-  placeOrderRaw: (requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PlaceOrderRawResponse>;
-  placeOrder: (requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
-  getOrderByIdRaw: (requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetOrderByIdRawResponse>;
-  getOrderById: (requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
-  deleteOrderRaw: (requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteOrderRawResponse>;
-  deleteOrder: (requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  number>>;
+  placeOrderRaw: (requestParameters: ApiPlaceOrderRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PlaceOrderRawResponse>;
+  placeOrder: (requestParameters: ApiPlaceOrderRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
+  getOrderByIdRaw: (requestParameters: ApiGetOrderByIdRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetOrderByIdRawResponse>;
+  getOrderById: (requestParameters: ApiGetOrderByIdRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
+  deleteOrderRaw: (requestParameters: ApiDeleteOrderRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteOrderRawResponse>;
+  deleteOrder: (requestParameters: ApiDeleteOrderRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class StoreApi extends BaseAPI implements StoreApiInterface {

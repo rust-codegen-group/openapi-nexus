@@ -41,8 +41,12 @@ export class CreateItemWithBodyConflictError extends ResponseError {
 
 
 export interface ItemsApiInterface {
-  createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateItemWithBodyConflictRawResponse>;
-  createItemWithBodyConflict: (requestParameters: ApiCreateItemWithBodyConflictRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateItemWithBodyConflictResponse200>;
+  createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest,
+  initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<CreateItemWithBodyConflictRawResponse>;
+  createItemWithBodyConflict: (requestParameters: ApiCreateItemWithBodyConflictRequest,
+  initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<CreateItemWithBodyConflictResponse200>;
 }
 
 export class ItemsApi extends BaseAPI implements ItemsApiInterface {

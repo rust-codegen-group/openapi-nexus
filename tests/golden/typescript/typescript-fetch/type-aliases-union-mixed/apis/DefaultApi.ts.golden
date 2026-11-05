@@ -31,8 +31,10 @@ export class TestMixedUnionError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  testMixedUnionRaw: (requestParameters: ApiTestMixedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestMixedUnionRawResponse>;
-  testMixedUnion: (requestParameters: ApiTestMixedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testMixedUnionRaw: (requestParameters: ApiTestMixedUnionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestMixedUnionRawResponse>;
+  testMixedUnion: (requestParameters: ApiTestMixedUnionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

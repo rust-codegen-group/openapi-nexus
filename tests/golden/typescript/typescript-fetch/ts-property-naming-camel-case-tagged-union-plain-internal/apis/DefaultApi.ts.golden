@@ -33,8 +33,10 @@ export class PreviewError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  previewRaw: (requestParameters: ApiPreviewRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PreviewRawResponse>;
-  preview: (requestParameters: ApiPreviewRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PreviewRequest>;
+  previewRaw: (requestParameters: ApiPreviewRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PreviewRawResponse>;
+  preview: (requestParameters: ApiPreviewRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PreviewRequest>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

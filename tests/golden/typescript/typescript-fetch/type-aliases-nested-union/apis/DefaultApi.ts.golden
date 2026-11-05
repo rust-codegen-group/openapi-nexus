@@ -31,8 +31,10 @@ export class TestNestedUnionError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  testNestedUnionRaw: (requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestNestedUnionRawResponse>;
-  testNestedUnion: (requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testNestedUnionRaw: (requestParameters: ApiTestNestedUnionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestNestedUnionRawResponse>;
+  testNestedUnion: (requestParameters: ApiTestNestedUnionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

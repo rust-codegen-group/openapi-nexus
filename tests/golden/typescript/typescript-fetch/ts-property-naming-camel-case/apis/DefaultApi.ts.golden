@@ -63,10 +63,14 @@ export class TestNamingConventionsError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  getWithQueryParamsRaw: (requestParameters: ApiGetWithQueryParamsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetWithQueryParamsRawResponse>;
-  getWithQueryParams: (requestParameters: ApiGetWithQueryParamsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  testNamingConventionsRaw: (requestParameters: ApiTestNamingConventionsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestNamingConventionsRawResponse>;
-  testNamingConventions: (requestParameters: ApiTestNamingConventionsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<NamingConventionTest>;
+  getWithQueryParamsRaw: (requestParameters: ApiGetWithQueryParamsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetWithQueryParamsRawResponse>;
+  getWithQueryParams: (requestParameters: ApiGetWithQueryParamsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  testNamingConventionsRaw: (requestParameters: ApiTestNamingConventionsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestNamingConventionsRawResponse>;
+  testNamingConventions: (requestParameters: ApiTestNamingConventionsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<NamingConventionTest>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

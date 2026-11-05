@@ -2,8 +2,7 @@
 //!
 //! Produces one `FileSpec` per tag containing:
 //! - request interfaces (one per operation that has parameters)
-//! - `{Tag}ApiInterface` — method arrow-function signatures (emitted as a raw
-//!   `CodeBlock` so `%T` slots can carry import tracking for every type ref)
+//! - `{Tag}ApiInterface` — structural callable properties with named parameters
 //! - `{Tag}Api` class extending `BaseAPI` with constructor + real Raw +
 //!   convenience methods
 //!
@@ -12,9 +11,9 @@
 //! Every named reference (model types, runtime wrappers) is routed through a
 //! structural [`TypeName`] (via `importable` for runtime-value symbols like
 //! `BaseAPI` / `JSONApiResponse`, `importable_type` for pure TS types like
-//! `Configuration`). Object-literal fragments like `{ status: 200 }` stay as
-//! `TypeName::raw`. Method bodies use `CodeBlock::add(fmt, [%T, %L, ...])` so
-//! sigil resolves all imports in one pass.
+//! `Configuration`). Callable parameter and return types remain structural
+//! through rendering. Object-literal fragments like `{ status: 200 }` still
+//! use a bounded `TypeName::raw` escape hatch.
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
@@ -43,6 +42,7 @@ use sigil_stitch::spec::fun_spec::FunSpec;
 use sigil_stitch::spec::modifiers::{DeclarationContext, TypeKind, Visibility};
 use sigil_stitch::spec::parameter_spec::ParameterSpec;
 use sigil_stitch::spec::type_spec::TypeSpec;
+use sigil_stitch::spec::where_spec::{CallableParam, CallableParamPresence};
 use sigil_stitch::type_name::TypeName;
 
 use super::sigil_emit::{EmitFlags, build_convertible_set, fn_base_name};
@@ -181,12 +181,7 @@ fn emit_api_file(
     }
     fb = fb.add_code(build_error_types_block(ops, ir)?);
 
-    // ApiInterface — emit as a raw CodeBlock so `%T` slots propagate imports
-    // for every arrow-function parameter and return type. (TypeSpec with
-    // FieldSpec arrow-function fields can't carry structural TypeName for the
-    // whole `(p: T) => R` shape because sigil's `TypeName::function` doesn't
-    // emit parameter names.)
-    fb = fb.add_code(build_api_interface_block(&interface_name, ops)?);
+    fb = fb.add_type(build_api_interface(&interface_name, ops)?);
 
     // When property_naming_camel_case is enabled, add explicit imports for
     // converter functions and $Wire types referenced in raw code blocks.
@@ -515,8 +510,7 @@ fn build_request_interface(
         return None;
     }
 
-    let method_base = op.operation_id.to_lower_camel_case();
-    let interface_name = format!("Api{}Request", method_base.to_pascal_case());
+    let interface_name = request_interface_name(op);
     let names = resolve_param_names(op);
 
     let mut tb =
@@ -614,70 +608,50 @@ fn build_body_field(
 }
 
 // ============================================================================
-// ApiInterface (raw CodeBlock with %T slots)
+// ApiInterface
 // ============================================================================
 
-fn build_api_interface_block(
+fn build_api_interface(
     interface_name: &str,
     ops: &[&IrOperation],
-) -> Result<CodeBlock, SigilStitchError> {
-    let mut cb = CodeBlock::builder();
-    cb.add(&format!("export interface {} {{\n", interface_name), vec![]);
+) -> Result<TypeSpec, SigilStitchError> {
+    let mut interface =
+        TypeSpec::builder(interface_name, TypeKind::Interface).visibility(Visibility::Public);
 
     for op in ops {
         let method_base = op.operation_id.to_lower_camel_case();
         let raw_name = format!("{}Raw", method_base);
 
-        cb.add(&format!("  {}: ", raw_name), vec![]);
-        emit_arrow_signature(&mut cb, op, raw_return_type(op));
-        cb.add(";\n", vec![]);
-
-        cb.add(&format!("  {}: ", method_base), vec![]);
-        emit_arrow_signature(
-            &mut cb,
-            op,
-            type_application(
-                TypeName::primitive("Promise"),
-                vec![convenience_body_type(op)],
-            ),
+        interface = interface.add_field(
+            FieldSpec::builder(&raw_name, api_callable_type(op, raw_return_type(op))).build()?,
         );
-        cb.add(";\n", vec![]);
+        let return_type = type_application(
+            TypeName::primitive("Promise"),
+            vec![convenience_body_type(op)],
+        );
+        interface = interface.add_field(
+            FieldSpec::builder(&method_base, api_callable_type(op, return_type)).build()?,
+        );
     }
 
-    cb.add("}", vec![]);
-    cb.build()
+    interface.build()
 }
 
-/// Append `(requestParameters: ApiXRequest, initOverrides?: RequestInit | InitOverrideFunction) => %T`
-/// onto the given block, using `%T` slots for every named type so imports
-/// flow through.
-fn emit_arrow_signature(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
-    op: &IrOperation,
-    return_ty: TypeName,
-) {
-    let mut parts: Vec<String> = Vec::new();
-    let mut args: Vec<Arg> = Vec::new();
-
+fn api_callable_type(op: &IrOperation, return_type: TypeName) -> TypeName {
+    let mut parameters = Vec::new();
     if operation_has_params(op) {
-        let iface = format!(
-            "Api{}Request",
-            op.operation_id.to_lower_camel_case().to_pascal_case()
-        );
-        parts.push(format!("requestParameters: {}", iface));
+        parameters.push(CallableParam::Single {
+            name: Some("requestParameters".to_string()),
+            type_name: TypeName::primitive(&request_interface_name(op)),
+            presence: CallableParamPresence::Required,
+        });
     }
-    // initOverrides?: RequestInit | InitOverrideFunction
-    parts.push("initOverrides?: RequestInit | %T".to_string());
-    args.push(Arg::TypeName(TypeName::importable_type(
-        RUNTIME_MOD,
-        "InitOverrideFunction",
-    )));
-
-    cb.add(&format!("({}) => %T", parts.join(", ")), {
-        let mut merged = args;
-        merged.push(Arg::TypeName(return_ty));
-        merged
+    parameters.push(CallableParam::Single {
+        name: Some("initOverrides".to_string()),
+        type_name: init_overrides_type(),
+        presence: CallableParamPresence::Optional,
     });
+    TypeName::callable(parameters, vec![return_type])
 }
 
 // ============================================================================
@@ -695,7 +669,7 @@ fn build_api_class(
     let mut tb = TypeSpec::builder(class_name, TypeKind::Class)
         .visibility(Visibility::Public)
         .extends(rt_value("BaseAPI"))
-        .implements(TypeName::raw(interface_name))
+        .implements(TypeName::primitive(interface_name))
         .add_method(build_constructor());
 
     for op in ops {
@@ -1569,18 +1543,22 @@ fn is_primitive_type(ty: &TypeName, primitive: &str) -> bool {
 fn method_param_specs(op: &IrOperation) -> Vec<ParameterSpec> {
     let mut out = Vec::new();
     if operation_has_params(op) {
-        let iface_name = format!(
-            "Api{}Request",
-            op.operation_id.to_lower_camel_case().to_pascal_case()
-        );
+        let iface_name = request_interface_name(op);
         out.push(
-            ParameterSpec::builder("requestParameters", TypeName::raw(&iface_name))
+            ParameterSpec::builder("requestParameters", TypeName::primitive(&iface_name))
                 .build()
                 .expect("ParameterSpec builds"),
         );
     }
     out.push(init_overrides_param());
     out
+}
+
+fn request_interface_name(op: &IrOperation) -> String {
+    format!(
+        "Api{}Request",
+        op.operation_id.to_lower_camel_case().to_pascal_case()
+    )
 }
 
 fn init_overrides_param() -> ParameterSpec {
@@ -1621,7 +1599,7 @@ fn raw_return_type(op: &IrOperation) -> TypeName {
     // same file (see `build_response_aliases_block`) so no import is needed.
     type_application(
         TypeName::primitive("Promise"),
-        vec![TypeName::raw(&raw_response_alias_name(op))],
+        vec![TypeName::primitive(&raw_response_alias_name(op))],
     )
 }
 
@@ -2297,6 +2275,123 @@ mod tests {
         ))
         .expect("response dispatch fixture parses");
         crate::ir::lower::lower(parsed).expect("response dispatch fixture lowers")
+    }
+
+    fn api_interface_ir() -> IrSpec {
+        let parsed = crate::parser::parse_content_yaml(include_str!(
+            "../../../../tests/fixtures/valid/typescript-api-interface.yaml"
+        ))
+        .expect("API interface fixture parses");
+        crate::ir::lower::lower(parsed).expect("API interface fixture lowers")
+    }
+
+    #[test]
+    fn api_callable_parameters_preserve_request_and_override_presence() {
+        let ir = api_interface_ir();
+        for op in &ir.operations {
+            let return_type = raw_return_type(op);
+            let TypeName::Callable {
+                parameters,
+                returns,
+            } = api_callable_type(op, return_type.clone())
+            else {
+                panic!("API properties must retain structural callable types");
+            };
+            assert_eq!(returns, vec![return_type]);
+            assert_eq!(
+                parameters.last(),
+                Some(&CallableParam::Single {
+                    name: Some("initOverrides".to_string()),
+                    type_name: init_overrides_type(),
+                    presence: CallableParamPresence::Optional,
+                })
+            );
+            match op.operation_id.as_str() {
+                "noInput" | "cookieInput" => assert_eq!(parameters.len(), 1),
+                "optionalInput" | "submit" | "getEntries" => {
+                    assert_eq!(parameters.len(), 2);
+                    assert_eq!(
+                        parameters[0],
+                        CallableParam::Single {
+                            name: Some("requestParameters".to_string()),
+                            type_name: TypeName::primitive(&request_interface_name(op)),
+                            presence: CallableParamPresence::Required,
+                        }
+                    );
+                }
+                other => panic!("uncovered fixture operation: {other}"),
+            }
+        }
+    }
+
+    #[test]
+    fn api_interface_renders_callable_properties_and_type_only_imports()
+    -> Result<(), SigilStitchError> {
+        let ir = api_interface_ir();
+        let ops = ["noInput", "cookieInput", "optionalInput", "submit"]
+            .iter()
+            .map(|id| {
+                ir.operations
+                    .iter()
+                    .find(|op| op.operation_id == *id)
+                    .expect("interface operation exists")
+            })
+            .collect::<Vec<_>>();
+        let interface = build_api_interface("EntriesApiInterface", &ops)?;
+        let fragments = interface.emit(&TypeScript::new())?;
+        let block = sigil_quote!(TypeScript { $C_each(fragments) })?;
+        assert_rendered!(
+            TypeScript::new(),
+            width = 180,
+            block,
+            r#"import type { Entry } from '../models/Entry';
+import type { InitOverrideFunction } from '../runtime/runtime';
+
+export interface EntriesApiInterface {
+  noInputRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<NoInputRawResponse>;
+  noInput: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  cookieInputRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<CookieInputRawResponse>;
+  cookieInput: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  optionalInputRaw: (requestParameters: ApiOptionalInputRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<OptionalInputRawResponse>;
+  optionalInput: (requestParameters: ApiOptionalInputRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Entry>;
+  submitRaw: (requestParameters: ApiSubmitRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<SubmitRawResponse>;
+  submit: (requestParameters: ApiSubmitRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Entry>;
+}
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn api_interface_keeps_nested_return_types_structural_at_render_width()
+    -> Result<(), SigilStitchError> {
+        let ir = api_interface_ir();
+        let op = ir
+            .operations
+            .iter()
+            .find(|op| op.operation_id == "getEntries")
+            .expect("composite response operation exists");
+        let interface = build_api_interface("EntriesApiInterface", &[op])?;
+        let fragments = interface.emit(&TypeScript::new())?;
+        let block = sigil_quote!(TypeScript { $C_each(fragments) })?;
+        assert_rendered!(
+            TypeScript::new(),
+            width = 100,
+            block,
+            r#"import type { Entry } from '../models/Entry';
+import type { InitOverrideFunction } from '../runtime/runtime';
+
+export interface EntriesApiInterface {
+  getEntriesRaw: (requestParameters: ApiGetEntriesRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetEntriesRawResponse>;
+  getEntries: (requestParameters: ApiGetEntriesRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Entry[]
+  | string
+  | (string | null)[]>;
+}
+"#
+        );
+        Ok(())
     }
 
     #[test]

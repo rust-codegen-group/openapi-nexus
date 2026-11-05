@@ -35,8 +35,10 @@ export class CreateSetupError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  createSetupRaw: (requestParameters: ApiCreateSetupRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateSetupRawResponse>;
-  createSetup: (requestParameters: ApiCreateSetupRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Setup>;
+  createSetupRaw: (requestParameters: ApiCreateSetupRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateSetupRawResponse>;
+  createSetup: (requestParameters: ApiCreateSetupRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Setup>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

@@ -34,8 +34,10 @@ export class UpdateFooBarError extends ResponseError {
 
 
 export interface FooApiInterface {
-  updateFooBarRaw: (requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateFooBarRawResponse>;
-  updateFooBar: (requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  updateFooBarRaw: (requestParameters: ApiUpdateFooBarRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateFooBarRawResponse>;
+  updateFooBar: (requestParameters: ApiUpdateFooBarRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class FooApi extends BaseAPI implements FooApiInterface {

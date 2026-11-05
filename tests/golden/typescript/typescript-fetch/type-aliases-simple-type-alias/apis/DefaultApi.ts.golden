@@ -31,8 +31,10 @@ export class TestSimpleAliasError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  testSimpleAliasRaw: (requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestSimpleAliasRawResponse>;
-  testSimpleAlias: (requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testSimpleAliasRaw: (requestParameters: ApiTestSimpleAliasRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestSimpleAliasRawResponse>;
+  testSimpleAlias: (requestParameters: ApiTestSimpleAliasRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

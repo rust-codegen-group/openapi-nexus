@@ -32,8 +32,10 @@ export class TestIntersectionError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  testIntersectionRaw: (requestParameters: ApiTestIntersectionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestIntersectionRawResponse>;
-  testIntersection: (requestParameters: ApiTestIntersectionRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testIntersectionRaw: (requestParameters: ApiTestIntersectionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestIntersectionRawResponse>;
+  testIntersection: (requestParameters: ApiTestIntersectionRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

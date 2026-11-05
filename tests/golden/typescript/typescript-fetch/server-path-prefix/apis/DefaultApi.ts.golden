@@ -62,12 +62,16 @@ export class GetUserError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  healthCheckRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<HealthCheckRawResponse>;
+  healthCheckRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<HealthCheckRawResponse>;
   healthCheck: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  listUsersRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<ListUsersRawResponse>;
+  listUsersRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<ListUsersRawResponse>;
   listUsers: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getUserRaw: (requestParameters: ApiGetUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserRawResponse>;
-  getUser: (requestParameters: ApiGetUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  getUserRaw: (requestParameters: ApiGetUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserRawResponse>;
+  getUser: (requestParameters: ApiGetUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

@@ -30,8 +30,10 @@ export class HandleEventError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  handleEventRaw: (requestParameters: ApiHandleEventRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleEventRawResponse>;
-  handleEvent: (requestParameters: ApiHandleEventRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  handleEventRaw: (requestParameters: ApiHandleEventRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleEventRawResponse>;
+  handleEvent: (requestParameters: ApiHandleEventRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

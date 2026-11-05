@@ -54,10 +54,14 @@ export class CreateTypeBError extends ResponseError {
 
 
 export interface TestApiApiInterface {
-  createTypeARaw: (requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeARawResponse>;
-  createTypeA: (requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeA>;
-  createTypeBRaw: (requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeBRawResponse>;
-  createTypeB: (requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeB>;
+  createTypeARaw: (requestParameters: ApiCreateTypeARequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeARawResponse>;
+  createTypeA: (requestParameters: ApiCreateTypeARequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeA>;
+  createTypeBRaw: (requestParameters: ApiCreateTypeBRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeBRawResponse>;
+  createTypeB: (requestParameters: ApiCreateTypeBRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeB>;
 }
 
 export class TestApiApi extends BaseAPI implements TestApiApiInterface {

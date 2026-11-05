@@ -44,10 +44,13 @@ export class GetFallbackWithBodyError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  getFallbackNoBodyRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetFallbackNoBodyRawResponse>;
+  getFallbackNoBodyRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetFallbackNoBodyRawResponse>;
   getFallbackNoBody: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getFallbackWithBodyRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetFallbackWithBodyRawResponse>;
-  getFallbackWithBody: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetFallbackWithBodyResponse200>;
+  getFallbackWithBodyRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetFallbackWithBodyRawResponse>;
+  getFallbackWithBody: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetFallbackWithBodyResponse200>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

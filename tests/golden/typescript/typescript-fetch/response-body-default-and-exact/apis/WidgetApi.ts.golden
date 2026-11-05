@@ -28,7 +28,8 @@ export class GetWidgetError extends ResponseError {
 
 
 export interface WidgetApiInterface {
-  getWidgetRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetWidgetRawResponse>;
+  getWidgetRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetWidgetRawResponse>;
   getWidget: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Widget>;
 }
 
