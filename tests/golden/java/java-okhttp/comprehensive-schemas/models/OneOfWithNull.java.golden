@@ -40,27 +40,14 @@ final class OneOfWithNullJsonAdapter extends TypeAdapter<OneOfWithNull> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return OneOfWithNull.VariantNull.INSTANCE;
-
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-        ) {
-            return new OneOfWithNull.VariantString(element
-            .getAsString());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new OneOfWithNull.VariantString(element.getAsString());
         }
-        if (((element.isJsonObject()
-         && element.getAsJsonObject().has("id")
-        )
-         && element.getAsJsonObject().has("name")
-        )
-        ) {
-            return new OneOfWithNull.VariantBasicObject(gson.fromJson(element
-            , new TypeToken<BasicObject>() {}.getType()));
-
+        if (((element.isJsonObject() && element.getAsJsonObject().has("id")) && element.getAsJsonObject().has("name"))) {
+            return new OneOfWithNull.VariantBasicObject(gson.fromJson(element, new TypeToken<BasicObject>() {}.getType()));
         }
         throw new JsonParseException("unknown OneOfWithNull union value");
-
-
     }
 
     @Override
@@ -71,17 +58,14 @@ final class OneOfWithNullJsonAdapter extends TypeAdapter<OneOfWithNull> {
         }
         if (value instanceof OneOfWithNull.VariantString) {
             gson.toJson(gson.toJsonTree(((OneOfWithNull.VariantString) value).value0()), writer);
-
             return;
         }
         if (value instanceof OneOfWithNull.VariantBasicObject) {
             gson.toJson(gson.toJsonTree(((OneOfWithNull.VariantBasicObject) value).value0()), writer);
-
             return;
         }
         if (value instanceof OneOfWithNull.VariantNull) {
             writer.nullValue();
-
             return;
         }
     }

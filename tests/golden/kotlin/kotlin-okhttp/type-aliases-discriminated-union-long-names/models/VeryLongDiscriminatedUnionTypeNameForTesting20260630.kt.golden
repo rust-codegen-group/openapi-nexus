@@ -39,18 +39,11 @@ private class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter: T
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when (jsonObject["kind"]?.asString) {
-            "ALPHA" -> VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha(gson.fromJson(jsonObject
-            , object: TypeToken<VeryLongDiscriminatedUnionTypeNameAlpha20260630>() {}.type))
-
-            "BETA" -> VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta(gson.fromJson(jsonObject
-            , object: TypeToken<VeryLongDiscriminatedUnionTypeNameBeta20260630>() {}.type))
-
-            "GAMMA" -> VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma(gson.fromJson(jsonObject
-            , object: TypeToken<VeryLongDiscriminatedUnionTypeNameGamma20260630>() {}.type))
-
+            "ALPHA" -> VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha(gson.fromJson(jsonObject, object: TypeToken<VeryLongDiscriminatedUnionTypeNameAlpha20260630>() {}.type))
+            "BETA" -> VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta(gson.fromJson(jsonObject, object: TypeToken<VeryLongDiscriminatedUnionTypeNameBeta20260630>() {}.type))
+            "GAMMA" -> VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma(gson.fromJson(jsonObject, object: TypeToken<VeryLongDiscriminatedUnionTypeNameGamma20260630>() {}.type))
             else -> throw JsonParseException("unknown VeryLongDiscriminatedUnionTypeNameForTesting20260630 discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: VeryLongDiscriminatedUnionTypeNameForTesting20260630?) {
@@ -63,19 +56,16 @@ private class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter: T
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "ALPHA")
                 gson.toJson(jsonObject, writer)
-
             }
             is VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "BETA")
                 gson.toJson(jsonObject, writer)
-
             }
             is VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "GAMMA")
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

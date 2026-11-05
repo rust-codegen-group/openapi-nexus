@@ -933,15 +933,9 @@ mod tests {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             -> Choice.VariantString(element
-            .asString)
-
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Choice.VariantString(element.asString)
             else -> throw JsonParseException("unknown Choice union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Choice?) {
@@ -952,7 +946,6 @@ mod tests {
         when (value) {
             is Choice.VariantString -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

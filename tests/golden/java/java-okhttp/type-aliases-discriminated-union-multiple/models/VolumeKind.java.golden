@@ -39,17 +39,12 @@ final class VolumeKindJsonAdapter extends TypeAdapter<VolumeKind> {
         JsonObject object = element.getAsJsonObject();
         String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
         if ("VOLUME_KIND_LOCAL".equals(discriminator)) {
-            return new VolumeKind.VariantVolumeKindLocal(gson.fromJson(object
-            , new TypeToken<VolumeKindLocal>() {}.getType()));
-
+            return new VolumeKind.VariantVolumeKindLocal(gson.fromJson(object, new TypeToken<VolumeKindLocal>() {}.getType()));
         }
         if ("VOLUME_KIND_REMOTE".equals(discriminator)) {
-            return new VolumeKind.VariantVolumeKindRemote(gson.fromJson(object
-            , new TypeToken<VolumeKindRemote>() {}.getType()));
-
+            return new VolumeKind.VariantVolumeKindRemote(gson.fromJson(object, new TypeToken<VolumeKindRemote>() {}.getType()));
         }
         throw new JsonParseException("unknown VolumeKind discriminator");
-
     }
 
     @Override
@@ -62,14 +57,12 @@ final class VolumeKindJsonAdapter extends TypeAdapter<VolumeKind> {
             JsonObject object = gson.toJsonTree(((VolumeKind.VariantVolumeKindLocal) value).value0()).getAsJsonObject();
             object.addProperty("kind", "VOLUME_KIND_LOCAL");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof VolumeKind.VariantVolumeKindRemote) {
             JsonObject object = gson.toJsonTree(((VolumeKind.VariantVolumeKindRemote) value).value0()).getAsJsonObject();
             object.addProperty("kind", "VOLUME_KIND_REMOTE");
             gson.toJson(object, writer);
-
             return;
         }
     }

@@ -32,31 +32,14 @@ final class QuxJsonAdapter extends TypeAdapter<Qux> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if (((element.isJsonObject()
-         && element.getAsJsonObject().has("endpoint")
-        )
-         && element.getAsJsonObject().has("type")
-        )
-        ) {
-            return new Qux.VariantBar(gson.fromJson(element
-            , new TypeToken<Bar>() {}.getType()));
-
+        if (((element.isJsonObject() && element.getAsJsonObject().has("endpoint")) && element.getAsJsonObject().has("type"))) {
+            return new Qux.VariantBar(gson.fromJson(element, new TypeToken<Bar>() {}.getType()));
         }
-        if (((element.isJsonObject()
-         && element.getAsJsonObject().has("path")
-        )
-         && element.getAsJsonObject().has("type")
-        )
-        ) {
-            return new Qux.VariantBaz(gson.fromJson(element
-            , new TypeToken<Baz>() {}.getType()));
-
+        if (((element.isJsonObject() && element.getAsJsonObject().has("path")) && element.getAsJsonObject().has("type"))) {
+            return new Qux.VariantBaz(gson.fromJson(element, new TypeToken<Baz>() {}.getType()));
         }
         throw new JsonParseException("unknown Qux union value");
-
-
     }
 
     @Override
@@ -67,12 +50,10 @@ final class QuxJsonAdapter extends TypeAdapter<Qux> {
         }
         if (value instanceof Qux.VariantBar) {
             gson.toJson(gson.toJsonTree(((Qux.VariantBar) value).value0()), writer);
-
             return;
         }
         if (value instanceof Qux.VariantBaz) {
             gson.toJson(gson.toJsonTree(((Qux.VariantBaz) value).value0()), writer);
-
             return;
         }
     }

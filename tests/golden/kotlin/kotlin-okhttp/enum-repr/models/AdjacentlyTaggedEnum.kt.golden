@@ -46,15 +46,10 @@ private class AdjacentlyTaggedEnumJsonAdapter: TypeAdapter<AdjacentlyTaggedEnum>
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when (jsonObject["ty"]?.asString) {
-            "ADJACENTLY_TAGGED_ENUM_VARIANT_A" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(jsonObject["data"]
-            , object: TypeToken<VariantA>() {}.type))
-
-            "ADJACENTLY_TAGGED_ENUM_VARIANT_B" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB(gson.fromJson(jsonObject["data"]
-            , object: TypeToken<VariantB>() {}.type))
-
+            "ADJACENTLY_TAGGED_ENUM_VARIANT_A" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(jsonObject["data"], object: TypeToken<VariantA>() {}.type))
+            "ADJACENTLY_TAGGED_ENUM_VARIANT_B" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB(gson.fromJson(jsonObject["data"], object: TypeToken<VariantB>() {}.type))
             else -> throw JsonParseException("unknown AdjacentlyTaggedEnum discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: AdjacentlyTaggedEnum?) {
@@ -68,14 +63,12 @@ private class AdjacentlyTaggedEnumJsonAdapter: TypeAdapter<AdjacentlyTaggedEnum>
                 jsonObject.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_A")
                 jsonObject.add("data", gson.toJsonTree(value.value0))
                 gson.toJson(jsonObject, writer)
-
             }
             is AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB -> {
                 val jsonObject = JsonObject()
                 jsonObject.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_B")
                 jsonObject.add("data", gson.toJsonTree(value.value0))
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

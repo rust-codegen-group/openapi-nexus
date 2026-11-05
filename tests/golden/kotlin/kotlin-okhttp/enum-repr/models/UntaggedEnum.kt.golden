@@ -38,27 +38,10 @@ private class UntaggedEnumJsonAdapter: TypeAdapter<UntaggedEnum>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("field1")
-            )
-             && element.asJsonObject.has("field2")
-            )
-             -> UntaggedEnum.VariantVariantA(gson.fromJson(element
-            , object: TypeToken<VariantA>() {}.type))
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("field3")
-            )
-             && element.asJsonObject.has("field4")
-            )
-             -> UntaggedEnum.VariantVariantB(gson.fromJson(element
-            , object: TypeToken<VariantB>() {}.type))
-
+            ((element.isJsonObject && element.asJsonObject.has("field1")) && element.asJsonObject.has("field2")) -> UntaggedEnum.VariantVariantA(gson.fromJson(element, object: TypeToken<VariantA>() {}.type))
+            ((element.isJsonObject && element.asJsonObject.has("field3")) && element.asJsonObject.has("field4")) -> UntaggedEnum.VariantVariantB(gson.fromJson(element, object: TypeToken<VariantB>() {}.type))
             else -> throw JsonParseException("unknown UntaggedEnum union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: UntaggedEnum?) {
@@ -69,11 +52,9 @@ private class UntaggedEnumJsonAdapter: TypeAdapter<UntaggedEnum>() {
         when (value) {
             is UntaggedEnum.VariantVariantA -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is UntaggedEnum.VariantVariantB -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

@@ -37,35 +37,17 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if ((element.isJsonObject()
-         && element.getAsJsonObject().has("bar")
-        )
-        ) {
-            return new Foo.VariantFooMember1(gson.fromJson(element
-            , new TypeToken<FooMember1>() {}.getType()));
-
+        if ((element.isJsonObject() && element.getAsJsonObject().has("bar"))) {
+            return new Foo.VariantFooMember1(gson.fromJson(element, new TypeToken<FooMember1>() {}.getType()));
         }
-        if ((element.isJsonObject()
-         && element.getAsJsonObject().has("quux")
-        )
-        ) {
-            return new Foo.VariantFooMember2(gson.fromJson(element
-            , new TypeToken<FooMember2>() {}.getType()));
-
+        if ((element.isJsonObject() && element.getAsJsonObject().has("quux"))) {
+            return new Foo.VariantFooMember2(gson.fromJson(element, new TypeToken<FooMember2>() {}.getType()));
         }
-        if ((element.isJsonObject()
-         && element.getAsJsonObject().has("grault")
-        )
-        ) {
-            return new Foo.VariantFooMember3(gson.fromJson(element
-            , new TypeToken<FooMember3>() {}.getType()));
-
+        if ((element.isJsonObject() && element.getAsJsonObject().has("grault"))) {
+            return new Foo.VariantFooMember3(gson.fromJson(element, new TypeToken<FooMember3>() {}.getType()));
         }
         throw new JsonParseException("unknown Foo union value");
-
-
     }
 
     @Override
@@ -76,17 +58,14 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         }
         if (value instanceof Foo.VariantFooMember1) {
             gson.toJson(gson.toJsonTree(((Foo.VariantFooMember1) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantFooMember2) {
             gson.toJson(gson.toJsonTree(((Foo.VariantFooMember2) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantFooMember3) {
             gson.toJson(gson.toJsonTree(((Foo.VariantFooMember3) value).value0()), writer);
-
             return;
         }
     }

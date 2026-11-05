@@ -35,23 +35,10 @@ private class OneOfObjectsJsonAdapter: TypeAdapter<OneOfObjects>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("id")
-            )
-             && element.asJsonObject.has("name")
-            )
-             -> OneOfObjects.VariantBasicObject(gson.fromJson(element
-            , object: TypeToken<BasicObject>() {}.type))
-
-            element.isJsonObject
-             -> OneOfObjects.VariantNestedObject(gson.fromJson(element
-            , object: TypeToken<NestedObject>() {}.type))
-
+            ((element.isJsonObject && element.asJsonObject.has("id")) && element.asJsonObject.has("name")) -> OneOfObjects.VariantBasicObject(gson.fromJson(element, object: TypeToken<BasicObject>() {}.type))
+            element.isJsonObject -> OneOfObjects.VariantNestedObject(gson.fromJson(element, object: TypeToken<NestedObject>() {}.type))
             else -> throw JsonParseException("unknown OneOfObjects union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: OneOfObjects?) {
@@ -62,11 +49,9 @@ private class OneOfObjectsJsonAdapter: TypeAdapter<OneOfObjects>() {
         when (value) {
             is OneOfObjects.VariantBasicObject -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is OneOfObjects.VariantNestedObject -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

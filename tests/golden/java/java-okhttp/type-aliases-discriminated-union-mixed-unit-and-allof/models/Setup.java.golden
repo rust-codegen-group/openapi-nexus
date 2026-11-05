@@ -46,20 +46,14 @@ final class SetupJsonAdapter extends TypeAdapter<Setup> {
         String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
         if ("SETUP_UNSPECIFIED".equals(discriminator)) {
             return Setup.VariantSetupUnspecified.INSTANCE;
-
         }
         if ("SETUP_QUICK".equals(discriminator)) {
-            return new Setup.VariantSetupQuick(gson.fromJson(object
-            , new TypeToken<SetupQuick>() {}.getType()));
-
+            return new Setup.VariantSetupQuick(gson.fromJson(object, new TypeToken<SetupQuick>() {}.getType()));
         }
         if ("SETUP_CUSTOM".equals(discriminator)) {
-            return new Setup.VariantSetupCustom(gson.fromJson(object
-            , new TypeToken<SetupCustom>() {}.getType()));
-
+            return new Setup.VariantSetupCustom(gson.fromJson(object, new TypeToken<SetupCustom>() {}.getType()));
         }
         throw new JsonParseException("unknown Setup discriminator");
-
     }
 
     @Override
@@ -72,21 +66,18 @@ final class SetupJsonAdapter extends TypeAdapter<Setup> {
             JsonObject object = new JsonObject();
             object.addProperty("kind", "SETUP_UNSPECIFIED");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof Setup.VariantSetupQuick) {
             JsonObject object = gson.toJsonTree(((Setup.VariantSetupQuick) value).value0()).getAsJsonObject();
             object.addProperty("kind", "SETUP_QUICK");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof Setup.VariantSetupCustom) {
             JsonObject object = gson.toJsonTree(((Setup.VariantSetupCustom) value).value0()).getAsJsonObject();
             object.addProperty("kind", "SETUP_CUSTOM");
             gson.toJson(object, writer);
-
             return;
         }
     }
