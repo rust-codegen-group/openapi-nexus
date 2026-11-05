@@ -76,12 +76,18 @@ export class PostRootError extends ResponseError {
 
 
 export interface AdditionalPropertiesApiInterface {
-  postLeafRaw: (requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostLeafRawResponse>;
-  postLeaf: (requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<LeafValue>;
-  postMiddleRaw: (requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostMiddleRawResponse>;
-  postMiddle: (requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<MiddleLevel>;
-  postRootRaw: (requestParameters: ApiPostRootRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostRootRawResponse>;
-  postRoot: (requestParameters: ApiPostRootRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<RootLevel>;
+  postLeafRaw: (requestParameters: ApiPostLeafRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostLeafRawResponse>;
+  postLeaf: (requestParameters: ApiPostLeafRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<LeafValue>;
+  postMiddleRaw: (requestParameters: ApiPostMiddleRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostMiddleRawResponse>;
+  postMiddle: (requestParameters: ApiPostMiddleRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<MiddleLevel>;
+  postRootRaw: (requestParameters: ApiPostRootRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostRootRawResponse>;
+  postRoot: (requestParameters: ApiPostRootRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<RootLevel>;
 }
 
 export class AdditionalPropertiesApi extends BaseAPI implements AdditionalPropertiesApiInterface {

@@ -36,8 +36,10 @@ export class GetItemsError extends ResponseError {
 
 
 export interface ItemsApiInterface {
-  getItemsRaw: (requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetItemsRawResponse>;
-  getItems: (requestParameters: ApiGetItemsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetItemsResponse200>;
+  getItemsRaw: (requestParameters: ApiGetItemsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetItemsRawResponse>;
+  getItems: (requestParameters: ApiGetItemsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetItemsResponse200>;
 }
 
 export class ItemsApi extends BaseAPI implements ItemsApiInterface {

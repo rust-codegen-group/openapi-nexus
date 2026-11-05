@@ -52,10 +52,14 @@ export class SendTextFieldsError extends ResponseError {
 
 
 export interface MultipartApiInterface {
-  sendOptionalPartsRaw: (requestParameters: ApiSendOptionalPartsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendOptionalPartsRawResponse>;
-  sendOptionalParts: (requestParameters: ApiSendOptionalPartsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendTextFieldsRaw: (requestParameters: ApiSendTextFieldsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendTextFieldsRawResponse>;
-  sendTextFields: (requestParameters: ApiSendTextFieldsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  sendOptionalPartsRaw: (requestParameters: ApiSendOptionalPartsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendOptionalPartsRawResponse>;
+  sendOptionalParts: (requestParameters: ApiSendOptionalPartsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  sendTextFieldsRaw: (requestParameters: ApiSendTextFieldsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendTextFieldsRawResponse>;
+  sendTextFields: (requestParameters: ApiSendTextFieldsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class MultipartApi extends BaseAPI implements MultipartApiInterface {

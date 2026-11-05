@@ -31,8 +31,10 @@ export class UploadEncodedAssetError extends ResponseError {
 
 
 export interface TransferApiInterface {
-  uploadEncodedAssetRaw: (requestParameters: ApiUploadEncodedAssetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadEncodedAssetRawResponse>;
-  uploadEncodedAsset: (requestParameters: ApiUploadEncodedAssetRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  uploadEncodedAssetRaw: (requestParameters: ApiUploadEncodedAssetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadEncodedAssetRawResponse>;
+  uploadEncodedAsset: (requestParameters: ApiUploadEncodedAssetRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class TransferApi extends BaseAPI implements TransferApiInterface {

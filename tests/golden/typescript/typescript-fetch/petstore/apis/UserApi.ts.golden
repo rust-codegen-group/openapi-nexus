@@ -171,20 +171,34 @@ export class DeleteUserError extends ResponseError {
 
 
 export interface UserApiInterface {
-  createUserRaw: (requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateUserRawResponse>;
-  createUser: (requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  createUsersWithListInputRaw: (requestParameters: ApiCreateUsersWithListInputRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateUsersWithListInputRawResponse>;
-  createUsersWithListInput: (requestParameters: ApiCreateUsersWithListInputRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  loginUserRaw: (requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<LoginUserRawResponse>;
-  loginUser: (requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  logoutUserRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<LogoutUserRawResponse>;
+  createUserRaw: (requestParameters: ApiCreateUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateUserRawResponse>;
+  createUser: (requestParameters: ApiCreateUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
+  createUsersWithListInputRaw: (requestParameters: ApiCreateUsersWithListInputRequest,
+  initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<CreateUsersWithListInputRawResponse>;
+  createUsersWithListInput: (requestParameters: ApiCreateUsersWithListInputRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
+  loginUserRaw: (requestParameters: ApiLoginUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<LoginUserRawResponse>;
+  loginUser: (requestParameters: ApiLoginUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  logoutUserRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<LogoutUserRawResponse>;
   logoutUser: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getUserByNameRaw: (requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByNameRawResponse>;
-  getUserByName: (requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  updateUserRaw: (requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateUserRawResponse>;
-  updateUser: (requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  deleteUserRaw: (requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteUserRawResponse>;
-  deleteUser: (requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  getUserByNameRaw: (requestParameters: ApiGetUserByNameRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByNameRawResponse>;
+  getUserByName: (requestParameters: ApiGetUserByNameRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
+  updateUserRaw: (requestParameters: ApiUpdateUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateUserRawResponse>;
+  updateUser: (requestParameters: ApiUpdateUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  deleteUserRaw: (requestParameters: ApiDeleteUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteUserRawResponse>;
+  deleteUser: (requestParameters: ApiDeleteUserRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
 }
 
 export class UserApi extends BaseAPI implements UserApiInterface {

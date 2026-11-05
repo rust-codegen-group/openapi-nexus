@@ -53,10 +53,14 @@ export class GetUserByIdError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  getAllUsersRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetAllUsersRawResponse>;
-  getAllUsers: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetAllUsersResponse200Item[]>;
-  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdRawResponse>;
-  getUserById: (requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdResponse200>;
+  getAllUsersRaw: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetAllUsersRawResponse>;
+  getAllUsers: (initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<GetAllUsersResponse200Item[]>;
+  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdRawResponse>;
+  getUserById: (requestParameters: ApiGetUserByIdRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdResponse200>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

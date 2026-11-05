@@ -31,8 +31,11 @@ export class TestUnionWithInlineObjectsError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  testUnionWithInlineObjectsRaw: (requestParameters: ApiTestUnionWithInlineObjectsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestUnionWithInlineObjectsRawResponse>;
-  testUnionWithInlineObjects: (requestParameters: ApiTestUnionWithInlineObjectsRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testUnionWithInlineObjectsRaw: (requestParameters: ApiTestUnionWithInlineObjectsRequest,
+  initOverrides?: RequestInit
+  | InitOverrideFunction) => Promise<TestUnionWithInlineObjectsRawResponse>;
+  testUnionWithInlineObjects: (requestParameters: ApiTestUnionWithInlineObjectsRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

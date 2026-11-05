@@ -32,8 +32,10 @@ export class CreateContainerError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  createContainerRaw: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateContainerRawResponse>;
-  createContainer: (requestParameters: ApiCreateContainerRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<ContainerImage>;
+  createContainerRaw: (requestParameters: ApiCreateContainerRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateContainerRawResponse>;
+  createContainer: (requestParameters: ApiCreateContainerRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<ContainerImage>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

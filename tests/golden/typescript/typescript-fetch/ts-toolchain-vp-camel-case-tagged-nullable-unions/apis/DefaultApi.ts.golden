@@ -32,8 +32,10 @@ export class CreateFooEnvelopeError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  createFooEnvelopeRaw: (requestParameters: ApiCreateFooEnvelopeRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateFooEnvelopeRawResponse>;
-  createFooEnvelope: (requestParameters: ApiCreateFooEnvelopeRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<FooEnvelope>;
+  createFooEnvelopeRaw: (requestParameters: ApiCreateFooEnvelopeRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateFooEnvelopeRawResponse>;
+  createFooEnvelope: (requestParameters: ApiCreateFooEnvelopeRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<FooEnvelope>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {

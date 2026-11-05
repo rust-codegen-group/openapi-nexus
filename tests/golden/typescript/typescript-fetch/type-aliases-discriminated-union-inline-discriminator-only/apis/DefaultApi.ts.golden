@@ -40,8 +40,10 @@ export class CreateEventError extends ResponseError {
 
 
 export interface DefaultApiInterface {
-  createEventRaw: (requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateEventRawResponse>;
-  createEvent: (requestParameters: ApiCreateEventRequest, initOverrides?: RequestInit | InitOverrideFunction) => Promise<Event>;
+  createEventRaw: (requestParameters: ApiCreateEventRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateEventRawResponse>;
+  createEvent: (requestParameters: ApiCreateEventRequest,
+  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Event>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
