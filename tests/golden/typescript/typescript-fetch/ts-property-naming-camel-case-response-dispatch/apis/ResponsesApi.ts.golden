@@ -36,7 +36,8 @@ export type ReadDefaultErrorDetail =
 export class ReadDefaultError extends ResponseError {
   readonly detail: ReadDefaultErrorDetail;
 
-  constructor(response: Response, detail: ReadDefaultErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: ReadDefaultErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -49,7 +50,8 @@ export type ReadErrorOnlyErrorDetail =
 export class ReadErrorOnlyError extends ResponseError {
   readonly detail: ReadErrorOnlyErrorDetail;
 
-  constructor(response: Response, detail: ReadErrorOnlyErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: ReadErrorOnlyErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -68,7 +70,8 @@ export type ReadMixedErrorDetail =
 export class ReadMixedError extends ResponseError {
   readonly detail: ReadMixedErrorDetail;
 
-  constructor(response: Response, detail: ReadMixedErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: ReadMixedErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -80,7 +83,8 @@ export type ReadSuccessOnlyErrorDetail =
 export class ReadSuccessOnlyError extends ResponseError {
   readonly detail: ReadSuccessOnlyErrorDetail;
 
-  constructor(response: Response, detail: ReadSuccessOnlyErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: ReadSuccessOnlyErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -94,12 +98,12 @@ export type ReadWildcardsErrorDetail =
 export class ReadWildcardsError extends ResponseError {
   readonly detail: ReadWildcardsErrorDetail;
 
-  constructor(response: Response, detail: ReadWildcardsErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: ReadWildcardsErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface ResponsesApiInterface {
   readDefaultRaw: (initOverrides?: RequestInit
