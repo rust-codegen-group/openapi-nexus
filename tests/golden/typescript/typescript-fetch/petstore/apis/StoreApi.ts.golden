@@ -146,7 +146,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Record<string,
-    number>> & { status: 200 };
+      number>> & { status: 200 };
     }
     else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
