@@ -35,7 +35,8 @@ export type CreateContainerErrorDetail =
 export class CreateContainerError extends ResponseError {
   readonly detail: CreateContainerErrorDetail;
 
-  constructor(response: Response, detail: CreateContainerErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateContainerErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -47,12 +48,12 @@ export type CreateVolumeErrorDetail =
 export class CreateVolumeError extends ResponseError {
   readonly detail: CreateVolumeErrorDetail;
 
-  constructor(response: Response, detail: CreateVolumeErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateVolumeErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface DefaultApiInterface {
   createContainerRaw: (requestParameters: ApiCreateContainerRequest,

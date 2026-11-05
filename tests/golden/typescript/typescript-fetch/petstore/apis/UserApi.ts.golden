@@ -84,7 +84,8 @@ export type CreateUserErrorDetail =
 export class CreateUserError extends ResponseError {
   readonly detail: CreateUserErrorDetail;
 
-  constructor(response: Response, detail: CreateUserErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateUserErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -96,7 +97,8 @@ export type CreateUsersWithListInputErrorDetail =
 export class CreateUsersWithListInputError extends ResponseError {
   readonly detail: CreateUsersWithListInputErrorDetail;
 
-  constructor(response: Response, detail: CreateUsersWithListInputErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: CreateUsersWithListInputErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -109,7 +111,8 @@ export type LoginUserErrorDetail =
 export class LoginUserError extends ResponseError {
   readonly detail: LoginUserErrorDetail;
 
-  constructor(response: Response, detail: LoginUserErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: LoginUserErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -121,7 +124,8 @@ export type LogoutUserErrorDetail =
 export class LogoutUserError extends ResponseError {
   readonly detail: LogoutUserErrorDetail;
 
-  constructor(response: Response, detail: LogoutUserErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: LogoutUserErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -135,7 +139,8 @@ export type GetUserByNameErrorDetail =
 export class GetUserByNameError extends ResponseError {
   readonly detail: GetUserByNameErrorDetail;
 
-  constructor(response: Response, detail: GetUserByNameErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: GetUserByNameErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -149,7 +154,8 @@ export type UpdateUserErrorDetail =
 export class UpdateUserError extends ResponseError {
   readonly detail: UpdateUserErrorDetail;
 
-  constructor(response: Response, detail: UpdateUserErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: UpdateUserErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
@@ -163,12 +169,12 @@ export type DeleteUserErrorDetail =
 export class DeleteUserError extends ResponseError {
   readonly detail: DeleteUserErrorDetail;
 
-  constructor(response: Response, detail: DeleteUserErrorDetail, msg = 'Response returned an error code') {
+  constructor(response: Response, detail: DeleteUserErrorDetail,
+    msg = 'Response returned an error code') {
     super(response, msg);
     this.detail = detail;
   }
 }
-
 
 export interface UserApiInterface {
   createUserRaw: (requestParameters: ApiCreateUserRequest,
