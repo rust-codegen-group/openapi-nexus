@@ -1178,8 +1178,14 @@ fn emit_response_handler(
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
 ) -> Result<(), SigilStitchError> {
-    cb.add("// Handle responses\n", vec![]);
-    emit_error_throw(cb, op, property_naming_camel_case, convertible);
+    cb.add_code(sigil_quote!(TypeScript {
+        $comment("Handle responses")
+    })?);
+    cb.add_code(build_error_dispatch(
+        op,
+        property_naming_camel_case,
+        convertible,
+    )?);
 
     let mut numeric: Vec<(u16, &IrResponse)> = Vec::new();
     let mut wildcards: Vec<(&str, &IrResponse)> = Vec::new();
@@ -1205,51 +1211,76 @@ fn emit_response_handler(
         .filter(|resp| is_success_status(&resp.status))
         .any(|r| !r.content.is_empty());
 
-    if numeric.is_empty() && wildcards.is_empty() {
-        if let Some(d) = default {
-            emit_response_return(cb, d, false, property_naming_camel_case, convertible)?;
-        } else {
-            emit_fallback_return(cb, fallback_has_body, false)?;
-        }
+    let fallback = if let Some(response) = default {
+        build_response_return(response, property_naming_camel_case, convertible)?
     } else {
-        for (i, (code, resp)) in numeric.iter().enumerate() {
-            let keyword = if i == 0 { "if" } else { "else if" };
-            cb.add(
-                &format!("{keyword} (response.status === {code}) {{\n  "),
-                vec![],
-            );
-            emit_response_return(cb, resp, true, property_naming_camel_case, convertible)?;
-            cb.add("}\n", vec![]);
-        }
-
-        // Wildcard range checks (4XX, 5XX, etc.) go in the else arm
-        let else_keyword = if numeric.is_empty() { "" } else { "else " };
-        if !wildcards.is_empty() {
-            for (i, (status, resp)) in wildcards.iter().enumerate() {
-                let (low, high) = wildcard_status_range(status);
-                let kw = if i == 0 { else_keyword } else { "else " };
-                cb.add(
-                    &format!(
-                        "{kw}if (response.status >= {low} && response.status < {high}) {{\n  "
-                    ),
-                    vec![],
-                );
-                emit_response_return(cb, resp, true, property_naming_camel_case, convertible)?;
-                cb.add("}\n", vec![]);
-            }
-            cb.add("else {\n  ", vec![]);
-        } else {
-            cb.add(&format!("{else_keyword}{{\n  "), vec![]);
-        }
-
-        if let Some(d) = default {
-            emit_response_return(cb, d, true, property_naming_camel_case, convertible)?;
-        } else {
-            emit_fallback_return(cb, fallback_has_body, true)?;
-        }
-        cb.add("}\n", vec![]);
+        build_fallback_return(fallback_has_body)?
+    };
+    if numeric.is_empty() && wildcards.is_empty() {
+        cb.add_code(fallback);
+        return Ok(());
     }
+
+    let mut branches = Vec::new();
+    for response in numeric
+        .iter()
+        .map(|(_, response)| *response)
+        .chain(wildcards.iter().map(|(_, response)| *response))
+    {
+        branches.push((
+            response_status_condition(&response.status)?,
+            build_response_return(response, property_naming_camel_case, convertible)?,
+        ));
+    }
+    cb.add_code(build_status_dispatch(branches, fallback)?);
     Ok(())
+}
+
+fn response_status_condition(status: &str) -> Result<CodeBlock, SigilStitchError> {
+    if let Ok(code) = status.parse::<u16>() {
+        sigil_quote!(TypeScript { response.status === $L(code.to_string()) })
+    } else {
+        let (low, high) = wildcard_status_range(status);
+        sigil_quote!(TypeScript { response.status >= $L(low.to_string()) && response.status < $L(high.to_string()) })
+    }
+}
+
+fn build_status_dispatch(
+    branches: Vec<(CodeBlock, CodeBlock)>,
+    fallback: CodeBlock,
+) -> Result<CodeBlock, SigilStitchError> {
+    let mut cb = CodeBlock::builder();
+    let has_branches = !branches.is_empty();
+    for (index, (condition, body)) in branches.into_iter().enumerate() {
+        let branch = if index == 0 {
+            sigil_quote!(TypeScript {
+                if ($C(condition)) {
+                    $C(body)
+                }
+            })
+        } else {
+            sigil_quote!(TypeScript {
+                else if ($C(condition)) {
+                    $C(body)
+                }
+            })
+        }?;
+        cb.add_code(branch);
+    }
+    if has_branches {
+        cb.add_code(sigil_quote!(TypeScript {
+            else {
+                $C(fallback)
+            }
+        })?);
+    } else {
+        // A bare scope is ambiguous with an object literal in sigil_quote!;
+        // the structural block API expresses that intent without raw braces.
+        cb.begin_control_flow_with_intent(sigil_stitch::code_node::BlockIntent::Generic, "", ());
+        cb.add_code(fallback);
+        cb.end_control_flow();
+    }
+    cb.build()
 }
 
 fn wildcard_status_range(status: &str) -> (u16, u16) {
@@ -1270,18 +1301,11 @@ fn is_success_status(status: &str) -> bool {
         || status.eq_ignore_ascii_case("2XX")
 }
 
-fn emit_error_throw(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+fn build_error_dispatch(
     op: &IrOperation,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) {
-    cb.add(
-        "if (!(response.status >= 200 && response.status < 300)) {\n",
-        vec![],
-    );
-    cb.add("  const errorRaw = response.clone();\n", vec![]);
-
+) -> Result<CodeBlock, SigilStitchError> {
     let mut numeric = Vec::new();
     let mut wildcards = Vec::new();
     let mut default = None;
@@ -1301,132 +1325,121 @@ fn emit_error_throw(
     numeric.sort_by_key(|(code, _)| *code);
 
     let mut used = HashSet::new();
-    let mut emitted_any = false;
-    for (code, resp) in numeric {
-        let keyword = if emitted_any { "else if" } else { "if" };
+    let mut branches = Vec::new();
+    for resp in numeric
+        .iter()
+        .map(|(_, response)| *response)
+        .chain(wildcards.iter().map(|(_, response)| *response))
+    {
         let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
-        cb.add(
-            &format!("  {keyword} (response.status === {code}) {{\n    "),
-            vec![],
-        );
-        emit_error_throw_for_response(cb, op, resp, &kind, property_naming_camel_case, convertible);
-        cb.add("  }\n", vec![]);
-        emitted_any = true;
-    }
-    for (status, resp) in wildcards {
-        let (low, high) = wildcard_status_range(status);
-        let keyword = if emitted_any { "else if" } else { "if" };
-        let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
-        cb.add(
-            &format!("  {keyword} (response.status >= {low} && response.status < {high}) {{\n    "),
-            vec![],
-        );
-        emit_error_throw_for_response(cb, op, resp, &kind, property_naming_camel_case, convertible);
-        cb.add("  }\n", vec![]);
-        emitted_any = true;
+        branches.push((
+            response_status_condition(&resp.status)?,
+            build_error_throw_for_response(
+                op,
+                resp,
+                &kind,
+                property_naming_camel_case,
+                convertible,
+            )?,
+        ));
     }
 
-    let keyword = if emitted_any { "else" } else { "" };
-    cb.add(&format!("  {keyword} {{\n    "), vec![]);
-    if let Some(resp) = default {
+    let fallback = if let Some(resp) = default {
         let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
-        emit_error_throw_for_response(cb, op, resp, &kind, property_naming_camel_case, convertible);
+        build_error_throw_for_response(op, resp, &kind, property_naming_camel_case, convertible)?
     } else {
-        let class_name = error_class_name(op);
-        cb.add(
-            &format!(
-                "let errorValue: Promise<Blob> | undefined;\n    throw new {class_name}(response, {{ kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() }});\n"
-            ),
-            vec![],
-        );
-    }
-    cb.add("  }\n", vec![]);
-    cb.add("}\n", vec![]);
+        build_error_throw(
+            op,
+            "unexpected",
+            sigil_quote!(TypeScript { response.status })?,
+            TypeName::primitive("Blob"),
+            sigil_quote!(TypeScript { errorRaw.clone().blob() })?,
+        )?
+    };
+    let dispatch = build_status_dispatch(branches, fallback)?;
+    sigil_quote!(TypeScript {
+        if (!(response.status >= 200 && response.status < 300)) {
+            const errorRaw = response.clone();
+            $C(dispatch)
+        }
+    })
 }
 
-fn emit_error_throw_for_response(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+fn build_error_throw_for_response(
     op: &IrOperation,
     resp: &IrResponse,
     kind: &str,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) {
+) -> Result<CodeBlock, SigilStitchError> {
+    let status = if let Ok(code) = resp.status.parse::<u16>() {
+        sigil_quote!(TypeScript { response.status as $L(code.to_string()) })
+    } else {
+        sigil_quote!(TypeScript { response.status })
+    }?;
+    build_error_throw(
+        op,
+        kind,
+        status,
+        response_value_type(resp),
+        error_value_expr(resp, property_naming_camel_case, convertible)?,
+    )
+}
+
+fn build_error_throw(
+    op: &IrOperation,
+    kind: &str,
+    status: CodeBlock,
+    value_type: TypeName,
+    value: CodeBlock,
+) -> Result<CodeBlock, SigilStitchError> {
     let class_name = error_class_name(op);
-    let status_expr = resp
-        .status
-        .parse::<u16>()
-        .ok()
-        .map(|code| format!("response.status as {code}"))
-        .unwrap_or_else(|| "response.status".to_string());
-    let value_expr = error_value_expr(resp, property_naming_camel_case, convertible);
-    let value_ty = response_value_type(resp);
-    cb.add(
-        &format!(
-            "let errorValue: Promise<%T> | undefined;\n    throw new {class_name}(response, {{ kind: '{}', status: {}, raw: response, value: () => errorValue ??= {} }});\n",
-            kind, status_expr, value_expr.0
-        ),
-        std::iter::once(Arg::TypeName(value_ty))
-            .chain(value_expr.1)
-            .collect::<Vec<_>>(),
-    );
+    let cached_type = TypeName::union(vec![
+        type_application(TypeName::primitive("Promise"), vec![value_type]),
+        TypeName::primitive("undefined"),
+    ]);
+    // sigil_quote! normalizes inline object literals without brace padding.
+    // Keep the existing brace padding with static spaces; values stay structured.
+    sigil_quote!(TypeScript {
+        let errorValue: $T(cached_type);
+        throw new $N(class_name)(response, {$L(" ")$N("kind"): $S(kind), status: $C(status), raw: response, value: () => errorValue ??= $C(value)$L(" ")});
+    })
 }
 
 fn error_value_expr(
     resp: &IrResponse,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) -> (String, Vec<Arg>) {
+) -> Result<CodeBlock, SigilStitchError> {
     let kind = classify_response(resp);
     if property_naming_camel_case
         && let ResponseKind::Json(Some(_)) = &kind
-        && let Some(from_json) = response_from_json_transformer(resp, convertible)
+        && let Some(from_json) = response_from_json_transformer(resp, convertible)?
     {
         let wrapper_type =
             type_application(rt_value("JSONApiResponse"), vec![response_value_type(resp)]);
-        return (
-            format!("new %T(errorRaw.clone(), {from_json}).value()"),
-            vec![Arg::TypeName(wrapper_type)],
-        );
+        return sigil_quote!(TypeScript {
+            new $T(wrapper_type)(errorRaw.clone(), $C(from_json)).value()
+        });
     }
-    match kind {
-        ResponseKind::Json(Some(body_ty)) => (
-            "new %T(errorRaw.clone()).value()".to_string(),
-            vec![Arg::TypeName(type_application(
-                rt_value("JSONApiResponse"),
-                vec![body_ty],
-            ))],
+    let wrapper_type = match kind {
+        ResponseKind::Json(body_ty) => type_application(
+            rt_value("JSONApiResponse"),
+            vec![body_ty.unwrap_or_else(|| TypeName::primitive("unknown"))],
         ),
-        ResponseKind::Json(None) => (
-            "new %T(errorRaw.clone()).value()".to_string(),
-            vec![Arg::TypeName(type_application(
-                rt_value("JSONApiResponse"),
-                vec![TypeName::primitive("unknown")],
-            ))],
-        ),
-        ResponseKind::Text => (
-            "new %T(errorRaw.clone()).value()".to_string(),
-            vec![Arg::TypeName(rt_value("TextApiResponse"))],
-        ),
-        ResponseKind::Blob => (
-            "new %T(errorRaw.clone()).value()".to_string(),
-            vec![Arg::TypeName(rt_value("BlobApiResponse"))],
-        ),
-        ResponseKind::None => (
-            "new %T(errorRaw.clone()).value()".to_string(),
-            vec![Arg::TypeName(rt_value("VoidApiResponse"))],
-        ),
-    }
+        ResponseKind::Text => rt_value("TextApiResponse"),
+        ResponseKind::Blob => rt_value("BlobApiResponse"),
+        ResponseKind::None => rt_value("VoidApiResponse"),
+    };
+    sigil_quote!(TypeScript { new $T(wrapper_type)(errorRaw.clone()).value() })
 }
 
 /// `return new Wrapper(response) as Wrapper<Body> & { status: X };`
-fn emit_response_return(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
+fn build_response_return(
     resp: &IrResponse,
-    _inside_block: bool,
     property_naming_camel_case: bool,
     convertible: &HashSet<String>,
-) -> Result<(), SigilStitchError> {
+) -> Result<CodeBlock, SigilStitchError> {
     let kind = classify_response(resp);
     let status_ty = match resp.status.parse::<u16>() {
         Ok(n) => n.to_string(),
@@ -1437,7 +1450,7 @@ fn emit_response_return(
     // inject a fromJSON transformer: `new JSONApiResponse<Pet>(response, (json) => petFromJSON(json as Pet$Wire))`
     if property_naming_camel_case
         && let ResponseKind::Json(Some(_)) = &kind
-        && let Some(from_json) = response_from_json_transformer(resp, convertible)
+        && let Some(from_json) = response_from_json_transformer(resp, convertible)?
     {
         let wrapper_type = match kind {
             ResponseKind::Json(Some(body_ty)) => {
@@ -1445,15 +1458,10 @@ fn emit_response_return(
             }
             _ => unreachable!(),
         };
-        // The transformer is a complete target-language callback expression.
         let status_type = response_status_type(&status_ty);
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                return new $T(rt_value("JSONApiResponse"))(response, $L(from_json.as_str())) as $T(wrapper_type)$L(" & ")$T(status_type);
-            })
-            ?,
-        );
-        return Ok(());
+        return sigil_quote!(TypeScript {
+            return new $T(rt_value("JSONApiResponse"))(response, $C(from_json)) as $T(wrapper_type)$L(" & ")$T(status_type);
+        });
     }
 
     let wrapper_value = match kind {
@@ -1473,10 +1481,9 @@ fn emit_response_return(
     };
     let status_type = response_status_type(&status_ty);
 
-    cb.add_code(sigil_quote!(TypeScript {
+    sigil_quote!(TypeScript {
         return new $T(wrapper_value)(response) as $T(wrapper_type)$L(" & ")$T(status_type);
-    })?);
-    Ok(())
+    })
 }
 
 fn response_status_type(status_ty: &str) -> TypeName {
@@ -1487,26 +1494,18 @@ fn response_status_type(status_ty: &str) -> TypeName {
 
 /// `return new JSONApiResponse(response) as JSONApiResponse<unknown> & { status: 2xx };`
 /// (or VoidApiResponse equivalent when no body appears anywhere).
-fn emit_fallback_return(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
-    any_body: bool,
-    _inside_block: bool,
-) -> Result<(), SigilStitchError> {
+fn build_fallback_return(any_body: bool) -> Result<CodeBlock, SigilStitchError> {
     let json_response = rt_value("JSONApiResponse");
     let void_response = rt_value("VoidApiResponse");
     let unknown = TypeName::primitive("unknown");
     let success_response = rt_type("HttpSuccessResponse");
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            $if(any_body) {
-                return new $T(json_response.clone())(response) as $T(json_response)<$T(unknown)> & $T(success_response.clone());
-            } $else {
-                return new $T(void_response.clone())(response) as $T(void_response) & $T(success_response);
-            }
-        })
-        ?,
-    );
-    Ok(())
+    sigil_quote!(TypeScript {
+        $if(any_body) {
+            return new $T(json_response.clone())(response) as $T(json_response)<$T(unknown)> & $T(success_response.clone());
+        } $else {
+            return new $T(void_response.clone())(response) as $T(void_response) & $T(success_response);
+        }
+    })
 }
 
 // ============================================================================
@@ -1935,29 +1934,35 @@ fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
 fn response_from_json_transformer(
     resp: &IrResponse,
     convertible: &HashSet<String>,
-) -> Option<String> {
-    let (media_type, type_expr) = pick_response_content(resp)?;
+) -> Result<Option<CodeBlock>, SigilStitchError> {
+    let Some((media_type, type_expr)) = pick_response_content(resp) else {
+        return Ok(None);
+    };
     if !is_json_media_type(&media_type) {
-        return None;
+        return Ok(None);
     }
-    match type_expr {
-        IrTypeExpr::Named(name) if convertible.contains(name) => {
-            let pascal = name.to_pascal_case();
-            let from_fn = format!("{}FromJSON", fn_base_name(&pascal));
-            let wire = format!("{}$Wire", pascal);
-            Some(format!("(json) => {from_fn}(json as {wire})"))
-        }
+    let (name, is_array) = match type_expr {
+        IrTypeExpr::Named(name) if convertible.contains(name) => (name, false),
         IrTypeExpr::Array(inner) => match inner.as_ref() {
-            IrTypeExpr::Named(name) if convertible.contains(name) => {
-                let pascal = name.to_pascal_case();
-                let from_fn = format!("{}FromJSON", fn_base_name(&pascal));
-                let wire = format!("{}$Wire", pascal);
-                Some(format!("(json) => (json as {wire}[]).map({from_fn})"))
-            }
-            _ => None,
+            IrTypeExpr::Named(name) if convertible.contains(name) => (name, true),
+            _ => return Ok(None),
         },
-        _ => None,
-    }
+        _ => return Ok(None),
+    };
+    let pascal = name.to_pascal_case();
+    let module = format!("../models/{pascal}");
+    let from_fn = TypeName::importable(&module, &format!("{}FromJSON", fn_base_name(&pascal)));
+    let wire = TypeName::importable_type(&module, &format!("{pascal}$Wire"));
+    let transformer = if is_array {
+        sigil_quote!(TypeScript {
+            (json) => (json as $T(TypeName::array(wire))).map($T(from_fn))
+        })
+    } else {
+        sigil_quote!(TypeScript {
+            (json) => $T(from_fn)(json as $T(wire))
+        })
+    }?;
+    Ok(Some(transformer))
 }
 
 /// For a request body with a Named type, produce the toJSON call:
@@ -2282,6 +2287,120 @@ mod tests {
             width = 100,
             block,
             "return new JSONApiResponse<Foo>(response) as JSONApiResponse<Foo> & { status: 200 };\n"
+        );
+        Ok(())
+    }
+
+    fn response_dispatch_ir() -> IrSpec {
+        let parsed = crate::parser::parse_content_yaml(include_str!(
+            "../../../../tests/fixtures/valid/typescript-response-dispatch.yaml"
+        ))
+        .expect("response dispatch fixture parses");
+        crate::ir::lower::lower(parsed).expect("response dispatch fixture lowers")
+    }
+
+    #[test]
+    fn error_throw_composes_lazy_array_conversion_and_imports() -> Result<(), SigilStitchError> {
+        let ir = response_dispatch_ir();
+        let op = ir
+            .operations
+            .iter()
+            .find(|op| op.operation_id == "readMixed")
+            .expect("mixed response operation exists");
+        let response = op
+            .responses
+            .iter()
+            .find(|response| response.status == "401")
+            .expect("array error exists");
+        let convertible = HashSet::from(["Detail".to_string()]);
+        let block =
+            build_error_throw_for_response(op, response, "unauthorized", true, &convertible)?;
+
+        assert_rendered!(
+            TypeScript::new(),
+            width = 100,
+            block,
+            r#"import type { Detail, Detail$Wire } from '../models/Detail';
+import { detailFromJSON } from '../models/Detail';
+import { JSONApiResponse } from '../runtime/runtime';
+
+let errorValue: Promise<Detail[]> | undefined;
+throw new ReadMixedError(response, { kind: 'unauthorized', status: response.status as 401, raw: response, value: () => errorValue ??= new JSONApiResponse<Detail[]>(errorRaw.clone(), (json) => (json as Detail$Wire[]).map(detailFromJSON)).value() });
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn status_dispatch_composes_conditions_and_returns_without_extra_newlines()
+    -> Result<(), SigilStitchError> {
+        let ir = response_dispatch_ir();
+        let op = ir
+            .operations
+            .iter()
+            .find(|op| op.operation_id == "readMixed")
+            .expect("mixed response operation exists");
+        let mut branches = Vec::new();
+        for status in ["201", "2XX"] {
+            let response = op
+                .responses
+                .iter()
+                .find(|response| response.status == status)
+                .expect("success response exists");
+            branches.push((
+                response_status_condition(status)?,
+                build_response_return(response, false, &HashSet::new())?,
+            ));
+        }
+        let block = build_status_dispatch(branches, build_fallback_return(true)?)?;
+        assert_rendered!(
+            TypeScript::new(),
+            width = 100,
+            block,
+            r#"import type { Detail } from '../models/Detail';
+import type { HttpSuccessResponse } from '../runtime/runtime';
+import { JSONApiResponse } from '../runtime/runtime';
+
+if (response.status === 201) {
+  return new JSONApiResponse(response) as JSONApiResponse<Detail> & { status: 201 };
+}
+else if (response.status >= 200 && response.status < 300) {
+  return new JSONApiResponse(response) as JSONApiResponse<Detail[]> & { status: number };
+}
+else {
+  return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+}
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn default_only_error_keeps_its_scope_and_lazy_named_conversion() -> Result<(), SigilStitchError>
+    {
+        let ir = response_dispatch_ir();
+        let op = ir
+            .operations
+            .iter()
+            .find(|op| op.operation_id == "readDefault")
+            .expect("default-only operation exists");
+        let block = build_error_dispatch(op, true, &HashSet::from(["Detail".to_string()]))?;
+        assert_rendered!(
+            TypeScript::new(),
+            width = 100,
+            block,
+            r#"import type { Detail, Detail$Wire } from '../models/Detail';
+import { detailFromJSON } from '../models/Detail';
+import { JSONApiResponse } from '../runtime/runtime';
+
+if (!(response.status >= 200 && response.status < 300)) {
+  const errorRaw = response.clone();
+   {
+    let errorValue: Promise<Detail> | undefined;
+    throw new ReadDefaultError(response, { kind: 'default', status: response.status, raw: response, value: () => errorValue ??= new JSONApiResponse<Detail>(errorRaw.clone(), (json) => detailFromJSON(json as Detail$Wire)).value() });
+  }
+}
+"#
         );
         Ok(())
     }
