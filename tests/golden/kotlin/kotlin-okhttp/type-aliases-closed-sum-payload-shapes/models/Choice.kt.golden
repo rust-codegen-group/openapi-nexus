@@ -39,23 +39,12 @@ private class ChoiceJsonAdapter: TypeAdapter<Choice>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> Choice.VariantNull
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             -> Choice.VariantString(element
-            .asString)
-
-            element.isJsonArray
-             -> Choice.VariantArray(gson.fromJson(element
-            , object: TypeToken<List<Int>>() {}.type))
-
-            element.isJsonObject
-             -> Choice.VariantMap(gson.fromJson(element
-            , object: TypeToken<Map<String, Boolean>>() {}.type))
-
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Choice.VariantString(element.asString)
+            element.isJsonArray -> Choice.VariantArray(gson.fromJson(element, object: TypeToken<List<Int>>() {}.type))
+            element.isJsonObject -> Choice.VariantMap(gson.fromJson(element, object: TypeToken<Map<String,
+            Boolean>>() {}.type))
             else -> throw JsonParseException("unknown Choice union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Choice?) {
@@ -66,19 +55,15 @@ private class ChoiceJsonAdapter: TypeAdapter<Choice>() {
         when (value) {
             is Choice.VariantString -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Choice.VariantArray -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Choice.VariantMap -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Choice.VariantNull -> {
                 writer.nullValue()
-
             }
         }
     }

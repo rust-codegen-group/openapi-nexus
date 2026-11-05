@@ -46,17 +46,12 @@ final class ExternallyTaggedEnumJsonAdapter extends TypeAdapter<ExternallyTagged
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
         if (object.has("EXTERNALLY_TAGGED_ENUM_VARIANT_A")) {
-            return new ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA(gson.fromJson(object.get("EXTERNALLY_TAGGED_ENUM_VARIANT_A")
-            , new TypeToken<VariantA>() {}.getType()));
-
+            return new ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA(gson.fromJson(object.get("EXTERNALLY_TAGGED_ENUM_VARIANT_A"), new TypeToken<VariantA>() {}.getType()));
         }
         if (object.has("EXTERNALLY_TAGGED_ENUM_VARIANT_B")) {
-            return new ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB(gson.fromJson(object.get("EXTERNALLY_TAGGED_ENUM_VARIANT_B")
-            , new TypeToken<VariantB>() {}.getType()));
-
+            return new ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB(gson.fromJson(object.get("EXTERNALLY_TAGGED_ENUM_VARIANT_B"), new TypeToken<VariantB>() {}.getType()));
         }
         throw new JsonParseException("unknown ExternallyTaggedEnum variant");
-
     }
 
     @Override
@@ -69,14 +64,12 @@ final class ExternallyTaggedEnumJsonAdapter extends TypeAdapter<ExternallyTagged
             JsonObject object = new JsonObject();
             object.add("EXTERNALLY_TAGGED_ENUM_VARIANT_A", gson.toJsonTree(((ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantA) value).value0()));
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB) {
             JsonObject object = new JsonObject();
             object.add("EXTERNALLY_TAGGED_ENUM_VARIANT_B", gson.toJsonTree(((ExternallyTaggedEnum.VariantExternallyTaggedEnumVariantB) value).value0()));
             gson.toJson(object, writer);
-
             return;
         }
     }

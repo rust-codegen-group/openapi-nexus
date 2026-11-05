@@ -35,23 +35,14 @@ final class AnyOfTypesJsonAdapter extends TypeAdapter<AnyOfTypes> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-        ) {
-            return new AnyOfTypes.VariantString(element
-            .getAsString());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new AnyOfTypes.VariantString(element.getAsString());
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
-        ) {
-            return new AnyOfTypes.VariantNumber(gson.fromJson(element
-            , Double.class));
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+            return new AnyOfTypes.VariantNumber(gson.fromJson(element, Double.class));
         }
         throw new JsonParseException("unknown AnyOfTypes union value");
-
-
     }
 
     @Override
@@ -62,12 +53,10 @@ final class AnyOfTypesJsonAdapter extends TypeAdapter<AnyOfTypes> {
         }
         if (value instanceof AnyOfTypes.VariantString) {
             gson.toJson(gson.toJsonTree(((AnyOfTypes.VariantString) value).value0()), writer);
-
             return;
         }
         if (value instanceof AnyOfTypes.VariantNumber) {
             gson.toJson(gson.toJsonTree(((AnyOfTypes.VariantNumber) value).value0()), writer);
-
             return;
         }
     }

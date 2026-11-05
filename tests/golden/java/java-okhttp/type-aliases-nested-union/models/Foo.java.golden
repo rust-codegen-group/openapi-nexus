@@ -34,39 +34,17 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
-
         }
-        if ((((element.isJsonObject()
-         && element.getAsJsonObject().has("endpoint")
-        )
-         && element.getAsJsonObject().has("type")
-        )
-         || ((element.isJsonObject()
-         && element.getAsJsonObject().has("path")
-        )
-         && element.getAsJsonObject().has("type")
-        )
-        )
-        ) {
-            return new Foo.VariantQux(gson.fromJson(element
-            , new TypeToken<Qux>() {}.getType()));
-
+        if ((((element.isJsonObject() && element.getAsJsonObject().has("endpoint")) && element.getAsJsonObject().has("type")) || ((element.isJsonObject() && element.getAsJsonObject().has("path")) && element.getAsJsonObject().has("type")))) {
+            return new Foo.VariantQux(gson.fromJson(element, new TypeToken<Qux>() {}.getType()));
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-        ) {
-            return new Foo.VariantString(element
-            .getAsString());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new Foo.VariantString(element.getAsString());
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
-        ) {
-            return new Foo.VariantNumber(gson.fromJson(element
-            , Double.class));
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+            return new Foo.VariantNumber(gson.fromJson(element, Double.class));
         }
         throw new JsonParseException("unknown Foo union value");
-
-
     }
 
     @Override
@@ -77,17 +55,14 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         }
         if (value instanceof Foo.VariantQux) {
             gson.toJson(gson.toJsonTree(((Foo.VariantQux) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantString) {
             gson.toJson(gson.toJsonTree(((Foo.VariantString) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantNumber) {
             gson.toJson(gson.toJsonTree(((Foo.VariantNumber) value).value0()), writer);
-
             return;
         }
     }

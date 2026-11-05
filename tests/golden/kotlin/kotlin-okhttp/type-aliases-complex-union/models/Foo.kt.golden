@@ -34,39 +34,11 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            (((element.isJsonObject
-             && element.asJsonObject.has("bucket")
-            )
-             && element.asJsonObject.has("endpoint")
-            )
-             && element.asJsonObject.has("type")
-            )
-             -> Foo.VariantBar(gson.fromJson(element
-            , object: TypeToken<Bar>() {}.type))
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("path")
-            )
-             && element.asJsonObject.has("type")
-            )
-             -> Foo.VariantBaz(gson.fromJson(element
-            , object: TypeToken<Baz>() {}.type))
-
-            (((element.isJsonObject
-             && element.asJsonObject.has("namespace")
-            )
-             && element.asJsonObject.has("type")
-            )
-             && element.asJsonObject.has("url")
-            )
-             -> Foo.VariantQux(gson.fromJson(element
-            , object: TypeToken<Qux>() {}.type))
-
+            (((element.isJsonObject && element.asJsonObject.has("bucket")) && element.asJsonObject.has("endpoint")) && element.asJsonObject.has("type")) -> Foo.VariantBar(gson.fromJson(element, object: TypeToken<Bar>() {}.type))
+            ((element.isJsonObject && element.asJsonObject.has("path")) && element.asJsonObject.has("type")) -> Foo.VariantBaz(gson.fromJson(element, object: TypeToken<Baz>() {}.type))
+            (((element.isJsonObject && element.asJsonObject.has("namespace")) && element.asJsonObject.has("type")) && element.asJsonObject.has("url")) -> Foo.VariantQux(gson.fromJson(element, object: TypeToken<Qux>() {}.type))
             else -> throw JsonParseException("unknown Foo union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Foo?) {
@@ -77,15 +49,12 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         when (value) {
             is Foo.VariantBar -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Foo.VariantBaz -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Foo.VariantQux -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }

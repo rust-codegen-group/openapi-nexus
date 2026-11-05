@@ -40,22 +40,15 @@ final class ResourceJsonAdapter extends TypeAdapter<Resource> {
         JsonObject object = element.getAsJsonObject();
         String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
         if ("RESOURCE_UNSPECIFIED".equals(discriminator)) {
-            return new Resource.VariantResourceUnspecified(gson.fromJson(object
-            , new TypeToken<ResourceUnspecified>() {}.getType()));
-
+            return new Resource.VariantResourceUnspecified(gson.fromJson(object, new TypeToken<ResourceUnspecified>() {}.getType()));
         }
         if ("RESOURCE_QUICK".equals(discriminator)) {
-            return new Resource.VariantResourceQuick(gson.fromJson(object
-            , new TypeToken<ResourceQuick>() {}.getType()));
-
+            return new Resource.VariantResourceQuick(gson.fromJson(object, new TypeToken<ResourceQuick>() {}.getType()));
         }
         if ("RESOURCE_CUSTOM".equals(discriminator)) {
-            return new Resource.VariantResourceCustom(gson.fromJson(object
-            , new TypeToken<ResourceCustom>() {}.getType()));
-
+            return new Resource.VariantResourceCustom(gson.fromJson(object, new TypeToken<ResourceCustom>() {}.getType()));
         }
         throw new JsonParseException("unknown Resource discriminator");
-
     }
 
     @Override
@@ -68,21 +61,18 @@ final class ResourceJsonAdapter extends TypeAdapter<Resource> {
             JsonObject object = gson.toJsonTree(((Resource.VariantResourceUnspecified) value).value0()).getAsJsonObject();
             object.addProperty("kind", "RESOURCE_UNSPECIFIED");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof Resource.VariantResourceQuick) {
             JsonObject object = gson.toJsonTree(((Resource.VariantResourceQuick) value).value0()).getAsJsonObject();
             object.addProperty("kind", "RESOURCE_QUICK");
             gson.toJson(object, writer);
-
             return;
         }
         if (value instanceof Resource.VariantResourceCustom) {
             JsonObject object = gson.toJsonTree(((Resource.VariantResourceCustom) value).value0()).getAsJsonObject();
             object.addProperty("kind", "RESOURCE_CUSTOM");
             gson.toJson(object, writer);
-
             return;
         }
     }

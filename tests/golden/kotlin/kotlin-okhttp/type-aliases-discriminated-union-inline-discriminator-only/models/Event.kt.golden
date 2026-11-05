@@ -56,16 +56,10 @@ private class EventJsonAdapter: TypeAdapter<Event>() {
         val jsonObject = element.asJsonObject
         return when (jsonObject["kind"]?.asString) {
             "EVENT_UNSPECIFIED" -> Event.VariantEventUnspecified
-
-            "EVENT_CREATED" -> Event.VariantEventCreated(gson.fromJson(jsonObject
-            , object: TypeToken<EventEventCreated>() {}.type))
-
-            "EVENT_UPDATED" -> Event.VariantEventUpdated(gson.fromJson(jsonObject
-            , object: TypeToken<EventEventUpdated>() {}.type))
-
+            "EVENT_CREATED" -> Event.VariantEventCreated(gson.fromJson(jsonObject, object: TypeToken<EventEventCreated>() {}.type))
+            "EVENT_UPDATED" -> Event.VariantEventUpdated(gson.fromJson(jsonObject, object: TypeToken<EventEventUpdated>() {}.type))
             else -> throw JsonParseException("unknown Event discriminator")
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Event?) {
@@ -78,19 +72,16 @@ private class EventJsonAdapter: TypeAdapter<Event>() {
                 val jsonObject = JsonObject()
                 jsonObject.addProperty("kind", "EVENT_UNSPECIFIED")
                 gson.toJson(jsonObject, writer)
-
             }
             is Event.VariantEventCreated -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "EVENT_CREATED")
                 gson.toJson(jsonObject, writer)
-
             }
             is Event.VariantEventUpdated -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
                 jsonObject.addProperty("kind", "EVENT_UPDATED")
                 gson.toJson(jsonObject, writer)
-
             }
         }
     }

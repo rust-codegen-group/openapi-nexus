@@ -39,29 +39,17 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return Foo.VariantNull.INSTANCE;
-
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-        ) {
-            return new Foo.VariantString(element
-            .getAsString());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new Foo.VariantString(element.getAsString());
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
-        ) {
-            return new Foo.VariantNumber(gson.fromJson(element
-            , Double.class));
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+            return new Foo.VariantNumber(gson.fromJson(element, Double.class));
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()
-        ) {
-            return new Foo.VariantBoolean(element
-            .getAsBoolean());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
+            return new Foo.VariantBoolean(element.getAsBoolean());
         }
         throw new JsonParseException("unknown Foo union value");
-
-
     }
 
     @Override
@@ -72,22 +60,18 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
         }
         if (value instanceof Foo.VariantString) {
             gson.toJson(gson.toJsonTree(((Foo.VariantString) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantNumber) {
             gson.toJson(gson.toJsonTree(((Foo.VariantNumber) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantBoolean) {
             gson.toJson(gson.toJsonTree(((Foo.VariantBoolean) value).value0()), writer);
-
             return;
         }
         if (value instanceof Foo.VariantNull) {
             writer.nullValue();
-
             return;
         }
     }

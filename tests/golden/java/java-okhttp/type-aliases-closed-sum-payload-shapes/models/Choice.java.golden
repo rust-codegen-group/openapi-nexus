@@ -42,29 +42,18 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return Choice.VariantNull.INSTANCE;
-
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-        ) {
-            return new Choice.VariantString(element
-            .getAsString());
-
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return new Choice.VariantString(element.getAsString());
         }
-        if (element.isJsonArray()
-        ) {
-            return new Choice.VariantArray(gson.fromJson(element
-            , new TypeToken<List<Integer>>() {}.getType()));
-
+        if (element.isJsonArray()) {
+            return new Choice.VariantArray(gson.fromJson(element, new TypeToken<List<Integer>>() {}.getType()));
         }
-        if (element.isJsonObject()
-        ) {
-            return new Choice.VariantMap(gson.fromJson(element
-            , new TypeToken<Map<String, Boolean>>() {}.getType()));
-
+        if (element.isJsonObject()) {
+            return new Choice.VariantMap(gson.fromJson(element, new TypeToken<Map<String,
+            Boolean>>() {}.getType()));
         }
         throw new JsonParseException("unknown Choice union value");
-
-
     }
 
     @Override
@@ -75,22 +64,18 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
         }
         if (value instanceof Choice.VariantString) {
             gson.toJson(gson.toJsonTree(((Choice.VariantString) value).value0()), writer);
-
             return;
         }
         if (value instanceof Choice.VariantArray) {
             gson.toJson(gson.toJsonTree(((Choice.VariantArray) value).value0()), writer);
-
             return;
         }
         if (value instanceof Choice.VariantMap) {
             gson.toJson(gson.toJsonTree(((Choice.VariantMap) value).value0()), writer);
-
             return;
         }
         if (value instanceof Choice.VariantNull) {
             writer.nullValue();
-
             return;
         }
     }

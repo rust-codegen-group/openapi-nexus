@@ -40,23 +40,10 @@ private class OneOfWithNullJsonAdapter: TypeAdapter<OneOfWithNull>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> OneOfWithNull.VariantNull
-
-            element.isJsonPrimitive && element.asJsonPrimitive.isString
-             -> OneOfWithNull.VariantString(element
-            .asString)
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("id")
-            )
-             && element.asJsonObject.has("name")
-            )
-             -> OneOfWithNull.VariantBasicObject(gson.fromJson(element
-            , object: TypeToken<BasicObject>() {}.type))
-
+            element.isJsonPrimitive && element.asJsonPrimitive.isString -> OneOfWithNull.VariantString(element.asString)
+            ((element.isJsonObject && element.asJsonObject.has("id")) && element.asJsonObject.has("name")) -> OneOfWithNull.VariantBasicObject(gson.fromJson(element, object: TypeToken<BasicObject>() {}.type))
             else -> throw JsonParseException("unknown OneOfWithNull union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: OneOfWithNull?) {
@@ -67,15 +54,12 @@ private class OneOfWithNullJsonAdapter: TypeAdapter<OneOfWithNull>() {
         when (value) {
             is OneOfWithNull.VariantString -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is OneOfWithNull.VariantBasicObject -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is OneOfWithNull.VariantNull -> {
                 writer.nullValue()
-
             }
         }
     }

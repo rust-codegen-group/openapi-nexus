@@ -32,27 +32,10 @@ private class QuxJsonAdapter: TypeAdapter<Qux>() {
         val element = JsonParser.parseReader(reader)
         return when {
             element.isJsonNull -> null
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("endpoint")
-            )
-             && element.asJsonObject.has("type")
-            )
-             -> Qux.VariantBar(gson.fromJson(element
-            , object: TypeToken<Bar>() {}.type))
-
-            ((element.isJsonObject
-             && element.asJsonObject.has("path")
-            )
-             && element.asJsonObject.has("type")
-            )
-             -> Qux.VariantBaz(gson.fromJson(element
-            , object: TypeToken<Baz>() {}.type))
-
+            ((element.isJsonObject && element.asJsonObject.has("endpoint")) && element.asJsonObject.has("type")) -> Qux.VariantBar(gson.fromJson(element, object: TypeToken<Bar>() {}.type))
+            ((element.isJsonObject && element.asJsonObject.has("path")) && element.asJsonObject.has("type")) -> Qux.VariantBaz(gson.fromJson(element, object: TypeToken<Baz>() {}.type))
             else -> throw JsonParseException("unknown Qux union value")
-
         }
-
     }
 
     override fun write(writer: JsonWriter, value: Qux?) {
@@ -63,11 +46,9 @@ private class QuxJsonAdapter: TypeAdapter<Qux>() {
         when (value) {
             is Qux.VariantBar -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
             is Qux.VariantBaz -> {
                 gson.toJson(gson.toJsonTree(value.value0), writer)
-
             }
         }
     }
