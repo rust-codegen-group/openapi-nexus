@@ -5,4 +5,4 @@
  */
 import type { AllOfMixedStringMapAllOf1 } from './AllOfMixedStringMapAllOf1';
 
-export type AllOfMixedStringMap = AllOfMixedStringMapAllOf1 & Record<string, string>;
+export type AllOfMixedStringMap = Readonly<AllOfMixedStringMapAllOf1 & Record<string, string>>;

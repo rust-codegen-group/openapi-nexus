@@ -93,6 +93,30 @@ test('compatible allOf dictionaries retain both colliding extensions', () => {
   assert.deepEqual(client.heterogeneousAllOfToJSON({ ...value }), input);
 });
 
+test('JSON and model allOf dictionaries convert all named fields together', () => {
+  const input = { known_first: { display_name: 'Ada' }, known_second: { display_name: 'Grace' }, extra_key: { display_name: 'Lin' } };
+  const expected = { knownFirst: { displayName: 'Ada' }, knownSecond: { displayName: 'Grace' }, extra_key: { displayName: 'Lin' } };
+  const value = client.jsonModelAllOfFromJSON(input);
+  assert.deepEqual(value, expected);
+  assert.deepEqual(client.jsonModelAllOfToJSON(value), input);
+  assert.deepEqual(client.jsonModelAllOfToJSON(expected), input);
+});
+
+test('a pure JSON dictionary in allOf keeps opaque values and converts named fields', () => {
+  const input = { known_item: { display_name: 'Ada' }, opaque_key: { display_name: 'untouched' } };
+  const expected = { knownItem: { displayName: 'Ada' }, opaque_key: { display_name: 'untouched' } };
+  assert.deepEqual(client.allOfJsonDictionaryFromJSON(input), expected);
+  assert.deepEqual(client.allOfJsonDictionaryToJSON(expected), input);
+});
+
+test('JSON and model allOf dictionaries retain colliding typed extensions', () => {
+  const input = { known_first: { display_name: 'Ada' }, known_second: { display_name: 'Grace' }, knownFirst: { display_name: 'extension-A' }, knownSecond: { display_name: 'extension-B' } };
+  const value = client.jsonModelAllOfFromJSON(input);
+  assert.deepEqual(value.knownFirst, { displayName: 'Ada' });
+  assert.deepEqual(value.knownSecond, { displayName: 'Grace' });
+  assert.deepEqual(client.jsonModelAllOfToJSON({ ...value }), input);
+});
+
 for (const key of ['started', 'finished']) {
   test(`open external ${key} wrappers convert nested models and preserve opaque extensions`, () => {
     const input = { [key]: { display_name: 'Ada' }, extra_dynamic: { opaque_key: 'payload' } };

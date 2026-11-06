@@ -21,10 +21,11 @@ The strict consumer check itself uses that package's installed compiler.
   Building outside the repository avoids Vite+ skipping gitignored generated
   sources. Generated source, manifests, and configuration are never patched.
 - `typecheck.ts` checks the actual packed declarations with strict typing and
-  `exactOptionalPropertyTypes`, including negative dictionary-type assertions.
+  `exactOptionalPropertyTypes`, including negative dictionary-type and readonly
+  `allOf` assertions for preserve, ergonomic, and wire declarations.
 - `tests/*.test.mjs` uses Node's native test runner against the packed camelCase
   client. It asserts full payload equality in both JSON conversion directions,
-  typed/nested/recursive dictionaries, allOf composition, search-event variants,
+  typed/nested/recursive dictionaries, JSON/model allOf composition, search-event variants,
   omitted fields, collisions with renamed fields, and prototype-sensitive keys.
 
 Generation and build orchestration stays in just/CI, not in the tests. After a

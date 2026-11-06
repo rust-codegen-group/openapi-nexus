@@ -6,9 +6,10 @@
 import type { HeterogeneousAllOfAllOf1, HeterogeneousAllOfAllOf1$Wire } from './HeterogeneousAllOfAllOf1';
 import type { HeterogeneousAllOfAllOf2, HeterogeneousAllOfAllOf2$Wire } from './HeterogeneousAllOfAllOf2';
 
-export type HeterogeneousAllOf$Wire = HeterogeneousAllOfAllOf1$Wire & HeterogeneousAllOfAllOf2$Wire;
+export type HeterogeneousAllOf$Wire = Readonly<HeterogeneousAllOfAllOf1$Wire
+& HeterogeneousAllOfAllOf2$Wire>;
 
-export type HeterogeneousAllOf = HeterogeneousAllOfAllOf1 & HeterogeneousAllOfAllOf2;
+export type HeterogeneousAllOf = Readonly<HeterogeneousAllOfAllOf1 & HeterogeneousAllOfAllOf2>;
 
 export function heterogeneousAllOfFromJSON(json: HeterogeneousAllOf$Wire): HeterogeneousAllOf {
   const additionalProperties = Object.fromEntries(Object.entries(json)
