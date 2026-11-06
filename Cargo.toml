@@ -47,7 +47,6 @@ tokio = { version = "1.49.0", features = ["full"] }
 tower = "0.5.2"
 tower-http = { version = "0.6.8", features = ["cors", "trace"] }
 utoipa = { version = "5.4.0", features = ["axum_extras", "chrono", "config", "debug", "non_strict_integers", "openapi_extensions", "time", "ulid", "url", "uuid", "yaml"] }
-utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "cache", "vendored"] }
 uuid = { version = "1.19.0", features = ["v4", "v7", "serde"] }
 
 [package]

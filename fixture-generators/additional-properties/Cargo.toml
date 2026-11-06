@@ -26,6 +26,5 @@ tower-http.workspace = true
 tower.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
-utoipa-swagger-ui.workspace = true
 utoipa.workspace = true
 uuid.workspace = true
