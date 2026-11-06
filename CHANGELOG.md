@@ -12,16 +12,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changes
 
 - Replace generator and file-writer dynamic error returns with typed
-  `GeneratorError` and `WriteError` interfaces.
-- Make the orchestration API return `PipelineError` and `GenerationReport`, and
-  make the CLI exit unsuccessfully when a selected generator or file write fails.
+  `GeneratorError` and `WriteError` interfaces. The orchestration API now returns
+  `Result<GenerationReport, PipelineError>`; callers must inspect the report for
+  individual generator and file-writing failures.
+- Return a nonzero CLI status when parsing, lowering, generation, or writing
+  fails, including partial failures in a multi-generator run.
+- Generate typed Java sealed interfaces and Kotlin sealed classes for supported
+  tagged and untagged unions instead of `Object`/`Any` fallbacks. Regenerate JVM
+  clients and update construction, matching, and payload access to their generated
+  alternatives.
+- Change `ConfigError::ParseOverrides` and `ConfigError::Validation` from tuple
+  variants to named `message` fields. OpenAPI 3.0 `ObjectSchema` exclusive-bound
+  fields now use `Option<ExclusiveBound>` instead of `Option<serde_json::Number>`.
+- Add `IrTaggedVariant.additional_properties` for external-wrapper extension
+  metadata. Callers constructing IR variants must initialize this field.
+- Enforce readonly TypeScript dictionary indexes, including compatible `allOf`
+  aliases, while retaining precise types for declared properties.
+
+### Added
+
+- Generate Gson adapters for Java and Kotlin union models that retain internal,
+  adjacent, external, and untagged wire shapes, with specific alternatives tried
+  before raw JSON fallbacks.
+- Preserve declared TypeScript additional properties in preserve-mode, ergonomic,
+  and wire types, including mixed objects, typed dictionaries, recursive values,
+  compatible `allOf` composition, model aliases, and open tagged variants.
+
+### Fixed
+
+- Retain opaque TypeScript extension keys and values through JSON conversion.
+  Preserve collisions with renamed fields under enumerable symbol metadata and
+  restore the original extension keys during `ToJSON` conversion.
+- Convert typed additional values and model-alias chains recursively, including
+  nullable aliases, arrays, nested dictionaries, and external-wrapper payloads.
+- Plan compatible JSON/model `allOf` dictionaries together so declared fields do
+  not leak under both wire and ergonomic names. Track imports for nested fallback
+  intersection types.
+- Preserve nested container, array-item, map-value, and alias nullability during
+  OpenAPI 3.0, 3.1, and 3.2 lowering, with corresponding output across all nine
+  generators.
+- Accept and retain OpenAPI 3.0 boolean `exclusiveMinimum` and `exclusiveMaximum`
+  flags while continuing to accept legacy numeric representations.
+- Retain Gson union decoding behavior for nulls, typed alternatives, and raw
+  fallbacks. Escape Kotlin reserved identifiers correctly.
+- Propagate source-emission diagnostics with artifact context rather than losing
+  the original cause or silently reporting generation success.
 
 ### Changed
 
-- Upgrade `snafu` to 0.9.2 and use Snafu-derived errors throughout the parsing,
-  lowering, configuration, generation, and writing pipeline.
-- Preserve sigil-stitch diagnostics instead of converting emission failures to
-  plain strings.
+- Upgrade `sigil-stitch` to 0.7.4 and `snafu` to 0.9.2. Use structured declarations,
+  semantic types, and quoted source fragments throughout substantially migrated
+  emitters; regenerated source may have formatting and import-layout changes.
+- Generate Kotlin projects with Kotlin Gradle plugin 2.2.21 while retaining their
+  JVM 17 toolchain target.
+- Run native generated-client consumers and stricter fixture/golden validation on
+  current toolchains. TypeScript consumers exercise packed public declarations and
+  runtime conversions within the existing Vite+ job.
+
+### Removed
+
+- Remove the nightly release workflow and nightly installer guidance. Version-tag
+  releases remain the supported prebuilt-binary publication path.
+
+### Security
+
+- Remove unused Swagger UI dependencies from the fixture generators, eliminating
+  `zip 3.0.0` and 20 other unused packages without upgrading retained dependencies.
+  This resolves the dependency behind GHSA-m665-v7pm-7grj, GHSA-q7v9-x93c-xqv3,
+  and GHSA-8hxf-qr8p-62x4; GitHub has marked all three alerts fixed.
 
 ## [0.2.3]
 

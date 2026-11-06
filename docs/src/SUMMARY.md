@@ -2,6 +2,7 @@
 
 - [Introduction](introduction.md)
 - [Getting Started](getting_started.md)
+- [Migrating to 0.3.0](migration_0_3_0.md)
 - [Authentication](auth.md)
 - [Multipart and Binary Bodies](multipart_and_binary.md)
 - [Response Headers](response_headers.md)
