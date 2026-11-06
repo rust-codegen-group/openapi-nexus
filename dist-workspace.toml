@@ -17,3 +17,8 @@ install-path = "CARGO_HOME"
 hosting = "github"
 # Whether to install an updater program
 install-updater = false
+
+[dist.github-custom-runners]
+# cargo-dist 0.32.0 defaults to the retired macos-14 ARM64 runner.
+# Pin a supported ARM64 image rather than following macos-latest.
+aarch64-apple-darwin = "macos-15"
