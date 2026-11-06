@@ -22,12 +22,16 @@ use crate::ir::types::{
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::code_block::CodeBlock;
+use sigil_stitch::error::SigilStitchError;
+use sigil_stitch::lang::RendererLang;
 use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::field_spec::FieldSpec;
 use sigil_stitch::spec::file_spec::FileSpec;
+use sigil_stitch::spec::fun_spec::FunSpec;
 use sigil_stitch::spec::import_spec::ImportSpec;
 use sigil_stitch::spec::modifiers::{TypeKind, Visibility};
+use sigil_stitch::spec::parameter_spec::ParameterSpec;
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 use std::collections::HashSet;
@@ -91,7 +95,9 @@ pub fn value_exports_for_schema(
             }
             exports
         }
-        IrSchemaKind::Intersection(_) if convertible.contains(&schema.name) => {
+        IrSchemaKind::Alias(_) | IrSchemaKind::Intersection(_)
+            if convertible.contains(&schema.name) =>
+        {
             let pascal = schema.name.to_pascal_case();
             let base = fn_base_name(&pascal);
             vec![format!("{base}FromJSON"), format!("{base}ToJSON")]
@@ -142,7 +148,9 @@ pub fn extra_type_exports_for_schema(
         {
             vec![format!("{}$Wire", schema.name.to_pascal_case())]
         }
-        IrSchemaKind::Intersection(_) if convertible.contains(&schema.name) => {
+        IrSchemaKind::Alias(_) | IrSchemaKind::Intersection(_)
+            if convertible.contains(&schema.name) =>
+        {
             vec![format!("{}$Wire", schema.name.to_pascal_case())]
         }
         IrSchemaKind::Union(_) if convertible.contains(&schema.name) => {
@@ -166,11 +174,13 @@ pub fn emit_model_file(
             emit_object_file(schema, obj, flags, convertible, unknown_aliases, ts)
         }
         IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en, flags, ts),
-        IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr, ts),
+        IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr, convertible, ts),
         IrSchemaKind::Union(u) => emit_union_file(schema, u, flags, convertible, ts),
-        IrSchemaKind::Intersection(i) => emit_intersection_file(schema, i, flags, convertible, ts),
+        IrSchemaKind::Intersection(i) => {
+            emit_intersection_file(schema, ir, i, flags, convertible, unknown_aliases, ts)
+        }
         IrSchemaKind::TaggedUnion(tu) => {
-            emit_tagged_union_file(schema, ir, tu, flags, convertible, ts)
+            emit_tagged_union_file(schema, ir, tu, flags, convertible, unknown_aliases, ts)
         }
     }
 }
@@ -204,6 +214,11 @@ fn emit_object_file(
 
     for (_json_name, prop) in &obj.properties {
         tb = tb.add_field(build_field(prop, &schema.name, unknown_aliases)?);
+    }
+    if let Some(dictionary) =
+        additional_properties_super_type(obj, &schema.name, false, convertible, unknown_aliases)
+    {
+        tb = tb.extends(dictionary);
     }
 
     let filename = format!("{}.ts", name);
@@ -240,6 +255,11 @@ fn emit_object_file_camel_case(
             unknown_aliases,
         )?);
     }
+    if let Some(dictionary) =
+        additional_properties_super_type(obj, &schema.name, true, convertible, unknown_aliases)
+    {
+        wire_tb = wire_tb.extends(dictionary);
+    }
 
     // --- Ergonomic interface (camelCase property names) ---
     let mut ergo_tb = TypeSpec::builder(name, TypeKind::Interface).visibility(Visibility::Public);
@@ -249,35 +269,83 @@ fn emit_object_file_camel_case(
     for (_json_name, prop) in &obj.properties {
         ergo_tb = ergo_tb.add_field(build_field_camel(prop, &schema.name, unknown_aliases)?);
     }
-
-    // Collect Named refs that need converter imports (only convertible ones)
-    let named_refs = collect_named_refs(obj, convertible)
-        .into_iter()
-        .filter(|ref_name| ref_name != &schema.name)
-        .collect::<Vec<_>>();
+    if let Some(dictionary) =
+        additional_properties_super_type(obj, &schema.name, false, convertible, unknown_aliases)
+    {
+        ergo_tb = ergo_tb.extends(dictionary);
+    }
 
     // --- fromJSON / toJSON functions ---
-    let from_json = build_from_json_fn(name, &wire_name, obj, convertible)?;
-    let to_json = build_to_json_fn(name, &wire_name, obj, convertible)?;
+    let from_json = build_json_converter(
+        name,
+        &wire_name,
+        &schema.name,
+        obj,
+        convertible,
+        unknown_aliases,
+        JsonDirection::FromWire,
+    )
+    .expect("TypeScript object FromJSON converter builds");
+    let to_json = build_json_converter(
+        name,
+        &wire_name,
+        &schema.name,
+        obj,
+        convertible,
+        unknown_aliases,
+        JsonDirection::ToWire,
+    )
+    .expect("TypeScript object ToJSON converter builds");
 
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
     fb = fb.add_type(wire_tb.build().ok()?);
     fb = fb.add_type(ergo_tb.build().ok()?);
 
-    // Add explicit imports for referenced converter functions
-    for ref_name in &named_refs {
-        let pascal = ref_name.to_pascal_case();
-        let module = format!("./{pascal}");
-        let base = fn_base_name(&pascal);
-        let from_fn = format!("{base}FromJSON");
-        let to_fn = format!("{base}ToJSON");
-        fb = fb.add_import(ImportSpec::named(&module, &from_fn));
-        fb = fb.add_import(ImportSpec::named(&module, &to_fn));
-    }
-
-    fb = fb.add_code(from_json);
-    fb = fb.add_code(to_json);
+    fb = fb.add_function(from_json);
+    fb = fb.add_function(to_json);
     fb.build().ok()
+}
+
+/// A string index also covers the declared properties in TypeScript. Include
+/// their types (and optional undefined) instead of making valid mixed schemas
+/// uncompilable. Readonly<Record<...>> expresses the index structurally without
+/// pretending an index signature is an ordinary named field.
+fn additional_properties_super_type(
+    obj: &IrObject,
+    current_schema: &str,
+    wire: bool,
+    convertible: &HashSet<String>,
+    unknown_aliases: &HashSet<String>,
+) -> Option<TypeName> {
+    let additional = obj.additional_properties.as_ref()?;
+    let value_type = |expr: &IrTypeExpr| {
+        if type_expr_collapses_to_unknown(expr, unknown_aliases) {
+            TypeName::primitive("unknown")
+        } else if wire {
+            type_expr_to_typename_wire(expr, current_schema, convertible)
+        } else {
+            type_expr_to_typename_for_schema(expr, current_schema)
+        }
+    };
+    let mut members = vec![value_type(additional)];
+    for prop in obj.properties.values() {
+        let mut ty = value_type(&prop.type_expr);
+        if prop.nullable {
+            ty = nullable_field_type_name(&prop.type_expr, ty, unknown_aliases);
+        }
+        members.push(ty);
+        if !prop.required {
+            members.push(TypeName::primitive("undefined"));
+        }
+    }
+    let record = type_application(
+        TypeName::primitive("Record"),
+        vec![TypeName::primitive("string"), union_typename(members)],
+    );
+    Some(type_application(
+        TypeName::primitive("Readonly"),
+        vec![record],
+    ))
 }
 
 /// Build a field for the $Wire interface (preserves original property name).
@@ -533,151 +601,292 @@ fn is_compound_type(expr: &IrTypeExpr) -> bool {
     )
 }
 
-/// Build the `export function nameFromJSON(json: Name$Wire): Name` function body.
-fn build_from_json_fn(
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum JsonDirection {
+    FromWire,
+    ToWire,
+}
+
+impl JsonDirection {
+    fn source(self) -> &'static str {
+        match self {
+            Self::FromWire => "json",
+            Self::ToWire => "value",
+        }
+    }
+
+    fn suffix(self) -> &'static str {
+        match self {
+            Self::FromWire => "FromJSON",
+            Self::ToWire => "ToJSON",
+        }
+    }
+
+    fn source_key(self, prop: &IrProperty) -> String {
+        match self {
+            Self::FromWire => prop.name.clone(),
+            Self::ToWire => prop.name.to_lower_camel_case(),
+        }
+    }
+
+    fn target_key(self, prop: &IrProperty) -> String {
+        match self {
+            Self::FromWire => prop.name.to_lower_camel_case(),
+            Self::ToWire => prop.name.clone(),
+        }
+    }
+}
+
+fn build_json_converter(
     name: &str,
     wire_name: &str,
+    current_schema: &str,
     obj: &IrObject,
     convertible: &HashSet<String>,
-) -> Option<CodeBlock> {
-    let fn_name = format!("{}FromJSON", fn_base_name(name));
-    let fields: Vec<CodeBlock> = obj
-        .properties
-        .iter()
-        .map(|(_json_name, prop)| {
-            let camel = prop.name.to_lower_camel_case();
-            let ergo_key = obj_literal_key(&camel);
-            let wire_access = wire_field_access(&prop.name);
-            let conv = from_json_expr(
-                &prop.type_expr,
-                &wire_access,
-                !prop.required,
-                prop.nullable,
-                convertible,
-            );
-            sigil_quote!(TypeScript {
-                $L(ergo_key.as_str()): $L(conv.as_str()),
-            })
-        })
-        .collect::<Result<_, _>>()
-        .ok()?;
-
-    if obj.properties.is_empty() {
-        return sigil_quote!(TypeScript {
-            export function $N(fn_name)(json: $N(wire_name)): $N(name) {
-                return json as unknown as $N(name);
-            }
-        })
-        .ok();
-    }
-
-    sigil_quote!(TypeScript {
-        export function $N(fn_name)(json: $N(wire_name)): $N(name) {
-        return {
-        $C_each(fields);
-        };
-        }
-    })
-    .ok()
-}
-
-/// Build the `export function nameToJSON(value: Name): Name$Wire` function body.
-fn build_to_json_fn(
-    name: &str,
-    wire_name: &str,
-    obj: &IrObject,
-    convertible: &HashSet<String>,
-) -> Option<CodeBlock> {
-    let fn_name = format!("{}ToJSON", fn_base_name(name));
-    let fields: Vec<CodeBlock> = obj
-        .properties
-        .iter()
-        .map(|(_json_name, prop)| {
-            let camel = prop.name.to_lower_camel_case();
-            let wire_key = obj_literal_key(&prop.name);
-            let ergo_access = ergo_field_access(&camel);
-            let conv = to_json_expr(
-                &prop.type_expr,
-                &ergo_access,
-                !prop.required,
-                prop.nullable,
-                convertible,
-            );
-            sigil_quote!(TypeScript {
-                $L(wire_key.as_str()): $L(conv.as_str()),
-            })
-        })
-        .collect::<Result<_, _>>()
-        .ok()?;
-
-    if obj.properties.is_empty() {
-        return sigil_quote!(TypeScript {
-            export function $N(fn_name)(value: $N(name)): $N(wire_name) {
-                return value as unknown as $N(wire_name);
-            }
-        })
-        .ok();
-    }
-
-    sigil_quote!(TypeScript {
-        export function $N(fn_name)(value: $N(name)): $N(wire_name) {
-        return {
-        $C_each(fields);
-        };
-        }
-    })
-    .ok()
-}
-
-/// Produce `json.field` or `json['kebab-field']` depending on identifier validity.
-fn wire_field_access(wire_name: &str) -> String {
-    if is_valid_ts_identifier(wire_name) {
-        format!("json.{wire_name}")
-    } else {
-        format!("json['{wire_name}']")
-    }
-}
-
-/// Produce `value.field` or `value['field']` for accessing the ergonomic object.
-fn ergo_field_access(camel: &str) -> String {
-    if is_valid_ts_identifier(camel) {
-        format!("value.{camel}")
-    } else {
-        format!("value['{camel}']")
-    }
-}
-
-/// Produce a valid object literal key: quote if not a valid identifier.
-fn obj_literal_key(name: &str) -> String {
-    if is_valid_ts_identifier(name) {
-        name.to_string()
-    } else {
-        format!("'{name}'")
-    }
-}
-
-/// Generate the fromJSON expression for a type.
-fn from_json_expr(
-    expr: &IrTypeExpr,
-    access: &str,
-    optional: bool,
-    nullable: bool,
-    convertible: &HashSet<String>,
-) -> String {
-    let inner = from_json_expr_inner(expr, access, convertible);
-    let with_null = if nullable && needs_conversion(expr, convertible) {
-        format!("{access} === null ? null : {inner}")
-    } else {
-        inner
+    unknown_aliases: &HashSet<String>,
+    direction: JsonDirection,
+) -> Result<FunSpec, SigilStitchError> {
+    let source = direction.source();
+    let (input, output) = match direction {
+        JsonDirection::FromWire => (wire_name, name),
+        JsonDirection::ToWire => (name, wire_name),
     };
-    if optional {
-        if needs_conversion(expr, convertible) {
-            format!("{access} !== undefined ? {with_null} : undefined")
-        } else {
-            with_null
+    let mut fields = Vec::new();
+    for prop in obj.properties.values() {
+        let source_key = direction.source_key(prop);
+        let target_key = direction.target_key(prop);
+        let access = json_property_access(source, &source_key)?;
+        let mut value = json_conversion_expr(
+            &prop.type_expr,
+            access.clone(),
+            current_schema,
+            convertible,
+            direction,
+        )?;
+        if prop.nullable && needs_conversion(&prop.type_expr, convertible) {
+            value = sigil_quote!(TypeScript {
+                $C(access.clone()) === null ? null : $C(value)
+            })?;
         }
+        if !prop.required && needs_conversion(&prop.type_expr, convertible) {
+            value = sigil_quote!(TypeScript {
+                $C(access) !== undefined ? $C(value) : undefined
+            })?;
+        }
+        let field = if target_key == "__proto__" {
+            // A literal __proto__ property changes an object literal's prototype.
+            sigil_quote!(TypeScript { [$S(target_key)]: $C(value), })?
+        } else if is_unescaped_ts_property(&target_key) {
+            sigil_quote!(TypeScript { $N(target_key): $C(value), })?
+        } else {
+            sigil_quote!(TypeScript { $S(target_key): $C(value), })?
+        };
+        fields.push(if !prop.required && obj.additional_properties.is_some() {
+            sigil_quote!(TypeScript {
+                ...(Object.prototype.hasOwnProperty.call($N(source), $S(source_key)) ? {
+                    $C(field)
+                } : {}),
+            })?
+        } else {
+            field
+        });
+    }
+    let body = if obj.properties.is_empty()
+        && !obj
+            .additional_properties
+            .as_ref()
+            .is_some_and(|ty| needs_conversion(ty, convertible))
+    {
+        sigil_quote!(TypeScript { return $N(source) as unknown as $T(TypeName::primitive(output)); })?
+    } else if let Some(additional) = &obj.additional_properties {
+        build_open_object_conversion(
+            obj,
+            additional,
+            fields,
+            current_schema,
+            convertible,
+            unknown_aliases,
+            direction,
+        )?
     } else {
-        with_null
+        sigil_quote!(TypeScript {
+            return {
+                $C_each(fields)
+            };
+        })?
+    };
+    FunSpec::builder(&format!("{}{}", fn_base_name(name), direction.suffix()))
+        .visibility(Visibility::Public)
+        .add_param(ParameterSpec::of(source, TypeName::primitive(input)))
+        .returns(vec![TypeName::primitive(output)])
+        .body(body)
+        .build()
+}
+
+fn build_open_object_conversion(
+    obj: &IrObject,
+    additional: &IrTypeExpr,
+    fields: Vec<CodeBlock>,
+    current_schema: &str,
+    convertible: &HashSet<String>,
+    unknown_aliases: &HashSet<String>,
+    direction: JsonDirection,
+) -> Result<CodeBlock, SigilStitchError> {
+    let source = direction.source();
+    let source_keys: Vec<_> = obj
+        .properties
+        .values()
+        .map(|prop| direction.source_key(prop))
+        .collect();
+    let target_keys: Vec<_> = obj
+        .properties
+        .values()
+        .map(|prop| direction.target_key(prop))
+        .collect();
+    let renamed = obj
+        .properties
+        .values()
+        .any(|prop| prop.name != prop.name.to_lower_camel_case());
+    let restore = direction == JsonDirection::ToWire && renamed;
+    let retain = direction == JsonDirection::FromWire && renamed;
+    let metadata_key = "openapi-nexus.additionalProperties";
+    let additional_type = match direction {
+        JsonDirection::FromWire => {
+            type_expr_to_typename_wire(additional, current_schema, convertible)
+        }
+        JsonDirection::ToWire => type_expr_to_typename_for_schema(additional, current_schema),
+    };
+    let retained_type = union_typename(vec![
+        type_application(
+            TypeName::primitive("Record"),
+            vec![TypeName::primitive("string"), additional_type.clone()],
+        ),
+        TypeName::primitive("undefined"),
+    ]);
+    let entries = sigil_quote!(TypeScript {
+        Object.entries($N(source))
+        $if(!source_keys.is_empty()) {
+            .filter(([key]) => ![$for(key in &source_keys; separator = ", ") { $S(key) }].includes(key))
+        }
+    })?;
+    let entries = if restore {
+        sigil_quote!(TypeScript {
+            Object.entries({ ...Object.fromEntries($C(entries)), ...retainedProperties })
+        })?
+    } else {
+        entries
+    };
+    let cast_additional =
+        !obj.properties.is_empty() && !type_expr_collapses_to_unknown(additional, unknown_aliases);
+    let converted = json_conversion_expr(
+        additional,
+        sigil_quote!(TypeScript { additionalValue })?,
+        current_schema,
+        convertible,
+        direction,
+    )?;
+    let visible = if retain {
+        sigil_quote!(TypeScript {
+            Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ![$for(key in &target_keys; separator = ", ") { $S(key) }].includes(key)))
+        })?
+    } else {
+        sigil_quote!(TypeScript {
+            additionalProperties
+        })?
+    };
+    // An extension may have the same spelling as a renamed declared field.
+    // Keep the declared property usable and retain the shadowed extension in
+    // enumerable symbol metadata: object spread preserves it, JSON does not.
+    sigil_quote!(TypeScript {
+        $if(restore) {
+            const retainedProperties = Object.getOwnPropertyDescriptor($N(source), Symbol.for($S(metadata_key)))?.value as $T(retained_type);
+        }
+        const additionalProperties = Object.fromEntries($C(entries).map(([key, value]) => {
+            const additionalValue = $if(cast_additional) { value as $T(additional_type) } $else { value };
+            return [key, $C(converted)] as const;
+        }));
+        const result = {
+            ...$C(visible),
+            $C_each(fields)
+        };
+        $if(retain) {
+            const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => [$for(key in &target_keys; separator = ", ") { $S(key) }].includes(key)));
+            if (Object.keys(shadowedProperties).length > 0) {
+                Object.defineProperty(result, Symbol.for($S(metadata_key)), {
+                    value: shadowedProperties,
+                    enumerable: true,
+                });
+            }
+        }
+        return result;
+    })
+}
+
+fn json_property_access(object: &str, key: &str) -> Result<CodeBlock, SigilStitchError> {
+    if is_unescaped_ts_property(key) && key != "__proto__" {
+        sigil_quote!(TypeScript { $N(object).$N(key) })
+    } else {
+        sigil_quote!(TypeScript { $N(object)[$S(key)] })
+    }
+}
+
+fn is_unescaped_ts_property(key: &str) -> bool {
+    // $N escapes declaration keywords, but property names must retain their
+    // wire spelling. String-literal keys and indexed access avoid that escape.
+    is_valid_ts_identifier(key) && !TypeScript::new().reserved_words().contains(&key)
+}
+
+fn json_conversion_expr(
+    expr: &IrTypeExpr,
+    access: CodeBlock,
+    current_schema: &str,
+    convertible: &HashSet<String>,
+    direction: JsonDirection,
+) -> Result<CodeBlock, SigilStitchError> {
+    match expr {
+        IrTypeExpr::Named(name) if convertible.contains(name) => {
+            let pascal = name.to_pascal_case();
+            let function_name = format!("{}{}", fn_base_name(&pascal), direction.suffix());
+            let function = if name == current_schema {
+                TypeName::primitive(&function_name)
+            } else {
+                TypeName::importable(&format!("./{pascal}"), &function_name)
+            };
+            sigil_quote!(TypeScript { $T(function)($C(access)) })
+        }
+        IrTypeExpr::Array(inner) if has_named_ref(inner, convertible) => {
+            let item = json_conversion_expr(
+                inner,
+                sigil_quote!(TypeScript { item })?,
+                current_schema,
+                convertible,
+                direction,
+            )?;
+            sigil_quote!(TypeScript { $C(access).map((item) => $C(item)) })
+        }
+        IrTypeExpr::Nullable(inner) if has_named_ref(inner, convertible) => {
+            let value = json_conversion_expr(
+                inner,
+                access.clone(),
+                current_schema,
+                convertible,
+                direction,
+            )?;
+            sigil_quote!(TypeScript { $C(access) != null ? $C(value) : null })
+        }
+        IrTypeExpr::Map(inner) if has_named_ref(inner, convertible) => {
+            let value = json_conversion_expr(
+                inner,
+                sigil_quote!(TypeScript { v })?,
+                current_schema,
+                convertible,
+                direction,
+            )?;
+            sigil_quote!(TypeScript {
+                Object.fromEntries(Object.entries($C(access) ?? {}).map(([k, v]) => [k, $C(value)]))
+            })
+        }
+        _ => Ok(access),
     }
 }
 
@@ -703,31 +912,6 @@ fn from_json_expr_inner(expr: &IrTypeExpr, access: &str, convertible: &HashSet<S
             )
         }
         _ => access.to_string(),
-    }
-}
-
-/// Generate the toJSON expression for a type.
-fn to_json_expr(
-    expr: &IrTypeExpr,
-    access: &str,
-    optional: bool,
-    nullable: bool,
-    convertible: &HashSet<String>,
-) -> String {
-    let inner = to_json_expr_inner(expr, access, convertible);
-    let with_null = if nullable && needs_conversion(expr, convertible) {
-        format!("{access} === null ? null : {inner}")
-    } else {
-        inner
-    };
-    if optional {
-        if needs_conversion(expr, convertible) {
-            format!("{access} !== undefined ? {with_null} : undefined")
-        } else {
-            with_null
-        }
-    } else {
-        with_null
     }
 }
 
@@ -827,17 +1011,6 @@ fn build_unknown_alias_set(ir: &IrSpec) -> HashSet<String> {
             renders_unknown.then(|| name.clone())
         })
         .collect()
-}
-
-/// Collect unique Named type references from an object's properties (only convertible ones).
-fn collect_named_refs(obj: &IrObject, convertible: &HashSet<String>) -> Vec<String> {
-    let mut refs = HashSet::new();
-    for (_name, prop) in &obj.properties {
-        collect_named_refs_from_expr(&prop.type_expr, &mut refs, convertible);
-    }
-    let mut sorted: Vec<String> = refs.into_iter().collect();
-    sorted.sort();
-    sorted
 }
 
 fn collect_named_refs_from_expr(
@@ -958,8 +1131,61 @@ fn is_valid_ts_identifier(s: &str) -> bool {
 
 /// Alias file: `export type Name = Inner;` — where `Inner` may be a named ref
 /// (import auto-emitted), a primitive, a readonly array, etc.
-fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr, ts: &TypeScript) -> Option<FileSpec> {
+fn emit_alias_file(
+    schema: &IrSchema,
+    expr: &IrTypeExpr,
+    convertible: &HashSet<String>,
+    ts: &TypeScript,
+) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
+    if convertible.contains(&schema.name) {
+        let wire_name = format!("{name}$Wire");
+        let mut file = FileSpec::builder_with(&format!("{name}.ts"), ts.clone())
+            .add_type(
+                build_type_alias(
+                    &wire_name,
+                    type_expr_to_typename_wire(expr, &schema.name, convertible),
+                    schema.description.as_deref(),
+                )
+                .expect("convertible wire type alias builds"),
+            )
+            .add_type(
+                build_type_alias(
+                    &name,
+                    type_expr_to_typename_for_schema(expr, &schema.name),
+                    schema.description.as_deref(),
+                )
+                .expect("convertible ergonomic type alias builds"),
+            );
+        for direction in [JsonDirection::FromWire, JsonDirection::ToWire] {
+            let source = direction.source();
+            let (input, output) = match direction {
+                JsonDirection::FromWire => (&wire_name, &name),
+                JsonDirection::ToWire => (&name, &wire_name),
+            };
+            let value = json_conversion_expr(
+                expr,
+                sigil_quote!(TypeScript { $N(source) }).expect("alias input builds"),
+                &schema.name,
+                convertible,
+                direction,
+            )
+            .expect("alias JSON conversion expression builds");
+            file = file.add_function(
+                FunSpec::builder(&format!("{}{}", fn_base_name(&name), direction.suffix()))
+                    .visibility(Visibility::Public)
+                    .add_param(ParameterSpec::of(source, TypeName::primitive(input)))
+                    .returns(vec![TypeName::primitive(output)])
+                    .body(
+                        sigil_quote!(TypeScript { return $C(value); })
+                            .expect("alias JSON converter body builds"),
+                    )
+                    .build()
+                    .expect("alias JSON converter builds"),
+            );
+        }
+        return file.build().ok();
+    }
     let rhs = type_expr_to_typename(expr);
 
     let type_alias = sigil_quote!(TypeScript {
@@ -973,6 +1199,20 @@ fn emit_alias_file(schema: &IrSchema, expr: &IrTypeExpr, ts: &TypeScript) -> Opt
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
     fb.add_code(type_alias).build().ok()
+}
+
+fn build_type_alias(
+    name: &str,
+    target: TypeName,
+    description: Option<&str>,
+) -> Result<TypeSpec, SigilStitchError> {
+    let mut alias = TypeSpec::builder(name, TypeKind::TypeAlias)
+        .visibility(Visibility::Public)
+        .extends(target);
+    if let Some(doc) = description {
+        alias = alias.doc(doc);
+    }
+    alias.build()
 }
 
 /// Union file: `export type Name = A | B | C [| null];`
@@ -989,6 +1229,17 @@ fn emit_union_file(
     let name = schema.name.to_pascal_case();
 
     if flags.property_naming_camel_case && convertible.contains(&schema.name) {
+        if let [member] = union.members.as_slice() {
+            // A single non-null member is unambiguous even when lowering kept
+            // anyOf/oneOf as a union. Reuse alias conversion rather than the
+            // multi-member union's cast-through policy.
+            let expr = if union.nullable {
+                IrTypeExpr::Nullable(Box::new(member.clone()))
+            } else {
+                member.clone()
+            };
+            return emit_alias_file(schema, &expr, convertible, ts);
+        }
         return emit_union_file_camel_case(schema, union, &name, convertible, ts);
     }
 
@@ -1017,9 +1268,11 @@ fn emit_union_file(
 /// reports it as unsupported rather than emitting `export type Name = ;`.
 fn emit_intersection_file(
     schema: &IrSchema,
+    ir: &IrSpec,
     intersection: &IrIntersection,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    unknown_aliases: &HashSet<String>,
     ts: &TypeScript,
 ) -> Option<FileSpec> {
     if intersection.members.is_empty() {
@@ -1028,7 +1281,15 @@ fn emit_intersection_file(
     let name = schema.name.to_pascal_case();
 
     if flags.property_naming_camel_case && convertible.contains(&schema.name) {
-        return emit_intersection_file_camel_case(schema, intersection, &name, convertible, ts);
+        return emit_intersection_file_camel_case(
+            schema,
+            ir,
+            intersection,
+            &name,
+            convertible,
+            unknown_aliases,
+            ts,
+        );
     }
 
     let members: Vec<TypeName> = intersection
@@ -1066,6 +1327,7 @@ fn emit_tagged_union_file(
     tu: &IrTaggedUnion,
     flags: EmitFlags,
     convertible: &HashSet<String>,
+    unknown_aliases: &HashSet<String>,
     ts: &TypeScript,
 ) -> Option<FileSpec> {
     if tu.variants.is_empty() {
@@ -1073,6 +1335,23 @@ fn emit_tagged_union_file(
     }
 
     let name = schema.name.to_pascal_case();
+
+    if matches!(tu.tagging, TaggingStyle::External)
+        && tu
+            .variants
+            .iter()
+            .any(|variant| variant.additional_properties.is_some())
+    {
+        return emit_open_external_union_file(
+            schema,
+            ir,
+            tu,
+            flags,
+            convertible,
+            unknown_aliases,
+            ts,
+        );
+    }
 
     if flags.property_naming_camel_case {
         return emit_tagged_union_file_camel_case(schema, ir, tu, &name, flags, convertible, ts);
@@ -1101,6 +1380,160 @@ fn emit_tagged_union_file(
     }
 
     fb.build().ok()
+}
+
+/// External tags are wire keys in both naming modes. Keep their outer maps
+/// separate from the referenced content model so nested fields are converted
+/// without treating the wrapper's extensions as part of that model.
+fn emit_open_external_union_file(
+    schema: &IrSchema,
+    ir: &IrSpec,
+    union: &IrTaggedUnion,
+    flags: EmitFlags,
+    convertible: &HashSet<String>,
+    unknown_aliases: &HashSet<String>,
+    ts: &TypeScript,
+) -> Option<FileSpec> {
+    let name = schema.name.to_pascal_case();
+    let wire_name = format!("{name}$Wire");
+    let value_type = |expr: &IrTypeExpr, wire: bool| {
+        if type_expr_collapses_to_unknown(expr, unknown_aliases) {
+            TypeName::primitive("unknown")
+        } else if wire {
+            type_expr_to_typename_wire(expr, &schema.name, convertible)
+        } else {
+            type_expr_to_typename_for_schema(expr, &schema.name)
+        }
+    };
+    let wrapper_type = |wire: bool| {
+        union_typename(
+            union
+                .variants
+                .iter()
+                .map(|variant| {
+                    let content = value_type(&variant.content_type, wire);
+                    let required = type_application(
+                        TypeName::primitive("Readonly"),
+                        vec![type_application(
+                            TypeName::primitive("Record"),
+                            vec![
+                                TypeName::string_literal(variant.discriminator_value.clone()),
+                                content.clone(),
+                            ],
+                        )],
+                    );
+                    if let Some(additional) = &variant.additional_properties {
+                        TypeName::intersection(vec![
+                            required,
+                            type_application(
+                                TypeName::primitive("Readonly"),
+                                vec![type_application(
+                                    TypeName::primitive("Record"),
+                                    vec![
+                                        TypeName::primitive("string"),
+                                        union_typename(vec![value_type(additional, wire), content]),
+                                    ],
+                                )],
+                            ),
+                        ])
+                    } else {
+                        required
+                    }
+                })
+                .collect(),
+        )
+    };
+    let mut file = FileSpec::builder_with(&format!("{name}.ts"), ts.clone());
+    if flags.property_naming_camel_case {
+        file = file.add_type(
+            build_type_alias(
+                &wire_name,
+                wrapper_type(true),
+                schema.description.as_deref(),
+            )
+            .expect("external wrapper wire alias builds"),
+        );
+    }
+    file = file.add_type(
+        build_type_alias(&name, wrapper_type(false), schema.description.as_deref())
+            .expect("external wrapper ergonomic alias builds"),
+    );
+
+    if flags.property_naming_camel_case {
+        for direction in [JsonDirection::FromWire, JsonDirection::ToWire] {
+            let source = direction.source();
+            let wire = direction == JsonDirection::FromWire;
+            let (input, output) = if wire {
+                (&wire_name, &name)
+            } else {
+                (&name, &wire_name)
+            };
+            let branches: Vec<_> = union.variants.iter().map(|variant| {
+                let key = &variant.discriminator_value;
+                // hasOwnProperty does not narrow a union containing a closed
+                // alternative. Assert only the key just checked, not an index
+                // signature on the entire wrapper.
+                let content_record = type_application(
+                    TypeName::primitive("Record"),
+                    vec![TypeName::string_literal(key.clone()), value_type(&variant.content_type, wire)],
+                );
+                let content = json_conversion_expr(
+                    &variant.content_type,
+                    sigil_quote!(TypeScript { contentValue }).expect("external content input builds"),
+                    &schema.name, convertible, direction,
+                ).expect("external content conversion builds");
+                let additional = variant.additional_properties.as_ref().map(|expr| {
+                    let ty = value_type(expr, wire);
+                    let cast = !type_expr_collapses_to_unknown(expr, unknown_aliases);
+                    let converted = json_conversion_expr(
+                        expr,
+                        sigil_quote!(TypeScript { additionalValue }).expect("external extension input builds"),
+                        &schema.name, convertible, direction,
+                    ).expect("external extension conversion builds");
+                    sigil_quote!(TypeScript {
+                        const additionalProperties = Object.fromEntries(Object.entries($N(source))
+                            .filter(([key]) => key !== $S(key))
+                            .map(([key, value]) => {
+                                const additionalValue = $if(cast) { value as $T(ty) } $else { value };
+                                return [key, $C(converted)] as const;
+                            }));
+                    }).expect("external extension collection builds")
+                });
+                sigil_quote!(TypeScript {
+                    if (Object.prototype.hasOwnProperty.call($N(source), $S(key))) {
+                        const contentValue = ($N(source) as $T(content_record))[$S(key)];
+                        $if(let Some(additional) = additional) { $C(additional) }
+                        return {
+                            $if(variant.additional_properties.is_some()) { ...additionalProperties, }
+                            [$S(key)]: $C(content),
+                        };
+                    }
+                }).expect("external wrapper conversion branch builds")
+            }).collect();
+            let body = sigil_quote!(TypeScript {
+                $C_each(branches)
+                throw new Error($S("Unknown variant"));
+            })
+            .expect("external wrapper converter body builds");
+            file = file.add_function(
+                FunSpec::builder(&format!("{}{}", fn_base_name(&name), direction.suffix()))
+                    .visibility(Visibility::Public)
+                    .add_param(ParameterSpec::of(source, TypeName::primitive(input)))
+                    .returns(vec![TypeName::primitive(output)])
+                    .body(body)
+                    .build()
+                    .expect("external wrapper JSON converter builds"),
+            );
+        }
+    }
+    if flags.emit_type_guards {
+        for guard in
+            build_tagged_union_type_guards(&name, ir, union, flags.property_naming_camel_case)
+        {
+            file = file.add_code(guard);
+        }
+    }
+    file.build().ok()
 }
 
 /// Emit a tagged union file with dual types + fromJSON/toJSON when camelCase.
@@ -1537,18 +1970,60 @@ fn emit_union_file_camel_case(
 
 fn emit_intersection_file_camel_case(
     schema: &IrSchema,
+    ir: &IrSpec,
     intersection: &IrIntersection,
     name: &str,
     convertible: &HashSet<String>,
+    unknown_aliases: &HashSet<String>,
     ts: &TypeScript,
 ) -> Option<FileSpec> {
     let filename = format!("{}.ts", name);
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
 
+    if let Some(object) = open_intersection_object(intersection, ir) {
+        let wire_name = format!("{name}$Wire");
+        let wire_type = TypeName::intersection(
+            intersection
+                .members
+                .iter()
+                .map(|member| type_expr_to_typename_wire(member, &schema.name, convertible))
+                .collect(),
+        );
+        let ergonomic_type = TypeName::intersection(
+            intersection
+                .members
+                .iter()
+                .map(|member| type_expr_to_typename_for_schema(member, &schema.name))
+                .collect(),
+        );
+        let mut file = fb
+            .add_type(
+                build_type_alias(&wire_name, wire_type, schema.description.as_deref())
+                    .expect("open intersection wire type alias builds"),
+            )
+            .add_type(
+                build_type_alias(name, ergonomic_type, schema.description.as_deref())
+                    .expect("open intersection ergonomic type alias builds"),
+            );
+        for direction in [JsonDirection::FromWire, JsonDirection::ToWire] {
+            file = file.add_function(
+                build_json_converter(
+                    name,
+                    &wire_name,
+                    &schema.name,
+                    &object,
+                    convertible,
+                    unknown_aliases,
+                    direction,
+                )
+                .expect("open intersection JSON converter builds"),
+            );
+        }
+        return file.build().ok();
+    }
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-
     // $Wire type alias: A$Wire & B$Wire & ... (only $Wire for convertible refs)
     let wire_name = format!("{name}$Wire");
     let wire_members: Vec<String> = intersection
@@ -1656,6 +2131,146 @@ fn emit_intersection_file_camel_case(
     }
 
     fb.build().ok()
+}
+
+/// Plan named fields and a dictionary together, so allOf map conversion never
+/// interprets a declared field as an extension or leaves its wire spelling behind.
+fn open_intersection_object(intersection: &IrIntersection, ir: &IrSpec) -> Option<IrObject> {
+    fn merge(
+        expr: &IrTypeExpr,
+        ir: &IrSpec,
+        object: &mut IrObject,
+        visiting: &mut HashSet<String>,
+    ) -> Option<()> {
+        match expr {
+            IrTypeExpr::Map(value) => {
+                object.additional_properties = Some(match &object.additional_properties {
+                    Some(existing) => intersect_dictionary_values(existing, value, ir)?,
+                    None => value.as_ref().clone(),
+                });
+            }
+            IrTypeExpr::Named(name) => {
+                if !visiting.insert(name.clone()) {
+                    return None;
+                }
+                match &ir.schemas.get(name)?.kind {
+                    IrSchemaKind::Object(member) => {
+                        for (name, property) in &member.properties {
+                            if let Some(existing) = object.properties.get_mut(name) {
+                                existing.type_expr = intersect_dictionary_values(
+                                    &existing.type_expr,
+                                    &property.type_expr,
+                                    ir,
+                                )?;
+                                // allOf requires a property if any member does,
+                                // and accepts null only if every member does.
+                                existing.required |= property.required;
+                                existing.nullable &= property.nullable;
+                            } else {
+                                object.properties.insert(name.clone(), property.clone());
+                            }
+                        }
+                        if let Some(value) = &member.additional_properties {
+                            merge(
+                                &IrTypeExpr::Map(Box::new(value.clone())),
+                                ir,
+                                object,
+                                visiting,
+                            )?;
+                        }
+                    }
+                    IrSchemaKind::Alias(inner) => merge(inner, ir, object, visiting)?,
+                    IrSchemaKind::Intersection(inner) => {
+                        for member in &inner.members {
+                            merge(member, ir, object, visiting)?;
+                        }
+                    }
+                    _ => return None,
+                }
+                visiting.remove(name);
+            }
+            _ => return None,
+        }
+        Some(())
+    }
+    let mut object = IrObject {
+        properties: Default::default(),
+        additional_properties: None,
+    };
+    let mut visiting = HashSet::new();
+    for member in &intersection.members {
+        merge(member, ir, &mut object, &mut visiting)?;
+    }
+    object.additional_properties.as_ref()?;
+    Some(object)
+}
+
+/// Narrow compatible allOf value contracts instead of treating an unrestricted
+/// dictionary and a typed dictionary as incompatible. Resolve aliases only for
+/// planning; the public intersection aliases still retain their original members.
+fn intersect_dictionary_values(
+    left: &IrTypeExpr,
+    right: &IrTypeExpr,
+    ir: &IrSpec,
+) -> Option<IrTypeExpr> {
+    fn intersect(
+        left: &IrTypeExpr,
+        right: &IrTypeExpr,
+        ir: &IrSpec,
+        visiting: &mut HashSet<String>,
+    ) -> Option<IrTypeExpr> {
+        if left == right {
+            return Some(left.clone());
+        }
+        if matches!(left, IrTypeExpr::Any) {
+            return Some(right.clone());
+        }
+        if matches!(right, IrTypeExpr::Any) {
+            return Some(left.clone());
+        }
+        for (candidate, value) in [(left, right), (right, left)] {
+            if let IrTypeExpr::Named(name) = candidate
+                && let Some(IrSchemaKind::Alias(target)) =
+                    ir.schemas.get(name).map(|schema| &schema.kind)
+            {
+                if !visiting.insert(name.clone()) {
+                    return None;
+                }
+                let result = intersect(target, value, ir, visiting);
+                visiting.remove(name);
+                return result;
+            }
+        }
+        match (left, right) {
+            (IrTypeExpr::Array(a), IrTypeExpr::Array(b)) => {
+                Some(IrTypeExpr::Array(Box::new(intersect(a, b, ir, visiting)?)))
+            }
+            (IrTypeExpr::Map(a), IrTypeExpr::Map(b)) => {
+                Some(IrTypeExpr::Map(Box::new(intersect(a, b, ir, visiting)?)))
+            }
+            (IrTypeExpr::Nullable(a), IrTypeExpr::Nullable(b)) => Some(IrTypeExpr::Nullable(
+                Box::new(intersect(a, b, ir, visiting)?),
+            )),
+            (IrTypeExpr::Nullable(inner), value) | (value, IrTypeExpr::Nullable(inner)) => {
+                intersect(inner, value, ir, visiting)
+            }
+            (IrTypeExpr::Primitive(a), IrTypeExpr::Primitive(b))
+                if primitive_to_ts(a) == primitive_to_ts(b) =>
+            {
+                Some(left.clone())
+            }
+            (
+                IrTypeExpr::Primitive(IrPrimitive::String),
+                value @ (IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_)),
+            )
+            | (
+                value @ (IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_)),
+                IrTypeExpr::Primitive(IrPrimitive::String),
+            ) => Some(value.clone()),
+            _ => None,
+        }
+    }
+    intersect(left, right, ir, &mut HashSet::new())
 }
 
 fn tagged_union_type_imports(
@@ -2152,17 +2767,24 @@ pub fn build_convertible_set(ir: &IrSpec, flags: EmitFlags) -> HashSet<String> {
         })
         .collect();
 
-    // Pass 2: composite convertibles (Intersection, Union) — only if they
-    // reference at least one leaf-convertible member.
-    let mut set = leaf.clone();
-    for (name, schema) in &ir.schemas {
-        let dominated = match &schema.kind {
-            IrSchemaKind::Intersection(i) => i.members.iter().any(|m| has_named_ref(m, &leaf)),
-            IrSchemaKind::Union(u) => u.members.iter().any(|m| has_named_ref(m, &leaf)),
-            _ => false,
-        };
-        if dominated {
-            set.insert(name.clone());
+    // Resolve aliases and composites to a fixed point so a chain of aliases
+    // cannot hide a model's wire type or required JSON conversion.
+    let mut set = leaf;
+    loop {
+        let previous_len = set.len();
+        for (name, schema) in &ir.schemas {
+            let dominated = match &schema.kind {
+                IrSchemaKind::Alias(expr) => has_named_ref(expr, &set),
+                IrSchemaKind::Intersection(i) => i.members.iter().any(|m| has_named_ref(m, &set)),
+                IrSchemaKind::Union(u) => u.members.iter().any(|m| has_named_ref(m, &set)),
+                _ => false,
+            };
+            if dominated {
+                set.insert(name.clone());
+            }
+        }
+        if set.len() == previous_len {
+            break;
         }
     }
     set
@@ -2217,6 +2839,246 @@ mod render_tests {
     use super::*;
     use sigil_stitch::assert_rendered;
 
+    fn additional_properties_ir() -> IrSpec {
+        let parsed = crate::parser::parse_content_yaml(include_str!(
+            "../../../../tests/fixtures/valid/typescript-additional-properties.yaml"
+        ))
+        .unwrap();
+        crate::ir::lower::lower(parsed).unwrap()
+    }
+
+    #[test]
+    fn structured_type_alias_keeps_intersection_imports() {
+        let target = TypeName::intersection(vec![
+            TypeName::importable_type("./Detail", "Detail$Wire"),
+            type_application(
+                TypeName::primitive("Readonly"),
+                vec![type_application(
+                    TypeName::primitive("Record"),
+                    vec![
+                        TypeName::primitive("string"),
+                        TypeName::primitive("unknown"),
+                    ],
+                )],
+            ),
+        ]);
+        let alias = build_type_alias("Envelope$Wire", target, None).unwrap();
+        let fragments = alias.emit(&TypeScript::new()).unwrap();
+        let block = sigil_quote!(TypeScript { $C_each(fragments) }).unwrap();
+        assert_rendered!(
+            TypeScript::new(),
+            block,
+            "import type { Detail$Wire } from './Detail';\n\nexport type Envelope$Wire = Detail$Wire & Readonly<Record<string, unknown>>;\n"
+        );
+    }
+
+    #[test]
+    fn convertible_aliases_resolve_independently_of_schema_order() {
+        let mut ir = additional_properties_ir();
+        let flags = EmitFlags {
+            property_naming_camel_case: true,
+            ..Default::default()
+        };
+        for _ in 0..2 {
+            let convertible = build_convertible_set(&ir, flags);
+            for name in [
+                "DetailAlias",
+                "DetailAliasChain",
+                "DetailListAlias",
+                "NullableDetailAlias",
+            ] {
+                assert!(
+                    convertible.contains(name),
+                    "{name} must retain model conversion"
+                );
+            }
+            assert!(!convertible.contains("AnyJsonValue"));
+            assert!(build_convertible_set(&ir, EmitFlags::default()).is_empty());
+            ir.schemas.reverse();
+        }
+    }
+
+    #[test]
+    fn model_alias_file_tracks_wire_types_and_converter_imports() {
+        let ir = additional_properties_ir();
+        let flags = EmitFlags {
+            property_naming_camel_case: true,
+            ..Default::default()
+        };
+        let convertible = build_convertible_set(&ir, flags);
+        let file = emit_model_file(
+            &ir.schemas["DetailAliasChain"],
+            &ir,
+            flags,
+            &convertible,
+            &HashSet::new(),
+            &TypeScript::new(),
+        )
+        .unwrap();
+        assert_eq!(
+            file.render(100).unwrap(),
+            r#"import type { DetailAlias, DetailAlias$Wire } from './DetailAlias';
+import { detailAliasFromJSON, detailAliasToJSON } from './DetailAlias';
+
+export type DetailAliasChain$Wire = DetailAlias$Wire;
+
+export type DetailAliasChain = DetailAlias;
+
+export function detailAliasChainFromJSON(json: DetailAliasChain$Wire): DetailAliasChain {
+  return detailAliasFromJSON(json);
+}
+
+export function detailAliasChainToJSON(value: DetailAliasChain): DetailAliasChain$Wire {
+  return detailAliasToJSON(value);
+}
+"#
+        );
+    }
+
+    #[test]
+    fn singleton_nullable_union_converts_its_only_non_null_member() {
+        let ir = additional_properties_ir();
+        let flags = EmitFlags {
+            property_naming_camel_case: true,
+            ..Default::default()
+        };
+        let convertible = build_convertible_set(&ir, flags);
+        let file = emit_model_file(
+            &ir.schemas["NullableDetailAlias"],
+            &ir,
+            flags,
+            &convertible,
+            &HashSet::new(),
+            &TypeScript::new(),
+        )
+        .unwrap();
+        assert_eq!(
+            file.render(100).unwrap(),
+            r#"import type { DetailAliasChain, DetailAliasChain$Wire } from './DetailAliasChain';
+import { detailAliasChainFromJSON, detailAliasChainToJSON } from './DetailAliasChain';
+
+export type NullableDetailAlias$Wire = DetailAliasChain$Wire | null;
+
+export type NullableDetailAlias = DetailAliasChain | null;
+
+export function nullableDetailAliasFromJSON(json: NullableDetailAlias$Wire): NullableDetailAlias {
+  return json != null ? detailAliasChainFromJSON(json) : null;
+}
+
+export function nullableDetailAliasToJSON(value: NullableDetailAlias): NullableDetailAlias$Wire {
+  return value != null ? detailAliasChainToJSON(value) : null;
+}
+"#
+        );
+    }
+
+    #[test]
+    fn compatible_allof_dictionaries_plan_all_named_fields_in_both_orders() {
+        let ir = additional_properties_ir();
+        let IrSchemaKind::Intersection(intersection) = &ir.schemas["HeterogeneousAllOf"].kind
+        else {
+            panic!("intersection fixture")
+        };
+        let mut intersection = intersection.clone();
+        for _ in 0..2 {
+            let object = open_intersection_object(&intersection, &ir).unwrap();
+            assert_eq!(
+                object.additional_properties,
+                Some(IrTypeExpr::Primitive(IrPrimitive::String))
+            );
+            assert_eq!(object.properties.len(), 2);
+            for key in ["known_field", "other_field"] {
+                let property = &object.properties[key];
+                assert_eq!(
+                    property.type_expr,
+                    IrTypeExpr::Primitive(IrPrimitive::String)
+                );
+                assert!(property.required);
+                assert!(!property.nullable);
+            }
+            intersection.members.reverse();
+        }
+    }
+
+    #[test]
+    fn compatible_allof_values_narrow_aliases_and_nested_containers() {
+        let ir = additional_properties_ir();
+        let string = IrTypeExpr::Primitive(IrPrimitive::String);
+        let detail = IrTypeExpr::Named("Detail".to_string());
+        let alias = IrTypeExpr::Named("DetailAliasChain".to_string());
+        let literal = IrTypeExpr::StringLiteral("fixed".to_string());
+        for (left, right, expected) in [
+            (IrTypeExpr::Any, string.clone(), string.clone()),
+            (alias.clone(), detail.clone(), detail.clone()),
+            (
+                IrTypeExpr::Array(Box::new(alias)),
+                IrTypeExpr::Array(Box::new(detail.clone())),
+                IrTypeExpr::Array(Box::new(detail)),
+            ),
+            (
+                IrTypeExpr::Map(Box::new(IrTypeExpr::Any)),
+                IrTypeExpr::Map(Box::new(string.clone())),
+                IrTypeExpr::Map(Box::new(string.clone())),
+            ),
+            (
+                IrTypeExpr::Nullable(Box::new(string.clone())),
+                string.clone(),
+                string.clone(),
+            ),
+            (string, literal.clone(), literal),
+        ] {
+            assert_eq!(
+                intersect_dictionary_values(&left, &right, &ir),
+                Some(expected.clone())
+            );
+            assert_eq!(
+                intersect_dictionary_values(&right, &left, &ir),
+                Some(expected)
+            );
+        }
+    }
+
+    #[test]
+    fn allof_duplicate_fields_merge_required_and_nullable_contracts_in_both_orders() {
+        let parsed = crate::parser::parse_content_yaml(
+            r#"
+openapi: 3.1.0
+info: {title: Compatible maps, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    Composed:
+      allOf:
+        - type: object
+          properties:
+            known_field: {type: [string, 'null']}
+          additionalProperties: true
+        - type: object
+          required: [known_field]
+          properties:
+            known_field: {type: string}
+          additionalProperties: {type: string}
+"#,
+        )
+        .unwrap();
+        let ir = crate::ir::lower::lower(parsed).unwrap();
+        let IrSchemaKind::Intersection(intersection) = &ir.schemas["Composed"].kind else {
+            panic!("intersection fixture")
+        };
+        let mut intersection = intersection.clone();
+        for _ in 0..2 {
+            let object = open_intersection_object(&intersection, &ir).unwrap();
+            let property = &object.properties["known_field"];
+            assert!(property.required);
+            assert!(!property.nullable);
+            assert_eq!(
+                property.type_expr,
+                IrTypeExpr::Primitive(IrPrimitive::String)
+            );
+            intersection.members.reverse();
+        }
+    }
+
     #[test]
     fn nullable_and_union_array_types_keep_precedence_and_imports() {
         let string = IrTypeExpr::Primitive(IrPrimitive::String);
@@ -2254,6 +3116,76 @@ mod render_tests {
             })
             .expect("array type render test quote builds");
             assert_rendered!(TypeScript::new(), width = 100, block, expected);
+        }
+    }
+
+    #[test]
+    fn additional_property_conversions_keep_nested_nullability_and_value_imports() {
+        let expr = IrTypeExpr::Map(Box::new(IrTypeExpr::Nullable(Box::new(IrTypeExpr::Named(
+            "Detail".to_string(),
+        )))));
+        let convertible = HashSet::from(["Detail".to_string()]);
+        for (direction, expected) in [
+            (
+                JsonDirection::FromWire,
+                "import { detailFromJSON } from './Detail';\n\nObject.fromEntries(Object.entries(values ?? {}).map(([k, v]) => [k, v != null ? detailFromJSON(v) : null]))\n",
+            ),
+            (
+                JsonDirection::ToWire,
+                "import { detailToJSON } from './Detail';\n\nObject.fromEntries(Object.entries(values ?? {}).map(([k, v]) => [k, v != null ? detailToJSON(v) : null]))\n",
+            ),
+        ] {
+            let access = sigil_quote!(TypeScript { values }).unwrap();
+            let block =
+                json_conversion_expr(&expr, access, "Envelope", &convertible, direction).unwrap();
+            assert_rendered!(TypeScript::new(), width = 200, block, expected);
+        }
+    }
+
+    #[test]
+    fn additional_property_types_keep_dictionary_value_imports_and_known_types() {
+        let parsed = crate::parser::parse_content_yaml(include_str!(
+            "../../../../tests/fixtures/valid/typescript-additional-properties.yaml"
+        ))
+        .unwrap();
+        let ir = crate::ir::lower::lower(parsed).unwrap();
+        let IrSchemaKind::Object(obj) = &ir.schemas["MixedModelMap"].kind else {
+            panic!("object fixture")
+        };
+        let convertible = HashSet::from(["Detail".to_string()]);
+        for (wire, expected) in [
+            (
+                false,
+                "import type { Detail } from './Detail';\n\nexport type Values = Readonly<Record<string, Detail | number>>;\n",
+            ),
+            (
+                true,
+                "import type { Detail$Wire } from './Detail';\n\nexport type Values = Readonly<Record<string, Detail$Wire | number>>;\n",
+            ),
+        ] {
+            let ty = additional_properties_super_type(
+                obj,
+                "MixedModelMap",
+                wire,
+                &convertible,
+                &HashSet::new(),
+            )
+            .unwrap();
+            let block = sigil_quote!(TypeScript { export type Values = $T(ty); }).unwrap();
+            assert_rendered!(TypeScript::new(), width = 100, block, expected);
+        }
+    }
+
+    #[test]
+    fn json_property_access_does_not_escape_wire_keywords_or_quoted_keys() {
+        for (key, expected) in [
+            ("known_field", "json.known_field\n"),
+            ("type", "json['type']\n"),
+            ("__proto__", "json['__proto__']\n"),
+            ("quoted'field", "json['quoted\\'field']\n"),
+        ] {
+            let block = json_property_access("json", key).unwrap();
+            assert_rendered!(TypeScript::new(), block, expected);
         }
     }
 }

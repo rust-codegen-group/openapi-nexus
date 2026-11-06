@@ -335,10 +335,17 @@ impl<'a> LowerCtx<'a> {
                     ObjectOrReference::Object(obj) => obj.description.clone(),
                     _ => None,
                 };
+                let additional_properties = match member {
+                    ObjectOrReference::Object(obj) => {
+                        self.lower_additional_properties(obj.additional_properties.as_ref())?
+                    }
+                    _ => None,
+                };
                 variants.push(IrTaggedVariant {
                     discriminator_value: disc_value,
                     content_type,
                     description,
+                    additional_properties,
                 });
             }
             return Ok(Some(IrTaggedUnion {
@@ -399,6 +406,7 @@ impl<'a> LowerCtx<'a> {
                 discriminator_value: disc_value,
                 content_type,
                 description,
+                additional_properties: None,
             });
         }
 
@@ -424,6 +432,7 @@ impl<'a> LowerCtx<'a> {
                     discriminator_value: value.clone(),
                     content_type: IrTypeExpr::Named(schema_name),
                     description: None,
+                    additional_properties: None,
                 });
             }
         } else {
@@ -435,6 +444,7 @@ impl<'a> LowerCtx<'a> {
                             discriminator_value: schema_name.clone(),
                             content_type: IrTypeExpr::Named(schema_name),
                             description: None,
+                            additional_properties: None,
                         });
                     }
                     ObjectOrReference::Object(inline_obj) => {
@@ -448,6 +458,7 @@ impl<'a> LowerCtx<'a> {
                             discriminator_value: disc_value,
                             content_type: IrTypeExpr::Named(variant_name),
                             description: None,
+                            additional_properties: None,
                         });
                     }
                 }
@@ -637,7 +648,20 @@ impl<'a> LowerCtx<'a> {
             );
         }
 
-        let additional_properties = match &obj.additional_properties {
+        let additional_properties =
+            self.lower_additional_properties(obj.additional_properties.as_ref())?;
+
+        Ok(IrObject {
+            properties,
+            additional_properties,
+        })
+    }
+
+    fn lower_additional_properties(
+        &mut self,
+        additional: Option<&AdditionalProperties>,
+    ) -> Result<Option<IrTypeExpr>, LowerError> {
+        Ok(match additional {
             Some(AdditionalProperties::Boolean(b)) => {
                 if *b {
                     Some(IrTypeExpr::Any)
@@ -649,11 +673,6 @@ impl<'a> LowerCtx<'a> {
                 Some(self.lower_schema_value(boxed_schema)?)
             }
             None => None,
-        };
-
-        Ok(IrObject {
-            properties,
-            additional_properties,
         })
     }
 

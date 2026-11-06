@@ -14,12 +14,12 @@ export interface FooTagOnlyUnionFooUnitAlpha {
 
 export function fooTagOnlyUnionFooUnitAlphaFromJSON(json: FooTagOnlyUnionFooUnitAlpha$Wire): FooTagOnlyUnionFooUnitAlpha {
   return {
-    type: json.type,
+    'type': json['type'],
   };
 }
 
 export function fooTagOnlyUnionFooUnitAlphaToJSON(value: FooTagOnlyUnionFooUnitAlpha): FooTagOnlyUnionFooUnitAlpha$Wire {
   return {
-    type: value.type,
+    'type': value['type'],
   };
 }

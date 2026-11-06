@@ -1,0 +1,38 @@
+openapi: 3.1.0
+info:
+  title: Open tagged additional properties
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Event:
+      oneOf:
+        - type: object
+          required: [type, sequence_number]
+          properties:
+            type: {type: string, enum: [searching]}
+            sequence_number: {type: integer}
+          additionalProperties: true
+        - type: object
+          required: [type]
+          properties:
+            type: {type: string, enum: [completed]}
+          additionalProperties: true
+    Payload:
+      type: object
+      required: [display_name]
+      properties:
+        display_name: {type: string}
+      additionalProperties: false
+    ExternalEvent:
+      oneOf:
+        - type: object
+          required: [started]
+          properties:
+            started: {$ref: '#/components/schemas/Payload'}
+          additionalProperties: true
+        - type: object
+          required: [finished]
+          properties:
+            finished: {$ref: '#/components/schemas/Payload'}
+          additionalProperties: true

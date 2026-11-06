@@ -14,12 +14,12 @@ export interface FooAdjacentPayloadFooInlineNone {
 
 export function fooAdjacentPayloadFooInlineNoneFromJSON(json: FooAdjacentPayloadFooInlineNone$Wire): FooAdjacentPayloadFooInlineNone {
   return {
-    type: json.type,
+    'type': json['type'],
   };
 }
 
 export function fooAdjacentPayloadFooInlineNoneToJSON(value: FooAdjacentPayloadFooInlineNone): FooAdjacentPayloadFooInlineNone$Wire {
   return {
-    type: value.type,
+    'type': value['type'],
   };
 }

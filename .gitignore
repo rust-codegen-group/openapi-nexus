@@ -8,6 +8,7 @@ test-output/
 examples/*/generated/
 examples/*/target/
 tests/generated-clients/rust/*/generated/
+tests/generated-clients/typescript/generated/
 tests/generated-clients/jvm/*/generated/
 tests/generated-clients/jvm/**/.gradle/
 tests/generated-clients/jvm/**/build/

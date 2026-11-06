@@ -3,6 +3,7 @@ default:
     @just --list --list-submodules
 
 mod golden-typescript 'just/golden-typescript.just'
+mod golden-typescript-clients 'just/golden-typescript-clients.just'
 mod golden-go 'just/golden-go.just'
 mod golden-rust 'just/golden-rust.just'
 mod golden-python 'just/golden-python.just'
@@ -169,4 +170,4 @@ publish:
 # ---------- CI (run everything locally) ----------
 
 # Run the full CI pipeline locally
-ci: fmt-check clippy doc-check book msrv script-check test-all coverage-lcov golden-build-all golden-rust::test golden-jvm::test
+ci: fmt-check clippy doc-check book msrv script-check test-all coverage-lcov golden-build-all golden-typescript-clients::test golden-rust::test golden-jvm::test

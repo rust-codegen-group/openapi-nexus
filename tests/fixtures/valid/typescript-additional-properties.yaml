@@ -1,0 +1,244 @@
+openapi: 3.1.0
+info:
+  title: TypeScript additional property preservation
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    AnyJsonValue:
+      type: ['null', boolean, object, array, number, string]
+    PlainStringMap:
+      type: object
+      additionalProperties: {type: string}
+    PlainJsonMap:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
+    NestedStringMap:
+      type: object
+      properties:
+        known: {type: string}
+        extra:
+          type: object
+          additionalProperties: {type: string}
+    NestedJsonMap:
+      type: object
+      properties:
+        known: {type: string}
+        extra:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
+    MixedStringMap:
+      type: object
+      properties:
+        known: {type: string}
+      additionalProperties: {type: string}
+    MixedJsonMap:
+      type: object
+      properties:
+        known: {type: string}
+      additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
+    MixedInlineAnyMap:
+      type: object
+      properties:
+        known: {type: string}
+      additionalProperties:
+        type: ['null', boolean, object, array, number, string]
+    MixedBooleanMap:
+      type: object
+      properties:
+        known: {type: string}
+      additionalProperties: true
+    MixedNumberMap:
+      type: object
+      properties:
+        known: {type: number}
+      additionalProperties: {type: number}
+    AllOfMixedStringMap:
+      allOf:
+        - type: object
+          properties:
+            known: {type: string}
+        - type: object
+          additionalProperties: {type: string}
+    HeterogeneousAllOf:
+      allOf:
+        - type: object
+          required: [known_field]
+          properties:
+            known_field: {type: string}
+          additionalProperties: true
+        - type: object
+          required: [other_field]
+          properties:
+            other_field: {type: string}
+          additionalProperties: {type: string}
+    SearchItem:
+      type: object
+      required: [type]
+      properties:
+        type: {type: string, enum: [web_search_call]}
+        id: {type: [string, 'null']}
+        status: {type: [string, 'null']}
+      additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
+    SearchStreamEvent:
+      oneOf:
+        - type: object
+          required: [type, sequence_number]
+          properties:
+            type: {type: string, enum: [response.web_search_call.searching]}
+            sequence_number: {type: integer, format: int64}
+          additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
+        - type: object
+          required: [type]
+          properties:
+            type: {type: string, enum: [response.completed]}
+    Detail:
+      type: object
+      required: [display_name]
+      properties:
+        display_name: {type: string}
+      additionalProperties: false
+    DetailAlias:
+      $ref: '#/components/schemas/Detail'
+    DetailAliasChain:
+      $ref: '#/components/schemas/DetailAlias'
+    DetailListAlias:
+      type: array
+      items: {$ref: '#/components/schemas/DetailAliasChain'}
+    NullableDetailAlias:
+      anyOf:
+        - {$ref: '#/components/schemas/DetailAliasChain'}
+        - {type: 'null'}
+    AliasMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: {$ref: '#/components/schemas/DetailAliasChain'}
+    AliasArrayMap:
+      type: object
+      required: [known_count]
+      properties:
+        known_count: {type: integer}
+      additionalProperties: {$ref: '#/components/schemas/DetailListAlias'}
+    AliasNullableMap:
+      type: object
+      required: [known_count]
+      properties:
+        known_count: {type: integer}
+      additionalProperties: {$ref: '#/components/schemas/NullableDetailAlias'}
+    OpenExternalEvent:
+      oneOf:
+        - type: object
+          required: [started]
+          properties:
+            started: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: true
+        - type: object
+          required: [finished]
+          properties:
+            finished: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: true
+    TypedExternalEvent:
+      oneOf:
+        - type: object
+          required: [started]
+          properties:
+            started: {$ref: '#/components/schemas/DetailAliasChain'}
+          additionalProperties: {$ref: '#/components/schemas/DetailAliasChain'}
+        - type: object
+          required: [finished]
+          properties:
+            finished: {$ref: '#/components/schemas/DetailAliasChain'}
+          additionalProperties: {$ref: '#/components/schemas/DetailAliasChain'}
+    ClosedExternalEvent:
+      oneOf:
+        - type: object
+          required: [started]
+          properties:
+            started: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: false
+        - type: object
+          required: [finished]
+          properties:
+            finished: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: false
+    MixedExternalEvent:
+      oneOf:
+        - type: object
+          required: [started]
+          properties:
+            started: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: true
+        - type: object
+          required: [finished]
+          properties:
+            finished: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: false
+    PlainModelMap:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/Detail'}
+    MixedModelMap:
+      type: object
+      required: [known_count]
+      properties:
+        known_count: {type: integer}
+      additionalProperties: {$ref: '#/components/schemas/Detail'}
+    ArrayModelMap:
+      type: object
+      required: [known_count]
+      properties:
+        known_count: {type: integer}
+      additionalProperties:
+        type: array
+        items: {$ref: '#/components/schemas/Detail'}
+    NestedModelMap:
+      type: object
+      required: [known_count]
+      properties:
+        known_count: {type: integer}
+      additionalProperties:
+        type: object
+        additionalProperties: {$ref: '#/components/schemas/Detail'}
+    NullableModelMap:
+      type: object
+      required: [known_count]
+      properties:
+        known_count: {type: integer}
+      additionalProperties:
+        anyOf:
+          - {$ref: '#/components/schemas/Detail'}
+          - {type: 'null'}
+    RecursiveMap:
+      type: object
+      required: [node_label]
+      properties:
+        node_label: {type: string}
+      additionalProperties: {$ref: '#/components/schemas/RecursiveMap'}
+    RenamedMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+        optional_field: {type: [string, 'null']}
+      additionalProperties: true
+    AllOfRenamedMap:
+      description: Composed map with overlapping declared fields.
+      allOf:
+        - {$ref: '#/components/schemas/RenamedMap'}
+        - type: object
+          properties:
+            known_field: {type: string}
+          additionalProperties: true
+    QuotedMap:
+      type: object
+      properties:
+        kebab-field: {type: string}
+        __proto__: {type: string}
+      additionalProperties: true
+    ClosedObject:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: false

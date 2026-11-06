@@ -86,6 +86,8 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("nested-nullable", "valid/nested-nullable.yaml"),
 
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
+        ("open-tagged-additional-properties", "valid/open-tagged-additional-properties.yaml"),
+        ("typescript-additional-properties", "valid/typescript-additional-properties.yaml"),
         ("enum-repr", "valid/enum-repr/enum-repr.yaml"),
         ("query-param-enum", "valid/query/query-param-enum.yaml"),
         ("server-path-prefix", "valid/server-path-prefix.yaml"),
@@ -179,6 +181,8 @@ generate_golden_tests! {
 
     test_enum_repr_golden: "enum-repr",
     test_additional_properties_golden: "additional-properties",
+    test_open_tagged_additional_properties_golden: "open-tagged-additional-properties",
+    test_typescript_additional_properties_golden: "typescript-additional-properties",
 
     test_query_param_enum_golden: "query-param-enum",
     test_server_path_prefix_golden: "server-path-prefix",
@@ -260,6 +264,20 @@ property_naming = "camelCase"
         golden_dir(),
         "ts-property-naming-camel-case-multipart-parts",
         "valid/multipart-nested-object-parts.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+#[traced_test]
+fn test_property_naming_camel_case_additional_properties_golden() {
+    let config = toml::from_str("property_naming = 'camelCase'\ntoolchain = 'vp'").unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    run_golden_test(
+        &generator,
+        golden_dir(),
+        "ts-property-naming-camel-case-additional-properties",
+        "valid/typescript-additional-properties.yaml",
         UPDATE_HINT,
     );
 }

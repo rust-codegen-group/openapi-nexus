@@ -18,16 +18,16 @@ export interface Qux {
 
 export function quxFromJSON(json: Qux$Wire): Qux {
   return {
-    namespace: json.namespace,
-    type: json.type,
+    'namespace': json['namespace'],
+    'type': json['type'],
     url: json.url,
   };
 }
 
 export function quxToJSON(value: Qux): Qux$Wire {
   return {
-    namespace: value.namespace,
-    type: value.type,
+    'namespace': value['namespace'],
+    'type': value['type'],
     url: value.url,
   };
 }

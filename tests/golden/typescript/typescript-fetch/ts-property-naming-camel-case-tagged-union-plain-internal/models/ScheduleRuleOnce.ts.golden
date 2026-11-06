@@ -18,13 +18,13 @@ export interface ScheduleRuleOnce {
 export function scheduleRuleOnceFromJSON(json: ScheduleRuleOnce$Wire): ScheduleRuleOnce {
   return {
     at: json.at,
-    type: json.type,
+    'type': json['type'],
   };
 }
 
 export function scheduleRuleOnceToJSON(value: ScheduleRuleOnce): ScheduleRuleOnce$Wire {
   return {
     at: value.at,
-    type: value.type,
+    'type': value['type'],
   };
 }
