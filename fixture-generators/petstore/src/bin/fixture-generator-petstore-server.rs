@@ -86,7 +86,6 @@ async fn main() {
     // Start the server
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("🚀 Petstore API server running on http://localhost:3000");
-    println!("📚 Swagger UI available at http://localhost:3000/swagger-ui");
     println!("📋 OpenAPI spec available at http://localhost:3000/openapi.json");
 
     axum::serve(listener, app).await.unwrap();
