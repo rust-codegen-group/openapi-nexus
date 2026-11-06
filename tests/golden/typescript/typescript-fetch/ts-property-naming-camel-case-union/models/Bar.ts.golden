@@ -20,7 +20,7 @@ export function barFromJSON(json: Bar$Wire): Bar {
   return {
     bucket: json.bucket,
     endpoint: json.endpoint,
-    type: json.type,
+    'type': json['type'],
   };
 }
 
@@ -28,6 +28,6 @@ export function barToJSON(value: Bar): Bar$Wire {
   return {
     bucket: value.bucket,
     endpoint: value.endpoint,
-    type: value.type,
+    'type': value['type'],
   };
 }

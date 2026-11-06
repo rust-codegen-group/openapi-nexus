@@ -21,7 +21,7 @@ export function scheduleRuleCronFromJSON(json: ScheduleRuleCron$Wire): ScheduleR
   return {
     expression: json.expression,
     timezone: json.timezone,
-    type: json.type,
+    'type': json['type'],
   };
 }
 
@@ -29,6 +29,6 @@ export function scheduleRuleCronToJSON(value: ScheduleRuleCron): ScheduleRuleCro
   return {
     expression: value.expression,
     timezone: value.timezone,
-    type: value.type,
+    'type': value['type'],
   };
 }

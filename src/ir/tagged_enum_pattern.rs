@@ -89,11 +89,25 @@ impl TaggedEnumPattern {
     ///   alongside its content properties
     /// - Untagged: Schema reference to a component schema
     pub fn detect_from_schema(schema_ref: &ObjectOrReference<ObjectSchema>) -> Option<Self> {
+        // A tag plus one content field is not an adjacent wrapper when the
+        // outer object declares extensions. Promoting the complete object as
+        // an internal variant keeps that dictionary in the shared IR.
+        let open = matches!(schema_ref, ObjectOrReference::Object(obj)
+            if matches!(&obj.additional_properties,
+                Some(crate::spec::oas31::spec::Schema::Object(_))
+                | Some(crate::spec::oas31::spec::Schema::Boolean(crate::spec::oas31::spec::BooleanSchema(true)))));
         match schema_ref {
             // ExternallyTagged: object with exactly 1 required property whose value is either:
             // - a string enum (inline discriminator), OR
             // - a $ref to another schema (the property name IS the variant discriminator)
-            ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 1 => {
+            ObjectOrReference::Object(obj_schema)
+                if obj_schema.properties.len() == 1
+                    && (!open
+                        || matches!(
+                            obj_schema.properties.values().next(),
+                            Some(ObjectOrReference::Ref { .. })
+                        )) =>
+            {
                 if let Some((prop_name, prop_schema)) = obj_schema.properties.iter().next()
                     && obj_schema.required.contains(prop_name)
                 {
@@ -115,7 +129,7 @@ impl TaggedEnumPattern {
                     }
                 }
             }
-            ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 2 => {
+            ObjectOrReference::Object(obj_schema) if obj_schema.properties.len() == 2 && !open => {
                 let mut tag_field: Option<String> = None;
                 let mut content_field: Option<String> = None;
                 let mut enum_value: Option<String> = None;
@@ -154,7 +168,7 @@ impl TaggedEnumPattern {
                 }
             }
             ObjectOrReference::Object(obj_schema)
-                if obj_schema.properties.len() > 2 && obj_schema.all_of.is_empty() =>
+                if (obj_schema.properties.len() > 2 || open) && obj_schema.all_of.is_empty() =>
             {
                 let mut tag_field: Option<String> = None;
                 let mut enum_value: Option<String> = None;
@@ -234,8 +248,19 @@ impl TaggedEnumPattern {
     pub fn detect_from_schema_v32(
         schema_ref: &ObjectOrReference32<ObjectSchema32>,
     ) -> Option<Self> {
+        let open = matches!(schema_ref, ObjectOrReference32::Object(obj)
+            if matches!(&obj.additional_properties,
+                Some(crate::spec::oas32::spec::Schema::Object(_))
+                | Some(crate::spec::oas32::spec::Schema::Boolean(crate::spec::oas32::spec::BooleanSchema(true)))));
         match schema_ref {
-            ObjectOrReference32::Object(obj_schema) if obj_schema.properties.len() == 1 => {
+            ObjectOrReference32::Object(obj_schema)
+                if obj_schema.properties.len() == 1
+                    && (!open
+                        || matches!(
+                            obj_schema.properties.values().next(),
+                            Some(ObjectOrReference32::Ref { .. })
+                        )) =>
+            {
                 if let Some((prop_name, prop_schema)) = obj_schema.properties.iter().next()
                     && obj_schema.required.contains(prop_name)
                 {
@@ -255,7 +280,9 @@ impl TaggedEnumPattern {
                     }
                 }
             }
-            ObjectOrReference32::Object(obj_schema) if obj_schema.properties.len() == 2 => {
+            ObjectOrReference32::Object(obj_schema)
+                if obj_schema.properties.len() == 2 && !open =>
+            {
                 let mut tag_field: Option<String> = None;
                 let mut content_field: Option<String> = None;
                 let mut enum_value: Option<String> = None;
@@ -294,7 +321,7 @@ impl TaggedEnumPattern {
                 }
             }
             ObjectOrReference32::Object(obj_schema)
-                if obj_schema.properties.len() > 2 && obj_schema.all_of.is_empty() =>
+                if (obj_schema.properties.len() > 2 || open) && obj_schema.all_of.is_empty() =>
             {
                 let mut tag_field: Option<String> = None;
                 let mut enum_value: Option<String> = None;
@@ -355,8 +382,19 @@ impl TaggedEnumPattern {
     pub fn detect_from_schema_v30(
         schema_ref: &ObjectOrReference30<ObjectSchema30>,
     ) -> Option<Self> {
+        let open = matches!(schema_ref, ObjectOrReference30::Object(obj)
+            if matches!(&obj.additional_properties,
+                Some(crate::spec::oas30::spec::AdditionalProperties::Schema(_))
+                | Some(crate::spec::oas30::spec::AdditionalProperties::Boolean(true))));
         match schema_ref {
-            ObjectOrReference30::Object(obj_schema) if obj_schema.properties.len() == 1 => {
+            ObjectOrReference30::Object(obj_schema)
+                if obj_schema.properties.len() == 1
+                    && (!open
+                        || matches!(
+                            obj_schema.properties.values().next(),
+                            Some(ObjectOrReference30::Ref { .. })
+                        )) =>
+            {
                 if let Some((prop_name, prop_schema)) = obj_schema.properties.iter().next()
                     && obj_schema.required.contains(prop_name)
                 {
@@ -376,7 +414,9 @@ impl TaggedEnumPattern {
                     }
                 }
             }
-            ObjectOrReference30::Object(obj_schema) if obj_schema.properties.len() == 2 => {
+            ObjectOrReference30::Object(obj_schema)
+                if obj_schema.properties.len() == 2 && !open =>
+            {
                 let mut tag_field: Option<String> = None;
                 let mut content_field: Option<String> = None;
                 let mut enum_value: Option<String> = None;
@@ -415,7 +455,7 @@ impl TaggedEnumPattern {
                 }
             }
             ObjectOrReference30::Object(obj_schema)
-                if obj_schema.properties.len() > 2 && obj_schema.all_of.is_empty() =>
+                if (obj_schema.properties.len() > 2 || open) && obj_schema.all_of.is_empty() =>
             {
                 let mut tag_field: Option<String> = None;
                 let mut enum_value: Option<String> = None;

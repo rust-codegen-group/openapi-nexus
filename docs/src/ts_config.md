@@ -187,6 +187,41 @@ Referenced types that are themselves convertible (objects, intersections, unions
 
 Defaults to `"preserve"` (no renaming, single interface, no converters).
 
+### Additional properties
+
+Objects declaring `additionalProperties` expose a readonly string dictionary in
+both naming modes, including objects that also declare named fields. Typed map
+values keep their model types; arbitrary JSON values use `unknown`.
+
+TypeScript's string index covers named fields too. For mixed schemas, the index
+value type therefore includes the additional-value type, every declared field
+type, and `undefined` when a declared field is optional. Named fields retain their
+more precise types. For example, an optional known string plus string extensions
+extends `Readonly<Record<string, string | undefined>>`.
+
+In camelCase mode, both converters preserve extension keys verbatim. Typed model
+values are converted recursively, including arrays, nullable values, and nested
+maps; opaque JSON contents are not renamed. Omitted optional fields stay absent
+on these open objects. Object/map `allOf` composition and open tagged variants
+also retain their extensions. `additionalProperties: false` and unspecified
+additional-property behavior are unchanged.
+
+Compatible `allOf` dictionary contracts are narrowed together (for example,
+`true` with `string` uses string values), and named fields are planned across
+all members before conversion. Aliases of models, arrays, maps, and nullable
+values receive matching wire aliases and converters, including alias chains.
+External tag keys stay verbatim while both the referenced payload and any typed
+outer extension values are converted; each closed alternative remains closed.
+
+An extension can collide with a renamed field: `{known_field: 'fixed',
+knownField: 'extension'}` must still expose `value.knownField === 'fixed'`. The
+converter retains the colliding extension under the enumerable symbol
+`Symbol.for('openapi-nexus.additionalProperties')`; `nameToJSON` restores it.
+Object spread preserves this metadata. Serialize through `nameToJSON`, not
+`JSON.stringify(value)` or a JSON-based clone, which omits symbol metadata. Use
+`Name$Wire` or `property_naming = "preserve"` when direct access to all original
+wire keys is preferable.
+
 ## Barrel Exports
 
 When either feature is enabled, `models/index.ts` automatically emits value re-exports:

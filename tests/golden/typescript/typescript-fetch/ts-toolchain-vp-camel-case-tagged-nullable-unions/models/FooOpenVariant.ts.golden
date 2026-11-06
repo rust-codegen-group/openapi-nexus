@@ -4,22 +4,30 @@
  * TypeScript Fetch VP CamelCase Masked Regression Test — 1.0.0
  * Masked fixture for TypeScript Fetch camelCase regression coverage.
  */
-export interface FooOpenVariant$Wire {
+export interface FooOpenVariant$Wire extends Readonly<Record<string, string | 'foo_open_variant'>> {
   readonly type: 'foo_open_variant';
 }
 
-export interface FooOpenVariant {
+export interface FooOpenVariant extends Readonly<Record<string, string | 'foo_open_variant'>> {
   readonly type: 'foo_open_variant';
 }
 
 export function fooOpenVariantFromJSON(json: FooOpenVariant$Wire): FooOpenVariant {
-  return {
-    type: json.type,
+  const additionalProperties = Object.fromEntries(Object.entries(json)
+  .filter(([key]) => !['type'].includes(key)).map(([key, value]) => {const additionalValue = value as string; return [key, additionalValue] as const;}));
+  const result = {
+    ...additionalProperties,
+    'type': json['type'],
   };
+  return result;
 }
 
 export function fooOpenVariantToJSON(value: FooOpenVariant): FooOpenVariant$Wire {
-  return {
-    type: value.type,
+  const additionalProperties = Object.fromEntries(Object.entries(value)
+  .filter(([key]) => !['type'].includes(key)).map(([key, value]) => {const additionalValue = value as string; return [key, additionalValue] as const;}));
+  const result = {
+    ...additionalProperties,
+    'type': value['type'],
   };
+  return result;
 }

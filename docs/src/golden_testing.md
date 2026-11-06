@@ -115,6 +115,30 @@ just golden-kotlin::build
 just golden-build-all           # all languages
 ```
 
+## TypeScript Client Runtime Tests
+
+```bash
+just golden-typescript-clients::test
+```
+
+This generates fresh preserve/camelCase clients, validates and packs them with
+Vite+, checks their packed declarations with strict TypeScript, and runs ordinary
+Node tests against the real bundle. Full additional-property payload equality,
+typed dictionary conversion, allOf and search-event composition, renamed-key
+collisions, optional-field absence, and prototype-sensitive keys are covered.
+The preserve client supplies type-contract coverage, not a second runtime
+conversion path (it does not emit converters).
+
+Generation, compilation, and execution are separate just recipes. Builds run in
+temporary directories so Vite+ does not skip gitignored generated sources; no
+generated manifests or source files are patched. The consumer type check uses
+the generated package's installed compiler rather than the global `tsc` selection.
+The current global Vite+ CLI also needs TypeScript installed alongside the CLI
+for declaration packing (`npm install -g typescript vite-plus`). CI reuses that
+bootstrap and its generator cache in the existing TypeScript/Vite+ golden-build
+job; no separate consumer job is added. `just ci` includes these checks too. See
+`tests/generated-clients/typescript/README.md` for details.
+
 ## Rust Client Runtime Tests
 
 Generated Rust clients also have standalone consumer test projects under
@@ -169,7 +193,7 @@ suite. The independent JVM Client Tests CI matrix and `just ci` run these checks
 - Development and ordinary CI validation select current Rust `stable` (locally
   validated with Rust 1.99.0). MSRV checks explicitly select Rust 1.90.0; they do
   not substitute for stable validation.
-- Local TypeScript validation uses TypeScript 7.0.2 and Vite+ 1.4.0 on Node
+- Local TypeScript validation uses TypeScript 7.0.2 and Vite+ 1.5.0 on Node
   26.13.0. The native validators use the active `tsc` and `vp` on `PATH`; when
   `tsc` is not globally installed, `npm exec --package typescript -- just
   golden-typescript::build-tsc` supplies it without changing generated packages.
@@ -184,7 +208,7 @@ normally; no test harness launches a compiler, build tool, or validation script.
 to just/CI, which directly run the golden builds and ordinary consumer projects.
 
 `just ci` includes generator tests and coverage, all nine generators' native
-golden builds, and Rust/JVM consumer tests. Golden comparison is already included
+golden builds, and TypeScript/Rust/JVM consumer tests. Golden comparison is already included
 in `test-all`, so the full recipe does not repeat it as another standalone step.
 
 ## Extra File Detection

@@ -7,6 +7,6 @@
 /**
  * Object allowing any additional properties
  */
-export interface ObjectWithAdditionalPropertiesTrue {
+export interface ObjectWithAdditionalPropertiesTrue extends Readonly<Record<string, unknown>> {
   readonly name: string;
 }

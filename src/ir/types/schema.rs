@@ -109,6 +109,10 @@ pub struct IrTaggedVariant {
     pub discriminator_value: String,
     pub content_type: IrTypeExpr,
     pub description: Option<String>,
+    /// Additional values on an external wrapper, outside its variant key.
+    /// Internal variants retain their dictionaries in `content_type` instead.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub additional_properties: Option<IrTypeExpr>,
 }
 
 // ---------------------------------------------------------------------------

@@ -21,7 +21,7 @@ export function scheduleRuleIntervalFromJSON(json: ScheduleRuleInterval$Wire): S
   return {
     anchorAt: json.anchor_at,
     everyMinutes: json.every_minutes,
-    type: json.type,
+    'type': json['type'],
   };
 }
 
@@ -29,6 +29,6 @@ export function scheduleRuleIntervalToJSON(value: ScheduleRuleInterval): Schedul
   return {
     anchor_at: value.anchorAt,
     every_minutes: value.everyMinutes,
-    type: value.type,
+    'type': value['type'],
   };
 }
