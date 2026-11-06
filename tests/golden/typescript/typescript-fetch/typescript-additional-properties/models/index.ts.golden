@@ -6,6 +6,8 @@
 export type { AliasArrayMap } from './AliasArrayMap';
 export type { AliasMap } from './AliasMap';
 export type { AliasNullableMap } from './AliasNullableMap';
+export type { AllOfJsonDictionary } from './AllOfJsonDictionary';
+export type { AllOfJsonDictionaryAllOf1 } from './AllOfJsonDictionaryAllOf1';
 export type { AllOfMixedStringMap } from './AllOfMixedStringMap';
 export type { AllOfMixedStringMapAllOf1 } from './AllOfMixedStringMapAllOf1';
 export type { AllOfRenamedMap } from './AllOfRenamedMap';
@@ -21,6 +23,9 @@ export type { DetailListAlias } from './DetailListAlias';
 export type { HeterogeneousAllOf } from './HeterogeneousAllOf';
 export type { HeterogeneousAllOfAllOf1 } from './HeterogeneousAllOfAllOf1';
 export type { HeterogeneousAllOfAllOf2 } from './HeterogeneousAllOfAllOf2';
+export type { JsonModelAllOf } from './JsonModelAllOf';
+export type { JsonModelAllOfAllOf1 } from './JsonModelAllOfAllOf1';
+export type { JsonModelAllOfAllOf2 } from './JsonModelAllOfAllOf2';
 export type { MixedBooleanMap } from './MixedBooleanMap';
 export type { MixedExternalEvent } from './MixedExternalEvent';
 export type { MixedInlineAnyMap } from './MixedInlineAnyMap';

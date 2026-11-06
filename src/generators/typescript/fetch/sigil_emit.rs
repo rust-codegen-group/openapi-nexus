@@ -1298,15 +1298,21 @@ fn emit_intersection_file(
         .map(type_expr_to_typename)
         .collect();
     let inter_ty = TypeName::intersection(members);
+    let inter_ty = if open_intersection_object(intersection, ir, unknown_aliases).is_some() {
+        type_application(TypeName::primitive("Readonly"), vec![inter_ty])
+    } else {
+        inter_ty
+    };
 
     let type_alias = sigil_quote!(TypeScript {
         export type $N(name.as_str()) = $T(inter_ty);
     })
-    .ok()?;
+    .expect("intersection type alias builds");
 
     let filename = format!("{}.ts", name);
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
+        // FileSpec has no structural doc slot for a code member.
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
     fb.add_code(type_alias).build().ok()
@@ -1980,7 +1986,7 @@ fn emit_intersection_file_camel_case(
     let filename = format!("{}.ts", name);
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
 
-    if let Some(object) = open_intersection_object(intersection, ir) {
+    if let Some(object) = open_intersection_object(intersection, ir, unknown_aliases) {
         let wire_name = format!("{name}$Wire");
         let wire_type = TypeName::intersection(
             intersection
@@ -1998,12 +2004,20 @@ fn emit_intersection_file_camel_case(
         );
         let mut file = fb
             .add_type(
-                build_type_alias(&wire_name, wire_type, schema.description.as_deref())
-                    .expect("open intersection wire type alias builds"),
+                build_type_alias(
+                    &wire_name,
+                    type_application(TypeName::primitive("Readonly"), vec![wire_type]),
+                    schema.description.as_deref(),
+                )
+                .expect("open intersection wire type alias builds"),
             )
             .add_type(
-                build_type_alias(name, ergonomic_type, schema.description.as_deref())
-                    .expect("open intersection ergonomic type alias builds"),
+                build_type_alias(
+                    name,
+                    type_application(TypeName::primitive("Readonly"), vec![ergonomic_type]),
+                    schema.description.as_deref(),
+                )
+                .expect("open intersection ergonomic type alias builds"),
             );
         for direction in [JsonDirection::FromWire, JsonDirection::ToWire] {
             file = file.add_function(
@@ -2021,29 +2035,32 @@ fn emit_intersection_file_camel_case(
         }
         return file.build().ok();
     }
-    if let Some(doc) = &schema.description {
-        fb = fb.add_raw(&format!("/** {doc} */\n"));
-    }
     // $Wire type alias: A$Wire & B$Wire & ... (only $Wire for convertible refs)
     let wire_name = format!("{name}$Wire");
-    let wire_members: Vec<String> = intersection
+    let wire_members = intersection
         .members
         .iter()
-        .map(|m| type_expr_str_wire(m, convertible))
+        .map(|member| type_expr_to_typename_wire(member, &schema.name, convertible))
         .collect();
-    let wire_type = sigil_quote!(TypeScript {
-        export type $N(wire_name.as_str()) = $for(member in &wire_members; separator = " & ") { $L(member.as_str()) };
-    })
-    .ok()?;
-    fb = fb.add_code(wire_type);
+    fb = fb.add_type(
+        build_type_alias(
+            &wire_name,
+            TypeName::intersection(wire_members),
+            schema.description.as_deref(),
+        )
+        .expect("intersection wire type alias builds"),
+    );
 
     // Ergonomic type alias: A & B & ...
-    let ergo_members: Vec<String> = intersection.members.iter().map(type_expr_str).collect();
-    let ergo_type = sigil_quote!(TypeScript {
-        export type $N(name) = $for(member in &ergo_members; separator = " & ") { $L(member.as_str()) };
-    })
-    .ok()?;
-    fb = fb.add_code(ergo_type);
+    let ergo_members = intersection
+        .members
+        .iter()
+        .map(|member| type_expr_to_typename_for_schema(member, &schema.name))
+        .collect();
+    fb = fb.add_type(
+        build_type_alias(name, TypeName::intersection(ergo_members), None)
+            .expect("intersection ergonomic type alias builds"),
+    );
 
     // fromJSON: spread each convertible Named member's converter
     let base = fn_base_name(name);
@@ -2135,17 +2152,24 @@ fn emit_intersection_file_camel_case(
 
 /// Plan named fields and a dictionary together, so allOf map conversion never
 /// interprets a declared field as an extension or leaves its wire spelling behind.
-fn open_intersection_object(intersection: &IrIntersection, ir: &IrSpec) -> Option<IrObject> {
+fn open_intersection_object(
+    intersection: &IrIntersection,
+    ir: &IrSpec,
+    unknown_aliases: &HashSet<String>,
+) -> Option<IrObject> {
     fn merge(
         expr: &IrTypeExpr,
         ir: &IrSpec,
+        unknown_aliases: &HashSet<String>,
         object: &mut IrObject,
         visiting: &mut HashSet<String>,
     ) -> Option<()> {
         match expr {
             IrTypeExpr::Map(value) => {
                 object.additional_properties = Some(match &object.additional_properties {
-                    Some(existing) => intersect_dictionary_values(existing, value, ir)?,
+                    Some(existing) => {
+                        intersect_dictionary_values(existing, value, ir, unknown_aliases)?
+                    }
                     None => value.as_ref().clone(),
                 });
             }
@@ -2161,6 +2185,7 @@ fn open_intersection_object(intersection: &IrIntersection, ir: &IrSpec) -> Optio
                                     &existing.type_expr,
                                     &property.type_expr,
                                     ir,
+                                    unknown_aliases,
                                 )?;
                                 // allOf requires a property if any member does,
                                 // and accepts null only if every member does.
@@ -2174,15 +2199,18 @@ fn open_intersection_object(intersection: &IrIntersection, ir: &IrSpec) -> Optio
                             merge(
                                 &IrTypeExpr::Map(Box::new(value.clone())),
                                 ir,
+                                unknown_aliases,
                                 object,
                                 visiting,
                             )?;
                         }
                     }
-                    IrSchemaKind::Alias(inner) => merge(inner, ir, object, visiting)?,
+                    IrSchemaKind::Alias(inner) => {
+                        merge(inner, ir, unknown_aliases, object, visiting)?
+                    }
                     IrSchemaKind::Intersection(inner) => {
                         for member in &inner.members {
-                            merge(member, ir, object, visiting)?;
+                            merge(member, ir, unknown_aliases, object, visiting)?;
                         }
                     }
                     _ => return None,
@@ -2199,7 +2227,7 @@ fn open_intersection_object(intersection: &IrIntersection, ir: &IrSpec) -> Optio
     };
     let mut visiting = HashSet::new();
     for member in &intersection.members {
-        merge(member, ir, &mut object, &mut visiting)?;
+        merge(member, ir, unknown_aliases, &mut object, &mut visiting)?;
     }
     object.additional_properties.as_ref()?;
     Some(object)
@@ -2212,20 +2240,24 @@ fn intersect_dictionary_values(
     left: &IrTypeExpr,
     right: &IrTypeExpr,
     ir: &IrSpec,
+    unknown_aliases: &HashSet<String>,
 ) -> Option<IrTypeExpr> {
     fn intersect(
         left: &IrTypeExpr,
         right: &IrTypeExpr,
         ir: &IrSpec,
+        unknown_aliases: &HashSet<String>,
         visiting: &mut HashSet<String>,
     ) -> Option<IrTypeExpr> {
         if left == right {
             return Some(left.clone());
         }
-        if matches!(left, IrTypeExpr::Any) {
+        // JSON unions and their aliases can render as unknown just like Any.
+        // Narrow that representation here without changing ambiguous-union conversion.
+        if type_expr_collapses_to_unknown(left, unknown_aliases) {
             return Some(right.clone());
         }
-        if matches!(right, IrTypeExpr::Any) {
+        if type_expr_collapses_to_unknown(right, unknown_aliases) {
             return Some(left.clone());
         }
         for (candidate, value) in [(left, right), (right, left)] {
@@ -2236,23 +2268,27 @@ fn intersect_dictionary_values(
                 if !visiting.insert(name.clone()) {
                     return None;
                 }
-                let result = intersect(target, value, ir, visiting);
+                let result = intersect(target, value, ir, unknown_aliases, visiting);
                 visiting.remove(name);
                 return result;
             }
         }
         match (left, right) {
-            (IrTypeExpr::Array(a), IrTypeExpr::Array(b)) => {
-                Some(IrTypeExpr::Array(Box::new(intersect(a, b, ir, visiting)?)))
-            }
-            (IrTypeExpr::Map(a), IrTypeExpr::Map(b)) => {
-                Some(IrTypeExpr::Map(Box::new(intersect(a, b, ir, visiting)?)))
-            }
+            (IrTypeExpr::Array(a), IrTypeExpr::Array(b)) => Some(IrTypeExpr::Array(Box::new(
+                intersect(a, b, ir, unknown_aliases, visiting)?,
+            ))),
+            (IrTypeExpr::Map(a), IrTypeExpr::Map(b)) => Some(IrTypeExpr::Map(Box::new(intersect(
+                a,
+                b,
+                ir,
+                unknown_aliases,
+                visiting,
+            )?))),
             (IrTypeExpr::Nullable(a), IrTypeExpr::Nullable(b)) => Some(IrTypeExpr::Nullable(
-                Box::new(intersect(a, b, ir, visiting)?),
+                Box::new(intersect(a, b, ir, unknown_aliases, visiting)?),
             )),
             (IrTypeExpr::Nullable(inner), value) | (value, IrTypeExpr::Nullable(inner)) => {
-                intersect(inner, value, ir, visiting)
+                intersect(inner, value, ir, unknown_aliases, visiting)
             }
             (IrTypeExpr::Primitive(a), IrTypeExpr::Primitive(b))
                 if primitive_to_ts(a) == primitive_to_ts(b) =>
@@ -2270,7 +2306,7 @@ fn intersect_dictionary_values(
             _ => None,
         }
     }
-    intersect(left, right, ir, &mut HashSet::new())
+    intersect(left, right, ir, unknown_aliases, &mut HashSet::new())
 }
 
 fn tagged_union_type_imports(
@@ -2848,27 +2884,27 @@ mod render_tests {
     }
 
     #[test]
-    fn structured_type_alias_keeps_intersection_imports() {
-        let target = TypeName::intersection(vec![
-            TypeName::importable_type("./Detail", "Detail$Wire"),
-            type_application(
-                TypeName::primitive("Readonly"),
-                vec![type_application(
+    fn structured_readonly_intersection_keeps_imports() {
+        let target = type_application(
+            TypeName::primitive("Readonly"),
+            vec![TypeName::intersection(vec![
+                TypeName::importable_type("./Detail", "Detail$Wire"),
+                type_application(
                     TypeName::primitive("Record"),
                     vec![
                         TypeName::primitive("string"),
                         TypeName::primitive("unknown"),
                     ],
-                )],
-            ),
-        ]);
+                ),
+            ])],
+        );
         let alias = build_type_alias("Envelope$Wire", target, None).unwrap();
         let fragments = alias.emit(&TypeScript::new()).unwrap();
         let block = sigil_quote!(TypeScript { $C_each(fragments) }).unwrap();
         assert_rendered!(
             TypeScript::new(),
             block,
-            "import type { Detail$Wire } from './Detail';\n\nexport type Envelope$Wire = Detail$Wire & Readonly<Record<string, unknown>>;\n"
+            "import type { Detail$Wire } from './Detail';\n\nexport type Envelope$Wire = Readonly<Detail$Wire & Record<string, unknown>>;\n"
         );
     }
 
@@ -2973,15 +3009,82 @@ export function nullableDetailAliasToJSON(value: NullableDetailAlias): NullableD
     }
 
     #[test]
+    fn planned_allof_type_keeps_readonly_dictionary_and_imports() {
+        let ir = additional_properties_ir();
+        let file = emit_model_file(
+            &ir.schemas["AllOfMixedStringMap"],
+            &ir,
+            EmitFlags::default(),
+            &HashSet::new(),
+            &build_unknown_alias_set(&ir),
+            &TypeScript::new(),
+        )
+        .unwrap();
+        assert_eq!(
+            file.render(100).unwrap(),
+            "import type { AllOfMixedStringMapAllOf1 } from './AllOfMixedStringMapAllOf1';\n\nexport type AllOfMixedStringMap = Readonly<AllOfMixedStringMapAllOf1 & Record<string, string>>;\n"
+        );
+    }
+
+    #[test]
+    fn fallback_allof_type_tracks_nested_dictionary_imports() {
+        let ir = additional_properties_ir();
+        // A non-object member deliberately keeps this on the fallback path.
+        let intersection = IrIntersection {
+            members: vec![
+                IrTypeExpr::Named("Detail".to_string()),
+                IrTypeExpr::Map(Box::new(IrTypeExpr::Named("AnyJsonValue".to_string()))),
+                IrTypeExpr::Primitive(IrPrimitive::String),
+            ],
+        };
+        let flags = EmitFlags {
+            property_naming_camel_case: true,
+            ..Default::default()
+        };
+        let convertible = build_convertible_set(&ir, flags);
+        let mut schema = ir.schemas["AllOfJsonDictionary"].clone();
+        schema.kind = IrSchemaKind::Intersection(intersection);
+        let file = emit_model_file(
+            &schema,
+            &ir,
+            flags,
+            &convertible,
+            &build_unknown_alias_set(&ir),
+            &TypeScript::new(),
+        )
+        .unwrap();
+        assert_eq!(
+            file.render(100).unwrap(),
+            r#"import type { AnyJsonValue } from './AnyJsonValue';
+import type { Detail, Detail$Wire } from './Detail';
+import { detailFromJSON, detailToJSON } from './Detail';
+
+export type AllOfJsonDictionary$Wire = Detail$Wire & Record<string, AnyJsonValue> & string;
+
+export type AllOfJsonDictionary = Detail & Record<string, AnyJsonValue> & string;
+
+export function allOfJsonDictionaryFromJSON(json: AllOfJsonDictionary$Wire): AllOfJsonDictionary {
+  return { ...detailFromJSON(json as Detail$Wire) } as AllOfJsonDictionary;
+}
+
+export function allOfJsonDictionaryToJSON(value: AllOfJsonDictionary): AllOfJsonDictionary$Wire {
+  return { ...detailToJSON(value as Detail) } as AllOfJsonDictionary$Wire;
+}
+"#
+        );
+    }
+
+    #[test]
     fn compatible_allof_dictionaries_plan_all_named_fields_in_both_orders() {
         let ir = additional_properties_ir();
+        let unknown_aliases = build_unknown_alias_set(&ir);
         let IrSchemaKind::Intersection(intersection) = &ir.schemas["HeterogeneousAllOf"].kind
         else {
             panic!("intersection fixture")
         };
         let mut intersection = intersection.clone();
         for _ in 0..2 {
-            let object = open_intersection_object(&intersection, &ir).unwrap();
+            let object = open_intersection_object(&intersection, &ir, &unknown_aliases).unwrap();
             assert_eq!(
                 object.additional_properties,
                 Some(IrTypeExpr::Primitive(IrPrimitive::String))
@@ -3001,14 +3104,52 @@ export function nullableDetailAliasToJSON(value: NullableDetailAlias): NullableD
     }
 
     #[test]
-    fn compatible_allof_values_narrow_aliases_and_nested_containers() {
+    fn json_model_allof_dictionaries_plan_fields_in_both_orders() {
         let ir = additional_properties_ir();
+        let unknown_aliases = build_unknown_alias_set(&ir);
+        let IrSchemaKind::Intersection(intersection) = &ir.schemas["JsonModelAllOf"].kind else {
+            panic!("intersection fixture")
+        };
+        let mut intersection = intersection.clone();
+        for _ in 0..2 {
+            let object = open_intersection_object(&intersection, &ir, &unknown_aliases)
+                .expect("JSON and model dictionaries have a compatible value contract");
+            assert_eq!(
+                object.additional_properties,
+                Some(IrTypeExpr::Named("Detail".to_string()))
+            );
+            assert_eq!(object.properties.len(), 2);
+            for key in ["known_first", "known_second"] {
+                assert!(object.properties[key].required);
+            }
+            intersection.members.reverse();
+        }
+    }
+
+    #[test]
+    fn compatible_allof_values_narrow_aliases_and_nested_containers() {
+        let mut ir = additional_properties_ir();
+        let mut json_alias = ir.schemas["DetailAlias"].clone();
+        json_alias.name = "JsonAlias".to_string();
+        json_alias.kind = IrSchemaKind::Alias(IrTypeExpr::Named("AnyJsonValue".to_string()));
+        ir.schemas.insert(json_alias.name.clone(), json_alias);
+        let unknown_aliases = build_unknown_alias_set(&ir);
         let string = IrTypeExpr::Primitive(IrPrimitive::String);
         let detail = IrTypeExpr::Named("Detail".to_string());
         let alias = IrTypeExpr::Named("DetailAliasChain".to_string());
         let literal = IrTypeExpr::StringLiteral("fixed".to_string());
         for (left, right, expected) in [
             (IrTypeExpr::Any, string.clone(), string.clone()),
+            (
+                IrTypeExpr::Named("AnyJsonValue".to_string()),
+                detail.clone(),
+                detail.clone(),
+            ),
+            (
+                IrTypeExpr::Named("JsonAlias".to_string()),
+                detail.clone(),
+                detail.clone(),
+            ),
             (alias.clone(), detail.clone(), detail.clone()),
             (
                 IrTypeExpr::Array(Box::new(alias)),
@@ -3028,12 +3169,29 @@ export function nullableDetailAliasToJSON(value: NullableDetailAlias): NullableD
             (string, literal.clone(), literal),
         ] {
             assert_eq!(
-                intersect_dictionary_values(&left, &right, &ir),
+                intersect_dictionary_values(&left, &right, &ir, &unknown_aliases),
                 Some(expected.clone())
             );
             assert_eq!(
-                intersect_dictionary_values(&right, &left, &ir),
+                intersect_dictionary_values(&right, &left, &ir, &unknown_aliases),
                 Some(expected)
+            );
+        }
+    }
+
+    #[test]
+    fn ambiguous_allof_value_unions_keep_the_existing_fallback() {
+        let ir = additional_properties_ir();
+        let unknown_aliases = build_unknown_alias_set(&ir);
+        let union = IrTypeExpr::Union(vec![
+            IrTypeExpr::Primitive(IrPrimitive::String),
+            IrTypeExpr::Primitive(IrPrimitive::Number),
+        ]);
+        let detail = IrTypeExpr::Named("Detail".to_string());
+        for (left, right) in [(&union, &detail), (&detail, &union)] {
+            assert_eq!(
+                intersect_dictionary_values(left, right, &ir, &unknown_aliases),
+                None
             );
         }
     }
@@ -3062,12 +3220,13 @@ components:
         )
         .unwrap();
         let ir = crate::ir::lower::lower(parsed).unwrap();
+        let unknown_aliases = build_unknown_alias_set(&ir);
         let IrSchemaKind::Intersection(intersection) = &ir.schemas["Composed"].kind else {
             panic!("intersection fixture")
         };
         let mut intersection = intersection.clone();
         for _ in 0..2 {
-            let object = open_intersection_object(&intersection, &ir).unwrap();
+            let object = open_intersection_object(&intersection, &ir, &unknown_aliases).unwrap();
             let property = &object.properties["known_field"];
             assert!(property.required);
             assert!(!property.nullable);

@@ -5,9 +5,10 @@
  */
 import type { AllOfMixedStringMapAllOf1, AllOfMixedStringMapAllOf1$Wire } from './AllOfMixedStringMapAllOf1';
 
-export type AllOfMixedStringMap$Wire = AllOfMixedStringMapAllOf1$Wire & Record<string, string>;
+export type AllOfMixedStringMap$Wire = Readonly<AllOfMixedStringMapAllOf1$Wire
+& Record<string, string>>;
 
-export type AllOfMixedStringMap = AllOfMixedStringMapAllOf1 & Record<string, string>;
+export type AllOfMixedStringMap = Readonly<AllOfMixedStringMapAllOf1 & Record<string, string>>;
 
 export function allOfMixedStringMapFromJSON(json: AllOfMixedStringMap$Wire): AllOfMixedStringMap {
   const additionalProperties = Object.fromEntries(Object.entries(json)

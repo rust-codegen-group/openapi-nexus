@@ -180,7 +180,8 @@ export function userToJSON(value: User): User$Wire {
 Works with all schema kinds:
 - **Objects**: dual interfaces + converters
 - **Tagged unions** (internal, adjacent, external): dual type aliases + switch/if-chain converters
-- **Intersections** (allOf): dual type aliases + spread-based converters
+- **Intersections** (allOf): dual type aliases; compatible open objects share one
+  conversion plan, while other intersections use spread-based converters
 - **Unions** (oneOf): dual type aliases + cast-through converters
 
 Referenced types that are themselves convertible (objects, intersections, unions) get their converter functions called recursively. Enums and simple aliases pass through unchanged.
@@ -208,7 +209,12 @@ additional-property behavior are unchanged.
 
 Compatible `allOf` dictionary contracts are narrowed together (for example,
 `true` with `string` uses string values), and named fields are planned across
-all members before conversion. Aliases of models, arrays, maps, and nullable
+all members before conversion. This includes JSON unions that render as `unknown`:
+intersecting an arbitrary-JSON dictionary with a model dictionary converts the
+additional values as that model, without treating other members' named fields as
+extensions. Their public intersection aliases retain the original member types
+inside `Readonly<...>` in preserve, ergonomic, and wire declarations.
+Aliases of models, arrays, maps, and nullable
 values receive matching wire aliases and converters, including alias chains.
 External tag keys stay verbatim while both the referenced payload and any typed
 outer extension values are converted; each closed alternative remains closed.

@@ -1,4 +1,8 @@
 import type {
+  AllOfMixedStringMap,
+  AllOfMixedStringMap$Wire,
+  JsonModelAllOf,
+  JsonModelAllOf$Wire,
   AliasMap,
   AliasMap$Wire,
   DetailAliasChain,
@@ -22,11 +26,36 @@ import type {
   PlainStringMap,
 } from './generated/camel-case/dist/index.mjs';
 import type {
+  AllOfMixedStringMap as PreservedAllOfMap,
   MixedModelMap as PreservedModelMap,
   MixedStringMap as PreservedStringMap,
 } from './generated/preserve/dist/index.mjs';
 
 function expectType<T>(_value: T): void {}
+
+declare const allOf: AllOfMixedStringMap;
+declare const allOfWire: AllOfMixedStringMap$Wire;
+declare const preservedAllOf: PreservedAllOfMap;
+expectType<string | undefined>(allOf.known);
+expectType<string | undefined>(allOfWire.known);
+expectType<string | undefined>(preservedAllOf.known);
+// @ts-expect-error Composed ergonomic dictionaries are readonly.
+allOf.extension = 'changed';
+// @ts-expect-error Composed wire dictionaries are readonly.
+allOfWire.extension = 'changed';
+// @ts-expect-error Preserve-mode composed dictionaries are readonly.
+preservedAllOf.extension = 'changed';
+
+const composedModels: JsonModelAllOf = { knownFirst: { displayName: 'Ada' }, knownSecond: { displayName: 'Grace' }, extra_key: { displayName: 'Lin' } };
+const composedModelsWire: JsonModelAllOf$Wire = { known_first: { display_name: 'Ada' }, known_second: { display_name: 'Grace' }, extra_key: { display_name: 'Lin' } };
+expectType<Detail>(composedModels.knownFirst);
+expectType<Detail$Wire>(composedModelsWire.known_first);
+// @ts-expect-error Readonly composition must retain the declared model's precise type.
+const invalidComposedModel: JsonModelAllOf = { knownFirst: { display_name: 'Ada' }, knownSecond: { displayName: 'Grace' } };
+// @ts-expect-error Composed model extensions are readonly.
+composedModels.extra_key = { displayName: 'changed' };
+// @ts-expect-error Composed wire model extensions are readonly.
+composedModelsWire.extra_key = { display_name: 'changed' };
 
 const plain: PlainStringMap = { extra_dynamic: 'opaque' };
 expectType<string>(plain.extra_dynamic);

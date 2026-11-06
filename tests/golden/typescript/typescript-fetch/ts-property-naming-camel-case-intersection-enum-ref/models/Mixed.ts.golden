@@ -8,8 +8,9 @@ import type { EnumStatus } from './EnumStatus';
 import type { ObjectBase, ObjectBase$Wire } from './ObjectBase';
 import { objectBaseFromJSON, objectBaseToJSON } from './ObjectBase';
 
-/** Intersection with one object (convertible) and one enum (non-convertible) */
-
+/**
+ * Intersection with one object (convertible) and one enum (non-convertible)
+ */
 export type Mixed$Wire = ObjectBase$Wire & EnumStatus;
 
 export type Mixed = ObjectBase & EnumStatus;

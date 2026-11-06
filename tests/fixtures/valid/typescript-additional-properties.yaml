@@ -100,6 +100,26 @@ components:
       additionalProperties: false
     DetailAlias:
       $ref: '#/components/schemas/Detail'
+    JsonModelAllOf:
+      allOf:
+        - type: object
+          required: [known_first]
+          properties:
+            known_first: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
+        - type: object
+          required: [known_second]
+          properties:
+            known_second: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: {$ref: '#/components/schemas/Detail'}
+    AllOfJsonDictionary:
+      allOf:
+        - type: object
+          required: [known_item]
+          properties:
+            known_item: {$ref: '#/components/schemas/Detail'}
+        - type: object
+          additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
     DetailAliasChain:
       $ref: '#/components/schemas/DetailAlias'
     DetailListAlias:

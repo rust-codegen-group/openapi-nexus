@@ -9,12 +9,12 @@ import type { RenamedMap, RenamedMap$Wire } from './RenamedMap';
 /**
  * Composed map with overlapping declared fields.
  */
-export type AllOfRenamedMap$Wire = RenamedMap$Wire & AllOfRenamedMapAllOf2$Wire;
+export type AllOfRenamedMap$Wire = Readonly<RenamedMap$Wire & AllOfRenamedMapAllOf2$Wire>;
 
 /**
  * Composed map with overlapping declared fields.
  */
-export type AllOfRenamedMap = RenamedMap & AllOfRenamedMapAllOf2;
+export type AllOfRenamedMap = Readonly<RenamedMap & AllOfRenamedMapAllOf2>;
 
 export function allOfRenamedMapFromJSON(json: AllOfRenamedMap$Wire): AllOfRenamedMap {
   const additionalProperties = Object.fromEntries(Object.entries(json)

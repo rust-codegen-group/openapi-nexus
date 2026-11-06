@@ -8,4 +8,4 @@ import type { RenamedMap } from './RenamedMap';
 
 /** Composed map with overlapping declared fields. */
 
-export type AllOfRenamedMap = RenamedMap & AllOfRenamedMapAllOf2;
+export type AllOfRenamedMap = Readonly<RenamedMap & AllOfRenamedMapAllOf2>;
