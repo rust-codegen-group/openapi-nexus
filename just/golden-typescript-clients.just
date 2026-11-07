@@ -3,9 +3,12 @@
 set working-directory := '..'
 
 @prepare:
-    rm -rf tests/generated-clients/typescript/generated/camel-case tests/generated-clients/typescript/generated/preserve
+    rm -rf tests/generated-clients/typescript/generated/camel-case tests/generated-clients/typescript/generated/preserve tests/generated-clients/typescript/generated/union-default tests/generated-clients/typescript/generated/union-strict tests/generated-clients/typescript/generated/union-raw
     cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-additional-properties.yaml --output tests/generated-clients/typescript/generated/camel-case --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp
     cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-additional-properties.yaml --output tests/generated-clients/typescript/generated/preserve --generators typescript-fetch --generator-config typescript-fetch.toolchain=vp
+    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-untagged-union.yaml --output tests/generated-clients/typescript/generated/union-default --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp
+    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-untagged-union.yaml --output tests/generated-clients/typescript/generated/union-strict --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.untagged_union_strategy=strict
+    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-untagged-union.yaml --output tests/generated-clients/typescript/generated/union-raw --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.untagged_union_strategy=raw
 
 @build: prepare
     #!/usr/bin/env bash
@@ -13,7 +16,7 @@ set working-directory := '..'
     project="$PWD/tests/generated-clients/typescript"
     builds=()
     trap 'rm -rf "${builds[@]}"' EXIT
-    for mode in camel-case preserve; do
+    for mode in camel-case preserve union-default union-strict union-raw; do
         output="$project/generated/$mode"
         build=$(mktemp -d)
         builds+=("$build")

@@ -30,6 +30,21 @@ import type {
   MixedModelMap as PreservedModelMap,
   MixedStringMap as PreservedStringMap,
 } from './generated/preserve/dist/index.mjs';
+import type { Tool, Tool$Wire, ToolList, ToolMap, ToolRequest } from './generated/union-default/dist/index.mjs';
+import type { Tool as RawTool } from './generated/union-raw/dist/index.mjs';
+
+const unionTool: Tool = { name: 'weather', inputSchema: { type: 'object' } };
+const unionWire: Tool$Wire = { name: 'weather', input_schema: { type: 'object' } };
+const unionRequest: ToolRequest = { tools: [unionTool] };
+const unionList: ToolList = [{ name: 'weather', inputSchema: {} }];
+const unionMap: ToolMap = { arbitrary_key: { name: 'weather', inputSchema: {} } };
+const rawUnion: RawTool = unionWire;
+// @ts-expect-error Normal unions retain the ergonomic member contract.
+const invalidUnion: Tool = { name: 'weather', input_schema: {} };
+// @ts-expect-error Raw unions expose wire members rather than ergonomic members.
+const invalidRawUnion: RawTool = { name: 'weather', inputSchema: {} };
+// @ts-expect-error Union array alternatives remain readonly.
+unionList[0] = { name: 'changed', inputSchema: {} };
 
 function expectType<T>(_value: T): void {}
 

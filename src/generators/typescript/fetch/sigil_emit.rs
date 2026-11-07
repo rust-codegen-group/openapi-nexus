@@ -15,6 +15,7 @@
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::type_application;
+use crate::generators::union_match::{JsonShape, plan_union_members};
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
@@ -36,12 +37,15 @@ use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 use std::collections::HashSet;
 
+use super::config::UntaggedUnionStrategy;
+
 /// Flags controlling optional TS emissions (const objects, type guards).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct EmitFlags {
     pub emit_enum_constants: bool,
     pub emit_type_guards: bool,
     pub property_naming_camel_case: bool,
+    pub untagged_union_strategy: UntaggedUnionStrategy,
 }
 
 /// Convert a PascalCase name to its lowerCamelCase function base name.
@@ -168,21 +172,46 @@ pub fn emit_model_file(
     convertible: &HashSet<String>,
     unknown_aliases: &HashSet<String>,
     ts: &TypeScript,
-) -> Option<FileSpec> {
-    match &schema.kind {
+) -> Result<Option<FileSpec>, SigilStitchError> {
+    if let IrSchemaKind::Union(union) = &schema.kind
+        && flags.property_naming_camel_case
+        && convertible.contains(&schema.name)
+    {
+        if let [member] = union.members.as_slice()
+            && flags.untagged_union_strategy == UntaggedUnionStrategy::FirstMatch
+        {
+            let expr = if union.nullable {
+                IrTypeExpr::Nullable(Box::new(member.clone()))
+            } else {
+                member.clone()
+            };
+            return Ok(emit_alias_file(schema, &expr, convertible, ts));
+        }
+        return emit_union_file_camel_case(
+            schema,
+            ir,
+            union,
+            &schema.name.to_pascal_case(),
+            convertible,
+            flags.untagged_union_strategy,
+            ts,
+        )
+        .map(Some);
+    }
+    Ok(match &schema.kind {
         IrSchemaKind::Object(obj) => {
             emit_object_file(schema, obj, flags, convertible, unknown_aliases, ts)
         }
         IrSchemaKind::Enum(en) => emit_enum_file_from(schema, en, flags, ts),
         IrSchemaKind::Alias(expr) => emit_alias_file(schema, expr, convertible, ts),
-        IrSchemaKind::Union(u) => emit_union_file(schema, u, flags, convertible, ts),
+        IrSchemaKind::Union(u) => emit_union_file(schema, u, ts),
         IrSchemaKind::Intersection(i) => {
             emit_intersection_file(schema, ir, i, flags, convertible, unknown_aliases, ts)
         }
         IrSchemaKind::TaggedUnion(tu) => {
             emit_tagged_union_file(schema, ir, tu, flags, convertible, unknown_aliases, ts)
         }
-    }
+    })
 }
 
 /// Back-compat alias used by the enum prototype test. Prefer `emit_model_file`.
@@ -1219,29 +1248,8 @@ fn build_type_alias(
 ///
 /// `nullable` appends a `null` member. Imports for each `IrTypeExpr::Named`
 /// member are tracked via `TypeName::Importable` inside `TypeName::union`.
-fn emit_union_file(
-    schema: &IrSchema,
-    union: &IrUnion,
-    flags: EmitFlags,
-    convertible: &HashSet<String>,
-    ts: &TypeScript,
-) -> Option<FileSpec> {
+fn emit_union_file(schema: &IrSchema, union: &IrUnion, ts: &TypeScript) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-
-    if flags.property_naming_camel_case && convertible.contains(&schema.name) {
-        if let [member] = union.members.as_slice() {
-            // A single non-null member is unambiguous even when lowering kept
-            // anyOf/oneOf as a union. Reuse alias conversion rather than the
-            // multi-member union's cast-through policy.
-            let expr = if union.nullable {
-                IrTypeExpr::Nullable(Box::new(member.clone()))
-            } else {
-                member.clone()
-            };
-            return emit_alias_file(schema, &expr, convertible, ts);
-        }
-        return emit_union_file_camel_case(schema, union, &name, convertible, ts);
-    }
 
     let mut members: Vec<TypeName> = union.members.iter().map(type_expr_to_typename).collect();
     if union.nullable {
@@ -1888,86 +1896,266 @@ fn external_variant_to_json_expr(
 }
 
 // ---------------------------------------------------------------------------
-// Union camelCase: cast-through pattern
+// Union camelCase: structural member selection and semantic conversion
 // ---------------------------------------------------------------------------
 
 fn emit_union_file_camel_case(
     schema: &IrSchema,
+    ir: &IrSpec,
     union: &IrUnion,
     name: &str,
     convertible: &HashSet<String>,
+    strategy: UntaggedUnionStrategy,
     ts: &TypeScript,
-) -> Option<FileSpec> {
-    let filename = format!("{}.ts", name);
-    let mut fb = FileSpec::builder_with(&filename, ts.clone());
-
-    if let Some(doc) = &schema.description {
-        fb = fb.add_raw(&format!("/** {doc} */\n"));
-    }
-
-    // $Wire type alias
+) -> Result<FileSpec, SigilStitchError> {
     let wire_name = format!("{name}$Wire");
-    let mut wire_members: Vec<String> = union
+    let mut wire_members: Vec<_> = union
         .members
         .iter()
-        .map(|m| type_expr_str_wire(m, convertible))
+        .map(|member| type_expr_to_typename_wire(member, &schema.name, convertible))
         .collect();
     if union.nullable {
-        wire_members.push("null".to_string());
+        wire_members.push(TypeName::primitive("null"));
     }
-    let wire_rhs = simplify_union_strings(wire_members);
-    let wire_type = sigil_quote!(TypeScript {
-        export type $N(wire_name.as_str()) = $L(wire_rhs.as_str());
-    })
-    .ok()?;
-    fb = fb.add_code(wire_type);
-
-    // Ergonomic type alias
-    let mut ergo_members: Vec<String> = union.members.iter().map(type_expr_str).collect();
+    let mut ergonomic_members: Vec<_> = union
+        .members
+        .iter()
+        .map(|member| type_expr_to_typename_for_schema(member, &schema.name))
+        .collect();
     if union.nullable {
-        ergo_members.push("null".to_string());
+        ergonomic_members.push(TypeName::primitive("null"));
     }
-    let ergo_rhs = simplify_union_strings(ergo_members);
-    let ergo_type = sigil_quote!(TypeScript {
-        export type $N(name) = $L(ergo_rhs.as_str());
-    })
-    .ok()?;
-    fb = fb.add_code(ergo_type);
-
-    // fromJSON: cast-through
-    let base = fn_base_name(name);
-    let from_fn = format!("{base}FromJSON");
-    let to_fn = format!("{base}ToJSON");
-    let from_json = sigil_quote!(TypeScript {
-        export function $N(from_fn)(json: $N(wire_name.as_str())): $N(name) {
-            return json as unknown as $N(name);
-        }
-    })
-    .ok()?;
-    fb = fb.add_code(from_json);
-
-    // toJSON: cast-through
-    let to_json = sigil_quote!(TypeScript {
-        export function $N(to_fn)(value: $N(name)): $N(wire_name.as_str()) {
-            return value as unknown as $N(wire_name.as_str());
-        }
-    })
-    .ok()?;
-    fb = fb.add_code(to_json);
-
-    // Add imports for Named members (wire + ergonomic types only if convertible)
-    let mut seen_imports = HashSet::new();
-    let mut imports = Vec::new();
-    for member in &union.members {
-        collect_type_imports_from_expr(member, &mut seen_imports, &mut imports, convertible, true);
+    let ergonomic_type = if strategy == UntaggedUnionStrategy::Raw {
+        // Raw mode exposes the wire union honestly, rather than promising
+        // ergonomic members while leaving their field names unchanged.
+        TypeName::primitive(&wire_name)
+    } else {
+        union_typename(ergonomic_members)
+    };
+    let mut file = FileSpec::builder_with(&format!("{name}.ts"), ts.clone())
+        .add_type(build_type_alias(
+            &wire_name,
+            union_typename(wire_members),
+            schema.description.as_deref(),
+        )?)
+        .add_type(build_type_alias(
+            name,
+            ergonomic_type,
+            schema.description.as_deref(),
+        )?);
+    for direction in [JsonDirection::FromWire, JsonDirection::ToWire] {
+        file = file.add_function(build_union_converter(
+            schema,
+            ir,
+            union,
+            convertible,
+            strategy,
+            direction,
+        )?);
     }
-    if ergo_rhs != "unknown" || wire_rhs != "unknown" {
-        for import in imports {
-            fb = fb.add_import(import);
+    file.build()
+}
+
+fn build_union_converter(
+    schema: &IrSchema,
+    ir: &IrSpec,
+    union: &IrUnion,
+    convertible: &HashSet<String>,
+    strategy: UntaggedUnionStrategy,
+    direction: JsonDirection,
+) -> Result<FunSpec, SigilStitchError> {
+    let name = schema.name.to_pascal_case();
+    let wire_name = format!("{name}$Wire");
+    let (input, output) = match direction {
+        JsonDirection::FromWire => (&wire_name, &name),
+        JsonDirection::ToWire => (&name, &wire_name),
+    };
+    let source = direction.source();
+    let output_type = TypeName::primitive(output);
+    let body = if strategy == UntaggedUnionStrategy::Raw {
+        sigil_quote!(TypeScript { return $N(source); })?
+    } else {
+        let strict = strategy == UntaggedUnionStrategy::Strict;
+        let members = plan_union_members(union, ir);
+        let raw_fallback = members.iter().any(|member| member.shape == JsonShape::Any);
+        let mut checks = Vec::new();
+        let mut branches = Vec::new();
+        for member in &members {
+            if member.shape == JsonShape::Any {
+                continue;
+            }
+            // A self-reference without a container cannot make progress. Leave
+            // it to the raw fallback instead of recursively calling ourselves.
+            if matches!(&member.type_expr, IrTypeExpr::Named(target) if target == &schema.name) {
+                continue;
+            }
+            let condition = union_shape_condition(
+                &member.shape,
+                sigil_quote!(TypeScript { candidate })?,
+                direction,
+            )?;
+            let condition = if strict && !member.fallback {
+                let index = checks.len();
+                checks.push(condition);
+                // sigil-stitch literal arguments accept text, not usize. Only
+                // this numeric index crosses that boundary.
+                sigil_quote!(TypeScript { matches[$L(index.to_string())] })?
+            } else {
+                condition
+            };
+            let member_type = match direction {
+                JsonDirection::FromWire => {
+                    type_expr_to_typename_wire(&member.type_expr, &schema.name, convertible)
+                }
+                JsonDirection::ToWire => {
+                    type_expr_to_typename_for_schema(&member.type_expr, &schema.name)
+                }
+            };
+            let value = json_conversion_expr(
+                &member.type_expr,
+                sigil_quote!(TypeScript { ($N(source) as unknown as $T(member_type)) })?,
+                &schema.name,
+                convertible,
+                direction,
+            )?;
+            branches.push(sigil_quote!(TypeScript {
+                if ($C(condition)) {
+                    return $C(value);
+                }
+            })?);
+        }
+        let ambiguity = format!("Ambiguous {name} untagged union value");
+        let unmatched = format!("No matching {name} untagged union member");
+        sigil_quote!(TypeScript {
+            const candidate: $T(TypeName::primitive("unknown")) = $N(source);
+            $if(union.nullable) {
+                if (candidate === null) {
+                    return null;
+                }
+            }
+            $if(strict && !checks.is_empty()) {
+                const matches = [$for(check in &checks; separator = ", ") { $C(check.clone()) }];
+                if (matches.filter(Boolean).length > 1) {
+                    throw new TypeError($S(ambiguity));
+                }
+            }
+            $C_each(branches)
+            $if(strict && !raw_fallback) {
+                throw new TypeError($S(unmatched));
+            } $else {
+                return $N(source) as unknown as $T(output_type.clone());
+            }
+        })?
+    };
+    FunSpec::builder(&format!("{}{}", fn_base_name(&name), direction.suffix()))
+        .visibility(Visibility::Public)
+        .add_param(ParameterSpec::of(source, TypeName::primitive(input)))
+        .returns(vec![output_type])
+        .body(body)
+        .build()
+}
+
+fn join_union_conditions(
+    conditions: Vec<CodeBlock>,
+    disjunction: bool,
+) -> Result<CodeBlock, SigilStitchError> {
+    let mut conditions = conditions.into_iter();
+    let Some(mut result) = conditions.next() else {
+        return if disjunction {
+            sigil_quote!(TypeScript { false })
+        } else {
+            sigil_quote!(TypeScript { true })
+        };
+    };
+    for condition in conditions {
+        result = if disjunction {
+            sigil_quote!(TypeScript { ($C(result) || $C(condition)) })?
+        } else {
+            sigil_quote!(TypeScript { ($C(result) && $C(condition)) })?
+        };
+    }
+    Ok(result)
+}
+
+fn union_shape_condition(
+    shape: &JsonShape,
+    value: CodeBlock,
+    direction: JsonDirection,
+) -> Result<CodeBlock, SigilStitchError> {
+    let record_type = type_application(
+        TypeName::primitive("Record"),
+        vec![
+            TypeName::primitive("string"),
+            TypeName::primitive("unknown"),
+        ],
+    );
+    match shape {
+        JsonShape::Any => sigil_quote!(TypeScript { true }),
+        JsonShape::Never => sigil_quote!(TypeScript { false }),
+        JsonShape::Null => sigil_quote!(TypeScript { $C(value) === null }),
+        JsonShape::Boolean => sigil_quote!(TypeScript { typeof $C(value) === "boolean" }),
+        JsonShape::String => sigil_quote!(TypeScript { typeof $C(value) === "string" }),
+        JsonShape::Number { integer } => {
+            let predicate = if *integer { "isInteger" } else { "isFinite" };
+            sigil_quote!(TypeScript { typeof $C(value.clone()) === "number" && Number.$N(predicate)($C(value)) })
+        }
+        JsonShape::Literal(literal) => match literal {
+            serde_json::Value::String(text) => sigil_quote!(TypeScript { $C(value) === $S(text) }),
+            serde_json::Value::Number(number) => {
+                sigil_quote!(TypeScript { $C(value) === $L(number.to_string()) })
+            }
+            serde_json::Value::Bool(true) => sigil_quote!(TypeScript { $C(value) === true }),
+            serde_json::Value::Bool(false) => sigil_quote!(TypeScript { $C(value) === false }),
+            serde_json::Value::Null => sigil_quote!(TypeScript { $C(value) === null }),
+            _ => sigil_quote!(TypeScript { false }),
+        },
+        JsonShape::Array(inner) => {
+            if **inner == JsonShape::Any {
+                return sigil_quote!(TypeScript { Array.isArray($C(value)) });
+            }
+            let item = union_shape_condition(inner, sigil_quote!(TypeScript { item })?, direction)?;
+            sigil_quote!(TypeScript { Array.isArray($C(value.clone())) && $C(value).every((item: $T(TypeName::primitive("unknown"))) => $C(item)) })
+        }
+        JsonShape::Map(inner) => {
+            if **inner == JsonShape::Any {
+                return sigil_quote!(TypeScript { ($C(value.clone()) !== null && typeof $C(value.clone()) === "object" && !Array.isArray($C(value))) });
+            }
+            let item = union_shape_condition(inner, sigil_quote!(TypeScript { item })?, direction)?;
+            sigil_quote!(TypeScript {
+                ($C(value.clone()) !== null && typeof $C(value.clone()) === "object" && !Array.isArray($C(value.clone())) && Object.values($C(value) as $T(record_type)).every((item) => $C(item)))
+            })
+        }
+        JsonShape::Object(properties) => {
+            let mut conditions = vec![sigil_quote!(TypeScript {
+                $C(value.clone()) !== null && typeof $C(value.clone()) === "object" && !Array.isArray($C(value.clone()))
+            })?];
+            for property in properties {
+                let key = match direction {
+                    JsonDirection::FromWire => property.wire_name.clone(),
+                    JsonDirection::ToWire if property.rename => {
+                        property.wire_name.to_lower_camel_case()
+                    }
+                    JsonDirection::ToWire => property.wire_name.clone(),
+                };
+                let access = sigil_quote!(TypeScript { ($C(value.clone()) as $T(record_type.clone()))[$S(key.as_str())] })?;
+                let shape_check =
+                    union_shape_condition(&property.shape, access.clone(), direction)?;
+                conditions.push(if property.required {
+                    sigil_quote!(TypeScript { (Object.prototype.hasOwnProperty.call($C(value.clone()), $S(key.as_str())) && $C(shape_check)) })?
+                } else {
+                    sigil_quote!(TypeScript { (!Object.prototype.hasOwnProperty.call($C(value.clone()), $S(key.as_str())) || $C(access) === undefined || $C(shape_check)) })?
+                });
+            }
+            join_union_conditions(conditions, false)
+        }
+        JsonShape::AnyOf(shapes) | JsonShape::AllOf(shapes) => {
+            let conditions = shapes
+                .iter()
+                .map(|shape| union_shape_condition(shape, value.clone(), direction))
+                .collect::<Result<Vec<_>, _>>()?;
+            join_union_conditions(conditions, matches!(shape, JsonShape::AnyOf(_)))
         }
     }
-
-    fb.build().ok()
 }
 
 // ---------------------------------------------------------------------------
@@ -2839,6 +3027,7 @@ pub fn generate_model_files(
 
     for (name, schema) in &ir.schemas {
         let file_spec = emit_model_file(schema, ir, flags, &convertible, &unknown_aliases, ts)
+            .map_err(|source| GeneratorError::emission(ArtifactKind::Model, name, source))?
             .ok_or_else(|| GeneratorError::UnsupportedSchema {
                 schema: name.clone(),
                 kind: format!("{:?}", schema.kind),
@@ -2874,6 +3063,29 @@ fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
 mod render_tests {
     use super::*;
     use sigil_stitch::assert_rendered;
+
+    #[test]
+    fn union_literal_and_numeric_guards_render_exactly() {
+        let value = sigil_quote!(TypeScript { candidate }).unwrap();
+        let integer = union_shape_condition(
+            &JsonShape::Number { integer: true },
+            value.clone(),
+            JsonDirection::FromWire,
+        )
+        .unwrap();
+        assert_rendered!(
+            TypeScript::new(),
+            integer,
+            "typeof candidate === \"number\" && Number.isInteger(candidate)\n"
+        );
+        let boolean = union_shape_condition(
+            &JsonShape::Literal(false.into()),
+            value,
+            JsonDirection::FromWire,
+        )
+        .unwrap();
+        assert_rendered!(TypeScript::new(), boolean, "candidate === false\n");
+    }
 
     fn additional_properties_ir() -> IrSpec {
         let parsed = crate::parser::parse_content_yaml(include_str!(
@@ -2950,6 +3162,7 @@ mod render_tests {
             &HashSet::new(),
             &TypeScript::new(),
         )
+        .unwrap()
         .unwrap();
         assert_eq!(
             file.render(100).unwrap(),
@@ -2987,6 +3200,7 @@ export function detailAliasChainToJSON(value: DetailAliasChain): DetailAliasChai
             &HashSet::new(),
             &TypeScript::new(),
         )
+        .unwrap()
         .unwrap();
         assert_eq!(
             file.render(100).unwrap(),
@@ -3019,6 +3233,7 @@ export function nullableDetailAliasToJSON(value: NullableDetailAlias): NullableD
             &build_unknown_alias_set(&ir),
             &TypeScript::new(),
         )
+        .unwrap()
         .unwrap();
         assert_eq!(
             file.render(100).unwrap(),
@@ -3052,6 +3267,7 @@ export function nullableDetailAliasToJSON(value: NullableDetailAlias): NullableD
             &build_unknown_alias_set(&ir),
             &TypeScript::new(),
         )
+        .unwrap()
         .unwrap();
         assert_eq!(
             file.render(100).unwrap(),
