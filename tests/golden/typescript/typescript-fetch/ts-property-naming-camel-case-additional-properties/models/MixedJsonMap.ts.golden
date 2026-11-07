@@ -3,6 +3,8 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { anyJsonValueFromJSON, anyJsonValueToJSON } from './AnyJsonValue';
+
 export interface MixedJsonMap$Wire extends Readonly<Record<string, unknown>> {
   readonly known?: string;
 }
@@ -19,7 +21,7 @@ export function mixedJsonMapFromJSON(json: MixedJsonMap$Wire): MixedJsonMap {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueFromJSON(additionalValue)] as const;
     }),
   );
   const result = {
@@ -37,7 +39,7 @@ export function mixedJsonMapToJSON(value: MixedJsonMap): MixedJsonMap$Wire {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueToJSON(additionalValue)] as const;
     }),
   );
   const result = {

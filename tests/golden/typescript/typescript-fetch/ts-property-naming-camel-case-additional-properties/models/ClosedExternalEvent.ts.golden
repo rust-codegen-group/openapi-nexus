@@ -6,18 +6,36 @@
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
-export type ClosedExternalEvent$Wire = { started: Detail$Wire } | { finished: Detail$Wire };
+export type ClosedExternalEvent$Wire =
+  | Record<'started', Detail$Wire>
+  | Record<'finished', Detail$Wire>;
 
-export type ClosedExternalEvent = { started: Detail } | { finished: Detail };
+export type ClosedExternalEvent = Record<'started', Detail> | Record<'finished', Detail>;
 
 export function closedExternalEventFromJSON(json: ClosedExternalEvent$Wire): ClosedExternalEvent {
-  if ('started' in json) return { started: detailFromJSON(json['started']) };
-  if ('finished' in json) return { finished: detailFromJSON(json['finished']) };
+  if (Object.prototype.hasOwnProperty.call(json, 'started')) {
+    return {
+      ['started']: detailFromJSON((json as Record<'started', Detail$Wire>)['started']),
+    } as ClosedExternalEvent;
+  }
+  if (Object.prototype.hasOwnProperty.call(json, 'finished')) {
+    return {
+      ['finished']: detailFromJSON((json as Record<'finished', Detail$Wire>)['finished']),
+    } as ClosedExternalEvent;
+  }
   throw new Error('Unknown variant');
 }
 
 export function closedExternalEventToJSON(value: ClosedExternalEvent): ClosedExternalEvent$Wire {
-  if ('started' in value) return { started: detailToJSON(value['started']) };
-  if ('finished' in value) return { finished: detailToJSON(value['finished']) };
+  if (Object.prototype.hasOwnProperty.call(value, 'started')) {
+    return {
+      ['started']: detailToJSON((value as Record<'started', Detail>)['started']),
+    } as ClosedExternalEvent$Wire;
+  }
+  if (Object.prototype.hasOwnProperty.call(value, 'finished')) {
+    return {
+      ['finished']: detailToJSON((value as Record<'finished', Detail>)['finished']),
+    } as ClosedExternalEvent$Wire;
+  }
   throw new Error('Unknown variant');
 }

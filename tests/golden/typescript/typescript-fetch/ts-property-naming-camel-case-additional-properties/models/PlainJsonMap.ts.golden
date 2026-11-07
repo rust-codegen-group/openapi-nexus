@@ -3,14 +3,38 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { anyJsonValueFromJSON, anyJsonValueToJSON } from './AnyJsonValue';
+
 export interface PlainJsonMap$Wire extends Readonly<Record<string, unknown>> {}
 
 export interface PlainJsonMap extends Readonly<Record<string, unknown>> {}
 
 export function plainJsonMapFromJSON(json: PlainJsonMap$Wire): PlainJsonMap {
-  return json as unknown as PlainJsonMap;
+  const sourceEntries = Object.entries(json);
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, anyJsonValueFromJSON(additionalValue)] as const;
+    }),
+  );
+  const result = {
+    ...additionalProperties,
+  };
+  return result;
 }
 
 export function plainJsonMapToJSON(value: PlainJsonMap): PlainJsonMap$Wire {
-  return value as unknown as PlainJsonMap$Wire;
+  const sourceEntries = Object.entries(value);
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, anyJsonValueToJSON(additionalValue)] as const;
+    }),
+  );
+  const result = {
+    ...additionalProperties,
+  };
+  return result;
 }

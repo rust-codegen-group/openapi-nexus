@@ -15,12 +15,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Enable full `vp check` and validate freshly generated clients before and after
   packing, without a formatter preparation step. Exclude `dist/` from formatting
   and provide a `fmt` script for manual edits.
-- Upgrade generated TypeScript clients to Vite+ `^1.5.0`, including Vite `8.3.5`,
-  Vitest `5.1.0`, Rolldown `1.2.16`, Oxfmt `0.76.0`, Oxlint `1.91.0`,
+- Upgrade generated TypeScript clients to Vite+ `^1.5.0`, resolving Vite `8.3.7`,
+  Vitest `5.1.0`, Rolldown `1.2.18`, Oxfmt `0.76.0`, Oxlint `1.91.0`,
   oxlint-tsgolint `7.0.2005`, and tsdown `0.23.4`. Pin CI validation and
-  documented setup to Vite+ `1.5.0` and TypeScript `7.0.2`, and report the resolved
+  documented setup to Vite+ `1.5.1` and TypeScript `7.0.2`, and report the resolved
   tool versions during client builds. Vite+ projects require Node.js
   `^22.18.0 || ^24.11.0 || >=26.0.0`.
+
+- Upgrade `sigil-stitch` to 0.7.5 for structured TypeScript namespace-qualified
+  types with import-aware nested arguments.
+- Retain inline scalar enum values in `IrTypeExpr::ScalarEnum` for union selection.
+  Rust callers exhaustively matching the public IR enum must handle this variant;
+  its `representation_nullable` fact retains an extracted null permission at the
+  original enum boundary, while `representation_is_constraint` distinguishes
+  authored types from synthetic untyped-enum fallbacks. Other generators retain
+  their existing representation and enum policies.
+
+### Fixed
+
+- Convert camelCase TypeScript untagged-union members in both JSON directions,
+  including mixed client/search tools and containing requests. Add configurable
+  `firstMatch`, `strict`, and wire-preserving `raw` selection policies instead
+  of treating every multi-member union converter as an identity cast. Retain
+  nested converter/strict-policy delegation, concrete-before-fallback priority
+  through nullable and `allOf` aliases, binary model values, and adjacent-tagged
+  unit variants. Convert inline container members and concrete values in open
+   nested dictionaries, and preserve array/null shapes through single-member
+   `allOf` aliases. Use the same value plan for models, nested HTTP bodies,
+   multipart JSON parts, response/error payloads, and tagged payloads/type guards.
+   Retain scalar enum and typed additional-value checks, productive recursive
+   matching, honest raw alias types, and readonly dictionary contracts. Required
+   nullable JSON bodies distinguish a supplied `null` from an omitted body.
+   Optional bodies also delegate supplied null, without an unformatted inline
+   conditional. Intersect nested enum constraints at their original nullability
+   boundary and retain authored concrete null matches beside opaque fallbacks.
+   Untyped numeric enums no longer inherit a synthetic string constraint;
+   extracted enum null permission restores a typed nullable conversion boundary.
+   Nullable `oneOf`/`anyOf` wrappers retain outer enum constraints; explicit null
+   alternatives do not bypass strict candidate counts or nested strict errors.
+   Emit compound conversions and predicates as static internal helpers with
+   direct Vite+-compatible layout, preserving readonly inputs and public exports.
+- Preserve tagged TypeScript models named `Record` or `Readonly` by qualifying
+  built-in utility references without renaming the generated public model.
+
 
 ## [0.3.0]
 

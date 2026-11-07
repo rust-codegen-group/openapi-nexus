@@ -133,10 +133,10 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     requestParameters: ApiCreateTestResourceRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateTestResourceRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createTestResourceRaw().',
+        'Required parameter "body" was undefined when calling createTestResourceRaw().',
       );
     }
     // Build path with path parameters
@@ -149,7 +149,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     };
 
     // Prepare request body
-    const requestBody = requestParameters.body;
+    const requestBody = requestParameters['body'];
     // Make request
     const response = await this.request(
       {
@@ -199,7 +199,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     requestParameters: ApiDeleteTestResourceRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<DeleteTestResourceRawResponse> {
-    if (requestParameters.resourceId === undefined || requestParameters.resourceId === null) {
+    if (requestParameters['resourceId'] === undefined || requestParameters['resourceId'] === null) {
       throw new RequiredError(
         'resourceId',
         'Required parameter "resourceId" was null or undefined when calling deleteTestResourceRaw().',
@@ -238,7 +238,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
           status: response.status,
           raw: response,
           value: () => {
-            errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+            errorValue ??= new JSONApiResponse<HttpErrorResponse>(errorRaw.clone(), (json) => {
               return httpErrorResponseFromJSON(json as HttpErrorResponse$Wire);
             }).value();
             return errorValue;
@@ -251,7 +251,7 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
           status: response.status,
           raw: response,
           value: () => {
-            errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+            errorValue ??= new JSONApiResponse<HttpErrorResponse>(errorRaw.clone(), (json) => {
               return httpErrorResponseFromJSON(json as HttpErrorResponse$Wire);
             }).value();
             return errorValue;

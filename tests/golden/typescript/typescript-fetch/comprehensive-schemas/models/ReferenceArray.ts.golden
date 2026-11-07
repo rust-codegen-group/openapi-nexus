@@ -6,6 +6,7 @@
  */
 import type { StringType } from './StringType';
 
-/** Array of references */
-
+/**
+ * Array of references
+ */
 export type ReferenceArray = readonly StringType[];

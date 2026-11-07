@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noEmitOnError": true,
+    "rootDir": ".",
+    "outDir": "../../../target/generated-clients/typescript-isolation",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "files": ["isolation-consumer.ts"]
+}

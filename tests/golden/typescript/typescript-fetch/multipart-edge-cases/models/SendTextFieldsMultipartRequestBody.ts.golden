@@ -4,7 +4,6 @@
  * Multipart Edge Cases — 1.0.0
  * Covers optional multipart bodies, optional parts, and text-only multipart fields.
  */
-
 export interface SendTextFieldsMultipartRequestBody {
   enabled: boolean;
   note: string;

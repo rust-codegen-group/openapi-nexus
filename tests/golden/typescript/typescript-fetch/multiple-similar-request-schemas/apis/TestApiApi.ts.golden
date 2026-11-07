@@ -108,7 +108,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     requestParameters: ApiCreateTypeARequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateTypeARawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTypeARaw().',
@@ -172,7 +172,7 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     requestParameters: ApiCreateTypeBRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateTypeBRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTypeBRaw().',

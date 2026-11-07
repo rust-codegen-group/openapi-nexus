@@ -15,33 +15,55 @@ import type { SetupUnspecified, SetupUnspecified$Wire } from './SetupUnspecified
 import { setupUnspecifiedFromJSON, setupUnspecifiedToJSON } from './SetupUnspecified';
 
 export type Setup$Wire =
-  | ({ kind: 'SETUP_UNSPECIFIED' } & SetupUnspecified$Wire)
-  | ({ kind: 'SETUP_AUTOMATIC' } & SetupAutomatic$Wire)
-  | ({ kind: 'SETUP_MANUAL' } & SetupManual$Wire);
+  | (Record<'kind', 'SETUP_UNSPECIFIED'> & SetupUnspecified$Wire)
+  | (Record<'kind', 'SETUP_AUTOMATIC'> & SetupAutomatic$Wire)
+  | (Record<'kind', 'SETUP_MANUAL'> & SetupManual$Wire);
 
 export type Setup =
-  | ({ kind: 'SETUP_UNSPECIFIED' } & SetupUnspecified)
-  | ({ kind: 'SETUP_AUTOMATIC' } & SetupAutomatic)
-  | ({ kind: 'SETUP_MANUAL' } & SetupManual);
+  | (Record<'kind', 'SETUP_UNSPECIFIED'> & SetupUnspecified)
+  | (Record<'kind', 'SETUP_AUTOMATIC'> & SetupAutomatic)
+  | (Record<'kind', 'SETUP_MANUAL'> & SetupManual);
 
 export function setupFromJSON(json: Setup$Wire): Setup {
-  switch (json.kind) {
-    case 'SETUP_UNSPECIFIED':
-      return { ...setupUnspecifiedFromJSON(json), kind: 'SETUP_UNSPECIFIED' };
-    case 'SETUP_AUTOMATIC':
-      return { ...setupAutomaticFromJSON(json), kind: 'SETUP_AUTOMATIC' };
-    case 'SETUP_MANUAL':
-      return { ...setupManualFromJSON(json), kind: 'SETUP_MANUAL' };
+  if (json['kind'] === 'SETUP_UNSPECIFIED') {
+    return {
+      ...setupUnspecifiedFromJSON(json as unknown as SetupUnspecified$Wire),
+      ['kind']: 'SETUP_UNSPECIFIED',
+    } as Setup;
   }
+  if (json['kind'] === 'SETUP_AUTOMATIC') {
+    return {
+      ...setupAutomaticFromJSON(json as unknown as SetupAutomatic$Wire),
+      ['kind']: 'SETUP_AUTOMATIC',
+    } as Setup;
+  }
+  if (json['kind'] === 'SETUP_MANUAL') {
+    return {
+      ...setupManualFromJSON(json as unknown as SetupManual$Wire),
+      ['kind']: 'SETUP_MANUAL',
+    } as Setup;
+  }
+  throw new Error('Unknown variant');
 }
 
 export function setupToJSON(value: Setup): Setup$Wire {
-  switch (value.kind) {
-    case 'SETUP_UNSPECIFIED':
-      return { ...setupUnspecifiedToJSON(value), kind: 'SETUP_UNSPECIFIED' } as Setup$Wire;
-    case 'SETUP_AUTOMATIC':
-      return { ...setupAutomaticToJSON(value), kind: 'SETUP_AUTOMATIC' } as Setup$Wire;
-    case 'SETUP_MANUAL':
-      return { ...setupManualToJSON(value), kind: 'SETUP_MANUAL' } as Setup$Wire;
+  if (value['kind'] === 'SETUP_UNSPECIFIED') {
+    return {
+      ...setupUnspecifiedToJSON(value as unknown as SetupUnspecified),
+      ['kind']: 'SETUP_UNSPECIFIED',
+    } as Setup$Wire;
   }
+  if (value['kind'] === 'SETUP_AUTOMATIC') {
+    return {
+      ...setupAutomaticToJSON(value as unknown as SetupAutomatic),
+      ['kind']: 'SETUP_AUTOMATIC',
+    } as Setup$Wire;
+  }
+  if (value['kind'] === 'SETUP_MANUAL') {
+    return {
+      ...setupManualToJSON(value as unknown as SetupManual),
+      ['kind']: 'SETUP_MANUAL',
+    } as Setup$Wire;
+  }
+  throw new Error('Unknown variant');
 }

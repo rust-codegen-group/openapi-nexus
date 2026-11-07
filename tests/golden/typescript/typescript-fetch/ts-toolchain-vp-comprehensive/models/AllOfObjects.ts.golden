@@ -7,6 +7,7 @@
 import type { AllOfObjectsAllOf2 } from './AllOfObjectsAllOf2';
 import type { BasicObject } from './BasicObject';
 
-/** Intersection of object types (merge) */
-
+/**
+ * Intersection of object types (merge)
+ */
 export type AllOfObjects = BasicObject & AllOfObjectsAllOf2;

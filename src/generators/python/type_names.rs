@@ -14,6 +14,9 @@ pub(crate) fn python_type_name_for_schema(expr: &IrTypeExpr, current_schema: &st
 
 fn python_type_name_with_current(expr: &IrTypeExpr, current_schema: Option<&str>) -> TypeName {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => {
+            python_type_name_with_current(representation, current_schema)
+        }
         IrTypeExpr::Named(name) => {
             let py_name = name.to_pascal_case();
             if current_schema == Some(name.as_str()) {

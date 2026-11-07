@@ -250,7 +250,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     requestParameters: ApiHandleAdjacentlyTaggedRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<HandleAdjacentlyTaggedRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleAdjacentlyTaggedRaw().',
@@ -327,7 +327,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     requestParameters: ApiHandleExternallyTaggedRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<HandleExternallyTaggedRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleExternallyTaggedRaw().',
@@ -404,7 +404,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     requestParameters: ApiHandleInternallyTaggedRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<HandleInternallyTaggedRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleInternallyTaggedRaw().',
@@ -481,7 +481,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     requestParameters: ApiHandleMixedRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<HandleMixedRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleMixedRaw().',
@@ -556,7 +556,7 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     requestParameters: ApiHandleUntaggedRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<HandleUntaggedRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling handleUntaggedRaw().',

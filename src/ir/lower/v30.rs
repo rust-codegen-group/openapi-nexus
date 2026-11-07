@@ -785,6 +785,7 @@ impl<'a> LowerCtx<'a> {
             }
         };
         with_schema_nullability(obj, base)
+            .with_scalar_enum(&obj.enum_values, obj.schema_type.is_some())
     }
 
     fn lower_schema_value_with_promotion(
@@ -1127,7 +1128,7 @@ fn extract_component_name(ref_path: &str) -> String {
 /// Preserve nullability without changing the existing untyped-schema fallback.
 fn nested_type_to_expr(obj: &ObjectSchema) -> IrTypeExpr {
     let base = type_string_to_type_expr(obj.schema_type.as_deref().unwrap_or("string"), obj);
-    with_schema_nullability(obj, base)
+    with_schema_nullability(obj, base).with_scalar_enum(&obj.enum_values, obj.schema_type.is_some())
 }
 
 fn with_schema_nullability(obj: &ObjectSchema, base: IrTypeExpr) -> IrTypeExpr {
@@ -1298,10 +1299,7 @@ fn classify_tagging_style(
 }
 
 fn unwrap_nullable(expr: IrTypeExpr) -> (IrTypeExpr, bool) {
-    match expr {
-        IrTypeExpr::Nullable(inner) => (*inner, true),
-        other => (other, false),
-    }
+    expr.split_nullable()
 }
 
 fn extract_validation(obj: &ObjectSchema) -> Option<IrValidation> {

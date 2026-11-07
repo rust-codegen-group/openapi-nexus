@@ -9,24 +9,58 @@ import { variantAFromJSON, variantAToJSON } from './VariantA';
 import type { VariantB, VariantB$Wire } from './VariantB';
 import { variantBFromJSON, variantBToJSON } from './VariantB';
 
-/** Externally tagged enum where the key determines the variant */
-
+/**
+ * Externally tagged enum where the key determines the variant
+ */
 export type ExternallyTaggedEnum$Wire =
-  | { EXTERNALLY_TAGGED_VARIANT_A: VariantA$Wire }
-  | { EXTERNALLY_TAGGED_VARIANT_B: VariantB$Wire };
+  | Record<'EXTERNALLY_TAGGED_VARIANT_A', VariantA$Wire>
+  | Record<'EXTERNALLY_TAGGED_VARIANT_B', VariantB$Wire>;
 
+/**
+ * Externally tagged enum where the key determines the variant
+ */
 export type ExternallyTaggedEnum =
-  | { EXTERNALLY_TAGGED_VARIANT_A: VariantA }
-  | { EXTERNALLY_TAGGED_VARIANT_B: VariantB };
+  | Record<'EXTERNALLY_TAGGED_VARIANT_A', VariantA>
+  | Record<'EXTERNALLY_TAGGED_VARIANT_B', VariantB>;
 
-export function externallyTaggedEnumFromJSON(json: ExternallyTaggedEnum$Wire): ExternallyTaggedEnum {
-  if ('EXTERNALLY_TAGGED_VARIANT_A' in json) return { EXTERNALLY_TAGGED_VARIANT_A: variantAFromJSON(json['EXTERNALLY_TAGGED_VARIANT_A']) };
-  if ('EXTERNALLY_TAGGED_VARIANT_B' in json) return { EXTERNALLY_TAGGED_VARIANT_B: variantBFromJSON(json['EXTERNALLY_TAGGED_VARIANT_B']) };
+export function externallyTaggedEnumFromJSON(
+  json: ExternallyTaggedEnum$Wire,
+): ExternallyTaggedEnum {
+  if (Object.prototype.hasOwnProperty.call(json, 'EXTERNALLY_TAGGED_VARIANT_A')) {
+    return {
+      ['EXTERNALLY_TAGGED_VARIANT_A']: variantAFromJSON(
+        (json as Record<'EXTERNALLY_TAGGED_VARIANT_A', VariantA$Wire>)[
+          'EXTERNALLY_TAGGED_VARIANT_A'
+        ],
+      ),
+    } as ExternallyTaggedEnum;
+  }
+  if (Object.prototype.hasOwnProperty.call(json, 'EXTERNALLY_TAGGED_VARIANT_B')) {
+    return {
+      ['EXTERNALLY_TAGGED_VARIANT_B']: variantBFromJSON(
+        (json as Record<'EXTERNALLY_TAGGED_VARIANT_B', VariantB$Wire>)[
+          'EXTERNALLY_TAGGED_VARIANT_B'
+        ],
+      ),
+    } as ExternallyTaggedEnum;
+  }
   throw new Error('Unknown variant');
 }
 
 export function externallyTaggedEnumToJSON(value: ExternallyTaggedEnum): ExternallyTaggedEnum$Wire {
-  if ('EXTERNALLY_TAGGED_VARIANT_A' in value) return { EXTERNALLY_TAGGED_VARIANT_A: variantAToJSON(value['EXTERNALLY_TAGGED_VARIANT_A']) };
-  if ('EXTERNALLY_TAGGED_VARIANT_B' in value) return { EXTERNALLY_TAGGED_VARIANT_B: variantBToJSON(value['EXTERNALLY_TAGGED_VARIANT_B']) };
+  if (Object.prototype.hasOwnProperty.call(value, 'EXTERNALLY_TAGGED_VARIANT_A')) {
+    return {
+      ['EXTERNALLY_TAGGED_VARIANT_A']: variantAToJSON(
+        (value as Record<'EXTERNALLY_TAGGED_VARIANT_A', VariantA>)['EXTERNALLY_TAGGED_VARIANT_A'],
+      ),
+    } as ExternallyTaggedEnum$Wire;
+  }
+  if (Object.prototype.hasOwnProperty.call(value, 'EXTERNALLY_TAGGED_VARIANT_B')) {
+    return {
+      ['EXTERNALLY_TAGGED_VARIANT_B']: variantBToJSON(
+        (value as Record<'EXTERNALLY_TAGGED_VARIANT_B', VariantB>)['EXTERNALLY_TAGGED_VARIANT_B'],
+      ),
+    } as ExternallyTaggedEnum$Wire;
+  }
   throw new Error('Unknown variant');
 }

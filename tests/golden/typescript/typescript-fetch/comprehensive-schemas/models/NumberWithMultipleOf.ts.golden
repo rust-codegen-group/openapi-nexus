@@ -4,6 +4,7 @@
  * Comprehensive Schema Types Example — 1.0.0
  * Comprehensive test for all OpenAPI v3.1.2 schema types
  */
-/** Number divisible by multipleOf */
-
+/**
+ * Number divisible by multipleOf
+ */
 export type NumberWithMultipleOf = number;

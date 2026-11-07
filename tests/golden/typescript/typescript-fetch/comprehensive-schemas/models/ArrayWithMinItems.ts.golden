@@ -4,6 +4,7 @@
  * Comprehensive Schema Types Example — 1.0.0
  * Comprehensive test for all OpenAPI v3.1.2 schema types
  */
-/** Array with minimum items constraint */
-
+/**
+ * Array with minimum items constraint
+ */
 export type ArrayWithMinItems = readonly string[];

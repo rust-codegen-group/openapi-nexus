@@ -17,13 +17,12 @@ export type MixedExternalEvent =
 export function mixedExternalEventFromJSON(json: MixedExternalEvent$Wire): MixedExternalEvent {
   if (Object.prototype.hasOwnProperty.call(json, 'started')) {
     const contentValue = (json as Record<'started', Detail$Wire>)['started'];
+    const entries = Object.entries(json).filter(([key]) => key !== 'started');
     const additionalProperties = Object.fromEntries(
-      Object.entries(json)
-        .filter(([key]) => key !== 'started')
-        .map(([key, value]) => {
-          const additionalValue = value;
-          return [key, additionalValue] as const;
-        }),
+      entries.map(([key, value]) => {
+        const additionalValue = value;
+        return [key, additionalValue] as const;
+      }),
     );
     return { ...additionalProperties, ['started']: detailFromJSON(contentValue) };
   }
@@ -37,13 +36,12 @@ export function mixedExternalEventFromJSON(json: MixedExternalEvent$Wire): Mixed
 export function mixedExternalEventToJSON(value: MixedExternalEvent): MixedExternalEvent$Wire {
   if (Object.prototype.hasOwnProperty.call(value, 'started')) {
     const contentValue = (value as Record<'started', Detail>)['started'];
+    const entries = Object.entries(value).filter(([key]) => key !== 'started');
     const additionalProperties = Object.fromEntries(
-      Object.entries(value)
-        .filter(([key]) => key !== 'started')
-        .map(([key, value]) => {
-          const additionalValue = value;
-          return [key, additionalValue] as const;
-        }),
+      entries.map(([key, value]) => {
+        const additionalValue = value;
+        return [key, additionalValue] as const;
+      }),
     );
     return { ...additionalProperties, ['started']: detailToJSON(contentValue) };
   }

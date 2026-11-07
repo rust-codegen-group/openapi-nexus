@@ -105,7 +105,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiCreateTestRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateTestRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createTestRaw().',
@@ -169,7 +169,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiGetTestRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<GetTestRawResponse> {
-    if (requestParameters.id === undefined || requestParameters.id === null) {
+    if (requestParameters['id'] === undefined || requestParameters['id'] === null) {
       throw new RequiredError(
         'id',
         'Required parameter "id" was null or undefined when calling getTestRaw().',

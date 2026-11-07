@@ -8,33 +8,41 @@ import type { FooOpenVariant, FooOpenVariant$Wire } from './FooOpenVariant';
 import { fooOpenVariantFromJSON, fooOpenVariantToJSON } from './FooOpenVariant';
 
 export type FooMappedTagUnion$Wire =
-  | { type: 'foo_closed_variant' }
-  | ({ type: 'foo_open_variant' } & FooOpenVariant$Wire);
+  | Record<'type', 'foo_closed_variant'>
+  | (Record<'type', 'foo_open_variant'> & FooOpenVariant$Wire);
 
 export type FooMappedTagUnion =
-  | { type: 'foo_closed_variant' }
-  | ({ type: 'foo_open_variant' } & FooOpenVariant);
+  | Record<'type', 'foo_closed_variant'>
+  | (Record<'type', 'foo_open_variant'> & FooOpenVariant);
 
 export function fooMappedTagUnionFromJSON(json: FooMappedTagUnion$Wire): FooMappedTagUnion {
-  switch (json.type) {
-    case 'foo_closed_variant':
-      return { type: 'foo_closed_variant' };
-    case 'foo_open_variant':
-      return { ...fooOpenVariantFromJSON(json), type: 'foo_open_variant' };
+  if (json['type'] === 'foo_closed_variant') {
+    return { ['type']: 'foo_closed_variant' } as FooMappedTagUnion;
   }
+  if (json['type'] === 'foo_open_variant') {
+    return {
+      ...fooOpenVariantFromJSON(json as unknown as FooOpenVariant$Wire),
+      ['type']: 'foo_open_variant',
+    } as FooMappedTagUnion;
+  }
+  throw new Error('Unknown variant');
 }
 
 export function fooMappedTagUnionToJSON(value: FooMappedTagUnion): FooMappedTagUnion$Wire {
-  switch (value.type) {
-    case 'foo_closed_variant':
-      return { type: 'foo_closed_variant' } as FooMappedTagUnion$Wire;
-    case 'foo_open_variant':
-      return { ...fooOpenVariantToJSON(value), type: 'foo_open_variant' } as FooMappedTagUnion$Wire;
+  if (value['type'] === 'foo_closed_variant') {
+    return { ['type']: 'foo_closed_variant' } as FooMappedTagUnion$Wire;
   }
+  if (value['type'] === 'foo_open_variant') {
+    return {
+      ...fooOpenVariantToJSON(value as unknown as FooOpenVariant),
+      ['type']: 'foo_open_variant',
+    } as FooMappedTagUnion$Wire;
+  }
+  throw new Error('Unknown variant');
 }
 
-export function isFooOpenVariant(value: FooMappedTagUnion): value is {
-  type: 'foo_open_variant';
-} & FooOpenVariant {
-  return value.type === 'foo_open_variant';
+export function isFooOpenVariant(
+  value: FooMappedTagUnion,
+): value is Record<'type', 'foo_open_variant'> & FooOpenVariant {
+  return value['type'] === 'foo_open_variant';
 }

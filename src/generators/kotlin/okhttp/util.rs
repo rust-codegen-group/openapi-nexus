@@ -7,6 +7,7 @@ use sigil_stitch::prelude::RendererLang;
 
 pub fn kt_type_str(expr: &IrTypeExpr) -> String {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => kt_type_str(representation),
         IrTypeExpr::Named(name) => name.to_pascal_case(),
         IrTypeExpr::Primitive(p) => kt_primitive(p).to_string(),
         IrTypeExpr::Array(inner) => format!("List<{}>", kt_type_str(inner)),
@@ -101,7 +102,7 @@ pub fn sanitize_operation_id(op_id: &str, method: &str, path: &str) -> String {
 }
 
 pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
-    match t {
+    match t.representation() {
         IrTypeExpr::Primitive(
             IrPrimitive::String
             | IrPrimitive::Date

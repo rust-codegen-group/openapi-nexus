@@ -101,6 +101,9 @@ fn response_header_value_kind_inner(
     seen: &mut HashSet<String>,
 ) -> ResponseHeaderValueKind {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => {
+            response_header_value_kind_inner(representation, ir, seen)
+        }
         IrTypeExpr::Primitive(IrPrimitive::Integer | IrPrimitive::IntegerWithFormat(_)) => {
             ResponseHeaderValueKind::Integer
         }

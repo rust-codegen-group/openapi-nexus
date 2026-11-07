@@ -3,17 +3,17 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { convert$4FromJSON, convert$4ToJSON } from '../runtime/valueConversion$4';
 import type { DetailAliasChain, DetailAliasChain$Wire } from './DetailAliasChain';
-import { detailAliasChainFromJSON, detailAliasChainToJSON } from './DetailAliasChain';
 
 export type DetailListAlias$Wire = readonly DetailAliasChain$Wire[];
 
 export type DetailListAlias = readonly DetailAliasChain[];
 
 export function detailListAliasFromJSON(json: DetailListAlias$Wire): DetailListAlias {
-  return json.map((item) => detailAliasChainFromJSON(item));
+  return convert$4FromJSON(json);
 }
 
 export function detailListAliasToJSON(value: DetailListAlias): DetailListAlias$Wire {
-  return value.map((item) => detailAliasChainToJSON(item));
+  return convert$4ToJSON(value);
 }

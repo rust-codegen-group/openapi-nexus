@@ -28,7 +28,7 @@ use crate::generators::response_names::response_entry_kind as response_detail_ki
 use crate::generators::type_application;
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
-    IrOperation, IrParameter, IrPrimitive, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
+    IrOperation, IrParameter, IrRequestBody, IrResponse, IrSpec, IrTypeExpr,
     ParameterLocation as IrParameterLocation,
 };
 use heck::{ToLowerCamelCase as _, ToPascalCase as _};
@@ -45,7 +45,8 @@ use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::spec::where_spec::{CallableParam, CallableParamPresence};
 use sigil_stitch::type_name::TypeName;
 
-use super::sigil_emit::{EmitFlags, build_convertible_set, fn_base_name};
+use super::plan::{Direction, Scope, TypeScriptPlan};
+use super::sigil_emit::EmitFlags;
 
 const RUNTIME_MOD: &str = "../runtime/runtime";
 
@@ -56,13 +57,25 @@ pub fn generate_api_files(
     request_inputs: &RequestInputPlan,
     ts: &TypeScript,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
+    let plan = TypeScriptPlan::new(
+        ir,
+        EmitFlags {
+            property_naming_camel_case,
+            ..EmitFlags::default()
+        },
+    );
+    generate_api_files_with_plan(ir, request_inputs, &plan, ts)
+}
+
+pub(super) fn generate_api_files_with_plan(
+    ir: &IrSpec,
+    request_inputs: &RequestInputPlan,
+    plan: &TypeScriptPlan<'_>,
+    ts: &TypeScript,
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let header = super::project_files::render_file_header(&ir.info);
     let by_tag = group_by_tag(&ir.operations);
-    let flags = EmitFlags {
-        property_naming_camel_case,
-        ..EmitFlags::default()
-    };
-    let convertible = build_convertible_set(ir, flags);
+    let property_naming_camel_case = plan.flags().property_naming_camel_case;
 
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
@@ -72,7 +85,7 @@ pub fn generate_api_files(
             ir,
             property_naming_camel_case,
             request_inputs,
-            &convertible,
+            plan,
             ts,
         )
         .map_err(|source| {
@@ -160,7 +173,7 @@ fn emit_api_file(
     ir: &IrSpec,
     property_naming_camel_case: bool,
     request_inputs: &RequestInputPlan,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
     ts: &TypeScript,
 ) -> Result<FileSpec, SigilStitchError> {
     let class_name = format!("{}Api", tag.to_pascal_case());
@@ -170,7 +183,7 @@ fn emit_api_file(
 
     // Request interfaces — one per op that has at least one parameter / body.
     for op in ops {
-        if let Some(req_iface) = build_request_interface(op, request_inputs) {
+        if let Some(req_iface) = build_request_interface(op, request_inputs, plan) {
             fb = fb.add_type(req_iface);
         }
     }
@@ -178,49 +191,16 @@ fn emit_api_file(
     // Per-operation raw response type aliases — emit each union member on its
     // own line so readers can scan each `Wrapper & { status: N }` pair without
     // the pretty printer splitting intersections across lines.
-    fb = fb.add_code(build_response_aliases_block(ops)?);
+    fb = fb.add_code(build_response_aliases_block(ops, plan)?);
     for accessor in build_success_header_accessors(ops, ir)? {
         fb = fb.add_function(accessor);
     }
-    for (detail_alias, error_class) in build_error_types(ops, ir)? {
+    for (detail_alias, error_class) in build_error_types(ops, ir, plan)? {
         fb = fb.add_code(detail_alias);
         fb = fb.add_type(error_class);
     }
 
-    fb = fb.add_type(build_api_interface(&interface_name, ops)?);
-
-    // When property_naming_camel_case is enabled, add explicit imports for
-    // converter functions and $Wire types referenced in raw code blocks.
-    if property_naming_camel_case {
-        let request_types =
-            collect_request_named_types(ops, ir, property_naming_camel_case, convertible);
-        let response_types = collect_response_named_types(ops, convertible);
-
-        for name in request_types.union(&response_types) {
-            let pascal = name.to_pascal_case();
-            let module = format!("../models/{pascal}");
-            let base = fn_base_name(&pascal);
-            let in_request = request_types.contains(name);
-            let in_response = response_types.contains(name);
-
-            if in_response {
-                let from_fn = format!("{base}FromJSON");
-                let wire_name = format!("{}$Wire", pascal);
-                fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named(
-                    &module, &from_fn,
-                ));
-                fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named_type(
-                    &module, &wire_name,
-                ));
-            }
-            if in_request {
-                let to_fn = format!("{base}ToJSON");
-                fb = fb.add_import(sigil_stitch::spec::import_spec::ImportSpec::named(
-                    &module, &to_fn,
-                ));
-            }
-        }
-    }
+    fb = fb.add_type(build_api_interface(&interface_name, ops, plan)?);
 
     // ApiClass stays structural so modifiers / docs / constructor delegation
     // use sigil's machinery.
@@ -230,7 +210,7 @@ fn emit_api_file(
         ops,
         ir,
         property_naming_camel_case,
-        convertible,
+        plan,
     )?);
 
     fb.build()
@@ -260,11 +240,14 @@ fn error_detail_alias_name(op: &IrOperation) -> String {
 /// Each member is a `%T` slot so imports still flow through the collector,
 /// and each sits on its own line so intersections (`Wrapper & { status: N }`)
 /// stay intact.
-fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock, SigilStitchError> {
+fn build_response_aliases_block(
+    ops: &[&IrOperation],
+    plan: &TypeScriptPlan<'_>,
+) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
     for op in ops {
         let alias = raw_response_alias_name(op);
-        let members = raw_response_members(op);
+        let members = raw_response_members(op, plan);
         let alias_block = if members.len() == 1 {
             let member = members.into_iter().next().unwrap();
             sigil_quote!(TypeScript {
@@ -322,6 +305,7 @@ fn build_success_header_accessors(
 fn build_error_types(
     ops: &[&IrOperation],
     ir: &IrSpec,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<Vec<(CodeBlock, TypeSpec)>, SigilStitchError> {
     let mut error_types = Vec::new();
     for op in ops {
@@ -332,7 +316,8 @@ fn build_error_types(
             .iter()
             .filter(|resp| !is_success_status(&resp.status))
             .collect();
-        let detail_alias_block = build_error_detail_alias_block(&detail_alias, &error_responses)?;
+        let detail_alias_block =
+            build_error_detail_alias_block(&detail_alias, &error_responses, plan)?;
         let error_class = build_error_class(&class_name, &detail_alias, op, ir)?;
         error_types.push((detail_alias_block, error_class));
     }
@@ -342,6 +327,7 @@ fn build_error_types(
 fn build_error_detail_alias_block(
     detail_alias: &str,
     error_responses: &[&IrResponse],
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
     let mut used = HashSet::new();
@@ -354,7 +340,7 @@ fn build_error_detail_alias_block(
             .ok()
             .map(|n| n.to_string())
             .unwrap_or_else(|| "number".to_string());
-        members.push((kind, status_ty, response_value_type(resp)));
+        members.push((kind, status_ty, response_value_type(resp, plan)));
     }
     members.push((
         "unexpected".to_string(),
@@ -536,7 +522,7 @@ fn ts_header_body(
 
 /// Compute the deduplicated list of union members for an operation's raw
 /// response type (wrapper intersected with status literal).
-fn raw_response_members(op: &IrOperation) -> Vec<TypeName> {
+fn raw_response_members(op: &IrOperation, plan: &TypeScriptPlan<'_>) -> Vec<TypeName> {
     let mut members: Vec<TypeName> = Vec::new();
     let mut any_body = false;
     let mut has_default = false;
@@ -549,7 +535,7 @@ fn raw_response_members(op: &IrOperation) -> Vec<TypeName> {
         if resp.status.eq_ignore_ascii_case("default") {
             has_default = true;
         }
-        let kind = classify_response(resp);
+        let kind = classify_response(resp, plan);
         if !matches!(kind, ResponseKind::None) {
             any_body = true;
         }
@@ -572,6 +558,7 @@ fn raw_response_members(op: &IrOperation) -> Vec<TypeName> {
 fn build_request_interface(
     op: &IrOperation,
     request_inputs: &RequestInputPlan,
+    plan: &TypeScriptPlan<'_>,
 ) -> Option<TypeSpec> {
     let has_params = !op.parameters.is_empty() || op.request_body.is_some();
     if !has_params {
@@ -588,7 +575,11 @@ fn build_request_interface(
         if matches!(param.location, IrParameterLocation::Cookie) {
             continue;
         }
-        tb = tb.add_field(build_param_field(param, &resolved_param(&names, param)));
+        tb = tb.add_field(build_param_field(
+            param,
+            &resolved_param(&names, param),
+            plan,
+        ));
     }
     if let Some(rb) = &op.request_body {
         tb = tb.add_field(build_body_field(
@@ -596,14 +587,15 @@ fn build_request_interface(
             rb,
             &resolved_body(&names),
             request_inputs,
+            plan,
         ));
     }
 
     tb.build().ok()
 }
 
-fn build_param_field(param: &IrParameter, name: &str) -> FieldSpec {
-    let ty = type_expr_to_typename(&param.type_expr);
+fn build_param_field(param: &IrParameter, name: &str, plan: &TypeScriptPlan<'_>) -> FieldSpec {
+    let ty = plan.value(&param.type_expr, Scope::api()).public_type();
     let mut fb = FieldSpec::builder(name, ty);
     if !param.required {
         fb = fb.is_optional();
@@ -652,6 +644,7 @@ fn build_body_field(
     rb: &IrRequestBody,
     name: &str,
     request_inputs: &RequestInputPlan,
+    plan: &TypeScriptPlan<'_>,
 ) -> FieldSpec {
     let ty = preferred_request_media_type(rb)
         .and_then(|mt| {
@@ -661,7 +654,9 @@ fn build_body_field(
                     TypeName::importable_type(&format!("../models/{ts_name}"), &ts_name)
                 })
             } else {
-                rb.content.get(mt.as_str()).map(type_expr_to_typename)
+                rb.content
+                    .get(mt.as_str())
+                    .map(|expr| plan.value(expr, Scope::api()).public_type())
             }
         })
         .unwrap_or_else(|| TypeName::primitive("unknown"));
@@ -682,6 +677,7 @@ fn build_body_field(
 fn build_api_interface(
     interface_name: &str,
     ops: &[&IrOperation],
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<TypeSpec, SigilStitchError> {
     let mut interface =
         TypeSpec::builder(interface_name, TypeKind::Interface).visibility(Visibility::Public);
@@ -695,7 +691,7 @@ fn build_api_interface(
         );
         let return_type = type_application(
             TypeName::primitive("Promise"),
-            vec![convenience_body_type(op)],
+            vec![convenience_body_type(op, plan)],
         );
         interface = interface.add_field(
             FieldSpec::builder(&method_base, api_callable_type(op, return_type)).build()?,
@@ -732,7 +728,7 @@ fn build_api_class(
     ops: &[&IrOperation],
     ir: &IrSpec,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<TypeSpec, SigilStitchError> {
     let mut tb = TypeSpec::builder(class_name, TypeKind::Class)
         .visibility(Visibility::Public)
@@ -741,13 +737,8 @@ fn build_api_class(
         .add_method(build_constructor());
 
     for op in ops {
-        tb = tb.add_method(build_raw_method(
-            op,
-            ir,
-            property_naming_camel_case,
-            convertible,
-        )?);
-        tb = tb.add_method(build_convenience_method(op)?);
+        tb = tb.add_method(build_raw_method(op, ir, property_naming_camel_case, plan)?);
+        tb = tb.add_method(build_convenience_method(op, plan)?);
     }
 
     tb.build()
@@ -780,7 +771,7 @@ fn build_raw_method(
     op: &IrOperation,
     ir: &IrSpec,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<FunSpec, SigilStitchError> {
     let method_base = op.operation_id.to_lower_camel_case();
     let method_name = format!("{}Raw", method_base);
@@ -793,13 +784,13 @@ fn build_raw_method(
     fb = fb.returns(vec![raw_return_type(op)]);
 
     let mut body = CodeBlock::builder();
-    emit_required_param_checks(&mut body, op, &method_name);
+    emit_required_param_checks(&mut body, op, &method_name, plan)?;
     emit_url_path(&mut body, op)?;
     emit_query_params(&mut body, op)?;
     emit_headers(&mut body, op)?;
-    emit_request_body(&mut body, op, ir, property_naming_camel_case, convertible)?;
+    emit_request_body(&mut body, op, ir, property_naming_camel_case, plan)?;
     emit_make_request(&mut body, op, op.request_body.is_some());
-    emit_response_handler(&mut body, op, property_naming_camel_case, convertible)?;
+    emit_response_handler(&mut body, op, property_naming_camel_case, plan)?;
 
     fb = fb.body(body.build()?);
 
@@ -834,31 +825,55 @@ fn emit_required_param_checks(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
     method_name: &str,
-) {
+    plan: &TypeScriptPlan<'_>,
+) -> Result<(), SigilStitchError> {
     let names = resolve_param_names(op);
     let required_named = op
         .parameters
         .iter()
         .filter(|p| p.required && !matches!(p.location, IrParameterLocation::Cookie))
-        .map(|p| resolved_param(&names, p))
+        .map(|p| (resolved_param(&names, p), false))
         .collect::<Vec<_>>();
     let mut all_required = required_named;
     if let Some(rb) = &op.request_body
         && rb.required
     {
-        all_required.push(resolved_body(&names));
+        let nullable = preferred_request_media_type(rb)
+            .filter(|media| is_json_media_type(media))
+            .and_then(|media| rb.content.get(media.as_str()))
+            .is_some_and(|expr| plan.value(expr, Scope::api()).accepts_null());
+        all_required.push((resolved_body(&names), nullable));
     }
 
-    for pname in all_required {
-        let access = request_parameters_access(&pname);
-        cb.add(
-            &format!(
-                "if ({0} === undefined || {0} === null) {{\n  throw new %T(\n    '{1}',\n    'Required parameter \"{1}\" was null or undefined when calling {2}().',\n  );\n}}\n",
-                access, pname, method_name
-            ),
-            vec![Arg::TypeName(rt_value("RequiredError"))],
-        );
+    for (pname, nullable) in all_required {
+        let access = sigil_quote!(TypeScript { requestParameters[$S(pname.as_str())] })?;
+        let condition = if nullable {
+            sigil_quote!(TypeScript { $C(access) === undefined })?
+        } else {
+            sigil_quote!(TypeScript { $C(access.clone()) === undefined || $C(access) === null })?
+        };
+        let missing = if nullable {
+            "undefined"
+        } else {
+            "null or undefined"
+        };
+        let message =
+            format!("Required parameter \"{pname}\" was {missing} when calling {method_name}().");
+        let error = super::layout::call(
+            sigil_quote!(TypeScript { new $T(rt_value("RequiredError")) })?,
+            &[
+                sigil_quote!(TypeScript { $S(pname) })?,
+                sigil_quote!(TypeScript { $S(message) })?,
+            ],
+            12,
+        )?;
+        cb.add_code(sigil_quote!(TypeScript {
+            if ($C(condition)) {
+                throw $C(error);
+            }
+        })?);
     }
+    Ok(())
 }
 
 fn emit_url_path(
@@ -972,7 +987,7 @@ fn emit_request_body(
     op: &IrOperation,
     ir: &IrSpec,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<(), SigilStitchError> {
     if let Some(ref body) = op.request_body {
         cb.add("// Prepare request body\n", vec![]);
@@ -986,36 +1001,41 @@ fn emit_request_body(
             if let Some(parts) =
                 multipart_parts_for(body, &media_type, ir, property_naming_camel_case)
             {
+                cb.add_code(sigil_quote!(TypeScript { const multipartBody = requestParameters[$S(body_name.as_str())]; })?);
+                let mut multipart = CodeBlock::builder();
+                emit_multipart_blob_setup(&mut multipart)?;
+                for (index, part) in parts.into_iter().enumerate() {
+                    let part_name = format!("multipartValue${index}");
+                    multipart.add_code(sigil_quote!(TypeScript { const $N(part_name.clone()) = multipartBody[$S(part.field_name.as_str())]; })?);
+                    let mut part_body = CodeBlock::builder();
+                    let column =
+                        if body.required { 4 } else { 6 } + if part.required { 0 } else { 2 };
+                    emit_multipart_blob_part(
+                        &mut part_body,
+                        &part,
+                        sigil_quote!(TypeScript { $N(part_name.clone()) })?,
+                        plan,
+                        index,
+                        column,
+                    )?;
+                    let part_body = part_body.build()?;
+                    if part.required {
+                        multipart.add_code(part_body);
+                    } else {
+                        multipart.add_code(sigil_quote!(TypeScript {
+                            if ($N(part_name.clone()) !== undefined && $N(part_name) !== null) { $C(part_body) }
+                        })?);
+                    }
+                }
+                emit_multipart_blob_finish(&mut multipart, body.required)?;
+                let multipart = multipart.build()?;
                 if !body.required {
                     cb.add_code(sigil_quote!(TypeScript {
                         let requestBody: Blob | undefined = undefined;
+                        if (multipartBody !== undefined && multipartBody !== null) { $C(multipart) }
                     })?);
-                    cb.add(
-                        &format!("if ({access} !== undefined && {access} !== null) {{\n"),
-                        vec![],
-                    );
-                    emit_multipart_blob_setup(cb)?;
                 } else {
-                    emit_multipart_blob_setup(cb)?;
-                }
-                for part in parts {
-                    let part_access = format!("{access}{}", ts_property_access(&part.field_name));
-                    if part.required {
-                        emit_multipart_blob_part(cb, &part, &part_access, convertible)?;
-                    } else {
-                        cb.add(
-                            &format!(
-                                "if ({part_access} !== undefined && {part_access} !== null) {{\n"
-                            ),
-                            vec![],
-                        );
-                        emit_multipart_blob_part(cb, &part, &part_access, convertible)?;
-                        cb.add("}\n", vec![]);
-                    }
-                }
-                emit_multipart_blob_finish(cb, body.required)?;
-                if !body.required {
-                    cb.add("}\n", vec![]);
+                    cb.add_code(multipart);
                 }
             } else {
                 emit_unsupported_ts_body(
@@ -1042,11 +1062,30 @@ fn emit_request_body(
                     None
                 }
             });
-            if let Some(to_json) =
-                json_type.and_then(|ty| body_to_json_expr(ty, &access, convertible))
-            {
+            if let Some(ty) = json_type {
+                let access =
+                    sigil_quote!(TypeScript { requestParameters[$S(body_name.as_str())] })?;
+                let value_plan = plan.value(ty, Scope::api());
+                let value = if body.required {
+                    value_plan.convert_at(access, Direction::ToWire, 23)?
+                } else {
+                    let converted = value_plan.convert_at(
+                        sigil_quote!(TypeScript { bodyValue })?,
+                        Direction::ToWire,
+                        13,
+                    )?;
+                    let body = sigil_quote!(TypeScript {
+                        const bodyValue = $C(access);
+                        if (bodyValue === undefined) {
+                            return undefined;
+                        }
+                        return $C(converted);
+                    })?;
+                    let arrow = super::layout::block_arrow(sigil_quote!(TypeScript { () })?, body);
+                    sigil_quote!(TypeScript { ($C(arrow))() })?
+                };
                 cb.add_code(sigil_quote!(TypeScript {
-                    const requestBody = $L(to_json.as_str());
+                    const requestBody = $C(value);
                 })?);
             } else {
                 cb.add_code(sigil_quote!(TypeScript {
@@ -1119,8 +1158,10 @@ fn emit_multipart_blob_finish(
 fn emit_multipart_blob_part(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     part: &MultipartPart,
-    part_access: &str,
-    convertible: &HashSet<String>,
+    part_expr: CodeBlock,
+    plan: &TypeScriptPlan<'_>,
+    index: usize,
+    column: usize,
 ) -> Result<(), SigilStitchError> {
     if part.value_encoding == MultipartValueEncoding::Unsupported {
         cb.add_code(sigil_quote!(TypeScript {
@@ -1129,7 +1170,6 @@ fn emit_multipart_blob_part(
         return Ok(());
     }
     if part.is_binary {
-        cb.add("{\n", vec![]);
         let header_prefix = format!(
             "\r\nContent-Disposition: form-data; name=\"{}\"; filename=\"",
             multipart_header_quoted(&part.wire_name)
@@ -1138,21 +1178,32 @@ fn emit_multipart_blob_part(
             "\"\r\nContent-Type: {}\r\n\r\n",
             multipart_header_value(&part.content_type)
         );
-        let filename_literal = ts_string_literal(&part.wire_name);
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                const multipartFilename = $T(rt_value("uploadFileFilename"))($L(part_access), $L(filename_literal.as_str()));
-            })
-            ?,
-        );
-        let header_prefix_literal = ts_string_literal(&header_prefix);
-        let header_suffix_literal = ts_string_literal(&header_suffix);
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                multipartChunks.push($S("--") + multipartBoundary + $L(header_prefix_literal.as_str()) + $T(rt_value("multipartHeaderValue"))(multipartFilename) + $L(header_suffix_literal.as_str()));
-            })
-            ?,
-        );
+        let filename_name = format!("multipartFilename${index}");
+        let filename = super::layout::call(
+            sigil_quote!(TypeScript { $T(rt_value("uploadFileFilename")) })?,
+            &[
+                part_expr.clone(),
+                sigil_quote!(TypeScript { $S(part.wire_name.clone()) })?,
+            ],
+            column + filename_name.len() + 9,
+        )?;
+        cb.add_code(super::layout::const_value(
+            &filename_name,
+            filename,
+            column,
+        )?);
+        let header = super::layout::call(
+            sigil_quote!(TypeScript { multipartChunks.push })?,
+            &[
+                sigil_quote!(TypeScript { $S("--") })?,
+                sigil_quote!(TypeScript { multipartBoundary })?,
+                sigil_quote!(TypeScript { $S(header_prefix) })?,
+                sigil_quote!(TypeScript { $T(rt_value("multipartHeaderValue"))($N(filename_name)) })?,
+                sigil_quote!(TypeScript { $S(header_suffix) })?,
+            ],
+            column,
+        )?;
+        cb.add_code(sigil_quote!(TypeScript { $C(header); })?);
     } else {
         let disposition = format!(
             "form-data; name=\"{}\"",
@@ -1163,34 +1214,45 @@ fn emit_multipart_blob_part(
             disposition,
             multipart_header_value(&part.content_type)
         );
-        let header_tail_literal = ts_string_literal(&header_tail);
-        cb.add_code(sigil_quote!(TypeScript {
-            multipartChunks.push($S("--") + multipartBoundary + $L(header_tail_literal));
-        })?);
+        let header = super::layout::call(
+            sigil_quote!(TypeScript { multipartChunks.push })?,
+            &[
+                sigil_quote!(TypeScript { $S("--") })?,
+                sigil_quote!(TypeScript { multipartBoundary })?,
+                sigil_quote!(TypeScript { $S(header_tail) })?,
+            ],
+            column,
+        )?;
+        cb.add_code(sigil_quote!(TypeScript { $C(header); })?);
     }
     if part.is_binary {
-        cb.add_code(sigil_quote!(TypeScript {
-            multipartChunks.push($T(rt_value("uploadFileData"))($L(part_access)));
-        })?);
+        let data = sigil_quote!(TypeScript { $T(rt_value("uploadFileData"))($C(part_expr)) })?;
+        let pushed = super::layout::call(
+            sigil_quote!(TypeScript { multipartChunks.push })?,
+            &[data],
+            column,
+        )?;
+        cb.add_code(sigil_quote!(TypeScript { $C(pushed); })?);
     } else {
         let value_expr = if part.value_encoding == MultipartValueEncoding::Json {
-            let json_value = multipart_part_to_json_expr(part, part_access, convertible)
-                .unwrap_or_else(|| part_access.to_string());
-            format!("JSON.stringify({json_value})")
+            let json_value = plan
+                .value(&part.type_expr, Scope::api())
+                .convert(part_expr, Direction::ToWire)?;
+            sigil_quote!(TypeScript { JSON.stringify($C(json_value)) })?
         } else {
-            format!("String({part_access})")
+            sigil_quote!(TypeScript { String($C(part_expr)) })?
         };
-        cb.add_code(sigil_quote!(TypeScript {
-            multipartChunks.push($L(value_expr));
-        })?);
+        let pushed = super::layout::call(
+            sigil_quote!(TypeScript { multipartChunks.push })?,
+            &[value_expr],
+            column,
+        )?;
+        cb.add_code(sigil_quote!(TypeScript { $C(pushed); })?);
     }
     let crlf_literal = ts_string_literal("\r\n");
     cb.add_code(sigil_quote!(TypeScript {
         multipartChunks.push($L(crlf_literal));
     })?);
-    if part.is_binary {
-        cb.add("}\n", vec![]);
-    }
     Ok(())
 }
 
@@ -1209,16 +1271,12 @@ fn emit_response_handler(
     cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
     op: &IrOperation,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<(), SigilStitchError> {
     cb.add_code(sigil_quote!(TypeScript {
         $comment("Handle responses")
     })?);
-    cb.add_code(build_error_dispatch(
-        op,
-        property_naming_camel_case,
-        convertible,
-    )?);
+    cb.add_code(build_error_dispatch(op, property_naming_camel_case, plan)?);
 
     let mut numeric: Vec<(u16, &IrResponse)> = Vec::new();
     let mut wildcards: Vec<(&str, &IrResponse)> = Vec::new();
@@ -1245,7 +1303,7 @@ fn emit_response_handler(
         .any(|r| !r.content.is_empty());
 
     let fallback = if let Some(response) = default {
-        build_response_return(response, property_naming_camel_case, convertible)?
+        build_response_return(response, property_naming_camel_case, plan)?
     } else {
         build_fallback_return(fallback_has_body)?
     };
@@ -1262,7 +1320,7 @@ fn emit_response_handler(
     {
         branches.push((
             response_status_condition(&response.status)?,
-            build_response_return(response, property_naming_camel_case, convertible)?,
+            build_response_return(response, property_naming_camel_case, plan)?,
         ));
     }
     cb.add_code(build_status_dispatch(branches, fallback)?);
@@ -1327,7 +1385,7 @@ fn is_success_status(status: &str) -> bool {
 fn build_error_dispatch(
     op: &IrOperation,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let mut numeric = Vec::new();
     let mut wildcards = Vec::new();
@@ -1357,19 +1415,13 @@ fn build_error_dispatch(
         let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
         branches.push((
             response_status_condition(&resp.status)?,
-            build_error_throw_for_response(
-                op,
-                resp,
-                &kind,
-                property_naming_camel_case,
-                convertible,
-            )?,
+            build_error_throw_for_response(op, resp, &kind, property_naming_camel_case, plan)?,
         ));
     }
 
     let fallback = if let Some(resp) = default {
         let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
-        build_error_throw_for_response(op, resp, &kind, property_naming_camel_case, convertible)?
+        build_error_throw_for_response(op, resp, &kind, property_naming_camel_case, plan)?
     } else {
         build_error_throw(
             op,
@@ -1393,7 +1445,7 @@ fn build_error_throw_for_response(
     resp: &IrResponse,
     kind: &str,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let status = if let Ok(code) = resp.status.parse::<u16>() {
         sigil_quote!(TypeScript { response.status as $L(code.to_string()) })
@@ -1404,8 +1456,8 @@ fn build_error_throw_for_response(
         op,
         kind,
         status,
-        response_value_type(resp),
-        error_value_expr(resp, property_naming_camel_case, convertible)?,
+        response_value_type(resp, plan),
+        error_value_expr(resp, property_naming_camel_case, plan)?,
     )
 }
 
@@ -1436,14 +1488,17 @@ fn build_error_throw(
 fn error_value_expr(
     resp: &IrResponse,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<CodeBlock, SigilStitchError> {
-    let kind = classify_response(resp);
+    let kind = classify_response(resp, plan);
     if property_naming_camel_case
         && let ResponseKind::Json(Some(_)) = &kind
-        && let Some(from_json) = response_from_json_transformer(resp, convertible)?
+        && let Some(from_json) = response_from_json_transformer(resp, plan)?
     {
-        let wrapper_type = rt_value("JSONApiResponse");
+        let wrapper_type = type_application(
+            rt_value("JSONApiResponse"),
+            vec![response_value_type(resp, plan)],
+        );
         return sigil_quote!(TypeScript {
             new $T(wrapper_type)(errorRaw.clone(), $C(from_json)).value()
         });
@@ -1464,9 +1519,9 @@ fn error_value_expr(
 fn build_response_return(
     resp: &IrResponse,
     property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<CodeBlock, SigilStitchError> {
-    let kind = classify_response(resp);
+    let kind = classify_response(resp, plan);
     let status_ty = match resp.status.parse::<u16>() {
         Ok(n) => n.to_string(),
         Err(_) => "number".to_string(),
@@ -1476,7 +1531,7 @@ fn build_response_return(
     // inject a fromJSON transformer: `new JSONApiResponse<Pet>(response, (json) => petFromJSON(json as Pet$Wire))`
     if property_naming_camel_case
         && let ResponseKind::Json(Some(_)) = &kind
-        && let Some(from_json) = response_from_json_transformer(resp, convertible)?
+        && let Some(from_json) = response_from_json_transformer(resp, plan)?
     {
         let wrapper_type = match kind {
             ResponseKind::Json(Some(body_ty)) => {
@@ -1510,7 +1565,7 @@ fn build_response_return(
     let flat = sigil_quote!(TypeScript {
         return new $T(wrapper_value.clone())(response) as $T(wrapper_type.clone())$L(" & ")$T(status_type.clone());
     })?;
-    if super::layout::fragment_width(&flat) + 6 > 100 {
+    if super::layout::fragment_width(&flat)? + 6 > 100 {
         let status_type = TypeName::raw(&format!("{{\n  status: {status_ty};\n}}"));
         sigil_quote!(TypeScript { return new $T(wrapper_value)(response) as $T(wrapper_type)$L(" & ")$T(status_type); })
     } else {
@@ -1544,7 +1599,10 @@ fn build_fallback_return(any_body: bool) -> Result<CodeBlock, SigilStitchError> 
 // Convenience method
 // ============================================================================
 
-fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, SigilStitchError> {
+fn build_convenience_method(
+    op: &IrOperation,
+    plan: &TypeScriptPlan<'_>,
+) -> Result<FunSpec, SigilStitchError> {
     let method_base = op.operation_id.to_lower_camel_case();
     let raw_name = format!("{}Raw", method_base);
 
@@ -1553,7 +1611,7 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, SigilStitchErro
     for param in method_param_specs(op) {
         fb = fb.add_param(param);
     }
-    let body_ty = convenience_body_type(op);
+    let body_ty = convenience_body_type(op, plan);
     fb = fb.returns(vec![type_application(
         TypeName::primitive("Promise"),
         vec![body_ty.clone()],
@@ -1692,7 +1750,7 @@ fn fallback_member(any_body: bool) -> TypeName {
     TypeName::intersection(vec![wrapper, rt_type("HttpSuccessResponse")])
 }
 
-fn convenience_body_type(op: &IrOperation) -> TypeName {
+fn convenience_body_type(op: &IrOperation, plan: &TypeScriptPlan<'_>) -> TypeName {
     let mut members: Vec<TypeName> = Vec::new();
     let mut any_body = false;
     for resp in op
@@ -1700,7 +1758,7 @@ fn convenience_body_type(op: &IrOperation) -> TypeName {
         .iter()
         .filter(|resp| is_success_status(&resp.status))
     {
-        match classify_response(resp) {
+        match classify_response(resp, plan) {
             ResponseKind::Json(Some(body)) => {
                 any_body = true;
                 members.push(body);
@@ -1729,8 +1787,8 @@ fn convenience_body_type(op: &IrOperation) -> TypeName {
     }
 }
 
-fn response_value_type(resp: &IrResponse) -> TypeName {
-    match classify_response(resp) {
+fn response_value_type(resp: &IrResponse, plan: &TypeScriptPlan<'_>) -> TypeName {
+    match classify_response(resp, plan) {
         ResponseKind::Json(Some(body)) => body,
         ResponseKind::Json(None) => TypeName::primitive("unknown"),
         ResponseKind::Text => TypeName::primitive("string"),
@@ -1777,12 +1835,12 @@ enum ResponseKind {
     None,
 }
 
-fn classify_response(resp: &IrResponse) -> ResponseKind {
+fn classify_response(resp: &IrResponse, plan: &TypeScriptPlan<'_>) -> ResponseKind {
     let Some((media_type, ty)) = pick_response_content(resp) else {
         return ResponseKind::None;
     };
     if is_json_media_type(&media_type) {
-        return ResponseKind::Json(Some(type_expr_to_typename(ty)));
+        return ResponseKind::Json(Some(plan.value(ty, Scope::api()).public_type()));
     }
     match media_type_base(&media_type).as_str() {
         "text/plain"
@@ -1913,52 +1971,6 @@ fn rt_type(name: &str) -> TypeName {
 // IrTypeExpr → TypeName
 // ============================================================================
 
-fn type_expr_to_typename(expr: &IrTypeExpr) -> TypeName {
-    match expr {
-        IrTypeExpr::Named(name) => {
-            let ts_name = name.to_pascal_case();
-            TypeName::importable_type(&format!("../models/{ts_name}"), &ts_name)
-        }
-        IrTypeExpr::Primitive(p) => TypeName::primitive(primitive_to_ts(p)),
-        IrTypeExpr::Array(inner) => TypeName::array(type_expr_to_typename(inner)),
-        IrTypeExpr::Nullable(inner) => TypeName::union(vec![
-            type_expr_to_typename(inner),
-            TypeName::primitive("null"),
-        ]),
-        IrTypeExpr::StringLiteral(s) => TypeName::string_literal(s.clone()),
-        IrTypeExpr::StringEnum(values) => TypeName::union(
-            values
-                .iter()
-                .map(|v| TypeName::string_literal(v.clone()))
-                .collect(),
-        ),
-        IrTypeExpr::Map(inner) => type_application(
-            TypeName::primitive("Record"),
-            vec![TypeName::primitive("string"), type_expr_to_typename(inner)],
-        ),
-        IrTypeExpr::Union(members) => {
-            TypeName::union(members.iter().map(type_expr_to_typename).collect())
-        }
-        IrTypeExpr::Any => TypeName::primitive("unknown"),
-    }
-}
-
-fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
-    match p {
-        IrPrimitive::Binary => "Blob | File",
-        IrPrimitive::String
-        | IrPrimitive::Date
-        | IrPrimitive::DateTime
-        | IrPrimitive::Uuid
-        | IrPrimitive::StringWithFormat(_) => "string",
-        IrPrimitive::Integer
-        | IrPrimitive::Number
-        | IrPrimitive::IntegerWithFormat(_)
-        | IrPrimitive::NumberWithFormat(_) => "number",
-        IrPrimitive::Boolean => "boolean",
-    }
-}
-
 // ============================================================================
 // Property naming (camelCase) helpers for API layer
 // ============================================================================
@@ -1969,7 +1981,7 @@ fn primitive_to_ts(p: &IrPrimitive) -> &'static str {
 /// Returns None for non-Named types (no conversion needed).
 fn response_from_json_transformer(
     resp: &IrResponse,
-    convertible: &HashSet<String>,
+    plan: &TypeScriptPlan<'_>,
 ) -> Result<Option<CodeBlock>, SigilStitchError> {
     let Some((media_type, type_expr)) = pick_response_content(resp) else {
         return Ok(None);
@@ -1977,66 +1989,17 @@ fn response_from_json_transformer(
     if !is_json_media_type(&media_type) {
         return Ok(None);
     }
-    let (name, is_array) = match type_expr {
-        IrTypeExpr::Named(name) if convertible.contains(name) => (name, false),
-        IrTypeExpr::Array(inner) => match inner.as_ref() {
-            IrTypeExpr::Named(name) if convertible.contains(name) => (name, true),
-            _ => return Ok(None),
-        },
-        _ => return Ok(None),
-    };
-    let pascal = name.to_pascal_case();
-    let module = format!("../models/{pascal}");
-    let from_fn = TypeName::importable(&module, &format!("{}FromJSON", fn_base_name(&pascal)));
-    let wire = TypeName::importable_type(&module, &format!("{pascal}$Wire"));
-    let transformer = if is_array {
-        sigil_quote!(TypeScript {
-            (json) => {
-                return (json as $T(TypeName::array(wire))).map($T(from_fn));
-            }
-        })
-    } else {
-        sigil_quote!(TypeScript {
-            (json) => {
-                return $T(from_fn)(json as $T(wire));
-            }
-        })
-    }?;
-    Ok(Some(transformer))
-}
-
-/// For a request body with a Named type, produce the toJSON call:
-/// `petToJSON(requestParameters.body)` or `requestParameters.body.map(petToJSON)`
-/// Returns None for non-Named types (no conversion needed).
-fn body_to_json_expr(
-    content_type: &IrTypeExpr,
-    access: &str,
-    convertible: &HashSet<String>,
-) -> Option<String> {
-    match content_type {
-        IrTypeExpr::Named(name) if convertible.contains(name) => {
-            let pascal = name.to_pascal_case();
-            let to_fn = format!("{}ToJSON", fn_base_name(&pascal));
-            Some(format!("{to_fn}({access})"))
-        }
-        IrTypeExpr::Array(inner) => match inner.as_ref() {
-            IrTypeExpr::Named(name) if convertible.contains(name) => {
-                let pascal = name.to_pascal_case();
-                let to_fn = format!("{}ToJSON", fn_base_name(&pascal));
-                Some(format!("{access}.map({to_fn})"))
-            }
-            _ => None,
-        },
-        _ => None,
+    if !plan.has_effect(type_expr) {
+        return Ok(None);
     }
-}
-
-fn multipart_part_to_json_expr(
-    part: &MultipartPart,
-    access: &str,
-    convertible: &HashSet<String>,
-) -> Option<String> {
-    body_to_json_expr(&part.type_expr, access, convertible)
+    let value = plan.value(type_expr, Scope::api());
+    let wire = value.wire_type();
+    let converted = value.convert(
+        sigil_quote!(TypeScript { json as $T(wire) })?,
+        Direction::FromWire,
+    )?;
+    let transformer = sigil_quote!(TypeScript { (json) => { return $C(converted); } })?;
+    Ok(Some(transformer))
 }
 
 struct MultipartPart {
@@ -2075,14 +2038,6 @@ fn multipart_parts_for(
     })
 }
 
-fn ts_property_access(field_name: &str) -> String {
-    if is_js_identifier(field_name) {
-        format!(".{field_name}")
-    } else {
-        format!("[{}]", ts_string_literal(field_name))
-    }
-}
-
 fn ts_string_literal(value: &str) -> String {
     format!(
         "'{}'",
@@ -2102,38 +2057,6 @@ fn multipart_header_quoted(value: &str) -> String {
 
 fn multipart_header_value(value: &str) -> String {
     value.replace(['\r', '\n'], "")
-}
-
-/// Collect unique Named type references from request bodies only
-/// that are in the convertible set (i.e., have $Wire/fromJSON/toJSON emitted).
-fn collect_request_named_types(
-    ops: &[&IrOperation],
-    ir: &IrSpec,
-    property_naming_camel_case: bool,
-    convertible: &HashSet<String>,
-) -> BTreeSet<String> {
-    let mut names = BTreeSet::new();
-    for op in ops {
-        if let Some(ref body) = op.request_body
-            && let Some(media_type) = preferred_request_media_type(body)
-        {
-            if is_json_media_type(&media_type) {
-                if let Some(ty) = body.content.get(media_type.as_str()) {
-                    collect_convertible_named_refs(ty, convertible, &mut names);
-                }
-            } else if media_type_base(&media_type) == "multipart/form-data"
-                && let Some(parts) =
-                    multipart_parts_for(body, &media_type, ir, property_naming_camel_case)
-            {
-                for part in parts {
-                    if part.value_encoding == MultipartValueEncoding::Json {
-                        collect_convertible_named_refs(&part.type_expr, convertible, &mut names);
-                    }
-                }
-            }
-        }
-    }
-    names
 }
 
 fn pick_response_content(resp: &IrResponse) -> Option<(String, &IrTypeExpr)> {
@@ -2207,46 +2130,6 @@ fn is_xml_media_type(media_type: &str) -> bool {
     base == "application/xml" || base == "text/xml" || base.ends_with("+xml")
 }
 
-/// Collect unique Named type references from JSON responses only
-/// that are in the convertible set (i.e., have $Wire/fromJSON/toJSON emitted).
-fn collect_response_named_types(
-    ops: &[&IrOperation],
-    convertible: &HashSet<String>,
-) -> BTreeSet<String> {
-    let mut names = BTreeSet::new();
-    for op in ops {
-        for resp in &op.responses {
-            if let Some((media_type, ty)) = pick_response_content(resp)
-                && is_json_media_type(&media_type)
-            {
-                collect_convertible_named_refs(ty, convertible, &mut names);
-            }
-        }
-    }
-    names
-}
-
-fn collect_convertible_named_refs(
-    expr: &IrTypeExpr,
-    convertible: &HashSet<String>,
-    names: &mut BTreeSet<String>,
-) {
-    match expr {
-        IrTypeExpr::Named(name) if convertible.contains(name) => {
-            names.insert(name.clone());
-        }
-        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) | IrTypeExpr::Map(inner) => {
-            collect_convertible_named_refs(inner, convertible, names);
-        }
-        IrTypeExpr::Union(members) => {
-            for member in members {
-                collect_convertible_named_refs(member, convertible, names);
-            }
-        }
-        _ => {}
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2298,15 +2181,22 @@ mod tests {
 
     #[test]
     fn string_singletons_use_structured_string_literal_type_names() {
+        let ir = response_dispatch_ir();
+        let plan = TypeScriptPlan::new(&ir, EmitFlags::default());
         assert_eq!(
-            type_expr_to_typename(&IrTypeExpr::StringLiteral("quoted'".to_string())),
+            plan.value(
+                &IrTypeExpr::StringLiteral("quoted'".to_string()),
+                Scope::api()
+            )
+            .public_type(),
             TypeName::string_literal("quoted'")
         );
         assert_eq!(
-            type_expr_to_typename(&IrTypeExpr::StringEnum(vec![
-                "a".to_string(),
-                "b".to_string()
-            ])),
+            plan.value(
+                &IrTypeExpr::StringEnum(vec!["a".to_string(), "b".to_string()]),
+                Scope::api()
+            )
+            .public_type(),
             TypeName::union(vec![
                 TypeName::string_literal("a"),
                 TypeName::string_literal("b"),
@@ -2353,6 +2243,39 @@ mod tests {
         ))
         .expect("typed error fixture parses");
         crate::ir::lower::lower(parsed).expect("typed error fixture lowers")
+    }
+
+    #[test]
+    fn optional_json_request_delegates_supplied_null_with_stable_layout()
+    -> Result<(), SigilStitchError> {
+        let parsed = crate::parser::parse_content_yaml(include_str!(
+            "../../../../tests/fixtures/valid/typescript-untagged-union.yaml"
+        ))
+        .unwrap();
+        let ir = crate::ir::lower::lower(parsed).unwrap();
+        let plan = TypeScriptPlan::new(
+            &ir,
+            EmitFlags {
+                property_naming_camel_case: true,
+                untagged_union_strategy: super::super::config::UntaggedUnionStrategy::Strict,
+                ..Default::default()
+            },
+        );
+        let op = ir
+            .operations
+            .iter()
+            .find(|op| op.operation_id == "sendOptionalScalar")
+            .unwrap();
+        let mut body = CodeBlock::builder();
+        emit_request_body(&mut body, op, &ir, true, &plan)?;
+        let block = body.build()?;
+        assert_rendered!(
+            super::super::layout::TypeScript::from(TypeScript::new()),
+            width = 100,
+            block,
+            "import { nullableScalarInnerToJSON } from '../models/NullableScalarInner';\n\n// Prepare request body\nconst requestBody = (() => {\n  const bodyValue = requestParameters['body'];\n  if (bodyValue === undefined) {\n    return undefined;\n  }\n  return nullableScalarInnerToJSON(bodyValue);\n})();\n"
+        );
+        Ok(())
     }
 
     #[test]
@@ -2407,7 +2330,8 @@ mod tests {
                     .expect("interface operation exists")
             })
             .collect::<Vec<_>>();
-        let interface = build_api_interface("EntriesApiInterface", &ops)?;
+        let plan = TypeScriptPlan::new(&ir, EmitFlags::default());
+        let interface = build_api_interface("EntriesApiInterface", &ops, &plan)?;
         let fragments = interface.emit(&TypeScript::new())?;
         let block = sigil_quote!(TypeScript { $C_each(fragments) })?;
         assert_rendered!(
@@ -2441,7 +2365,8 @@ export interface EntriesApiInterface {
             .iter()
             .find(|op| op.operation_id == "getEntries")
             .expect("composite response operation exists");
-        let interface = build_api_interface("EntriesApiInterface", &[op])?;
+        let plan = TypeScriptPlan::new(&ir, EmitFlags::default());
+        let interface = build_api_interface("EntriesApiInterface", &[op], &plan)?;
         let fragments = interface.emit(&TypeScript::new())?;
         let block = sigil_quote!(TypeScript { $C_each(fragments) })?;
         assert_rendered!(
@@ -2550,17 +2475,22 @@ export class CreateResourceError extends ResponseError {
             .iter()
             .find(|response| response.status == "401")
             .expect("array error exists");
-        let convertible = HashSet::from(["Detail".to_string()]);
-        let block =
-            build_error_throw_for_response(op, response, "unauthorized", true, &convertible)?;
+        let plan = TypeScriptPlan::new(
+            &ir,
+            EmitFlags {
+                property_naming_camel_case: true,
+                ..Default::default()
+            },
+        );
+        let block = build_error_throw_for_response(op, response, "unauthorized", true, &plan)?;
 
         assert_rendered!(
             TypeScript::new(),
             width = 100,
             block,
             r#"import type { Detail, Detail$Wire } from '../models/Detail';
-import { detailFromJSON } from '../models/Detail';
 import { JSONApiResponse } from '../runtime/runtime';
+import { convert$0FromJSON } from '../runtime/valueConversion$0';
 
 let errorValue: Promise<Detail[]> | undefined;
 throw new ReadMixedError(response, {
@@ -2568,8 +2498,8 @@ throw new ReadMixedError(response, {
   status: response.status as 401,
   raw: response,
   value: () => {
-    errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
-      return (json as Detail$Wire[]).map(detailFromJSON);
+    errorValue ??= new JSONApiResponse<Detail[]>(errorRaw.clone(), (json) => {
+      return convert$0FromJSON(json as Detail$Wire[]);
     }).value();
     return errorValue;
   },
@@ -2583,6 +2513,7 @@ throw new ReadMixedError(response, {
     fn status_dispatch_composes_conditions_and_returns_without_extra_newlines()
     -> Result<(), SigilStitchError> {
         let ir = response_dispatch_ir();
+        let plan = TypeScriptPlan::new(&ir, EmitFlags::default());
         let op = ir
             .operations
             .iter()
@@ -2597,7 +2528,7 @@ throw new ReadMixedError(response, {
                 .expect("success response exists");
             branches.push((
                 response_status_condition(status)?,
-                build_response_return(response, false, &HashSet::new())?,
+                build_response_return(response, false, &plan)?,
             ));
         }
         let block = build_status_dispatch(branches, build_fallback_return(true)?)?;
@@ -2630,7 +2561,14 @@ if (response.status === 201) {
             .iter()
             .find(|op| op.operation_id == "readDefault")
             .expect("default-only operation exists");
-        let block = build_error_dispatch(op, true, &HashSet::from(["Detail".to_string()]))?;
+        let plan = TypeScriptPlan::new(
+            &ir,
+            EmitFlags {
+                property_naming_camel_case: true,
+                ..Default::default()
+            },
+        );
+        let block = build_error_dispatch(op, true, &plan)?;
         assert_rendered!(
             TypeScript::new(),
             width = 100,
@@ -2648,7 +2586,7 @@ if (!(response.status >= 200 && response.status < 300)) {
       status: response.status,
       raw: response,
       value: () => {
-        errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+        errorValue ??= new JSONApiResponse<Detail>(errorRaw.clone(), (json) => {
           return detailFromJSON(json as Detail$Wire);
         }).value();
         return errorValue;

@@ -8,6 +8,7 @@ use sigil_stitch::prelude::*;
 
 pub fn java_type_str(expr: &IrTypeExpr) -> String {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => java_type_str(representation),
         IrTypeExpr::Named(name) => name.to_pascal_case(),
         IrTypeExpr::Primitive(p) => java_primitive(p).to_string(),
         IrTypeExpr::Array(inner) => format!("List<{}>", java_boxed_type_str(inner)),
@@ -20,6 +21,7 @@ pub fn java_type_str(expr: &IrTypeExpr) -> String {
 
 pub fn java_boxed_type_str(expr: &IrTypeExpr) -> String {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => java_boxed_type_str(representation),
         IrTypeExpr::Primitive(p) => java_primitive_boxed(p).to_string(),
         _ => java_type_str(expr),
     }
@@ -187,7 +189,7 @@ pub fn sanitize_operation_id(op_id: &str, method: &str, path: &str) -> String {
 }
 
 pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
-    match t {
+    match t.representation() {
         IrTypeExpr::Primitive(
             IrPrimitive::String
             | IrPrimitive::Date
@@ -207,7 +209,7 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
         IrTypeExpr::Nullable(inner) => render_value_as_string(value_expr, inner),
         IrTypeExpr::Array(inner) => {
             if matches!(
-                inner.as_ref(),
+                inner.representation(),
                 IrTypeExpr::Primitive(
                     IrPrimitive::String
                         | IrPrimitive::Date
@@ -242,7 +244,7 @@ pub fn build_java_getter(getter_name: &str, type_str: &str, field_name: &str) ->
 }
 
 pub fn type_uses_list(expr: &IrTypeExpr) -> bool {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Array(_) => true,
         IrTypeExpr::Nullable(inner) => type_uses_list(inner),
         IrTypeExpr::Map(inner) => type_uses_list(inner),
@@ -251,7 +253,7 @@ pub fn type_uses_list(expr: &IrTypeExpr) -> bool {
 }
 
 pub fn type_uses_map(expr: &IrTypeExpr) -> bool {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Map(_) => true,
         IrTypeExpr::Nullable(inner) => type_uses_map(inner),
         IrTypeExpr::Array(inner) => type_uses_map(inner),

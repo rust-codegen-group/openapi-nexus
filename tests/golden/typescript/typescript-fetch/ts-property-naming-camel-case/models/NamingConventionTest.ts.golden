@@ -4,13 +4,10 @@
  * Naming Conventions Test — 1.0.0
  * Test fixture to verify language property naming conventions
  */
+import { convert$0FromJSON, convert$0ToJSON } from '../runtime/valueConversion$0';
 import type {
   NamingConventionTestItemsArrayItem,
   NamingConventionTestItemsArrayItem$Wire,
-} from './NamingConventionTestItemsArrayItem';
-import {
-  namingConventionTestItemsArrayItemFromJSON,
-  namingConventionTestItemsArrayItemToJSON,
 } from './NamingConventionTestItemsArrayItem';
 import type {
   NamingConventionTestNestedObject,
@@ -141,8 +138,7 @@ export function namingConventionTestFromJSON(
     camelCaseField: json.camelCaseField,
     camelCaseNumber: json.camelCaseNumber,
     id: json.id,
-    itemsArray:
-      json.items_array !== undefined ? json.items_array.map((item) => namingConventionTestItemsArrayItemFromJSON(item)) : undefined,
+    itemsArray: json.items_array !== undefined ? convert$0FromJSON(json.items_array) : undefined,
     kebabCaseArray: json['kebab-case-array'],
     kebabCaseField: json['kebab-case-field'],
     nestedObject:
@@ -163,8 +159,7 @@ export function namingConventionTestToJSON(value: NamingConventionTest): NamingC
     camelCaseField: value.camelCaseField,
     camelCaseNumber: value.camelCaseNumber,
     id: value.id,
-    items_array:
-      value.itemsArray !== undefined ? value.itemsArray.map((item) => namingConventionTestItemsArrayItemToJSON(item)) : undefined,
+    items_array: value.itemsArray !== undefined ? convert$0ToJSON(value.itemsArray) : undefined,
     'kebab-case-array': value.kebabCaseArray,
     'kebab-case-field': value.kebabCaseField,
     nested_object:

@@ -420,7 +420,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiUpdatePetRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<UpdatePetRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling updatePetRaw().',
@@ -517,7 +517,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiAddPetRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<AddPetRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling addPetRaw().',
@@ -603,7 +603,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiFindPetsByStatusRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<FindPetsByStatusRawResponse> {
-    if (requestParameters.status === undefined || requestParameters.status === null) {
+    if (requestParameters['status'] === undefined || requestParameters['status'] === null) {
       throw new RequiredError(
         'status',
         'Required parameter "status" was null or undefined when calling findPetsByStatusRaw().',
@@ -677,7 +677,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiFindPetsByTagsRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<FindPetsByTagsRawResponse> {
-    if (requestParameters.tags === undefined || requestParameters.tags === null) {
+    if (requestParameters['tags'] === undefined || requestParameters['tags'] === null) {
       throw new RequiredError(
         'tags',
         'Required parameter "tags" was null or undefined when calling findPetsByTagsRaw().',
@@ -751,7 +751,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiGetPetByIdRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<GetPetByIdRawResponse> {
-    if (requestParameters.petId === undefined || requestParameters.petId === null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling getPetByIdRaw().',
@@ -834,7 +834,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiUpdatePetWithFormRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<UpdatePetWithFormRawResponse> {
-    if (requestParameters.petId === undefined || requestParameters.petId === null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling updatePetWithFormRaw().',
@@ -912,7 +912,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiDeletePetRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<DeletePetRawResponse> {
-    if (requestParameters.petId === undefined || requestParameters.petId === null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling deletePetRaw().',
@@ -984,7 +984,7 @@ export class PetApi extends BaseAPI implements PetApiInterface {
     requestParameters: ApiUploadFileRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<UploadFileRawResponse> {
-    if (requestParameters.petId === undefined || requestParameters.petId === null) {
+    if (requestParameters['petId'] === undefined || requestParameters['petId'] === null) {
       throw new RequiredError(
         'petId',
         'Required parameter "petId" was null or undefined when calling uploadFileRaw().',

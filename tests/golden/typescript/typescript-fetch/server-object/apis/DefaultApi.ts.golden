@@ -165,7 +165,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiGetUserByIdRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<GetUserByIdRawResponse> {
-    if (requestParameters.id === undefined || requestParameters.id === null) {
+    if (requestParameters['id'] === undefined || requestParameters['id'] === null) {
       throw new RequiredError(
         'id',
         'Required parameter "id" was null or undefined when calling getUserByIdRaw().',

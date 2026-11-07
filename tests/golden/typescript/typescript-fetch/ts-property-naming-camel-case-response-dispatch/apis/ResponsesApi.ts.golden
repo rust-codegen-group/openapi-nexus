@@ -20,6 +20,7 @@ import {
   TextApiResponse,
   VoidApiResponse,
 } from '../runtime/runtime';
+import { convert$0FromJSON } from '../runtime/valueConversion$0';
 
 export type ReadDefaultRawResponse = VoidApiResponse & HttpSuccessResponse;
 export type ReadErrorOnlyRawResponse = VoidApiResponse & HttpSuccessResponse;
@@ -272,7 +273,7 @@ export class ResponsesApi extends BaseAPI implements ResponsesApiInterface {
           status: response.status,
           raw: response,
           value: () => {
-            errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+            errorValue ??= new JSONApiResponse<Detail>(errorRaw.clone(), (json) => {
               return detailFromJSON(json as Detail$Wire);
             }).value();
             return errorValue;
@@ -377,7 +378,7 @@ export class ResponsesApi extends BaseAPI implements ResponsesApiInterface {
           status: response.status as 400,
           raw: response,
           value: () => {
-            errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+            errorValue ??= new JSONApiResponse<Detail>(errorRaw.clone(), (json) => {
               return detailFromJSON(json as Detail$Wire);
             }).value();
             return errorValue;
@@ -390,8 +391,8 @@ export class ResponsesApi extends BaseAPI implements ResponsesApiInterface {
           status: response.status as 401,
           raw: response,
           value: () => {
-            errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
-              return (json as Detail$Wire[]).map(detailFromJSON);
+            errorValue ??= new JSONApiResponse<Detail[]>(errorRaw.clone(), (json) => {
+              return convert$0FromJSON(json as Detail$Wire[]);
             }).value();
             return errorValue;
           },
@@ -436,7 +437,7 @@ export class ResponsesApi extends BaseAPI implements ResponsesApiInterface {
           status: response.status,
           raw: response,
           value: () => {
-            errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+            errorValue ??= new JSONApiResponse<Detail>(errorRaw.clone(), (json) => {
               return detailFromJSON(json as Detail$Wire);
             }).value();
             return errorValue;
@@ -467,7 +468,7 @@ export class ResponsesApi extends BaseAPI implements ResponsesApiInterface {
       return new BlobApiResponse(response) as BlobApiResponse & { status: 206 };
     } else if (response.status >= 200 && response.status < 300) {
       return new JSONApiResponse(response, (json) => {
-        return (json as Detail$Wire[]).map(detailFromJSON);
+        return convert$0FromJSON(json as Detail$Wire[]);
       }) as JSONApiResponse<Detail[]> & { status: number };
     } else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;

@@ -28,7 +28,8 @@ export {
   fooAdjacentPayloadFooInlineObjectPayloadValueFromJSON,
   fooAdjacentPayloadFooInlineObjectPayloadValueToJSON,
 } from './FooAdjacentPayloadFooInlineObjectPayloadValue';
-export type { FooAnyValue } from './FooAnyValue';
+export type { FooAnyValue, FooAnyValue$Wire } from './FooAnyValue';
+export { fooAnyValueFromJSON, fooAnyValueToJSON } from './FooAnyValue';
 export type { FooArrayPart, FooArrayPart$Wire } from './FooArrayPart';
 export { fooArrayPartFromJSON, fooArrayPartToJSON } from './FooArrayPart';
 export type { FooClosedVariant, FooClosedVariant$Wire } from './FooClosedVariant';

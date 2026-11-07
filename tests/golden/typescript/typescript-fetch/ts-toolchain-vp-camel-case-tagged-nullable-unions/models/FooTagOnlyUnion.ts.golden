@@ -8,46 +8,53 @@ import type { FooObjectPayload, FooObjectPayload$Wire } from './FooObjectPayload
 import { fooObjectPayloadFromJSON, fooObjectPayloadToJSON } from './FooObjectPayload';
 
 export type FooTagOnlyUnion$Wire =
-  | { type: 'foo_unit_alpha' }
-  | { type: 'foo_unit_beta' }
-  | { type: 'foo_object_payload'; object_payload: FooObjectPayload$Wire };
+  | Record<'type', 'foo_unit_alpha'>
+  | Record<'type', 'foo_unit_beta'>
+  | (Record<'type', 'foo_object_payload'> & Record<'object_payload', FooObjectPayload$Wire>);
 
 export type FooTagOnlyUnion =
-  | { type: 'foo_unit_alpha' }
-  | { type: 'foo_unit_beta' }
-  | { type: 'foo_object_payload'; objectPayload: FooObjectPayload };
+  | Record<'type', 'foo_unit_alpha'>
+  | Record<'type', 'foo_unit_beta'>
+  | (Record<'type', 'foo_object_payload'> & Record<'objectPayload', FooObjectPayload>);
 
 export function fooTagOnlyUnionFromJSON(json: FooTagOnlyUnion$Wire): FooTagOnlyUnion {
-  switch (json.type) {
-    case 'foo_unit_alpha':
-      return { type: 'foo_unit_alpha' };
-    case 'foo_unit_beta':
-      return { type: 'foo_unit_beta' };
-    case 'foo_object_payload':
-      return {
-        type: 'foo_object_payload',
-        objectPayload: fooObjectPayloadFromJSON(json.object_payload),
-      };
+  if (json['type'] === 'foo_unit_alpha') {
+    return { ['type']: 'foo_unit_alpha' } as FooTagOnlyUnion;
   }
+  if (json['type'] === 'foo_unit_beta') {
+    return { ['type']: 'foo_unit_beta' } as FooTagOnlyUnion;
+  }
+  if (json['type'] === 'foo_object_payload') {
+    return {
+      ['type']: 'foo_object_payload',
+      ['objectPayload']: fooObjectPayloadFromJSON(
+        (json as Record<'object_payload', FooObjectPayload$Wire>)['object_payload'],
+      ),
+    } as FooTagOnlyUnion;
+  }
+  throw new Error('Unknown variant');
 }
 
 export function fooTagOnlyUnionToJSON(value: FooTagOnlyUnion): FooTagOnlyUnion$Wire {
-  switch (value.type) {
-    case 'foo_unit_alpha':
-      return { type: 'foo_unit_alpha' };
-    case 'foo_unit_beta':
-      return { type: 'foo_unit_beta' };
-    case 'foo_object_payload':
-      return {
-        type: 'foo_object_payload',
-        object_payload: fooObjectPayloadToJSON(value.objectPayload),
-      };
+  if (value['type'] === 'foo_unit_alpha') {
+    return { ['type']: 'foo_unit_alpha' } as FooTagOnlyUnion$Wire;
   }
+  if (value['type'] === 'foo_unit_beta') {
+    return { ['type']: 'foo_unit_beta' } as FooTagOnlyUnion$Wire;
+  }
+  if (value['type'] === 'foo_object_payload') {
+    return {
+      ['type']: 'foo_object_payload',
+      ['object_payload']: fooObjectPayloadToJSON(
+        (value as Record<'objectPayload', FooObjectPayload>)['objectPayload'],
+      ),
+    } as FooTagOnlyUnion$Wire;
+  }
+  throw new Error('Unknown variant');
 }
 
-export function isFooObjectPayload(value: FooTagOnlyUnion): value is {
-  type: 'foo_object_payload';
-  objectPayload: FooObjectPayload;
-} {
-  return value.type === 'foo_object_payload';
+export function isFooObjectPayload(
+  value: FooTagOnlyUnion,
+): value is Record<'type', 'foo_object_payload'> & Record<'objectPayload', FooObjectPayload> {
+  return value['type'] === 'foo_object_payload';
 }

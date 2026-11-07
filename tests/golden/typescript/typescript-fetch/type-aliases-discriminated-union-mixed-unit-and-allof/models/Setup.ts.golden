@@ -12,9 +12,10 @@
 import type { SetupCustom } from './SetupCustom';
 import type { SetupQuick } from './SetupQuick';
 
-/** Setup: quick (managed), custom, or unspecified. */
-
+/**
+ * Setup: quick (managed), custom, or unspecified.
+ */
 export type Setup =
-  | { kind: 'SETUP_UNSPECIFIED' }
-  | ({ kind: 'SETUP_QUICK' } & SetupQuick)
-  | ({ kind: 'SETUP_CUSTOM' } & SetupCustom);
+  | Record<'kind', 'SETUP_UNSPECIFIED'>
+  | (Record<'kind', 'SETUP_QUICK'> & SetupQuick)
+  | (Record<'kind', 'SETUP_CUSTOM'> & SetupCustom);

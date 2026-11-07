@@ -69,7 +69,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     requestParameters: ApiUploadRawMultipartRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<UploadRawMultipartRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling uploadRawMultipartRaw().',

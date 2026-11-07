@@ -3,6 +3,8 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { anyJsonValueFromJSON, anyJsonValueToJSON } from './AnyJsonValue';
+
 export interface SearchItem$Wire extends Readonly<Record<string, unknown>> {
   readonly id?: string | null;
   readonly status?: string | null;
@@ -23,7 +25,7 @@ export function searchItemFromJSON(json: SearchItem$Wire): SearchItem {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueFromJSON(additionalValue)] as const;
     }),
   );
   const result = {
@@ -43,7 +45,7 @@ export function searchItemToJSON(value: SearchItem): SearchItem$Wire {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueToJSON(additionalValue)] as const;
     }),
   );
   const result = {

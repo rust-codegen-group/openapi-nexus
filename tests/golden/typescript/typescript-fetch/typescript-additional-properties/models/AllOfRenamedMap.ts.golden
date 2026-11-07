@@ -6,6 +6,7 @@
 import type { AllOfRenamedMapAllOf2 } from './AllOfRenamedMapAllOf2';
 import type { RenamedMap } from './RenamedMap';
 
-/** Composed map with overlapping declared fields. */
-
+/**
+ * Composed map with overlapping declared fields.
+ */
 export type AllOfRenamedMap = Readonly<RenamedMap & AllOfRenamedMapAllOf2>;

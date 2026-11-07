@@ -14,9 +14,9 @@ export type Foo$Wire = Bar$Wire & Baz$Wire;
 export type Foo = Bar & Baz;
 
 export function fooFromJSON(json: Foo$Wire): Foo {
-  return { ...barFromJSON(json as Bar$Wire), ...bazFromJSON(json as Baz$Wire) } as Foo;
+  return {...barFromJSON(json as Bar$Wire), ...bazFromJSON(json as Baz$Wire)} as Foo;
 }
 
 export function fooToJSON(value: Foo): Foo$Wire {
-  return { ...barToJSON(value as Bar), ...bazToJSON(value as Baz) } as Foo$Wire;
+  return {...barToJSON(value as Bar), ...bazToJSON(value as Baz)} as Foo$Wire;
 }

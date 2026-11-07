@@ -11,5 +11,5 @@ import type { VolumeKindLocal } from './VolumeKindLocal';
 import type { VolumeKindRemote } from './VolumeKindRemote';
 
 export type VolumeKind =
-  | ({ kind: 'VOLUME_KIND_LOCAL' } & VolumeKindLocal)
-  | ({ kind: 'VOLUME_KIND_REMOTE' } & VolumeKindRemote);
+  | (Record<'kind', 'VOLUME_KIND_LOCAL'> & VolumeKindLocal)
+  | (Record<'kind', 'VOLUME_KIND_REMOTE'> & VolumeKindRemote);

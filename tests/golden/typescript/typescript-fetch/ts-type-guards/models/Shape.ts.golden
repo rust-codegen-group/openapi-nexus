@@ -6,18 +6,15 @@
 import type { Circle } from './Circle';
 import type { Rectangle } from './Rectangle';
 
-/** A geometric shape */
+/**
+ * A geometric shape
+ */
+export type Shape = Record<'kind', 'circle'> & Circle | Record<'kind', 'rectangle'> & Rectangle;
 
-export type Shape = ({ kind: 'circle' } & Circle) | ({ kind: 'rectangle' } & Rectangle);
-
-export function isCircle(value: Shape): value is {
-  kind: 'circle';
-} & Circle {
-  return value.kind === 'circle';
+export function isCircle(value: Shape): value is Record<'kind', 'circle'> & Circle {
+  return value['kind'] === 'circle';
 }
 
-export function isRectangle(value: Shape): value is {
-  kind: 'rectangle';
-} & Rectangle {
-  return value.kind === 'rectangle';
+export function isRectangle(value: Shape): value is Record<'kind', 'rectangle'> & Rectangle {
+  return value['kind'] === 'rectangle';
 }

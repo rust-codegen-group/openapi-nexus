@@ -85,13 +85,13 @@ export class FooApi extends BaseAPI implements FooApiInterface {
     requestParameters: ApiUpdateFooBarRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<UpdateFooBarRawResponse> {
-    if (requestParameters.fooId === undefined || requestParameters.fooId === null) {
+    if (requestParameters['fooId'] === undefined || requestParameters['fooId'] === null) {
       throw new RequiredError(
         'fooId',
         'Required parameter "fooId" was null or undefined when calling updateFooBarRaw().',
       );
     }
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling updateFooBarRaw().',

@@ -493,7 +493,7 @@ fn rust_type_name_qualified(expr: &IrTypeExpr, ir: &IrSpec) -> TypeName {
 }
 
 fn rust_type_name(expr: &IrTypeExpr, ir: &IrSpec, qualify_named: bool) -> TypeName {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(name) => {
             if qualify_named
                 && let Some(schema) = ir.schemas.get(name)
@@ -531,7 +531,7 @@ pub fn param_rust_type(p: &IrParameter, ir: &IrSpec) -> (String, bool) {
     let base = rust_type_str_qualified(&p.type_expr, ir);
     if p.required {
         (base, false)
-    } else if matches!(p.type_expr, IrTypeExpr::Nullable(_)) {
+    } else if matches!(p.type_expr.representation(), IrTypeExpr::Nullable(_)) {
         // Already wrapped in Option by rust_type_str_qualified → avoid double-wrapping
         (base, true)
     } else {

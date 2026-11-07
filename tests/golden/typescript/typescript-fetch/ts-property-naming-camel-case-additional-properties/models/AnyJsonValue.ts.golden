@@ -3,4 +3,16 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { convert$1FromJSON, convert$1ToJSON } from '../runtime/valueConversion$1';
+
+export type AnyJsonValue$Wire = unknown;
+
 export type AnyJsonValue = unknown;
+
+export function anyJsonValueFromJSON(json: AnyJsonValue$Wire): AnyJsonValue {
+  return convert$1FromJSON(json);
+}
+
+export function anyJsonValueToJSON(value: AnyJsonValue): AnyJsonValue$Wire {
+  return convert$1ToJSON(value);
+}

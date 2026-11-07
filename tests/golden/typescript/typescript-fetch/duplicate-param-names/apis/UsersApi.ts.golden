@@ -95,7 +95,7 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
     requestParameters: ApiGetUserByIdDuplicateRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<GetUserByIdDuplicateRawResponse> {
-    if (requestParameters.pathId === undefined || requestParameters.pathId === null) {
+    if (requestParameters['pathId'] === undefined || requestParameters['pathId'] === null) {
       throw new RequiredError(
         'pathId',
         'Required parameter "pathId" was null or undefined when calling getUserByIdDuplicateRaw().',

@@ -309,7 +309,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiPostBinaryRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostBinaryRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postBinaryRaw().',
@@ -373,7 +373,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiPostFormRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostFormRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postFormRaw().',
@@ -437,7 +437,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiPostJsonRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostJsonRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postJsonRaw().',
@@ -501,7 +501,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiPostJsonOrXmlRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostJsonOrXmlRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postJsonOrXmlRaw().',
@@ -565,7 +565,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiPatchMergeJsonRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PatchMergeJsonRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling patchMergeJsonRaw().',
@@ -629,7 +629,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiPostTextRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostTextRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postTextRaw().',
@@ -693,7 +693,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiPostXmlRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostXmlRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postXmlRaw().',

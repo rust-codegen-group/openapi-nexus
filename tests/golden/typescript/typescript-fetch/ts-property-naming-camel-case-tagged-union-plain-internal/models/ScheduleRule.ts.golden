@@ -13,33 +13,55 @@ import type { ScheduleRuleOnce, ScheduleRuleOnce$Wire } from './ScheduleRuleOnce
 import { scheduleRuleOnceFromJSON, scheduleRuleOnceToJSON } from './ScheduleRuleOnce';
 
 export type ScheduleRule$Wire =
-  | ({ type: 'once' } & ScheduleRuleOnce$Wire)
-  | ({ type: 'interval' } & ScheduleRuleInterval$Wire)
-  | ({ type: 'cron' } & ScheduleRuleCron$Wire);
+  | (Record<'type', 'once'> & ScheduleRuleOnce$Wire)
+  | (Record<'type', 'interval'> & ScheduleRuleInterval$Wire)
+  | (Record<'type', 'cron'> & ScheduleRuleCron$Wire);
 
 export type ScheduleRule =
-  | ({ type: 'once' } & ScheduleRuleOnce)
-  | ({ type: 'interval' } & ScheduleRuleInterval)
-  | ({ type: 'cron' } & ScheduleRuleCron);
+  | (Record<'type', 'once'> & ScheduleRuleOnce)
+  | (Record<'type', 'interval'> & ScheduleRuleInterval)
+  | (Record<'type', 'cron'> & ScheduleRuleCron);
 
 export function scheduleRuleFromJSON(json: ScheduleRule$Wire): ScheduleRule {
-  switch (json.type) {
-    case 'once':
-      return { ...scheduleRuleOnceFromJSON(json), type: 'once' };
-    case 'interval':
-      return { ...scheduleRuleIntervalFromJSON(json), type: 'interval' };
-    case 'cron':
-      return { ...scheduleRuleCronFromJSON(json), type: 'cron' };
+  if (json['type'] === 'once') {
+    return {
+      ...scheduleRuleOnceFromJSON(json as unknown as ScheduleRuleOnce$Wire),
+      ['type']: 'once',
+    } as ScheduleRule;
   }
+  if (json['type'] === 'interval') {
+    return {
+      ...scheduleRuleIntervalFromJSON(json as unknown as ScheduleRuleInterval$Wire),
+      ['type']: 'interval',
+    } as ScheduleRule;
+  }
+  if (json['type'] === 'cron') {
+    return {
+      ...scheduleRuleCronFromJSON(json as unknown as ScheduleRuleCron$Wire),
+      ['type']: 'cron',
+    } as ScheduleRule;
+  }
+  throw new Error('Unknown variant');
 }
 
 export function scheduleRuleToJSON(value: ScheduleRule): ScheduleRule$Wire {
-  switch (value.type) {
-    case 'once':
-      return { ...scheduleRuleOnceToJSON(value), type: 'once' } as ScheduleRule$Wire;
-    case 'interval':
-      return { ...scheduleRuleIntervalToJSON(value), type: 'interval' } as ScheduleRule$Wire;
-    case 'cron':
-      return { ...scheduleRuleCronToJSON(value), type: 'cron' } as ScheduleRule$Wire;
+  if (value['type'] === 'once') {
+    return {
+      ...scheduleRuleOnceToJSON(value as unknown as ScheduleRuleOnce),
+      ['type']: 'once',
+    } as ScheduleRule$Wire;
   }
+  if (value['type'] === 'interval') {
+    return {
+      ...scheduleRuleIntervalToJSON(value as unknown as ScheduleRuleInterval),
+      ['type']: 'interval',
+    } as ScheduleRule$Wire;
+  }
+  if (value['type'] === 'cron') {
+    return {
+      ...scheduleRuleCronToJSON(value as unknown as ScheduleRuleCron),
+      ['type']: 'cron',
+    } as ScheduleRule$Wire;
+  }
+  throw new Error('Unknown variant');
 }

@@ -3,8 +3,8 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { convert$6FromJSON, convert$6ToJSON } from '../runtime/valueConversion$6';
 import type { Detail, Detail$Wire } from './Detail';
-import { detailFromJSON, detailToJSON } from './Detail';
 
 export interface NullableModelMap$Wire extends Readonly<
   Record<string, Detail$Wire | null | number>
@@ -24,7 +24,7 @@ export function nullableModelMapFromJSON(json: NullableModelMap$Wire): NullableM
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as Detail$Wire | null;
-      return [key, additionalValue != null ? detailFromJSON(additionalValue) : null] as const;
+      return [key, convert$6FromJSON(additionalValue)] as const;
     }),
   );
   const visibleProperties = Object.fromEntries(
@@ -63,7 +63,7 @@ export function nullableModelMapToJSON(value: NullableModelMap): NullableModelMa
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as Detail | null;
-      return [key, additionalValue != null ? detailToJSON(additionalValue) : null] as const;
+      return [key, convert$6ToJSON(additionalValue)] as const;
     }),
   );
   const result = {

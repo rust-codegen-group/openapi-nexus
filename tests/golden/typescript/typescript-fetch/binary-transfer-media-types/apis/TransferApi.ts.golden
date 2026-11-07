@@ -125,7 +125,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     requestParameters: ApiDownloadAssetRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<DownloadAssetRawResponse> {
-    if (requestParameters.assetId === undefined || requestParameters.assetId === null) {
+    if (requestParameters['assetId'] === undefined || requestParameters['assetId'] === null) {
       throw new RequiredError(
         'assetId',
         'Required parameter "assetId" was null or undefined when calling downloadAssetRaw().',
@@ -197,7 +197,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     requestParameters: ApiUploadAssetRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<UploadAssetRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling uploadAssetRaw().',
@@ -211,20 +211,36 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     const headerParameters: Record<string, string> = {};
 
     // Prepare request body
+    const multipartBody = requestParameters['body'];
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
     const multipartChunks: Array<string | Blob> = [];
     headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
-    {
-    const multipartFilename = uploadFileFilename(requestParameters.body.file, 'file');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + multipartHeaderValue(multipartFilename) + '"\r\nContent-Type: application/octet-stream\r\n\r\n');
-    multipartChunks.push(uploadFileData(requestParameters.body.file));
+    const multipartValue$0 = multipartBody['file'];
+    const multipartFilename$0 = uploadFileFilename(multipartValue$0, 'file');
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="file"; filename="',
+      multipartHeaderValue(multipartFilename$0),
+      '"\r\nContent-Type: application/octet-stream\r\n\r\n',
+    );
+    multipartChunks.push(uploadFileData(multipartValue$0));
     multipartChunks.push('\r\n');
-    }
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n');
-    multipartChunks.push(JSON.stringify(requestParameters.body.metadata));
+    const multipartValue$1 = multipartBody['metadata'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n',
+    );
+    multipartChunks.push(JSON.stringify(multipartValue$1));
     multipartChunks.push('\r\n');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="purpose"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.purpose));
+    const multipartValue$2 = multipartBody['purpose'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="purpose"\r\nContent-Type: text/plain\r\n\r\n',
+    );
+    multipartChunks.push(String(multipartValue$2));
     multipartChunks.push('\r\n');
     multipartChunks.push('--' + multipartBoundary + '--\r\n');
     const requestBody = new Blob(multipartChunks);

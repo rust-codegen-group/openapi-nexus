@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info: {title: TypeScript helper dependency isolation, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    Detail:
+      type: object
+      required: [wire_name]
+      properties:
+        wire_name: {type: string}
+    Useful:
+      type: array
+      items: {$ref: '#/components/schemas/Detail'}
+    Recursive:
+      anyOf:
+        - {$ref: '#/components/schemas/Detail'}
+        - type: array
+          items: {$ref: '#/components/schemas/Recursive'}
+        - type: object
+          additionalProperties: {$ref: '#/components/schemas/Recursive'}

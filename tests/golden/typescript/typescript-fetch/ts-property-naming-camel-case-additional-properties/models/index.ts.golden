@@ -36,7 +36,8 @@ export {
   allOfRenamedMapAllOf2FromJSON,
   allOfRenamedMapAllOf2ToJSON,
 } from './AllOfRenamedMapAllOf2';
-export type { AnyJsonValue } from './AnyJsonValue';
+export type { AnyJsonValue, AnyJsonValue$Wire } from './AnyJsonValue';
+export { anyJsonValueFromJSON, anyJsonValueToJSON } from './AnyJsonValue';
 export type { ArrayModelMap, ArrayModelMap$Wire } from './ArrayModelMap';
 export { arrayModelMapFromJSON, arrayModelMapToJSON } from './ArrayModelMap';
 export type { ClosedExternalEvent, ClosedExternalEvent$Wire } from './ClosedExternalEvent';

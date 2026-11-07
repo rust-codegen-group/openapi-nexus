@@ -164,7 +164,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     requestParameters: ApiPostLeafRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostLeafRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postLeafRaw().',
@@ -239,7 +239,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     requestParameters: ApiPostMiddleRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostMiddleRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postMiddleRaw().',
@@ -314,7 +314,7 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     requestParameters: ApiPostRootRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PostRootRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling postRootRaw().',

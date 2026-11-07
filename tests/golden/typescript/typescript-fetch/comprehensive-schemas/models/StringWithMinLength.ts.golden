@@ -4,6 +4,7 @@
  * Comprehensive Schema Types Example — 1.0.0
  * Comprehensive test for all OpenAPI v3.1.2 schema types
  */
-/** String with minimum length */
-
+/**
+ * String with minimum length
+ */
 export type StringWithMinLength = string;

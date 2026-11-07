@@ -367,6 +367,7 @@ fn kotlin_closed_sum_case(case: &ClosedSumCasePlan) -> Result<ClosedSumCaseSpec,
 
 fn kotlin_type_name(expr: &IrTypeExpr) -> TypeName {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => kotlin_type_name(representation),
         IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
         IrTypeExpr::Primitive(primitive) => TypeName::primitive(kt_primitive(primitive)),
         IrTypeExpr::Array(inner) => TypeName::application(
@@ -607,6 +608,7 @@ fn kotlin_adapter_read_value(
     payload: &IrTypeExpr,
     source: CodeBlock,
 ) -> Result<CodeBlock, SigilStitchError> {
+    let payload = payload.representation();
     let payload_type = kotlin_type_name(payload);
     let root_name = plan.name.as_str();
     let case_name = case.name.as_str();
@@ -751,6 +753,9 @@ fn kotlin_json_condition(
     schemas: &indexmap::IndexMap<String, IrSchema>,
 ) -> Result<CodeBlock, SigilStitchError> {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => {
+            kotlin_json_condition(representation, schemas)
+        }
         IrTypeExpr::Primitive(
             IrPrimitive::String
             | IrPrimitive::StringWithFormat(_)

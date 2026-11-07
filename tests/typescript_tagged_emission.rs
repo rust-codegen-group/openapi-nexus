@@ -1,4 +1,4 @@
-//! Stage C: prove `sigil_emit::generate_model_files` handles TaggedUnion across
+//! Prove `sigil_emit::generate_model_files` handles tagged unions across
 //! all three tagging styles (Internal / Adjacent / External).
 //!
 //! Fixtures available today mostly exercise Internal (the common OpenAPI
@@ -50,7 +50,7 @@ fn find<'a>(files: &'a [(String, String)], filename: &str) -> &'a str {
         })
 }
 
-/// Internal tagging: `({ kind: 'VAL' } & ContentType)` per variant. Variants
+/// Internal tagging: `Record<'kind', 'VAL'> & ContentType` per variant. Variants
 /// here are inferred from oneOf-of-allOf pairs — the IR lowerer promotes each
 /// variant to its own named schema, so the content type is a Named ref.
 #[test]
@@ -58,10 +58,10 @@ fn internally_tagged_union_emits_discriminator_intersection() {
     let files = render_models("valid/type-aliases/discriminated-union-internally-tagged.yaml");
     let resource = find(&files, "Resource.ts");
 
-    // Each variant should appear as `({ kind: 'VAL' } & SomeType)`.
+    // Each variant retains its discriminator literal and content intersection.
     for value in ["RESOURCE_UNSPECIFIED", "RESOURCE_QUICK", "RESOURCE_CUSTOM"] {
         assert!(
-            resource.contains(&format!("kind: '{value}'")),
+            resource.contains(&format!("Record<'kind', '{value}'>")),
             "expected discriminator literal {value} in:\n{resource}"
         );
     }
@@ -76,7 +76,7 @@ fn internally_tagged_union_emits_discriminator_intersection() {
     );
     // Pipe separator between variants.
     assert!(
-        resource.contains(" | "),
+        resource.contains("export type Resource =\n  | (Record<'kind', 'RESOURCE_UNSPECIFIED'> & ResourceUnspecified)\n  | (Record<'kind', 'RESOURCE_QUICK'> & ResourceQuick)\n  | (Record<'kind', 'RESOURCE_CUSTOM'> & ResourceCustom);\n"),
         "expected `|` between variants, got:\n{resource}"
     );
 }
@@ -92,7 +92,7 @@ fn discriminated_union_with_refs_imports_each_variant() {
         container.contains("export type ContainerImage ="),
         "expected type alias, got:\n{container}"
     );
-    // At least one `{ kind: '...' } & Something` variant should render.
+    // At least one discriminator Record intersected with a payload must render.
     assert!(
         container.contains(" & "),
         "expected intersection operator, got:\n{container}"

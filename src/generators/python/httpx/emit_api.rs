@@ -552,7 +552,7 @@ fn render_multipart_json_value(access: &str, expr: &IrTypeExpr, ir: &IrSpec) -> 
 }
 
 fn render_stringify(var: &str, type_expr: &IrTypeExpr) -> String {
-    match type_expr {
+    match type_expr.representation() {
         IrTypeExpr::Primitive(
             IrPrimitive::String
             | IrPrimitive::Date
@@ -593,7 +593,7 @@ fn render_response_parse(response: &TypedResponse, ir: &IrSpec) -> String {
 }
 
 fn render_json_response_parse(type_expr: &IrTypeExpr, ir: &IrSpec) -> String {
-    match type_expr {
+    match type_expr.representation() {
         IrTypeExpr::Named(name) => {
             let py_name = name.to_pascal_case();
             if is_object_schema(name, ir) {
@@ -1326,5 +1326,5 @@ fn sanitize_operation_id(op_id: &str, method: &str, path: &str) -> String {
 /// Returns true if the type expression is already nullable (wrapped in None),
 /// so that the caller can avoid double-wrapping with TypeName::optional.
 fn is_already_optional(expr: &IrTypeExpr) -> bool {
-    matches!(expr, IrTypeExpr::Nullable(_))
+    matches!(expr.representation(), IrTypeExpr::Nullable(_))
 }

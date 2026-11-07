@@ -466,6 +466,7 @@ fn render_alias_file(
 /// needed within the `models/` tree.
 fn go_type_name(expr: &IrTypeExpr) -> TypeName {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => go_type_name(representation),
         IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
         IrTypeExpr::Primitive(p) => TypeName::primitive(go_primitive(p)),
         IrTypeExpr::Array(inner) => TypeName::slice(go_type_name(inner)),
@@ -479,6 +480,7 @@ fn go_type_name(expr: &IrTypeExpr) -> TypeName {
 /// Map an IR type expression to a Go type as a bare string.
 fn go_type_str(expr: &IrTypeExpr) -> String {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => go_type_str(representation),
         IrTypeExpr::Named(name) => name.to_pascal_case(),
         IrTypeExpr::Primitive(p) => go_primitive(p).to_string(),
         IrTypeExpr::Array(inner) => format!("[]{}", go_type_str(inner)),

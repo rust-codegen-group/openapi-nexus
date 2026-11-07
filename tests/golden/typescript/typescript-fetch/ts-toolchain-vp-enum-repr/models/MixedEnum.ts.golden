@@ -7,9 +7,10 @@
 import type { MixedEnumMember2 } from './MixedEnumMember2';
 import type { MixedEnumMember4 } from './MixedEnumMember4';
 
-/** Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
+/**
+ * Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
 
 Serializes as externally tagged: `{"SimpleA": null}`, `{"VariantA": {"field1": "...", "field2": 123}}`,
-`{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}` */
-
+`{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}`
+ */
 export type MixedEnum = 'SimpleA' | MixedEnumMember2 | 'SimpleB' | MixedEnumMember4;
