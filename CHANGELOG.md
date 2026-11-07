@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Convert camelCase TypeScript untagged-union members in both JSON directions,
+  including mixed client/search tools and containing requests. Add configurable
+  `firstMatch`, `strict`, and wire-preserving `raw` selection policies instead
+  of treating every multi-member union converter as an identity cast.
+
 ## [0.3.0]
 
 ### Breaking Changes

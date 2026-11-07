@@ -1,0 +1,31 @@
+{
+  "description": "TypeScript client for Untagged union conversion",
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite-plus": "^0.2.5"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "api-client",
+    "typescript",
+    "generated"
+  ],
+  "main": "./dist/index.mjs",
+  "name": "untagged-union-conversion",
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check --no-fmt"
+  },
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "version": "1.0.0"
+}

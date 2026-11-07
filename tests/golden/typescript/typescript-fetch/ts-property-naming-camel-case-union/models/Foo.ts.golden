@@ -5,17 +5,56 @@
  * Test fixture for oneOf/anyOf union types with interface members
  */
 import type { Bar, Bar$Wire } from './Bar';
+import { barFromJSON, barToJSON } from './Bar';
 import type { Baz, Baz$Wire } from './Baz';
+import { bazFromJSON, bazToJSON } from './Baz';
 import type { Qux, Qux$Wire } from './Qux';
+import { quxFromJSON, quxToJSON } from './Qux';
 
 export type Foo$Wire = Bar$Wire | Baz$Wire | Qux$Wire;
 
 export type Foo = Bar | Baz | Qux;
 
 export function fooFromJSON(json: Foo$Wire): Foo {
+  const candidate: unknown = json;
+  if ((((candidate !== null && typeof candidate === "object" && !Array.isArray(candidate) && (Object.prototype.hasOwnProperty.call(candidate, 'bucket') && typeof (candidate as Record<string,
+  unknown>)['bucket'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'endpoint') && typeof (candidate as Record<string,
+  unknown>)['endpoint'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'type') && (candidate as Record<string,
+  unknown>)['type'] === 'bar'))) {
+    return barFromJSON((json as unknown as Bar$Wire));
+  }
+  if (((candidate !== null && typeof candidate === "object" && !Array.isArray(candidate) && (Object.prototype.hasOwnProperty.call(candidate, 'path') && typeof (candidate as Record<string,
+  unknown>)['path'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'type') && (candidate as Record<string,
+  unknown>)['type'] === 'baz'))) {
+    return bazFromJSON((json as unknown as Baz$Wire));
+  }
+  if ((((candidate !== null && typeof candidate === "object" && !Array.isArray(candidate) && (Object.prototype.hasOwnProperty.call(candidate, 'namespace') && typeof (candidate as Record<string,
+  unknown>)['namespace'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'type') && (candidate as Record<string,
+  unknown>)['type'] === 'qux')) && (Object.prototype.hasOwnProperty.call(candidate, 'url') && typeof (candidate as Record<string,
+  unknown>)['url'] === "string"))) {
+    return quxFromJSON((json as unknown as Qux$Wire));
+  }
   return json as unknown as Foo;
 }
 
 export function fooToJSON(value: Foo): Foo$Wire {
+  const candidate: unknown = value;
+  if ((((candidate !== null && typeof candidate === "object" && !Array.isArray(candidate) && (Object.prototype.hasOwnProperty.call(candidate, 'bucket') && typeof (candidate as Record<string,
+  unknown>)['bucket'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'endpoint') && typeof (candidate as Record<string,
+  unknown>)['endpoint'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'type') && (candidate as Record<string,
+  unknown>)['type'] === 'bar'))) {
+    return barToJSON((value as unknown as Bar));
+  }
+  if (((candidate !== null && typeof candidate === "object" && !Array.isArray(candidate) && (Object.prototype.hasOwnProperty.call(candidate, 'path') && typeof (candidate as Record<string,
+  unknown>)['path'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'type') && (candidate as Record<string,
+  unknown>)['type'] === 'baz'))) {
+    return bazToJSON((value as unknown as Baz));
+  }
+  if ((((candidate !== null && typeof candidate === "object" && !Array.isArray(candidate) && (Object.prototype.hasOwnProperty.call(candidate, 'namespace') && typeof (candidate as Record<string,
+  unknown>)['namespace'] === "string")) && (Object.prototype.hasOwnProperty.call(candidate, 'type') && (candidate as Record<string,
+  unknown>)['type'] === 'qux')) && (Object.prototype.hasOwnProperty.call(candidate, 'url') && typeof (candidate as Record<string,
+  unknown>)['url'] === "string"))) {
+    return quxToJSON((value as unknown as Qux));
+  }
   return value as unknown as Foo$Wire;
 }

@@ -16,6 +16,7 @@ include_build_scripts = true
 emit_enum_constants = true
 emit_type_guards = true
 property_naming = "camelCase"
+untagged_union_strategy = "firstMatch"
 indent = "    "
 ```
 
@@ -182,11 +183,56 @@ Works with all schema kinds:
 - **Tagged unions** (internal, adjacent, external): dual type aliases + switch/if-chain converters
 - **Intersections** (allOf): dual type aliases; compatible open objects share one
   conversion plan, while other intersections use spread-based converters
-- **Unions** (oneOf): dual type aliases + cast-through converters
+- **Untagged unions** (oneOf/anyOf): dual type aliases + member-selecting converters
 
 Referenced types that are themselves convertible (objects, intersections, unions) get their converter functions called recursively. Enums and simple aliases pass through unchanged.
 
 Defaults to `"preserve"` (no renaming, single interface, no converters).
+
+### `untagged_union_strategy`
+
+Controls untagged-union conversion when `property_naming = "camelCase"`:
+
+- `"firstMatch"` (default): select the first structurally matching member and
+  call its converter. Concrete members precede unconstrained JSON/object/map
+  fallbacks, with schema order preserved within each group. Unmatched values
+  pass through unchanged rather than making imperfect specifications unusable.
+- `"strict"`: use the same structural selection, but throw `TypeError` for
+  multiple concrete matches or no matching member. A raw fallback is considered
+  only after the concrete members, so it does not itself create ambiguity.
+- `"raw"`: do not select or convert union members. Both `Name` and `Name$Wire`
+  expose the wire representation; pass original wire keys such as `input_schema`,
+  not ergonomic keys such as `inputSchema`. This is an explicit escape hatch,
+  not an identity cast pretending to return a renamed model.
+
+```toml
+[generators.typescript-fetch]
+property_naming = "camelCase"
+untagged_union_strategy = "strict"
+```
+
+The same choice is available through a CLI override:
+
+```sh
+openapi-nexus generate --input openapi.yaml --generators typescript-fetch \
+  --generator-config typescript-fetch.property_naming=camelCase \
+  --generator-config typescript-fetch.untagged_union_strategy=strict
+```
+
+Selection checks JSON kinds, required own fields, declared property shapes, and
+literal/enum values in the appropriate wire or ergonomic naming direction.
+Arrays and dictionaries inspect their element/value shapes; dictionary keys and
+external variant tags stay verbatim. This is conversion dispatch, not full JSON
+Schema validation: formats, numeric bounds, and other validation keywords are
+not checked. Recursive references stop expanding the selection guard at a cycle;
+the selected member converter still handles recursive payload conversion.
+
+For example, a mixed `ClientTool | SearchTool` union can distinguish a required
+`input_schema` / `inputSchema` field from a search member's required literal
+`type`, then convert `inputSchema` and `maxUses` to `input_schema` and `max_uses`.
+Conversions also work through containing arrays, dictionaries, and model aliases.
+Declared additional-property behavior remains owned by the selected member's
+converter. Tagged-union dispatch and preserve-mode generation are unchanged.
 
 ### Additional properties
 

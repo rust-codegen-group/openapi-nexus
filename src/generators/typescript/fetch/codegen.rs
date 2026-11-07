@@ -62,6 +62,7 @@ impl TypeScriptFetchCodeGenerator {
             emit_type_guards: self.config.emit_type_guards,
             property_naming_camel_case: self.config.property_naming
                 == super::config::PropertyNaming::CamelCase,
+            untagged_union_strategy: self.config.untagged_union_strategy,
         };
         let mut files = super::sigil_emit::generate_model_files(ir, flags, &ts)?;
 

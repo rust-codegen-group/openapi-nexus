@@ -5,15 +5,32 @@
  * Masked fixture for TypeScript Fetch camelCase regression coverage.
  */
 import type { FooArrayPart, FooArrayPart$Wire } from './FooArrayPart';
+import { fooArrayPartFromJSON, fooArrayPartToJSON } from './FooArrayPart';
 
 export type FooUnionContent$Wire = string | readonly FooArrayPart$Wire[];
 
 export type FooUnionContent = string | readonly FooArrayPart[];
 
 export function fooUnionContentFromJSON(json: FooUnionContent$Wire): FooUnionContent {
+  const candidate: unknown = json;
+  if (typeof candidate === "string") {
+    return (json as unknown as string);
+  }
+  if (Array.isArray(candidate) && candidate.every((item: unknown) => (item !== null && typeof item === "object" && !Array.isArray(item) && (Object.prototype.hasOwnProperty.call(item, 'bar_text') && typeof (item as Record<string,
+  unknown>)['bar_text'] === "string")))) {
+    return (json as unknown as readonly FooArrayPart$Wire[]).map((item) => fooArrayPartFromJSON(item));
+  }
   return json as unknown as FooUnionContent;
 }
 
 export function fooUnionContentToJSON(value: FooUnionContent): FooUnionContent$Wire {
+  const candidate: unknown = value;
+  if (typeof candidate === "string") {
+    return (value as unknown as string);
+  }
+  if (Array.isArray(candidate) && candidate.every((item: unknown) => (item !== null && typeof item === "object" && !Array.isArray(item) && (Object.prototype.hasOwnProperty.call(item, 'barText') && typeof (item as Record<string,
+  unknown>)['barText'] === "string")))) {
+    return (value as unknown as readonly FooArrayPart[]).map((item) => fooArrayPartToJSON(item));
+  }
   return value as unknown as FooUnionContent$Wire;
 }
