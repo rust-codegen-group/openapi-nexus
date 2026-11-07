@@ -121,21 +121,22 @@ fn multipart_wire_construction_is_pinned_across_clients() {
     let ts_api = generated_file(&ts_files, "apis/MultipartApi.ts");
     let ts_input = generated_file(&ts_files, "models/SendOptionalPartsMultipartRequestBody.ts");
     assert!(ts_api.contains("let requestBody: Blob | undefined = undefined;"));
-    assert!(
-        ts_api.contains(
-            "if (requestParameters.body !== undefined && requestParameters.body !== null)"
-        )
-    );
+    assert!(ts_api.contains("const multipartBody = requestParameters['body'];"));
+    assert!(ts_api.contains("if (multipartBody !== undefined && multipartBody !== null)"));
     assert!(ts_api.contains("const multipartChunks: Array<string | Blob> = [];"));
     assert!(
         ts_api.contains(
             "Content-Disposition: form-data; name=\"note\"\\r\\nContent-Type: text/plain"
         )
     );
-    assert!(ts_api.contains("uploadFileFilename(requestParameters.body.file, 'file')"));
-    assert!(ts_api.contains("uploadFileData(requestParameters.body.file)"));
+    assert!(ts_api.contains("const multipartValue$2 = multipartBody['file'];"));
+    assert!(ts_api.contains("if (multipartValue$2 !== undefined && multipartValue$2 !== null)"));
+    assert!(ts_api.contains("uploadFileFilename(multipartValue$2, 'file')"));
+    assert!(ts_api.contains("multipartHeaderValue(multipartFilename$2)"));
+    assert!(ts_api.contains("uploadFileData(multipartValue$2)"));
     assert!(ts_input.contains("file?: UploadFileInput;"));
-    assert!(ts_api.contains("multipartChunks.push(String(requestParameters.body.note));"));
+    assert!(ts_api.contains("const multipartValue$1 = multipartBody['note'];"));
+    assert!(ts_api.contains("multipartChunks.push(String(multipartValue$1));"));
     assert!(!ts_api.contains("filename=\"file\""));
 
     let reqwest_files =
@@ -356,7 +357,10 @@ property_naming = "camelCase"
     let api = generated_file(&files, "apis/MultipartApi.ts");
 
     assert!(api.contains("itemConfigToJSON"));
-    assert!(api.contains(
-        "multipartChunks.push(JSON.stringify(itemConfigToJSON(requestParameters.body.itemConfig)));"
-    ));
+    assert!(api.contains("const multipartBody = requestParameters['body'];"));
+    assert!(api.contains("const multipartValue$1 = multipartBody['itemConfig'];"));
+    assert!(
+        api.contains("multipartChunks.push(JSON.stringify(itemConfigToJSON(multipartValue$1)));")
+    );
+    assert!(!api.contains("multipartChunks.push(JSON.stringify(multipartValue$1));"));
 }

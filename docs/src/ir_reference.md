@@ -108,6 +108,12 @@ pub enum IrTypeExpr {
     Primitive(IrPrimitive),
     StringLiteral(String),
     StringEnum(Vec<String>),
+    ScalarEnum {
+        representation: Box<IrTypeExpr>,
+        representation_is_constraint: bool,
+        representation_nullable: bool,
+        values: Vec<serde_json::Value>,
+    },
     Array(Box<IrTypeExpr>),
     Map(Box<IrTypeExpr>),
     Nullable(Box<IrTypeExpr>),
@@ -131,6 +137,35 @@ For object properties, the outer nullable wrapper is recorded in
 `IrProperty.nullable`; nested wrappers remain in `type_expr`. A nullable
 container does not make its contents nullable, and nullability is independent
 of whether a property is required.
+
+Inline scalar enum facts survive all three lowerers, including property, array
+item, and dictionary value positions. `ScalarEnum` retains finite values together
+with the pre-existing `representation`; existing string literal/enum expressions
+already carry their values. TypeScript uses these facts for structural union
+selection. Other generators consume the retained representation without changing
+their enum policy. Rust callers exhaustively matching `IrTypeExpr` must account
+for this variant.
+
+Finite-value constraints apply to the original node: a nullable type with
+`enum: [1]` still excludes null during selection, while `enum: [1, null]` permits
+it. Extracting `IrProperty.nullable` does not widen that constraint. The
+`representation_nullable` fact records a removed nullable wrapper at its exact
+enum boundary: an outer enum intersects the inner constraints without moving
+null permission across another enum. It defaults to false when constructing a
+new `ScalarEnum` whose complete nullable representation is still present.
+Nested finite constraints are intersected rather than replaced by outer values.
+`representation_is_constraint` distinguishes an authored type or constrained
+wrapper from the legacy string fallback used for an enum with no declared type.
+The latter keeps its existing emitted type, but numeric/boolean/null enum values
+are matched directly rather than intersected with a synthetic string check.
+The `representation()` view exposes the legacy type beneath scalar metadata for
+generators that do not use finite values. OpenAPI 3.1/3.2 nullable `oneOf`/`anyOf`
+wrappers retain enums attached to the wrapper, including inside arrays and maps.
+TypeScript conversion restores an extracted nullable wrapper around its original
+delegate; matching metadata does not imply that a nonnullable delegate accepts
+null. Null already accepted by the inner union still reaches its strict policy.
+Inner finite constraints remain inside the restored wrapper so null excluded by
+that inner constraint can still be admitted exclusively by the outer wrapper.
 
 OpenAPI 3.0 boolean `exclusiveMinimum` / `exclusiveMaximum` flags retain both
 `true` and `false` in validation metadata. The public 3.0 `ObjectSchema` fields

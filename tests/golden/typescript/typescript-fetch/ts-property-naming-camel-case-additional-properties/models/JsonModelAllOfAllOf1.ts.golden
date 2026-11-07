@@ -4,6 +4,7 @@
  * TypeScript additional property preservation — 1.0.0
  */
 import type { AnyJsonValue } from './AnyJsonValue';
+import { anyJsonValueFromJSON, anyJsonValueToJSON } from './AnyJsonValue';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
@@ -25,7 +26,7 @@ export function jsonModelAllOfAllOf1FromJSON(
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueFromJSON(additionalValue)] as const;
     }),
   );
   const visibleProperties = Object.fromEntries(
@@ -64,7 +65,7 @@ export function jsonModelAllOfAllOf1ToJSON(value: JsonModelAllOfAllOf1): JsonMod
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueToJSON(additionalValue)] as const;
     }),
   );
   const result = {

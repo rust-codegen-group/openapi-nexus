@@ -88,6 +88,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
         ("open-tagged-additional-properties", "valid/open-tagged-additional-properties.yaml"),
         ("typescript-additional-properties", "valid/typescript-additional-properties.yaml"),
+        ("untagged-union", "valid/typescript-untagged-union.yaml"),
         ("enum-repr", "valid/enum-repr/enum-repr.yaml"),
         ("query-param-enum", "valid/query/query-param-enum.yaml"),
         ("server-path-prefix", "valid/server-path-prefix.yaml"),
@@ -183,6 +184,7 @@ generate_golden_tests! {
     test_additional_properties_golden: "additional-properties",
     test_open_tagged_additional_properties_golden: "open-tagged-additional-properties",
     test_typescript_additional_properties_golden: "typescript-additional-properties",
+    test_untagged_union_golden: "untagged-union",
 
     test_query_param_enum_golden: "query-param-enum",
     test_server_path_prefix_golden: "server-path-prefix",
@@ -280,6 +282,72 @@ fn test_property_naming_camel_case_additional_properties_golden() {
         "valid/typescript-additional-properties.yaml",
         UPDATE_HINT,
     );
+}
+
+#[test]
+fn test_camel_case_untagged_union_delegates_to_member_converters() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+
+    let config = toml::from_str("property_naming = 'camelCase'").unwrap();
+    let generator = TypeScriptFetchCodeGenerator::new(config);
+    let parsed = openapi_nexus::parser::parse_content_yaml(include_str!(
+        "fixtures/valid/typescript-untagged-union.yaml"
+    ))
+    .unwrap();
+    let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
+    let files = generator.generate(&ir).unwrap();
+    let union = files
+        .iter()
+        .find(|file| file.filename == "Tool.ts")
+        .unwrap();
+    assert!(union.content.contains("clientToolFromJSON("));
+    assert!(union.content.contains("searchToolToJSON("));
+}
+
+#[test]
+fn test_invalid_untagged_union_member_retains_model_emission_context() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+    use openapi_nexus::generators::{ArtifactKind, GeneratorError};
+    use openapi_nexus::ir::types::{IrSchemaKind, IrTypeExpr};
+    let parsed = openapi_nexus::parser::parse_content_yaml(include_str!(
+        "fixtures/valid/typescript-untagged-union.yaml"
+    ))
+    .unwrap();
+    let mut ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
+    let IrSchemaKind::Union(union) = &mut ir.schemas.get_mut("Tool").unwrap().kind else {
+        panic!("untagged union")
+    };
+    union.members.push(IrTypeExpr::Named(String::new()));
+    let generator =
+        TypeScriptFetchCodeGenerator::new(toml::from_str("property_naming = 'camelCase'").unwrap());
+    let error = generator
+        .generate(&ir)
+        .expect_err("invalid type must retain its error, not panic");
+    assert!(
+        matches!(error, GeneratorError::Emission { artifact: ArtifactKind::Model, name, .. } if name == "Tool")
+    );
+}
+
+#[test]
+fn test_camel_case_untagged_union_golden() {
+    for (strategy, suffix) in [
+        ("firstMatch", "first-match"),
+        ("strict", "strict"),
+        ("raw", "raw"),
+    ] {
+        let config = toml::from_str(&format!(
+            "property_naming = 'camelCase'\ntoolchain = 'vp'\nuntagged_union_strategy = '{strategy}'"
+        ))
+        .unwrap();
+        let generator = TypeScriptFetchCodeGenerator::new(config);
+        run_golden_test(
+            &generator,
+            golden_dir(),
+            &format!("ts-untagged-union-{suffix}"),
+            "valid/typescript-untagged-union.yaml",
+            UPDATE_HINT,
+        );
+    }
 }
 
 #[test]
@@ -670,6 +738,12 @@ fn test_self_referential_object_keeps_self_references_local() {
         );
         if camel_case {
             assert!(
+                !files
+                    .iter()
+                    .any(|file| file.filename.ends_with("unionMatch.ts")),
+                "a union-free recursive model must not emit unused matchers"
+            );
+            assert!(
                 foo_file
                     .content
                     .contains("readonly children?: readonly Foo$Wire[];"),
@@ -679,16 +753,38 @@ fn test_self_referential_object_keeps_self_references_local() {
             assert!(
                 foo_file
                     .content
-                    .contains("json.children.map((item) => fooFromJSON(item))"),
-                "Foo's decoder must call itself locally:\n{}",
+                    .contains("convert$0FromJSON(json.children)"),
+                "Foo's decoder must delegate its array through the planned helper:\n{}",
                 foo_file.content
             );
             assert!(
-                foo_file
-                    .content
-                    .contains("value.children.map((item) => fooToJSON(item))"),
-                "Foo's encoder must call itself locally:\n{}",
+                foo_file.content.contains("convert$0ToJSON(value.children)"),
+                "Foo's encoder must delegate its array through the planned helper:\n{}",
                 foo_file.content
+            );
+            let helpers = files
+                .iter()
+                .find(|file| file.filename.ends_with("valueConversion$0.ts"))
+                .unwrap();
+            assert!(
+                helpers
+                    .content
+                    .contains("import type { Foo, Foo$Wire } from '../models/Foo';")
+            );
+            assert!(
+                helpers
+                    .content
+                    .contains("import { fooFromJSON, fooToJSON } from '../models/Foo';")
+            );
+            assert!(
+                helpers.content.contains("return json.map(fooFromJSON);"),
+                "the helper must retain the original recursive decoder: {}",
+                helpers.content
+            );
+            assert!(
+                helpers.content.contains("return value.map(fooToJSON);"),
+                "the helper must retain the original recursive encoder: {}",
+                helpers.content
             );
         }
     }

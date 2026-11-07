@@ -17,25 +17,23 @@ export type OpenExternalEvent =
 export function openExternalEventFromJSON(json: OpenExternalEvent$Wire): OpenExternalEvent {
   if (Object.prototype.hasOwnProperty.call(json, 'started')) {
     const contentValue = (json as Record<'started', Detail$Wire>)['started'];
+    const entries = Object.entries(json).filter(([key]) => key !== 'started');
     const additionalProperties = Object.fromEntries(
-      Object.entries(json)
-        .filter(([key]) => key !== 'started')
-        .map(([key, value]) => {
-          const additionalValue = value;
-          return [key, additionalValue] as const;
-        }),
+      entries.map(([key, value]) => {
+        const additionalValue = value;
+        return [key, additionalValue] as const;
+      }),
     );
     return { ...additionalProperties, ['started']: detailFromJSON(contentValue) };
   }
   if (Object.prototype.hasOwnProperty.call(json, 'finished')) {
     const contentValue = (json as Record<'finished', Detail$Wire>)['finished'];
+    const entries = Object.entries(json).filter(([key]) => key !== 'finished');
     const additionalProperties = Object.fromEntries(
-      Object.entries(json)
-        .filter(([key]) => key !== 'finished')
-        .map(([key, value]) => {
-          const additionalValue = value;
-          return [key, additionalValue] as const;
-        }),
+      entries.map(([key, value]) => {
+        const additionalValue = value;
+        return [key, additionalValue] as const;
+      }),
     );
     return { ...additionalProperties, ['finished']: detailFromJSON(contentValue) };
   }
@@ -45,25 +43,23 @@ export function openExternalEventFromJSON(json: OpenExternalEvent$Wire): OpenExt
 export function openExternalEventToJSON(value: OpenExternalEvent): OpenExternalEvent$Wire {
   if (Object.prototype.hasOwnProperty.call(value, 'started')) {
     const contentValue = (value as Record<'started', Detail>)['started'];
+    const entries = Object.entries(value).filter(([key]) => key !== 'started');
     const additionalProperties = Object.fromEntries(
-      Object.entries(value)
-        .filter(([key]) => key !== 'started')
-        .map(([key, value]) => {
-          const additionalValue = value;
-          return [key, additionalValue] as const;
-        }),
+      entries.map(([key, value]) => {
+        const additionalValue = value;
+        return [key, additionalValue] as const;
+      }),
     );
     return { ...additionalProperties, ['started']: detailToJSON(contentValue) };
   }
   if (Object.prototype.hasOwnProperty.call(value, 'finished')) {
     const contentValue = (value as Record<'finished', Detail>)['finished'];
+    const entries = Object.entries(value).filter(([key]) => key !== 'finished');
     const additionalProperties = Object.fromEntries(
-      Object.entries(value)
-        .filter(([key]) => key !== 'finished')
-        .map(([key, value]) => {
-          const additionalValue = value;
-          return [key, additionalValue] as const;
-        }),
+      entries.map(([key, value]) => {
+        const additionalValue = value;
+        return [key, additionalValue] as const;
+      }),
     );
     return { ...additionalProperties, ['finished']: detailToJSON(contentValue) };
   }

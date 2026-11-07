@@ -70,10 +70,10 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiTestUnionWithAnyRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<TestUnionWithAnyRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling testUnionWithAnyRaw().',
+        'Required parameter "body" was undefined when calling testUnionWithAnyRaw().',
       );
     }
     // Build path with path parameters

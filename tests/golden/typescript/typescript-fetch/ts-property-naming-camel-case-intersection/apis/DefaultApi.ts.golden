@@ -71,7 +71,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiTestIntersectionRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<TestIntersectionRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling testIntersectionRaw().',
@@ -87,7 +87,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     };
 
     // Prepare request body
-    const requestBody = fooToJSON(requestParameters.body);
+    const requestBody = fooToJSON(requestParameters['body']);
     // Make request
     const response = await this.request(
       {

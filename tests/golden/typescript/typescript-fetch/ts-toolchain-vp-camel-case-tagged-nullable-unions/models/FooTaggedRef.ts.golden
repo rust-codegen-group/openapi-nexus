@@ -7,27 +7,37 @@
 import type { FooPayloadBody, FooPayloadBody$Wire } from './FooPayloadBody';
 import { fooPayloadBodyFromJSON, fooPayloadBodyToJSON } from './FooPayloadBody';
 
-export type FooTaggedRef$Wire = { type: 'foo_ref_payload'; bar_payload: FooPayloadBody$Wire };
+export type FooTaggedRef$Wire = Record<'type', 'foo_ref_payload'> &
+  Record<'bar_payload', FooPayloadBody$Wire>;
 
-export type FooTaggedRef = { type: 'foo_ref_payload'; barPayload: FooPayloadBody };
+export type FooTaggedRef = Record<'type', 'foo_ref_payload'> & Record<'barPayload', FooPayloadBody>;
 
 export function fooTaggedRefFromJSON(json: FooTaggedRef$Wire): FooTaggedRef {
-  switch (json.type) {
-    case 'foo_ref_payload':
-      return { type: 'foo_ref_payload', barPayload: fooPayloadBodyFromJSON(json.bar_payload) };
+  if (json['type'] === 'foo_ref_payload') {
+    return {
+      ['type']: 'foo_ref_payload',
+      ['barPayload']: fooPayloadBodyFromJSON(
+        (json as Record<'bar_payload', FooPayloadBody$Wire>)['bar_payload'],
+      ),
+    } as FooTaggedRef;
   }
+  throw new Error('Unknown variant');
 }
 
 export function fooTaggedRefToJSON(value: FooTaggedRef): FooTaggedRef$Wire {
-  switch (value.type) {
-    case 'foo_ref_payload':
-      return { type: 'foo_ref_payload', bar_payload: fooPayloadBodyToJSON(value.barPayload) };
+  if (value['type'] === 'foo_ref_payload') {
+    return {
+      ['type']: 'foo_ref_payload',
+      ['bar_payload']: fooPayloadBodyToJSON(
+        (value as Record<'barPayload', FooPayloadBody>)['barPayload'],
+      ),
+    } as FooTaggedRef$Wire;
   }
+  throw new Error('Unknown variant');
 }
 
-export function isFooRefPayload(value: FooTaggedRef): value is {
-  type: 'foo_ref_payload';
-  barPayload: FooPayloadBody;
-} {
-  return value.type === 'foo_ref_payload';
+export function isFooRefPayload(
+  value: FooTaggedRef,
+): value is Record<'type', 'foo_ref_payload'> & Record<'barPayload', FooPayloadBody> {
+  return value['type'] === 'foo_ref_payload';
 }

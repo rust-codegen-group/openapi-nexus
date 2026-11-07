@@ -1,0 +1,818 @@
+openapi: 3.1.0
+info:
+  title: Untagged union conversion
+  version: 1.0.0
+paths:
+  /matrix:
+    post:
+      tags: [Conversion]
+      operationId: exchangeMatrix
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+      responses:
+        '200':
+          description: Matrix
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Tool'
+        '400':
+          description: Matrix error
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Tool'
+  /nullable:
+    post:
+      tags: [Conversion]
+      operationId: exchangeNullable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: [array, 'null']
+              items:
+                $ref: '#/components/schemas/Tool'
+      responses:
+        '200':
+          description: Nullable array
+          content:
+            application/json:
+              schema:
+                type: [array, 'null']
+                items:
+                  $ref: '#/components/schemas/Tool'
+  /multipart:
+    post:
+      tags: [Conversion]
+      operationId: exchangeMultipart
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [payload_values]
+              properties:
+                upload_file:
+                  type: string
+                  format: binary
+                payload_values:
+                  type: array
+                  items:
+                    type: [object, string]
+                    additionalProperties:
+                      $ref: '#/components/schemas/Detail'
+            encoding:
+              payload_values:
+                contentType: application/json
+      responses:
+        '204':
+          description: Accepted
+  /optional-scalar:
+    post:
+      tags: [Conversion]
+      operationId: sendOptionalScalar
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NullableScalarInner'}
+      responses:
+        '204': {description: Accepted}
+  /required-scalar:
+    post:
+      tags: [Conversion]
+      operationId: sendRequiredScalar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NullableScalarInner'}
+      responses:
+        '204': {description: Accepted}
+  /optional-inline-scalar:
+    post:
+      tags: [Conversion]
+      operationId: sendOptionalInlineScalar
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - {type: [string, 'null']}
+                - {type: [number, 'null']}
+      responses:
+        '204': {description: Accepted}
+  /optional-detail:
+    post:
+      tags: [Conversion]
+      operationId: sendOptionalDetail
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NullableDetail'}
+      responses:
+        '204': {description: Accepted}
+components:
+  schemas:
+    ClientTool:
+      type: object
+      required: [name, input_schema]
+      properties:
+        name:
+          type: string
+        input_schema:
+          type: object
+          additionalProperties: true
+    SearchTool:
+      type: object
+      required: [type, name]
+      properties:
+        type:
+          type: string
+          enum: [web_search_20250305]
+        name:
+          type: string
+          enum: [web_search]
+        max_uses:
+          type: integer
+    Tool:
+      oneOf:
+        - $ref: '#/components/schemas/ClientTool'
+        - $ref: '#/components/schemas/SearchTool'
+    NullableTool:
+      anyOf:
+        - $ref: '#/components/schemas/Tool'
+        - type: 'null'
+    ToolAlias:
+      allOf:
+        - $ref: '#/components/schemas/Tool'
+    ToolList:
+      oneOf:
+        - type: array
+          items:
+            $ref: '#/components/schemas/ClientTool'
+        - type: array
+          items:
+            $ref: '#/components/schemas/SearchTool'
+    ToolMap:
+      oneOf:
+        - type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ClientTool'
+        - type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SearchTool'
+    OpenTool:
+      anyOf:
+        - {}
+        - $ref: '#/components/schemas/ClientTool'
+    AlternativeTool:
+      type: object
+      required: [name, input_schema]
+      properties:
+        name:
+          type: string
+        input_schema:
+          type: object
+          additionalProperties: true
+        second_option:
+          type: boolean
+    AmbiguousTool:
+      anyOf:
+        - $ref: '#/components/schemas/ClientTool'
+        - $ref: '#/components/schemas/AlternativeTool'
+    ToolRequest:
+      type: object
+      required: [tools]
+      properties:
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tool'
+    Detail:
+      type: object
+      required: [wire_name]
+      properties:
+        wire_name:
+          type: string
+    OtherDetail:
+      type: object
+      required: [wire_name]
+      properties:
+        wire_name:
+          type: string
+        optional_flag:
+          type: boolean
+    OpenInner:
+      anyOf:
+        - {}
+        - $ref: '#/components/schemas/Detail'
+    Outer:
+      anyOf:
+        - $ref: '#/components/schemas/OpenInner'
+        - type: string
+    OpenAlias:
+      allOf:
+        - $ref: '#/components/schemas/OpenInner'
+    AliasOuter:
+      anyOf:
+        - $ref: '#/components/schemas/OpenAlias'
+        - $ref: '#/components/schemas/SearchTool'
+    NullableMapFallback:
+      anyOf:
+        - type: [object, 'null']
+          additionalProperties: true
+        - $ref: '#/components/schemas/Detail'
+    AmbiguousInner:
+      anyOf:
+        - {}
+        - $ref: '#/components/schemas/Detail'
+        - $ref: '#/components/schemas/OtherDetail'
+    AmbiguousOuter:
+      anyOf:
+        - $ref: '#/components/schemas/AmbiguousInner'
+        - type: string
+    Adjacent:
+      oneOf:
+        - type: object
+          required: [event_type]
+          properties:
+            event_type:
+              type: string
+              enum: [empty]
+        - type: object
+          required: [event_type, event_data]
+          properties:
+            event_type:
+              type: string
+              enum: [data]
+            event_data:
+              $ref: '#/components/schemas/Detail'
+    AdjacentOrNumber:
+      anyOf:
+        - $ref: '#/components/schemas/Adjacent'
+        - type: number
+    BinaryModel:
+      type: object
+      required: [binary_data, field_name]
+      properties:
+        binary_data:
+          type: string
+          format: binary
+        field_name:
+          type: string
+    BinaryUnion:
+      anyOf:
+        - $ref: '#/components/schemas/BinaryModel'
+        - type: boolean
+    OpenMap:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/OpenInner'
+    MapOuter:
+      anyOf:
+        - {}
+        - $ref: '#/components/schemas/OpenMap'
+    AmbiguousMap:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/AmbiguousInner'
+    AmbiguousMapOuter:
+      anyOf:
+        - {}
+        - $ref: '#/components/schemas/AmbiguousMap'
+    MapWrapped:
+      allOf:
+        - $ref: '#/components/schemas/NullableMapFallback'
+    WrappedMapOrBoolean:
+      anyOf:
+        - $ref: '#/components/schemas/MapWrapped'
+        - type: boolean
+    DetailArrayOrObject:
+      anyOf:
+        - type: array
+          items:
+            $ref: '#/components/schemas/Detail'
+        - $ref: '#/components/schemas/Detail'
+    ArrayWrapped:
+      allOf:
+        - $ref: '#/components/schemas/DetailArrayOrObject'
+    WrappedArrayOrBoolean:
+      anyOf:
+        - $ref: '#/components/schemas/ArrayWrapped'
+        - type: boolean
+    InlineMixedValues:
+      anyOf:
+        - type: array
+          items:
+            type: [object, string]
+            additionalProperties:
+              $ref: '#/components/schemas/Detail'
+        - $ref: '#/components/schemas/Detail'
+    InlineDictionaryValues:
+      anyOf:
+        - type: object
+          additionalProperties:
+            type: [object, string]
+            additionalProperties:
+              $ref: '#/components/schemas/Detail'
+        - type: boolean
+    NamedValue:
+      anyOf:
+        - type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Detail'
+        - type: string
+    NamedContainer:
+      anyOf:
+        - type: array
+          items:
+            $ref: '#/components/schemas/NamedValue'
+        - $ref: '#/components/schemas/Detail'
+    InlineNumericValues:
+      anyOf:
+        - type: array
+          items:
+            type: [object, integer, number]
+            additionalProperties:
+              $ref: '#/components/schemas/Detail'
+    ArrayPayload:
+      type: object
+      required: [wire_items]
+      properties:
+        wire_items:
+          type: array
+          items:
+            type: string
+    ArrayPayloadOrBoolean:
+      anyOf:
+        - $ref: '#/components/schemas/ArrayPayload'
+        - type: boolean
+    PrimitiveArrayChoice:
+      anyOf:
+        - type: array
+          items:
+            type: [integer, number]
+        - $ref: '#/components/schemas/Detail'
+    PrimitiveMapChoice:
+      anyOf:
+        - type: object
+          additionalProperties:
+            type: [integer, number]
+        - $ref: '#/components/schemas/Detail'
+    DictionaryAlias:
+      allOf:
+        - type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Detail'
+    ValueAlias:
+      type: array
+      items:
+        type: [object, string]
+        additionalProperties:
+          $ref: '#/components/schemas/Detail'
+    AliasChoice:
+      anyOf:
+        - $ref: '#/components/schemas/ValueAlias'
+        - $ref: '#/components/schemas/Detail'
+    InlineProperty:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items:
+            type: [object, string]
+            additionalProperties:
+              $ref: '#/components/schemas/Detail'
+    RawEnvelope:
+      type: object
+      required: [request_id, raw_choice, plain_detail]
+      properties:
+        request_id:
+          type: string
+        raw_choice:
+          $ref: '#/components/schemas/AliasChoice'
+        plain_detail:
+          $ref: '#/components/schemas/Detail'
+    MixedMapA:
+      type: object
+      required: [marker]
+      properties:
+        marker:
+          type: string
+      additionalProperties:
+        $ref: '#/components/schemas/Detail'
+    MixedMapB:
+      type: object
+      required: [marker]
+      properties:
+        marker:
+          type: string
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/Detail'
+    MixedMapChoice:
+      anyOf:
+        - $ref: '#/components/schemas/MixedMapA'
+        - $ref: '#/components/schemas/MixedMapB'
+    NumericOne:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          type: integer
+          enum: [1]
+        first_value:
+          type: string
+    NumericTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          type: integer
+          enum: [2]
+        second_value:
+          type: string
+    NumericEnumChoice:
+      oneOf:
+        - $ref: '#/components/schemas/NumericOne'
+        - $ref: '#/components/schemas/NumericTwo'
+    NullableOpaque:
+      anyOf:
+        - {}
+        - type: 'null'
+    TwiceNullableOpaque:
+      anyOf:
+        - $ref: '#/components/schemas/NullableOpaque'
+        - type: 'null'
+    NullableDetail:
+      anyOf:
+        - $ref: '#/components/schemas/Detail'
+        - type: 'null'
+    OnceNullableOuter:
+      anyOf:
+        - $ref: '#/components/schemas/NullableOpaque'
+        - $ref: '#/components/schemas/NullableDetail'
+    TwiceNullableOuter:
+      anyOf:
+        - $ref: '#/components/schemas/TwiceNullableOpaque'
+        - $ref: '#/components/schemas/NullableDetail'
+    RecursiveList:
+      anyOf:
+        - type: array
+          items:
+            $ref: '#/components/schemas/RecursiveList'
+        - $ref: '#/components/schemas/Detail'
+    RecursiveOpenDictionary:
+      anyOf:
+        - {}
+        - $ref: '#/components/schemas/Detail'
+        - type: object
+          additionalProperties:
+            $ref: '#/components/schemas/RecursiveOpenDictionary'
+    RecursiveDictionaryChoice:
+      anyOf:
+        - {}
+        - $ref: '#/components/schemas/RecursiveOpenDictionary'
+    AdjacentContainer:
+      oneOf:
+        - type: object
+          required: [event_type]
+          properties:
+            event_type:
+              type: string
+              enum: [empty]
+        - type: object
+          required: [event_type, event_data]
+          properties:
+            event_type:
+              type: string
+              enum: [data]
+            event_data:
+              type: array
+              items:
+                type: [object, string]
+                additionalProperties:
+                  $ref: '#/components/schemas/Detail'
+    AdjacentPrimitive:
+      oneOf:
+        - type: object
+          required: [event_type]
+          properties:
+            event_type:
+              type: string
+              enum: [empty]
+        - type: object
+          required: [event_type, event_data]
+          properties:
+            event_type:
+              type: string
+              enum: [data]
+            event_data:
+              type: array
+              items:
+                type: [integer, number]
+    Record:
+      oneOf:
+        - type: object
+          required: [event_type]
+          properties:
+            event_type: {type: string, enum: [empty]}
+        - type: object
+          required: [event_type, event_data]
+          properties:
+            event_type: {type: string, enum: [data]}
+            event_data:
+              $ref: '#/components/schemas/Detail'
+    RecordOrBoolean:
+      anyOf:
+        - $ref: '#/components/schemas/Record'
+        - type: boolean
+    Readonly:
+      oneOf:
+        - type: object
+          required: [extension_key]
+          properties:
+            extension_key: {$ref: '#/components/schemas/Detail'}
+          additionalProperties:
+            type: array
+            items: {$ref: '#/components/schemas/Detail'}
+    TaggedMapA:
+      oneOf:
+        - type: object
+          required: [payload_key]
+          properties:
+            payload_key: {$ref: '#/components/schemas/Detail'}
+          additionalProperties: {$ref: '#/components/schemas/Detail'}
+    TaggedMapB:
+      oneOf:
+        - type: object
+          required: [payload_key]
+          properties:
+            payload_key: {$ref: '#/components/schemas/Detail'}
+          additionalProperties:
+            type: array
+            items: {$ref: '#/components/schemas/Detail'}
+    TaggedMapChoice:
+      anyOf:
+        - $ref: '#/components/schemas/TaggedMapA'
+        - $ref: '#/components/schemas/TaggedMapB'
+    NullableNumericOne:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: [integer, 'null'], enum: [1]}
+        first_value: {type: string}
+    NullableNumericTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: [integer, 'null'], enum: [2, null]}
+        second_value: {type: string}
+    NullableNumericChoice:
+      oneOf:
+        - $ref: '#/components/schemas/NullableNumericOne'
+        - $ref: '#/components/schemas/NullableNumericTwo'
+    ExplicitNullableEnumChoice:
+      anyOf:
+        - type: array
+          items:
+            anyOf:
+              - {type: integer, enum: [1]}
+              - {type: 'null'}
+        - $ref: '#/components/schemas/Detail'
+    WrapperOne:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          anyOf: [{type: integer}, {type: 'null'}]
+          enum: [1]
+        first_value: {type: string}
+    WrapperTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          anyOf: [{type: integer}, {type: 'null'}]
+          enum: [2, null]
+        second_value: {type: string}
+    WrapperChoice:
+      oneOf:
+        - $ref: '#/components/schemas/WrapperOne'
+        - $ref: '#/components/schemas/WrapperTwo'
+    NullableOverlap:
+      anyOf:
+        - $ref: '#/components/schemas/NullableDetail'
+        - $ref: '#/components/schemas/NullableTool'
+    ExplicitNullOverlap:
+      anyOf:
+        - {type: 'null'}
+        - $ref: '#/components/schemas/NullableDetail'
+        - $ref: '#/components/schemas/NullableTool'
+    NestedExplicitNullOverlap:
+      anyOf:
+        - {type: 'null'}
+        - $ref: '#/components/schemas/NullableOverlap'
+        - {type: boolean}
+    NestedDetailLists:
+      type: array
+      items:
+        type: array
+        items: {$ref: '#/components/schemas/Detail'}
+    NullableScalarInner:
+      anyOf:
+        - {type: [string, 'null']}
+        - {type: [number, 'null']}
+    WrappedScalarInner:
+      anyOf:
+        - {$ref: '#/components/schemas/NullableScalarInner'}
+        - {type: 'null'}
+    NullableScalarParent:
+      type: object
+      required: [inner_value]
+      properties:
+        inner_value:
+          anyOf:
+            - {$ref: '#/components/schemas/NullableScalarInner'}
+            - {type: 'null'}
+    NullableScalarArray:
+      type: array
+      items:
+        anyOf:
+          - {$ref: '#/components/schemas/NullableScalarInner'}
+          - {type: 'null'}
+    NullableScalarMap:
+      type: object
+      additionalProperties:
+        anyOf:
+          - {$ref: '#/components/schemas/NullableScalarInner'}
+          - {type: 'null'}
+    NullableNonNullScalars:
+      type: array
+      items:
+        anyOf:
+          - anyOf: [{type: integer}, {type: number}]
+          - {type: 'null'}
+    NestedEnumNarrow:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          anyOf: [{type: integer, enum: [1]}, {type: 'null'}]
+          enum: [1, 2]
+        first_value: {type: string}
+    NestedEnumChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/NestedEnumNarrow'}
+        - {$ref: '#/components/schemas/NumericTwo'}
+    NestedNullableEnumNarrow:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          anyOf: [{type: integer, enum: [1]}, {type: 'null'}]
+          enum: [1, null]
+        first_value: {type: string}
+    NestedNullableEnumChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/NestedNullableEnumNarrow'}
+        - {$ref: '#/components/schemas/NumericTwo'}
+    NullableOpenInner:
+      anyOf:
+        - {}
+        - {type: [string, 'null']}
+        - {type: [number, 'null']}
+    NullableOpenExplicitOuter:
+      anyOf:
+        - {$ref: '#/components/schemas/NullableOpenInner'}
+        - {type: 'null'}
+    NullableOpenSiblingOuter:
+      anyOf:
+        - {$ref: '#/components/schemas/NullableOpenInner'}
+        - {type: [boolean, 'null']}
+    NullableOpaqueSiblingOuter:
+      anyOf:
+        - {$ref: '#/components/schemas/NullableOpaque'}
+        - {type: [boolean, 'null']}
+    UntypedNumericOne:
+      type: object
+      required: [revision]
+      properties:
+        revision: {enum: [1]}
+        first_value: {type: string}
+    UntypedNumericTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision: {enum: [2]}
+        second_value: {type: string}
+    UntypedNumericChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/UntypedNumericOne'}
+        - {$ref: '#/components/schemas/UntypedNumericTwo'}
+    ScalarEnumChoice:
+      anyOf:
+        - {type: integer}
+        - {type: boolean}
+    NullableEnumParent:
+      type: object
+      required: [scalar_value]
+      properties:
+        scalar_value:
+          anyOf:
+            - {$ref: '#/components/schemas/ScalarEnumChoice'}
+            - {type: 'null'}
+          enum: [1, null]
+    NullableInlineEnumParent:
+      type: object
+      required: [scalar_value]
+      properties:
+        scalar_value:
+          type: [integer, boolean, 'null']
+          enum: [1, null]
+    NullablePlainEnumParent:
+      type: object
+      required: [scalar_value]
+      properties:
+        scalar_value:
+          anyOf:
+            - {$ref: '#/components/schemas/ScalarEnumChoice'}
+            - {type: 'null'}
+    AlreadyNullableEnumParent:
+      type: object
+      required: [scalar_value]
+      properties:
+        scalar_value:
+          anyOf:
+            - {$ref: '#/components/schemas/NullableScalarInner'}
+            - {type: 'null'}
+          enum: [1, null]
+    ConstrainedOuterEnumParent:
+      type: object
+      required: [scalar_value]
+      properties:
+        scalar_value:
+          anyOf:
+            - anyOf:
+                - {$ref: '#/components/schemas/NullableScalarInner'}
+                - {type: 'null'}
+              enum: [1]
+            - {type: 'null'}
+          enum: [1, null]
+    EnumFreeOuterEnumParent:
+      type: object
+      required: [scalar_value]
+      properties:
+        scalar_value:
+          anyOf:
+            - anyOf:
+                - {$ref: '#/components/schemas/NullableScalarInner'}
+                - {type: 'null'}
+              enum: [1]
+            - {type: 'null'}
+    ContainerOuterEnum:
+      type: array
+      items:
+        anyOf:
+          - anyOf:
+              - {$ref: '#/components/schemas/NullableScalarInner'}
+              - {type: 'null'}
+            enum: [1]
+          - {type: 'null'}
+        enum: [1, null]
+    AlreadyNullableOuterEnumParent:
+      type: object
+      required: [scalar_value]
+      properties:
+        scalar_value:
+          anyOf:
+            - anyOf:
+                - {$ref: '#/components/schemas/NullableScalarInner'}
+                - {type: 'null'}
+              enum: [1, null]
+            - {type: 'null'}
+          enum: [1, null]

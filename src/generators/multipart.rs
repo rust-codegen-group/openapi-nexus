@@ -86,7 +86,7 @@ fn multipart_part_from_property(
 }
 
 fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(name) => match ir.schemas.get(name).map(|schema| &schema.kind) {
             Some(IrSchemaKind::Object(obj)) => Some(obj),
             Some(IrSchemaKind::Alias(inner)) => resolve_object(inner, ir),
@@ -98,7 +98,7 @@ fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject>
 }
 
 fn is_binary_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Primitive(IrPrimitive::Binary) => true,
         IrTypeExpr::Nullable(inner) => is_binary_type(inner, ir),
         IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {
@@ -109,7 +109,7 @@ fn is_binary_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
 }
 
 fn is_multipart_text_type(expr: &IrTypeExpr, ir: &IrSpec) -> bool {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Primitive(_) | IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
         IrTypeExpr::Nullable(inner) => is_multipart_text_type(inner, ir),
         IrTypeExpr::Named(name) => ir.schemas.get(name).is_some_and(|schema| {

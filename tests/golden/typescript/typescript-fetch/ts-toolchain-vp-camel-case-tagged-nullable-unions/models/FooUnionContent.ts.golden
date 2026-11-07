@@ -4,6 +4,14 @@
  * TypeScript Fetch VP CamelCase Masked Regression Test — 1.0.0
  * Masked fixture for TypeScript Fetch camelCase regression coverage.
  */
+import {
+  matches$2FromJSON,
+  matches$2ToJSON,
+  matches$6FromJSON,
+  matches$6ToJSON,
+} from '../runtime/unionMatch';
+import type { Value$0, Value$0Wire } from '../runtime/valueConversion$0';
+import { convert$0FromJSON, convert$0ToJSON } from '../runtime/valueConversion$0';
 import type { FooArrayPart, FooArrayPart$Wire } from './FooArrayPart';
 
 export type FooUnionContent$Wire = string | readonly FooArrayPart$Wire[];
@@ -11,9 +19,23 @@ export type FooUnionContent$Wire = string | readonly FooArrayPart$Wire[];
 export type FooUnionContent = string | readonly FooArrayPart[];
 
 export function fooUnionContentFromJSON(json: FooUnionContent$Wire): FooUnionContent {
+  const candidate: unknown = json;
+  if (matches$2FromJSON(candidate)) {
+    return json as unknown as string;
+  }
+  if (matches$6FromJSON(candidate)) {
+    return convert$0FromJSON(json as unknown as Value$0Wire);
+  }
   return json as unknown as FooUnionContent;
 }
 
 export function fooUnionContentToJSON(value: FooUnionContent): FooUnionContent$Wire {
+  const candidate: unknown = value;
+  if (matches$2ToJSON(candidate)) {
+    return value as unknown as string;
+  }
+  if (matches$6ToJSON(candidate)) {
+    return convert$0ToJSON(value as unknown as Value$0);
+  }
   return value as unknown as FooUnionContent$Wire;
 }

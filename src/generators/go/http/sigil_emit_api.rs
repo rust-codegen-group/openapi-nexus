@@ -278,7 +278,7 @@ fn collect_body_imports(plans: &[OpPlan<'_>], module_path: &str) -> Vec<ImportSp
 }
 
 fn collect_stringify_imports(t: &IrTypeExpr, pkgs: &mut BTreeSet<String>) {
-    match t {
+    match t.representation() {
         IrTypeExpr::Primitive(
             IrPrimitive::String
             | IrPrimitive::Date
@@ -313,7 +313,7 @@ fn collect_stringify_imports(t: &IrTypeExpr, pkgs: &mut BTreeSet<String>) {
 
 fn is_stringish_primitive(t: &IrTypeExpr) -> bool {
     matches!(
-        t,
+        t.representation(),
         IrTypeExpr::Primitive(
             IrPrimitive::String
                 | IrPrimitive::Date
@@ -1869,7 +1869,7 @@ fn go_field_name(name: &str) -> String {
 }
 
 fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
-    match t {
+    match t.representation() {
         IrTypeExpr::Primitive(
             IrPrimitive::String
             | IrPrimitive::Date
@@ -1899,7 +1899,7 @@ fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
                 format!("strings.Join({value_expr}, \",\")")
             } else {
                 let (item_expr, item_type) =
-                    if let IrTypeExpr::Nullable(real_inner) = inner.as_ref() {
+                    if let IrTypeExpr::Nullable(real_inner) = inner.representation() {
                         ("*v", real_inner.as_ref())
                     } else {
                         ("v", inner.as_ref())
@@ -1920,6 +1920,7 @@ fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
 
 fn go_type_str(expr: &IrTypeExpr) -> String {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => go_type_str(representation),
         IrTypeExpr::Named(name) => format!("models.{}", name.to_pascal_case()),
         IrTypeExpr::Primitive(p) => go_primitive(p).to_string(),
         IrTypeExpr::Array(inner) => format!("[]{}", go_type_str(inner)),

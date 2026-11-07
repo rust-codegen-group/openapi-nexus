@@ -31,6 +31,19 @@ pub enum Toolchain {
     Vp,
 }
 
+/// Runtime selection policy for camelCase untagged-union converters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum UntaggedUnionStrategy {
+    /// Convert the first structurally matching member; preserve unmatched input.
+    #[default]
+    FirstMatch,
+    /// Reject ambiguous or unmatched structural shapes at conversion time.
+    Strict,
+    /// Keep the union in its original wire representation without conversion.
+    Raw,
+}
+
 /// TypeScript Fetch generator-specific configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptFetchConfig {
@@ -88,6 +101,10 @@ pub struct TypeScriptFetchConfig {
     ///   interfaces and `fromJSON`/`toJSON` conversion functions.
     #[serde(default)]
     pub property_naming: PropertyNaming,
+
+    /// Selection behavior for untagged unions in camelCase mode.
+    #[serde(default)]
+    pub untagged_union_strategy: UntaggedUnionStrategy,
 
     /// Toolchain for type checking and building.
     ///
@@ -178,6 +195,7 @@ impl Default for TypeScriptFetchConfig {
             emit_enum_constants: false,
             emit_type_guards: false,
             property_naming: PropertyNaming::default(),
+            untagged_union_strategy: UntaggedUnionStrategy::default(),
             toolchain: Toolchain::default(),
             indent: default_indent(),
         }
@@ -197,5 +215,31 @@ impl From<toml::value::Table> for TypeScriptFetchConfig {
                 Self::default()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn untagged_union_selection_policy_is_explicit_and_defaults_to_first_match() {
+        let default: TypeScriptFetchConfig = toml::from_str("").unwrap();
+        assert_eq!(
+            default.untagged_union_strategy,
+            UntaggedUnionStrategy::FirstMatch
+        );
+        for (value, expected) in [
+            ("firstMatch", UntaggedUnionStrategy::FirstMatch),
+            ("strict", UntaggedUnionStrategy::Strict),
+            ("raw", UntaggedUnionStrategy::Raw),
+        ] {
+            let config: TypeScriptFetchConfig =
+                toml::from_str(&format!("untagged_union_strategy = '{value}'")).unwrap();
+            assert_eq!(config.untagged_union_strategy, expected);
+        }
+        assert!(
+            toml::from_str::<TypeScriptFetchConfig>("untagged_union_strategy = 'unknown'").is_err()
+        );
     }
 }

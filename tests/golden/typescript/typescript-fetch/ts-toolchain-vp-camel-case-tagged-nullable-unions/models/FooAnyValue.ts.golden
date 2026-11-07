@@ -4,4 +4,16 @@
  * TypeScript Fetch VP CamelCase Masked Regression Test — 1.0.0
  * Masked fixture for TypeScript Fetch camelCase regression coverage.
  */
+import { convert$1FromJSON, convert$1ToJSON } from '../runtime/valueConversion$1';
+
+export type FooAnyValue$Wire = unknown;
+
 export type FooAnyValue = unknown;
+
+export function fooAnyValueFromJSON(json: FooAnyValue$Wire): FooAnyValue {
+  return convert$1FromJSON(json);
+}
+
+export function fooAnyValueToJSON(value: FooAnyValue): FooAnyValue$Wire {
+  return convert$1ToJSON(value);
+}

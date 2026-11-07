@@ -7,11 +7,12 @@ import type {
   AllOfJsonDictionaryAllOf1,
   AllOfJsonDictionaryAllOf1$Wire,
 } from './AllOfJsonDictionaryAllOf1';
-import type { AnyJsonValue } from './AnyJsonValue';
+import type { AnyJsonValue, AnyJsonValue$Wire } from './AnyJsonValue';
+import { anyJsonValueFromJSON, anyJsonValueToJSON } from './AnyJsonValue';
 import { detailFromJSON, detailToJSON } from './Detail';
 
 export type AllOfJsonDictionary$Wire = Readonly<
-  AllOfJsonDictionaryAllOf1$Wire & Record<string, AnyJsonValue>
+  AllOfJsonDictionaryAllOf1$Wire & Record<string, AnyJsonValue$Wire>
 >;
 
 export type AllOfJsonDictionary = Readonly<
@@ -26,7 +27,7 @@ export function allOfJsonDictionaryFromJSON(json: AllOfJsonDictionary$Wire): All
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueFromJSON(additionalValue)] as const;
     }),
   );
   const visibleProperties = Object.fromEntries(
@@ -65,7 +66,7 @@ export function allOfJsonDictionaryToJSON(value: AllOfJsonDictionary): AllOfJson
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, anyJsonValueToJSON(additionalValue)] as const;
     }),
   );
   const result = {

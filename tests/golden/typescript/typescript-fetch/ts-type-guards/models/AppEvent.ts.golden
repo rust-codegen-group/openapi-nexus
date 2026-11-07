@@ -7,27 +7,26 @@ import type { ClickEvent } from './ClickEvent';
 import type { KeyEvent } from './KeyEvent';
 import type { ScrollEvent } from './ScrollEvent';
 
-/** An application event */
-
+/**
+ * An application event
+ */
 export type AppEvent =
-  | ({ eventType: 'ClickEvent' } & ClickEvent)
-  | ({ eventType: 'ScrollEvent' } & ScrollEvent)
-  | ({ eventType: 'KeyEvent' } & KeyEvent);
+  | (Record<'eventType', 'ClickEvent'> & ClickEvent)
+  | (Record<'eventType', 'ScrollEvent'> & ScrollEvent)
+  | (Record<'eventType', 'KeyEvent'> & KeyEvent);
 
-export function isClickEvent(value: AppEvent): value is {
-  eventType: 'ClickEvent';
-} & ClickEvent {
-  return value.eventType === 'ClickEvent';
+export function isClickEvent(
+  value: AppEvent,
+): value is Record<'eventType', 'ClickEvent'> & ClickEvent {
+  return value['eventType'] === 'ClickEvent';
 }
 
-export function isScrollEvent(value: AppEvent): value is {
-  eventType: 'ScrollEvent';
-} & ScrollEvent {
-  return value.eventType === 'ScrollEvent';
+export function isScrollEvent(
+  value: AppEvent,
+): value is Record<'eventType', 'ScrollEvent'> & ScrollEvent {
+  return value['eventType'] === 'ScrollEvent';
 }
 
-export function isKeyEvent(value: AppEvent): value is {
-  eventType: 'KeyEvent';
-} & KeyEvent {
-  return value.eventType === 'KeyEvent';
+export function isKeyEvent(value: AppEvent): value is Record<'eventType', 'KeyEvent'> & KeyEvent {
+  return value['eventType'] === 'KeyEvent';
 }

@@ -13,37 +13,41 @@ import {
 } from './SearchStreamEventResponseWebSearchCallSearching';
 
 export type SearchStreamEvent$Wire =
-  | ({
-      type: 'response.web_search_call.searching';
-    } & SearchStreamEventResponseWebSearchCallSearching$Wire)
-  | { type: 'response.completed' };
+  | (Record<'type', 'response.web_search_call.searching'> &
+      SearchStreamEventResponseWebSearchCallSearching$Wire)
+  | Record<'type', 'response.completed'>;
 
 export type SearchStreamEvent =
-  | ({
-      type: 'response.web_search_call.searching';
-    } & SearchStreamEventResponseWebSearchCallSearching)
-  | { type: 'response.completed' };
+  | (Record<'type', 'response.web_search_call.searching'> &
+      SearchStreamEventResponseWebSearchCallSearching)
+  | Record<'type', 'response.completed'>;
 
 export function searchStreamEventFromJSON(json: SearchStreamEvent$Wire): SearchStreamEvent {
-  switch (json.type) {
-    case 'response.web_search_call.searching':
-      return {
-        ...searchStreamEventResponseWebSearchCallSearchingFromJSON(json),
-        type: 'response.web_search_call.searching',
-      };
-    case 'response.completed':
-      return { type: 'response.completed' };
+  if (json['type'] === 'response.web_search_call.searching') {
+    return {
+      ...searchStreamEventResponseWebSearchCallSearchingFromJSON(
+        json as unknown as SearchStreamEventResponseWebSearchCallSearching$Wire,
+      ),
+      ['type']: 'response.web_search_call.searching',
+    } as SearchStreamEvent;
   }
+  if (json['type'] === 'response.completed') {
+    return { ['type']: 'response.completed' } as SearchStreamEvent;
+  }
+  throw new Error('Unknown variant');
 }
 
 export function searchStreamEventToJSON(value: SearchStreamEvent): SearchStreamEvent$Wire {
-  switch (value.type) {
-    case 'response.web_search_call.searching':
-      return {
-        ...searchStreamEventResponseWebSearchCallSearchingToJSON(value),
-        type: 'response.web_search_call.searching',
-      } as SearchStreamEvent$Wire;
-    case 'response.completed':
-      return { type: 'response.completed' } as SearchStreamEvent$Wire;
+  if (value['type'] === 'response.web_search_call.searching') {
+    return {
+      ...searchStreamEventResponseWebSearchCallSearchingToJSON(
+        value as unknown as SearchStreamEventResponseWebSearchCallSearching,
+      ),
+      ['type']: 'response.web_search_call.searching',
+    } as SearchStreamEvent$Wire;
   }
+  if (value['type'] === 'response.completed') {
+    return { ['type']: 'response.completed' } as SearchStreamEvent$Wire;
+  }
+  throw new Error('Unknown variant');
 }

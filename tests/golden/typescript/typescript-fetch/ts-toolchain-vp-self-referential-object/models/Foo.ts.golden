@@ -3,6 +3,7 @@
  *
  * Self-Referential Object Test — 1.0.0
  */
+import { convert$0FromJSON, convert$0ToJSON } from '../runtime/valueConversion$0';
 import type { Bar, Bar$Wire } from './Bar';
 import { barFromJSON, barToJSON } from './Bar';
 
@@ -18,16 +19,14 @@ export interface Foo {
 
 export function fooFromJSON(json: Foo$Wire): Foo {
   return {
-    children:
-      json.children !== undefined ? json.children.map((item) => fooFromJSON(item)) : undefined,
+    children: json.children !== undefined ? convert$0FromJSON(json.children) : undefined,
     relatedBar: barFromJSON(json.related_bar),
   };
 }
 
 export function fooToJSON(value: Foo): Foo$Wire {
   return {
-    children:
-      value.children !== undefined ? value.children.map((item) => fooToJSON(item)) : undefined,
+    children: value.children !== undefined ? convert$0ToJSON(value.children) : undefined,
     related_bar: barToJSON(value.relatedBar),
   };
 }

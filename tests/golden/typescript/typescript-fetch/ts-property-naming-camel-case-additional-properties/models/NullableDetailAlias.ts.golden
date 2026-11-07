@@ -3,6 +3,7 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { matches$5FromJSON, matches$5ToJSON } from '../runtime/unionMatch';
 import type { DetailAliasChain, DetailAliasChain$Wire } from './DetailAliasChain';
 import { detailAliasChainFromJSON, detailAliasChainToJSON } from './DetailAliasChain';
 
@@ -11,9 +12,23 @@ export type NullableDetailAlias$Wire = DetailAliasChain$Wire | null;
 export type NullableDetailAlias = DetailAliasChain | null;
 
 export function nullableDetailAliasFromJSON(json: NullableDetailAlias$Wire): NullableDetailAlias {
-  return json != null ? detailAliasChainFromJSON(json) : null;
+  const candidate: unknown = json;
+  if (matches$5FromJSON(candidate)) {
+    return detailAliasChainFromJSON(json as unknown as DetailAliasChain$Wire);
+  }
+  if (candidate === null) {
+    return null;
+  }
+  return json as unknown as NullableDetailAlias;
 }
 
 export function nullableDetailAliasToJSON(value: NullableDetailAlias): NullableDetailAlias$Wire {
-  return value != null ? detailAliasChainToJSON(value) : null;
+  const candidate: unknown = value;
+  if (matches$5ToJSON(candidate)) {
+    return detailAliasChainToJSON(value as unknown as DetailAliasChain);
+  }
+  if (candidate === null) {
+    return null;
+  }
+  return value as unknown as NullableDetailAlias$Wire;
 }

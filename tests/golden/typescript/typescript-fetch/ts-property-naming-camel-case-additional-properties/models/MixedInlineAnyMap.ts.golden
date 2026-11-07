@@ -3,6 +3,8 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { convert$1FromJSON, convert$1ToJSON } from '../runtime/valueConversion$1';
+
 export interface MixedInlineAnyMap$Wire extends Readonly<Record<string, unknown>> {
   readonly known?: string;
 }
@@ -19,7 +21,7 @@ export function mixedInlineAnyMapFromJSON(json: MixedInlineAnyMap$Wire): MixedIn
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, convert$1FromJSON(additionalValue)] as const;
     }),
   );
   const result = {
@@ -37,7 +39,7 @@ export function mixedInlineAnyMapToJSON(value: MixedInlineAnyMap): MixedInlineAn
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value;
-      return [key, additionalValue] as const;
+      return [key, convert$1ToJSON(additionalValue)] as const;
     }),
   );
   const result = {

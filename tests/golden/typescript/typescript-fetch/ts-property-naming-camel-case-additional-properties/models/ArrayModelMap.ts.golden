@@ -3,8 +3,8 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { convert$3FromJSON, convert$3ToJSON } from '../runtime/valueConversion$3';
 import type { Detail, Detail$Wire } from './Detail';
-import { detailFromJSON, detailToJSON } from './Detail';
 
 export interface ArrayModelMap$Wire extends Readonly<
   Record<string, readonly Detail$Wire[] | number>
@@ -24,7 +24,7 @@ export function arrayModelMapFromJSON(json: ArrayModelMap$Wire): ArrayModelMap {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as readonly Detail$Wire[];
-      return [key, additionalValue.map((item) => detailFromJSON(item))] as const;
+      return [key, convert$3FromJSON(additionalValue)] as const;
     }),
   );
   const visibleProperties = Object.fromEntries(
@@ -63,7 +63,7 @@ export function arrayModelMapToJSON(value: ArrayModelMap): ArrayModelMap$Wire {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as readonly Detail[];
-      return [key, additionalValue.map((item) => detailToJSON(item))] as const;
+      return [key, convert$3ToJSON(additionalValue)] as const;
     }),
   );
   const result = {

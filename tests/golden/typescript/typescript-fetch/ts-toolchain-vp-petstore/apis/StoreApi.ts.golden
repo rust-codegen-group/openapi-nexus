@@ -263,7 +263,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     requestParameters: ApiPlaceOrderRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<PlaceOrderRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling placeOrderRaw().',
@@ -338,7 +338,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     requestParameters: ApiGetOrderByIdRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<GetOrderByIdRawResponse> {
-    if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
+    if (requestParameters['orderId'] === undefined || requestParameters['orderId'] === null) {
       throw new RequiredError(
         'orderId',
         'Required parameter "orderId" was null or undefined when calling getOrderByIdRaw().',
@@ -421,7 +421,7 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     requestParameters: ApiDeleteOrderRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<DeleteOrderRawResponse> {
-    if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
+    if (requestParameters['orderId'] === undefined || requestParameters['orderId'] === null) {
       throw new RequiredError(
         'orderId',
         'Required parameter "orderId" was null or undefined when calling deleteOrderRaw().',

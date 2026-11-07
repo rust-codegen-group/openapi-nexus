@@ -530,7 +530,7 @@ fn emit_union(
 }
 
 fn union_variant_name(expr: &IrTypeExpr, index: usize) -> String {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(n) => n.to_pascal_case(),
         IrTypeExpr::Primitive(p) => primitive_variant_name(p),
         IrTypeExpr::Array(_) => format!("Array{index}"),
@@ -886,6 +886,7 @@ fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject>
 
 pub fn rust_type_str(expr: &IrTypeExpr) -> String {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => rust_type_str(representation),
         IrTypeExpr::Named(name) => name.to_pascal_case(),
         IrTypeExpr::Primitive(p) => rust_primitive(p).to_string(),
         IrTypeExpr::Array(inner) => format!("Vec<{}>", rust_type_str(inner)),
@@ -902,7 +903,7 @@ pub fn rust_type_str(expr: &IrTypeExpr) -> String {
 /// Map an IR type to a Rust type string, qualified for use from API modules.
 /// Named references to suppressed primitive aliases are resolved to the primitive type.
 pub fn rust_type_str_qualified(expr: &IrTypeExpr, ir: &IrSpec) -> String {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(name) => {
             if let Some(schema) = ir.schemas.get(name)
                 && let IrSchemaKind::Alias(inner) = &schema.kind
@@ -924,7 +925,7 @@ pub fn rust_type_str_qualified(expr: &IrTypeExpr, ir: &IrSpec) -> String {
 
 /// Map an IR type for use within model files (sibling references use `super::`).
 fn rust_type_str_model(expr: &IrTypeExpr) -> String {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(name) => format!("super::{}", name.to_pascal_case()),
         IrTypeExpr::Array(inner) => format!("Vec<{}>", rust_type_str_model(inner)),
         IrTypeExpr::Map(inner) => format!(
@@ -1019,7 +1020,7 @@ fn collect_named_type_refs(schema: &IrSchema) -> Vec<&str> {
 }
 
 fn collect_named_from_expr<'a>(expr: &'a IrTypeExpr, refs: &mut Vec<&'a str>) {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(name) => refs.push(name.as_str()),
         IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
             collect_named_from_expr(inner, refs);

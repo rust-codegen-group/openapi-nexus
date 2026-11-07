@@ -17,6 +17,6 @@ import type { EventEventCreated } from './EventEventCreated';
 import type { EventEventUpdated } from './EventEventUpdated';
 
 export type Event =
-  | { kind: 'EVENT_UNSPECIFIED' }
-  | ({ kind: 'EVENT_CREATED' } & EventEventCreated)
-  | ({ kind: 'EVENT_UPDATED' } & EventEventUpdated);
+  | Record<'kind', 'EVENT_UNSPECIFIED'>
+  | (Record<'kind', 'EVENT_CREATED'> & EventEventCreated)
+  | (Record<'kind', 'EVENT_UPDATED'> & EventEventUpdated);

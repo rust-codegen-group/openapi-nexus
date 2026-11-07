@@ -6,6 +6,7 @@
  */
 import type { BasicObject } from './BasicObject';
 
-/** Union of string, null, and schema reference */
-
+/**
+ * Union of string, null, and schema reference
+ */
 export type OneOfWithNull = string | BasicObject | null;

@@ -117,41 +117,67 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     const headerParameters: Record<string, string> = {};
 
     // Prepare request body
+    const multipartBody = requestParameters['body'];
     let requestBody: Blob | undefined = undefined;
-    if (requestParameters.body !== undefined && requestParameters.body !== null) {
-    const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
-    const multipartChunks: Array<string | Blob> = [];
-    headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
-    if (requestParameters.body.attributes !== undefined && requestParameters.body.attributes !== null) {
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="attributes"\r\nContent-Type: application/json\r\n\r\n');
-    multipartChunks.push(JSON.stringify(requestParameters.body.attributes));
-    multipartChunks.push('\r\n');
-    }
-    if (requestParameters.body.enabled !== undefined && requestParameters.body.enabled !== null) {
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="enabled"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.enabled));
-    multipartChunks.push('\r\n');
-    }
-    if (requestParameters.body.file !== undefined && requestParameters.body.file !== null) {
-    {
-    const multipartFilename = uploadFileFilename(requestParameters.body.file, 'file');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + multipartHeaderValue(multipartFilename) + '"\r\nContent-Type: application/octet-stream\r\n\r\n');
-    multipartChunks.push(uploadFileData(requestParameters.body.file));
-    multipartChunks.push('\r\n');
-    }
-    }
-    if (requestParameters.body.retry_count !== undefined && requestParameters.body.retry_count !== null) {
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="retry_count"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.retry_count));
-    multipartChunks.push('\r\n');
-    }
-    if (requestParameters.body.title !== undefined && requestParameters.body.title !== null) {
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="title"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.title));
-    multipartChunks.push('\r\n');
-    }
-    multipartChunks.push('--' + multipartBoundary + '--\r\n');
-    requestBody = new Blob(multipartChunks);
+    if (multipartBody !== undefined && multipartBody !== null) {
+      const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
+      const multipartChunks: Array<string | Blob> = [];
+      headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
+      const multipartValue$0 = multipartBody['attributes'];
+      if (multipartValue$0 !== undefined && multipartValue$0 !== null) {
+        multipartChunks.push(
+          '--',
+          multipartBoundary,
+          '\r\nContent-Disposition: form-data; name="attributes"\r\nContent-Type: application/json\r\n\r\n',
+        );
+        multipartChunks.push(JSON.stringify(multipartValue$0));
+        multipartChunks.push('\r\n');
+      }
+      const multipartValue$1 = multipartBody['enabled'];
+      if (multipartValue$1 !== undefined && multipartValue$1 !== null) {
+        multipartChunks.push(
+          '--',
+          multipartBoundary,
+          '\r\nContent-Disposition: form-data; name="enabled"\r\nContent-Type: text/plain\r\n\r\n',
+        );
+        multipartChunks.push(String(multipartValue$1));
+        multipartChunks.push('\r\n');
+      }
+      const multipartValue$2 = multipartBody['file'];
+      if (multipartValue$2 !== undefined && multipartValue$2 !== null) {
+        const multipartFilename$2 = uploadFileFilename(multipartValue$2, 'file');
+        multipartChunks.push(
+          '--',
+          multipartBoundary,
+          '\r\nContent-Disposition: form-data; name="file"; filename="',
+          multipartHeaderValue(multipartFilename$2),
+          '"\r\nContent-Type: application/octet-stream\r\n\r\n',
+        );
+        multipartChunks.push(uploadFileData(multipartValue$2));
+        multipartChunks.push('\r\n');
+      }
+      const multipartValue$3 = multipartBody['retry_count'];
+      if (multipartValue$3 !== undefined && multipartValue$3 !== null) {
+        multipartChunks.push(
+          '--',
+          multipartBoundary,
+          '\r\nContent-Disposition: form-data; name="retry_count"\r\nContent-Type: text/plain\r\n\r\n',
+        );
+        multipartChunks.push(String(multipartValue$3));
+        multipartChunks.push('\r\n');
+      }
+      const multipartValue$4 = multipartBody['title'];
+      if (multipartValue$4 !== undefined && multipartValue$4 !== null) {
+        multipartChunks.push(
+          '--',
+          multipartBoundary,
+          '\r\nContent-Disposition: form-data; name="title"\r\nContent-Type: text/plain\r\n\r\n',
+        );
+        multipartChunks.push(String(multipartValue$4));
+        multipartChunks.push('\r\n');
+      }
+      multipartChunks.push('--' + multipartBoundary + '--\r\n');
+      requestBody = new Blob(multipartChunks);
     }
     // Make request
     const response = await this.request(
@@ -200,7 +226,7 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     requestParameters: ApiSendTextFieldsRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<SendTextFieldsRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling sendTextFieldsRaw().',
@@ -214,17 +240,33 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     const headerParameters: Record<string, string> = {};
 
     // Prepare request body
+    const multipartBody = requestParameters['body'];
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
     const multipartChunks: Array<string | Blob> = [];
     headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="enabled"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.enabled));
+    const multipartValue$0 = multipartBody['enabled'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="enabled"\r\nContent-Type: text/plain\r\n\r\n',
+    );
+    multipartChunks.push(String(multipartValue$0));
     multipartChunks.push('\r\n');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="note"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.note));
+    const multipartValue$1 = multipartBody['note'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="note"\r\nContent-Type: text/plain\r\n\r\n',
+    );
+    multipartChunks.push(String(multipartValue$1));
     multipartChunks.push('\r\n');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="retry_count"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.retry_count));
+    const multipartValue$2 = multipartBody['retry_count'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="retry_count"\r\nContent-Type: text/plain\r\n\r\n',
+    );
+    multipartChunks.push(String(multipartValue$2));
     multipartChunks.push('\r\n');
     multipartChunks.push('--' + multipartBoundary + '--\r\n');
     const requestBody = new Blob(multipartChunks);

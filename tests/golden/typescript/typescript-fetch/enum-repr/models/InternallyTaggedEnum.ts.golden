@@ -7,11 +7,12 @@
 import type { VariantA } from './VariantA';
 import type { VariantB } from './VariantB';
 
-/** Internally tagged enum
+/**
+ * Internally tagged enum
 
 The tag is a field inside the object alongside other fields:
-`{"ty": "VariantA", "field1": "...", "field2": 123}` */
-
+`{"ty": "VariantA", "field1": "...", "field2": 123}`
+ */
 export type InternallyTaggedEnum =
-  | ({ ty: 'INTERNALLY_TAGGED_ENUM_VARIANT_A' } & VariantA)
-  | ({ ty: 'INTERNALLY_TAGGED_ENUM_VARIANT_B' } & VariantB);
+  | (Record<'ty', 'INTERNALLY_TAGGED_ENUM_VARIANT_A'> & VariantA)
+  | (Record<'ty', 'INTERNALLY_TAGGED_ENUM_VARIANT_B'> & VariantB);

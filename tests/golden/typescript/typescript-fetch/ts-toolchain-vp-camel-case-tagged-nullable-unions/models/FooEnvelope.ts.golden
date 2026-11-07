@@ -6,7 +6,8 @@
  */
 import type { FooAdjacentPayload, FooAdjacentPayload$Wire } from './FooAdjacentPayload';
 import { fooAdjacentPayloadFromJSON, fooAdjacentPayloadToJSON } from './FooAdjacentPayload';
-import type { FooAnyValue } from './FooAnyValue';
+import type { FooAnyValue, FooAnyValue$Wire } from './FooAnyValue';
+import { fooAnyValueFromJSON, fooAnyValueToJSON } from './FooAnyValue';
 import type { FooMappedTagUnion, FooMappedTagUnion$Wire } from './FooMappedTagUnion';
 import { fooMappedTagUnionFromJSON, fooMappedTagUnionToJSON } from './FooMappedTagUnion';
 import type { FooNullableRefHolder, FooNullableRefHolder$Wire } from './FooNullableRefHolder';
@@ -20,7 +21,7 @@ import { fooUnionContentFromJSON, fooUnionContentToJSON } from './FooUnionConten
 
 export interface FooEnvelope$Wire {
   readonly adjacent_payload: FooAdjacentPayload$Wire;
-  readonly any_value: FooAnyValue;
+  readonly any_value: FooAnyValue$Wire;
   readonly mapped_tag_union: FooMappedTagUnion$Wire;
   readonly nullable_ref_holder: FooNullableRefHolder$Wire;
   readonly tag_only_union: FooTagOnlyUnion$Wire;
@@ -41,7 +42,7 @@ export interface FooEnvelope {
 export function fooEnvelopeFromJSON(json: FooEnvelope$Wire): FooEnvelope {
   return {
     adjacentPayload: fooAdjacentPayloadFromJSON(json.adjacent_payload),
-    anyValue: json.any_value,
+    anyValue: fooAnyValueFromJSON(json.any_value),
     mappedTagUnion: fooMappedTagUnionFromJSON(json.mapped_tag_union),
     nullableRefHolder: fooNullableRefHolderFromJSON(json.nullable_ref_holder),
     tagOnlyUnion: fooTagOnlyUnionFromJSON(json.tag_only_union),
@@ -53,7 +54,7 @@ export function fooEnvelopeFromJSON(json: FooEnvelope$Wire): FooEnvelope {
 export function fooEnvelopeToJSON(value: FooEnvelope): FooEnvelope$Wire {
   return {
     adjacent_payload: fooAdjacentPayloadToJSON(value.adjacentPayload),
-    any_value: value.anyValue,
+    any_value: fooAnyValueToJSON(value.anyValue),
     mapped_tag_union: fooMappedTagUnionToJSON(value.mappedTagUnion),
     nullable_ref_holder: fooNullableRefHolderToJSON(value.nullableRefHolder),
     tag_only_union: fooTagOnlyUnionToJSON(value.tagOnlyUnion),

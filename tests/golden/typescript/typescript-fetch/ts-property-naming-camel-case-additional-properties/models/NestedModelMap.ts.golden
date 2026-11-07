@@ -3,8 +3,8 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
+import { convert$5FromJSON, convert$5ToJSON } from '../runtime/valueConversion$5';
 import type { Detail, Detail$Wire } from './Detail';
-import { detailFromJSON, detailToJSON } from './Detail';
 
 export interface NestedModelMap$Wire extends Readonly<
   Record<string, Record<string, Detail$Wire> | number>
@@ -24,9 +24,7 @@ export function nestedModelMapFromJSON(json: NestedModelMap$Wire): NestedModelMa
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as Record<string, Detail$Wire>;
-      const convertedValue = Object.fromEntries(
-        Object.entries(additionalValue ?? {}).map(([k, v]) => [k, detailFromJSON(v)]),
-      );
+      const convertedValue = convert$5FromJSON(additionalValue);
       return [key, convertedValue] as const;
     }),
   );
@@ -66,9 +64,7 @@ export function nestedModelMapToJSON(value: NestedModelMap): NestedModelMap$Wire
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as Record<string, Detail>;
-      const convertedValue = Object.fromEntries(
-        Object.entries(additionalValue ?? {}).map(([k, v]) => [k, detailToJSON(v)]),
-      );
+      const convertedValue = convert$5ToJSON(additionalValue);
       return [key, convertedValue] as const;
     }),
   );

@@ -333,7 +333,7 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
     requestParameters: ApiCreateResourceRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateResourceRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createResourceRaw().',
@@ -474,7 +474,7 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
     requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateResourceWithWildcardSuccessRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createResourceWithWildcardSuccessRaw().',

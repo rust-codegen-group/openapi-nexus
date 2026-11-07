@@ -4,6 +4,7 @@
  * Comprehensive Schema Types Example — 1.0.0
  * Comprehensive test for all OpenAPI v3.1.2 schema types
  */
-/** Boolean type */
-
+/**
+ * Boolean type
+ */
 export type BooleanType = boolean;

@@ -87,13 +87,13 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     requestParameters: ApiCreateItemWithBodyConflictRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateItemWithBodyConflictRawResponse> {
-    if (requestParameters.itemId === undefined || requestParameters.itemId === null) {
+    if (requestParameters['itemId'] === undefined || requestParameters['itemId'] === null) {
       throw new RequiredError(
         'itemId',
         'Required parameter "itemId" was null or undefined when calling createItemWithBodyConflictRaw().',
       );
     }
-    if (requestParameters.bodyBody === undefined || requestParameters.bodyBody === null) {
+    if (requestParameters['bodyBody'] === undefined || requestParameters['bodyBody'] === null) {
       throw new RequiredError(
         'bodyBody',
         'Required parameter "bodyBody" was null or undefined when calling createItemWithBodyConflictRaw().',

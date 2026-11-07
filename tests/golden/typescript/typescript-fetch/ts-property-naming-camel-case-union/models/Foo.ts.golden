@@ -4,18 +4,49 @@
  * Union Type with Interfaces Test — 1.0.0
  * Test fixture for oneOf/anyOf union types with interface members
  */
+import {
+  matches$0FromJSON,
+  matches$0ToJSON,
+  matches$3FromJSON,
+  matches$3ToJSON,
+  matches$5FromJSON,
+  matches$5ToJSON,
+} from '../runtime/unionMatch';
 import type { Bar, Bar$Wire } from './Bar';
+import { barFromJSON, barToJSON } from './Bar';
 import type { Baz, Baz$Wire } from './Baz';
+import { bazFromJSON, bazToJSON } from './Baz';
 import type { Qux, Qux$Wire } from './Qux';
+import { quxFromJSON, quxToJSON } from './Qux';
 
 export type Foo$Wire = Bar$Wire | Baz$Wire | Qux$Wire;
 
 export type Foo = Bar | Baz | Qux;
 
 export function fooFromJSON(json: Foo$Wire): Foo {
+  const candidate: unknown = json;
+  if (matches$0FromJSON(candidate)) {
+    return barFromJSON(json as unknown as Bar$Wire);
+  }
+  if (matches$3FromJSON(candidate)) {
+    return bazFromJSON(json as unknown as Baz$Wire);
+  }
+  if (matches$5FromJSON(candidate)) {
+    return quxFromJSON(json as unknown as Qux$Wire);
+  }
   return json as unknown as Foo;
 }
 
 export function fooToJSON(value: Foo): Foo$Wire {
+  const candidate: unknown = value;
+  if (matches$0ToJSON(candidate)) {
+    return barToJSON(value as unknown as Bar);
+  }
+  if (matches$3ToJSON(candidate)) {
+    return bazToJSON(value as unknown as Baz);
+  }
+  if (matches$5ToJSON(candidate)) {
+    return quxToJSON(value as unknown as Qux);
+  }
   return value as unknown as Foo$Wire;
 }

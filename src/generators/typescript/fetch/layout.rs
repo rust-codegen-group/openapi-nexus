@@ -8,6 +8,7 @@ use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::import::ImportGroup;
 use sigil_stitch::lang::capability::{FunctionContext, FunctionForm, LanguageCapabilities};
 use sigil_stitch::lang::{CodeLang, RendererLang};
+use sigil_stitch::prelude::sigil_quote;
 use sigil_stitch::spec::modifiers::{DeclarationContext, TypeKind, Visibility};
 use sigil_stitch::type_name::TypeName;
 
@@ -17,15 +18,14 @@ const WIDTH: usize = 100;
 pub struct TypeScript(sigil_stitch::lang::typescript::TypeScript);
 
 impl TypeScript {
-    fn width(&self, block: &CodeBlock) -> usize {
-        block
-            .render_standalone(&self.0, usize::MAX)
-            .expect("valid TypeScript fragment")
+    fn width(&self, block: &CodeBlock) -> Result<usize, SigilStitchError> {
+        Ok(block
+            .render_standalone(&self.0, usize::MAX)?
             .lines()
             .next()
             .unwrap_or("")
             .chars()
-            .count()
+            .count())
     }
 }
 
@@ -492,9 +492,14 @@ impl CodeLang for TypeScript {
         let width = (if top { 0 } else { self.indent_unit().len() })
             + prefix.chars().count()
             + 1
-            + parameters.iter().map(|p| self.width(p)).sum::<usize>()
+            + parameters
+                .iter()
+                .map(|p| self.width(p))
+                .collect::<Result<Vec<_>, _>>()?
+                .iter()
+                .sum::<usize>()
             + parameters.len().saturating_sub(1) * 2
-            + self.width(&suffix);
+            + self.width(&suffix)?;
         let multiline = !parameters.is_empty() && width > WIDTH;
         cb.add("%L(", prefix);
         if multiline {
@@ -551,7 +556,7 @@ impl TypeScript {
         depth: usize,
     ) -> Result<CodeBlock, SigilStitchError> {
         let fragment = CodeBlock::of("%T", ty.clone())?;
-        if column + self.width(&fragment) + 2 <= WIDTH {
+        if column + self.width(&fragment)? + 2 <= WIDTH {
             return Ok(fragment);
         }
         if let TypeName::Application { base, arguments } = ty {
@@ -584,11 +589,36 @@ impl TypeScript {
         depth: usize,
     ) -> Result<CodeBlock, SigilStitchError> {
         let inline = CodeBlock::of("%T", ty.clone())?;
+        if let TypeName::Intersection(parts) = ty
+            && column + self.width(&inline)? > WIDTH
+            && let Some((first, rest)) = parts.split_first()
+        {
+            use sigil_stitch::code_node::CodeNode;
+            let mut result =
+                sigil_quote!(TypeScript { $C(self.type_part(first, column, depth)?) })?;
+            result = super::layout::inline(result);
+            for part in rest {
+                // The type-name renderer has no width-aware intersection layout.
+                // Keep each member semantic and add only connector/layout nodes.
+                result.nodes_mut().extend([
+                    CodeNode::Literal(" &".into()),
+                    CodeNode::Newline,
+                    CodeNode::Indent,
+                    CodeNode::Nested(self.type_part(part, (depth + 1) * 2, depth + 1)?),
+                    CodeNode::Dedent,
+                ]);
+            }
+            let mut spaced = sigil_quote!(TypeScript {})?;
+            spaced
+                .nodes_mut()
+                .extend([CodeNode::Literal(" ".into()), CodeNode::Nested(result)]);
+            return Ok(spaced);
+        }
         if let TypeName::Callable {
             parameters,
             returns,
         } = ty
-            && column + self.width(&inline) > WIDTH
+            && column + self.width(&inline)? > WIDTH
         {
             use sigil_stitch::spec::where_spec::{CallableParam, CallableParamPresence};
             let mut cb = CodeBlock::builder();
@@ -624,7 +654,7 @@ impl TypeScript {
             );
             return cb.build();
         }
-        if column + self.width(&inline) <= WIDTH || !matches!(ty, TypeName::Union(_)) {
+        if column + self.width(&inline)? <= WIDTH || !matches!(ty, TypeName::Union(_)) {
             let mut cb = CodeBlock::builder();
             cb.add(" ", ());
             cb.add_code(self.type_part(ty, column, depth)?);
@@ -641,12 +671,24 @@ impl TypeScript {
             }
             if let TypeName::Intersection(parts) = member {
                 cb.add("| (", ());
-                let multiline = 5 + self.width(&CodeBlock::of("%T", member.clone())?) > WIDTH;
+                let multiline = 5 + self.width(&CodeBlock::of("%T", member.clone())?)? > WIDTH;
                 for (i, part) in parts.iter().enumerate() {
                     if i > 0 {
                         cb.add(if multiline { " &\n%>%>" } else { " & " }, ());
                     }
-                    cb.add("%T", part.clone());
+                    cb.add_code(self.type_part(
+                        part,
+                        if multiline && i > 0 {
+                            (depth + 3) * 2
+                        } else {
+                            5
+                        },
+                        if multiline && i > 0 {
+                            depth + 3
+                        } else {
+                            depth + 1
+                        },
+                    )?);
                     if multiline && i > 0 {
                         cb.add("%<%<", ());
                     }
@@ -678,38 +720,289 @@ pub(super) fn inline(mut block: CodeBlock) -> CodeBlock {
     block
 }
 
-pub(super) fn fragment_width(block: &CodeBlock) -> usize {
-    block
+pub(super) fn fragment_width(block: &CodeBlock) -> Result<usize, SigilStitchError> {
+    Ok(block
         .render_standalone(
             &sigil_stitch::lang::typescript::TypeScript::new(),
             usize::MAX,
-        )
-        .expect("valid TypeScript fragment")
+        )?
         .lines()
         .next()
         .unwrap_or("")
         .chars()
-        .count()
+        .count())
 }
 
-pub(super) fn return_object(fields: &[String], cast: Option<&str>, column: usize) -> String {
-    let suffix = cast.map_or_else(String::new, |ty| format!(" as {ty}"));
-    let inline = format!("return {{ {} }}{suffix};", fields.join(", "));
-    if column + inline.chars().count() <= WIDTH {
-        inline
+fn fits(block: &CodeBlock, column: usize) -> Result<bool, SigilStitchError> {
+    let rendered = block.render_standalone(
+        &TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new()),
+        usize::MAX,
+    )?;
+    Ok(
+        !rendered.trim_end().contains('\n')
+            && column + rendered.trim_end().chars().count() <= WIDTH,
+    )
+}
+
+fn delimited(
+    mut prefix: CodeBlock,
+    open: &'static str,
+    close: &'static str,
+    items: &[CodeBlock],
+    multiline: bool,
+) -> CodeBlock {
+    use sigil_stitch::code_node::CodeNode;
+    // sigil-stitch has no expression-list layout API; quoted object braces and
+    // parenthesized argument lists discard their boundary newlines. Only their
+    // static delimiters/whitespace live here. Items remain semantic quote trees.
+    let nodes = prefix.nodes_mut();
+    nodes.push(CodeNode::Literal(open.into()));
+    if multiline {
+        nodes.extend([CodeNode::Newline, CodeNode::Indent]);
+    }
+    for (index, item) in items.iter().enumerate() {
+        if index > 0 && !multiline {
+            nodes.push(CodeNode::Literal(", ".into()));
+        }
+        nodes.push(CodeNode::Nested(inline(item.clone())));
+        if multiline {
+            nodes.extend([CodeNode::Literal(",".into()), CodeNode::Newline]);
+        }
+    }
+    if multiline {
+        nodes.push(CodeNode::Dedent);
+    }
+    nodes.push(CodeNode::Literal(close.into()));
+    prefix
+}
+
+pub(super) fn call(
+    function: CodeBlock,
+    arguments: &[CodeBlock],
+    column: usize,
+) -> Result<CodeBlock, SigilStitchError> {
+    let flat = delimited(inline(function.clone()), "(", ")", arguments, false);
+    if fits(&flat, column)? {
+        return Ok(flat);
+    }
+    Ok(delimited(inline(function), "(", ")", arguments, true))
+}
+
+pub(super) fn block_arrow(mut parameters: CodeBlock, body: CodeBlock) -> CodeBlock {
+    use sigil_stitch::code_node::CodeNode;
+    // As with expression lists above, quotes do not retain the opening newline
+    // of a block-bodied arrow nested inside call parentheses.
+    parameters = inline(parameters);
+    parameters.nodes_mut().extend([
+        CodeNode::Literal(" => {".into()),
+        CodeNode::Newline,
+        CodeNode::Indent,
+        CodeNode::Nested(body),
+        CodeNode::Dedent,
+        CodeNode::Literal("}".into()),
+    ]);
+    parameters
+}
+
+pub(super) fn array(items: &[CodeBlock], column: usize) -> Result<CodeBlock, SigilStitchError> {
+    let flat = delimited(sigil_quote!(TypeScript {})?, "[", "]", items, false);
+    if fits(&flat, column)? {
+        return Ok(flat);
+    }
+    Ok(delimited(
+        sigil_quote!(TypeScript {})?,
+        "[",
+        "]",
+        items,
+        true,
+    ))
+}
+
+pub(super) fn const_value(
+    name: &str,
+    value: CodeBlock,
+    column: usize,
+) -> Result<CodeBlock, SigilStitchError> {
+    use sigil_stitch::code_node::CodeNode;
+    let flat = sigil_quote!(TypeScript { const $N(name) = $C(inline(value.clone())); })?;
+    if fits(&flat, column)? {
+        return Ok(flat);
+    }
+    // Local bindings have no declaration spec. Preserve the quoted identifier
+    // and expression, adding only the unsupported continuation indentation.
+    let mut prefix = inline(sigil_quote!(TypeScript { const $N(name) = })?);
+    prefix.nodes_mut().extend([
+        CodeNode::Newline,
+        CodeNode::Indent,
+        CodeNode::Nested(inline(value)),
+        CodeNode::Literal(";".into()),
+        CodeNode::Newline,
+        CodeNode::Dedent,
+    ]);
+    Ok(prefix)
+}
+
+pub(super) fn indexed_assertion(
+    value: CodeBlock,
+    ty: TypeName,
+    key: &str,
+    column: usize,
+) -> Result<CodeBlock, SigilStitchError> {
+    use sigil_stitch::code_node::CodeNode;
+    let flat = inline(sigil_quote!(TypeScript { ($C(value.clone()) as $T(ty.clone()))[$S(key)] })?);
+    if fits(&flat, column)? {
+        return Ok(flat);
+    }
+    let mut head = inline(sigil_quote!(TypeScript { ($C(value.clone()) as $T(ty.clone())) })?);
+    if fits(&head, column)? {
+        // A wide computed index, unlike an argument list, has no trailing comma.
+        // Its string key stays quoted semantically inside the layout group.
+        head.nodes_mut().extend([
+            CodeNode::Literal("[".into()),
+            CodeNode::Newline,
+            CodeNode::Indent,
+            CodeNode::Nested(inline(sigil_quote!(TypeScript { $S(key) })?)),
+            CodeNode::Newline,
+            CodeNode::Dedent,
+            CodeNode::Literal("]".into()),
+        ]);
+        return Ok(head);
+    }
+    let lang = TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new());
+    let mut assertion = inline(sigil_quote!(TypeScript { $C(value) as })?);
+    let ty = lang.type_expression(
+        &ty,
+        column + 2 + lang.width(&assertion)? + 1,
+        column / 2 + 1,
+    )?;
+    assertion.nodes_mut().push(CodeNode::Nested(ty));
+    // Quotes have no parenthesized-expression layout node. Keep the assertion's
+    // name/type and the indexed string semantic; only group punctuation is raw.
+    let mut group = sigil_quote!(TypeScript {})?;
+    group.nodes_mut().extend([
+        CodeNode::Literal("(".into()),
+        CodeNode::Newline,
+        CodeNode::Indent,
+        CodeNode::Nested(assertion),
+        CodeNode::Newline,
+        CodeNode::Dedent,
+        CodeNode::Literal(")".into()),
+    ]);
+    Ok(inline(sigil_quote!(TypeScript { $C(group)[$S(key)] })?))
+}
+
+pub(super) fn type_guard(
+    name: &str,
+    parent: TypeName,
+    narrowed: TypeName,
+    body: CodeBlock,
+) -> Result<CodeBlock, SigilStitchError> {
+    use sigil_stitch::code_node::CodeNode;
+    let lang = TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new());
+    let prefix = inline(sigil_quote!(TypeScript { export function $N(name) })?);
+    let parameter = inline(sigil_quote!(TypeScript { value: $T(parent) })?);
+    let suffix = inline(sigil_quote!(TypeScript { : value is $T(narrowed.clone()) })?);
+    let header = delimited(
+        prefix.clone(),
+        "(",
+        ")",
+        std::slice::from_ref(&parameter),
+        false,
+    );
+    let multiline = lang.width(&header)? + lang.width(&suffix)? + 2 > WIDTH;
+    let mut header = delimited(prefix, "(", ")", &[parameter], multiline);
+    let column = if multiline { 1 } else { lang.width(&header)? } + ": value is".len() + 1;
+    // FunSpec has no semantic type-predicate return slot. The small `value is`
+    // delimiter is the only raw syntax; both types and the body stay structured.
+    header.nodes_mut().extend([
+        CodeNode::Literal(": value is".into()),
+        CodeNode::Nested(lang.type_expression(&narrowed, column, 0)?),
+        CodeNode::Literal(" {".into()),
+        CodeNode::Newline,
+        CodeNode::Indent,
+        CodeNode::Nested(body),
+        CodeNode::Dedent,
+        CodeNode::Literal("}".into()),
+        CodeNode::Newline,
+    ]);
+    Ok(header)
+}
+
+pub(super) fn return_object(
+    fields: &[CodeBlock],
+    cast: Option<TypeName>,
+    column: usize,
+) -> Result<CodeBlock, SigilStitchError> {
+    let object = delimited(sigil_quote!(TypeScript {})?, "{ ", " }", fields, false);
+    let flat = if let Some(cast) = &cast {
+        sigil_quote!(TypeScript { return $C(object) as $T(cast.clone()); })?
     } else {
-        format!(
-            "return {{\n{}}}{suffix};",
-            fields
-                .iter()
-                .map(|field| format!("  {field},\n"))
-                .collect::<String>()
-        )
+        sigil_quote!(TypeScript { return $C(object); })?
+    };
+    if fits(&flat, column)? {
+        return Ok(flat);
+    }
+    let object = delimited(sigil_quote!(TypeScript {})?, "{", "}", fields, true);
+    if let Some(cast) = cast {
+        sigil_quote!(TypeScript { return $C(object) as $T(cast); })
+    } else {
+        sigil_quote!(TypeScript { return $C(object); })
     }
 }
 
 impl From<sigil_stitch::lang::typescript::TypeScript> for TypeScript {
     fn from(lang: sigil_stitch::lang::typescript::TypeScript) -> Self {
         Self(lang)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sigil_stitch::assert_rendered;
+
+    #[test]
+    fn expression_layout_keeps_semantic_imports_and_object_punctuation() {
+        let converter = TypeName::importable("./Detail", "detailFromJSON");
+        let argument = sigil_quote!(TypeScript { json as unknown as $T(TypeName::importable_type("./Detail", "Detail$Wire")) }).unwrap();
+        let call = call(
+            sigil_quote!(TypeScript { $T(converter) }).unwrap(),
+            &[argument],
+            80,
+        )
+        .unwrap();
+        let field = sigil_quote!(TypeScript { [$S("payload")]: $C(call) }).unwrap();
+        let block = return_object(&[field], Some(TypeName::primitive("Event")), 4).unwrap();
+        assert_rendered!(
+            TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new()),
+            width = 100,
+            block,
+            "import type { Detail$Wire } from './Detail';\nimport { detailFromJSON } from './Detail';\n\nreturn {\n  ['payload']: detailFromJSON(\n    json as unknown as Detail$Wire,\n  ),\n} as Event;\n"
+        );
+    }
+
+    #[test]
+    fn indexed_assertion_breaks_the_key_when_the_cast_head_fits() {
+        let payload = TypeName::importable_type(
+            "./Payload",
+            "FooAdjacentPayloadFooInlineObjectPayloadValue$Wire",
+        );
+        let ty = crate::generators::type_application(
+            TypeName::primitive("Record"),
+            vec![TypeName::string_literal("payload_value"), payload],
+        );
+        let block = indexed_assertion(
+            sigil_quote!(TypeScript { json }).unwrap(),
+            ty,
+            "payload_value",
+            8,
+        )
+        .unwrap();
+        assert_rendered!(
+            TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new()),
+            width = 100,
+            block,
+            "import type { FooAdjacentPayloadFooInlineObjectPayloadValue$Wire } from './Payload';\n\n(json as Record<'payload_value', FooAdjacentPayloadFooInlineObjectPayloadValue$Wire>)[\n  'payload_value'\n]\n"
+        );
     }
 }

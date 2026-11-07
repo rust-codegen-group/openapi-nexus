@@ -30,8 +30,67 @@ import type {
   MixedModelMap as PreservedModelMap,
   MixedStringMap as PreservedStringMap,
 } from './generated/preserve/dist/index.mjs';
+import type { Tool, Tool$Wire, ToolList, ToolMap, ToolRequest, BinaryUnion, AdjacentOrNumber, Outer, OpenAlias, InlineMixedValues, InlineMixedValues$Wire, MapWrapped, ArrayWrapped, DictionaryAlias, DictionaryAlias$Wire } from './generated/union-default/dist/index.mjs';
+import type { Tool as RawTool, BinaryUnion as RawBinaryUnion, AdjacentOrNumber as RawAdjacentOrNumber, AliasChoice as RawAliasChoice, ValueAlias as RawValueAlias, RawEnvelope } from './generated/union-raw/dist/index.mjs';
+import type { DictionaryAlias as StrictDictionaryAlias } from './generated/union-strict/dist/index.mjs';
+import type { ExchangeMultipartMultipartRequestBody as RawMultipartInput } from './generated/union-raw/dist/index.mjs';
+import type { NestedDetailLists } from './generated/union-default/dist/index.mjs';
+
+const unionTool: Tool = { name: 'weather', inputSchema: { type: 'object' } };
+const unionWire: Tool$Wire = { name: 'weather', input_schema: { type: 'object' } };
+const unionRequest: ToolRequest = { tools: [unionTool] };
+const unionList: ToolList = [{ name: 'weather', inputSchema: {} }];
+const unionMap: ToolMap = { arbitrary_key: { name: 'weather', inputSchema: {} } };
+const rawUnion: RawTool = unionWire;
+const binaryUnion: BinaryUnion = { binaryData: new Blob(['x']), fieldName: 'name' };
+const binaryUnionWire: RawBinaryUnion = { binary_data: new Blob(['x']), field_name: 'name' };
+const unitUnion: AdjacentOrNumber = { eventType: 'empty' };
+const unitUnionWire: RawAdjacentOrNumber = { event_type: 'empty' };
+const openOuter: Outer = { arbitrary_key: [null, 7] };
+const openAlias: OpenAlias = 'opaque';
+const inlineValues: InlineMixedValues = [{ keep_key: { wireName: 'Ada' } }, 'opaque'];
+const inlineWire: InlineMixedValues$Wire = [{ keep_key: { wire_name: 'Ada' } }, 'opaque'];
+const wrappedNull: MapWrapped = null;
+const wrappedArray: ArrayWrapped = [{ wireName: 'Ada' }];
+const rawAlias: RawAliasChoice = [{ keep_key: { wire_name: 'Ada' } }, 'opaque'];
+const rawValueAlias: RawValueAlias = [{ keep_key: { wire_name: 'Ada' } }];
+const rawMultipart: RawMultipartInput = { payloadValues: [{ keep_key: { wire_name: 'Ada' } }, 'opaque'] };
+// @ts-expect-error Multipart declarations use the same raw union wire projection.
+const invalidRawMultipart: RawMultipartInput = { payloadValues: [{ keep_key: { wireName: 'Ada' } }] };
+const rawEnvelope: RawEnvelope = { requestId: 'r1', rawChoice: rawAlias, plainDetail: { wireName: 'Ada' } };
+const dictionaryAlias: DictionaryAlias = { keep_key: { wireName: 'Ada' } };
+const dictionaryAliasWire: DictionaryAlias$Wire = { keep_key: { wire_name: 'Ada' } };
+const strictDictionary: StrictDictionaryAlias = dictionaryAlias;
+// @ts-expect-error Raw aliases require the wire representation through inline unions.
+const invalidRawAlias: RawAliasChoice = [{ keep_key: { wireName: 'Ada' } }];
+// @ts-expect-error Singleton allOf dictionaries preserve their readonly index signature.
+dictionaryAlias.new_key = { wireName: 'changed' };
+// @ts-expect-error Singleton allOf wire dictionaries preserve their readonly index signature.
+dictionaryAliasWire.new_key = { wire_name: 'changed' };
+// @ts-expect-error Strict selection does not change readonly declaration contracts.
+strictDictionary.new_key = { wireName: 'changed' };
+// @ts-expect-error Container member conversion retains the ergonomic element type.
+const invalidInlineValues: InlineMixedValues = [{ keep_key: { wire_name: 'Ada' } }];
+// @ts-expect-error Single-member allOf array aliases remain readonly.
+wrappedArray[0] = { wireName: 'changed' };
+// @ts-expect-error Binary members still require Blob/File, not strings.
+const invalidBinaryUnion: BinaryUnion = { binaryData: 'wrong', fieldName: 'name' };
+// @ts-expect-error Normal tagged members keep ergonomic names.
+const invalidUnitUnion: AdjacentOrNumber = { event_type: 'empty' };
+// @ts-expect-error Normal unions retain the ergonomic member contract.
+const invalidUnion: Tool = { name: 'weather', input_schema: {} };
+// @ts-expect-error Raw unions expose wire members rather than ergonomic members.
+const invalidRawUnion: RawTool = { name: 'weather', inputSchema: {} };
+// @ts-expect-error Union array alternatives remain readonly.
+unionList[0] = { name: 'changed', inputSchema: {} };
 
 function expectType<T>(_value: T): void {}
+
+declare const nestedLists: NestedDetailLists;
+expectType<string>(nestedLists[0][0].wireName);
+nestedLists[0].push({ wireName: 'inner arrays retain their existing mutable type' });
+// @ts-expect-error The outer model array remains readonly.
+nestedLists[0] = [];
 
 declare const allOf: AllOfMixedStringMap;
 declare const allOfWire: AllOfMixedStringMap$Wire;

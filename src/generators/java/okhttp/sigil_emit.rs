@@ -572,6 +572,7 @@ fn java_closed_sum_case(case: &ClosedSumCasePlan) -> Result<ClosedSumCaseSpec, S
 
 fn java_type_name(expr: &IrTypeExpr, boxed: bool) -> TypeName {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => java_type_name(representation, boxed),
         IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
         IrTypeExpr::Primitive(primitive) => TypeName::primitive(if boxed {
             java_primitive_boxed(primitive)
@@ -817,6 +818,7 @@ fn java_adapter_read_value(
     payload: &IrTypeExpr,
     source: CodeBlock,
 ) -> Result<CodeBlock, SigilStitchError> {
+    let payload = payload.representation();
     let payload_type = java_type_name(payload, true);
     let root_name = plan.name.as_str();
     let case_name = case.name.as_str();
@@ -942,6 +944,9 @@ fn java_json_condition(
     schemas: &indexmap::IndexMap<String, IrSchema>,
 ) -> Result<CodeBlock, SigilStitchError> {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => {
+            java_json_condition(representation, schemas)
+        }
         IrTypeExpr::Primitive(
             IrPrimitive::String
             | IrPrimitive::StringWithFormat(_)

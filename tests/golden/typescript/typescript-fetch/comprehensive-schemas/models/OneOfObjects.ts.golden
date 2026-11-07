@@ -7,6 +7,7 @@
 import type { BasicObject } from './BasicObject';
 import type { NestedObject } from './NestedObject';
 
-/** Union of object types */
-
+/**
+ * Union of object types
+ */
 export type OneOfObjects = BasicObject | NestedObject;

@@ -16,6 +16,7 @@ include_build_scripts = true
 emit_enum_constants = true
 emit_type_guards = true
 property_naming = "camelCase"
+untagged_union_strategy = "firstMatch"
 indent = "    "
 ```
 
@@ -204,11 +205,127 @@ Works with all schema kinds:
 - **Tagged unions** (internal, adjacent, external): dual type aliases + switch/if-chain converters
 - **Intersections** (allOf): dual type aliases; compatible open objects share one
   conversion plan, while other intersections use spread-based converters
-- **Unions** (oneOf): dual type aliases + cast-through converters
+- **Untagged unions** (oneOf/anyOf): dual type aliases + member-selecting converters
 
-Referenced types that are themselves convertible (objects, intersections, unions) get their converter functions called recursively. Enums and simple aliases pass through unchanged.
+Models, JSON request bodies, JSON multipart parts, successful responses, and lazy
+error values use one value plan per generation. It projects public and wire types
+and delegates conversion recursively through aliases, properties, arrays, and
+dictionaries. An unchanged type does not remove a `strict` runtime check: even an
+inline `integer | number` union must still detect overlapping matches.
+
+Compound conversions and structural predicates use statically generated helper
+functions in internal runtime modules, not a runtime schema interpreter. They
+are not re-exported by the public barrel. Conversion helpers retain separate
+dependency modules so importing a model does not load unrelated model graphs.
+Helper inputs accept readonly arrays
+without widening public API results or changing model array mutability. Source
+layout is emitted directly; full Vite+ checks need no formatter preparation.
 
 Defaults to `"preserve"` (no renaming, single interface, no converters).
+
+### `untagged_union_strategy`
+
+Controls untagged-union conversion when `property_naming = "camelCase"`:
+
+- `"firstMatch"` (default): select the first structurally matching member and
+  call its converter. Concrete members precede unconstrained JSON/object/map
+  fallbacks, with schema order preserved within each group. Unmatched values
+  pass through unchanged rather than making imperfect specifications unusable.
+- `"strict"`: use the same structural selection, but throw `TypeError` for
+  multiple concrete matches or no matching member. A raw fallback is considered
+  only after the concrete members, so it does not itself create ambiguity.
+- `"raw"`: do not select or convert union members. Both `Name` and `Name$Wire`
+  expose the wire representation; pass original wire keys such as `input_schema`,
+  not ergonomic keys such as `inputSchema`. This is an explicit escape hatch,
+  not an identity cast pretending to return a renamed model. This applies to the
+  entire union subtree, including inline container unions and aliases; ordinary
+  enclosing objects and sibling properties still convert normally.
+
+```toml
+[generators.typescript-fetch]
+property_naming = "camelCase"
+untagged_union_strategy = "strict"
+```
+
+The same choice is available through a CLI override:
+
+```sh
+openapi-nexus generate --input openapi.yaml --generators typescript-fetch \
+  --generator-config typescript-fetch.property_naming=camelCase \
+  --generator-config typescript-fetch.untagged_union_strategy=strict
+```
+
+Selection checks generated value kinds, required own fields, declared property
+shapes, typed additional values, and scalar literal/enum values in the appropriate
+wire or ergonomic naming direction. Named fields are excluded from the additional
+value check, even though TypeScript widens the dictionary's index type to include
+them.
+Nested enum constraints intersect at their original nullable boundaries; an outer
+enum does not replace or widen an inner enum.
+Untyped scalar enums match their finite values without treating the legacy
+string type fallback as an authored constraint.
+Arrays and dictionaries inspect their element/value shapes; dictionary keys and
+external variant tags stay verbatim. This is conversion dispatch, not full JSON
+Schema validation: formats, numeric bounds, and other validation keywords are
+not checked. Productive recursive references use statically generated matching
+functions rather than becoming unrestricted guards. These helpers are private to
+the generated runtime, not public barrel exports; selected member converters
+still handle recursive payload conversion. Same-value circular type aliases are
+not made representable by this mechanism.
+Binary properties match their generated `Blob | File` representation rather
+than strings. Adjacent-tagged unit variants do not require a content property;
+payload variants retain their content checks.
+
+A named nested union can provide both concrete matches and a raw fallback.
+Its concrete matches take priority over fallbacks, and both paths delegate to
+the nested converter so its strict ambiguity policy is not bypassed. Nullable
+and `allOf` wrappers do not turn an unrestricted map/JSON fallback into a
+concrete match. A dictionary of open nested unions retains a concrete selection
+path when at least one entry matches concretely, even when other entries are
+opaque. Empty or entirely opaque dictionaries remain fallbacks. Both paths
+delegate through the dictionary converter, preserving inner strict errors.
+
+Matching is pure: select/count the original member candidates before running a
+converter, then invoke only the selected delegate. A nested strict error propagates
+instead of triggering a retry with another member. Repeated nullable wrappers are
+idempotent; they do not create extra candidates or promote an opaque fallback.
+An explicit null alternative does not bypass ambiguity among other nullable
+members, or suppress a selected nested converter's strict error.
+An unrestricted fallback beside authored nullable members does not erase those
+members' concrete null matches. Null permission added only by an opaque wrapper
+remains a fallback rather than creating an extra concrete candidate.
+Property, array and dictionary nullable wrappers delegate null when the inner
+value already accepts it. Null admitted only by the outer wrapper still bypasses
+a non-nullable inner converter.
+This remains true when property nullability was extracted through scalar enum
+metadata: conversion restores the wrapper rather than passing null directly to
+the nonnullable delegate.
+
+Inline unions inside a selected array or dictionary member use the same
+selection policy recursively, rather than returning their contents unchanged.
+A single-member `allOf` alias delegates without spreading its result,
+preserving primitive, array, and null values too.
+
+For example, a mixed `ClientTool | SearchTool` union can distinguish a required
+`input_schema` / `inputSchema` field from a search member's required literal
+`type`, then convert `inputSchema` and `maxUses` to `input_schema` and `max_uses`.
+Conversions also work through containing arrays, dictionaries, and model aliases.
+Declared additional-property behavior remains owned by the selected member's
+converter. Direct tagged payloads and optional type guards use the same type and
+conversion projections. Preserve mode does not add JSON converters.
+
+Tagged declarations and guards namespace-qualify built-in utilities when a model
+name shadows them, including open external wrappers. A tagged schema named
+`Record` or `Readonly` keeps its public model and converter names; its generated
+utility types use `globalThis.Record` or `globalThis.Readonly` instead. Planned
+dictionaries and structural matching casts use the same qualification.
+
+A required JSON body must be supplied, but a schema-permitted `null` is a value,
+not a missing body. Such bodies serialize as JSON `null`; omitted bodies still
+throw `RequiredError` before sending a request.
+Optional JSON bodies skip conversion only when omitted (`undefined`). A supplied
+null uses the same planned conversion and strict ambiguity checks as a required
+body or direct model conversion.
 
 ### Additional properties
 

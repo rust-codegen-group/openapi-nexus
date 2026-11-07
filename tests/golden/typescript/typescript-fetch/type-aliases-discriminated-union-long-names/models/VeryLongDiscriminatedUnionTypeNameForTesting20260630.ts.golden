@@ -11,6 +11,6 @@ import type { VeryLongDiscriminatedUnionTypeNameBeta20260630 } from './VeryLongD
 import type { VeryLongDiscriminatedUnionTypeNameGamma20260630 } from './VeryLongDiscriminatedUnionTypeNameGamma20260630';
 
 export type VeryLongDiscriminatedUnionTypeNameForTesting20260630 =
-  | ({ kind: 'ALPHA' } & VeryLongDiscriminatedUnionTypeNameAlpha20260630)
-  | ({ kind: 'BETA' } & VeryLongDiscriminatedUnionTypeNameBeta20260630)
-  | ({ kind: 'GAMMA' } & VeryLongDiscriminatedUnionTypeNameGamma20260630);
+  | (Record<'kind', 'ALPHA'> & VeryLongDiscriminatedUnionTypeNameAlpha20260630)
+  | (Record<'kind', 'BETA'> & VeryLongDiscriminatedUnionTypeNameBeta20260630)
+  | (Record<'kind', 'GAMMA'> & VeryLongDiscriminatedUnionTypeNameGamma20260630);

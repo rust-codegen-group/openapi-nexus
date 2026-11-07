@@ -748,7 +748,7 @@ fn emit_elif(
 
 /// Like `python_type_name` but Named types import from `..models.{snake}` (for API files).
 pub fn api_type_name(expr: &IrTypeExpr) -> TypeName {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(name) => {
             let py_name = name.to_pascal_case();
             let module = format!("..models.{}", name.to_snake_case());
@@ -776,6 +776,7 @@ pub fn api_type_name(expr: &IrTypeExpr) -> TypeName {
 /// Map an IR type expression to a Python type string (for serialization helpers).
 pub fn python_type_str(expr: &IrTypeExpr) -> String {
     match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => python_type_str(representation),
         IrTypeExpr::Named(name) => name.to_pascal_case(),
         IrTypeExpr::Primitive(p) => python_primitive(p).to_string(),
         IrTypeExpr::StringLiteral(s) => {
@@ -829,7 +830,7 @@ fn collect_request_input_imports(
     expr: &IrTypeExpr,
     imports: &mut std::collections::BTreeSet<String>,
 ) {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::Named(name) => {
             let py_name = name.to_pascal_case();
             let module = name.to_snake_case();
@@ -863,7 +864,7 @@ fn collect_request_input_imports(
 }
 
 fn needs_typing_literal(expr: &IrTypeExpr) -> bool {
-    match expr {
+    match expr.representation() {
         IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
         IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
             needs_typing_literal(inner)

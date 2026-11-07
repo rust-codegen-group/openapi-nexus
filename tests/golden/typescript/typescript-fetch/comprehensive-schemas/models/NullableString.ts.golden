@@ -4,6 +4,7 @@
  * Comprehensive Schema Types Example — 1.0.0
  * Comprehensive test for all OpenAPI v3.1.2 schema types
  */
-/** Nullable string type (OpenAPI 3.1.2 style) */
-
+/**
+ * Nullable string type (OpenAPI 3.1.2 style)
+ */
 export type NullableString = string | null;

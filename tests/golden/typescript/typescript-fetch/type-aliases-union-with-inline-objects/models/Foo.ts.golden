@@ -8,6 +8,7 @@ import type { FooMember1 } from './FooMember1';
 import type { FooMember2 } from './FooMember2';
 import type { FooMember3 } from './FooMember3';
 
-/** Union type with inline object schemas */
-
+/**
+ * Union type with inline object schemas
+ */
 export type Foo = FooMember1 | FooMember2 | FooMember3;

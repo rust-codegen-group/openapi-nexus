@@ -4,6 +4,7 @@
  * Simple Type Alias Test — 1.0.0
  * Test fixture for simple type aliases (not unions or intersections)
  */
-/** A simple string type alias */
-
+/**
+ * A simple string type alias
+ */
 export type Foo = string;

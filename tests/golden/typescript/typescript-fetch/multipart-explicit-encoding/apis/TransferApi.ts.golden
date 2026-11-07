@@ -73,7 +73,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     requestParameters: ApiUploadEncodedAssetRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<UploadEncodedAssetRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling uploadEncodedAssetRaw().',
@@ -87,23 +87,44 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     const headerParameters: Record<string, string> = {};
 
     // Prepare request body
+    const multipartBody = requestParameters['body'];
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
     const multipartChunks: Array<string | Blob> = [];
     headerParameters['Content-Type'] = 'multipart/form-data; boundary=' + multipartBoundary;
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="audit"\r\nContent-Type: application/json\r\n\r\n');
-    multipartChunks.push(JSON.stringify(requestParameters.body.audit));
+    const multipartValue$0 = multipartBody['audit'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="audit"\r\nContent-Type: application/json\r\n\r\n',
+    );
+    multipartChunks.push(JSON.stringify(multipartValue$0));
     multipartChunks.push('\r\n');
-    {
-    const multipartFilename = uploadFileFilename(requestParameters.body.file, 'file');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + multipartHeaderValue(multipartFilename) + '"\r\nContent-Type: application/pdf\r\n\r\n');
-    multipartChunks.push(uploadFileData(requestParameters.body.file));
+    const multipartValue$1 = multipartBody['file'];
+    const multipartFilename$1 = uploadFileFilename(multipartValue$1, 'file');
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="file"; filename="',
+      multipartHeaderValue(multipartFilename$1),
+      '"\r\nContent-Type: application/pdf\r\n\r\n',
+    );
+    multipartChunks.push(uploadFileData(multipartValue$1));
     multipartChunks.push('\r\n');
-    }
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/vnd.openapi-nexus.metadata+json\r\n\r\n');
-    multipartChunks.push(JSON.stringify(requestParameters.body.metadata));
+    const multipartValue$2 = multipartBody['metadata'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/vnd.openapi-nexus.metadata+json\r\n\r\n',
+    );
+    multipartChunks.push(JSON.stringify(multipartValue$2));
     multipartChunks.push('\r\n');
-    multipartChunks.push('--' + multipartBoundary + '\r\nContent-Disposition: form-data; name="purpose"\r\nContent-Type: text/plain\r\n\r\n');
-    multipartChunks.push(String(requestParameters.body.purpose));
+    const multipartValue$3 = multipartBody['purpose'];
+    multipartChunks.push(
+      '--',
+      multipartBoundary,
+      '\r\nContent-Disposition: form-data; name="purpose"\r\nContent-Type: text/plain\r\n\r\n',
+    );
+    multipartChunks.push(String(multipartValue$3));
     multipartChunks.push('\r\n');
     multipartChunks.push('--' + multipartBoundary + '--\r\n');
     const requestBody = new Blob(multipartChunks);

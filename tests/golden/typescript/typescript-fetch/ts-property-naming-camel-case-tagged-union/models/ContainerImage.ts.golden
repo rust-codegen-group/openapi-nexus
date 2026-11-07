@@ -14,33 +14,41 @@ import {
 } from './ContainerImageManaged';
 
 export type ContainerImage$Wire =
-  | ({ kind: 'CONTAINER_IMAGE_MANAGED' } & ContainerImageManaged$Wire)
-  | ({ kind: 'CONTAINER_IMAGE_CUSTOM' } & ContainerImageCustom$Wire);
+  | (Record<'kind', 'CONTAINER_IMAGE_MANAGED'> & ContainerImageManaged$Wire)
+  | (Record<'kind', 'CONTAINER_IMAGE_CUSTOM'> & ContainerImageCustom$Wire);
 
 export type ContainerImage =
-  | ({ kind: 'CONTAINER_IMAGE_MANAGED' } & ContainerImageManaged)
-  | ({ kind: 'CONTAINER_IMAGE_CUSTOM' } & ContainerImageCustom);
+  | (Record<'kind', 'CONTAINER_IMAGE_MANAGED'> & ContainerImageManaged)
+  | (Record<'kind', 'CONTAINER_IMAGE_CUSTOM'> & ContainerImageCustom);
 
 export function containerImageFromJSON(json: ContainerImage$Wire): ContainerImage {
-  switch (json.kind) {
-    case 'CONTAINER_IMAGE_MANAGED':
-      return { ...containerImageManagedFromJSON(json), kind: 'CONTAINER_IMAGE_MANAGED' };
-    case 'CONTAINER_IMAGE_CUSTOM':
-      return { ...containerImageCustomFromJSON(json), kind: 'CONTAINER_IMAGE_CUSTOM' };
+  if (json['kind'] === 'CONTAINER_IMAGE_MANAGED') {
+    return {
+      ...containerImageManagedFromJSON(json as unknown as ContainerImageManaged$Wire),
+      ['kind']: 'CONTAINER_IMAGE_MANAGED',
+    } as ContainerImage;
   }
+  if (json['kind'] === 'CONTAINER_IMAGE_CUSTOM') {
+    return {
+      ...containerImageCustomFromJSON(json as unknown as ContainerImageCustom$Wire),
+      ['kind']: 'CONTAINER_IMAGE_CUSTOM',
+    } as ContainerImage;
+  }
+  throw new Error('Unknown variant');
 }
 
 export function containerImageToJSON(value: ContainerImage): ContainerImage$Wire {
-  switch (value.kind) {
-    case 'CONTAINER_IMAGE_MANAGED':
-      return {
-        ...containerImageManagedToJSON(value),
-        kind: 'CONTAINER_IMAGE_MANAGED',
-      } as ContainerImage$Wire;
-    case 'CONTAINER_IMAGE_CUSTOM':
-      return {
-        ...containerImageCustomToJSON(value),
-        kind: 'CONTAINER_IMAGE_CUSTOM',
-      } as ContainerImage$Wire;
+  if (value['kind'] === 'CONTAINER_IMAGE_MANAGED') {
+    return {
+      ...containerImageManagedToJSON(value as unknown as ContainerImageManaged),
+      ['kind']: 'CONTAINER_IMAGE_MANAGED',
+    } as ContainerImage$Wire;
   }
+  if (value['kind'] === 'CONTAINER_IMAGE_CUSTOM') {
+    return {
+      ...containerImageCustomToJSON(value as unknown as ContainerImageCustom),
+      ['kind']: 'CONTAINER_IMAGE_CUSTOM',
+    } as ContainerImage$Wire;
+  }
+  throw new Error('Unknown variant');
 }

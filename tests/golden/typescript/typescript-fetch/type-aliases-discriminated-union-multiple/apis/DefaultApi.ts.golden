@@ -109,7 +109,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiCreateContainerRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateContainerRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createContainerRaw().',
@@ -173,7 +173,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     requestParameters: ApiCreateVolumeRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<CreateVolumeRawResponse> {
-    if (requestParameters.body === undefined || requestParameters.body === null) {
+    if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
         'Required parameter "body" was null or undefined when calling createVolumeRaw().',

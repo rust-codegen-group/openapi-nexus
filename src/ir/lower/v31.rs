@@ -719,9 +719,10 @@ impl<'a> LowerCtx<'a> {
             }
             ObjectOrReference::Object(obj) => {
                 if let Some(inner) = nullable_wrapper_inner(obj) {
-                    return Ok(IrTypeExpr::Nullable(Box::new(
-                        self.lower_schema_ref(inner)?,
-                    )));
+                    return Ok(
+                        IrTypeExpr::Nullable(Box::new(self.lower_schema_ref(inner)?))
+                            .with_scalar_enum(&obj.enum_values, true),
+                    );
                 }
                 Ok(self.lower_type_from_schema(obj))
             }
@@ -775,7 +776,9 @@ impl<'a> LowerCtx<'a> {
             return Ok(None);
         };
         let inner = self.lower_schema_ref_with_promotion(candidate_name, inner_ref)?;
-        Ok(Some(IrTypeExpr::Nullable(Box::new(inner))))
+        Ok(Some(
+            IrTypeExpr::Nullable(Box::new(inner)).with_scalar_enum(&obj.enum_values, true),
+        ))
     }
 
     /// Lower array items, promoting inline object items to named schemas.
@@ -816,7 +819,7 @@ impl<'a> LowerCtx<'a> {
             }
         }
 
-        match &obj.schema_type {
+        let representation = match &obj.schema_type {
             Some(type_set) => type_set_to_type_expr(type_set, obj),
             None => {
                 // No type specified, infer from context
@@ -828,7 +831,8 @@ impl<'a> LowerCtx<'a> {
                     IrTypeExpr::Any
                 }
             }
-        }
+        };
+        representation.with_scalar_enum(&obj.enum_values, obj.schema_type.is_some())
     }
 
     fn lower_schema_value_with_promotion(
@@ -1284,12 +1288,13 @@ fn nested_type_to_expr(obj: &ObjectSchema) -> IrTypeExpr {
             }
             ObjectOrReference::Object(inner) => nested_type_to_expr(inner),
         };
-        return IrTypeExpr::Nullable(Box::new(inner));
+        return IrTypeExpr::Nullable(Box::new(inner)).with_scalar_enum(&obj.enum_values, true);
     }
-    match &obj.schema_type {
+    let representation = match &obj.schema_type {
         Some(types) => type_set_to_type_expr(types, obj),
         None => single_type_to_expr(SchemaType::String, obj),
-    }
+    };
+    representation.with_scalar_enum(&obj.enum_values, obj.schema_type.is_some())
 }
 
 fn with_schema_nullability(obj: &ObjectSchema, base: IrTypeExpr) -> IrTypeExpr {
@@ -1428,10 +1433,7 @@ fn classify_tagging_style(
 }
 
 fn unwrap_nullable(expr: IrTypeExpr) -> (IrTypeExpr, bool) {
-    match expr {
-        IrTypeExpr::Nullable(inner) => (*inner, true),
-        other => (other, false),
-    }
+    expr.split_nullable()
 }
 
 fn extract_validation(obj: &ObjectSchema) -> Option<IrValidation> {

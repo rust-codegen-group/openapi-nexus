@@ -247,7 +247,7 @@ export class EntriesApi extends BaseAPI implements EntriesApiInterface {
     requestParameters: ApiGetEntriesRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
   ): Promise<GetEntriesRawResponse> {
-    if (requestParameters.id === undefined || requestParameters.id === null) {
+    if (requestParameters['id'] === undefined || requestParameters['id'] === null) {
       throw new RequiredError(
         'id',
         'Required parameter "id" was null or undefined when calling getEntriesRaw().',

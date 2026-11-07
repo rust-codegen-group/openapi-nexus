@@ -136,7 +136,7 @@ rewrites. Full `vp check` runs on the original generated output, then runs again
 after packing. The consumer type check uses the generated package's installed
 compiler rather than the global `tsc` selection.
 The current global Vite+ CLI also needs TypeScript installed alongside the CLI
-for declaration packing (`npm install -g typescript@7.0.2 vite-plus@1.5.0`). CI
+for declaration packing (`npm install -g typescript@7.0.2 vite-plus@1.5.1`). CI
 reuses that bootstrap and its generator cache in the existing TypeScript/Vite+
 golden-build job; no separate consumer job is added. `just ci` includes these checks too. See
 `tests/generated-clients/typescript/README.md` for details.
@@ -195,8 +195,9 @@ suite. The independent JVM Client Tests CI matrix and `just ci` run these checks
 - Development and ordinary CI validation select current Rust `stable` (locally
   validated with Rust 1.99.0). MSRV checks explicitly select Rust 1.90.0; they do
   not substitute for stable validation.
-- Local TypeScript validation uses TypeScript 7.0.2 and Vite+ 1.5.0 on Node
-  26.13.0. The native validators use the active `tsc` and `vp` on `PATH`. To select
+- Local TypeScript validation uses TypeScript 7.0.2 and Vite+ 1.5.1 on Node
+  26.13.0, resolving Vite 8.3.7, Rolldown 1.2.18 and Oxfmt 0.76.0. The native
+  validators use the active `tsc` and `vp` on `PATH`. To select
   that compiler explicitly, `npm exec --package=typescript@7.0.2 -- just
   golden-typescript::build-tsc` supplies it without changing generated packages.
 - Current local JVM validation uses Homebrew JDK 27.0.1 with Gradle 9.8.2, respecting

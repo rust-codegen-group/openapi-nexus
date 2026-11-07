@@ -30,7 +30,7 @@ win before `Any`, that fallback payloads are preserved, and that discriminator,
 adjacent, and external round-trips retain complete JSON and decoded payloads.
 
 The runner respects `JAVA_HOME` or Gradle's active JVM. Current local validation
-uses Homebrew JDK 27 and Gradle 9.8.1; CI also runs the JVM validation on JDK 27.
+uses Homebrew JDK 27.0.1 and Gradle 9.8.2; CI also runs the JVM validation on JDK 27.
 Generated libraries keep their declared Java 17 compilation target. The Foojay
 resolver supplies that compiler where needed, without forcing the consumer tests
 to run on an older JVM. No patch-versioned JDK installation path is baked into

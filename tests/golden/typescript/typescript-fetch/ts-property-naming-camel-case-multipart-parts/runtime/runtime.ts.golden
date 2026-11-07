@@ -114,7 +114,10 @@ export function uploadFileFilename(value: UploadFileInput, fallback: string): st
 }
 
 export function multipartHeaderValue(value: string): string {
-  return value.replace(/[\r\n]/g, '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return value
+    .replace(/[\r\n]/g, '')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"');
 }
 
 function isUploadFile(value: UploadFileInput): value is UploadFile {

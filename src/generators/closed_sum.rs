@@ -1,7 +1,8 @@
 use heck::ToPascalCase;
 
 use crate::ir::types::{
-    IrPrimitive, IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
+    IrPrimitive, IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion,
+    TaggingStyle,
 };
 
 /// Target-independent plan for a closed sum emitted from an OpenAPI union.
@@ -187,6 +188,9 @@ fn tagged_case_name(expr: &IrTypeExpr, index: usize) -> String {
 
 fn union_case_name(expr: &IrTypeExpr, index: usize) -> String {
     let name = match expr {
+        IrTypeExpr::ScalarEnum { representation, .. } => {
+            return union_case_name(representation, index);
+        }
         IrTypeExpr::Named(name) => name.to_pascal_case(),
         IrTypeExpr::Primitive(primitive) => primitive_case_name(primitive),
         IrTypeExpr::Array(_) => "Array".to_string(),
@@ -204,7 +208,22 @@ fn union_case_name(expr: &IrTypeExpr, index: usize) -> String {
     }
 }
 
-fn is_tag_only_variant(
+/// Shared unit-payload rule for tagged declarations and structural matching.
+pub(crate) fn is_tagged_unit_variant(
+    ir: &IrSpec,
+    union: &IrTaggedUnion,
+    variant: &IrTaggedVariant,
+) -> bool {
+    is_tag_only_variant(
+        ir,
+        &union.discriminator_field,
+        &variant.discriminator_value,
+        &variant.content_type,
+    ) || matches!(union.tagging, TaggingStyle::Internal)
+        && matches!(variant.content_type, IrTypeExpr::StringLiteral(_))
+}
+
+pub(crate) fn is_tag_only_variant(
     ir: &IrSpec,
     discriminator_field: &str,
     discriminator_value: &str,
