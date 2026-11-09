@@ -5,8 +5,20 @@
  * This is a sample Pet Store Server based on the OpenAPI 3.1 specification
  */
 import type { Order } from '../models/Order';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiPlaceOrderRequest {
   body: Order;
@@ -27,96 +39,162 @@ export interface ApiDeleteOrderRequest {
 }
 
 export type GetInventoryRawResponse =
-  | JSONApiResponse<Record<string, number>> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<Record<string, number>> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type PlaceOrderRawResponse =
-  | JSONApiResponse<Order> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<Order> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type GetOrderByIdRawResponse =
-  | JSONApiResponse<Order> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<Order> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type DeleteOrderRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type GetInventoryErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetInventoryErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetInventoryError extends ResponseError {
   readonly detail: GetInventoryErrorDetail;
 
-  constructor(response: Response, detail: GetInventoryErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetInventoryErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type PlaceOrderErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class PlaceOrderError extends ResponseError {
   readonly detail: PlaceOrderErrorDetail;
 
-  constructor(response: Response, detail: PlaceOrderErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PlaceOrderErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type GetOrderByIdErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'notFound'; status: 404; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class GetOrderByIdError extends ResponseError {
   readonly detail: GetOrderByIdErrorDetail;
 
-  constructor(response: Response, detail: GetOrderByIdErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetOrderByIdErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type DeleteOrderErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'notFound'; status: 404; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class DeleteOrderError extends ResponseError {
   readonly detail: DeleteOrderErrorDetail;
 
-  constructor(response: Response, detail: DeleteOrderErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: DeleteOrderErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface StoreApiInterface {
-  getInventoryRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<GetInventoryRawResponse>;
-  getInventory: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Record<string,
-  number>>;
-  placeOrderRaw: (requestParameters: ApiPlaceOrderRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PlaceOrderRawResponse>;
-  placeOrder: (requestParameters: ApiPlaceOrderRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
-  getOrderByIdRaw: (requestParameters: ApiGetOrderByIdRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetOrderByIdRawResponse>;
-  getOrderById: (requestParameters: ApiGetOrderByIdRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Order>;
-  deleteOrderRaw: (requestParameters: ApiDeleteOrderRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteOrderRawResponse>;
-  deleteOrder: (requestParameters: ApiDeleteOrderRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  getInventoryRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetInventoryRawResponse>;
+  getInventory: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Record<string, number>>;
+  placeOrderRaw: (
+    requestParameters: ApiPlaceOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PlaceOrderRawResponse>;
+  placeOrder: (
+    requestParameters: ApiPlaceOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Order>;
+  getOrderByIdRaw: (
+    requestParameters: ApiGetOrderByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetOrderByIdRawResponse>;
+  getOrderById: (
+    requestParameters: ApiGetOrderByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Order>;
+  deleteOrderRaw: (
+    requestParameters: ApiDeleteOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<DeleteOrderRawResponse>;
+  deleteOrder: (
+    requestParameters: ApiDeleteOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
 }
 
 export class StoreApi extends BaseAPI implements StoreApiInterface {
@@ -127,54 +205,68 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getInventoryRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetInventoryRawResponse> {
+  async getInventoryRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetInventoryRawResponse> {
     // Build path with path parameters
     const urlPath = `/store/inventory`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetInventoryError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetInventoryError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<Record<string,
-      number>> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<Record<string, number>> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getInventory(initOverrides?: RequestInit | InitOverrideFunction): Promise<Record<string,
-  number>> {
+  async getInventory(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Record<string, number>> {
     const response = await this.getInventoryRaw(initOverrides);
-    return await response.value() as Record<string, number>;
+    return (await response.value()) as Record<string, number>;
   }
 
-  async placeOrderRaw(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PlaceOrderRawResponse> {
+  async placeOrderRaw(
+    requestParameters: ApiPlaceOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PlaceOrderRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling placeOrderRaw().'
+        'Required parameter "body" was null or undefined when calling placeOrderRaw().',
       );
     }
     // Build path with path parameters
@@ -189,46 +281,67 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new PlaceOrderError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new PlaceOrderError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new PlaceOrderError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PlaceOrderError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Order> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async placeOrder(requestParameters: ApiPlaceOrderRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Order> {
+  async placeOrder(
+    requestParameters: ApiPlaceOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Order> {
     const response = await this.placeOrderRaw(requestParameters, initOverrides);
-    return await response.value() as Order;
+    return (await response.value()) as Order;
   }
 
-  async getOrderByIdRaw(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetOrderByIdRawResponse> {
+  async getOrderByIdRaw(
+    requestParameters: ApiGetOrderByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetOrderByIdRawResponse> {
     if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
       throw new RequiredError(
         'orderId',
-        'Required parameter "orderId" was null or undefined when calling getOrderByIdRaw().'
+        'Required parameter "orderId" was null or undefined when calling getOrderByIdRaw().',
       );
     }
     // Build path with path parameters
@@ -237,54 +350,81 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new GetOrderByIdError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else if (response.status === 404) {
+        throw new GetOrderByIdError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 404) {
         let errorValue: Promise<void> | undefined;
-        throw new GetOrderByIdError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new GetOrderByIdError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetOrderByIdError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetOrderByIdError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Order> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getOrderById(requestParameters: ApiGetOrderByIdRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Order> {
+  async getOrderById(
+    requestParameters: ApiGetOrderByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Order> {
     const response = await this.getOrderByIdRaw(requestParameters, initOverrides);
-    return await response.value() as Order;
+    return (await response.value()) as Order;
   }
 
-  async deleteOrderRaw(requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<DeleteOrderRawResponse> {
+  async deleteOrderRaw(
+    requestParameters: ApiDeleteOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<DeleteOrderRawResponse> {
     if (requestParameters.orderId === undefined || requestParameters.orderId === null) {
       throw new RequiredError(
         'orderId',
-        'Required parameter "orderId" was null or undefined when calling deleteOrderRaw().'
+        'Required parameter "orderId" was null or undefined when calling deleteOrderRaw().',
       );
     }
     // Build path with path parameters
@@ -293,44 +433,69 @@ export class StoreApi extends BaseAPI implements StoreApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'DELETE',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new DeleteOrderError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else if (response.status === 404) {
+        throw new DeleteOrderError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 404) {
         let errorValue: Promise<void> | undefined;
-        throw new DeleteOrderError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new DeleteOrderError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new DeleteOrderError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new DeleteOrderError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async deleteOrder(requestParameters: ApiDeleteOrderRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async deleteOrder(
+    requestParameters: ApiDeleteOrderRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.deleteOrderRaw(requestParameters, initOverrides);
     return await response.value();
   }

@@ -5,36 +5,60 @@
  * Covers explicit multipart part content types.
  */
 import type { UploadEncodedAssetMultipartRequestBody } from '../models/UploadEncodedAssetMultipartRequestBody';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, RequiredError, ResponseError, VoidApiResponse, multipartHeaderValue, uploadFileData, uploadFileFilename } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+  multipartHeaderValue,
+  uploadFileData,
+  uploadFileFilename,
+} from '../runtime/runtime';
 
 export interface ApiUploadEncodedAssetRequest {
   body: UploadEncodedAssetMultipartRequestBody;
 }
 
 export type UploadEncodedAssetRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type UploadEncodedAssetErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type UploadEncodedAssetErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class UploadEncodedAssetError extends ResponseError {
   readonly detail: UploadEncodedAssetErrorDetail;
 
-  constructor(response: Response, detail: UploadEncodedAssetErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: UploadEncodedAssetErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface TransferApiInterface {
-  uploadEncodedAssetRaw: (requestParameters: ApiUploadEncodedAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadEncodedAssetRawResponse>;
-  uploadEncodedAsset: (requestParameters: ApiUploadEncodedAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  uploadEncodedAssetRaw: (
+    requestParameters: ApiUploadEncodedAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<UploadEncodedAssetRawResponse>;
+  uploadEncodedAsset: (
+    requestParameters: ApiUploadEncodedAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
 }
 
 export class TransferApi extends BaseAPI implements TransferApiInterface {
@@ -45,12 +69,14 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async uploadEncodedAssetRaw(requestParameters: ApiUploadEncodedAssetRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<UploadEncodedAssetRawResponse> {
+  async uploadEncodedAssetRaw(
+    requestParameters: ApiUploadEncodedAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<UploadEncodedAssetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling uploadEncodedAssetRaw().'
+        'Required parameter "body" was null or undefined when calling uploadEncodedAssetRaw().',
       );
     }
     // Build path with path parameters
@@ -58,8 +84,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Prepare request body
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
@@ -83,32 +108,44 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     multipartChunks.push('--' + multipartBoundary + '--\r\n');
     const requestBody = new Blob(multipartChunks);
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new UploadEncodedAssetError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new UploadEncodedAssetError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async uploadEncodedAsset(requestParameters: ApiUploadEncodedAssetRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+  async uploadEncodedAsset(
+    requestParameters: ApiUploadEncodedAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.uploadEncodedAssetRaw(requestParameters, initOverrides);
     return await response.value();
   }

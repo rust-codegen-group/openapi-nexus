@@ -8,4 +8,6 @@
 import type { ContainerImageCustom } from './ContainerImageCustom';
 import type { ContainerImageManaged } from './ContainerImageManaged';
 
-export type ContainerImage = ({ kind: 'CONTAINER_IMAGE_MANAGED' } & ContainerImageManaged) | ({ kind: 'CONTAINER_IMAGE_CUSTOM' } & ContainerImageCustom);
+export type ContainerImage =
+  | ({ kind: 'CONTAINER_IMAGE_MANAGED' } & ContainerImageManaged)
+  | ({ kind: 'CONTAINER_IMAGE_CUSTOM' } & ContainerImageCustom);

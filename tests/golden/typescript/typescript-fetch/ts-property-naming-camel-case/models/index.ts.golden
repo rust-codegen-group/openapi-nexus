@@ -6,9 +6,27 @@
  */
 export type { NamingConventionTest, NamingConventionTest$Wire } from './NamingConventionTest';
 export { namingConventionTestFromJSON, namingConventionTestToJSON } from './NamingConventionTest';
-export type { NamingConventionTestItemsArrayItem, NamingConventionTestItemsArrayItem$Wire } from './NamingConventionTestItemsArrayItem';
-export { namingConventionTestItemsArrayItemFromJSON, namingConventionTestItemsArrayItemToJSON } from './NamingConventionTestItemsArrayItem';
-export type { NamingConventionTestNestedObject, NamingConventionTestNestedObject$Wire } from './NamingConventionTestNestedObject';
-export { namingConventionTestNestedObjectFromJSON, namingConventionTestNestedObjectToJSON } from './NamingConventionTestNestedObject';
-export type { NamingConventionTestPascalCaseObject, NamingConventionTestPascalCaseObject$Wire } from './NamingConventionTestPascalCaseObject';
-export { namingConventionTestPascalCaseObjectFromJSON, namingConventionTestPascalCaseObjectToJSON } from './NamingConventionTestPascalCaseObject';
+export type {
+  NamingConventionTestItemsArrayItem,
+  NamingConventionTestItemsArrayItem$Wire,
+} from './NamingConventionTestItemsArrayItem';
+export {
+  namingConventionTestItemsArrayItemFromJSON,
+  namingConventionTestItemsArrayItemToJSON,
+} from './NamingConventionTestItemsArrayItem';
+export type {
+  NamingConventionTestNestedObject,
+  NamingConventionTestNestedObject$Wire,
+} from './NamingConventionTestNestedObject';
+export {
+  namingConventionTestNestedObjectFromJSON,
+  namingConventionTestNestedObjectToJSON,
+} from './NamingConventionTestNestedObject';
+export type {
+  NamingConventionTestPascalCaseObject,
+  NamingConventionTestPascalCaseObject$Wire,
+} from './NamingConventionTestPascalCaseObject';
+export {
+  namingConventionTestPascalCaseObjectFromJSON,
+  namingConventionTestPascalCaseObjectToJSON,
+} from './NamingConventionTestPascalCaseObject';

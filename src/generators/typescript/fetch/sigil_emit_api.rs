@@ -78,9 +78,12 @@ pub fn generate_api_files(
         .map_err(|source| {
             GeneratorError::emission(ArtifactKind::Api, format!("{tag} API"), source)
         })?;
-        let body = file_spec.render(100).map_err(|source| {
-            GeneratorError::emission(ArtifactKind::Api, format!("{tag} API"), source)
-        })?;
+        let body = file_spec
+            .with_lang(super::layout::TypeScript::from(ts.clone()))
+            .render(100)
+            .map_err(|source| {
+                GeneratorError::emission(ArtifactKind::Api, format!("{tag} API"), source)
+            })?;
         let filename = format!("{}Api.ts", tag.to_pascal_case());
         let content = format!("{header}{body}");
         files.push(FileInfo::api(filename, content));
@@ -270,11 +273,10 @@ fn build_response_aliases_block(ops: &[&IrOperation]) -> Result<CodeBlock, Sigil
         } else {
             sigil_quote!(TypeScript {
                 export type $N(alias.as_str()) =
-                $L("  | ")$for(member in &members; separator = "\n  | ") { $T((*member).clone()) };
+                $L("  | ")$for(member in &members; separator = "\n  | ") { ($T((*member).clone())) };
             })
         }?;
         cb.add_code(alias_block);
-        cb.add_line();
     }
     cb.build()
 }
@@ -342,10 +344,9 @@ fn build_error_detail_alias_block(
     error_responses: &[&IrResponse],
 ) -> Result<CodeBlock, SigilStitchError> {
     let mut cb = CodeBlock::builder();
-    cb.add(&format!("export type {detail_alias} =\n"), vec![]);
     let mut used = HashSet::new();
-    for (idx, resp) in error_responses.iter().enumerate() {
-        let prefix = if idx == 0 { "  " } else { "  | " };
+    let mut members = Vec::new();
+    for resp in error_responses {
         let kind = unique_ts_kind(&response_detail_kind(&resp.status), &mut used);
         let status_ty = resp
             .status
@@ -353,27 +354,48 @@ fn build_error_detail_alias_block(
             .ok()
             .map(|n| n.to_string())
             .unwrap_or_else(|| "number".to_string());
-        let value_ty = response_value_type(resp);
-        cb.add(prefix, vec![]);
+        members.push((kind, status_ty, response_value_type(resp)));
+    }
+    members.push((
+        "unexpected".to_string(),
+        "number".to_string(),
+        TypeName::primitive("Blob"),
+    ));
+    cb.add("export type %L =", detail_alias);
+    let union = members.len() > 1;
+    if union {
+        cb.add("\n%>", ());
+    } else {
+        cb.add(" ", ());
+    }
+    for (index, (kind, status, value)) in members.into_iter().enumerate() {
+        if index > 0 {
+            cb.add_line();
+        }
+        if union {
+            cb.add("| ", ());
+        }
+        cb.add("{\n%>", ());
+        // Union object members align two columns after the pipe.
+        let pad = if union { "  " } else { "" };
         cb.add(
-            &format!(
-                "{{ kind: '{}'; status: {}; raw: Response; value(): Promise<%T> }}\n",
-                kind, status_ty
-            ),
-            vec![Arg::TypeName(value_ty)],
+            "%Lkind: %S;\n%Lstatus: %L;\n%Lraw: Response;\n%Lvalue(): Promise<%T>;\n%<%L}",
+            vec![
+                Arg::Literal(pad.into()),
+                Arg::StringLit(kind),
+                Arg::Literal(pad.into()),
+                Arg::Literal(status),
+                Arg::Literal(pad.into()),
+                Arg::Literal(pad.into()),
+                Arg::TypeName(value),
+                Arg::Literal(if union { "  " } else { "" }.into()),
+            ],
         );
     }
-    let prefix = if error_responses.is_empty() {
-        "  "
-    } else {
-        "  | "
-    };
-    cb.add(
-        &format!(
-            "{prefix}{{ kind: 'unexpected'; status: number; raw: Response; value(): Promise<%T> }};\n"
-        ),
-        vec![Arg::TypeName(TypeName::primitive("Blob"))],
-    );
+    if union {
+        cb.add("%<", ());
+    }
+    cb.add(";\n", ());
     cb.build()
 }
 
@@ -831,7 +853,7 @@ fn emit_required_param_checks(
         let access = request_parameters_access(&pname);
         cb.add(
             &format!(
-                "if ({0} === undefined || {0} === null) {{\n  throw new %T(\n    '{1}',\n    'Required parameter \"{1}\" was null or undefined when calling {2}().'\n  );\n}}\n",
+                "if ({0} === undefined || {0} === null) {{\n  throw new %T(\n    '{1}',\n    'Required parameter \"{1}\" was null or undefined when calling {2}().',\n  );\n}}\n",
                 access, pname, method_name
             ),
             vec![Arg::TypeName(rt_value("RequiredError"))],
@@ -867,12 +889,17 @@ fn emit_url_path(
         let original = &p.name;
         let access = request_parameters_access(&resolved);
         let placeholder = format!("{{{original}}}");
-        cb.add_code(
-            sigil_quote!(TypeScript {
-                urlPath = urlPath.replace($V(placeholder.as_str()), encodeURIComponent(String($L(access.as_str()))));
-            })
-            ?,
+        let inline = format!(
+            "urlPath = urlPath.replace(`{placeholder}`, encodeURIComponent(String({access})));"
         );
+        if inline.chars().count() + 4 <= 100 {
+            cb.add_code(sigil_quote!(TypeScript { urlPath = urlPath.replace($V(placeholder.as_str()), encodeURIComponent(String($L(access.as_str())))); })?);
+        } else {
+            cb.add(
+                "urlPath = urlPath.replace(\n  %V,\n  encodeURIComponent(String(%L)),\n);\n",
+                vec![Arg::VerbatimStr(placeholder), Arg::Literal(access)],
+            );
+        }
     }
     Ok(())
 }
@@ -908,17 +935,20 @@ fn emit_headers(
     op: &IrOperation,
 ) -> Result<(), SigilStitchError> {
     cb.add("// Build headers\n", vec![]);
-    cb.add(
-        "const headerParameters: Record<string, string> = {\n",
-        vec![],
-    );
     if let Some(rb) = &op.request_body
         && let Some(media_type) = preferred_request_media_type(rb)
         && media_type_base(&media_type) != "multipart/form-data"
     {
-        cb.add(&format!("  'Content-Type': '{}',\n", media_type), vec![]);
+        cb.add(
+            "const headerParameters: Record<string, string> = {\n  'Content-Type': %S,\n};\n\n",
+            vec![Arg::StringLit(media_type)],
+        );
+    } else {
+        cb.add(
+            "const headerParameters: Record<string, string> = {};\n\n",
+            (),
+        );
     }
-    cb.add("};\n\n", vec![]);
     let names = resolve_param_names(op);
     for p in op
         .parameters
@@ -1170,26 +1200,9 @@ fn emit_make_request(
     has_body: bool,
 ) {
     let method = op.method.to_uppercase();
-    let request_with_body = format!(
-        "const response = await this.request({{\n    path: urlPath,\n    method: '{}',\n    headers: headerParameters,\n    query: queryParameters,\n    body: requestBody,\n}}, initOverrides);",
-        method
-    );
-    let request_without_body = format!(
-        "const response = await this.request({{\n    path: urlPath,\n    method: '{}',\n    headers: headerParameters,\n    query: queryParameters,\n    body: undefined,\n}}, initOverrides);",
-        method
-    );
-    cb.add("// Make request\n", vec![]);
-    cb.add_code(
-        sigil_quote!(TypeScript {
-            $if(has_body) {
-                $L(request_with_body)
-            } $else {
-                $L(request_without_body)
-            }
-        })
-        .expect("make request block builds"),
-    );
-    cb.add_line();
+    let body = if has_body { "requestBody" } else { "undefined" };
+    cb.add("// Make request\n", ());
+    cb.add("const response = await this.request(\n  {\n    path: urlPath,\n    method: %S,\n    headers: headerParameters,\n    query: queryParameters,\n    body: %L,\n  },\n  initOverrides,\n);\n\n", vec![Arg::StringLit(method), Arg::Literal(body.into())]);
 }
 
 fn emit_response_handler(
@@ -1272,33 +1285,23 @@ fn build_status_dispatch(
     let mut cb = CodeBlock::builder();
     let has_branches = !branches.is_empty();
     for (index, (condition, body)) in branches.into_iter().enumerate() {
-        let branch = if index == 0 {
-            sigil_quote!(TypeScript {
-                if ($C(condition)) {
-                    $C(body)
-                }
-            })
+        if index == 0 {
+            cb.begin_control_flow("if (%L)", super::layout::inline(condition));
         } else {
-            sigil_quote!(TypeScript {
-                else if ($C(condition)) {
-                    $C(body)
-                }
-            })
-        }?;
-        cb.add_code(branch);
+            cb.next_control_flow("else if (%L)", super::layout::inline(condition));
+        }
+        cb.add_code(body);
     }
     if has_branches {
-        cb.add_code(sigil_quote!(TypeScript {
-            else {
-                $C(fallback)
-            }
-        })?);
+        cb.next_control_flow("else", ());
     } else {
-        // A bare scope is ambiguous with an object literal in sigil_quote!;
-        // the structural block API expresses that intent without raw braces.
-        cb.begin_control_flow_with_intent(sigil_stitch::code_node::BlockIntent::Generic, "", ());
-        cb.add_code(fallback);
+        cb.add("{\n%>", ());
+    }
+    cb.add_code(fallback);
+    if has_branches {
         cb.end_control_flow();
+    } else {
+        cb.add("%<}\n", ());
     }
     cb.build()
 }
@@ -1418,12 +1421,16 @@ fn build_error_throw(
         type_application(TypeName::primitive("Promise"), vec![value_type]),
         TypeName::primitive("undefined"),
     ]);
-    // sigil_quote! normalizes inline object literals without brace padding.
-    // Keep the existing brace padding with static spaces; values stay structured.
-    sigil_quote!(TypeScript {
-        let errorValue: $T(cached_type);
-        throw new $N(class_name)(response, {$L(" ")$N("kind"): $S(kind), status: $C(status), raw: response, value: () => errorValue ??= $C(value)$L(" ")});
-    })
+    CodeBlock::of(
+        "let errorValue: %T;\nthrow new %N(response, {\n%>kind: %S,\nstatus: %L,\nraw: response,\nvalue: () => {\n%>errorValue ??= %L;\nreturn errorValue;\n%<},\n%<});\n",
+        vec![
+            Arg::TypeName(cached_type),
+            Arg::Name(class_name),
+            Arg::StringLit(kind.into()),
+            Arg::Code(super::layout::inline(status)),
+            Arg::Code(super::layout::inline(value)),
+        ],
+    )
 }
 
 fn error_value_expr(
@@ -1436,8 +1443,7 @@ fn error_value_expr(
         && let ResponseKind::Json(Some(_)) = &kind
         && let Some(from_json) = response_from_json_transformer(resp, convertible)?
     {
-        let wrapper_type =
-            type_application(rt_value("JSONApiResponse"), vec![response_value_type(resp)]);
+        let wrapper_type = rt_value("JSONApiResponse");
         return sigil_quote!(TypeScript {
             new $T(wrapper_type)(errorRaw.clone(), $C(from_json)).value()
         });
@@ -1501,9 +1507,15 @@ fn build_response_return(
     };
     let status_type = response_status_type(&status_ty);
 
-    sigil_quote!(TypeScript {
-        return new $T(wrapper_value)(response) as $T(wrapper_type)$L(" & ")$T(status_type);
-    })
+    let flat = sigil_quote!(TypeScript {
+        return new $T(wrapper_value.clone())(response) as $T(wrapper_type.clone())$L(" & ")$T(status_type.clone());
+    })?;
+    if super::layout::fragment_width(&flat) + 6 > 100 {
+        let status_type = TypeName::raw(&format!("{{\n  status: {status_ty};\n}}"));
+        sigil_quote!(TypeScript { return new $T(wrapper_value)(response) as $T(wrapper_type)$L(" & ")$T(status_type); })
+    } else {
+        Ok(flat)
+    }
 }
 
 fn response_status_type(status_ty: &str) -> TypeName {
@@ -1521,7 +1533,7 @@ fn build_fallback_return(any_body: bool) -> Result<CodeBlock, SigilStitchError> 
     let success_response = rt_type("HttpSuccessResponse");
     sigil_quote!(TypeScript {
         $if(any_body) {
-            return new $T(json_response.clone())(response) as $T(json_response)<$T(unknown)> & $T(success_response.clone());
+            return new $T(json_response.clone())(response) as $T(json_response)<$T(unknown)>$L(" & ")$T(success_response.clone());
         } $else {
             return new $T(void_response.clone())(response) as $T(void_response) & $T(success_response);
         }
@@ -1555,7 +1567,7 @@ fn build_convenience_method(op: &IrOperation) -> Result<FunSpec, SigilStitchErro
         $if(is_void) {
             return await response.value();
         } $else {
-            return await response.value() as $T(body_ty);
+            return (await response.value()) as $T(body_ty);
         }
     })
     .expect("CodeBlock builds");
@@ -1979,11 +1991,15 @@ fn response_from_json_transformer(
     let wire = TypeName::importable_type(&module, &format!("{pascal}$Wire"));
     let transformer = if is_array {
         sigil_quote!(TypeScript {
-            (json) => (json as $T(TypeName::array(wire))).map($T(from_fn))
+            (json) => {
+                return (json as $T(TypeName::array(wire))).map($T(from_fn));
+            }
         })
     } else {
         sigil_quote!(TypeScript {
-            (json) => $T(from_fn)(json as $T(wire))
+            (json) => {
+                return $T(from_fn)(json as $T(wire));
+            }
         })
     }?;
     Ok(Some(transformer))
@@ -2547,7 +2563,17 @@ import { detailFromJSON } from '../models/Detail';
 import { JSONApiResponse } from '../runtime/runtime';
 
 let errorValue: Promise<Detail[]> | undefined;
-throw new ReadMixedError(response, { kind: 'unauthorized', status: response.status as 401, raw: response, value: () => errorValue ??= new JSONApiResponse<Detail[]>(errorRaw.clone(), (json) => (json as Detail$Wire[]).map(detailFromJSON)).value() });
+throw new ReadMixedError(response, {
+  kind: 'unauthorized',
+  status: response.status as 401,
+  raw: response,
+  value: () => {
+    errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+      return (json as Detail$Wire[]).map(detailFromJSON);
+    }).value();
+    return errorValue;
+  },
+});
 "#
         );
         Ok(())
@@ -2585,12 +2611,10 @@ import { JSONApiResponse } from '../runtime/runtime';
 
 if (response.status === 201) {
   return new JSONApiResponse(response) as JSONApiResponse<Detail> & { status: 201 };
-}
-else if (response.status >= 200 && response.status < 300) {
+} else if (response.status >= 200 && response.status < 300) {
   return new JSONApiResponse(response) as JSONApiResponse<Detail[]> & { status: number };
-}
-else {
-  return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+} else {
+  return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
 }
 "#
         );
@@ -2617,9 +2641,19 @@ import { JSONApiResponse } from '../runtime/runtime';
 
 if (!(response.status >= 200 && response.status < 300)) {
   const errorRaw = response.clone();
-   {
+  {
     let errorValue: Promise<Detail> | undefined;
-    throw new ReadDefaultError(response, { kind: 'default', status: response.status, raw: response, value: () => errorValue ??= new JSONApiResponse<Detail>(errorRaw.clone(), (json) => detailFromJSON(json as Detail$Wire)).value() });
+    throw new ReadDefaultError(response, {
+      kind: 'default',
+      status: response.status,
+      raw: response,
+      value: () => {
+        errorValue ??= new JSONApiResponse(errorRaw.clone(), (json) => {
+          return detailFromJSON(json as Detail$Wire);
+        }).value();
+        return errorValue;
+      },
+    });
   }
 }
 "#

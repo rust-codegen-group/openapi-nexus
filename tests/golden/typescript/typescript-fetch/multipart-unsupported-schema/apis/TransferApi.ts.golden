@@ -4,36 +4,57 @@
  * Multipart Unsupported Schema — 1.0.0
  * Covers multipart request bodies that are not object-shaped.
  */
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiUploadRawMultipartRequest {
   body: unknown;
 }
 
 export type UploadRawMultipartRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type UploadRawMultipartErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type UploadRawMultipartErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class UploadRawMultipartError extends ResponseError {
   readonly detail: UploadRawMultipartErrorDetail;
 
-  constructor(response: Response, detail: UploadRawMultipartErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: UploadRawMultipartErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface TransferApiInterface {
-  uploadRawMultipartRaw: (requestParameters: ApiUploadRawMultipartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadRawMultipartRawResponse>;
-  uploadRawMultipart: (requestParameters: ApiUploadRawMultipartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  uploadRawMultipartRaw: (
+    requestParameters: ApiUploadRawMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<UploadRawMultipartRawResponse>;
+  uploadRawMultipart: (
+    requestParameters: ApiUploadRawMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
 }
 
 export class TransferApi extends BaseAPI implements TransferApiInterface {
@@ -44,12 +65,14 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async uploadRawMultipartRaw(requestParameters: ApiUploadRawMultipartRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<UploadRawMultipartRawResponse> {
+  async uploadRawMultipartRaw(
+    requestParameters: ApiUploadRawMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<UploadRawMultipartRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling uploadRawMultipartRaw().'
+        'Required parameter "body" was null or undefined when calling uploadRawMultipartRaw().',
       );
     }
     // Build path with path parameters
@@ -57,38 +80,49 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Prepare request body
     const requestBody = (() => {throw new Error('unsupported multipart request body: schema must be object-shaped');})();
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new UploadRawMultipartError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new UploadRawMultipartError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async uploadRawMultipart(requestParameters: ApiUploadRawMultipartRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+  async uploadRawMultipart(
+    requestParameters: ApiUploadRawMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.uploadRawMultipartRaw(requestParameters, initOverrides);
     return await response.value();
   }

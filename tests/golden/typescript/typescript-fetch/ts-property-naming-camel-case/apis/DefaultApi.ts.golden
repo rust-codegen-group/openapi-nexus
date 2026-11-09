@@ -4,10 +4,28 @@
  * Naming Conventions Test — 1.0.0
  * Test fixture to verify language property naming conventions
  */
-import type { NamingConventionTest, NamingConventionTest$Wire } from '../models/NamingConventionTest';
-import { namingConventionTestFromJSON, namingConventionTestToJSON } from '../models/NamingConventionTest';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  NamingConventionTest,
+  NamingConventionTest$Wire,
+} from '../models/NamingConventionTest';
+import {
+  namingConventionTestFromJSON,
+  namingConventionTestToJSON,
+} from '../models/NamingConventionTest';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiGetWithQueryParamsRequest {
   snakeCaseParam: string;
@@ -29,49 +47,69 @@ export interface ApiTestNamingConventionsRequest {
 }
 
 export type GetWithQueryParamsRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type TestNamingConventionsRawResponse =
-  | JSONApiResponse<NamingConventionTest> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<NamingConventionTest> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type GetWithQueryParamsErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetWithQueryParamsErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetWithQueryParamsError extends ResponseError {
   readonly detail: GetWithQueryParamsErrorDetail;
 
-  constructor(response: Response, detail: GetWithQueryParamsErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetWithQueryParamsErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type TestNamingConventionsErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type TestNamingConventionsErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class TestNamingConventionsError extends ResponseError {
   readonly detail: TestNamingConventionsErrorDetail;
 
-  constructor(response: Response, detail: TestNamingConventionsErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: TestNamingConventionsErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  getWithQueryParamsRaw: (requestParameters: ApiGetWithQueryParamsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetWithQueryParamsRawResponse>;
-  getWithQueryParams: (requestParameters: ApiGetWithQueryParamsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  testNamingConventionsRaw: (requestParameters: ApiTestNamingConventionsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestNamingConventionsRawResponse>;
-  testNamingConventions: (requestParameters: ApiTestNamingConventionsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<NamingConventionTest>;
+  getWithQueryParamsRaw: (
+    requestParameters: ApiGetWithQueryParamsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetWithQueryParamsRawResponse>;
+  getWithQueryParams: (
+    requestParameters: ApiGetWithQueryParamsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  testNamingConventionsRaw: (
+    requestParameters: ApiTestNamingConventionsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<TestNamingConventionsRawResponse>;
+  testNamingConventions: (
+    requestParameters: ApiTestNamingConventionsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<NamingConventionTest>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -82,12 +120,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getWithQueryParamsRaw(requestParameters: ApiGetWithQueryParamsRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<GetWithQueryParamsRawResponse> {
+  async getWithQueryParamsRaw(
+    requestParameters: ApiGetWithQueryParamsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetWithQueryParamsRawResponse> {
     if (requestParameters.snakeCaseParam === undefined || requestParameters.snakeCaseParam === null) {
       throw new RequiredError(
         'snakeCaseParam',
-        'Required parameter "snakeCaseParam" was null or undefined when calling getWithQueryParamsRaw().'
+        'Required parameter "snakeCaseParam" was null or undefined when calling getWithQueryParamsRaw().',
       );
     }
     // Build path with path parameters
@@ -131,46 +171,59 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       queryParameters['id'] = requestParameters.id;
     }
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetWithQueryParamsError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetWithQueryParamsError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async getWithQueryParams(requestParameters: ApiGetWithQueryParamsRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+  async getWithQueryParams(
+    requestParameters: ApiGetWithQueryParamsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.getWithQueryParamsRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async testNamingConventionsRaw(requestParameters: ApiTestNamingConventionsRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<TestNamingConventionsRawResponse> {
+  async testNamingConventionsRaw(
+    requestParameters: ApiTestNamingConventionsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<TestNamingConventionsRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling testNamingConventionsRaw().'
+        'Required parameter "body" was null or undefined when calling testNamingConventionsRaw().',
       );
     }
     // Build path with path parameters
@@ -185,33 +238,47 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = namingConventionTestToJSON(requestParameters.body);
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new TestNamingConventionsError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new TestNamingConventionsError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response, (json) => namingConventionTestFromJSON(json as NamingConventionTest$Wire)) as JSONApiResponse<NamingConventionTest> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response, (json) => {
+        return namingConventionTestFromJSON(json as NamingConventionTest$Wire);
+      }) as JSONApiResponse<NamingConventionTest> & { status: 200 };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async testNamingConventions(requestParameters: ApiTestNamingConventionsRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<NamingConventionTest> {
+  async testNamingConventions(
+    requestParameters: ApiTestNamingConventionsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<NamingConventionTest> {
     const response = await this.testNamingConventionsRaw(requestParameters, initOverrides);
-    return await response.value() as NamingConventionTest;
+    return (await response.value()) as NamingConventionTest;
   }
 }

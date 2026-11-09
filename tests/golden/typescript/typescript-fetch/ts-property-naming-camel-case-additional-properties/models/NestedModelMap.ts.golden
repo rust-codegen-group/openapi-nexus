@@ -6,8 +6,9 @@
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
-export interface NestedModelMap$Wire extends Readonly<Record<string,
-Record<string, Detail$Wire> | number>> {
+export interface NestedModelMap$Wire extends Readonly<
+  Record<string, Record<string, Detail$Wire> | number>
+> {
   readonly known_count: number;
 }
 
@@ -16,27 +17,61 @@ export interface NestedModelMap extends Readonly<Record<string, Record<string, D
 }
 
 export function nestedModelMapFromJSON(json: NestedModelMap$Wire): NestedModelMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known_count'].includes(key)).map(([key, value]) => {const additionalValue = value as Record<string,
-  Detail$Wire>; return [key, Object.fromEntries(Object.entries(additionalValue ?? {}).map(([k, v]) => [k, detailFromJSON(v)]))] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known_count'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as Record<string, Detail$Wire>;
+      const convertedValue = Object.fromEntries(
+        Object.entries(additionalValue ?? {}).map(([k, v]) => [k, detailFromJSON(v)]),
+      );
+      return [key, convertedValue] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['knownCount'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['knownCount'].includes(key))),
+    ...visibleProperties,
     knownCount: json.known_count,
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['knownCount'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['knownCount'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
 export function nestedModelMapToJSON(value: NestedModelMap): NestedModelMap$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  Record<string, Detail>>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['knownCount'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value as Record<string,
-  Detail>; return [key, Object.fromEntries(Object.entries(additionalValue ?? {}).map(([k, v]) => [k, detailToJSON(v)]))] as const;}));
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, Record<string, Detail>> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['knownCount'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as Record<string, Detail>;
+      const convertedValue = Object.fromEntries(
+        Object.entries(additionalValue ?? {}).map(([k, v]) => [k, detailToJSON(v)]),
+      );
+      return [key, convertedValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
     known_count: value.knownCount,

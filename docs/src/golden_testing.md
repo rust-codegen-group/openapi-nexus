@@ -47,7 +47,7 @@ CI materializes each golden directory into a temp folder (stripping the `.golden
 
 | Language | Command | Marker file |
 |----------|---------|-------------|
-| TypeScript | `vp check --no-fmt && vp pack` or `tsc --noEmit` (see below) | `tsconfig.json.golden` |
+| TypeScript | `vp check && vp pack && vp check` or `tsc --noEmit` (see below) | `tsconfig.json.golden` |
 | Go | `go build ./...` | `go.mod.golden` |
 | Rust | `cargo check` | `Cargo.toml.golden` |
 | Python | `pyright` | `pyproject.toml.golden` |
@@ -61,7 +61,7 @@ This catches type errors that snapshot comparison alone cannot.
 The TypeScript golden build script selects the toolchain per-test based on whether
 `vite.config.ts.golden` exists in the test directory:
 
-- **With `vite.config.ts`** — runs `vp install && vp check --no-fmt && vp pack`. This is the `toolchain = "vp"` path: installs deps, runs type-aware linting, then builds the library bundle.
+- **With `vite.config.ts`** — runs `vp install && vp check && vp pack && vp check`. This is the `toolchain = "vp"` path: installs deps, checks the original generated files for formatting and type-aware linting/types, then builds the library bundle. The second check verifies that formatting still passes after packing; generated `dist/` output is excluded from formatting.
 - **Without `vite.config.ts`** — runs `tsc --noEmit`. This is the `toolchain = "tsc"` path: type-checks only.
 
 Both paths are always exercised in CI. Both `vp` and `tsc` must be available.
@@ -121,9 +121,9 @@ just golden-build-all           # all languages
 just golden-typescript-clients::test
 ```
 
-This generates fresh preserve/camelCase clients, validates and packs them with
-Vite+, checks their packed declarations with strict TypeScript, and runs ordinary
-Node tests against the real bundle. Full additional-property payload equality,
+This generates fresh preserve/camelCase clients, validates, and packs
+them with Vite+, checks their packed declarations with strict TypeScript, and
+runs ordinary Node tests against the real bundle. Full additional-property payload equality,
 typed dictionary conversion, allOf and search-event composition, renamed-key
 collisions, optional-field absence, and prototype-sensitive keys are covered.
 The preserve client supplies type-contract coverage, not a second runtime
@@ -131,8 +131,10 @@ conversion path (it does not emit converters).
 
 Generation, compilation, and execution are separate just recipes. Builds run in
 temporary directories so Vite+ does not skip gitignored generated sources; no
-generated manifests or source files are patched. The consumer type check uses
-the generated package's installed compiler rather than the global `tsc` selection.
+generated manifests or source files receive compatibility patches or formatter
+rewrites. Full `vp check` runs on the original generated output, then runs again
+after packing. The consumer type check uses the generated package's installed
+compiler rather than the global `tsc` selection.
 The current global Vite+ CLI also needs TypeScript installed alongside the CLI
 for declaration packing (`npm install -g typescript@7.0.2 vite-plus@1.5.0`). CI
 reuses that bootstrap and its generator cache in the existing TypeScript/Vite+

@@ -7,8 +7,19 @@
 import type { GetAllUsersResponse200Item } from '../models/GetAllUsersResponse200Item';
 import type { GetUserByIdResponse200 } from '../models/GetUserByIdResponse200';
 import type { GetUserByIdResponse404 } from '../models/GetUserByIdResponse404';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiGetUserByIdRequest {
   /**
@@ -18,50 +29,74 @@ export interface ApiGetUserByIdRequest {
 }
 
 export type GetAllUsersRawResponse =
-  | JSONApiResponse<GetAllUsersResponse200Item[]> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<GetAllUsersResponse200Item[]> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type GetUserByIdRawResponse =
-  | JSONApiResponse<GetUserByIdResponse200> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<GetUserByIdResponse200> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type GetAllUsersErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetAllUsersErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetAllUsersError extends ResponseError {
   readonly detail: GetAllUsersErrorDetail;
 
-  constructor(response: Response, detail: GetAllUsersErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetAllUsersErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type GetUserByIdErrorDetail =
-  { kind: 'notFound'; status: 404; raw: Response; value(): Promise<GetUserByIdResponse404> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<GetUserByIdResponse404>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class GetUserByIdError extends ResponseError {
   readonly detail: GetUserByIdErrorDetail;
 
-  constructor(response: Response, detail: GetUserByIdErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetUserByIdErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  getAllUsersRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<GetAllUsersRawResponse>;
-  getAllUsers: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<GetAllUsersResponse200Item[]>;
-  getUserByIdRaw: (requestParameters: ApiGetUserByIdRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdRawResponse>;
-  getUserById: (requestParameters: ApiGetUserByIdRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdResponse200>;
+  getAllUsersRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetAllUsersRawResponse>;
+  getAllUsers: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetAllUsersResponse200Item[]>;
+  getUserByIdRaw: (
+    requestParameters: ApiGetUserByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetUserByIdRawResponse>;
+  getUserById: (
+    requestParameters: ApiGetUserByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetUserByIdResponse200>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -72,53 +107,68 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getAllUsersRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetAllUsersRawResponse> {
+  async getAllUsersRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetAllUsersRawResponse> {
     // Build path with path parameters
     const urlPath = `/users`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetAllUsersError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetAllUsersError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<GetAllUsersResponse200Item[]> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<GetAllUsersResponse200Item[]> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getAllUsers(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetAllUsersResponse200Item[]> {
+  async getAllUsers(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetAllUsersResponse200Item[]> {
     const response = await this.getAllUsersRaw(initOverrides);
-    return await response.value() as GetAllUsersResponse200Item[];
+    return (await response.value()) as GetAllUsersResponse200Item[];
   }
 
-  async getUserByIdRaw(requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetUserByIdRawResponse> {
+  async getUserByIdRaw(
+    requestParameters: ApiGetUserByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetUserByIdRawResponse> {
     if (requestParameters.id === undefined || requestParameters.id === null) {
       throw new RequiredError(
         'id',
-        'Required parameter "id" was null or undefined when calling getUserByIdRaw().'
+        'Required parameter "id" was null or undefined when calling getUserByIdRaw().',
       );
     }
     // Build path with path parameters
@@ -127,41 +177,61 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 404) {
         let errorValue: Promise<GetUserByIdResponse404> | undefined;
-        throw new GetUserByIdError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new JSONApiResponse<GetUserByIdResponse404>(errorRaw.clone()).value() });
-      }
-      else {
+        throw new GetUserByIdError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<GetUserByIdResponse404>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetUserByIdError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetUserByIdError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<GetUserByIdResponse200> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<GetUserByIdResponse200> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getUserById(requestParameters: ApiGetUserByIdRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetUserByIdResponse200> {
+  async getUserById(
+    requestParameters: ApiGetUserByIdRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetUserByIdResponse200> {
     const response = await this.getUserByIdRaw(requestParameters, initOverrides);
-    return await response.value() as GetUserByIdResponse200;
+    return (await response.value()) as GetUserByIdResponse200;
   }
 }

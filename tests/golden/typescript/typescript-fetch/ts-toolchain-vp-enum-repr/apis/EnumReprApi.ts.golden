@@ -9,8 +9,20 @@ import type { ExternallyTaggedEnum } from '../models/ExternallyTaggedEnum';
 import type { InternallyTaggedEnum } from '../models/InternallyTaggedEnum';
 import type { MixedEnum } from '../models/MixedEnum';
 import type { UntaggedEnum } from '../models/UntaggedEnum';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiHandleAdjacentlyTaggedRequest {
   body: AdjacentlyTaggedEnum;
@@ -33,117 +45,197 @@ export interface ApiHandleUntaggedRequest {
 }
 
 export type HandleAdjacentlyTaggedRawResponse =
-  | JSONApiResponse<AdjacentlyTaggedEnum> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<AdjacentlyTaggedEnum> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type HandleExternallyTaggedRawResponse =
-  | JSONApiResponse<ExternallyTaggedEnum> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<ExternallyTaggedEnum> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type HandleInternallyTaggedRawResponse =
-  | JSONApiResponse<InternallyTaggedEnum> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<InternallyTaggedEnum> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type HandleMixedRawResponse =
-  | JSONApiResponse<MixedEnum> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<MixedEnum> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type HandleUntaggedRawResponse =
-  | JSONApiResponse<UntaggedEnum> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<UntaggedEnum> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
 export type HandleAdjacentlyTaggedErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class HandleAdjacentlyTaggedError extends ResponseError {
   readonly detail: HandleAdjacentlyTaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleAdjacentlyTaggedErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: HandleAdjacentlyTaggedErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type HandleExternallyTaggedErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class HandleExternallyTaggedError extends ResponseError {
   readonly detail: HandleExternallyTaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleExternallyTaggedErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: HandleExternallyTaggedErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type HandleInternallyTaggedErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class HandleInternallyTaggedError extends ResponseError {
   readonly detail: HandleInternallyTaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleInternallyTaggedErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: HandleInternallyTaggedErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type HandleMixedErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class HandleMixedError extends ResponseError {
   readonly detail: HandleMixedErrorDetail;
 
-  constructor(response: Response, detail: HandleMixedErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: HandleMixedErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type HandleUntaggedErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class HandleUntaggedError extends ResponseError {
   readonly detail: HandleUntaggedErrorDetail;
 
-  constructor(response: Response, detail: HandleUntaggedErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: HandleUntaggedErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface EnumReprApiInterface {
-  handleAdjacentlyTaggedRaw: (requestParameters: ApiHandleAdjacentlyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleAdjacentlyTaggedRawResponse>;
-  handleAdjacentlyTagged: (requestParameters: ApiHandleAdjacentlyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<AdjacentlyTaggedEnum>;
-  handleExternallyTaggedRaw: (requestParameters: ApiHandleExternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleExternallyTaggedRawResponse>;
-  handleExternallyTagged: (requestParameters: ApiHandleExternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<ExternallyTaggedEnum>;
-  handleInternallyTaggedRaw: (requestParameters: ApiHandleInternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleInternallyTaggedRawResponse>;
-  handleInternallyTagged: (requestParameters: ApiHandleInternallyTaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<InternallyTaggedEnum>;
-  handleMixedRaw: (requestParameters: ApiHandleMixedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleMixedRawResponse>;
-  handleMixed: (requestParameters: ApiHandleMixedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<MixedEnum>;
-  handleUntaggedRaw: (requestParameters: ApiHandleUntaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<HandleUntaggedRawResponse>;
-  handleUntagged: (requestParameters: ApiHandleUntaggedRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UntaggedEnum>;
+  handleAdjacentlyTaggedRaw: (
+    requestParameters: ApiHandleAdjacentlyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<HandleAdjacentlyTaggedRawResponse>;
+  handleAdjacentlyTagged: (
+    requestParameters: ApiHandleAdjacentlyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<AdjacentlyTaggedEnum>;
+  handleExternallyTaggedRaw: (
+    requestParameters: ApiHandleExternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<HandleExternallyTaggedRawResponse>;
+  handleExternallyTagged: (
+    requestParameters: ApiHandleExternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<ExternallyTaggedEnum>;
+  handleInternallyTaggedRaw: (
+    requestParameters: ApiHandleInternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<HandleInternallyTaggedRawResponse>;
+  handleInternallyTagged: (
+    requestParameters: ApiHandleInternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<InternallyTaggedEnum>;
+  handleMixedRaw: (
+    requestParameters: ApiHandleMixedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<HandleMixedRawResponse>;
+  handleMixed: (
+    requestParameters: ApiHandleMixedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<MixedEnum>;
+  handleUntaggedRaw: (
+    requestParameters: ApiHandleUntaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<HandleUntaggedRawResponse>;
+  handleUntagged: (
+    requestParameters: ApiHandleUntaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<UntaggedEnum>;
 }
 
 export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
@@ -154,13 +246,14 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async handleAdjacentlyTaggedRaw(requestParameters: ApiHandleAdjacentlyTaggedRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<HandleAdjacentlyTaggedRawResponse> {
+  async handleAdjacentlyTaggedRaw(
+    requestParameters: ApiHandleAdjacentlyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<HandleAdjacentlyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling handleAdjacentlyTaggedRaw().'
+        'Required parameter "body" was null or undefined when calling handleAdjacentlyTaggedRaw().',
       );
     }
     // Build path with path parameters
@@ -175,47 +268,69 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new HandleAdjacentlyTaggedError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new HandleAdjacentlyTaggedError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new HandleAdjacentlyTaggedError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new HandleAdjacentlyTaggedError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<AdjacentlyTaggedEnum> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<AdjacentlyTaggedEnum> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async handleAdjacentlyTagged(requestParameters: ApiHandleAdjacentlyTaggedRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<AdjacentlyTaggedEnum> {
+  async handleAdjacentlyTagged(
+    requestParameters: ApiHandleAdjacentlyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<AdjacentlyTaggedEnum> {
     const response = await this.handleAdjacentlyTaggedRaw(requestParameters, initOverrides);
-    return await response.value() as AdjacentlyTaggedEnum;
+    return (await response.value()) as AdjacentlyTaggedEnum;
   }
 
-  async handleExternallyTaggedRaw(requestParameters: ApiHandleExternallyTaggedRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<HandleExternallyTaggedRawResponse> {
+  async handleExternallyTaggedRaw(
+    requestParameters: ApiHandleExternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<HandleExternallyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling handleExternallyTaggedRaw().'
+        'Required parameter "body" was null or undefined when calling handleExternallyTaggedRaw().',
       );
     }
     // Build path with path parameters
@@ -230,47 +345,69 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new HandleExternallyTaggedError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new HandleExternallyTaggedError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new HandleExternallyTaggedError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new HandleExternallyTaggedError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<ExternallyTaggedEnum> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<ExternallyTaggedEnum> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async handleExternallyTagged(requestParameters: ApiHandleExternallyTaggedRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<ExternallyTaggedEnum> {
+  async handleExternallyTagged(
+    requestParameters: ApiHandleExternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<ExternallyTaggedEnum> {
     const response = await this.handleExternallyTaggedRaw(requestParameters, initOverrides);
-    return await response.value() as ExternallyTaggedEnum;
+    return (await response.value()) as ExternallyTaggedEnum;
   }
 
-  async handleInternallyTaggedRaw(requestParameters: ApiHandleInternallyTaggedRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<HandleInternallyTaggedRawResponse> {
+  async handleInternallyTaggedRaw(
+    requestParameters: ApiHandleInternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<HandleInternallyTaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling handleInternallyTaggedRaw().'
+        'Required parameter "body" was null or undefined when calling handleInternallyTaggedRaw().',
       );
     }
     // Build path with path parameters
@@ -285,46 +422,69 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new HandleInternallyTaggedError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new HandleInternallyTaggedError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new HandleInternallyTaggedError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new HandleInternallyTaggedError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<InternallyTaggedEnum> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<InternallyTaggedEnum> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async handleInternallyTagged(requestParameters: ApiHandleInternallyTaggedRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<InternallyTaggedEnum> {
+  async handleInternallyTagged(
+    requestParameters: ApiHandleInternallyTaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<InternallyTaggedEnum> {
     const response = await this.handleInternallyTaggedRaw(requestParameters, initOverrides);
-    return await response.value() as InternallyTaggedEnum;
+    return (await response.value()) as InternallyTaggedEnum;
   }
 
-  async handleMixedRaw(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<HandleMixedRawResponse> {
+  async handleMixedRaw(
+    requestParameters: ApiHandleMixedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<HandleMixedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling handleMixedRaw().'
+        'Required parameter "body" was null or undefined when calling handleMixedRaw().',
       );
     }
     // Build path with path parameters
@@ -339,46 +499,67 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new HandleMixedError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new HandleMixedError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new HandleMixedError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new HandleMixedError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<MixedEnum> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async handleMixed(requestParameters: ApiHandleMixedRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<MixedEnum> {
+  async handleMixed(
+    requestParameters: ApiHandleMixedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<MixedEnum> {
     const response = await this.handleMixedRaw(requestParameters, initOverrides);
-    return await response.value() as MixedEnum;
+    return (await response.value()) as MixedEnum;
   }
 
-  async handleUntaggedRaw(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<HandleUntaggedRawResponse> {
+  async handleUntaggedRaw(
+    requestParameters: ApiHandleUntaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<HandleUntaggedRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling handleUntaggedRaw().'
+        'Required parameter "body" was null or undefined when calling handleUntaggedRaw().',
       );
     }
     // Build path with path parameters
@@ -393,37 +574,56 @@ export class EnumReprApi extends BaseAPI implements EnumReprApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new HandleUntaggedError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new HandleUntaggedError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new HandleUntaggedError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new HandleUntaggedError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<UntaggedEnum> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async handleUntagged(requestParameters: ApiHandleUntaggedRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<UntaggedEnum> {
+  async handleUntagged(
+    requestParameters: ApiHandleUntaggedRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<UntaggedEnum> {
     const response = await this.handleUntaggedRaw(requestParameters, initOverrides);
-    return await response.value() as UntaggedEnum;
+    return (await response.value()) as UntaggedEnum;
   }
 }

@@ -1,26 +1,26 @@
 {
+  "name": "optional-array-of-inline-objects-test",
+  "version": "1.0.0",
   "description": "Test case for optional array of inline objects with snake_case to camelCase conversion",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "openapi",
-    "api-client",
-    "typescript",
-    "generated"
-  ],
-  "main": "./dist/index.js",
-  "name": "optional-array-of-inline-objects-test",
   "scripts": {
     "build": "tsc"
-  },
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  }
 }

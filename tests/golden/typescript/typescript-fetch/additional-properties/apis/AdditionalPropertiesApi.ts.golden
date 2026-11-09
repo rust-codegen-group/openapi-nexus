@@ -7,8 +7,20 @@
 import type { LeafValue } from '../models/LeafValue';
 import type { MiddleLevel } from '../models/MiddleLevel';
 import type { RootLevel } from '../models/RootLevel';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiPostLeafRequest {
   body: LeafValue;
@@ -23,73 +35,121 @@ export interface ApiPostRootRequest {
 }
 
 export type PostLeafRawResponse =
-  | JSONApiResponse<LeafValue> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<LeafValue> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type PostMiddleRawResponse =
-  | JSONApiResponse<MiddleLevel> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<MiddleLevel> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type PostRootRawResponse =
-  | JSONApiResponse<RootLevel> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<RootLevel> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
 export type PostLeafErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class PostLeafError extends ResponseError {
   readonly detail: PostLeafErrorDetail;
 
-  constructor(response: Response, detail: PostLeafErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostLeafErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type PostMiddleErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class PostMiddleError extends ResponseError {
   readonly detail: PostMiddleErrorDetail;
 
-  constructor(response: Response, detail: PostMiddleErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostMiddleErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type PostRootErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class PostRootError extends ResponseError {
   readonly detail: PostRootErrorDetail;
 
-  constructor(response: Response, detail: PostRootErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostRootErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface AdditionalPropertiesApiInterface {
-  postLeafRaw: (requestParameters: ApiPostLeafRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostLeafRawResponse>;
-  postLeaf: (requestParameters: ApiPostLeafRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<LeafValue>;
-  postMiddleRaw: (requestParameters: ApiPostMiddleRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostMiddleRawResponse>;
-  postMiddle: (requestParameters: ApiPostMiddleRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<MiddleLevel>;
-  postRootRaw: (requestParameters: ApiPostRootRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostRootRawResponse>;
-  postRoot: (requestParameters: ApiPostRootRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<RootLevel>;
+  postLeafRaw: (
+    requestParameters: ApiPostLeafRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostLeafRawResponse>;
+  postLeaf: (
+    requestParameters: ApiPostLeafRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<LeafValue>;
+  postMiddleRaw: (
+    requestParameters: ApiPostMiddleRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostMiddleRawResponse>;
+  postMiddle: (
+    requestParameters: ApiPostMiddleRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<MiddleLevel>;
+  postRootRaw: (
+    requestParameters: ApiPostRootRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostRootRawResponse>;
+  postRoot: (
+    requestParameters: ApiPostRootRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<RootLevel>;
 }
 
 export class AdditionalPropertiesApi extends BaseAPI implements AdditionalPropertiesApiInterface {
@@ -100,12 +160,14 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     super(configuration ?? DefaultConfig);
   }
 
-  async postLeafRaw(requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostLeafRawResponse> {
+  async postLeafRaw(
+    requestParameters: ApiPostLeafRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostLeafRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postLeafRaw().'
+        'Required parameter "body" was null or undefined when calling postLeafRaw().',
       );
     }
     // Build path with path parameters
@@ -120,46 +182,67 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new PostLeafError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new PostLeafError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostLeafError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostLeafError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<LeafValue> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async postLeaf(requestParameters: ApiPostLeafRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<LeafValue> {
+  async postLeaf(
+    requestParameters: ApiPostLeafRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<LeafValue> {
     const response = await this.postLeafRaw(requestParameters, initOverrides);
-    return await response.value() as LeafValue;
+    return (await response.value()) as LeafValue;
   }
 
-  async postMiddleRaw(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostMiddleRawResponse> {
+  async postMiddleRaw(
+    requestParameters: ApiPostMiddleRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostMiddleRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postMiddleRaw().'
+        'Required parameter "body" was null or undefined when calling postMiddleRaw().',
       );
     }
     // Build path with path parameters
@@ -174,46 +257,67 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new PostMiddleError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new PostMiddleError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostMiddleError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostMiddleError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<MiddleLevel> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async postMiddle(requestParameters: ApiPostMiddleRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<MiddleLevel> {
+  async postMiddle(
+    requestParameters: ApiPostMiddleRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<MiddleLevel> {
     const response = await this.postMiddleRaw(requestParameters, initOverrides);
-    return await response.value() as MiddleLevel;
+    return (await response.value()) as MiddleLevel;
   }
 
-  async postRootRaw(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostRootRawResponse> {
+  async postRootRaw(
+    requestParameters: ApiPostRootRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostRootRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postRootRaw().'
+        'Required parameter "body" was null or undefined when calling postRootRaw().',
       );
     }
     // Build path with path parameters
@@ -228,37 +332,56 @@ export class AdditionalPropertiesApi extends BaseAPI implements AdditionalProper
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new PostRootError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new PostRootError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostRootError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostRootError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<RootLevel> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async postRoot(requestParameters: ApiPostRootRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<RootLevel> {
+  async postRoot(
+    requestParameters: ApiPostRootRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<RootLevel> {
     const response = await this.postRootRaw(requestParameters, initOverrides);
-    return await response.value() as RootLevel;
+    return (await response.value()) as RootLevel;
   }
 }

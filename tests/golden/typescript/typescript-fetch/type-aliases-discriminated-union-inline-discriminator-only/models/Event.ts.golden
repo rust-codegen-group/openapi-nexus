@@ -16,4 +16,7 @@
 import type { EventEventCreated } from './EventEventCreated';
 import type { EventEventUpdated } from './EventEventUpdated';
 
-export type Event = { kind: 'EVENT_UNSPECIFIED' } | ({ kind: 'EVENT_CREATED' } & EventEventCreated) | ({ kind: 'EVENT_UPDATED' } & EventEventUpdated);
+export type Event =
+  | { kind: 'EVENT_UNSPECIFIED' }
+  | ({ kind: 'EVENT_CREATED' } & EventEventCreated)
+  | ({ kind: 'EVENT_UPDATED' } & EventEventUpdated);

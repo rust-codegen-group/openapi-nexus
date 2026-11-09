@@ -13,7 +13,9 @@ export interface ContainerImageCustom {
   readonly customField: string;
 }
 
-export function containerImageCustomFromJSON(json: ContainerImageCustom$Wire): ContainerImageCustom {
+export function containerImageCustomFromJSON(
+  json: ContainerImageCustom$Wire,
+): ContainerImageCustom {
   return {
     customField: json.customField,
   };

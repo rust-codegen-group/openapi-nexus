@@ -8,8 +8,19 @@ import type { CreateTestResourceRequest } from '../models/CreateTestResourceRequ
 import type { CreateTestResourceResponse } from '../models/CreateTestResourceResponse';
 import type { DeleteTestResourceResponse } from '../models/DeleteTestResourceResponse';
 import type { HttpErrorResponse } from '../models/HttpErrorResponse';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiCreateTestResourceRequest {
   body: CreateTestResourceRequest;
@@ -23,51 +34,82 @@ export interface ApiDeleteTestResourceRequest {
 }
 
 export type CreateTestResourceRawResponse =
-  | JSONApiResponse<CreateTestResourceResponse> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<CreateTestResourceResponse> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type DeleteTestResourceRawResponse =
-  | JSONApiResponse<DeleteTestResourceResponse> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<DeleteTestResourceResponse> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type CreateTestResourceErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type CreateTestResourceErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class CreateTestResourceError extends ResponseError {
   readonly detail: CreateTestResourceErrorDetail;
 
-  constructor(response: Response, detail: CreateTestResourceErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateTestResourceErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type DeleteTestResourceErrorDetail =
-  { kind: 'clientError'; status: number; raw: Response; value(): Promise<HttpErrorResponse> }
-  | { kind: 'serverError'; status: number; raw: Response; value(): Promise<HttpErrorResponse> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'clientError';
+      status: number;
+      raw: Response;
+      value(): Promise<HttpErrorResponse>;
+    }
+  | {
+      kind: 'serverError';
+      status: number;
+      raw: Response;
+      value(): Promise<HttpErrorResponse>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class DeleteTestResourceError extends ResponseError {
   readonly detail: DeleteTestResourceErrorDetail;
 
-  constructor(response: Response, detail: DeleteTestResourceErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: DeleteTestResourceErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface TestResourceApiInterface {
-  createTestResourceRaw: (requestParameters: ApiCreateTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestResourceRawResponse>;
-  createTestResource: (requestParameters: ApiCreateTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestResourceResponse>;
-  deleteTestResourceRaw: (requestParameters: ApiDeleteTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteTestResourceRawResponse>;
-  deleteTestResource: (requestParameters: ApiDeleteTestResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteTestResourceResponse>;
+  createTestResourceRaw: (
+    requestParameters: ApiCreateTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateTestResourceRawResponse>;
+  createTestResource: (
+    requestParameters: ApiCreateTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateTestResourceResponse>;
+  deleteTestResourceRaw: (
+    requestParameters: ApiDeleteTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<DeleteTestResourceRawResponse>;
+  deleteTestResource: (
+    requestParameters: ApiDeleteTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<DeleteTestResourceResponse>;
 }
 
 export class TestResourceApi extends BaseAPI implements TestResourceApiInterface {
@@ -78,12 +120,14 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     super(configuration ?? DefaultConfig);
   }
 
-  async createTestResourceRaw(requestParameters: ApiCreateTestResourceRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceRawResponse> {
+  async createTestResourceRaw(
+    requestParameters: ApiCreateTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateTestResourceRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createTestResourceRaw().'
+        'Required parameter "body" was null or undefined when calling createTestResourceRaw().',
       );
     }
     // Build path with path parameters
@@ -98,89 +142,135 @@ export class TestResourceApi extends BaseAPI implements TestResourceApiInterface
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateTestResourceError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateTestResourceError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<CreateTestResourceResponse> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<CreateTestResourceResponse> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createTestResource(requestParameters: ApiCreateTestResourceRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<CreateTestResourceResponse> {
+  async createTestResource(
+    requestParameters: ApiCreateTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateTestResourceResponse> {
     const response = await this.createTestResourceRaw(requestParameters, initOverrides);
-    return await response.value() as CreateTestResourceResponse;
+    return (await response.value()) as CreateTestResourceResponse;
   }
 
-  async deleteTestResourceRaw(requestParameters: ApiDeleteTestResourceRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceRawResponse> {
+  async deleteTestResourceRaw(
+    requestParameters: ApiDeleteTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<DeleteTestResourceRawResponse> {
     if (requestParameters.resourceId === undefined || requestParameters.resourceId === null) {
       throw new RequiredError(
         'resourceId',
-        'Required parameter "resourceId" was null or undefined when calling deleteTestResourceRaw().'
+        'Required parameter "resourceId" was null or undefined when calling deleteTestResourceRaw().',
       );
     }
     // Build path with path parameters
     let urlPath = `/v1/api/test-resource/{resource_id}`;
-    urlPath = urlPath.replace(`{resource_id}`, encodeURIComponent(String(requestParameters.resourceId)));
+    urlPath = urlPath.replace(
+      `{resource_id}`,
+      encodeURIComponent(String(requestParameters.resourceId)),
+    );
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'DELETE',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status >= 400 && response.status < 500) {
         let errorValue: Promise<HttpErrorResponse> | undefined;
-        throw new DeleteTestResourceError(response, { kind: 'clientError', status: response.status, raw: response, value: () => errorValue ??= new JSONApiResponse<HttpErrorResponse>(errorRaw.clone()).value() });
-      }
-      else if (response.status >= 500 && response.status < 600) {
+        throw new DeleteTestResourceError(response, {
+          kind: 'clientError',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<HttpErrorResponse>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status >= 500 && response.status < 600) {
         let errorValue: Promise<HttpErrorResponse> | undefined;
-        throw new DeleteTestResourceError(response, { kind: 'serverError', status: response.status, raw: response, value: () => errorValue ??= new JSONApiResponse<HttpErrorResponse>(errorRaw.clone()).value() });
-      }
-      else {
+        throw new DeleteTestResourceError(response, {
+          kind: 'serverError',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<HttpErrorResponse>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new DeleteTestResourceError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new DeleteTestResourceError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<DeleteTestResourceResponse> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<DeleteTestResourceResponse> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async deleteTestResource(requestParameters: ApiDeleteTestResourceRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<DeleteTestResourceResponse> {
+  async deleteTestResource(
+    requestParameters: ApiDeleteTestResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<DeleteTestResourceResponse> {
     const response = await this.deleteTestResourceRaw(requestParameters, initOverrides);
-    return await response.value() as DeleteTestResourceResponse;
+    return (await response.value()) as DeleteTestResourceResponse;
   }
 }

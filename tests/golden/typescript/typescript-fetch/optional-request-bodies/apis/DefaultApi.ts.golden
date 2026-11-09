@@ -5,8 +5,19 @@
  * Covers optional non-multipart request bodies.
  */
 import type { Payload } from '../models/Payload';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiSendOptionalBinaryRequest {
   body?: Blob | File;
@@ -25,91 +36,131 @@ export interface ApiSendRequiredJsonRequest {
 }
 
 export type SendOptionalBinaryRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type SendOptionalJsonRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type SendOptionalTextRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type SendRequiredJsonRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type SendOptionalBinaryErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendOptionalBinaryErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendOptionalBinaryError extends ResponseError {
   readonly detail: SendOptionalBinaryErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalBinaryErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendOptionalBinaryErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type SendOptionalJsonErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendOptionalJsonErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendOptionalJsonError extends ResponseError {
   readonly detail: SendOptionalJsonErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalJsonErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendOptionalJsonErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type SendOptionalTextErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendOptionalTextErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendOptionalTextError extends ResponseError {
   readonly detail: SendOptionalTextErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalTextErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendOptionalTextErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type SendRequiredJsonErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendRequiredJsonErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendRequiredJsonError extends ResponseError {
   readonly detail: SendRequiredJsonErrorDetail;
 
-  constructor(response: Response, detail: SendRequiredJsonErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendRequiredJsonErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  sendOptionalBinaryRaw: (requestParameters: ApiSendOptionalBinaryRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendOptionalBinaryRawResponse>;
-  sendOptionalBinary: (requestParameters: ApiSendOptionalBinaryRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendOptionalJsonRaw: (requestParameters: ApiSendOptionalJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendOptionalJsonRawResponse>;
-  sendOptionalJson: (requestParameters: ApiSendOptionalJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendOptionalTextRaw: (requestParameters: ApiSendOptionalTextRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendOptionalTextRawResponse>;
-  sendOptionalText: (requestParameters: ApiSendOptionalTextRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendRequiredJsonRaw: (requestParameters: ApiSendRequiredJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendRequiredJsonRawResponse>;
-  sendRequiredJson: (requestParameters: ApiSendRequiredJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  sendOptionalBinaryRaw: (
+    requestParameters: ApiSendOptionalBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendOptionalBinaryRawResponse>;
+  sendOptionalBinary: (
+    requestParameters: ApiSendOptionalBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  sendOptionalJsonRaw: (
+    requestParameters: ApiSendOptionalJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendOptionalJsonRawResponse>;
+  sendOptionalJson: (
+    requestParameters: ApiSendOptionalJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  sendOptionalTextRaw: (
+    requestParameters: ApiSendOptionalTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendOptionalTextRawResponse>;
+  sendOptionalText: (
+    requestParameters: ApiSendOptionalTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  sendRequiredJsonRaw: (
+    requestParameters: ApiSendRequiredJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendRequiredJsonRawResponse>;
+  sendRequiredJson: (
+    requestParameters: ApiSendRequiredJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -120,8 +171,10 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async sendOptionalBinaryRaw(requestParameters: ApiSendOptionalBinaryRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalBinaryRawResponse> {
+  async sendOptionalBinaryRaw(
+    requestParameters: ApiSendOptionalBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendOptionalBinaryRawResponse> {
     // Build path with path parameters
     const urlPath = `/optional-binary`;
     // Build query parameters
@@ -134,38 +187,52 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendOptionalBinaryError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendOptionalBinaryError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendOptionalBinary(requestParameters: ApiSendOptionalBinaryRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+  async sendOptionalBinary(
+    requestParameters: ApiSendOptionalBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendOptionalBinaryRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async sendOptionalJsonRaw(requestParameters: ApiSendOptionalJsonRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalJsonRawResponse> {
+  async sendOptionalJsonRaw(
+    requestParameters: ApiSendOptionalJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendOptionalJsonRawResponse> {
     // Build path with path parameters
     const urlPath = `/optional-json`;
     // Build query parameters
@@ -178,38 +245,52 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendOptionalJsonError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendOptionalJsonError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendOptionalJson(requestParameters: ApiSendOptionalJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async sendOptionalJson(
+    requestParameters: ApiSendOptionalJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendOptionalJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async sendOptionalTextRaw(requestParameters: ApiSendOptionalTextRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalTextRawResponse> {
+  async sendOptionalTextRaw(
+    requestParameters: ApiSendOptionalTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendOptionalTextRawResponse> {
     // Build path with path parameters
     const urlPath = `/optional-text`;
     // Build query parameters
@@ -222,42 +303,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendOptionalTextError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendOptionalTextError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendOptionalText(requestParameters: ApiSendOptionalTextRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async sendOptionalText(
+    requestParameters: ApiSendOptionalTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendOptionalTextRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async sendRequiredJsonRaw(requestParameters: ApiSendRequiredJsonRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendRequiredJsonRawResponse> {
+  async sendRequiredJsonRaw(
+    requestParameters: ApiSendRequiredJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendRequiredJsonRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling sendRequiredJsonRaw().'
+        'Required parameter "body" was null or undefined when calling sendRequiredJsonRaw().',
       );
     }
     // Build path with path parameters
@@ -272,32 +367,44 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendRequiredJsonError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendRequiredJsonError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendRequiredJson(requestParameters: ApiSendRequiredJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async sendRequiredJson(
+    requestParameters: ApiSendRequiredJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendRequiredJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }

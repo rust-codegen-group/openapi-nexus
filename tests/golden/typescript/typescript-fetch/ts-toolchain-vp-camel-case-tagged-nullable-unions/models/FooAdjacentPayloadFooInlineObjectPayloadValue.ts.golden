@@ -12,13 +12,17 @@ export interface FooAdjacentPayloadFooInlineObjectPayloadValue {
   readonly barValue: string;
 }
 
-export function fooAdjacentPayloadFooInlineObjectPayloadValueFromJSON(json: FooAdjacentPayloadFooInlineObjectPayloadValue$Wire): FooAdjacentPayloadFooInlineObjectPayloadValue {
+export function fooAdjacentPayloadFooInlineObjectPayloadValueFromJSON(
+  json: FooAdjacentPayloadFooInlineObjectPayloadValue$Wire,
+): FooAdjacentPayloadFooInlineObjectPayloadValue {
   return {
     barValue: json.bar_value,
   };
 }
 
-export function fooAdjacentPayloadFooInlineObjectPayloadValueToJSON(value: FooAdjacentPayloadFooInlineObjectPayloadValue): FooAdjacentPayloadFooInlineObjectPayloadValue$Wire {
+export function fooAdjacentPayloadFooInlineObjectPayloadValueToJSON(
+  value: FooAdjacentPayloadFooInlineObjectPayloadValue,
+): FooAdjacentPayloadFooInlineObjectPayloadValue$Wire {
   return {
     bar_value: value.barValue,
   };

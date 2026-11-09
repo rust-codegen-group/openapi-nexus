@@ -3,29 +3,49 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
-import type { AllOfMixedStringMapAllOf1, AllOfMixedStringMapAllOf1$Wire } from './AllOfMixedStringMapAllOf1';
+import type {
+  AllOfMixedStringMapAllOf1,
+  AllOfMixedStringMapAllOf1$Wire,
+} from './AllOfMixedStringMapAllOf1';
 
-export type AllOfMixedStringMap$Wire = Readonly<AllOfMixedStringMapAllOf1$Wire
-& Record<string, string>>;
+export type AllOfMixedStringMap$Wire = Readonly<
+  AllOfMixedStringMapAllOf1$Wire & Record<string, string>
+>;
 
 export type AllOfMixedStringMap = Readonly<AllOfMixedStringMapAllOf1 & Record<string, string>>;
 
 export function allOfMixedStringMapFromJSON(json: AllOfMixedStringMap$Wire): AllOfMixedStringMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known'].includes(key)).map(([key, value]) => {const additionalValue = value as string; return [key, additionalValue] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as string;
+      return [key, additionalValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
-    ...(Object.prototype.hasOwnProperty.call(json, 'known') ? {known: json.known,} : {}),
+    ...(Object.prototype.hasOwnProperty.call(json, 'known') ? { known: json.known } : {}),
   };
   return result;
 }
 
 export function allOfMixedStringMapToJSON(value: AllOfMixedStringMap): AllOfMixedStringMap$Wire {
-  const additionalProperties = Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['known'].includes(key)).map(([key, value]) => {const additionalValue = value as string; return [key, additionalValue] as const;}));
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['known'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as string;
+      return [key, additionalValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
-    ...(Object.prototype.hasOwnProperty.call(value, 'known') ? {known: value.known,} : {}),
+    ...(Object.prototype.hasOwnProperty.call(value, 'known') ? { known: value.known } : {}),
   };
   return result;
 }

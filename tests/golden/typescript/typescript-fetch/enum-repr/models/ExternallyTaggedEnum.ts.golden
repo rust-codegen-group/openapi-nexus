@@ -12,4 +12,6 @@ import type { VariantB } from './VariantB';
 This is the default representation where the variant name is the key
 and the content is the value: `{"VariantA": {"field1": "...", "field2": 123}}` */
 
-export type ExternallyTaggedEnum = { 'EXTERNALLY_TAGGED_ENUM_VARIANT_A': VariantA } | { 'EXTERNALLY_TAGGED_ENUM_VARIANT_B': VariantB };
+export type ExternallyTaggedEnum =
+  | { EXTERNALLY_TAGGED_ENUM_VARIANT_A: VariantA }
+  | { EXTERNALLY_TAGGED_ENUM_VARIANT_B: VariantB };

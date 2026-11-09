@@ -1,31 +1,32 @@
 {
+  "name": "discriminated-union-with-references-test",
+  "version": "1.0.0",
   "description": "Test fixture for discriminated union where variants are references to component schemas.\nThis is similar to the ContainerImage pattern in the infiron API.\n",
-  "devDependencies": {
-    "typescript": "^7.0.2",
-    "vite-plus": "^1.5.0"
-  },
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
       "default": "./dist/index.mjs",
       "types": "./dist/index.d.mts"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "openapi",
-    "api-client",
-    "typescript",
-    "generated"
-  ],
-  "main": "./dist/index.mjs",
-  "name": "discriminated-union-with-references-test",
   "scripts": {
     "build": "vp pack",
-    "check": "vp check --no-fmt"
+    "check": "vp check",
+    "fmt": "vp fmt"
   },
-  "type": "module",
-  "types": "./dist/index.d.mts",
-  "version": "1.0.0"
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.5.0"
+  }
 }

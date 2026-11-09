@@ -6,8 +6,9 @@
 import type { DetailListAlias, DetailListAlias$Wire } from './DetailListAlias';
 import { detailListAliasFromJSON, detailListAliasToJSON } from './DetailListAlias';
 
-export interface AliasArrayMap$Wire extends Readonly<Record<string,
-DetailListAlias$Wire | number>> {
+export interface AliasArrayMap$Wire extends Readonly<
+  Record<string, DetailListAlias$Wire | number>
+> {
   readonly known_count: number;
 }
 
@@ -16,25 +17,55 @@ export interface AliasArrayMap extends Readonly<Record<string, DetailListAlias |
 }
 
 export function aliasArrayMapFromJSON(json: AliasArrayMap$Wire): AliasArrayMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known_count'].includes(key)).map(([key, value]) => {const additionalValue = value as DetailListAlias$Wire; return [key, detailListAliasFromJSON(additionalValue)] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known_count'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as DetailListAlias$Wire;
+      return [key, detailListAliasFromJSON(additionalValue)] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['knownCount'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['knownCount'].includes(key))),
+    ...visibleProperties,
     knownCount: json.known_count,
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['knownCount'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['knownCount'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
 export function aliasArrayMapToJSON(value: AliasArrayMap): AliasArrayMap$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  DetailListAlias>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['knownCount'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value as DetailListAlias; return [key, detailListAliasToJSON(additionalValue)] as const;}));
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, DetailListAlias> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['knownCount'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as DetailListAlias;
+      return [key, detailListAliasToJSON(additionalValue)] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
     known_count: value.knownCount,

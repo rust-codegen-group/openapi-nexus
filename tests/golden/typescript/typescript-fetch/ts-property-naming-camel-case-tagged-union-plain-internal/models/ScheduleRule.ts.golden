@@ -12,22 +12,34 @@ import { scheduleRuleIntervalFromJSON, scheduleRuleIntervalToJSON } from './Sche
 import type { ScheduleRuleOnce, ScheduleRuleOnce$Wire } from './ScheduleRuleOnce';
 import { scheduleRuleOnceFromJSON, scheduleRuleOnceToJSON } from './ScheduleRuleOnce';
 
-export type ScheduleRule$Wire = ({ type: 'once' } & ScheduleRuleOnce$Wire) | ({ type: 'interval' } & ScheduleRuleInterval$Wire) | ({ type: 'cron' } & ScheduleRuleCron$Wire);
+export type ScheduleRule$Wire =
+  | ({ type: 'once' } & ScheduleRuleOnce$Wire)
+  | ({ type: 'interval' } & ScheduleRuleInterval$Wire)
+  | ({ type: 'cron' } & ScheduleRuleCron$Wire);
 
-export type ScheduleRule = ({ type: 'once' } & ScheduleRuleOnce) | ({ type: 'interval' } & ScheduleRuleInterval) | ({ type: 'cron' } & ScheduleRuleCron);
+export type ScheduleRule =
+  | ({ type: 'once' } & ScheduleRuleOnce)
+  | ({ type: 'interval' } & ScheduleRuleInterval)
+  | ({ type: 'cron' } & ScheduleRuleCron);
 
 export function scheduleRuleFromJSON(json: ScheduleRule$Wire): ScheduleRule {
   switch (json.type) {
-    case 'once': return { ...scheduleRuleOnceFromJSON(json), type: 'once' };
-    case 'interval': return { ...scheduleRuleIntervalFromJSON(json), type: 'interval' };
-    case 'cron': return { ...scheduleRuleCronFromJSON(json), type: 'cron' };
+    case 'once':
+      return { ...scheduleRuleOnceFromJSON(json), type: 'once' };
+    case 'interval':
+      return { ...scheduleRuleIntervalFromJSON(json), type: 'interval' };
+    case 'cron':
+      return { ...scheduleRuleCronFromJSON(json), type: 'cron' };
   }
 }
 
 export function scheduleRuleToJSON(value: ScheduleRule): ScheduleRule$Wire {
   switch (value.type) {
-    case 'once': return { ...scheduleRuleOnceToJSON(value), type: 'once' } as ScheduleRule$Wire;
-    case 'interval': return { ...scheduleRuleIntervalToJSON(value), type: 'interval' } as ScheduleRule$Wire;
-    case 'cron': return { ...scheduleRuleCronToJSON(value), type: 'cron' } as ScheduleRule$Wire;
+    case 'once':
+      return { ...scheduleRuleOnceToJSON(value), type: 'once' } as ScheduleRule$Wire;
+    case 'interval':
+      return { ...scheduleRuleIntervalToJSON(value), type: 'interval' } as ScheduleRule$Wire;
+    case 'cron':
+      return { ...scheduleRuleCronToJSON(value), type: 'cron' } as ScheduleRule$Wire;
   }
 }

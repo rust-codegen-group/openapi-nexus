@@ -5,8 +5,20 @@
  * Test API with duplicate parameter names across different locations
  */
 import type { GetUserByIdDuplicateResponse200 } from '../models/GetUserByIdDuplicateResponse200';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiGetUserByIdDuplicateRequest {
   /**
@@ -24,30 +36,51 @@ export interface ApiGetUserByIdDuplicateRequest {
 }
 
 export type GetUserByIdDuplicateRawResponse =
-  | JSONApiResponse<GetUserByIdDuplicateResponse200> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<GetUserByIdDuplicateResponse200> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
 export type GetUserByIdDuplicateErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'notFound'; status: 404; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class GetUserByIdDuplicateError extends ResponseError {
   readonly detail: GetUserByIdDuplicateErrorDetail;
 
-  constructor(response: Response, detail: GetUserByIdDuplicateErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetUserByIdDuplicateErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface UsersApiInterface {
-  getUserByIdDuplicateRaw: (requestParameters: ApiGetUserByIdDuplicateRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateRawResponse>;
-  getUserByIdDuplicate: (requestParameters: ApiGetUserByIdDuplicateRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByIdDuplicateResponse200>;
+  getUserByIdDuplicateRaw: (
+    requestParameters: ApiGetUserByIdDuplicateRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetUserByIdDuplicateRawResponse>;
+  getUserByIdDuplicate: (
+    requestParameters: ApiGetUserByIdDuplicateRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetUserByIdDuplicateResponse200>;
 }
 
 export class UsersApi extends BaseAPI implements UsersApiInterface {
@@ -58,12 +91,14 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getUserByIdDuplicateRaw(requestParameters: ApiGetUserByIdDuplicateRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateRawResponse> {
+  async getUserByIdDuplicateRaw(
+    requestParameters: ApiGetUserByIdDuplicateRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetUserByIdDuplicateRawResponse> {
     if (requestParameters.pathId === undefined || requestParameters.pathId === null) {
       throw new RequiredError(
         'pathId',
-        'Required parameter "pathId" was null or undefined when calling getUserByIdDuplicateRaw().'
+        'Required parameter "pathId" was null or undefined when calling getUserByIdDuplicateRaw().',
       );
     }
     // Build path with path parameters
@@ -75,48 +110,75 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
       queryParameters['id'] = requestParameters.queryId;
     }
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     if (requestParameters.headerId !== undefined) {
       headerParameters['id'] = String(requestParameters.headerId);
     }
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new GetUserByIdDuplicateError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else if (response.status === 404) {
+        throw new GetUserByIdDuplicateError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 404) {
         let errorValue: Promise<void> | undefined;
-        throw new GetUserByIdDuplicateError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new GetUserByIdDuplicateError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetUserByIdDuplicateError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetUserByIdDuplicateError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<GetUserByIdDuplicateResponse200> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<GetUserByIdDuplicateResponse200> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getUserByIdDuplicate(requestParameters: ApiGetUserByIdDuplicateRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<GetUserByIdDuplicateResponse200> {
+  async getUserByIdDuplicate(
+    requestParameters: ApiGetUserByIdDuplicateRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetUserByIdDuplicateResponse200> {
     const response = await this.getUserByIdDuplicateRaw(requestParameters, initOverrides);
-    return await response.value() as GetUserByIdDuplicateResponse200;
+    return (await response.value()) as GetUserByIdDuplicateResponse200;
   }
 }

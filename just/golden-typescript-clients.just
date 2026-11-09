@@ -1,4 +1,4 @@
-# Native TypeScript consumer tests against fresh, unmodified generated clients.
+# Native TypeScript consumer tests against freshly generated clients checked directly by Vite+.
 
 set working-directory := '..'
 
@@ -20,7 +20,7 @@ set working-directory := '..'
         # Like golden builds, validate outside the ignored generated directory:
         # Vite+ otherwise skips every source file because of the repository ignore.
         tar --exclude=node_modules --exclude=dist -C "$output" -cf - . | tar -C "$build" -xf -
-        (cd "$build" && vp install && vp --version && vp check --no-fmt && vp pack)
+        (cd "$build" && vp install && vp --version && vp check && vp pack && vp check)
         mkdir -p "$output/dist"
         cp "$build"/dist/* "$output/dist/"
     done

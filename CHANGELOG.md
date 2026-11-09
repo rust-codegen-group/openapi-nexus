@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Generate TypeScript source, runtime templates, Markdown examples, and JSON
+  configuration with formatting compatible with Vite+ checks. Lay out long
+  signatures, imports, unions, and converter expressions directly in Rust.
+  Enable full `vp check` and validate freshly generated clients before and after
+  packing, without a formatter preparation step. Exclude `dist/` from formatting
+  and provide a `fmt` script for manual edits.
 - Upgrade generated TypeScript clients to Vite+ `^1.5.0`, including Vite `8.3.5`,
   Vitest `5.1.0`, Rolldown `1.2.16`, Oxfmt `0.76.0`, Oxlint `1.91.0`,
   oxlint-tsgolint `7.0.2005`, and tsdown `0.23.4`. Pin CI validation and

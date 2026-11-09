@@ -10,4 +10,6 @@
 import type { ContainerKindCustom } from './ContainerKindCustom';
 import type { ContainerKindManaged } from './ContainerKindManaged';
 
-export type ContainerKind = ({ kind: 'CONTAINER_KIND_MANAGED' } & ContainerKindManaged) | ({ kind: 'CONTAINER_KIND_CUSTOM' } & ContainerKindCustom);
+export type ContainerKind =
+  | ({ kind: 'CONTAINER_KIND_MANAGED' } & ContainerKindManaged)
+  | ({ kind: 'CONTAINER_KIND_CUSTOM' } & ContainerKindCustom);

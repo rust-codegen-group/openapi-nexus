@@ -52,8 +52,8 @@ import { Configuration, {{EXAMPLE_API_CLASS}} } from '{{PACKAGE_NAME}}';
 const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
-    'Authorization': 'Bearer YOUR_TOKEN'
-  }
+    Authorization: 'Bearer YOUR_TOKEN',
+  },
 });
 
 // Initialize the API client
@@ -101,9 +101,9 @@ const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
     'X-API-Key': 'your-api-key',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
-  credentials: 'include'
+  credentials: 'include',
 });
 ```
 
@@ -126,12 +126,12 @@ const loggingMiddleware: Middleware = {
   onError: async (context) => {
     console.error('Error:', context.error);
     return undefined;
-  }
+  },
 };
 
 const config = new Configuration({
   basePath: 'https://api.example.com',
-  middleware: [loggingMiddleware]
+  middleware: [loggingMiddleware],
 });
 ```
 
@@ -190,7 +190,7 @@ To build ES modules:
 npm run build
 ```
 
-## TypeScript Support
+{{TOOLCHAIN_CHECKS}}## TypeScript Support
 
 This package includes TypeScript type definitions. No additional `@types` package is needed.
 
@@ -214,7 +214,7 @@ import type { User, CreateUserRequest } from '{{PACKAGE_NAME}}';
 const user: User = {
   id: 1,
   name: 'John Doe',
-  email: 'john@example.com'
+  email: 'john@example.com',
 };
 ```
 

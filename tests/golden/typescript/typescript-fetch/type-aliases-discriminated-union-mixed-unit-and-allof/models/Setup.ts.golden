@@ -14,4 +14,7 @@ import type { SetupQuick } from './SetupQuick';
 
 /** Setup: quick (managed), custom, or unspecified. */
 
-export type Setup = { kind: 'SETUP_UNSPECIFIED' } | ({ kind: 'SETUP_QUICK' } & SetupQuick) | ({ kind: 'SETUP_CUSTOM' } & SetupCustom);
+export type Setup =
+  | { kind: 'SETUP_UNSPECIFIED' }
+  | ({ kind: 'SETUP_QUICK' } & SetupQuick)
+  | ({ kind: 'SETUP_CUSTOM' } & SetupCustom);

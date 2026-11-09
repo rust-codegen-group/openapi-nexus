@@ -5,6 +5,6 @@
  */
 import type { Detail } from './Detail';
 
-export type OpenExternalEvent = Readonly<Record<'started', Detail>>
-& Readonly<Record<string, unknown>>
-| Readonly<Record<'finished', Detail>> & Readonly<Record<string, unknown>>;
+export type OpenExternalEvent =
+  | (Readonly<Record<'started', Detail>> & Readonly<Record<string, unknown>>)
+  | (Readonly<Record<'finished', Detail>> & Readonly<Record<string, unknown>>);

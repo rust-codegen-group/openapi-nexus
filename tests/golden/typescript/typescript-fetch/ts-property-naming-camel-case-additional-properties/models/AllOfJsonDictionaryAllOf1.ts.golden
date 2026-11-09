@@ -14,13 +14,17 @@ export interface AllOfJsonDictionaryAllOf1 {
   readonly knownItem: Detail;
 }
 
-export function allOfJsonDictionaryAllOf1FromJSON(json: AllOfJsonDictionaryAllOf1$Wire): AllOfJsonDictionaryAllOf1 {
+export function allOfJsonDictionaryAllOf1FromJSON(
+  json: AllOfJsonDictionaryAllOf1$Wire,
+): AllOfJsonDictionaryAllOf1 {
   return {
     knownItem: detailFromJSON(json.known_item),
   };
 }
 
-export function allOfJsonDictionaryAllOf1ToJSON(value: AllOfJsonDictionaryAllOf1): AllOfJsonDictionaryAllOf1$Wire {
+export function allOfJsonDictionaryAllOf1ToJSON(
+  value: AllOfJsonDictionaryAllOf1,
+): AllOfJsonDictionaryAllOf1$Wire {
   return {
     known_item: detailToJSON(value.knownItem),
   };

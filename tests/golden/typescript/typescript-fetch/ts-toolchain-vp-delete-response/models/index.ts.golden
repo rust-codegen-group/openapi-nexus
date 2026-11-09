@@ -5,9 +5,21 @@
  * Test fixture for DELETE operations with JSON response schemas and type alias request bodies
  */
 export type { CreateTestResourceRequest } from './CreateTestResourceRequest';
-export type { CreateTestResourceResponse, CreateTestResourceResponse$Wire } from './CreateTestResourceResponse';
-export { createTestResourceResponseFromJSON, createTestResourceResponseToJSON } from './CreateTestResourceResponse';
-export type { DeleteTestResourceResponse, DeleteTestResourceResponse$Wire } from './DeleteTestResourceResponse';
-export { deleteTestResourceResponseFromJSON, deleteTestResourceResponseToJSON } from './DeleteTestResourceResponse';
+export type {
+  CreateTestResourceResponse,
+  CreateTestResourceResponse$Wire,
+} from './CreateTestResourceResponse';
+export {
+  createTestResourceResponseFromJSON,
+  createTestResourceResponseToJSON,
+} from './CreateTestResourceResponse';
+export type {
+  DeleteTestResourceResponse,
+  DeleteTestResourceResponse$Wire,
+} from './DeleteTestResourceResponse';
+export {
+  deleteTestResourceResponseFromJSON,
+  deleteTestResourceResponseToJSON,
+} from './DeleteTestResourceResponse';
 export type { HttpErrorResponse, HttpErrorResponse$Wire } from './HttpErrorResponse';
 export { httpErrorResponseFromJSON, httpErrorResponseToJSON } from './HttpErrorResponse';

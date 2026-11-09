@@ -3,5 +3,4 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
-export interface PlainJsonMap extends Readonly<Record<string, unknown>> {
-}
+export interface PlainJsonMap extends Readonly<Record<string, unknown>> {}

@@ -6,8 +6,22 @@
  */
 import type { SendOptionalPartsMultipartRequestBody } from '../models/SendOptionalPartsMultipartRequestBody';
 import type { SendTextFieldsMultipartRequestBody } from '../models/SendTextFieldsMultipartRequestBody';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, RequiredError, ResponseError, VoidApiResponse, multipartHeaderValue, uploadFileData, uploadFileFilename } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+  multipartHeaderValue,
+  uploadFileData,
+  uploadFileFilename,
+} from '../runtime/runtime';
 
 export interface ApiSendOptionalPartsRequest {
   body?: SendOptionalPartsMultipartRequestBody;
@@ -18,49 +32,69 @@ export interface ApiSendTextFieldsRequest {
 }
 
 export type SendOptionalPartsRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type SendTextFieldsRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type SendOptionalPartsErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendOptionalPartsErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendOptionalPartsError extends ResponseError {
   readonly detail: SendOptionalPartsErrorDetail;
 
-  constructor(response: Response, detail: SendOptionalPartsErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendOptionalPartsErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type SendTextFieldsErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendTextFieldsErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendTextFieldsError extends ResponseError {
   readonly detail: SendTextFieldsErrorDetail;
 
-  constructor(response: Response, detail: SendTextFieldsErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendTextFieldsErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface MultipartApiInterface {
-  sendOptionalPartsRaw: (requestParameters: ApiSendOptionalPartsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendOptionalPartsRawResponse>;
-  sendOptionalParts: (requestParameters: ApiSendOptionalPartsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendTextFieldsRaw: (requestParameters: ApiSendTextFieldsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendTextFieldsRawResponse>;
-  sendTextFields: (requestParameters: ApiSendTextFieldsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  sendOptionalPartsRaw: (
+    requestParameters: ApiSendOptionalPartsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendOptionalPartsRawResponse>;
+  sendOptionalParts: (
+    requestParameters: ApiSendOptionalPartsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  sendTextFieldsRaw: (
+    requestParameters: ApiSendTextFieldsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendTextFieldsRawResponse>;
+  sendTextFields: (
+    requestParameters: ApiSendTextFieldsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
 }
 
 export class MultipartApi extends BaseAPI implements MultipartApiInterface {
@@ -71,15 +105,16 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async sendOptionalPartsRaw(requestParameters: ApiSendOptionalPartsRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendOptionalPartsRawResponse> {
+  async sendOptionalPartsRaw(
+    requestParameters: ApiSendOptionalPartsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendOptionalPartsRawResponse> {
     // Build path with path parameters
     const urlPath = `/multipart/optional`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Prepare request body
     let requestBody: Blob | undefined = undefined;
@@ -119,42 +154,56 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     requestBody = new Blob(multipartChunks);
     }
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendOptionalPartsError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendOptionalPartsError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendOptionalParts(requestParameters: ApiSendOptionalPartsRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+  async sendOptionalParts(
+    requestParameters: ApiSendOptionalPartsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendOptionalPartsRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async sendTextFieldsRaw(requestParameters: ApiSendTextFieldsRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<SendTextFieldsRawResponse> {
+  async sendTextFieldsRaw(
+    requestParameters: ApiSendTextFieldsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendTextFieldsRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling sendTextFieldsRaw().'
+        'Required parameter "body" was null or undefined when calling sendTextFieldsRaw().',
       );
     }
     // Build path with path parameters
@@ -162,8 +211,7 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Prepare request body
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
@@ -181,32 +229,44 @@ export class MultipartApi extends BaseAPI implements MultipartApiInterface {
     multipartChunks.push('--' + multipartBoundary + '--\r\n');
     const requestBody = new Blob(multipartChunks);
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendTextFieldsError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendTextFieldsError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendTextFields(requestParameters: ApiSendTextFieldsRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async sendTextFields(
+    requestParameters: ApiSendTextFieldsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendTextFieldsRaw(requestParameters, initOverrides);
     return await response.value();
   }

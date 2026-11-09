@@ -6,14 +6,19 @@
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
-export interface PlainModelMap$Wire extends Readonly<Record<string, Detail$Wire>> {
-}
+export interface PlainModelMap$Wire extends Readonly<Record<string, Detail$Wire>> {}
 
-export interface PlainModelMap extends Readonly<Record<string, Detail>> {
-}
+export interface PlainModelMap extends Readonly<Record<string, Detail>> {}
 
 export function plainModelMapFromJSON(json: PlainModelMap$Wire): PlainModelMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json).map(([key, value]) => {const additionalValue = value; return [key, detailFromJSON(additionalValue)] as const;}));
+  const sourceEntries = Object.entries(json);
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, detailFromJSON(additionalValue)] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
   };
@@ -21,7 +26,14 @@ export function plainModelMapFromJSON(json: PlainModelMap$Wire): PlainModelMap {
 }
 
 export function plainModelMapToJSON(value: PlainModelMap): PlainModelMap$Wire {
-  const additionalProperties = Object.fromEntries(Object.entries(value).map(([key, value]) => {const additionalValue = value; return [key, detailToJSON(additionalValue)] as const;}));
+  const sourceEntries = Object.entries(value);
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, detailToJSON(additionalValue)] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
   };

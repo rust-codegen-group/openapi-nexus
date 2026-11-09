@@ -4,11 +4,23 @@
  * TypeScript API Interface — 1.0.0
  */
 import type { Entry } from '../models/Entry';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  TextApiResponse,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
-export interface ApiCookieInputRequest {
-}
+export interface ApiCookieInputRequest {}
 
 export interface ApiGetEntriesRequest {
   id: string;
@@ -23,113 +35,154 @@ export interface ApiSubmitRequest {
 }
 
 export type CookieInputRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type GetEntriesRawResponse =
-  | JSONApiResponse<Entry[]> & { status: 200 }
-  | TextApiResponse & { status: 206 }
-  | JSONApiResponse<(string | null)[]> & { status: 207 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<Entry[]> & { status: 200 })
+  | (TextApiResponse & { status: 206 })
+  | (JSONApiResponse<(string | null)[]> & { status: 207 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type NoInputRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type OptionalInputRawResponse =
-  | JSONApiResponse<Entry> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<Entry> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type SubmitRawResponse =
-  | JSONApiResponse<Entry> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<Entry> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type CookieInputErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type CookieInputErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class CookieInputError extends ResponseError {
   readonly detail: CookieInputErrorDetail;
 
-  constructor(response: Response, detail: CookieInputErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CookieInputErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type GetEntriesErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetEntriesErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetEntriesError extends ResponseError {
   readonly detail: GetEntriesErrorDetail;
 
-  constructor(response: Response, detail: GetEntriesErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetEntriesErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type NoInputErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type NoInputErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class NoInputError extends ResponseError {
   readonly detail: NoInputErrorDetail;
 
-  constructor(response: Response, detail: NoInputErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: NoInputErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type OptionalInputErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type OptionalInputErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class OptionalInputError extends ResponseError {
   readonly detail: OptionalInputErrorDetail;
 
-  constructor(response: Response, detail: OptionalInputErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: OptionalInputErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type SubmitErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SubmitErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SubmitError extends ResponseError {
   readonly detail: SubmitErrorDetail;
 
-  constructor(response: Response, detail: SubmitErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SubmitErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface EntriesApiInterface {
-  cookieInputRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<CookieInputRawResponse>;
+  cookieInputRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CookieInputRawResponse>;
   cookieInput: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getEntriesRaw: (requestParameters: ApiGetEntriesRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetEntriesRawResponse>;
-  getEntries: (requestParameters: ApiGetEntriesRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Entry[]
-  | string
-  | (string | null)[]>;
+  getEntriesRaw: (
+    requestParameters: ApiGetEntriesRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetEntriesRawResponse>;
+  getEntries: (
+    requestParameters: ApiGetEntriesRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Entry[] | string | (string | null)[]>;
   noInputRaw: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<NoInputRawResponse>;
   noInput: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  optionalInputRaw: (requestParameters: ApiOptionalInputRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<OptionalInputRawResponse>;
-  optionalInput: (requestParameters: ApiOptionalInputRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Entry>;
-  submitRaw: (requestParameters: ApiSubmitRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SubmitRawResponse>;
-  submit: (requestParameters: ApiSubmitRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Entry>;
+  optionalInputRaw: (
+    requestParameters: ApiOptionalInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<OptionalInputRawResponse>;
+  optionalInput: (
+    requestParameters: ApiOptionalInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Entry>;
+  submitRaw: (
+    requestParameters: ApiSubmitRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SubmitRawResponse>;
+  submit: (
+    requestParameters: ApiSubmitRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Entry>;
 }
 
 export class EntriesApi extends BaseAPI implements EntriesApiInterface {
@@ -140,37 +193,47 @@ export class EntriesApi extends BaseAPI implements EntriesApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async cookieInputRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CookieInputRawResponse> {
+  async cookieInputRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CookieInputRawResponse> {
     // Build path with path parameters
     const urlPath = `/cookie-input`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new CookieInputError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CookieInputError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
@@ -180,12 +243,14 @@ export class EntriesApi extends BaseAPI implements EntriesApiInterface {
     return await response.value();
   }
 
-  async getEntriesRaw(requestParameters: ApiGetEntriesRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetEntriesRawResponse> {
+  async getEntriesRaw(
+    requestParameters: ApiGetEntriesRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetEntriesRawResponse> {
     if (requestParameters.id === undefined || requestParameters.id === null) {
       throw new RequiredError(
         'id',
-        'Required parameter "id" was null or undefined when calling getEntriesRaw().'
+        'Required parameter "id" was null or undefined when calling getEntriesRaw().',
       );
     }
     // Build path with path parameters
@@ -194,77 +259,96 @@ export class EntriesApi extends BaseAPI implements EntriesApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetEntriesError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetEntriesError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Entry[]> & { status: 200 };
-    }
-    else if (response.status === 206) {
+    } else if (response.status === 206) {
       return new TextApiResponse(response) as TextApiResponse & { status: 206 };
-    }
-    else if (response.status === 207) {
+    } else if (response.status === 207) {
       return new JSONApiResponse(response) as JSONApiResponse<(string | null)[]> & { status: 207 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getEntries(requestParameters: ApiGetEntriesRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Entry[] | string | (string | null)[]> {
+  async getEntries(
+    requestParameters: ApiGetEntriesRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Entry[] | string | (string | null)[]> {
     const response = await this.getEntriesRaw(requestParameters, initOverrides);
-    return await response.value() as Entry[] | string | (string | null)[];
+    return (await response.value()) as Entry[] | string | (string | null)[];
   }
 
-  async noInputRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<NoInputRawResponse> {
+  async noInputRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<NoInputRawResponse> {
     // Build path with path parameters
     const urlPath = `/no-input`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new NoInputError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new NoInputError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
@@ -274,8 +358,10 @@ export class EntriesApi extends BaseAPI implements EntriesApiInterface {
     return await response.value();
   }
 
-  async optionalInputRaw(requestParameters: ApiOptionalInputRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<OptionalInputRawResponse> {
+  async optionalInputRaw(
+    requestParameters: ApiOptionalInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<OptionalInputRawResponse> {
     // Build path with path parameters
     const urlPath = `/optional-input`;
     // Build query parameters
@@ -284,42 +370,55 @@ export class EntriesApi extends BaseAPI implements EntriesApiInterface {
       queryParameters['filter'] = requestParameters.filter;
     }
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new OptionalInputError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new OptionalInputError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Entry> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async optionalInput(requestParameters: ApiOptionalInputRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Entry> {
+  async optionalInput(
+    requestParameters: ApiOptionalInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Entry> {
     const response = await this.optionalInputRaw(requestParameters, initOverrides);
-    return await response.value() as Entry;
+    return (await response.value()) as Entry;
   }
 
-  async submitRaw(requestParameters: ApiSubmitRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<SubmitRawResponse> {
+  async submitRaw(
+    requestParameters: ApiSubmitRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SubmitRawResponse> {
     // Build path with path parameters
     const urlPath = `/submit`;
     // Build query parameters
@@ -332,33 +431,45 @@ export class EntriesApi extends BaseAPI implements EntriesApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SubmitError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SubmitError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Entry> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async submit(requestParameters: ApiSubmitRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Entry> {
+  async submit(
+    requestParameters: ApiSubmitRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Entry> {
     const response = await this.submitRaw(requestParameters, initOverrides);
-    return await response.value() as Entry;
+    return (await response.value()) as Entry;
   }
 }

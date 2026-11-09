@@ -18,7 +18,9 @@ export interface NamingConventionTestItemsArrayItem {
   readonly itemSnakeCase?: string;
 }
 
-export function namingConventionTestItemsArrayItemFromJSON(json: NamingConventionTestItemsArrayItem$Wire): NamingConventionTestItemsArrayItem {
+export function namingConventionTestItemsArrayItemFromJSON(
+  json: NamingConventionTestItemsArrayItem$Wire,
+): NamingConventionTestItemsArrayItem {
   return {
     itemPascalCase: json.ItemPascalCase,
     itemKebabCase: json['item-kebab-case'],
@@ -27,7 +29,9 @@ export function namingConventionTestItemsArrayItemFromJSON(json: NamingConventio
   };
 }
 
-export function namingConventionTestItemsArrayItemToJSON(value: NamingConventionTestItemsArrayItem): NamingConventionTestItemsArrayItem$Wire {
+export function namingConventionTestItemsArrayItemToJSON(
+  value: NamingConventionTestItemsArrayItem,
+): NamingConventionTestItemsArrayItem$Wire {
   return {
     ItemPascalCase: value.itemPascalCase,
     'item-kebab-case': value.itemKebabCase,

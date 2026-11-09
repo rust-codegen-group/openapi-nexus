@@ -10,4 +10,7 @@ import type { ResourceCustom } from './ResourceCustom';
 import type { ResourceQuick } from './ResourceQuick';
 import type { ResourceUnspecified } from './ResourceUnspecified';
 
-export type Resource = ({ kind: 'RESOURCE_UNSPECIFIED' } & ResourceUnspecified) | ({ kind: 'RESOURCE_QUICK' } & ResourceQuick) | ({ kind: 'RESOURCE_CUSTOM' } & ResourceCustom);
+export type Resource =
+  | ({ kind: 'RESOURCE_UNSPECIFIED' } & ResourceUnspecified)
+  | ({ kind: 'RESOURCE_QUICK' } & ResourceQuick)
+  | ({ kind: 'RESOURCE_CUSTOM' } & ResourceCustom);

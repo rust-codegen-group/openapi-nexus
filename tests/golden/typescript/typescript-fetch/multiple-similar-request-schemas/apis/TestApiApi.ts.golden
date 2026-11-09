@@ -8,8 +8,19 @@ import type { CreateRequestTypeA } from '../models/CreateRequestTypeA';
 import type { CreateRequestTypeB } from '../models/CreateRequestTypeB';
 import type { ResourceTypeA } from '../models/ResourceTypeA';
 import type { ResourceTypeB } from '../models/ResourceTypeB';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiCreateTypeARequest {
   body: CreateRequestTypeA;
@@ -20,49 +31,69 @@ export interface ApiCreateTypeBRequest {
 }
 
 export type CreateTypeARawResponse =
-  | JSONApiResponse<ResourceTypeA> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<ResourceTypeA> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type CreateTypeBRawResponse =
-  | JSONApiResponse<ResourceTypeB> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<ResourceTypeB> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type CreateTypeAErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type CreateTypeAErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class CreateTypeAError extends ResponseError {
   readonly detail: CreateTypeAErrorDetail;
 
-  constructor(response: Response, detail: CreateTypeAErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateTypeAErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type CreateTypeBErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type CreateTypeBErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class CreateTypeBError extends ResponseError {
   readonly detail: CreateTypeBErrorDetail;
 
-  constructor(response: Response, detail: CreateTypeBErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateTypeBErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface TestApiApiInterface {
-  createTypeARaw: (requestParameters: ApiCreateTypeARequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeARawResponse>;
-  createTypeA: (requestParameters: ApiCreateTypeARequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeA>;
-  createTypeBRaw: (requestParameters: ApiCreateTypeBRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTypeBRawResponse>;
-  createTypeB: (requestParameters: ApiCreateTypeBRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<ResourceTypeB>;
+  createTypeARaw: (
+    requestParameters: ApiCreateTypeARequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateTypeARawResponse>;
+  createTypeA: (
+    requestParameters: ApiCreateTypeARequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<ResourceTypeA>;
+  createTypeBRaw: (
+    requestParameters: ApiCreateTypeBRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateTypeBRawResponse>;
+  createTypeB: (
+    requestParameters: ApiCreateTypeBRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<ResourceTypeB>;
 }
 
 export class TestApiApi extends BaseAPI implements TestApiApiInterface {
@@ -73,12 +104,14 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async createTypeARaw(requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateTypeARawResponse> {
+  async createTypeARaw(
+    requestParameters: ApiCreateTypeARequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateTypeARawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createTypeARaw().'
+        'Required parameter "body" was null or undefined when calling createTypeARaw().',
       );
     }
     // Build path with path parameters
@@ -93,42 +126,56 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateTypeAError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateTypeAError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<ResourceTypeA> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createTypeA(requestParameters: ApiCreateTypeARequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<ResourceTypeA> {
+  async createTypeA(
+    requestParameters: ApiCreateTypeARequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<ResourceTypeA> {
     const response = await this.createTypeARaw(requestParameters, initOverrides);
-    return await response.value() as ResourceTypeA;
+    return (await response.value()) as ResourceTypeA;
   }
 
-  async createTypeBRaw(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateTypeBRawResponse> {
+  async createTypeBRaw(
+    requestParameters: ApiCreateTypeBRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateTypeBRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createTypeBRaw().'
+        'Required parameter "body" was null or undefined when calling createTypeBRaw().',
       );
     }
     // Build path with path parameters
@@ -143,33 +190,45 @@ export class TestApiApi extends BaseAPI implements TestApiApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateTypeBError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateTypeBError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<ResourceTypeB> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createTypeB(requestParameters: ApiCreateTypeBRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<ResourceTypeB> {
+  async createTypeB(
+    requestParameters: ApiCreateTypeBRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<ResourceTypeB> {
     const response = await this.createTypeBRaw(requestParameters, initOverrides);
-    return await response.value() as ResourceTypeB;
+    return (await response.value()) as ResourceTypeB;
   }
 }

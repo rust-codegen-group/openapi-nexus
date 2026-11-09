@@ -113,7 +113,7 @@ Variants with "UNSPECIFIED" in the discriminator value, discriminator values equ
 Selects the type checking and build toolchain. One of `"tsc"` (default) or `"vp"`.
 
 - `"tsc"` — bare TypeScript compiler. Generates `tsconfig.json` only. Build script: `tsc`.
-- `"vp"` — vite-plus. Generates `vite.config.ts` with `pack` config for library output (ESM + .d.ts). Build script: `vp pack`. Check script: `vp check --no-fmt`.
+- `"vp"` — vite-plus. Generates `vite.config.ts` with `pack` config for library output (ESM + .d.ts). Build script: `vp pack`. Format script: `vp fmt`. Check script: `vp check`.
 
 When `toolchain = "vp"`, the generated `package.json` includes `vite-plus` (`^1.5.0`) and `typescript` (`^7.0.2`) as dev dependencies, and scripts use `vp pack` (library mode) rather than `vp build` (app mode).
 
@@ -123,6 +123,21 @@ Run `vp --version` after `vp install` in a generated project to inspect the reso
 component versions.
 
 Vite+ 1.5.0 requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`.
+
+After generating or regenerating a Vite+ client, run:
+
+```sh
+vp install
+vp check
+vp pack
+```
+
+The generator emits sources, JSON, and Markdown using the configured single-quote
+style and standard Oxfmt layout. `vp check` validates formatting, lint rules, and
+types directly on these files without modifying them. No formatter is required
+between generation and validation. Use `vp fmt` (or `npm run fmt`) for subsequent
+manual edits. The generated configuration excludes `dist/`, so checks also pass
+after packing. Generation itself requires only Rust, without Node.js or Vite+.
 
 ```toml
 [generators.typescript-fetch]

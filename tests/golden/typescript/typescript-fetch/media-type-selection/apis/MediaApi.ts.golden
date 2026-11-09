@@ -6,8 +6,25 @@
  */
 import type { Payload } from '../models/Payload';
 import type { SendParameterizedMultipartMultipartRequestBody } from '../models/SendParameterizedMultipartMultipartRequestBody';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, BlobApiResponse, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse, multipartHeaderValue, uploadFileData, uploadFileFilename } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  BlobApiResponse,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  TextApiResponse,
+  VoidApiResponse,
+  multipartHeaderValue,
+  uploadFileData,
+  uploadFileFilename,
+} from '../runtime/runtime';
 
 export interface ApiSendJsonPreferredRequest {
   body: Payload;
@@ -22,130 +39,180 @@ export interface ApiSendVendorJsonRequest {
 }
 
 export type SendJsonPreferredRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type SendParameterizedMultipartRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type SendVendorJsonRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type GetOctetPreferredRawResponse =
-  | BlobApiResponse & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (BlobApiResponse & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type GetTextPreferredRawResponse =
-  | TextApiResponse & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (TextApiResponse & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type GetVendorJsonRawResponse =
-  | JSONApiResponse<Payload> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<Payload> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type SendJsonPreferredErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendJsonPreferredErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendJsonPreferredError extends ResponseError {
   readonly detail: SendJsonPreferredErrorDetail;
 
-  constructor(response: Response, detail: SendJsonPreferredErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendJsonPreferredErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type SendParameterizedMultipartErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendParameterizedMultipartErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendParameterizedMultipartError extends ResponseError {
   readonly detail: SendParameterizedMultipartErrorDetail;
 
-  constructor(response: Response, detail: SendParameterizedMultipartErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendParameterizedMultipartErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type SendVendorJsonErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type SendVendorJsonErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class SendVendorJsonError extends ResponseError {
   readonly detail: SendVendorJsonErrorDetail;
 
-  constructor(response: Response, detail: SendVendorJsonErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: SendVendorJsonErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type GetOctetPreferredErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetOctetPreferredErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetOctetPreferredError extends ResponseError {
   readonly detail: GetOctetPreferredErrorDetail;
 
-  constructor(response: Response, detail: GetOctetPreferredErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetOctetPreferredErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type GetTextPreferredErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetTextPreferredErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetTextPreferredError extends ResponseError {
   readonly detail: GetTextPreferredErrorDetail;
 
-  constructor(response: Response, detail: GetTextPreferredErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetTextPreferredErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type GetVendorJsonErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetVendorJsonErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetVendorJsonError extends ResponseError {
   readonly detail: GetVendorJsonErrorDetail;
 
-  constructor(response: Response, detail: GetVendorJsonErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetVendorJsonErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface MediaApiInterface {
-  sendJsonPreferredRaw: (requestParameters: ApiSendJsonPreferredRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendJsonPreferredRawResponse>;
-  sendJsonPreferred: (requestParameters: ApiSendJsonPreferredRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendParameterizedMultipartRaw: (requestParameters: ApiSendParameterizedMultipartRequest,
-  initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<SendParameterizedMultipartRawResponse>;
-  sendParameterizedMultipart: (requestParameters: ApiSendParameterizedMultipartRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  sendVendorJsonRaw: (requestParameters: ApiSendVendorJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<SendVendorJsonRawResponse>;
-  sendVendorJson: (requestParameters: ApiSendVendorJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getOctetPreferredRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<GetOctetPreferredRawResponse>;
+  sendJsonPreferredRaw: (
+    requestParameters: ApiSendJsonPreferredRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendJsonPreferredRawResponse>;
+  sendJsonPreferred: (
+    requestParameters: ApiSendJsonPreferredRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  sendParameterizedMultipartRaw: (
+    requestParameters: ApiSendParameterizedMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendParameterizedMultipartRawResponse>;
+  sendParameterizedMultipart: (
+    requestParameters: ApiSendParameterizedMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  sendVendorJsonRaw: (
+    requestParameters: ApiSendVendorJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<SendVendorJsonRawResponse>;
+  sendVendorJson: (
+    requestParameters: ApiSendVendorJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  getOctetPreferredRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetOctetPreferredRawResponse>;
   getOctetPreferred: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Blob>;
-  getTextPreferredRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<GetTextPreferredRawResponse>;
+  getTextPreferredRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetTextPreferredRawResponse>;
   getTextPreferred: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<string>;
-  getVendorJsonRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<GetVendorJsonRawResponse>;
+  getVendorJsonRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetVendorJsonRawResponse>;
   getVendorJson: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<Payload>;
 }
 
@@ -157,12 +224,14 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async sendJsonPreferredRaw(requestParameters: ApiSendJsonPreferredRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<SendJsonPreferredRawResponse> {
+  async sendJsonPreferredRaw(
+    requestParameters: ApiSendJsonPreferredRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendJsonPreferredRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling sendJsonPreferredRaw().'
+        'Required parameter "body" was null or undefined when calling sendJsonPreferredRaw().',
       );
     }
     // Build path with path parameters
@@ -177,43 +246,56 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendJsonPreferredError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendJsonPreferredError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendJsonPreferred(requestParameters: ApiSendJsonPreferredRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+  async sendJsonPreferred(
+    requestParameters: ApiSendJsonPreferredRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendJsonPreferredRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async sendParameterizedMultipartRaw(requestParameters: ApiSendParameterizedMultipartRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<SendParameterizedMultipartRawResponse> {
+  async sendParameterizedMultipartRaw(
+    requestParameters: ApiSendParameterizedMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendParameterizedMultipartRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling sendParameterizedMultipartRaw().'
+        'Required parameter "body" was null or undefined when calling sendParameterizedMultipartRaw().',
       );
     }
     // Build path with path parameters
@@ -221,8 +303,7 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Prepare request body
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
@@ -242,42 +323,56 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     multipartChunks.push('--' + multipartBoundary + '--\r\n');
     const requestBody = new Blob(multipartChunks);
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendParameterizedMultipartError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendParameterizedMultipartError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendParameterizedMultipart(requestParameters: ApiSendParameterizedMultipartRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<void> {
+  async sendParameterizedMultipart(
+    requestParameters: ApiSendParameterizedMultipartRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendParameterizedMultipartRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async sendVendorJsonRaw(requestParameters: ApiSendVendorJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<SendVendorJsonRawResponse> {
+  async sendVendorJsonRaw(
+    requestParameters: ApiSendVendorJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<SendVendorJsonRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling sendVendorJsonRaw().'
+        'Required parameter "body" was null or undefined when calling sendVendorJsonRaw().',
       );
     }
     // Build path with path parameters
@@ -292,153 +387,195 @@ export class MediaApi extends BaseAPI implements MediaApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'PATCH',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new SendVendorJsonError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new SendVendorJsonError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async sendVendorJson(requestParameters: ApiSendVendorJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async sendVendorJson(
+    requestParameters: ApiSendVendorJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.sendVendorJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async getOctetPreferredRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetOctetPreferredRawResponse> {
+  async getOctetPreferredRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetOctetPreferredRawResponse> {
     // Build path with path parameters
     const urlPath = `/response/octet-before-xml`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetOctetPreferredError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetOctetPreferredError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new BlobApiResponse(response) as BlobApiResponse & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
   async getOctetPreferred(initOverrides?: RequestInit | InitOverrideFunction): Promise<Blob> {
     const response = await this.getOctetPreferredRaw(initOverrides);
-    return await response.value() as Blob;
+    return (await response.value()) as Blob;
   }
 
-  async getTextPreferredRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetTextPreferredRawResponse> {
+  async getTextPreferredRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetTextPreferredRawResponse> {
     // Build path with path parameters
     const urlPath = `/response/text-before-xml`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetTextPreferredError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetTextPreferredError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new TextApiResponse(response) as TextApiResponse & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
   async getTextPreferred(initOverrides?: RequestInit | InitOverrideFunction): Promise<string> {
     const response = await this.getTextPreferredRaw(initOverrides);
-    return await response.value() as string;
+    return (await response.value()) as string;
   }
 
-  async getVendorJsonRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetVendorJsonRawResponse> {
+  async getVendorJsonRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetVendorJsonRawResponse> {
     // Build path with path parameters
     const urlPath = `/response/vendor-json`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetVendorJsonError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetVendorJsonError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Payload> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
   async getVendorJson(initOverrides?: RequestInit | InitOverrideFunction): Promise<Payload> {
     const response = await this.getVendorJsonRaw(initOverrides);
-    return await response.value() as Payload;
+    return (await response.value()) as Payload;
   }
 }

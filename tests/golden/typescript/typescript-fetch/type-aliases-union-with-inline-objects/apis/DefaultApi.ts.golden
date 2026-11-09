@@ -5,37 +5,57 @@
  * Test fixture for union types (oneOf) with inline object schemas that should generate named interfaces
  */
 import type { Foo } from '../models/Foo';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiTestUnionWithInlineObjectsRequest {
   body: Foo;
 }
 
 export type TestUnionWithInlineObjectsRawResponse =
-  | JSONApiResponse<Foo> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<Foo> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type TestUnionWithInlineObjectsErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type TestUnionWithInlineObjectsErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class TestUnionWithInlineObjectsError extends ResponseError {
   readonly detail: TestUnionWithInlineObjectsErrorDetail;
 
-  constructor(response: Response, detail: TestUnionWithInlineObjectsErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: TestUnionWithInlineObjectsErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  testUnionWithInlineObjectsRaw: (requestParameters: ApiTestUnionWithInlineObjectsRequest,
-  initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<TestUnionWithInlineObjectsRawResponse>;
-  testUnionWithInlineObjects: (requestParameters: ApiTestUnionWithInlineObjectsRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testUnionWithInlineObjectsRaw: (
+    requestParameters: ApiTestUnionWithInlineObjectsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<TestUnionWithInlineObjectsRawResponse>;
+  testUnionWithInlineObjects: (
+    requestParameters: ApiTestUnionWithInlineObjectsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -46,13 +66,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async testUnionWithInlineObjectsRaw(requestParameters: ApiTestUnionWithInlineObjectsRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<TestUnionWithInlineObjectsRawResponse> {
+  async testUnionWithInlineObjectsRaw(
+    requestParameters: ApiTestUnionWithInlineObjectsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<TestUnionWithInlineObjectsRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling testUnionWithInlineObjectsRaw().'
+        'Required parameter "body" was null or undefined when calling testUnionWithInlineObjectsRaw().',
       );
     }
     // Build path with path parameters
@@ -67,33 +88,45 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new TestUnionWithInlineObjectsError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new TestUnionWithInlineObjectsError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Foo> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async testUnionWithInlineObjects(requestParameters: ApiTestUnionWithInlineObjectsRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<Foo> {
+  async testUnionWithInlineObjects(
+    requestParameters: ApiTestUnionWithInlineObjectsRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Foo> {
     const response = await this.testUnionWithInlineObjectsRaw(requestParameters, initOverrides);
-    return await response.value() as Foo;
+    return (await response.value()) as Foo;
   }
 }

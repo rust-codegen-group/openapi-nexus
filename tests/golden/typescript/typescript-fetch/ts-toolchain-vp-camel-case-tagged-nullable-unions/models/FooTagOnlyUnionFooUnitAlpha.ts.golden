@@ -12,14 +12,18 @@ export interface FooTagOnlyUnionFooUnitAlpha {
   readonly type: 'foo_unit_alpha';
 }
 
-export function fooTagOnlyUnionFooUnitAlphaFromJSON(json: FooTagOnlyUnionFooUnitAlpha$Wire): FooTagOnlyUnionFooUnitAlpha {
+export function fooTagOnlyUnionFooUnitAlphaFromJSON(
+  json: FooTagOnlyUnionFooUnitAlpha$Wire,
+): FooTagOnlyUnionFooUnitAlpha {
   return {
-    'type': json['type'],
+    type: json['type'],
   };
 }
 
-export function fooTagOnlyUnionFooUnitAlphaToJSON(value: FooTagOnlyUnionFooUnitAlpha): FooTagOnlyUnionFooUnitAlpha$Wire {
+export function fooTagOnlyUnionFooUnitAlphaToJSON(
+  value: FooTagOnlyUnionFooUnitAlpha,
+): FooTagOnlyUnionFooUnitAlpha$Wire {
   return {
-    'type': value['type'],
+    type: value['type'],
   };
 }

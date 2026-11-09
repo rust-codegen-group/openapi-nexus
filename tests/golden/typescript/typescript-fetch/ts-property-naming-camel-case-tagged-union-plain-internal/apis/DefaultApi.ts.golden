@@ -7,36 +7,57 @@
  */
 import type { PreviewRequest, PreviewRequest$Wire } from '../models/PreviewRequest';
 import { previewRequestFromJSON, previewRequestToJSON } from '../models/PreviewRequest';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiPreviewRequest {
   body: PreviewRequest;
 }
 
 export type PreviewRawResponse =
-  | JSONApiResponse<PreviewRequest> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<PreviewRequest> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type PreviewErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PreviewErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PreviewError extends ResponseError {
   readonly detail: PreviewErrorDetail;
 
-  constructor(response: Response, detail: PreviewErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PreviewErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  previewRaw: (requestParameters: ApiPreviewRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PreviewRawResponse>;
-  preview: (requestParameters: ApiPreviewRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PreviewRequest>;
+  previewRaw: (
+    requestParameters: ApiPreviewRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PreviewRawResponse>;
+  preview: (
+    requestParameters: ApiPreviewRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PreviewRequest>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -47,12 +68,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async previewRaw(requestParameters: ApiPreviewRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PreviewRawResponse> {
+  async previewRaw(
+    requestParameters: ApiPreviewRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PreviewRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling previewRaw().'
+        'Required parameter "body" was null or undefined when calling previewRaw().',
       );
     }
     // Build path with path parameters
@@ -67,33 +90,47 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = previewRequestToJSON(requestParameters.body);
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PreviewError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PreviewError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response, (json) => previewRequestFromJSON(json as PreviewRequest$Wire)) as JSONApiResponse<PreviewRequest> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response, (json) => {
+        return previewRequestFromJSON(json as PreviewRequest$Wire);
+      }) as JSONApiResponse<PreviewRequest> & { status: 200 };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async preview(requestParameters: ApiPreviewRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PreviewRequest> {
+  async preview(
+    requestParameters: ApiPreviewRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PreviewRequest> {
     const response = await this.previewRaw(requestParameters, initOverrides);
-    return await response.value() as PreviewRequest;
+    return (await response.value()) as PreviewRequest;
   }
 }

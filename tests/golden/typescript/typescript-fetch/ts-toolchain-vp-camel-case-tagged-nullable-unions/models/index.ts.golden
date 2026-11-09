@@ -5,11 +5,29 @@
  * Masked fixture for TypeScript Fetch camelCase regression coverage.
  */
 export type { FooAdjacentPayload, FooAdjacentPayload$Wire } from './FooAdjacentPayload';
-export { fooAdjacentPayloadFromJSON, fooAdjacentPayloadToJSON, isFooInlineText, isFooInlineObject, isFooInlineList } from './FooAdjacentPayload';
-export type { FooAdjacentPayloadFooInlineNone, FooAdjacentPayloadFooInlineNone$Wire } from './FooAdjacentPayloadFooInlineNone';
-export { fooAdjacentPayloadFooInlineNoneFromJSON, fooAdjacentPayloadFooInlineNoneToJSON } from './FooAdjacentPayloadFooInlineNone';
-export type { FooAdjacentPayloadFooInlineObjectPayloadValue, FooAdjacentPayloadFooInlineObjectPayloadValue$Wire } from './FooAdjacentPayloadFooInlineObjectPayloadValue';
-export { fooAdjacentPayloadFooInlineObjectPayloadValueFromJSON, fooAdjacentPayloadFooInlineObjectPayloadValueToJSON } from './FooAdjacentPayloadFooInlineObjectPayloadValue';
+export {
+  fooAdjacentPayloadFromJSON,
+  fooAdjacentPayloadToJSON,
+  isFooInlineText,
+  isFooInlineObject,
+  isFooInlineList,
+} from './FooAdjacentPayload';
+export type {
+  FooAdjacentPayloadFooInlineNone,
+  FooAdjacentPayloadFooInlineNone$Wire,
+} from './FooAdjacentPayloadFooInlineNone';
+export {
+  fooAdjacentPayloadFooInlineNoneFromJSON,
+  fooAdjacentPayloadFooInlineNoneToJSON,
+} from './FooAdjacentPayloadFooInlineNone';
+export type {
+  FooAdjacentPayloadFooInlineObjectPayloadValue,
+  FooAdjacentPayloadFooInlineObjectPayloadValue$Wire,
+} from './FooAdjacentPayloadFooInlineObjectPayloadValue';
+export {
+  fooAdjacentPayloadFooInlineObjectPayloadValueFromJSON,
+  fooAdjacentPayloadFooInlineObjectPayloadValueToJSON,
+} from './FooAdjacentPayloadFooInlineObjectPayloadValue';
 export type { FooAnyValue } from './FooAnyValue';
 export type { FooArrayPart, FooArrayPart$Wire } from './FooArrayPart';
 export { fooArrayPartFromJSON, fooArrayPartToJSON } from './FooArrayPart';
@@ -18,7 +36,11 @@ export { fooClosedVariantFromJSON, fooClosedVariantToJSON } from './FooClosedVar
 export type { FooEnvelope, FooEnvelope$Wire } from './FooEnvelope';
 export { fooEnvelopeFromJSON, fooEnvelopeToJSON } from './FooEnvelope';
 export type { FooMappedTagUnion, FooMappedTagUnion$Wire } from './FooMappedTagUnion';
-export { fooMappedTagUnionFromJSON, fooMappedTagUnionToJSON, isFooOpenVariant } from './FooMappedTagUnion';
+export {
+  fooMappedTagUnionFromJSON,
+  fooMappedTagUnionToJSON,
+  isFooOpenVariant,
+} from './FooMappedTagUnion';
 export type { FooNullableItem, FooNullableItem$Wire } from './FooNullableItem';
 export { fooNullableItemFromJSON, fooNullableItemToJSON } from './FooNullableItem';
 export type { FooNullableItems, FooNullableItems$Wire } from './FooNullableItems';
@@ -32,11 +54,27 @@ export { fooOpenVariantFromJSON, fooOpenVariantToJSON } from './FooOpenVariant';
 export type { FooPayloadBody, FooPayloadBody$Wire } from './FooPayloadBody';
 export { fooPayloadBodyFromJSON, fooPayloadBodyToJSON } from './FooPayloadBody';
 export type { FooTagOnlyUnion, FooTagOnlyUnion$Wire } from './FooTagOnlyUnion';
-export { fooTagOnlyUnionFromJSON, fooTagOnlyUnionToJSON, isFooObjectPayload } from './FooTagOnlyUnion';
-export type { FooTagOnlyUnionFooUnitAlpha, FooTagOnlyUnionFooUnitAlpha$Wire } from './FooTagOnlyUnionFooUnitAlpha';
-export { fooTagOnlyUnionFooUnitAlphaFromJSON, fooTagOnlyUnionFooUnitAlphaToJSON } from './FooTagOnlyUnionFooUnitAlpha';
-export type { FooTagOnlyUnionFooUnitBeta, FooTagOnlyUnionFooUnitBeta$Wire } from './FooTagOnlyUnionFooUnitBeta';
-export { fooTagOnlyUnionFooUnitBetaFromJSON, fooTagOnlyUnionFooUnitBetaToJSON } from './FooTagOnlyUnionFooUnitBeta';
+export {
+  fooTagOnlyUnionFromJSON,
+  fooTagOnlyUnionToJSON,
+  isFooObjectPayload,
+} from './FooTagOnlyUnion';
+export type {
+  FooTagOnlyUnionFooUnitAlpha,
+  FooTagOnlyUnionFooUnitAlpha$Wire,
+} from './FooTagOnlyUnionFooUnitAlpha';
+export {
+  fooTagOnlyUnionFooUnitAlphaFromJSON,
+  fooTagOnlyUnionFooUnitAlphaToJSON,
+} from './FooTagOnlyUnionFooUnitAlpha';
+export type {
+  FooTagOnlyUnionFooUnitBeta,
+  FooTagOnlyUnionFooUnitBeta$Wire,
+} from './FooTagOnlyUnionFooUnitBeta';
+export {
+  fooTagOnlyUnionFooUnitBetaFromJSON,
+  fooTagOnlyUnionFooUnitBetaToJSON,
+} from './FooTagOnlyUnionFooUnitBeta';
 export type { FooTaggedRef, FooTaggedRef$Wire } from './FooTaggedRef';
 export { fooTaggedRefFromJSON, fooTaggedRefToJSON, isFooRefPayload } from './FooTaggedRef';
 export type { FooUnionContent, FooUnionContent$Wire } from './FooUnionContent';

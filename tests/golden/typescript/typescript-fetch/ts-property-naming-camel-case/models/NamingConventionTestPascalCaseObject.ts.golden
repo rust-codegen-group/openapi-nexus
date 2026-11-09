@@ -12,13 +12,17 @@ export interface NamingConventionTestPascalCaseObject {
   readonly nestedProperty?: string;
 }
 
-export function namingConventionTestPascalCaseObjectFromJSON(json: NamingConventionTestPascalCaseObject$Wire): NamingConventionTestPascalCaseObject {
+export function namingConventionTestPascalCaseObjectFromJSON(
+  json: NamingConventionTestPascalCaseObject$Wire,
+): NamingConventionTestPascalCaseObject {
   return {
     nestedProperty: json.nested_property,
   };
 }
 
-export function namingConventionTestPascalCaseObjectToJSON(value: NamingConventionTestPascalCaseObject): NamingConventionTestPascalCaseObject$Wire {
+export function namingConventionTestPascalCaseObjectToJSON(
+  value: NamingConventionTestPascalCaseObject,
+): NamingConventionTestPascalCaseObject$Wire {
   return {
     nested_property: value.nestedProperty,
   };

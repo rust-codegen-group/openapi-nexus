@@ -14,12 +14,12 @@ export interface FooClosedVariant {
 
 export function fooClosedVariantFromJSON(json: FooClosedVariant$Wire): FooClosedVariant {
   return {
-    'type': json['type'],
+    type: json['type'],
   };
 }
 
 export function fooClosedVariantToJSON(value: FooClosedVariant): FooClosedVariant$Wire {
   return {
-    'type': value['type'],
+    type: value['type'],
   };
 }

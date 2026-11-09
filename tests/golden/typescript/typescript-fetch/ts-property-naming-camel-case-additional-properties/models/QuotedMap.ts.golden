@@ -14,30 +14,66 @@ export interface QuotedMap extends Readonly<Record<string, unknown>> {
 }
 
 export function quotedMapFromJSON(json: QuotedMap$Wire): QuotedMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['__proto__', 'kebab-field'].includes(key)).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['__proto__', 'kebab-field'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['proto', 'kebabField'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['proto', 'kebabField'].includes(key))),
-    ...(Object.prototype.hasOwnProperty.call(json, '__proto__') ? {proto: json['__proto__'],} : {}),
-    ...(Object.prototype.hasOwnProperty.call(json, 'kebab-field') ? {kebabField: json['kebab-field'],} : {}),
+    ...visibleProperties,
+    ...(Object.prototype.hasOwnProperty.call(json, '__proto__')
+      ? { proto: json['__proto__'] }
+      : {}),
+    ...(Object.prototype.hasOwnProperty.call(json, 'kebab-field')
+      ? { kebabField: json['kebab-field'] }
+      : {}),
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['proto', 'kebabField'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['proto', 'kebabField'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
 export function quotedMapToJSON(value: QuotedMap): QuotedMap$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  unknown>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['proto', 'kebabField'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, unknown> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['proto', 'kebabField'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
-    ...(Object.prototype.hasOwnProperty.call(value, 'proto') ? {['__proto__']: value.proto,} : {}),
-    ...(Object.prototype.hasOwnProperty.call(value, 'kebabField') ? {'kebab-field': value.kebabField,} : {}),
+    ...(Object.prototype.hasOwnProperty.call(value, 'proto') ? { ['__proto__']: value.proto } : {}),
+    ...(Object.prototype.hasOwnProperty.call(value, 'kebabField')
+      ? { 'kebab-field': value.kebabField }
+      : {}),
   };
   return result;
 }
