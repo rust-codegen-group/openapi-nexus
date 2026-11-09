@@ -374,7 +374,7 @@ impl TypeScriptFetchCodeGenerator {
                     });
                     package_json["devDependencies"] = serde_json::json!({
                         "typescript": "^7.0.2",
-                        "vite-plus": "^0.2.5",
+                        "vite-plus": "^1.5.0",
                     });
                 }
             }

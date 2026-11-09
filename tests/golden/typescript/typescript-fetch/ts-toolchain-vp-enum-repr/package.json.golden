@@ -2,7 +2,7 @@
   "description": "This API demonstrates all 4 kinds of enum representation types: Externally Tagged, Internally Tagged, Adjacently Tagged, and Untagged",
   "devDependencies": {
     "typescript": "^7.0.2",
-    "vite-plus": "^0.2.5"
+    "vite-plus": "^1.5.0"
   },
   "exports": {
     ".": {

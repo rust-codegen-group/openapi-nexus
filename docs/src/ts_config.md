@@ -115,7 +115,14 @@ Selects the type checking and build toolchain. One of `"tsc"` (default) or `"vp"
 - `"tsc"` — bare TypeScript compiler. Generates `tsconfig.json` only. Build script: `tsc`.
 - `"vp"` — vite-plus. Generates `vite.config.ts` with `pack` config for library output (ESM + .d.ts). Build script: `vp pack`. Check script: `vp check --no-fmt`.
 
-When `toolchain = "vp"`, the generated `package.json` includes `vite-plus` and `typescript` as dev dependencies, and scripts use `vp pack` (library mode) rather than `vp build` (app mode).
+When `toolchain = "vp"`, the generated `package.json` includes `vite-plus` (`^1.5.0`) and `typescript` (`^7.0.2`) as dev dependencies, and scripts use `vp pack` (library mode) rather than `vp build` (app mode).
+
+Vite+ manages Vite, Vitest, Rolldown, Oxfmt, Oxlint, oxlint-tsgolint, and tsdown as
+one toolchain. Upgrading `vite-plus` upgrades these bundled components together.
+Run `vp --version` after `vp install` in a generated project to inspect the resolved
+component versions.
+
+Vite+ 1.5.0 requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`.
 
 ```toml
 [generators.typescript-fetch]

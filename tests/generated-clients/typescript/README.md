@@ -4,10 +4,11 @@
 just golden-typescript-clients::test
 ```
 
-Requires Rust, Node, and a current Vite+ CLI installed alongside TypeScript:
+Requires Rust, Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`, and Vite+ 1.5.0
+installed alongside TypeScript 7.0.2:
 
 ```sh
-npm install -g typescript vite-plus
+npm install -g typescript@7.0.2 vite-plus@1.5.0
 ```
 
 The current global Vite+ CLI resolves the TypeScript API beside the CLI when
@@ -17,7 +18,8 @@ The strict consumer check itself uses that package's installed compiler.
 - `prepare` runs the public generator CLI with an explicit empty configuration,
   producing fresh, unmodified preserve and camelCase clients.
 - `build` copies each client to a temporary build directory, runs `vp install`,
-  `vp check --no-fmt`, and `vp pack`, then copies its bundle/declarations back.
+  reports the resolved Vite+ component versions with `vp --version`, runs
+  `vp check --no-fmt` and `vp pack`, then copies its bundle/declarations back.
   Building outside the repository avoids Vite+ skipping gitignored generated
   sources. Generated source, manifests, and configuration are never patched.
 - `typecheck.ts` checks the actual packed declarations with strict typing and

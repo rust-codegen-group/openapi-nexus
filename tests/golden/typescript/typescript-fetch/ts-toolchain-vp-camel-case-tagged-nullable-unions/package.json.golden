@@ -2,7 +2,7 @@
   "description": "Masked fixture for TypeScript Fetch camelCase regression coverage.",
   "devDependencies": {
     "typescript": "^7.0.2",
-    "vite-plus": "^0.2.5"
+    "vite-plus": "^1.5.0"
   },
   "exports": {
     ".": {

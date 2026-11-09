@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade generated TypeScript clients to Vite+ `^1.5.0`, including Vite `8.3.5`,
+  Vitest `5.1.0`, Rolldown `1.2.16`, Oxfmt `0.76.0`, Oxlint `1.91.0`,
+  oxlint-tsgolint `7.0.2005`, and tsdown `0.23.4`. Pin CI validation and
+  documented setup to Vite+ `1.5.0` and TypeScript `7.0.2`, and report the resolved
+  tool versions during client builds. Vite+ projects require Node.js
+  `^22.18.0 || ^24.11.0 || >=26.0.0`.
+
 ## [0.3.0]
 
 ### Breaking Changes
