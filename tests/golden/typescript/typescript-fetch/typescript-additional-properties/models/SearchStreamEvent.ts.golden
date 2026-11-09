@@ -5,4 +5,8 @@
  */
 import type { SearchStreamEventResponseWebSearchCallSearching } from './SearchStreamEventResponseWebSearchCallSearching';
 
-export type SearchStreamEvent = ({ type: 'response.web_search_call.searching' } & SearchStreamEventResponseWebSearchCallSearching) | { type: 'response.completed' };
+export type SearchStreamEvent =
+  | ({
+      type: 'response.web_search_call.searching';
+    } & SearchStreamEventResponseWebSearchCallSearching)
+  | { type: 'response.completed' };

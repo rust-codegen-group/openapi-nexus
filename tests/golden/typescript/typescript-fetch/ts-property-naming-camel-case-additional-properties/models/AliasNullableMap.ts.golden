@@ -6,8 +6,9 @@
 import type { NullableDetailAlias, NullableDetailAlias$Wire } from './NullableDetailAlias';
 import { nullableDetailAliasFromJSON, nullableDetailAliasToJSON } from './NullableDetailAlias';
 
-export interface AliasNullableMap$Wire extends Readonly<Record<string,
-NullableDetailAlias$Wire | number>> {
+export interface AliasNullableMap$Wire extends Readonly<
+  Record<string, NullableDetailAlias$Wire | number>
+> {
   readonly known_count: number;
 }
 
@@ -16,25 +17,55 @@ export interface AliasNullableMap extends Readonly<Record<string, NullableDetail
 }
 
 export function aliasNullableMapFromJSON(json: AliasNullableMap$Wire): AliasNullableMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known_count'].includes(key)).map(([key, value]) => {const additionalValue = value as NullableDetailAlias$Wire; return [key, nullableDetailAliasFromJSON(additionalValue)] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known_count'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as NullableDetailAlias$Wire;
+      return [key, nullableDetailAliasFromJSON(additionalValue)] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['knownCount'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['knownCount'].includes(key))),
+    ...visibleProperties,
     knownCount: json.known_count,
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['knownCount'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['knownCount'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
 export function aliasNullableMapToJSON(value: AliasNullableMap): AliasNullableMap$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  NullableDetailAlias>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['knownCount'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value as NullableDetailAlias; return [key, nullableDetailAliasToJSON(additionalValue)] as const;}));
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, NullableDetailAlias> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['knownCount'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as NullableDetailAlias;
+      return [key, nullableDetailAliasToJSON(additionalValue)] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
     known_count: value.knownCount,

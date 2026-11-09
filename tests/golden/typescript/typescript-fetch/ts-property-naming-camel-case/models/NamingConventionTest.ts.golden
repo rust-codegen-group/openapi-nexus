@@ -4,12 +4,30 @@
  * Naming Conventions Test — 1.0.0
  * Test fixture to verify language property naming conventions
  */
-import type { NamingConventionTestItemsArrayItem, NamingConventionTestItemsArrayItem$Wire } from './NamingConventionTestItemsArrayItem';
-import { namingConventionTestItemsArrayItemFromJSON, namingConventionTestItemsArrayItemToJSON } from './NamingConventionTestItemsArrayItem';
-import type { NamingConventionTestNestedObject, NamingConventionTestNestedObject$Wire } from './NamingConventionTestNestedObject';
-import { namingConventionTestNestedObjectFromJSON, namingConventionTestNestedObjectToJSON } from './NamingConventionTestNestedObject';
-import type { NamingConventionTestPascalCaseObject, NamingConventionTestPascalCaseObject$Wire } from './NamingConventionTestPascalCaseObject';
-import { namingConventionTestPascalCaseObjectFromJSON, namingConventionTestPascalCaseObjectToJSON } from './NamingConventionTestPascalCaseObject';
+import type {
+  NamingConventionTestItemsArrayItem,
+  NamingConventionTestItemsArrayItem$Wire,
+} from './NamingConventionTestItemsArrayItem';
+import {
+  namingConventionTestItemsArrayItemFromJSON,
+  namingConventionTestItemsArrayItemToJSON,
+} from './NamingConventionTestItemsArrayItem';
+import type {
+  NamingConventionTestNestedObject,
+  NamingConventionTestNestedObject$Wire,
+} from './NamingConventionTestNestedObject';
+import {
+  namingConventionTestNestedObjectFromJSON,
+  namingConventionTestNestedObjectToJSON,
+} from './NamingConventionTestNestedObject';
+import type {
+  NamingConventionTestPascalCaseObject,
+  NamingConventionTestPascalCaseObject$Wire,
+} from './NamingConventionTestPascalCaseObject';
+import {
+  namingConventionTestPascalCaseObjectFromJSON,
+  namingConventionTestPascalCaseObjectToJSON,
+} from './NamingConventionTestPascalCaseObject';
 
 export interface NamingConventionTest$Wire {
   /**
@@ -111,19 +129,24 @@ export interface NamingConventionTest {
   readonly snakeCaseNumber?: number;
 }
 
-export function namingConventionTestFromJSON(json: NamingConventionTest$Wire): NamingConventionTest {
+export function namingConventionTestFromJSON(
+  json: NamingConventionTest$Wire,
+): NamingConventionTest {
   return {
     pascalCaseField: json.PascalCaseField,
-    pascalCaseObject: json.PascalCaseObject !== undefined ? namingConventionTestPascalCaseObjectFromJSON(json.PascalCaseObject) : undefined,
+    pascalCaseObject:
+      json.PascalCaseObject !== undefined ? namingConventionTestPascalCaseObjectFromJSON(json.PascalCaseObject) : undefined,
     screamingNumber: json.SCREAMING_NUMBER,
     screamingSnakeCase: json.SCREAMING_SNAKE_CASE,
     camelCaseField: json.camelCaseField,
     camelCaseNumber: json.camelCaseNumber,
     id: json.id,
-    itemsArray: json.items_array !== undefined ? json.items_array.map((item) => namingConventionTestItemsArrayItemFromJSON(item)) : undefined,
+    itemsArray:
+      json.items_array !== undefined ? json.items_array.map((item) => namingConventionTestItemsArrayItemFromJSON(item)) : undefined,
     kebabCaseArray: json['kebab-case-array'],
     kebabCaseField: json['kebab-case-field'],
-    nestedObject: json.nested_object !== undefined ? namingConventionTestNestedObjectFromJSON(json.nested_object) : undefined,
+    nestedObject:
+      json.nested_object !== undefined ? namingConventionTestNestedObjectFromJSON(json.nested_object) : undefined,
     singleword: json.singleword,
     snakeCaseField: json.snake_case_field,
     snakeCaseNumber: json.snake_case_number,
@@ -133,16 +156,19 @@ export function namingConventionTestFromJSON(json: NamingConventionTest$Wire): N
 export function namingConventionTestToJSON(value: NamingConventionTest): NamingConventionTest$Wire {
   return {
     PascalCaseField: value.pascalCaseField,
-    PascalCaseObject: value.pascalCaseObject !== undefined ? namingConventionTestPascalCaseObjectToJSON(value.pascalCaseObject) : undefined,
+    PascalCaseObject:
+      value.pascalCaseObject !== undefined ? namingConventionTestPascalCaseObjectToJSON(value.pascalCaseObject) : undefined,
     SCREAMING_NUMBER: value.screamingNumber,
     SCREAMING_SNAKE_CASE: value.screamingSnakeCase,
     camelCaseField: value.camelCaseField,
     camelCaseNumber: value.camelCaseNumber,
     id: value.id,
-    items_array: value.itemsArray !== undefined ? value.itemsArray.map((item) => namingConventionTestItemsArrayItemToJSON(item)) : undefined,
+    items_array:
+      value.itemsArray !== undefined ? value.itemsArray.map((item) => namingConventionTestItemsArrayItemToJSON(item)) : undefined,
     'kebab-case-array': value.kebabCaseArray,
     'kebab-case-field': value.kebabCaseField,
-    nested_object: value.nestedObject !== undefined ? namingConventionTestNestedObjectToJSON(value.nestedObject) : undefined,
+    nested_object:
+      value.nestedObject !== undefined ? namingConventionTestNestedObjectToJSON(value.nestedObject) : undefined,
     singleword: value.singleword,
     snake_case_field: value.snakeCaseField,
     snake_case_number: value.snakeCaseNumber,

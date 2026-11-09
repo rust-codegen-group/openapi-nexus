@@ -3,22 +3,33 @@
  *
  * Minimal API — 1.0.0
  */
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, ResponseError, VoidApiResponse } from '../runtime/runtime';
 
 export type GetTestRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type GetTestErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetTestErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetTestError extends ResponseError {
   readonly detail: GetTestErrorDetail;
 
-  constructor(response: Response, detail: GetTestErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetTestErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -37,37 +48,47 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async getTestRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetTestRawResponse> {
+  async getTestRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetTestRawResponse> {
     // Build path with path parameters
     const urlPath = `/test`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetTestError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetTestError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }

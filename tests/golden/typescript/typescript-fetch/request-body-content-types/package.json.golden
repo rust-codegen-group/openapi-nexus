@@ -1,26 +1,26 @@
 {
+  "name": "request-body-content-types",
+  "version": "1.0.0",
   "description": "Covers non-JSON request body media types to pin Content-Type emission.",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "openapi",
-    "api-client",
-    "typescript",
-    "generated"
-  ],
-  "main": "./dist/index.js",
-  "name": "request-body-content-types",
   "scripts": {
     "build": "tsc"
-  },
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  }
 }

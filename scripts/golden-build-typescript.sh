@@ -46,7 +46,7 @@ for test_dir in "$golden"/*/; do
 
   log=$(mktemp)
   if [ "$toolchain" = "vp" ]; then
-    if (cd "$tmp" && vp install && vp check --no-fmt && vp pack) >>"$log" 2>&1; then
+    if (cd "$tmp" && vp install && vp check && vp pack && vp check) >>"$log" 2>&1; then
       echo "ok"
       passed=$((passed + 1))
     else

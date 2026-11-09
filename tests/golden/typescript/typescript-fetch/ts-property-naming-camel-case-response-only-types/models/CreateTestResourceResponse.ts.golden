@@ -18,13 +18,17 @@ export interface CreateTestResourceResponse {
   readonly resourceId: string;
 }
 
-export function createTestResourceResponseFromJSON(json: CreateTestResourceResponse$Wire): CreateTestResourceResponse {
+export function createTestResourceResponseFromJSON(
+  json: CreateTestResourceResponse$Wire,
+): CreateTestResourceResponse {
   return {
     resourceId: json.resource_id,
   };
 }
 
-export function createTestResourceResponseToJSON(value: CreateTestResourceResponse): CreateTestResourceResponse$Wire {
+export function createTestResourceResponseToJSON(
+  value: CreateTestResourceResponse,
+): CreateTestResourceResponse$Wire {
   return {
     resource_id: value.resourceId,
   };

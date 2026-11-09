@@ -673,23 +673,58 @@ fn build_json_converter(
                 $C(access) !== undefined ? $C(value) : undefined
             })?;
         }
-        let field = if target_key == "__proto__" {
-            // A literal __proto__ property changes an object literal's prototype.
-            sigil_quote!(TypeScript { [$S(target_key)]: $C(value), })?
-        } else if is_unescaped_ts_property(&target_key) {
-            sigil_quote!(TypeScript { $N(target_key): $C(value), })?
+        let key = if target_key == "__proto__" {
+            format!("[{}]", TypeScript::new().render_string_literal(&target_key))
+        } else if is_valid_ts_identifier(&target_key) {
+            target_key.clone()
         } else {
-            sigil_quote!(TypeScript { $S(target_key): $C(value), })?
+            TypeScript::new().render_string_literal(&target_key)
         };
-        fields.push(if !prop.required && obj.additional_properties.is_some() {
-            sigil_quote!(TypeScript {
-                ...(Object.prototype.hasOwnProperty.call($N(source), $S(source_key)) ? {
-                    $C(field)
-                } : {}),
-            })?
+        let value = super::layout::inline(value);
+        let format =
+            if 4 + key.chars().count() + 2 + super::layout::fragment_width(&value) + 1 > 100 {
+                "%L:\n%>%L,%<\n"
+            } else {
+                "%L: %L,\n"
+            };
+        let field = if !prop.required && obj.additional_properties.is_some() {
+            let condition = sigil_quote!(TypeScript { Object.prototype.hasOwnProperty.call($N(source), $S(source_key)) })?;
+            let object = CodeBlock::of(
+                "{ %L: %L }",
+                vec![
+                    sigil_stitch::code_block::Arg::Literal(key),
+                    sigil_stitch::code_block::Arg::Code(value),
+                ],
+            )?;
+            let condition = super::layout::inline(condition);
+            let multiline = 4
+                + 4
+                + super::layout::fragment_width(&condition)
+                + 3
+                + super::layout::fragment_width(&object)
+                + 7
+                > 100;
+            CodeBlock::of(
+                if multiline {
+                    "...(%L\n%>? %L\n: {}),%<\n"
+                } else {
+                    "...(%L ? %L : {}),\n"
+                },
+                vec![
+                    sigil_stitch::code_block::Arg::Code(condition),
+                    sigil_stitch::code_block::Arg::Code(object),
+                ],
+            )?
         } else {
-            field
-        });
+            CodeBlock::of(
+                format,
+                vec![
+                    sigil_stitch::code_block::Arg::Literal(key),
+                    sigil_stitch::code_block::Arg::Code(value),
+                ],
+            )?
+        };
+        fields.push(field);
     }
     let body = if obj.properties.is_empty()
         && !obj
@@ -763,19 +798,6 @@ fn build_open_object_conversion(
         ),
         TypeName::primitive("undefined"),
     ]);
-    let entries = sigil_quote!(TypeScript {
-        Object.entries($N(source))
-        $if(!source_keys.is_empty()) {
-            .filter(([key]) => ![$for(key in &source_keys; separator = ", ") { $S(key) }].includes(key))
-        }
-    })?;
-    let entries = if restore {
-        sigil_quote!(TypeScript {
-            Object.entries({ ...Object.fromEntries($C(entries)), ...retainedProperties })
-        })?
-    } else {
-        entries
-    };
     let cast_additional =
         !obj.properties.is_empty() && !type_expr_collapses_to_unknown(additional, unknown_aliases);
     let converted = json_conversion_expr(
@@ -785,41 +807,66 @@ fn build_open_object_conversion(
         convertible,
         direction,
     )?;
-    let visible = if retain {
-        sigil_quote!(TypeScript {
-            Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ![$for(key in &target_keys; separator = ", ") { $S(key) }].includes(key)))
-        })?
-    } else {
-        sigil_quote!(TypeScript {
-            additionalProperties
-        })?
+    let keys = |keys: &[String]| {
+        keys.iter()
+            .map(|key| TypeScript::new().render_string_literal(key))
+            .collect::<Vec<_>>()
+            .join(", ")
     };
-    // An extension may have the same spelling as a renamed declared field.
-    // Keep the declared property usable and retain the shadowed extension in
-    // enumerable symbol metadata: object spread preserves it, JSON does not.
-    sigil_quote!(TypeScript {
-        $if(restore) {
-            const retainedProperties = Object.getOwnPropertyDescriptor($N(source), Symbol.for($S(metadata_key)))?.value as $T(retained_type);
-        }
-        const additionalProperties = Object.fromEntries($C(entries).map(([key, value]) => {
-            const additionalValue = $if(cast_additional) { value as $T(additional_type) } $else { value };
-            return [key, $C(converted)] as const;
-        }));
-        const result = {
-            ...$C(visible),
-            $C_each(fields)
-        };
-        $if(retain) {
-            const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => [$for(key in &target_keys; separator = ", ") { $S(key) }].includes(key)));
-            if (Object.keys(shadowedProperties).length > 0) {
-                Object.defineProperty(result, Symbol.for($S(metadata_key)), {
-                    value: shadowedProperties,
-                    enumerable: true,
-                });
-            }
-        }
-        return result;
-    })
+    let mut cb = CodeBlock::builder();
+    if restore {
+        cb.add("const retainedProperties = Object.getOwnPropertyDescriptor(\n  %N,\n  Symbol.for(%S),\n)?.value as %T;\n", vec![sigil_stitch::code_block::Arg::Name(source.into()), sigil_stitch::code_block::Arg::StringLit(metadata_key.into()), sigil_stitch::code_block::Arg::TypeName(retained_type)]);
+    }
+    if source_keys.is_empty() {
+        cb.add(
+            "const sourceEntries = Object.entries(%N);\n",
+            vec![sigil_stitch::code_block::Arg::Name(source.into())],
+        );
+    } else {
+        cb.add("const sourceEntries = Object.entries(%N).filter(([key]) => {\n  return ![%L].includes(key);\n});\n", vec![sigil_stitch::code_block::Arg::Name(source.into()), sigil_stitch::code_block::Arg::Literal(keys(&source_keys))]);
+    }
+    if restore {
+        cb.add("const sourceProperties = Object.fromEntries(sourceEntries);\nconst additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });\n", ());
+    } else {
+        cb.add("const additionalEntries = sourceEntries;\n", ());
+    }
+    cb.add("const additionalProperties = Object.fromEntries(\n%>additionalEntries.map(([key, value]) => {\n%>const additionalValue = value", ());
+    if cast_additional {
+        cb.add(" as %T", additional_type);
+    }
+    if matches!(additional, IrTypeExpr::Map(_)) && needs_conversion(additional, convertible) {
+        cb.add(
+            ";\nconst convertedValue = %L;\nreturn [key, convertedValue] as const;\n%<}),\n%<);\n",
+            super::layout::inline(converted),
+        );
+    } else {
+        cb.add(
+            ";\nreturn [key, %L] as const;\n%<}),\n%<);\n",
+            super::layout::inline(converted),
+        );
+    }
+    if retain {
+        cb.add("const visibleProperties = Object.fromEntries(\n  Object.entries(additionalProperties).filter(([key]) => {\n    return ![%L].includes(key);\n  }),\n);\n", keys(&target_keys));
+    }
+    cb.add("const result = {\n%>", ());
+    cb.add(
+        if retain {
+            "...visibleProperties,\n"
+        } else {
+            "...additionalProperties,\n"
+        },
+        (),
+    );
+    for field in fields {
+        cb.add_code(field);
+    }
+    cb.add("%<};\n", ());
+    if retain {
+        cb.add("const shadowedProperties = Object.fromEntries(\n  Object.entries(additionalProperties).filter(([key]) => {\n    return [%L].includes(key);\n  }),\n);\n", keys(&target_keys));
+        cb.add("if (Object.keys(shadowedProperties).length > 0) {\n  Object.defineProperty(result, Symbol.for(%S), {\n    value: shadowedProperties,\n    enumerable: true,\n  });\n}\n", vec![sigil_stitch::code_block::Arg::StringLit(metadata_key.into())]);
+    }
+    cb.add("return result;\n", ());
+    cb.build()
 }
 
 fn json_property_access(object: &str, key: &str) -> Result<CodeBlock, SigilStitchError> {
@@ -882,9 +929,14 @@ fn json_conversion_expr(
                 convertible,
                 direction,
             )?;
-            sigil_quote!(TypeScript {
-                Object.fromEntries(Object.entries($C(access) ?? {}).map(([k, v]) => [k, $C(value)]))
-            })
+            let args = vec![
+                sigil_stitch::code_block::Arg::Code(super::layout::inline(access)),
+                sigil_stitch::code_block::Arg::Code(super::layout::inline(value)),
+            ];
+            CodeBlock::of(
+                "Object.fromEntries(\n%>Object.entries(%L ?? {}).map(([k, v]) => [k, %L]),\n%<)",
+                args,
+            )
         }
         _ => Ok(access),
     }
@@ -1188,17 +1240,14 @@ fn emit_alias_file(
     }
     let rhs = type_expr_to_typename(expr);
 
-    let type_alias = sigil_quote!(TypeScript {
-        export type $N(name.as_str()) = $T(rhs);
-    })
-    .ok()?;
+    let type_alias = build_type_alias(&name, rhs, None).ok()?;
 
     let filename = format!("{}.ts", name);
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(type_alias).build().ok()
+    fb.add_type(type_alias).build().ok()
 }
 
 fn build_type_alias(
@@ -1249,17 +1298,14 @@ fn emit_union_file(
     }
     let union_ty = union_typename(members);
 
-    let type_alias = sigil_quote!(TypeScript {
-        export type $N(name.as_str()) = $T(union_ty);
-    })
-    .ok()?;
+    let type_alias = build_type_alias(&name, union_ty, None).ok()?;
 
     let filename = format!("{}.ts", name);
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
     if let Some(doc) = &schema.description {
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(type_alias).build().ok()
+    fb.add_type(type_alias).build().ok()
 }
 
 /// Intersection file: `export type Name = A & B & C;`
@@ -1304,10 +1350,7 @@ fn emit_intersection_file(
         inter_ty
     };
 
-    let type_alias = sigil_quote!(TypeScript {
-        export type $N(name.as_str()) = $T(inter_ty);
-    })
-    .expect("intersection type alias builds");
+    let type_alias = build_type_alias(&name, inter_ty, None).ok()?;
 
     let filename = format!("{}.ts", name);
     let mut fb = FileSpec::builder_with(&filename, ts.clone());
@@ -1315,7 +1358,7 @@ fn emit_intersection_file(
         // FileSpec has no structural doc slot for a code member.
         fb = fb.add_raw(&format!("/** {doc} */\n"));
     }
-    fb.add_code(type_alias).build().ok()
+    fb.add_type(type_alias).build().ok()
 }
 
 /// Tagged union file: discriminated `export type` across three tagging styles.
@@ -1496,25 +1539,21 @@ fn emit_open_external_union_file(
                         sigil_quote!(TypeScript { additionalValue }).expect("external extension input builds"),
                         &schema.name, convertible, direction,
                     ).expect("external extension conversion builds");
-                    sigil_quote!(TypeScript {
-                        const additionalProperties = Object.fromEntries(Object.entries($N(source))
-                            .filter(([key]) => key !== $S(key))
-                            .map(([key, value]) => {
-                                const additionalValue = $if(cast) { value as $T(ty) } $else { value };
-                                return [key, $C(converted)] as const;
-                            }));
-                    }).expect("external extension collection builds")
+                    let mut cb = CodeBlock::builder();
+                    cb.add("const additionalProperties = Object.fromEntries(\n%>Object.entries(%N)\n%>.filter(([key]) => key !== %S)\n.map(([key, value]) => {\n%>const additionalValue = value", vec![sigil_stitch::code_block::Arg::Name(source.into()), sigil_stitch::code_block::Arg::StringLit(key.clone())]);
+                    if cast { cb.add(" as %T", ty); }
+                    cb.add(";\nreturn [key, %L] as const;\n%<}),\n%<%<);\n", super::layout::inline(converted));
+                    cb.build().expect("external extension collection builds")
                 });
-                sigil_quote!(TypeScript {
-                    if (Object.prototype.hasOwnProperty.call($N(source), $S(key))) {
-                        const contentValue = ($N(source) as $T(content_record))[$S(key)];
-                        $if(let Some(additional) = additional) { $C(additional) }
-                        return {
-                            $if(variant.additional_properties.is_some()) { ...additionalProperties, }
-                            [$S(key)]: $C(content),
-                        };
-                    }
-                }).expect("external wrapper conversion branch builds")
+                let mut cb = CodeBlock::builder();
+                cb.begin_control_flow("if (Object.prototype.hasOwnProperty.call(%N, %S))", vec![sigil_stitch::code_block::Arg::Name(source.into()), sigil_stitch::code_block::Arg::StringLit(key.clone())]);
+                cb.add("const contentValue = (%N as %T)[%S];\n", vec![sigil_stitch::code_block::Arg::Name(source.into()), sigil_stitch::code_block::Arg::TypeName(content_record), sigil_stitch::code_block::Arg::StringLit(key.clone())]);
+                if let Some(additional) = additional { cb.add_code(additional); }
+                cb.add("return { ", ());
+                if variant.additional_properties.is_some() { cb.add("...additionalProperties, ", ()); }
+                cb.add("[%S]: %L };\n", vec![sigil_stitch::code_block::Arg::StringLit(key.clone()), sigil_stitch::code_block::Arg::Code(super::layout::inline(content))]);
+                cb.end_control_flow();
+                cb.build().expect("external wrapper conversion branch builds")
             }).collect();
             let body = sigil_quote!(TypeScript {
                 $C_each(branches)
@@ -1658,7 +1697,10 @@ fn build_tagged_union_from_json(
             &tu.discriminator_field,
             convertible,
         );
-        case_lines.push(format!("case '{val}': {case_body}"));
+        case_lines.push(format!(
+            "case '{val}':\n  {}",
+            case_body.replace('\n', "\n  ")
+        ));
     }
     sigil_quote!(TypeScript {
         export function $N(fn_name)(json: $N(wire_name)): $N(name) {
@@ -1690,7 +1732,14 @@ fn internal_or_adjacent_from_json_case(
                 if convertible.contains(ref_name) {
                     let pascal = ref_name.to_pascal_case();
                     let converter = format!("{}FromJSON", fn_base_name(&pascal));
-                    format!("return {{ ...{converter}(json), {disc_field_camel}: '{val}' }};")
+                    super::layout::return_object(
+                        &[
+                            format!("...{converter}(json)"),
+                            format!("{disc_field_camel}: '{val}'"),
+                        ],
+                        None,
+                        6,
+                    )
                 } else {
                     format!("return {{ ...json, {disc_field_camel}: '{val}' }};")
                 }
@@ -1709,7 +1758,14 @@ fn internal_or_adjacent_from_json_case(
                 format!("json['{content_field}']")
             };
             let content_expr = from_json_expr_inner(content_type, &content_access, convertible);
-            format!("return {{ {disc_field_camel}: '{val}', {content_camel}: {content_expr} }};")
+            super::layout::return_object(
+                &[
+                    format!("{disc_field_camel}: '{val}'"),
+                    format!("{content_camel}: {content_expr}"),
+                ],
+                None,
+                6,
+            )
         }
         TaggingStyle::External => unreachable!(),
     }
@@ -1746,7 +1802,14 @@ fn external_variant_from_json_expr(
 ) -> String {
     let val_access = format!("json['{val}']");
     let content_expr = from_json_expr_inner(content_type, &val_access, convertible);
-    format!("{{ '{val}': {content_expr} }}")
+    format!(
+        "{{ {}: {content_expr} }}",
+        if is_valid_ts_identifier(val) {
+            val.to_string()
+        } else {
+            format!("'{val}'")
+        }
+    )
 }
 
 /// Build toJSON for a tagged union: switch on the camelCase discriminator field.
@@ -1789,7 +1852,10 @@ fn build_tagged_union_to_json(
             tag_only,
             convertible,
         );
-        case_lines.push(format!("case '{val}': {case_body}"));
+        case_lines.push(format!(
+            "case '{val}':\n  {}",
+            case_body.replace('\n', "\n  ")
+        ));
     }
     sigil_quote!(TypeScript {
         export function $N(fn_name)(value: $N(name)): $N(wire_name) {
@@ -1821,8 +1887,13 @@ fn internal_or_adjacent_to_json_case(
                 if convertible.contains(ref_name) {
                     let pascal = ref_name.to_pascal_case();
                     let converter = format!("{}ToJSON", fn_base_name(&pascal));
-                    format!(
-                        "return {{ ...{converter}(value), {disc_wire_key}: '{val}' }} as {wire_name};"
+                    super::layout::return_object(
+                        &[
+                            format!("...{converter}(value)"),
+                            format!("{disc_wire_key}: '{val}'"),
+                        ],
+                        Some(wire_name),
+                        6,
                     )
                 } else {
                     format!("return {{ ...value, {disc_wire_key}: '{val}' }} as {wire_name};")
@@ -1847,7 +1918,14 @@ fn internal_or_adjacent_to_json_case(
                 format!("value['{content_camel}']")
             };
             let content_expr = to_json_expr_inner(content_type, &content_access, convertible);
-            format!("return {{ {disc_wire_key}: '{val}', {content_wire_key}: {content_expr} }};")
+            super::layout::return_object(
+                &[
+                    format!("{disc_wire_key}: '{val}'"),
+                    format!("{content_wire_key}: {content_expr}"),
+                ],
+                None,
+                6,
+            )
         }
         TaggingStyle::External => unreachable!(),
     }
@@ -1884,7 +1962,14 @@ fn external_variant_to_json_expr(
 ) -> String {
     let val_access = format!("value['{val}']");
     let content_expr = to_json_expr_inner(content_type, &val_access, convertible);
-    format!("{{ '{val}': {content_expr} }}")
+    format!(
+        "{{ {}: {content_expr} }}",
+        if is_valid_ts_identifier(val) {
+            val.to_string()
+        } else {
+            format!("'{val}'")
+        }
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -2482,20 +2567,37 @@ fn variant_type_format(
     disc_value: &str,
     content_field_mode: Option<PropertyNamingMode>,
     content: &str,
+    multiline: bool,
 ) -> String {
+    let (padding, closing_padding) = if multiline {
+        ("\n  ", ";\n")
+    } else {
+        (" ", " ")
+    };
     match tagging {
         TaggingStyle::Internal => {
-            format!("({{ {disc_field}: '{disc_value}' }} & {content})")
+            if multiline {
+                format!("{{{padding}{disc_field}: '{disc_value}'{closing_padding}}} & {content}")
+            } else {
+                format!("({{{padding}{disc_field}: '{disc_value}'{closing_padding}}} & {content})")
+            }
         }
         TaggingStyle::Adjacent { content_field } => {
             let emitted_content_field = match content_field_mode {
                 Some(PropertyNamingMode::CamelCase) => content_field.to_lower_camel_case(),
                 None => content_field.clone(),
             };
-            format!("{{ {disc_field}: '{disc_value}'; {emitted_content_field}: {content} }}")
+            format!(
+                "{{{padding}{disc_field}: '{disc_value}';{padding}{emitted_content_field}: {content}{closing_padding}}}"
+            )
         }
         TaggingStyle::External => {
-            format!("{{ '{disc_value}': {content} }}")
+            let key = if is_valid_ts_identifier(disc_value) {
+                disc_value.to_string()
+            } else {
+                format!("'{disc_value}'")
+            };
+            format!("{{{padding}{key}: {content}{closing_padding}}}")
         }
     }
 }
@@ -2516,7 +2618,14 @@ fn tagged_variant_type_string(
     {
         return format!("{{ {disc_field}: '{disc_value}' }}");
     }
-    variant_type_format(tagging, disc_field, disc_value, content_field_mode, content)
+    variant_type_format(
+        tagging,
+        disc_field,
+        disc_value,
+        content_field_mode,
+        content,
+        false,
+    )
 }
 
 /// Build the runtime narrowing expression for one variant.
@@ -2592,12 +2701,14 @@ fn guard_check_and_type(
         None
     };
     let check = variant_check_body(tagging, &emitted_disc_field, disc_value);
+    // Multiline object predicates let Oxfmt lay out long signatures in one pass.
     let ty = variant_type_format(
         tagging,
         &emitted_disc_field,
         disc_value,
         content_field_mode,
         &TsTypeDisplay(content_type).to_string(),
+        true,
     );
     (check, ty)
 }
@@ -2623,21 +2734,37 @@ where
                 &variant.discriminator_value,
                 &variant.content_type,
             );
-            tagged_variant_type_string(
+            let member = tagged_variant_type_string(
                 &tu.tagging,
                 discriminator_field,
                 &variant.discriminator_value,
                 content_field_mode,
                 &type_name_for(&variant.content_type),
                 tag_only,
-            )
+            );
+            if member.chars().count() + 4 > 100 && matches!(tu.tagging, TaggingStyle::Internal) {
+                let object = variant_type_format(
+                    &tu.tagging,
+                    discriminator_field,
+                    &variant.discriminator_value,
+                    content_field_mode,
+                    &type_name_for(&variant.content_type),
+                    true,
+                );
+                format!("({})", object.replace('\n', "\n    "))
+            } else {
+                member
+            }
         })
         .collect();
 
-    sigil_quote!(TypeScript {
-        export type $N(name) = $for(member in &members; separator = " | ") { $L(member.as_str()) };
-    })
-    .ok()
+    let inline = format!("export type {name} = {};\n", members.join(" | "));
+    let text = if inline.trim_end().chars().count() <= 100 {
+        inline
+    } else {
+        format!("export type {name} =\n  | {};\n", members.join("\n  | "))
+    };
+    CodeBlock::of("%L", text).ok()
 }
 
 /// Build the pipe-joined literal body for an enum: `'a' | 1 | true | null`.
@@ -2844,6 +2971,7 @@ pub fn generate_model_files(
                 kind: format!("{:?}", schema.kind),
             })?;
         let body = file_spec
+            .with_lang(super::layout::TypeScript::from(ts.clone()))
             .render(100)
             .map_err(|source| GeneratorError::emission(ArtifactKind::Model, name, source))?;
         let content = format!("{header}{body}");
@@ -3287,11 +3415,11 @@ components:
         for (direction, expected) in [
             (
                 JsonDirection::FromWire,
-                "import { detailFromJSON } from './Detail';\n\nObject.fromEntries(Object.entries(values ?? {}).map(([k, v]) => [k, v != null ? detailFromJSON(v) : null]))\n",
+                "import { detailFromJSON } from './Detail';\n\nObject.fromEntries(\n  Object.entries(values ?? {}).map(([k, v]) => [k, v != null ? detailFromJSON(v) : null]),\n)\n",
             ),
             (
                 JsonDirection::ToWire,
-                "import { detailToJSON } from './Detail';\n\nObject.fromEntries(Object.entries(values ?? {}).map(([k, v]) => [k, v != null ? detailToJSON(v) : null]))\n",
+                "import { detailToJSON } from './Detail';\n\nObject.fromEntries(\n  Object.entries(values ?? {}).map(([k, v]) => [k, v != null ? detailToJSON(v) : null]),\n)\n",
             ),
         ] {
             let access = sigil_quote!(TypeScript { values }).unwrap();

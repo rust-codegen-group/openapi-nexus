@@ -13,13 +13,17 @@ export interface ContainerImageManaged {
   readonly managedField: string;
 }
 
-export function containerImageManagedFromJSON(json: ContainerImageManaged$Wire): ContainerImageManaged {
+export function containerImageManagedFromJSON(
+  json: ContainerImageManaged$Wire,
+): ContainerImageManaged {
   return {
     managedField: json.managedField,
   };
 }
 
-export function containerImageManagedToJSON(value: ContainerImageManaged): ContainerImageManaged$Wire {
+export function containerImageManagedToJSON(
+  value: ContainerImageManaged,
+): ContainerImageManaged$Wire {
   return {
     managedField: value.managedField,
   };

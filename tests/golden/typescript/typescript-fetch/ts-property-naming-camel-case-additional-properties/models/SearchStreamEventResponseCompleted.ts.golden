@@ -11,14 +11,18 @@ export interface SearchStreamEventResponseCompleted {
   readonly type: 'response.completed';
 }
 
-export function searchStreamEventResponseCompletedFromJSON(json: SearchStreamEventResponseCompleted$Wire): SearchStreamEventResponseCompleted {
+export function searchStreamEventResponseCompletedFromJSON(
+  json: SearchStreamEventResponseCompleted$Wire,
+): SearchStreamEventResponseCompleted {
   return {
-    'type': json['type'],
+    type: json['type'],
   };
 }
 
-export function searchStreamEventResponseCompletedToJSON(value: SearchStreamEventResponseCompleted): SearchStreamEventResponseCompleted$Wire {
+export function searchStreamEventResponseCompletedToJSON(
+  value: SearchStreamEventResponseCompleted,
+): SearchStreamEventResponseCompleted$Wire {
   return {
-    'type': value['type'],
+    type: value['type'],
   };
 }

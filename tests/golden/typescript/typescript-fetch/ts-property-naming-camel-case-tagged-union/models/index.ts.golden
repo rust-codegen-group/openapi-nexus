@@ -10,4 +10,7 @@ export { containerImageFromJSON, containerImageToJSON } from './ContainerImage';
 export type { ContainerImageCustom, ContainerImageCustom$Wire } from './ContainerImageCustom';
 export { containerImageCustomFromJSON, containerImageCustomToJSON } from './ContainerImageCustom';
 export type { ContainerImageManaged, ContainerImageManaged$Wire } from './ContainerImageManaged';
-export { containerImageManagedFromJSON, containerImageManagedToJSON } from './ContainerImageManaged';
+export {
+  containerImageManagedFromJSON,
+  containerImageManagedToJSON,
+} from './ContainerImageManaged';

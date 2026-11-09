@@ -18,14 +18,16 @@ export interface Foo {
 
 export function fooFromJSON(json: Foo$Wire): Foo {
   return {
-    children: json.children !== undefined ? json.children.map((item) => fooFromJSON(item)) : undefined,
+    children:
+      json.children !== undefined ? json.children.map((item) => fooFromJSON(item)) : undefined,
     relatedBar: barFromJSON(json.related_bar),
   };
 }
 
 export function fooToJSON(value: Foo): Foo$Wire {
   return {
-    children: value.children !== undefined ? value.children.map((item) => fooToJSON(item)) : undefined,
+    children:
+      value.children !== undefined ? value.children.map((item) => fooToJSON(item)) : undefined,
     related_bar: barToJSON(value.relatedBar),
   };
 }

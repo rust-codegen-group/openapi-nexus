@@ -6,8 +6,20 @@
  */
 import type { CreateItemWithBodyConflictRequest } from '../models/CreateItemWithBodyConflictRequest';
 import type { CreateItemWithBodyConflictResponse200 } from '../models/CreateItemWithBodyConflictResponse200';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiCreateItemWithBodyConflictRequest {
   /**
@@ -22,31 +34,45 @@ export interface ApiCreateItemWithBodyConflictRequest {
 }
 
 export type CreateItemWithBodyConflictRawResponse =
-  | JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
 export type CreateItemWithBodyConflictErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class CreateItemWithBodyConflictError extends ResponseError {
   readonly detail: CreateItemWithBodyConflictErrorDetail;
 
-  constructor(response: Response, detail: CreateItemWithBodyConflictErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateItemWithBodyConflictErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface ItemsApiInterface {
-  createItemWithBodyConflictRaw: (requestParameters: ApiCreateItemWithBodyConflictRequest,
-  initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<CreateItemWithBodyConflictRawResponse>;
-  createItemWithBodyConflict: (requestParameters: ApiCreateItemWithBodyConflictRequest,
-  initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<CreateItemWithBodyConflictResponse200>;
+  createItemWithBodyConflictRaw: (
+    requestParameters: ApiCreateItemWithBodyConflictRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateItemWithBodyConflictRawResponse>;
+  createItemWithBodyConflict: (
+    requestParameters: ApiCreateItemWithBodyConflictRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateItemWithBodyConflictResponse200>;
 }
 
 export class ItemsApi extends BaseAPI implements ItemsApiInterface {
@@ -57,19 +83,20 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async createItemWithBodyConflictRaw(requestParameters: ApiCreateItemWithBodyConflictRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateItemWithBodyConflictRawResponse> {
+  async createItemWithBodyConflictRaw(
+    requestParameters: ApiCreateItemWithBodyConflictRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateItemWithBodyConflictRawResponse> {
     if (requestParameters.itemId === undefined || requestParameters.itemId === null) {
       throw new RequiredError(
         'itemId',
-        'Required parameter "itemId" was null or undefined when calling createItemWithBodyConflictRaw().'
+        'Required parameter "itemId" was null or undefined when calling createItemWithBodyConflictRaw().',
       );
     }
     if (requestParameters.bodyBody === undefined || requestParameters.bodyBody === null) {
       throw new RequiredError(
         'bodyBody',
-        'Required parameter "bodyBody" was null or undefined when calling createItemWithBodyConflictRaw().'
+        'Required parameter "bodyBody" was null or undefined when calling createItemWithBodyConflictRaw().',
       );
     }
     // Build path with path parameters
@@ -88,38 +115,58 @@ export class ItemsApi extends BaseAPI implements ItemsApiInterface {
     // Prepare request body
     const requestBody = requestParameters.bodyBody;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new CreateItemWithBodyConflictError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new CreateItemWithBodyConflictError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateItemWithBodyConflictError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateItemWithBodyConflictError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<CreateItemWithBodyConflictResponse200> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response) as JSONApiResponse<CreateItemWithBodyConflictResponse200> & {
+        status: 200;
+      };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createItemWithBodyConflict(requestParameters: ApiCreateItemWithBodyConflictRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateItemWithBodyConflictResponse200> {
+  async createItemWithBodyConflict(
+    requestParameters: ApiCreateItemWithBodyConflictRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateItemWithBodyConflictResponse200> {
     const response = await this.createItemWithBodyConflictRaw(requestParameters, initOverrides);
-    return await response.value() as CreateItemWithBodyConflictResponse200;
+    return (await response.value()) as CreateItemWithBodyConflictResponse200;
   }
 }

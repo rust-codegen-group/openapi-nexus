@@ -3,8 +3,9 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
-export interface SearchStreamEventResponseWebSearchCallSearching extends Readonly<Record<string,
-unknown>> {
+export interface SearchStreamEventResponseWebSearchCallSearching extends Readonly<
+  Record<string, unknown>
+> {
   readonly sequence_number: number;
   readonly type: 'response.web_search_call.searching';
 }

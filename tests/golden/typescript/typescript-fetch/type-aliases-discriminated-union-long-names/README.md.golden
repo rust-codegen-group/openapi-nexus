@@ -4,7 +4,6 @@ Test fixture for discriminated union where variant type names are
 intentionally long enough to force multi-line type alias output at the
 100-char render width. Ensures PEP 695 parenthesization is correct.
 
-
 **Version:** 1.0.0
 
 ## Overview
@@ -55,8 +54,8 @@ import { Configuration, DefaultApi } from 'discriminated-union-with-long-type-na
 const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
-    'Authorization': 'Bearer YOUR_TOKEN'
-  }
+    Authorization: 'Bearer YOUR_TOKEN',
+  },
 });
 
 // Initialize the API client
@@ -104,9 +103,9 @@ const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
     'X-API-Key': 'your-api-key',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
-  credentials: 'include'
+  credentials: 'include',
 });
 ```
 
@@ -129,12 +128,12 @@ const loggingMiddleware: Middleware = {
   onError: async (context) => {
     console.error('Error:', context.error);
     return undefined;
-  }
+  },
 };
 
 const config = new Configuration({
   basePath: 'https://api.example.com',
-  middleware: [loggingMiddleware]
+  middleware: [loggingMiddleware],
 });
 ```
 
@@ -143,7 +142,11 @@ const config = new Configuration({
 The client throws typed errors for different failure scenarios:
 
 ```typescript
-import { ResponseError, FetchError, RequiredError } from 'discriminated-union-with-long-type-names-test';
+import {
+  ResponseError,
+  FetchError,
+  RequiredError,
+} from 'discriminated-union-with-long-type-names-test';
 
 try {
   const result = await api.someMethod();
@@ -217,7 +220,7 @@ import type { User, CreateUserRequest } from 'discriminated-union-with-long-type
 const user: User = {
   id: 1,
   name: 'John Doe',
-  email: 'john@example.com'
+  email: 'john@example.com',
 };
 ```
 

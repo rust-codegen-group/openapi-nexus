@@ -1,26 +1,26 @@
 {
+  "name": "open-tagged-additional-properties",
+  "version": "1.0.0",
   "description": "TypeScript client for Open tagged additional properties",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "openapi",
-    "api-client",
-    "typescript",
-    "generated"
-  ],
-  "main": "./dist/index.js",
-  "name": "open-tagged-additional-properties",
   "scripts": {
     "build": "tsc"
-  },
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  }
 }

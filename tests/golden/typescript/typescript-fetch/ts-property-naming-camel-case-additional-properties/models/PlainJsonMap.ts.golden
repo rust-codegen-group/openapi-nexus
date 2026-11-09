@@ -3,11 +3,9 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
-export interface PlainJsonMap$Wire extends Readonly<Record<string, unknown>> {
-}
+export interface PlainJsonMap$Wire extends Readonly<Record<string, unknown>> {}
 
-export interface PlainJsonMap extends Readonly<Record<string, unknown>> {
-}
+export interface PlainJsonMap extends Readonly<Record<string, unknown>> {}
 
 export function plainJsonMapFromJSON(json: PlainJsonMap$Wire): PlainJsonMap {
   return json as unknown as PlainJsonMap;

@@ -3,23 +3,47 @@
  *
  * TypeScript additional property preservation — 1.0.0
  */
-import type { SearchStreamEventResponseWebSearchCallSearching, SearchStreamEventResponseWebSearchCallSearching$Wire } from './SearchStreamEventResponseWebSearchCallSearching';
-import { searchStreamEventResponseWebSearchCallSearchingFromJSON, searchStreamEventResponseWebSearchCallSearchingToJSON } from './SearchStreamEventResponseWebSearchCallSearching';
+import type {
+  SearchStreamEventResponseWebSearchCallSearching,
+  SearchStreamEventResponseWebSearchCallSearching$Wire,
+} from './SearchStreamEventResponseWebSearchCallSearching';
+import {
+  searchStreamEventResponseWebSearchCallSearchingFromJSON,
+  searchStreamEventResponseWebSearchCallSearchingToJSON,
+} from './SearchStreamEventResponseWebSearchCallSearching';
 
-export type SearchStreamEvent$Wire = ({ type: 'response.web_search_call.searching' } & SearchStreamEventResponseWebSearchCallSearching$Wire) | { type: 'response.completed' };
+export type SearchStreamEvent$Wire =
+  | ({
+      type: 'response.web_search_call.searching';
+    } & SearchStreamEventResponseWebSearchCallSearching$Wire)
+  | { type: 'response.completed' };
 
-export type SearchStreamEvent = ({ type: 'response.web_search_call.searching' } & SearchStreamEventResponseWebSearchCallSearching) | { type: 'response.completed' };
+export type SearchStreamEvent =
+  | ({
+      type: 'response.web_search_call.searching';
+    } & SearchStreamEventResponseWebSearchCallSearching)
+  | { type: 'response.completed' };
 
 export function searchStreamEventFromJSON(json: SearchStreamEvent$Wire): SearchStreamEvent {
   switch (json.type) {
-    case 'response.web_search_call.searching': return { ...searchStreamEventResponseWebSearchCallSearchingFromJSON(json), type: 'response.web_search_call.searching' };
-    case 'response.completed': return { type: 'response.completed' };
+    case 'response.web_search_call.searching':
+      return {
+        ...searchStreamEventResponseWebSearchCallSearchingFromJSON(json),
+        type: 'response.web_search_call.searching',
+      };
+    case 'response.completed':
+      return { type: 'response.completed' };
   }
 }
 
 export function searchStreamEventToJSON(value: SearchStreamEvent): SearchStreamEvent$Wire {
   switch (value.type) {
-    case 'response.web_search_call.searching': return { ...searchStreamEventResponseWebSearchCallSearchingToJSON(value), type: 'response.web_search_call.searching' } as SearchStreamEvent$Wire;
-    case 'response.completed': return { type: 'response.completed' } as SearchStreamEvent$Wire;
+    case 'response.web_search_call.searching':
+      return {
+        ...searchStreamEventResponseWebSearchCallSearchingToJSON(value),
+        type: 'response.web_search_call.searching',
+      } as SearchStreamEvent$Wire;
+    case 'response.completed':
+      return { type: 'response.completed' } as SearchStreamEvent$Wire;
   }
 }

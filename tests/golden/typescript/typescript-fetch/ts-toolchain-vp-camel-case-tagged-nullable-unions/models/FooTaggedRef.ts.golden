@@ -13,16 +13,21 @@ export type FooTaggedRef = { type: 'foo_ref_payload'; barPayload: FooPayloadBody
 
 export function fooTaggedRefFromJSON(json: FooTaggedRef$Wire): FooTaggedRef {
   switch (json.type) {
-    case 'foo_ref_payload': return { type: 'foo_ref_payload', barPayload: fooPayloadBodyFromJSON(json.bar_payload) };
+    case 'foo_ref_payload':
+      return { type: 'foo_ref_payload', barPayload: fooPayloadBodyFromJSON(json.bar_payload) };
   }
 }
 
 export function fooTaggedRefToJSON(value: FooTaggedRef): FooTaggedRef$Wire {
   switch (value.type) {
-    case 'foo_ref_payload': return { type: 'foo_ref_payload', bar_payload: fooPayloadBodyToJSON(value.barPayload) };
+    case 'foo_ref_payload':
+      return { type: 'foo_ref_payload', bar_payload: fooPayloadBodyToJSON(value.barPayload) };
   }
 }
 
-export function isFooRefPayload(value: FooTaggedRef): value is { type: 'foo_ref_payload'; barPayload: FooPayloadBody } {
+export function isFooRefPayload(value: FooTaggedRef): value is {
+  type: 'foo_ref_payload';
+  barPayload: FooPayloadBody;
+} {
   return value.type === 'foo_ref_payload';
 }

@@ -7,24 +7,34 @@
 import type { FooOpenVariant, FooOpenVariant$Wire } from './FooOpenVariant';
 import { fooOpenVariantFromJSON, fooOpenVariantToJSON } from './FooOpenVariant';
 
-export type FooMappedTagUnion$Wire = { type: 'foo_closed_variant' } | ({ type: 'foo_open_variant' } & FooOpenVariant$Wire);
+export type FooMappedTagUnion$Wire =
+  | { type: 'foo_closed_variant' }
+  | ({ type: 'foo_open_variant' } & FooOpenVariant$Wire);
 
-export type FooMappedTagUnion = { type: 'foo_closed_variant' } | ({ type: 'foo_open_variant' } & FooOpenVariant);
+export type FooMappedTagUnion =
+  | { type: 'foo_closed_variant' }
+  | ({ type: 'foo_open_variant' } & FooOpenVariant);
 
 export function fooMappedTagUnionFromJSON(json: FooMappedTagUnion$Wire): FooMappedTagUnion {
   switch (json.type) {
-    case 'foo_closed_variant': return { type: 'foo_closed_variant' };
-    case 'foo_open_variant': return { ...fooOpenVariantFromJSON(json), type: 'foo_open_variant' };
+    case 'foo_closed_variant':
+      return { type: 'foo_closed_variant' };
+    case 'foo_open_variant':
+      return { ...fooOpenVariantFromJSON(json), type: 'foo_open_variant' };
   }
 }
 
 export function fooMappedTagUnionToJSON(value: FooMappedTagUnion): FooMappedTagUnion$Wire {
   switch (value.type) {
-    case 'foo_closed_variant': return { type: 'foo_closed_variant' } as FooMappedTagUnion$Wire;
-    case 'foo_open_variant': return { ...fooOpenVariantToJSON(value), type: 'foo_open_variant' } as FooMappedTagUnion$Wire;
+    case 'foo_closed_variant':
+      return { type: 'foo_closed_variant' } as FooMappedTagUnion$Wire;
+    case 'foo_open_variant':
+      return { ...fooOpenVariantToJSON(value), type: 'foo_open_variant' } as FooMappedTagUnion$Wire;
   }
 }
 
-export function isFooOpenVariant(value: FooMappedTagUnion): value is ({ type: 'foo_open_variant' } & FooOpenVariant) {
+export function isFooOpenVariant(value: FooMappedTagUnion): value is {
+  type: 'foo_open_variant';
+} & FooOpenVariant {
   return value.type === 'foo_open_variant';
 }

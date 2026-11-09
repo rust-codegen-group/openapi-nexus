@@ -5,8 +5,20 @@
  * This is a sample Pet Store Server based on the OpenAPI 3.1 specification
  */
 import type { User } from '../models/User';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiCreateUserRequest {
   body: User;
@@ -50,161 +62,266 @@ export interface ApiDeleteUserRequest {
 }
 
 export type CreateUserRawResponse =
-  | JSONApiResponse<User> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<User> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type CreateUsersWithListInputRawResponse =
-  | JSONApiResponse<User> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<User> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type LoginUserRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type LogoutUserRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type GetUserByNameRawResponse =
-  | JSONApiResponse<User> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<User> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type UpdateUserRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type DeleteUserRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type CreateUserErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type CreateUserErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class CreateUserError extends ResponseError {
   readonly detail: CreateUserErrorDetail;
 
-  constructor(response: Response, detail: CreateUserErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateUserErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type CreateUsersWithListInputErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type CreateUsersWithListInputErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class CreateUsersWithListInputError extends ResponseError {
   readonly detail: CreateUsersWithListInputErrorDetail;
 
-  constructor(response: Response, detail: CreateUsersWithListInputErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateUsersWithListInputErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type LoginUserErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class LoginUserError extends ResponseError {
   readonly detail: LoginUserErrorDetail;
 
-  constructor(response: Response, detail: LoginUserErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: LoginUserErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type LogoutUserErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type LogoutUserErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class LogoutUserError extends ResponseError {
   readonly detail: LogoutUserErrorDetail;
 
-  constructor(response: Response, detail: LogoutUserErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: LogoutUserErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type GetUserByNameErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'notFound'; status: 404; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class GetUserByNameError extends ResponseError {
   readonly detail: GetUserByNameErrorDetail;
 
-  constructor(response: Response, detail: GetUserByNameErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetUserByNameErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type UpdateUserErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'notFound'; status: 404; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class UpdateUserError extends ResponseError {
   readonly detail: UpdateUserErrorDetail;
 
-  constructor(response: Response, detail: UpdateUserErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: UpdateUserErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type DeleteUserErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'notFound'; status: 404; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class DeleteUserError extends ResponseError {
   readonly detail: DeleteUserErrorDetail;
 
-  constructor(response: Response, detail: DeleteUserErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: DeleteUserErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface UserApiInterface {
-  createUserRaw: (requestParameters: ApiCreateUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateUserRawResponse>;
-  createUser: (requestParameters: ApiCreateUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  createUsersWithListInputRaw: (requestParameters: ApiCreateUsersWithListInputRequest,
-  initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<CreateUsersWithListInputRawResponse>;
-  createUsersWithListInput: (requestParameters: ApiCreateUsersWithListInputRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  loginUserRaw: (requestParameters: ApiLoginUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<LoginUserRawResponse>;
-  loginUser: (requestParameters: ApiLoginUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  logoutUserRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<LogoutUserRawResponse>;
+  createUserRaw: (
+    requestParameters: ApiCreateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateUserRawResponse>;
+  createUser: (
+    requestParameters: ApiCreateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<User>;
+  createUsersWithListInputRaw: (
+    requestParameters: ApiCreateUsersWithListInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateUsersWithListInputRawResponse>;
+  createUsersWithListInput: (
+    requestParameters: ApiCreateUsersWithListInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<User>;
+  loginUserRaw: (
+    requestParameters: ApiLoginUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<LoginUserRawResponse>;
+  loginUser: (
+    requestParameters: ApiLoginUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  logoutUserRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<LogoutUserRawResponse>;
   logoutUser: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getUserByNameRaw: (requestParameters: ApiGetUserByNameRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetUserByNameRawResponse>;
-  getUserByName: (requestParameters: ApiGetUserByNameRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<User>;
-  updateUserRaw: (requestParameters: ApiUpdateUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateUserRawResponse>;
-  updateUser: (requestParameters: ApiUpdateUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  deleteUserRaw: (requestParameters: ApiDeleteUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DeleteUserRawResponse>;
-  deleteUser: (requestParameters: ApiDeleteUserRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  getUserByNameRaw: (
+    requestParameters: ApiGetUserByNameRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetUserByNameRawResponse>;
+  getUserByName: (
+    requestParameters: ApiGetUserByNameRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<User>;
+  updateUserRaw: (
+    requestParameters: ApiUpdateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<UpdateUserRawResponse>;
+  updateUser: (
+    requestParameters: ApiUpdateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  deleteUserRaw: (
+    requestParameters: ApiDeleteUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<DeleteUserRawResponse>;
+  deleteUser: (
+    requestParameters: ApiDeleteUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
 }
 
 export class UserApi extends BaseAPI implements UserApiInterface {
@@ -215,12 +332,14 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async createUserRaw(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateUserRawResponse> {
+  async createUserRaw(
+    requestParameters: ApiCreateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateUserRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createUserRaw().'
+        'Required parameter "body" was null or undefined when calling createUserRaw().',
       );
     }
     // Build path with path parameters
@@ -235,43 +354,56 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateUserError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateUserError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<User> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createUser(requestParameters: ApiCreateUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<User> {
+  async createUser(
+    requestParameters: ApiCreateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<User> {
     const response = await this.createUserRaw(requestParameters, initOverrides);
-    return await response.value() as User;
+    return (await response.value()) as User;
   }
 
-  async createUsersWithListInputRaw(requestParameters: ApiCreateUsersWithListInputRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateUsersWithListInputRawResponse> {
+  async createUsersWithListInputRaw(
+    requestParameters: ApiCreateUsersWithListInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateUsersWithListInputRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createUsersWithListInputRaw().'
+        'Required parameter "body" was null or undefined when calling createUsersWithListInputRaw().',
       );
     }
     // Build path with path parameters
@@ -286,38 +418,52 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateUsersWithListInputError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateUsersWithListInputError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<User> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createUsersWithListInput(requestParameters: ApiCreateUsersWithListInputRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<User> {
+  async createUsersWithListInput(
+    requestParameters: ApiCreateUsersWithListInputRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<User> {
     const response = await this.createUsersWithListInputRaw(requestParameters, initOverrides);
-    return await response.value() as User;
+    return (await response.value()) as User;
   }
 
-  async loginUserRaw(requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<LoginUserRawResponse> {
+  async loginUserRaw(
+    requestParameters: ApiLoginUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<LoginUserRawResponse> {
     // Build path with path parameters
     const urlPath = `/user/login`;
     // Build query parameters
@@ -329,75 +475,103 @@ export class UserApi extends BaseAPI implements UserApiInterface {
       queryParameters['password'] = requestParameters.password;
     }
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new LoginUserError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new LoginUserError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new LoginUserError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new LoginUserError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async loginUser(requestParameters: ApiLoginUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async loginUser(
+    requestParameters: ApiLoginUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.loginUserRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async logoutUserRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<LogoutUserRawResponse> {
+  async logoutUserRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<LogoutUserRawResponse> {
     // Build path with path parameters
     const urlPath = `/user/logout`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new LogoutUserError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new LogoutUserError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
@@ -407,12 +581,14 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     return await response.value();
   }
 
-  async getUserByNameRaw(requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetUserByNameRawResponse> {
+  async getUserByNameRaw(
+    requestParameters: ApiGetUserByNameRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetUserByNameRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
-        'Required parameter "username" was null or undefined when calling getUserByNameRaw().'
+        'Required parameter "username" was null or undefined when calling getUserByNameRaw().',
       );
     }
     // Build path with path parameters
@@ -421,60 +597,87 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new GetUserByNameError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else if (response.status === 404) {
+        throw new GetUserByNameError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 404) {
         let errorValue: Promise<void> | undefined;
-        throw new GetUserByNameError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new GetUserByNameError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetUserByNameError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetUserByNameError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<User> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getUserByName(requestParameters: ApiGetUserByNameRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<User> {
+  async getUserByName(
+    requestParameters: ApiGetUserByNameRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<User> {
     const response = await this.getUserByNameRaw(requestParameters, initOverrides);
-    return await response.value() as User;
+    return (await response.value()) as User;
   }
 
-  async updateUserRaw(requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<UpdateUserRawResponse> {
+  async updateUserRaw(
+    requestParameters: ApiUpdateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<UpdateUserRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
-        'Required parameter "username" was null or undefined when calling updateUserRaw().'
+        'Required parameter "username" was null or undefined when calling updateUserRaw().',
       );
     }
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling updateUserRaw().'
+        'Required parameter "body" was null or undefined when calling updateUserRaw().',
       );
     }
     // Build path with path parameters
@@ -490,50 +693,78 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'PUT',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new UpdateUserError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else if (response.status === 404) {
+        throw new UpdateUserError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 404) {
         let errorValue: Promise<void> | undefined;
-        throw new UpdateUserError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new UpdateUserError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new UpdateUserError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new UpdateUserError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async updateUser(requestParameters: ApiUpdateUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async updateUser(
+    requestParameters: ApiUpdateUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.updateUserRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async deleteUserRaw(requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<DeleteUserRawResponse> {
+  async deleteUserRaw(
+    requestParameters: ApiDeleteUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<DeleteUserRawResponse> {
     if (requestParameters.username === undefined || requestParameters.username === null) {
       throw new RequiredError(
         'username',
-        'Required parameter "username" was null or undefined when calling deleteUserRaw().'
+        'Required parameter "username" was null or undefined when calling deleteUserRaw().',
       );
     }
     // Build path with path parameters
@@ -542,44 +773,69 @@ export class UserApi extends BaseAPI implements UserApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'DELETE',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new DeleteUserError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else if (response.status === 404) {
+        throw new DeleteUserError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 404) {
         let errorValue: Promise<void> | undefined;
-        throw new DeleteUserError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new DeleteUserError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new DeleteUserError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new DeleteUserError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async deleteUser(requestParameters: ApiDeleteUserRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async deleteUser(
+    requestParameters: ApiDeleteUserRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.deleteUserRaw(requestParameters, initOverrides);
     return await response.value();
   }

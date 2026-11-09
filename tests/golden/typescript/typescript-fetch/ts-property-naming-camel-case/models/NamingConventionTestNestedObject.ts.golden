@@ -18,7 +18,9 @@ export interface NamingConventionTestNestedObject {
   readonly nestedSnakeCase: string;
 }
 
-export function namingConventionTestNestedObjectFromJSON(json: NamingConventionTestNestedObject$Wire): NamingConventionTestNestedObject {
+export function namingConventionTestNestedObjectFromJSON(
+  json: NamingConventionTestNestedObject$Wire,
+): NamingConventionTestNestedObject {
   return {
     nestedPascalCase: json.NestedPascalCase,
     nestedKebabCase: json['nested-kebab-case'],
@@ -27,7 +29,9 @@ export function namingConventionTestNestedObjectFromJSON(json: NamingConventionT
   };
 }
 
-export function namingConventionTestNestedObjectToJSON(value: NamingConventionTestNestedObject): NamingConventionTestNestedObject$Wire {
+export function namingConventionTestNestedObjectToJSON(
+  value: NamingConventionTestNestedObject,
+): NamingConventionTestNestedObject$Wire {
   return {
     NestedPascalCase: value.nestedPascalCase,
     'nested-kebab-case': value.nestedKebabCase,

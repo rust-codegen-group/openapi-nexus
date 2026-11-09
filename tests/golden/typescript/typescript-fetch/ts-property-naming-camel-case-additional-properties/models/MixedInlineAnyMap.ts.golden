@@ -12,21 +12,37 @@ export interface MixedInlineAnyMap extends Readonly<Record<string, unknown>> {
 }
 
 export function mixedInlineAnyMapFromJSON(json: MixedInlineAnyMap$Wire): MixedInlineAnyMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known'].includes(key)).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
-    ...(Object.prototype.hasOwnProperty.call(json, 'known') ? {known: json.known,} : {}),
+    ...(Object.prototype.hasOwnProperty.call(json, 'known') ? { known: json.known } : {}),
   };
   return result;
 }
 
 export function mixedInlineAnyMapToJSON(value: MixedInlineAnyMap): MixedInlineAnyMap$Wire {
-  const additionalProperties = Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['known'].includes(key)).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['known'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
-    ...(Object.prototype.hasOwnProperty.call(value, 'known') ? {known: value.known,} : {}),
+    ...(Object.prototype.hasOwnProperty.call(value, 'known') ? { known: value.known } : {}),
   };
   return result;
 }

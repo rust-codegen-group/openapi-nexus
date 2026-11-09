@@ -20,14 +20,18 @@ export interface DeleteTestResourceResponse {
   readonly success: boolean;
 }
 
-export function deleteTestResourceResponseFromJSON(json: DeleteTestResourceResponse$Wire): DeleteTestResourceResponse {
+export function deleteTestResourceResponseFromJSON(
+  json: DeleteTestResourceResponse$Wire,
+): DeleteTestResourceResponse {
   return {
     message: json.message,
     success: json.success,
   };
 }
 
-export function deleteTestResourceResponseToJSON(value: DeleteTestResourceResponse): DeleteTestResourceResponse$Wire {
+export function deleteTestResourceResponseToJSON(
+  value: DeleteTestResourceResponse,
+): DeleteTestResourceResponse$Wire {
   return {
     message: value.message,
     success: value.success,

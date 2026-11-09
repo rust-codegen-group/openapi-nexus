@@ -5,36 +5,57 @@
  * Test fixture for union types that reference other union types
  */
 import type { Foo } from '../models/Foo';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiTestNestedUnionRequest {
   body: Foo;
 }
 
 export type TestNestedUnionRawResponse =
-  | JSONApiResponse<Foo> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<Foo> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type TestNestedUnionErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type TestNestedUnionErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class TestNestedUnionError extends ResponseError {
   readonly detail: TestNestedUnionErrorDetail;
 
-  constructor(response: Response, detail: TestNestedUnionErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: TestNestedUnionErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  testNestedUnionRaw: (requestParameters: ApiTestNestedUnionRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestNestedUnionRawResponse>;
-  testNestedUnion: (requestParameters: ApiTestNestedUnionRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testNestedUnionRaw: (
+    requestParameters: ApiTestNestedUnionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<TestNestedUnionRawResponse>;
+  testNestedUnion: (
+    requestParameters: ApiTestNestedUnionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -45,12 +66,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async testNestedUnionRaw(requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<TestNestedUnionRawResponse> {
+  async testNestedUnionRaw(
+    requestParameters: ApiTestNestedUnionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<TestNestedUnionRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling testNestedUnionRaw().'
+        'Required parameter "body" was null or undefined when calling testNestedUnionRaw().',
       );
     }
     // Build path with path parameters
@@ -65,33 +88,45 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new TestNestedUnionError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new TestNestedUnionError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Foo> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async testNestedUnion(requestParameters: ApiTestNestedUnionRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Foo> {
+  async testNestedUnion(
+    requestParameters: ApiTestNestedUnionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Foo> {
     const response = await this.testNestedUnionRaw(requestParameters, initOverrides);
-    return await response.value() as Foo;
+    return (await response.value()) as Foo;
   }
 }

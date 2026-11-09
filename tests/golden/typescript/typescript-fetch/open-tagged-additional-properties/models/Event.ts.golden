@@ -6,4 +6,6 @@
 import type { EventCompleted } from './EventCompleted';
 import type { EventSearching } from './EventSearching';
 
-export type Event = ({ type: 'searching' } & EventSearching) | ({ type: 'completed' } & EventCompleted);
+export type Event =
+  | ({ type: 'searching' } & EventSearching)
+  | ({ type: 'completed' } & EventCompleted);

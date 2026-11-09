@@ -6,36 +6,57 @@
  */
 import type { Foo, Foo$Wire } from '../models/Foo';
 import { fooFromJSON, fooToJSON } from '../models/Foo';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiTestIntersectionRequest {
   body: Foo;
 }
 
 export type TestIntersectionRawResponse =
-  | JSONApiResponse<Foo> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<Foo> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type TestIntersectionErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type TestIntersectionErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class TestIntersectionError extends ResponseError {
   readonly detail: TestIntersectionErrorDetail;
 
-  constructor(response: Response, detail: TestIntersectionErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: TestIntersectionErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  testIntersectionRaw: (requestParameters: ApiTestIntersectionRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestIntersectionRawResponse>;
-  testIntersection: (requestParameters: ApiTestIntersectionRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testIntersectionRaw: (
+    requestParameters: ApiTestIntersectionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<TestIntersectionRawResponse>;
+  testIntersection: (
+    requestParameters: ApiTestIntersectionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -46,12 +67,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async testIntersectionRaw(requestParameters: ApiTestIntersectionRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<TestIntersectionRawResponse> {
+  async testIntersectionRaw(
+    requestParameters: ApiTestIntersectionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<TestIntersectionRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling testIntersectionRaw().'
+        'Required parameter "body" was null or undefined when calling testIntersectionRaw().',
       );
     }
     // Build path with path parameters
@@ -66,33 +89,47 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = fooToJSON(requestParameters.body);
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new TestIntersectionError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new TestIntersectionError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response, (json) => fooFromJSON(json as Foo$Wire)) as JSONApiResponse<Foo> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+      return new JSONApiResponse(response, (json) => {
+        return fooFromJSON(json as Foo$Wire);
+      }) as JSONApiResponse<Foo> & { status: 200 };
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async testIntersection(requestParameters: ApiTestIntersectionRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Foo> {
+  async testIntersection(
+    requestParameters: ApiTestIntersectionRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Foo> {
     const response = await this.testIntersectionRaw(requestParameters, initOverrides);
-    return await response.value() as Foo;
+    return (await response.value()) as Foo;
   }
 }

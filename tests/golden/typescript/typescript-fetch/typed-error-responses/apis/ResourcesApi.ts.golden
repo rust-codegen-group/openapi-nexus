@@ -11,8 +11,20 @@ import type { DefaultError } from '../models/DefaultError';
 import type { SameShapeValidationError } from '../models/SameShapeValidationError';
 import type { ServerError } from '../models/ServerError';
 import type { ValidationError } from '../models/ValidationError';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiCreateResourceRequest {
   body: CreateResourceRequest;
@@ -23,48 +35,62 @@ export interface ApiCreateResourceWithWildcardSuccessRequest {
 }
 
 export type CheckNoSuccessBodyRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type CreateResourceRawResponse =
-  | JSONApiResponse<CreatedResource> & { status: 201 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<CreatedResource> & { status: 201 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type CreateResourceWithWildcardSuccessRawResponse =
-  | JSONApiResponse<CreatedResource> & { status: 201 }
-  | JSONApiResponse<CreatedResource> & { status: number }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<CreatedResource> & { status: 201 })
+  | (JSONApiResponse<CreatedResource> & { status: number })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export function getCheckNoSuccessBodyXRequestIdHeader(response: CheckNoSuccessBodyRawResponse): string
-| undefined {
+export function getCheckNoSuccessBodyXRequestIdHeader(
+  response: CheckNoSuccessBodyRawResponse,
+): string | undefined {
   return response.headers.get('X-Request-Id') ?? undefined;
 }
 
-export function getCreateResource1RequestIdHeader(response: CreateResourceRawResponse): string
-| undefined {
+export function getCreateResource1RequestIdHeader(
+  response: CreateResourceRawResponse,
+): string | undefined {
   return response.headers.get('1-Request-Id') ?? undefined;
 }
 
-export function getCreateResourceXRequestIdHeader(response: CreateResourceRawResponse): string
-| undefined {
+export function getCreateResourceXRequestIdHeader(
+  response: CreateResourceRawResponse,
+): string | undefined {
   return response.headers.get('X-Request-Id') ?? undefined;
 }
 
-export function getCreateResourceXRequestIdHeader2(response: CreateResourceRawResponse): string
-| undefined {
+export function getCreateResourceXRequestIdHeader2(
+  response: CreateResourceRawResponse,
+): string | undefined {
   return response.headers.get('X_Request_Id') ?? undefined;
 }
 
 export type CheckNoSuccessBodyErrorDetail =
-  { kind: 'serviceUnavailable'; status: 503; raw: Response; value(): Promise<ServerError> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'serviceUnavailable';
+      status: 503;
+      raw: Response;
+      value(): Promise<ServerError>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class CheckNoSuccessBodyError extends ResponseError {
   readonly detail: CheckNoSuccessBodyErrorDetail;
 
-  constructor(response: Response, detail: CheckNoSuccessBodyErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CheckNoSuccessBodyErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -75,21 +101,69 @@ export class CheckNoSuccessBodyError extends ResponseError {
 }
 
 export type CreateResourceErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<BadRequestError> }
-  | { kind: 'conflict'; status: 409; raw: Response; value(): Promise<ConflictError> }
-  | { kind: 'validation'; status: 422; raw: Response; value(): Promise<ValidationError> }
-  | { kind: 'status423'; status: 423; raw: Response; value(): Promise<ConflictError> }
-  | { kind: 'status424'; status: 424; raw: Response; value(): Promise<SameShapeValidationError> }
-  | { kind: 'tooManyRequests'; status: 429; raw: Response; value(): Promise<DefaultError> }
-  | { kind: 'serverError'; status: number; raw: Response; value(): Promise<ServerError> }
-  | { kind: 'default'; status: number; raw: Response; value(): Promise<DefaultError> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<BadRequestError>;
+    }
+  | {
+      kind: 'conflict';
+      status: 409;
+      raw: Response;
+      value(): Promise<ConflictError>;
+    }
+  | {
+      kind: 'validation';
+      status: 422;
+      raw: Response;
+      value(): Promise<ValidationError>;
+    }
+  | {
+      kind: 'status423';
+      status: 423;
+      raw: Response;
+      value(): Promise<ConflictError>;
+    }
+  | {
+      kind: 'status424';
+      status: 424;
+      raw: Response;
+      value(): Promise<SameShapeValidationError>;
+    }
+  | {
+      kind: 'tooManyRequests';
+      status: 429;
+      raw: Response;
+      value(): Promise<DefaultError>;
+    }
+  | {
+      kind: 'serverError';
+      status: number;
+      raw: Response;
+      value(): Promise<ServerError>;
+    }
+  | {
+      kind: 'default';
+      status: number;
+      raw: Response;
+      value(): Promise<DefaultError>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class CreateResourceError extends ResponseError {
   readonly detail: CreateResourceErrorDetail;
 
-  constructor(response: Response, detail: CreateResourceErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateResourceErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -137,32 +211,53 @@ export class CreateResourceError extends ResponseError {
 }
 
 export type CreateResourceWithWildcardSuccessErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<BadRequestError> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<BadRequestError>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class CreateResourceWithWildcardSuccessError extends ResponseError {
   readonly detail: CreateResourceWithWildcardSuccessErrorDetail;
 
-  constructor(response: Response, detail: CreateResourceWithWildcardSuccessErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateResourceWithWildcardSuccessErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface ResourcesApiInterface {
-  checkNoSuccessBodyRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<CheckNoSuccessBodyRawResponse>;
+  checkNoSuccessBodyRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CheckNoSuccessBodyRawResponse>;
   checkNoSuccessBody: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  createResourceRaw: (requestParameters: ApiCreateResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateResourceRawResponse>;
-  createResource: (requestParameters: ApiCreateResourceRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreatedResource>;
-  createResourceWithWildcardSuccessRaw: (requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
-  initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<CreateResourceWithWildcardSuccessRawResponse>;
-  createResourceWithWildcardSuccess: (requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreatedResource>;
+  createResourceRaw: (
+    requestParameters: ApiCreateResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateResourceRawResponse>;
+  createResource: (
+    requestParameters: ApiCreateResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreatedResource>;
+  createResourceWithWildcardSuccessRaw: (
+    requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateResourceWithWildcardSuccessRawResponse>;
+  createResourceWithWildcardSuccess: (
+    requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreatedResource>;
 }
 
 export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
@@ -173,41 +268,58 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async checkNoSuccessBodyRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CheckNoSuccessBodyRawResponse> {
+  async checkNoSuccessBodyRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CheckNoSuccessBodyRawResponse> {
     // Build path with path parameters
     const urlPath = `/no-success-body`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 503) {
         let errorValue: Promise<ServerError> | undefined;
-        throw new CheckNoSuccessBodyError(response, { kind: 'serviceUnavailable', status: response.status as 503, raw: response, value: () => errorValue ??= new JSONApiResponse<ServerError>(errorRaw.clone()).value() });
-      }
-      else {
+        throw new CheckNoSuccessBodyError(response, {
+          kind: 'serviceUnavailable',
+          status: response.status as 503,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<ServerError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new CheckNoSuccessBodyError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CheckNoSuccessBodyError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
@@ -217,12 +329,14 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
     return await response.value();
   }
 
-  async createResourceRaw(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateResourceRawResponse> {
+  async createResourceRaw(
+    requestParameters: ApiCreateResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateResourceRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createResourceRaw().'
+        'Required parameter "body" was null or undefined when calling createResourceRaw().',
       );
     }
     // Build path with path parameters
@@ -237,71 +351,133 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<BadRequestError> | undefined;
-        throw new CreateResourceError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new JSONApiResponse<BadRequestError>(errorRaw.clone()).value() });
-      }
-      else if (response.status === 409) {
+        throw new CreateResourceError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<BadRequestError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 409) {
         let errorValue: Promise<ConflictError> | undefined;
-        throw new CreateResourceError(response, { kind: 'conflict', status: response.status as 409, raw: response, value: () => errorValue ??= new JSONApiResponse<ConflictError>(errorRaw.clone()).value() });
-      }
-      else if (response.status === 422) {
+        throw new CreateResourceError(response, {
+          kind: 'conflict',
+          status: response.status as 409,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<ConflictError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 422) {
         let errorValue: Promise<ValidationError> | undefined;
-        throw new CreateResourceError(response, { kind: 'validation', status: response.status as 422, raw: response, value: () => errorValue ??= new JSONApiResponse<ValidationError>(errorRaw.clone()).value() });
-      }
-      else if (response.status === 423) {
+        throw new CreateResourceError(response, {
+          kind: 'validation',
+          status: response.status as 422,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<ValidationError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 423) {
         let errorValue: Promise<ConflictError> | undefined;
-        throw new CreateResourceError(response, { kind: 'status423', status: response.status as 423, raw: response, value: () => errorValue ??= new JSONApiResponse<ConflictError>(errorRaw.clone()).value() });
-      }
-      else if (response.status === 424) {
+        throw new CreateResourceError(response, {
+          kind: 'status423',
+          status: response.status as 423,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<ConflictError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 424) {
         let errorValue: Promise<SameShapeValidationError> | undefined;
-        throw new CreateResourceError(response, { kind: 'status424', status: response.status as 424, raw: response, value: () => errorValue ??= new JSONApiResponse<SameShapeValidationError>(errorRaw.clone()).value() });
-      }
-      else if (response.status === 429) {
+        throw new CreateResourceError(response, {
+          kind: 'status424',
+          status: response.status as 424,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<SameShapeValidationError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 429) {
         let errorValue: Promise<DefaultError> | undefined;
-        throw new CreateResourceError(response, { kind: 'tooManyRequests', status: response.status as 429, raw: response, value: () => errorValue ??= new JSONApiResponse<DefaultError>(errorRaw.clone()).value() });
-      }
-      else if (response.status >= 500 && response.status < 600) {
+        throw new CreateResourceError(response, {
+          kind: 'tooManyRequests',
+          status: response.status as 429,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<DefaultError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status >= 500 && response.status < 600) {
         let errorValue: Promise<ServerError> | undefined;
-        throw new CreateResourceError(response, { kind: 'serverError', status: response.status, raw: response, value: () => errorValue ??= new JSONApiResponse<ServerError>(errorRaw.clone()).value() });
-      }
-      else {
+        throw new CreateResourceError(response, {
+          kind: 'serverError',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<ServerError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<DefaultError> | undefined;
-        throw new CreateResourceError(response, { kind: 'default', status: response.status, raw: response, value: () => errorValue ??= new JSONApiResponse<DefaultError>(errorRaw.clone()).value() });
+        throw new CreateResourceError(response, {
+          kind: 'default',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<DefaultError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 201) {
       return new JSONApiResponse(response) as JSONApiResponse<CreatedResource> & { status: 201 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createResource(requestParameters: ApiCreateResourceRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreatedResource> {
+  async createResource(
+    requestParameters: ApiCreateResourceRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreatedResource> {
     const response = await this.createResourceRaw(requestParameters, initOverrides);
-    return await response.value() as CreatedResource;
+    return (await response.value()) as CreatedResource;
   }
 
-  async createResourceWithWildcardSuccessRaw(requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
-    initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateResourceWithWildcardSuccessRawResponse> {
+  async createResourceWithWildcardSuccessRaw(
+    requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateResourceWithWildcardSuccessRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createResourceWithWildcardSuccessRaw().'
+        'Required parameter "body" was null or undefined when calling createResourceWithWildcardSuccessRaw().',
       );
     }
     // Build path with path parameters
@@ -316,40 +492,58 @@ export class ResourcesApi extends BaseAPI implements ResourcesApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<BadRequestError> | undefined;
-        throw new CreateResourceWithWildcardSuccessError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new JSONApiResponse<BadRequestError>(errorRaw.clone()).value() });
-      }
-      else {
+        throw new CreateResourceWithWildcardSuccessError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<BadRequestError>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateResourceWithWildcardSuccessError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateResourceWithWildcardSuccessError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 201) {
       return new JSONApiResponse(response) as JSONApiResponse<CreatedResource> & { status: 201 };
-    }
-    else if (response.status >= 200 && response.status < 300) {
+    } else if (response.status >= 200 && response.status < 300) {
       return new JSONApiResponse(response) as JSONApiResponse<CreatedResource> & { status: number };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createResourceWithWildcardSuccess(requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
-    initOverrides?: RequestInit | InitOverrideFunction): Promise<CreatedResource> {
+  async createResourceWithWildcardSuccess(
+    requestParameters: ApiCreateResourceWithWildcardSuccessRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreatedResource> {
     const response = await this.createResourceWithWildcardSuccessRaw(requestParameters, initOverrides);
-    return await response.value() as CreatedResource;
+    return (await response.value()) as CreatedResource;
   }
 }

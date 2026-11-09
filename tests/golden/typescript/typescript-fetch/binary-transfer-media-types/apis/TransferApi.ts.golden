@@ -6,8 +6,24 @@
  */
 import type { UploadAssetMultipartRequestBody } from '../models/UploadAssetMultipartRequestBody';
 import type { UploadMetadata } from '../models/UploadMetadata';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, BlobApiResponse, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse, multipartHeaderValue, uploadFileData, uploadFileFilename } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  BlobApiResponse,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+  multipartHeaderValue,
+  uploadFileData,
+  uploadFileFilename,
+} from '../runtime/runtime';
 
 export interface ApiDownloadAssetRequest {
   assetId: string;
@@ -18,51 +34,83 @@ export interface ApiUploadAssetRequest {
 }
 
 export type DownloadAssetRawResponse =
-  | BlobApiResponse & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (BlobApiResponse & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type UploadAssetRawResponse =
-  | JSONApiResponse<UploadMetadata> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<UploadMetadata> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
 export type DownloadAssetErrorDetail =
-  { kind: 'notFound'; status: 404; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'notFound';
+      status: 404;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class DownloadAssetError extends ResponseError {
   readonly detail: DownloadAssetErrorDetail;
 
-  constructor(response: Response, detail: DownloadAssetErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: DownloadAssetErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export type UploadAssetErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<void> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<void>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class UploadAssetError extends ResponseError {
   readonly detail: UploadAssetErrorDetail;
 
-  constructor(response: Response, detail: UploadAssetErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: UploadAssetErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface TransferApiInterface {
-  downloadAssetRaw: (requestParameters: ApiDownloadAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<DownloadAssetRawResponse>;
-  downloadAsset: (requestParameters: ApiDownloadAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Blob>;
-  uploadAssetRaw: (requestParameters: ApiUploadAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadAssetRawResponse>;
-  uploadAsset: (requestParameters: ApiUploadAssetRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UploadMetadata>;
+  downloadAssetRaw: (
+    requestParameters: ApiDownloadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<DownloadAssetRawResponse>;
+  downloadAsset: (
+    requestParameters: ApiDownloadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Blob>;
+  uploadAssetRaw: (
+    requestParameters: ApiUploadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<UploadAssetRawResponse>;
+  uploadAsset: (
+    requestParameters: ApiUploadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<UploadMetadata>;
 }
 
 export class TransferApi extends BaseAPI implements TransferApiInterface {
@@ -73,12 +121,14 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async downloadAssetRaw(requestParameters: ApiDownloadAssetRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<DownloadAssetRawResponse> {
+  async downloadAssetRaw(
+    requestParameters: ApiDownloadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<DownloadAssetRawResponse> {
     if (requestParameters.assetId === undefined || requestParameters.assetId === null) {
       throw new RequiredError(
         'assetId',
-        'Required parameter "assetId" was null or undefined when calling downloadAssetRaw().'
+        'Required parameter "assetId" was null or undefined when calling downloadAssetRaw().',
       );
     }
     // Build path with path parameters
@@ -87,50 +137,70 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 404) {
         let errorValue: Promise<void> | undefined;
-        throw new DownloadAssetError(response, { kind: 'notFound', status: response.status as 404, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new DownloadAssetError(response, {
+          kind: 'notFound',
+          status: response.status as 404,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new DownloadAssetError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new DownloadAssetError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new BlobApiResponse(response) as BlobApiResponse & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async downloadAsset(requestParameters: ApiDownloadAssetRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Blob> {
+  async downloadAsset(
+    requestParameters: ApiDownloadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Blob> {
     const response = await this.downloadAssetRaw(requestParameters, initOverrides);
-    return await response.value() as Blob;
+    return (await response.value()) as Blob;
   }
 
-  async uploadAssetRaw(requestParameters: ApiUploadAssetRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<UploadAssetRawResponse> {
+  async uploadAssetRaw(
+    requestParameters: ApiUploadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<UploadAssetRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling uploadAssetRaw().'
+        'Required parameter "body" was null or undefined when calling uploadAssetRaw().',
       );
     }
     // Build path with path parameters
@@ -138,8 +208,7 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Prepare request body
     const multipartBoundary = '----openapi-nexus-' + Math.random().toString(16).slice(2);
@@ -160,37 +229,56 @@ export class TransferApi extends BaseAPI implements TransferApiInterface {
     multipartChunks.push('--' + multipartBoundary + '--\r\n');
     const requestBody = new Blob(multipartChunks);
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<void> | undefined;
-        throw new UploadAssetError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new VoidApiResponse(errorRaw.clone()).value() });
-      }
-      else {
+        throw new UploadAssetError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new VoidApiResponse(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new UploadAssetError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new UploadAssetError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<UploadMetadata> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async uploadAsset(requestParameters: ApiUploadAssetRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<UploadMetadata> {
+  async uploadAsset(
+    requestParameters: ApiUploadAssetRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<UploadMetadata> {
     const response = await this.uploadAssetRaw(requestParameters, initOverrides);
-    return await response.value() as UploadMetadata;
+    return (await response.value()) as UploadMetadata;
   }
 }

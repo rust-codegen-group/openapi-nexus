@@ -3,7 +3,6 @@
 Internally tagged oneOf whose inline variant objects carry the required
 discriminator plus their content properties directly (no allOf wrapper).
 
-
 **Version:** 1.0.0
 
 ## Overview
@@ -54,8 +53,8 @@ import { Configuration, DefaultApi } from 'discriminated-union-plain-internal-ta
 const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
-    'Authorization': 'Bearer YOUR_TOKEN'
-  }
+    Authorization: 'Bearer YOUR_TOKEN',
+  },
 });
 
 // Initialize the API client
@@ -103,9 +102,9 @@ const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
     'X-API-Key': 'your-api-key',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
-  credentials: 'include'
+  credentials: 'include',
 });
 ```
 
@@ -128,12 +127,12 @@ const loggingMiddleware: Middleware = {
   onError: async (context) => {
     console.error('Error:', context.error);
     return undefined;
-  }
+  },
 };
 
 const config = new Configuration({
   basePath: 'https://api.example.com',
-  middleware: [loggingMiddleware]
+  middleware: [loggingMiddleware],
 });
 ```
 
@@ -142,7 +141,11 @@ const config = new Configuration({
 The client throws typed errors for different failure scenarios:
 
 ```typescript
-import { ResponseError, FetchError, RequiredError } from 'discriminated-union-plain-internal-tagging-test';
+import {
+  ResponseError,
+  FetchError,
+  RequiredError,
+} from 'discriminated-union-plain-internal-tagging-test';
 
 try {
   const result = await api.someMethod();
@@ -216,7 +219,7 @@ import type { User, CreateUserRequest } from 'discriminated-union-plain-internal
 const user: User = {
   id: 1,
   name: 'John Doe',
-  email: 'john@example.com'
+  email: 'john@example.com',
 };
 ```
 

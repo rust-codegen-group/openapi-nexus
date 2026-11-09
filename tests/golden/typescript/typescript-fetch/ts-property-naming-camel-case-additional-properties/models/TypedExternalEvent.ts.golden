@@ -6,25 +6,40 @@
 import type { DetailAliasChain, DetailAliasChain$Wire } from './DetailAliasChain';
 import { detailAliasChainFromJSON, detailAliasChainToJSON } from './DetailAliasChain';
 
-export type TypedExternalEvent$Wire = Readonly<Record<'started', DetailAliasChain$Wire>>
-& Readonly<Record<string, DetailAliasChain$Wire>>
-| Readonly<Record<'finished', DetailAliasChain$Wire>>
-& Readonly<Record<string, DetailAliasChain$Wire>>;
+export type TypedExternalEvent$Wire =
+  | (Readonly<Record<'started', DetailAliasChain$Wire>> &
+      Readonly<Record<string, DetailAliasChain$Wire>>)
+  | (Readonly<Record<'finished', DetailAliasChain$Wire>> &
+      Readonly<Record<string, DetailAliasChain$Wire>>);
 
-export type TypedExternalEvent = Readonly<Record<'started', DetailAliasChain>>
-& Readonly<Record<string, DetailAliasChain>>
-| Readonly<Record<'finished', DetailAliasChain>> & Readonly<Record<string, DetailAliasChain>>;
+export type TypedExternalEvent =
+  | (Readonly<Record<'started', DetailAliasChain>> & Readonly<Record<string, DetailAliasChain>>)
+  | (Readonly<Record<'finished', DetailAliasChain>> & Readonly<Record<string, DetailAliasChain>>);
 
 export function typedExternalEventFromJSON(json: TypedExternalEvent$Wire): TypedExternalEvent {
   if (Object.prototype.hasOwnProperty.call(json, 'started')) {
     const contentValue = (json as Record<'started', DetailAliasChain$Wire>)['started'];
-    const additionalProperties = Object.fromEntries(Object.entries(json).filter(([key]) => key !== 'started').map(([key, value]) => {const additionalValue = value as DetailAliasChain$Wire; return [key, detailAliasChainFromJSON(additionalValue)] as const;}));
-    return {...additionalProperties,['started']: detailAliasChainFromJSON(contentValue),};
+    const additionalProperties = Object.fromEntries(
+      Object.entries(json)
+        .filter(([key]) => key !== 'started')
+        .map(([key, value]) => {
+          const additionalValue = value as DetailAliasChain$Wire;
+          return [key, detailAliasChainFromJSON(additionalValue)] as const;
+        }),
+    );
+    return { ...additionalProperties, ['started']: detailAliasChainFromJSON(contentValue) };
   }
   if (Object.prototype.hasOwnProperty.call(json, 'finished')) {
     const contentValue = (json as Record<'finished', DetailAliasChain$Wire>)['finished'];
-    const additionalProperties = Object.fromEntries(Object.entries(json).filter(([key]) => key !== 'finished').map(([key, value]) => {const additionalValue = value as DetailAliasChain$Wire; return [key, detailAliasChainFromJSON(additionalValue)] as const;}));
-    return {...additionalProperties,['finished']: detailAliasChainFromJSON(contentValue),};
+    const additionalProperties = Object.fromEntries(
+      Object.entries(json)
+        .filter(([key]) => key !== 'finished')
+        .map(([key, value]) => {
+          const additionalValue = value as DetailAliasChain$Wire;
+          return [key, detailAliasChainFromJSON(additionalValue)] as const;
+        }),
+    );
+    return { ...additionalProperties, ['finished']: detailAliasChainFromJSON(contentValue) };
   }
   throw new Error('Unknown variant');
 }
@@ -32,13 +47,27 @@ export function typedExternalEventFromJSON(json: TypedExternalEvent$Wire): Typed
 export function typedExternalEventToJSON(value: TypedExternalEvent): TypedExternalEvent$Wire {
   if (Object.prototype.hasOwnProperty.call(value, 'started')) {
     const contentValue = (value as Record<'started', DetailAliasChain>)['started'];
-    const additionalProperties = Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'started').map(([key, value]) => {const additionalValue = value as DetailAliasChain; return [key, detailAliasChainToJSON(additionalValue)] as const;}));
-    return {...additionalProperties,['started']: detailAliasChainToJSON(contentValue),};
+    const additionalProperties = Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => key !== 'started')
+        .map(([key, value]) => {
+          const additionalValue = value as DetailAliasChain;
+          return [key, detailAliasChainToJSON(additionalValue)] as const;
+        }),
+    );
+    return { ...additionalProperties, ['started']: detailAliasChainToJSON(contentValue) };
   }
   if (Object.prototype.hasOwnProperty.call(value, 'finished')) {
     const contentValue = (value as Record<'finished', DetailAliasChain>)['finished'];
-    const additionalProperties = Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'finished').map(([key, value]) => {const additionalValue = value as DetailAliasChain; return [key, detailAliasChainToJSON(additionalValue)] as const;}));
-    return {...additionalProperties,['finished']: detailAliasChainToJSON(contentValue),};
+    const additionalProperties = Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => key !== 'finished')
+        .map(([key, value]) => {
+          const additionalValue = value as DetailAliasChain;
+          return [key, detailAliasChainToJSON(additionalValue)] as const;
+        }),
+    );
+    return { ...additionalProperties, ['finished']: detailAliasChainToJSON(contentValue) };
   }
   throw new Error('Unknown variant');
 }

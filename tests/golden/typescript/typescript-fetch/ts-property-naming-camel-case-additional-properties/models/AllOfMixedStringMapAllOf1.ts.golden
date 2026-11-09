@@ -11,13 +11,17 @@ export interface AllOfMixedStringMapAllOf1 {
   readonly known?: string;
 }
 
-export function allOfMixedStringMapAllOf1FromJSON(json: AllOfMixedStringMapAllOf1$Wire): AllOfMixedStringMapAllOf1 {
+export function allOfMixedStringMapAllOf1FromJSON(
+  json: AllOfMixedStringMapAllOf1$Wire,
+): AllOfMixedStringMapAllOf1 {
   return {
     known: json.known,
   };
 }
 
-export function allOfMixedStringMapAllOf1ToJSON(value: AllOfMixedStringMapAllOf1): AllOfMixedStringMapAllOf1$Wire {
+export function allOfMixedStringMapAllOf1ToJSON(
+  value: AllOfMixedStringMapAllOf1,
+): AllOfMixedStringMapAllOf1$Wire {
   return {
     known: value.known,
   };

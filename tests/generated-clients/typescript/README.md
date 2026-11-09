@@ -16,12 +16,15 @@ packing declarations, so the generated package's compiler alone is insufficient.
 The strict consumer check itself uses that package's installed compiler.
 
 - `prepare` runs the public generator CLI with an explicit empty configuration,
-  producing fresh, unmodified preserve and camelCase clients.
+  producing fresh preserve and camelCase clients.
 - `build` copies each client to a temporary build directory, runs `vp install`,
   reports the resolved Vite+ component versions with `vp --version`, runs
-  `vp check --no-fmt` and `vp pack`, then copies its bundle/declarations back.
+  full `vp check` and `vp pack`, then checks again after packing and
+  copies its bundle/declarations back.
   Building outside the repository avoids Vite+ skipping gitignored generated
-  sources. Generated source, manifests, and configuration are never patched.
+  sources. Checks run directly on the original generated source, manifests,
+  and configuration, without formatter rewrites or compatibility patches. The generated formatter
+  configuration excludes `dist/`, so checks do not reformat build output.
 - `typecheck.ts` checks the actual packed declarations with strict typing and
   `exactOptionalPropertyTypes`, including negative dictionary-type and readonly
   `allOf` assertions for preserve, ergonomic, and wire declarations.

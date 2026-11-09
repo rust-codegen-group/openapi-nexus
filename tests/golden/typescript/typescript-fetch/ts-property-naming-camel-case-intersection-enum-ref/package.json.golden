@@ -1,26 +1,26 @@
 {
+  "name": "intersection-with-enum-reference-test",
+  "version": "1.0.0",
   "description": "Test case for allOf intersections mixing objects and enums",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "openapi",
-    "api-client",
-    "typescript",
-    "generated"
-  ],
-  "main": "./dist/index.js",
-  "name": "intersection-with-enum-reference-test",
   "scripts": {
     "build": "tsc"
-  },
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  }
 }

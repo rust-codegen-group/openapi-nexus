@@ -6,5 +6,6 @@
 import type { AllOfJsonDictionaryAllOf1 } from './AllOfJsonDictionaryAllOf1';
 import type { AnyJsonValue } from './AnyJsonValue';
 
-export type AllOfJsonDictionary = Readonly<AllOfJsonDictionaryAllOf1
-& Record<string, AnyJsonValue>>;
+export type AllOfJsonDictionary = Readonly<
+  AllOfJsonDictionaryAllOf1 & Record<string, AnyJsonValue>
+>;

@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
+  fmt: {
+    singleQuote: true,
+    ignorePatterns: ['dist/**'],
+  },
   lint: {
     options: {
       typeAware: true,

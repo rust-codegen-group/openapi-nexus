@@ -5,6 +5,6 @@
  */
 import type { DetailAliasChain } from './DetailAliasChain';
 
-export type TypedExternalEvent = Readonly<Record<'started', DetailAliasChain>>
-& Readonly<Record<string, DetailAliasChain>>
-| Readonly<Record<'finished', DetailAliasChain>> & Readonly<Record<string, DetailAliasChain>>;
+export type TypedExternalEvent =
+  | (Readonly<Record<'started', DetailAliasChain>> & Readonly<Record<string, DetailAliasChain>>)
+  | (Readonly<Record<'finished', DetailAliasChain>> & Readonly<Record<string, DetailAliasChain>>);

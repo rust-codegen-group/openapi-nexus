@@ -1,31 +1,32 @@
 {
+  "name": "test-api-with-delete-response-schema",
+  "version": "1.0.0",
   "description": "Test fixture for DELETE operations with JSON response schemas and type alias request bodies",
-  "devDependencies": {
-    "typescript": "^7.0.2",
-    "vite-plus": "^1.5.0"
-  },
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
       "default": "./dist/index.mjs",
       "types": "./dist/index.d.mts"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "openapi",
-    "api-client",
-    "typescript",
-    "generated"
-  ],
-  "main": "./dist/index.mjs",
-  "name": "test-api-with-delete-response-schema",
   "scripts": {
     "build": "vp pack",
-    "check": "vp check --no-fmt"
+    "check": "vp check",
+    "fmt": "vp fmt"
   },
-  "type": "module",
-  "types": "./dist/index.d.mts",
-  "version": "1.0.0"
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.5.0"
+  }
 }

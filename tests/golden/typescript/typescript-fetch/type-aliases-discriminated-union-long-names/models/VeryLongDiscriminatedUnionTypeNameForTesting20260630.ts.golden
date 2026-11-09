@@ -10,4 +10,7 @@ import type { VeryLongDiscriminatedUnionTypeNameAlpha20260630 } from './VeryLong
 import type { VeryLongDiscriminatedUnionTypeNameBeta20260630 } from './VeryLongDiscriminatedUnionTypeNameBeta20260630';
 import type { VeryLongDiscriminatedUnionTypeNameGamma20260630 } from './VeryLongDiscriminatedUnionTypeNameGamma20260630';
 
-export type VeryLongDiscriminatedUnionTypeNameForTesting20260630 = ({ kind: 'ALPHA' } & VeryLongDiscriminatedUnionTypeNameAlpha20260630) | ({ kind: 'BETA' } & VeryLongDiscriminatedUnionTypeNameBeta20260630) | ({ kind: 'GAMMA' } & VeryLongDiscriminatedUnionTypeNameGamma20260630);
+export type VeryLongDiscriminatedUnionTypeNameForTesting20260630 =
+  | ({ kind: 'ALPHA' } & VeryLongDiscriminatedUnionTypeNameAlpha20260630)
+  | ({ kind: 'BETA' } & VeryLongDiscriminatedUnionTypeNameBeta20260630)
+  | ({ kind: 'GAMMA' } & VeryLongDiscriminatedUnionTypeNameGamma20260630);

@@ -5,8 +5,21 @@
  * Covers non-JSON request body media types to pin Content-Type emission.
  */
 import type { Payload } from '../models/Payload';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, TextApiResponse, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  TextApiResponse,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiPostBinaryRequest {
   body: Blob | File;
@@ -37,173 +50,250 @@ export interface ApiPostXmlRequest {
 }
 
 export type PostBinaryRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type PostFormRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type PostJsonRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type PostJsonOrXmlRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type PatchMergeJsonRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type PostTextRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type PostXmlRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 export type GetXmlResponseRawResponse =
-  | TextApiResponse & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (TextApiResponse & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type PostBinaryErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PostBinaryErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PostBinaryError extends ResponseError {
   readonly detail: PostBinaryErrorDetail;
 
-  constructor(response: Response, detail: PostBinaryErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostBinaryErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type PostFormErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PostFormErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PostFormError extends ResponseError {
   readonly detail: PostFormErrorDetail;
 
-  constructor(response: Response, detail: PostFormErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostFormErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type PostJsonErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PostJsonErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PostJsonError extends ResponseError {
   readonly detail: PostJsonErrorDetail;
 
-  constructor(response: Response, detail: PostJsonErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostJsonErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type PostJsonOrXmlErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PostJsonOrXmlErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PostJsonOrXmlError extends ResponseError {
   readonly detail: PostJsonOrXmlErrorDetail;
 
-  constructor(response: Response, detail: PostJsonOrXmlErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostJsonOrXmlErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type PatchMergeJsonErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PatchMergeJsonErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PatchMergeJsonError extends ResponseError {
   readonly detail: PatchMergeJsonErrorDetail;
 
-  constructor(response: Response, detail: PatchMergeJsonErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PatchMergeJsonErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type PostTextErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PostTextErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PostTextError extends ResponseError {
   readonly detail: PostTextErrorDetail;
 
-  constructor(response: Response, detail: PostTextErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostTextErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type PostXmlErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type PostXmlErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class PostXmlError extends ResponseError {
   readonly detail: PostXmlErrorDetail;
 
-  constructor(response: Response, detail: PostXmlErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: PostXmlErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type GetXmlResponseErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetXmlResponseErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetXmlResponseError extends ResponseError {
   readonly detail: GetXmlResponseErrorDetail;
 
-  constructor(response: Response, detail: GetXmlResponseErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetXmlResponseErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  postBinaryRaw: (requestParameters: ApiPostBinaryRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostBinaryRawResponse>;
-  postBinary: (requestParameters: ApiPostBinaryRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postFormRaw: (requestParameters: ApiPostFormRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostFormRawResponse>;
-  postForm: (requestParameters: ApiPostFormRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postJsonRaw: (requestParameters: ApiPostJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostJsonRawResponse>;
-  postJson: (requestParameters: ApiPostJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postJsonOrXmlRaw: (requestParameters: ApiPostJsonOrXmlRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostJsonOrXmlRawResponse>;
-  postJsonOrXml: (requestParameters: ApiPostJsonOrXmlRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  patchMergeJsonRaw: (requestParameters: ApiPatchMergeJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PatchMergeJsonRawResponse>;
-  patchMergeJson: (requestParameters: ApiPatchMergeJsonRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postTextRaw: (requestParameters: ApiPostTextRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostTextRawResponse>;
-  postText: (requestParameters: ApiPostTextRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  postXmlRaw: (requestParameters: ApiPostXmlRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<PostXmlRawResponse>;
-  postXml: (requestParameters: ApiPostXmlRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
-  getXmlResponseRaw: (initOverrides?: RequestInit
-  | InitOverrideFunction) => Promise<GetXmlResponseRawResponse>;
+  postBinaryRaw: (
+    requestParameters: ApiPostBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostBinaryRawResponse>;
+  postBinary: (
+    requestParameters: ApiPostBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  postFormRaw: (
+    requestParameters: ApiPostFormRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostFormRawResponse>;
+  postForm: (
+    requestParameters: ApiPostFormRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  postJsonRaw: (
+    requestParameters: ApiPostJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostJsonRawResponse>;
+  postJson: (
+    requestParameters: ApiPostJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  postJsonOrXmlRaw: (
+    requestParameters: ApiPostJsonOrXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostJsonOrXmlRawResponse>;
+  postJsonOrXml: (
+    requestParameters: ApiPostJsonOrXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  patchMergeJsonRaw: (
+    requestParameters: ApiPatchMergeJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PatchMergeJsonRawResponse>;
+  patchMergeJson: (
+    requestParameters: ApiPatchMergeJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  postTextRaw: (
+    requestParameters: ApiPostTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostTextRawResponse>;
+  postText: (
+    requestParameters: ApiPostTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  postXmlRaw: (
+    requestParameters: ApiPostXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<PostXmlRawResponse>;
+  postXml: (
+    requestParameters: ApiPostXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
+  getXmlResponseRaw: (
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetXmlResponseRawResponse>;
   getXmlResponse: (initOverrides?: RequestInit | InitOverrideFunction) => Promise<string>;
 }
 
@@ -215,12 +305,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async postBinaryRaw(requestParameters: ApiPostBinaryRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostBinaryRawResponse> {
+  async postBinaryRaw(
+    requestParameters: ApiPostBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostBinaryRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postBinaryRaw().'
+        'Required parameter "body" was null or undefined when calling postBinaryRaw().',
       );
     }
     // Build path with path parameters
@@ -235,42 +327,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostBinaryError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostBinaryError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async postBinary(requestParameters: ApiPostBinaryRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async postBinary(
+    requestParameters: ApiPostBinaryRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.postBinaryRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async postFormRaw(requestParameters: ApiPostFormRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostFormRawResponse> {
+  async postFormRaw(
+    requestParameters: ApiPostFormRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostFormRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postFormRaw().'
+        'Required parameter "body" was null or undefined when calling postFormRaw().',
       );
     }
     // Build path with path parameters
@@ -285,42 +391,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = (() => {throw new Error('unsupported request body media type: application/x-www-form-urlencoded');})();
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostFormError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostFormError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async postForm(requestParameters: ApiPostFormRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async postForm(
+    requestParameters: ApiPostFormRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.postFormRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async postJsonRaw(requestParameters: ApiPostJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostJsonRawResponse> {
+  async postJsonRaw(
+    requestParameters: ApiPostJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostJsonRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postJsonRaw().'
+        'Required parameter "body" was null or undefined when calling postJsonRaw().',
       );
     }
     // Build path with path parameters
@@ -335,42 +455,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostJsonError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostJsonError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async postJson(requestParameters: ApiPostJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async postJson(
+    requestParameters: ApiPostJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.postJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async postJsonOrXmlRaw(requestParameters: ApiPostJsonOrXmlRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostJsonOrXmlRawResponse> {
+  async postJsonOrXmlRaw(
+    requestParameters: ApiPostJsonOrXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostJsonOrXmlRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postJsonOrXmlRaw().'
+        'Required parameter "body" was null or undefined when calling postJsonOrXmlRaw().',
       );
     }
     // Build path with path parameters
@@ -385,42 +519,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostJsonOrXmlError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostJsonOrXmlError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async postJsonOrXml(requestParameters: ApiPostJsonOrXmlRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async postJsonOrXml(
+    requestParameters: ApiPostJsonOrXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.postJsonOrXmlRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async patchMergeJsonRaw(requestParameters: ApiPatchMergeJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PatchMergeJsonRawResponse> {
+  async patchMergeJsonRaw(
+    requestParameters: ApiPatchMergeJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PatchMergeJsonRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling patchMergeJsonRaw().'
+        'Required parameter "body" was null or undefined when calling patchMergeJsonRaw().',
       );
     }
     // Build path with path parameters
@@ -435,42 +583,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'PATCH',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PatchMergeJsonError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PatchMergeJsonError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async patchMergeJson(requestParameters: ApiPatchMergeJsonRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async patchMergeJson(
+    requestParameters: ApiPatchMergeJsonRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.patchMergeJsonRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async postTextRaw(requestParameters: ApiPostTextRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostTextRawResponse> {
+  async postTextRaw(
+    requestParameters: ApiPostTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostTextRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postTextRaw().'
+        'Required parameter "body" was null or undefined when calling postTextRaw().',
       );
     }
     // Build path with path parameters
@@ -485,42 +647,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostTextError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostTextError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async postText(requestParameters: ApiPostTextRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async postText(
+    requestParameters: ApiPostTextRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.postTextRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async postXmlRaw(requestParameters: ApiPostXmlRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<PostXmlRawResponse> {
+  async postXmlRaw(
+    requestParameters: ApiPostXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<PostXmlRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling postXmlRaw().'
+        'Required parameter "body" was null or undefined when calling postXmlRaw().',
       );
     }
     // Build path with path parameters
@@ -535,73 +711,95 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = (() => {throw new Error('unsupported request body media type: application/xml');})();
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new PostXmlError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new PostXmlError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async postXml(requestParameters: ApiPostXmlRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async postXml(
+    requestParameters: ApiPostXmlRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.postXmlRaw(requestParameters, initOverrides);
     return await response.value();
   }
 
-  async getXmlResponseRaw(initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetXmlResponseRawResponse> {
+  async getXmlResponseRaw(
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetXmlResponseRawResponse> {
     // Build path with path parameters
     const urlPath = `/xml-response`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetXmlResponseError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetXmlResponseError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new TextApiResponse(response) as TextApiResponse & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
   async getXmlResponse(initOverrides?: RequestInit | InitOverrideFunction): Promise<string> {
     const response = await this.getXmlResponseRaw(initOverrides);
-    return await response.value() as string;
+    return (await response.value()) as string;
   }
 }

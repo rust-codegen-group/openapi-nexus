@@ -7,7 +7,8 @@
 /**
  * Object with typed additional properties
  */
-export interface ObjectWithTypedAdditionalProperties extends Readonly<Record<string,
-number | string>> {
+export interface ObjectWithTypedAdditionalProperties extends Readonly<
+  Record<string, number | string>
+> {
   readonly name: string;
 }

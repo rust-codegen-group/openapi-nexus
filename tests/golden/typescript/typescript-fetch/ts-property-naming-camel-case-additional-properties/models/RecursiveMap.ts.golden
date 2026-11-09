@@ -12,25 +12,55 @@ export interface RecursiveMap extends Readonly<Record<string, RecursiveMap | str
 }
 
 export function recursiveMapFromJSON(json: RecursiveMap$Wire): RecursiveMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['node_label'].includes(key)).map(([key, value]) => {const additionalValue = value as RecursiveMap$Wire; return [key, recursiveMapFromJSON(additionalValue)] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['node_label'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as RecursiveMap$Wire;
+      return [key, recursiveMapFromJSON(additionalValue)] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['nodeLabel'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['nodeLabel'].includes(key))),
+    ...visibleProperties,
     nodeLabel: json.node_label,
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['nodeLabel'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['nodeLabel'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
 export function recursiveMapToJSON(value: RecursiveMap): RecursiveMap$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  RecursiveMap>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['nodeLabel'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value as RecursiveMap; return [key, recursiveMapToJSON(additionalValue)] as const;}));
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, RecursiveMap> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['nodeLabel'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as RecursiveMap;
+      return [key, recursiveMapToJSON(additionalValue)] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
     node_label: value.nodeLabel,

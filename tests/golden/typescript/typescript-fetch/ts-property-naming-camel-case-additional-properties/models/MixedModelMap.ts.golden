@@ -15,25 +15,55 @@ export interface MixedModelMap extends Readonly<Record<string, Detail | number>>
 }
 
 export function mixedModelMapFromJSON(json: MixedModelMap$Wire): MixedModelMap {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known_count'].includes(key)).map(([key, value]) => {const additionalValue = value as Detail$Wire; return [key, detailFromJSON(additionalValue)] as const;}));
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known_count'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as Detail$Wire;
+      return [key, detailFromJSON(additionalValue)] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['knownCount'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['knownCount'].includes(key))),
+    ...visibleProperties,
     knownCount: json.known_count,
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['knownCount'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['knownCount'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
 export function mixedModelMapToJSON(value: MixedModelMap): MixedModelMap$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  Detail>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['knownCount'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value as Detail; return [key, detailToJSON(additionalValue)] as const;}));
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, Detail> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['knownCount'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value as Detail;
+      return [key, detailToJSON(additionalValue)] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
     known_count: value.knownCount,

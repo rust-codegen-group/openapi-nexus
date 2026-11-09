@@ -2,6 +2,7 @@
 
 use heck::{ToKebabCase as _, ToLowerCamelCase as _, ToPascalCase as _, ToSnakeCase as _};
 
+use super::layout::named_list;
 use sigil_stitch::lang::typescript::TypeScript;
 
 use super::config::TypeScriptFetchConfig;
@@ -98,12 +99,15 @@ impl TypeScriptFetchCodeGenerator {
 
                 if value_names.is_empty() {
                     if extra_types.is_empty() {
-                        exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+                        exports.push(named_list(
+                            "export type",
+                            std::slice::from_ref(&type_name),
+                            &format!("./{stem}"),
+                        ));
                     } else {
                         let mut all_types = vec![type_name.clone()];
                         all_types.extend(extra_types);
-                        let joined = all_types.join(", ");
-                        exports.push(format!("export type {{ {joined} }} from './{stem}';"));
+                        exports.push(named_list("export type", &all_types, &format!("./{stem}")));
                     }
                 } else {
                     let type_name_is_value = value_names.contains(&type_name);
@@ -121,19 +125,20 @@ impl TypeScriptFetchCodeGenerator {
                         // `export { X }` covers both the type and value sides.
                         let mut all_names = vec![type_name.clone()];
                         all_names.extend(unique_values);
-                        let joined = all_names.join(", ");
-                        exports.push(format!("export {{ {joined} }} from './{stem}';"));
+                        exports.push(named_list("export", &all_names, &format!("./{stem}")));
                     } else {
                         // Type is separate from value exports.
                         // Emit `export type { X, X$Wire }` for types and a separate
                         // `export { xFromJSON, xToJSON }` for value exports.
                         let mut all_types = vec![type_name.clone()];
                         all_types.extend(extra_types);
-                        let type_joined = all_types.join(", ");
-                        exports.push(format!("export type {{ {type_joined} }} from './{stem}';"));
+                        exports.push(named_list("export type", &all_types, &format!("./{stem}")));
                         if !unique_values.is_empty() {
-                            let joined = unique_values.join(", ");
-                            exports.push(format!("export {{ {joined} }} from './{stem}';"));
+                            exports.push(named_list(
+                                "export",
+                                &unique_values,
+                                &format!("./{stem}"),
+                            ));
                         }
                     }
                 }
@@ -142,7 +147,11 @@ impl TypeScriptFetchCodeGenerator {
                 let type_name = model.name.to_pascal_case();
                 let filename = self.generate_filename(&model.name);
                 let stem = filename.trim_end_matches(".ts");
-                exports.push(format!("export type {{ {type_name} }} from './{stem}';"));
+                exports.push(named_list(
+                    "export type",
+                    std::slice::from_ref(&type_name),
+                    &format!("./{stem}"),
+                ));
             }
             files.push(render_index_file(&ir.info, "models/index.ts", &exports));
         }
@@ -175,8 +184,9 @@ impl TypeScriptFetchCodeGenerator {
         for (schema_name, type_names) in imports {
             let filename = self.generate_filename(&schema_name);
             let stem = filename.trim_end_matches(".ts");
-            let names = type_names.into_iter().collect::<Vec<_>>().join(", ");
-            content.push_str(&format!("import type {{ {names} }} from './{stem}';\n"));
+            let names = type_names.into_iter().collect::<Vec<_>>();
+            content.push_str(&named_list("import type", &names, &format!("./{stem}")));
+            content.push('\n');
         }
         if needs_upload || !model.fields.is_empty() {
             content.push('\n');
@@ -226,7 +236,12 @@ impl TypeScriptFetchCodeGenerator {
             request_inputs.has_uploads(),
         ));
 
-        files.push(render_readme_file(ir));
+        files.push(render_readme_file(
+            ir,
+            self.config.toolchain == Toolchain::Vp
+                && self.config.generate_package
+                && self.config.include_build_scripts,
+        ));
 
         let has_apis = !ir.operations.is_empty();
         let has_models =
@@ -317,10 +332,10 @@ impl TypeScriptFetchCodeGenerator {
         let license: Option<String> = ir.info.license.as_ref().map(|l| l.name.clone());
 
         let keywords = vec![
-            "openapi".to_string(),
             "api-client".to_string(),
-            "typescript".to_string(),
             "generated".to_string(),
+            "openapi".to_string(),
+            "typescript".to_string(),
         ];
 
         let package_name = self
@@ -370,7 +385,8 @@ impl TypeScriptFetchCodeGenerator {
                 Toolchain::Vp => {
                     package_json["scripts"] = serde_json::json!({
                         "build": "vp pack",
-                        "check": "vp check --no-fmt",
+                        "check": "vp check",
+                        "fmt": "vp fmt",
                     });
                     package_json["devDependencies"] = serde_json::json!({
                         "typescript": "^7.0.2",
@@ -380,8 +396,7 @@ impl TypeScriptFetchCodeGenerator {
             }
         }
 
-        let content =
-            serde_json::to_string_pretty(&package_json).unwrap_or_else(|_| "{}".to_string());
+        let content = render_project_json(&package_json, true);
 
         FileInfo::project("package.json".to_string(), content)
     }
@@ -411,7 +426,7 @@ impl TypeScriptFetchCodeGenerator {
         });
         tsconfig["compilerOptions"]["lib"] = serde_json::json!(self.config.ts_lib);
 
-        let content = serde_json::to_string_pretty(&tsconfig).unwrap_or_else(|_| "{}".to_string());
+        let content = render_project_json(&tsconfig, false);
         FileInfo::project("tsconfig.json".to_string(), content)
     }
 
@@ -426,8 +441,7 @@ impl TypeScriptFetchCodeGenerator {
             }
         });
 
-        let content =
-            serde_json::to_string_pretty(&tsconfig_esm).unwrap_or_else(|_| "{}".to_string());
+        let content = render_project_json(&tsconfig_esm, false);
         FileInfo::project("tsconfig.esm.json".to_string(), content)
     }
 
@@ -436,6 +450,10 @@ impl TypeScriptFetchCodeGenerator {
         let content = r#"import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
+  fmt: {
+    singleQuote: true,
+    ignorePatterns: ['dist/**'],
+  },
   lint: {
     options: {
       typeAware: true,
@@ -592,19 +610,74 @@ impl FileWriter for TypeScriptFetchCodeGenerator {}
 /// single-line form fits within ~100 cols, else break each name onto its own
 /// line. Keeps short barrels dense and long ones scannable.
 fn format_named_reexport(kind: &str, names: &[String], filename_base: &str) -> String {
-    let one_line = format!(
-        "{} {{ {} }} from './{}';",
-        kind,
-        names.join(", "),
-        filename_base
-    );
-    if names.len() <= 1 || one_line.len() <= 100 {
-        return one_line;
+    named_list(kind, names, &format!("./{filename_base}"))
+}
+
+/// Emit JSON with compact configuration arrays and npm's manifest field order.
+fn render_project_json(value: &serde_json::Value, package: bool) -> String {
+    fn render(value: &serde_json::Value, depth: usize, package: bool) -> String {
+        let pad = "  ".repeat(depth);
+        let inner_pad = "  ".repeat(depth + 1);
+        match value {
+            serde_json::Value::Object(map) if !map.is_empty() => {
+                let mut keys = map.keys().collect::<Vec<_>>();
+                if package && depth == 0 {
+                    let order = [
+                        "name",
+                        "version",
+                        "description",
+                        "keywords",
+                        "license",
+                        "files",
+                        "type",
+                        "main",
+                        "types",
+                        "exports",
+                        "scripts",
+                        "devDependencies",
+                    ];
+                    keys.sort_by_key(|key| {
+                        order
+                            .iter()
+                            .position(|known| known == &key.as_str())
+                            .unwrap_or(order.len())
+                    });
+                }
+                let entries = keys
+                    .into_iter()
+                    .map(|key| {
+                        format!(
+                            "{inner_pad}{}: {}",
+                            serde_json::to_string(key).expect("JSON key"),
+                            render(&map[key], depth + 1, package)
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                format!("{{\n{}\n{pad}}}", entries.join(",\n"))
+            }
+            serde_json::Value::Array(items) if !items.is_empty() => {
+                if !package {
+                    format!(
+                        "[{}]",
+                        items
+                            .iter()
+                            .map(|item| serde_json::to_string(item).expect("JSON value"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                } else {
+                    format!(
+                        "[\n{}\n{pad}]",
+                        items
+                            .iter()
+                            .map(|item| format!("{inner_pad}{}", render(item, depth + 1, package)))
+                            .collect::<Vec<_>>()
+                            .join(",\n")
+                    )
+                }
+            }
+            _ => serde_json::to_string(value).expect("JSON value"),
+        }
     }
-    let mut out = format!("{} {{\n", kind);
-    for name in names {
-        out.push_str(&format!("  {},\n", name));
-    }
-    out.push_str(&format!("}} from './{}';", filename_base));
-    out
+    format!("{}\n", render(value, 0, package))
 }

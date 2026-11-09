@@ -4,22 +4,33 @@
  * Array of Referenced Types Test — 1.0.0
  * Test case for array of referenced model types with recursive FromJSON calls
  */
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
 import { BaseAPI, DefaultConfig, ResponseError, VoidApiResponse } from '../runtime/runtime';
 
 export type TestRawResponse =
-  | VoidApiResponse & { status: 200 }
-  | VoidApiResponse & HttpSuccessResponse;
+  | (VoidApiResponse & { status: 200 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
-
-export type TestErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type TestErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class TestError extends ResponseError {
   readonly detail: TestErrorDetail;
 
-  constructor(response: Response, detail: TestErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: TestErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
@@ -44,30 +55,39 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new TestError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new TestError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 200 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }

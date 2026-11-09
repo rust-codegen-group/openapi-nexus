@@ -15,7 +15,9 @@ export interface FooNullableRefHolder {
   readonly maybeItems: FooNullableItems | null;
 }
 
-export function fooNullableRefHolderFromJSON(json: FooNullableRefHolder$Wire): FooNullableRefHolder {
+export function fooNullableRefHolderFromJSON(
+  json: FooNullableRefHolder$Wire,
+): FooNullableRefHolder {
   return {
     maybeItems: json.maybe_items === null ? null : fooNullableItemsFromJSON(json.maybe_items),
   };

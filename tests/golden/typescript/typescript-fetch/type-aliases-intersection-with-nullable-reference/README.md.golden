@@ -52,8 +52,8 @@ import { Configuration, DefaultApi } from 'intersection-type-with-nullable-refer
 const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
-    'Authorization': 'Bearer YOUR_TOKEN'
-  }
+    Authorization: 'Bearer YOUR_TOKEN',
+  },
 });
 
 // Initialize the API client
@@ -101,9 +101,9 @@ const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
     'X-API-Key': 'your-api-key',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
-  credentials: 'include'
+  credentials: 'include',
 });
 ```
 
@@ -126,12 +126,12 @@ const loggingMiddleware: Middleware = {
   onError: async (context) => {
     console.error('Error:', context.error);
     return undefined;
-  }
+  },
 };
 
 const config = new Configuration({
   basePath: 'https://api.example.com',
-  middleware: [loggingMiddleware]
+  middleware: [loggingMiddleware],
 });
 ```
 
@@ -140,7 +140,11 @@ const config = new Configuration({
 The client throws typed errors for different failure scenarios:
 
 ```typescript
-import { ResponseError, FetchError, RequiredError } from 'intersection-type-with-nullable-reference-test';
+import {
+  ResponseError,
+  FetchError,
+  RequiredError,
+} from 'intersection-type-with-nullable-reference-test';
 
 try {
   const result = await api.someMethod();
@@ -214,7 +218,7 @@ import type { User, CreateUserRequest } from 'intersection-type-with-nullable-re
 const user: User = {
   id: 1,
   name: 'John Doe',
-  email: 'john@example.com'
+  email: 'john@example.com',
 };
 ```
 

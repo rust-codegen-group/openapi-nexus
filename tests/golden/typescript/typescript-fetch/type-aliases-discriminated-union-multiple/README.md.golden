@@ -5,7 +5,6 @@ are properly namespaced and don't conflict.
 This reproduces the original bug where both unions would generate
 the same Kind.ts file causing conflicts.
 
-
 **Version:** 1.0.0
 
 ## Overview
@@ -56,8 +55,8 @@ import { Configuration, DefaultApi } from 'multiple-discriminated-unions-test';
 const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
-    'Authorization': 'Bearer YOUR_TOKEN'
-  }
+    Authorization: 'Bearer YOUR_TOKEN',
+  },
 });
 
 // Initialize the API client
@@ -105,9 +104,9 @@ const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
     'X-API-Key': 'your-api-key',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
-  credentials: 'include'
+  credentials: 'include',
 });
 ```
 
@@ -130,12 +129,12 @@ const loggingMiddleware: Middleware = {
   onError: async (context) => {
     console.error('Error:', context.error);
     return undefined;
-  }
+  },
 };
 
 const config = new Configuration({
   basePath: 'https://api.example.com',
-  middleware: [loggingMiddleware]
+  middleware: [loggingMiddleware],
 });
 ```
 
@@ -218,7 +217,7 @@ import type { User, CreateUserRequest } from 'multiple-discriminated-unions-test
 const user: User = {
   id: 1,
   name: 'John Doe',
-  email: 'john@example.com'
+  email: 'john@example.com',
 };
 ```
 

@@ -11,16 +11,31 @@ export type { AliasNullableMap, AliasNullableMap$Wire } from './AliasNullableMap
 export { aliasNullableMapFromJSON, aliasNullableMapToJSON } from './AliasNullableMap';
 export type { AllOfJsonDictionary, AllOfJsonDictionary$Wire } from './AllOfJsonDictionary';
 export { allOfJsonDictionaryFromJSON, allOfJsonDictionaryToJSON } from './AllOfJsonDictionary';
-export type { AllOfJsonDictionaryAllOf1, AllOfJsonDictionaryAllOf1$Wire } from './AllOfJsonDictionaryAllOf1';
-export { allOfJsonDictionaryAllOf1FromJSON, allOfJsonDictionaryAllOf1ToJSON } from './AllOfJsonDictionaryAllOf1';
+export type {
+  AllOfJsonDictionaryAllOf1,
+  AllOfJsonDictionaryAllOf1$Wire,
+} from './AllOfJsonDictionaryAllOf1';
+export {
+  allOfJsonDictionaryAllOf1FromJSON,
+  allOfJsonDictionaryAllOf1ToJSON,
+} from './AllOfJsonDictionaryAllOf1';
 export type { AllOfMixedStringMap, AllOfMixedStringMap$Wire } from './AllOfMixedStringMap';
 export { allOfMixedStringMapFromJSON, allOfMixedStringMapToJSON } from './AllOfMixedStringMap';
-export type { AllOfMixedStringMapAllOf1, AllOfMixedStringMapAllOf1$Wire } from './AllOfMixedStringMapAllOf1';
-export { allOfMixedStringMapAllOf1FromJSON, allOfMixedStringMapAllOf1ToJSON } from './AllOfMixedStringMapAllOf1';
+export type {
+  AllOfMixedStringMapAllOf1,
+  AllOfMixedStringMapAllOf1$Wire,
+} from './AllOfMixedStringMapAllOf1';
+export {
+  allOfMixedStringMapAllOf1FromJSON,
+  allOfMixedStringMapAllOf1ToJSON,
+} from './AllOfMixedStringMapAllOf1';
 export type { AllOfRenamedMap, AllOfRenamedMap$Wire } from './AllOfRenamedMap';
 export { allOfRenamedMapFromJSON, allOfRenamedMapToJSON } from './AllOfRenamedMap';
 export type { AllOfRenamedMapAllOf2, AllOfRenamedMapAllOf2$Wire } from './AllOfRenamedMapAllOf2';
-export { allOfRenamedMapAllOf2FromJSON, allOfRenamedMapAllOf2ToJSON } from './AllOfRenamedMapAllOf2';
+export {
+  allOfRenamedMapAllOf2FromJSON,
+  allOfRenamedMapAllOf2ToJSON,
+} from './AllOfRenamedMapAllOf2';
 export type { AnyJsonValue } from './AnyJsonValue';
 export type { ArrayModelMap, ArrayModelMap$Wire } from './ArrayModelMap';
 export { arrayModelMapFromJSON, arrayModelMapToJSON } from './ArrayModelMap';
@@ -38,10 +53,22 @@ export type { DetailListAlias, DetailListAlias$Wire } from './DetailListAlias';
 export { detailListAliasFromJSON, detailListAliasToJSON } from './DetailListAlias';
 export type { HeterogeneousAllOf, HeterogeneousAllOf$Wire } from './HeterogeneousAllOf';
 export { heterogeneousAllOfFromJSON, heterogeneousAllOfToJSON } from './HeterogeneousAllOf';
-export type { HeterogeneousAllOfAllOf1, HeterogeneousAllOfAllOf1$Wire } from './HeterogeneousAllOfAllOf1';
-export { heterogeneousAllOfAllOf1FromJSON, heterogeneousAllOfAllOf1ToJSON } from './HeterogeneousAllOfAllOf1';
-export type { HeterogeneousAllOfAllOf2, HeterogeneousAllOfAllOf2$Wire } from './HeterogeneousAllOfAllOf2';
-export { heterogeneousAllOfAllOf2FromJSON, heterogeneousAllOfAllOf2ToJSON } from './HeterogeneousAllOfAllOf2';
+export type {
+  HeterogeneousAllOfAllOf1,
+  HeterogeneousAllOfAllOf1$Wire,
+} from './HeterogeneousAllOfAllOf1';
+export {
+  heterogeneousAllOfAllOf1FromJSON,
+  heterogeneousAllOfAllOf1ToJSON,
+} from './HeterogeneousAllOfAllOf1';
+export type {
+  HeterogeneousAllOfAllOf2,
+  HeterogeneousAllOfAllOf2$Wire,
+} from './HeterogeneousAllOfAllOf2';
+export {
+  heterogeneousAllOfAllOf2FromJSON,
+  heterogeneousAllOfAllOf2ToJSON,
+} from './HeterogeneousAllOfAllOf2';
 export type { JsonModelAllOf, JsonModelAllOf$Wire } from './JsonModelAllOf';
 export { jsonModelAllOfFromJSON, jsonModelAllOfToJSON } from './JsonModelAllOf';
 export type { JsonModelAllOfAllOf1, JsonModelAllOfAllOf1$Wire } from './JsonModelAllOfAllOf1';
@@ -90,9 +117,21 @@ export type { SearchItem, SearchItem$Wire } from './SearchItem';
 export { searchItemFromJSON, searchItemToJSON } from './SearchItem';
 export type { SearchStreamEvent, SearchStreamEvent$Wire } from './SearchStreamEvent';
 export { searchStreamEventFromJSON, searchStreamEventToJSON } from './SearchStreamEvent';
-export type { SearchStreamEventResponseCompleted, SearchStreamEventResponseCompleted$Wire } from './SearchStreamEventResponseCompleted';
-export { searchStreamEventResponseCompletedFromJSON, searchStreamEventResponseCompletedToJSON } from './SearchStreamEventResponseCompleted';
-export type { SearchStreamEventResponseWebSearchCallSearching, SearchStreamEventResponseWebSearchCallSearching$Wire } from './SearchStreamEventResponseWebSearchCallSearching';
-export { searchStreamEventResponseWebSearchCallSearchingFromJSON, searchStreamEventResponseWebSearchCallSearchingToJSON } from './SearchStreamEventResponseWebSearchCallSearching';
+export type {
+  SearchStreamEventResponseCompleted,
+  SearchStreamEventResponseCompleted$Wire,
+} from './SearchStreamEventResponseCompleted';
+export {
+  searchStreamEventResponseCompletedFromJSON,
+  searchStreamEventResponseCompletedToJSON,
+} from './SearchStreamEventResponseCompleted';
+export type {
+  SearchStreamEventResponseWebSearchCallSearching,
+  SearchStreamEventResponseWebSearchCallSearching$Wire,
+} from './SearchStreamEventResponseWebSearchCallSearching';
+export {
+  searchStreamEventResponseWebSearchCallSearchingFromJSON,
+  searchStreamEventResponseWebSearchCallSearchingToJSON,
+} from './SearchStreamEventResponseWebSearchCallSearching';
 export type { TypedExternalEvent, TypedExternalEvent$Wire } from './TypedExternalEvent';
 export { typedExternalEventFromJSON, typedExternalEventToJSON } from './TypedExternalEvent';

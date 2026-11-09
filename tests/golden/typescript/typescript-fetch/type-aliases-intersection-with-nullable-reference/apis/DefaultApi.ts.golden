@@ -5,8 +5,19 @@
  * Test fixture for allOf intersection types with nullable reference properties
  */
 import type { Baz } from '../models/Baz';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiCreateTestRequest {
   body: Baz;
@@ -17,49 +28,69 @@ export interface ApiGetTestRequest {
 }
 
 export type CreateTestRawResponse =
-  | JSONApiResponse<Baz> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
-
+  | (JSONApiResponse<Baz> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type GetTestRawResponse =
-  | JSONApiResponse<Baz> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<Baz> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type CreateTestErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type CreateTestErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class CreateTestError extends ResponseError {
   readonly detail: CreateTestErrorDetail;
 
-  constructor(response: Response, detail: CreateTestErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: CreateTestErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
-export type GetTestErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type GetTestErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class GetTestError extends ResponseError {
   readonly detail: GetTestErrorDetail;
 
-  constructor(response: Response, detail: GetTestErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: GetTestErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  createTestRaw: (requestParameters: ApiCreateTestRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<CreateTestRawResponse>;
-  createTest: (requestParameters: ApiCreateTestRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
-  getTestRaw: (requestParameters: ApiGetTestRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<GetTestRawResponse>;
-  getTest: (requestParameters: ApiGetTestRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Baz>;
+  createTestRaw: (
+    requestParameters: ApiCreateTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<CreateTestRawResponse>;
+  createTest: (
+    requestParameters: ApiCreateTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Baz>;
+  getTestRaw: (
+    requestParameters: ApiGetTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<GetTestRawResponse>;
+  getTest: (
+    requestParameters: ApiGetTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Baz>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -70,12 +101,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async createTestRaw(requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<CreateTestRawResponse> {
+  async createTestRaw(
+    requestParameters: ApiCreateTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<CreateTestRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling createTestRaw().'
+        'Required parameter "body" was null or undefined when calling createTestRaw().',
       );
     }
     // Build path with path parameters
@@ -90,42 +123,56 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new CreateTestError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new CreateTestError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Baz> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async createTest(requestParameters: ApiCreateTestRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Baz> {
+  async createTest(
+    requestParameters: ApiCreateTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Baz> {
     const response = await this.createTestRaw(requestParameters, initOverrides);
-    return await response.value() as Baz;
+    return (await response.value()) as Baz;
   }
 
-  async getTestRaw(requestParameters: ApiGetTestRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<GetTestRawResponse> {
+  async getTestRaw(
+    requestParameters: ApiGetTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<GetTestRawResponse> {
     if (requestParameters.id === undefined || requestParameters.id === null) {
       throw new RequiredError(
         'id',
-        'Required parameter "id" was null or undefined when calling getTestRaw().'
+        'Required parameter "id" was null or undefined when calling getTestRaw().',
       );
     }
     // Build path with path parameters
@@ -134,37 +181,48 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
-    const headerParameters: Record<string, string> = {
-    };
+    const headerParameters: Record<string, string> = {};
 
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'GET',
         headers: headerParameters,
         query: queryParameters,
         body: undefined,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new GetTestError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new GetTestError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Baz> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async getTest(requestParameters: ApiGetTestRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Baz> {
+  async getTest(
+    requestParameters: ApiGetTestRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Baz> {
     const response = await this.getTestRaw(requestParameters, initOverrides);
-    return await response.value() as Baz;
+    return (await response.value()) as Baz;
   }
 }

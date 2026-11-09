@@ -5,36 +5,57 @@
  * Test fixture for simple type aliases (not unions or intersections)
  */
 import type { Foo } from '../models/Foo';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+} from '../runtime/runtime';
 
 export interface ApiTestSimpleAliasRequest {
   body: Foo;
 }
 
 export type TestSimpleAliasRawResponse =
-  | JSONApiResponse<Foo> & { status: 200 }
-  | JSONApiResponse<unknown> & HttpSuccessResponse;
+  | (JSONApiResponse<Foo> & { status: 200 })
+  | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-
-export type TestSimpleAliasErrorDetail =
-  { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+export type TestSimpleAliasErrorDetail = {
+  kind: 'unexpected';
+  status: number;
+  raw: Response;
+  value(): Promise<Blob>;
+};
 
 export class TestSimpleAliasError extends ResponseError {
   readonly detail: TestSimpleAliasErrorDetail;
 
-  constructor(response: Response, detail: TestSimpleAliasErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: TestSimpleAliasErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface DefaultApiInterface {
-  testSimpleAliasRaw: (requestParameters: ApiTestSimpleAliasRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<TestSimpleAliasRawResponse>;
-  testSimpleAlias: (requestParameters: ApiTestSimpleAliasRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<Foo>;
+  testSimpleAliasRaw: (
+    requestParameters: ApiTestSimpleAliasRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<TestSimpleAliasRawResponse>;
+  testSimpleAlias: (
+    requestParameters: ApiTestSimpleAliasRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<Foo>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -45,12 +66,14 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async testSimpleAliasRaw(requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<TestSimpleAliasRawResponse> {
+  async testSimpleAliasRaw(
+    requestParameters: ApiTestSimpleAliasRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<TestSimpleAliasRawResponse> {
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling testSimpleAliasRaw().'
+        'Required parameter "body" was null or undefined when calling testSimpleAliasRaw().',
       );
     }
     // Build path with path parameters
@@ -65,33 +88,45 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'POST',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
-       {
+      {
         let errorValue: Promise<Blob> | undefined;
-        throw new TestSimpleAliasError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new TestSimpleAliasError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 200) {
       return new JSONApiResponse(response) as JSONApiResponse<Foo> & { status: 200 };
-    }
-    else {
-      return new JSONApiResponse(response) as JSONApiResponse<unknown> &HttpSuccessResponse;
+    } else {
+      return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async testSimpleAlias(requestParameters: ApiTestSimpleAliasRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<Foo> {
+  async testSimpleAlias(
+    requestParameters: ApiTestSimpleAliasRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<Foo> {
     const response = await this.testSimpleAliasRaw(requestParameters, initOverrides);
-    return await response.value() as Foo;
+    return (await response.value()) as Foo;
   }
 }

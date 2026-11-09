@@ -17,13 +17,13 @@ export interface Baz {
 export function bazFromJSON(json: Baz$Wire): Baz {
   return {
     path: json.path,
-    'type': json['type'],
+    type: json['type'],
   };
 }
 
 export function bazToJSON(value: Baz): Baz$Wire {
   return {
     path: value.path,
-    'type': value['type'],
+    type: value['type'],
   };
 }

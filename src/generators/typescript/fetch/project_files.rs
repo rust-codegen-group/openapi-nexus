@@ -2,6 +2,7 @@
 
 use heck::ToKebabCase as _;
 use heck::ToPascalCase as _;
+use sigil_stitch::lang::RendererLang as _;
 
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::ir::types::{IrInfo, IrSpec};
@@ -84,14 +85,17 @@ pub fn render_runtime_file(info: &IrInfo, base_path: &str, include_upload_file: 
     };
     content.push_str(
         &RUNTIME_TS_BODY
-            .replace("{{BASE_PATH}}", base_path)
+            .replace(
+                "{{BASE_PATH_LITERAL}}",
+                &sigil_stitch::lang::typescript::TypeScript::new().render_string_literal(base_path),
+            )
             .replace("{{UPLOAD_FILE_HELPERS}}", &upload_helpers),
     );
     FileInfo::runtime("runtime.ts".to_string(), content)
 }
 
 /// Render the top-level `README.md`.
-pub fn render_readme_file(ir: &IrSpec) -> FileInfo {
+pub fn render_readme_file(ir: &IrSpec, include_vp_scripts: bool) -> FileInfo {
     let title = ir.info.title.as_str();
     let version = ir.info.version.as_str();
     let description = ir
@@ -100,12 +104,51 @@ pub fn render_readme_file(ir: &IrSpec) -> FileInfo {
         .as_deref()
         .unwrap_or("Generated API client");
     let package_name = title.to_kebab_case();
+    let toolchain_checks = if include_vp_scripts {
+        "### Formatting and validation\n\n\
+         After generating or regenerating this client, install its development dependencies,\n\
+         run all checks on the generated files and build the library:\n\n\
+         ```bash\n\
+         vp install\n\
+         vp check\n\
+         vp pack\n\
+         ```\n\n\
+         The `check` and `build` npm scripts run the same Vite+ commands.\n\
+         Use `vp fmt` (or the `fmt` script) to format any subsequent manual edits.\n\
+         `vp check` validates formatting, lint rules, and types without modifying files.\n\
+         Build output in `dist/` is excluded from formatting.\n\n"
+    } else {
+        ""
+    };
 
-    let content = README_MD_BODY
+    let mut content = README_MD_BODY.to_string();
+    for names in [
+        vec!["Configuration", "{{EXAMPLE_API_CLASS}}"],
+        vec!["Configuration", "Middleware"],
+        vec!["ResponseError", "FetchError", "RequiredError"],
+        vec!["User", "CreateUserRequest"],
+    ] {
+        let type_only = names[0] == "User";
+        let prefix = if type_only { "import type" } else { "import" };
+        let template = format!(
+            "{prefix} {{ {} }} from '{{{{PACKAGE_NAME}}}}';",
+            names.join(", ")
+        );
+        let names = names
+            .iter()
+            .map(|name| name.replace("{{EXAMPLE_API_CLASS}}", &pick_example_api_class(ir)))
+            .collect::<Vec<_>>();
+        content = content.replace(
+            &template,
+            &super::layout::named_list(prefix, &names, &package_name),
+        );
+    }
+    let content = content
         .replace("{{PACKAGE_NAME}}", &package_name)
-        .replace("{{DESCRIPTION}}", description)
+        .replace("{{DESCRIPTION}}", description.trim_end())
         .replace("{{VERSION}}", version)
         .replace("{{TITLE}}", title)
+        .replace("{{TOOLCHAIN_CHECKS}}", toolchain_checks)
         .replace("{{EXAMPLE_API_CLASS}}", &pick_example_api_class(ir));
 
     FileInfo::readme("README.md".to_string(), content)

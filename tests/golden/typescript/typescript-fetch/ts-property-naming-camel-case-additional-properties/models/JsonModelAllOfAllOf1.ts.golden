@@ -15,26 +15,58 @@ export interface JsonModelAllOfAllOf1 extends Readonly<Record<string, unknown>> 
   readonly knownFirst: Detail;
 }
 
-export function jsonModelAllOfAllOf1FromJSON(json: JsonModelAllOfAllOf1$Wire): JsonModelAllOfAllOf1 {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known_first'].includes(key)).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+export function jsonModelAllOfAllOf1FromJSON(
+  json: JsonModelAllOfAllOf1$Wire,
+): JsonModelAllOfAllOf1 {
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known_first'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['knownFirst'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['knownFirst'].includes(key))),
+    ...visibleProperties,
     knownFirst: detailFromJSON(json.known_first),
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['knownFirst'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['knownFirst'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
 export function jsonModelAllOfAllOf1ToJSON(value: JsonModelAllOfAllOf1): JsonModelAllOfAllOf1$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  AnyJsonValue>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['knownFirst'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, AnyJsonValue> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['knownFirst'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
     known_first: detailToJSON(value.knownFirst),

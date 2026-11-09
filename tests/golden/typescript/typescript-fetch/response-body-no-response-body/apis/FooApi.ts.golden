@@ -5,8 +5,20 @@
  */
 import type { ErrorResponse } from '../models/ErrorResponse';
 import type { FooRequest } from '../models/FooRequest';
-import type { Configuration, HTTPQuery, HttpSuccessResponse, InitOverrideFunction } from '../runtime/runtime';
-import { BaseAPI, DefaultConfig, JSONApiResponse, RequiredError, ResponseError, VoidApiResponse } from '../runtime/runtime';
+import type {
+  Configuration,
+  HTTPQuery,
+  HttpSuccessResponse,
+  InitOverrideFunction,
+} from '../runtime/runtime';
+import {
+  BaseAPI,
+  DefaultConfig,
+  JSONApiResponse,
+  RequiredError,
+  ResponseError,
+  VoidApiResponse,
+} from '../runtime/runtime';
 
 export interface ApiUpdateFooBarRequest {
   fooId: string;
@@ -14,30 +26,51 @@ export interface ApiUpdateFooBarRequest {
 }
 
 export type UpdateFooBarRawResponse =
-  | VoidApiResponse & { status: 204 }
-  | VoidApiResponse & HttpSuccessResponse;
-
+  | (VoidApiResponse & { status: 204 })
+  | (VoidApiResponse & HttpSuccessResponse);
 
 export type UpdateFooBarErrorDetail =
-  { kind: 'badRequest'; status: 400; raw: Response; value(): Promise<ErrorResponse> }
-  | { kind: 'internalServerError'; status: 500; raw: Response; value(): Promise<ErrorResponse> }
-  | { kind: 'unexpected'; status: number; raw: Response; value(): Promise<Blob> };
+  | {
+      kind: 'badRequest';
+      status: 400;
+      raw: Response;
+      value(): Promise<ErrorResponse>;
+    }
+  | {
+      kind: 'internalServerError';
+      status: 500;
+      raw: Response;
+      value(): Promise<ErrorResponse>;
+    }
+  | {
+      kind: 'unexpected';
+      status: number;
+      raw: Response;
+      value(): Promise<Blob>;
+    };
 
 export class UpdateFooBarError extends ResponseError {
   readonly detail: UpdateFooBarErrorDetail;
 
-  constructor(response: Response, detail: UpdateFooBarErrorDetail,
-    msg = 'Response returned an error code') {
+  constructor(
+    response: Response,
+    detail: UpdateFooBarErrorDetail,
+    msg = 'Response returned an error code',
+  ) {
     super(response, msg);
     this.detail = detail;
   }
 }
 
 export interface FooApiInterface {
-  updateFooBarRaw: (requestParameters: ApiUpdateFooBarRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<UpdateFooBarRawResponse>;
-  updateFooBar: (requestParameters: ApiUpdateFooBarRequest,
-  initOverrides?: RequestInit | InitOverrideFunction) => Promise<void>;
+  updateFooBarRaw: (
+    requestParameters: ApiUpdateFooBarRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<UpdateFooBarRawResponse>;
+  updateFooBar: (
+    requestParameters: ApiUpdateFooBarRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ) => Promise<void>;
 }
 
 export class FooApi extends BaseAPI implements FooApiInterface {
@@ -48,18 +81,20 @@ export class FooApi extends BaseAPI implements FooApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async updateFooBarRaw(requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<UpdateFooBarRawResponse> {
+  async updateFooBarRaw(
+    requestParameters: ApiUpdateFooBarRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<UpdateFooBarRawResponse> {
     if (requestParameters.fooId === undefined || requestParameters.fooId === null) {
       throw new RequiredError(
         'fooId',
-        'Required parameter "fooId" was null or undefined when calling updateFooBarRaw().'
+        'Required parameter "fooId" was null or undefined when calling updateFooBarRaw().',
       );
     }
     if (requestParameters.body === undefined || requestParameters.body === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling updateFooBarRaw().'
+        'Required parameter "body" was null or undefined when calling updateFooBarRaw().',
       );
     }
     // Build path with path parameters
@@ -75,40 +110,66 @@ export class FooApi extends BaseAPI implements FooApiInterface {
     // Prepare request body
     const requestBody = requestParameters.body;
     // Make request
-    const response = await this.request({
+    const response = await this.request(
+      {
         path: urlPath,
         method: 'PATCH',
         headers: headerParameters,
         query: queryParameters,
         body: requestBody,
-    }, initOverrides);
+      },
+      initOverrides,
+    );
 
     // Handle responses
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
         let errorValue: Promise<ErrorResponse> | undefined;
-        throw new UpdateFooBarError(response, { kind: 'badRequest', status: response.status as 400, raw: response, value: () => errorValue ??= new JSONApiResponse<ErrorResponse>(errorRaw.clone()).value() });
-      }
-      else if (response.status === 500) {
+        throw new UpdateFooBarError(response, {
+          kind: 'badRequest',
+          status: response.status as 400,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<ErrorResponse>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else if (response.status === 500) {
         let errorValue: Promise<ErrorResponse> | undefined;
-        throw new UpdateFooBarError(response, { kind: 'internalServerError', status: response.status as 500, raw: response, value: () => errorValue ??= new JSONApiResponse<ErrorResponse>(errorRaw.clone()).value() });
-      }
-      else {
+        throw new UpdateFooBarError(response, {
+          kind: 'internalServerError',
+          status: response.status as 500,
+          raw: response,
+          value: () => {
+            errorValue ??= new JSONApiResponse<ErrorResponse>(errorRaw.clone()).value();
+            return errorValue;
+          },
+        });
+      } else {
         let errorValue: Promise<Blob> | undefined;
-        throw new UpdateFooBarError(response, { kind: 'unexpected', status: response.status, raw: response, value: () => errorValue ??= errorRaw.clone().blob() });
+        throw new UpdateFooBarError(response, {
+          kind: 'unexpected',
+          status: response.status,
+          raw: response,
+          value: () => {
+            errorValue ??= errorRaw.clone().blob();
+            return errorValue;
+          },
+        });
       }
     }
     if (response.status === 204) {
       return new VoidApiResponse(response) as VoidApiResponse & { status: 204 };
-    }
-    else {
+    } else {
       return new VoidApiResponse(response) as VoidApiResponse & HttpSuccessResponse;
     }
   }
 
-  async updateFooBar(requestParameters: ApiUpdateFooBarRequest, initOverrides?: RequestInit
-    | InitOverrideFunction): Promise<void> {
+  async updateFooBar(
+    requestParameters: ApiUpdateFooBarRequest,
+    initOverrides?: RequestInit | InitOverrideFunction,
+  ): Promise<void> {
     const response = await this.updateFooBarRaw(requestParameters, initOverrides);
     return await response.value();
   }

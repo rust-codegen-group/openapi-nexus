@@ -22,7 +22,7 @@ pub enum PropertyNaming {
 /// Toolchain for type checking and building.
 ///
 /// `Tsc` uses bare `tsc` (default).
-/// `Vp` uses vite-plus (`vp check --no-fmt`) with type-aware linting.
+/// `Vp` uses vite-plus (`vp check`) with formatting and type-aware linting.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Toolchain {
@@ -92,7 +92,7 @@ pub struct TypeScriptFetchConfig {
     /// Toolchain for type checking and building.
     ///
     /// - `tsc` (default): bare TypeScript compiler.
-    /// - `vp`: vite-plus with type-aware linting and type checking.
+    /// - `vp`: vite-plus with formatting, type-aware linting, and type checking.
     #[serde(default)]
     pub toolchain: Toolchain,
 

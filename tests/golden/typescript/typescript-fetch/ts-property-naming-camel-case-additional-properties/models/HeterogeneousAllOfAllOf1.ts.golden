@@ -11,26 +11,60 @@ export interface HeterogeneousAllOfAllOf1 extends Readonly<Record<string, unknow
   readonly knownField: string;
 }
 
-export function heterogeneousAllOfAllOf1FromJSON(json: HeterogeneousAllOfAllOf1$Wire): HeterogeneousAllOfAllOf1 {
-  const additionalProperties = Object.fromEntries(Object.entries(json)
-  .filter(([key]) => !['known_field'].includes(key)).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+export function heterogeneousAllOfAllOf1FromJSON(
+  json: HeterogeneousAllOfAllOf1$Wire,
+): HeterogeneousAllOfAllOf1 {
+  const sourceEntries = Object.entries(json).filter(([key]) => {
+    return !['known_field'].includes(key);
+  });
+  const additionalEntries = sourceEntries;
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
+  const visibleProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return !['knownField'].includes(key);
+    }),
+  );
   const result = {
-    ...Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => !['knownField'].includes(key))),
+    ...visibleProperties,
     knownField: json.known_field,
   };
-  const shadowedProperties = Object.fromEntries(Object.entries(additionalProperties).filter(([key]) => ['knownField'].includes(key)));
+  const shadowedProperties = Object.fromEntries(
+    Object.entries(additionalProperties).filter(([key]) => {
+      return ['knownField'].includes(key);
+    }),
+  );
   if (Object.keys(shadowedProperties).length > 0) {
-    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {value: shadowedProperties, enumerable: true,});
+    Object.defineProperty(result, Symbol.for('openapi-nexus.additionalProperties'), {
+      value: shadowedProperties,
+      enumerable: true,
+    });
   }
   return result;
 }
 
-export function heterogeneousAllOfAllOf1ToJSON(value: HeterogeneousAllOfAllOf1): HeterogeneousAllOfAllOf1$Wire {
-  const retainedProperties = Object.getOwnPropertyDescriptor(value, Symbol.for('openapi-nexus.additionalProperties'))?.value as Record<string,
-  unknown>
-  | undefined;
-  const additionalProperties = Object.fromEntries(Object.entries({...Object.fromEntries(Object.entries(value)
-  .filter(([key]) => !['knownField'].includes(key))),...retainedProperties}).map(([key, value]) => {const additionalValue = value; return [key, additionalValue] as const;}));
+export function heterogeneousAllOfAllOf1ToJSON(
+  value: HeterogeneousAllOfAllOf1,
+): HeterogeneousAllOfAllOf1$Wire {
+  const retainedProperties = Object.getOwnPropertyDescriptor(
+    value,
+    Symbol.for('openapi-nexus.additionalProperties'),
+  )?.value as Record<string, unknown> | undefined;
+  const sourceEntries = Object.entries(value).filter(([key]) => {
+    return !['knownField'].includes(key);
+  });
+  const sourceProperties = Object.fromEntries(sourceEntries);
+  const additionalEntries = Object.entries({ ...sourceProperties, ...retainedProperties });
+  const additionalProperties = Object.fromEntries(
+    additionalEntries.map(([key, value]) => {
+      const additionalValue = value;
+      return [key, additionalValue] as const;
+    }),
+  );
   const result = {
     ...additionalProperties,
     known_field: value.knownField,

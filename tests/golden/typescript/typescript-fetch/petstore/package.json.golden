@@ -1,27 +1,27 @@
 {
+  "name": "petstore-api",
+  "version": "1.0.0",
   "description": "This is a sample Pet Store Server based on the OpenAPI 3.1 specification",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "license": "Apache 2.0",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "openapi",
-    "api-client",
-    "typescript",
-    "generated"
-  ],
-  "license": "Apache 2.0",
-  "main": "./dist/index.js",
-  "name": "petstore-api",
   "scripts": {
     "build": "tsc"
-  },
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  }
 }

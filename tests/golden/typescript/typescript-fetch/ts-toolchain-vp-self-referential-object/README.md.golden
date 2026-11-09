@@ -52,8 +52,8 @@ import { Configuration, DefaultApi } from 'self-referential-object-test';
 const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
-    'Authorization': 'Bearer YOUR_TOKEN'
-  }
+    Authorization: 'Bearer YOUR_TOKEN',
+  },
 });
 
 // Initialize the API client
@@ -101,9 +101,9 @@ const config = new Configuration({
   basePath: 'https://api.example.com',
   headers: {
     'X-API-Key': 'your-api-key',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
-  credentials: 'include'
+  credentials: 'include',
 });
 ```
 
@@ -126,12 +126,12 @@ const loggingMiddleware: Middleware = {
   onError: async (context) => {
     console.error('Error:', context.error);
     return undefined;
-  }
+  },
 };
 
 const config = new Configuration({
   basePath: 'https://api.example.com',
-  middleware: [loggingMiddleware]
+  middleware: [loggingMiddleware],
 });
 ```
 
@@ -190,6 +190,22 @@ To build ES modules:
 npm run build
 ```
 
+### Formatting and validation
+
+After generating or regenerating this client, install its development dependencies,
+run all checks on the generated files and build the library:
+
+```bash
+vp install
+vp check
+vp pack
+```
+
+The `check` and `build` npm scripts run the same Vite+ commands.
+Use `vp fmt` (or the `fmt` script) to format any subsequent manual edits.
+`vp check` validates formatting, lint rules, and types without modifying files.
+Build output in `dist/` is excluded from formatting.
+
 ## TypeScript Support
 
 This package includes TypeScript type definitions. No additional `@types` package is needed.
@@ -214,7 +230,7 @@ import type { User, CreateUserRequest } from 'self-referential-object-test';
 const user: User = {
   id: 1,
   name: 'John Doe',
-  email: 'john@example.com'
+  email: 'john@example.com',
 };
 ```
 

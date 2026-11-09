@@ -17,12 +17,14 @@ export interface FooNullableItems {
 
 export function fooNullableItemsFromJSON(json: FooNullableItems$Wire): FooNullableItems {
   return {
-    content: json.content === null ? null : json.content.map((item) => fooNullableItemFromJSON(item)),
+    content:
+      json.content === null ? null : json.content.map((item) => fooNullableItemFromJSON(item)),
   };
 }
 
 export function fooNullableItemsToJSON(value: FooNullableItems): FooNullableItems$Wire {
   return {
-    content: value.content === null ? null : value.content.map((item) => fooNullableItemToJSON(item)),
+    content:
+      value.content === null ? null : value.content.map((item) => fooNullableItemToJSON(item)),
   };
 }
