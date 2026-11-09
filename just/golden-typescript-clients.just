@@ -20,7 +20,7 @@ set working-directory := '..'
         # Like golden builds, validate outside the ignored generated directory:
         # Vite+ otherwise skips every source file because of the repository ignore.
         tar --exclude=node_modules --exclude=dist -C "$output" -cf - . | tar -C "$build" -xf -
-        (cd "$build" && vp install && vp check --no-fmt && vp pack)
+        (cd "$build" && vp install && vp --version && vp check --no-fmt && vp pack)
         mkdir -p "$output/dist"
         cp "$build"/dist/* "$output/dist/"
     done
