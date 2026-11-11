@@ -25,13 +25,13 @@ pub enum FeedSource {
 
 impl utoipa::PartialSchema for FeedSource {
     fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
-        utoipa::openapi::schema::Schema::OneOf(utoipa::openapi::schema::OneOfBuilder::new()
-            .item(<super::S3Source as utoipa::PartialSchema>::schema())
-            .item(<super::HttpSource as utoipa::PartialSchema>::schema())
-            .build()).into()
+        utoipa::openapi::schema::Schema::OneOf(
+        utoipa::openapi::schema::OneOfBuilder::new()
+            .item(<super::S3Source as utoipa::PartialSchema >::schema()).item(<super::HttpSource as utoipa::PartialSchema >::schema())
+
+        .build()).into()
     }
 }
-
 impl utoipa::ToSchema for FeedSource {
     fn name() -> std::borrow::Cow<'static, str> {
         std::borrow::Cow::Borrowed("FeedSource")

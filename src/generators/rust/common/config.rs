@@ -80,8 +80,9 @@ impl ExtraDerivesConfig {
 
     fn check_derives(derives: &[String], deps: &BTreeMap<String, String>) {
         for d in derives {
-            if let Some(crate_name) = d.split("::").next()
-                && crate_name != d
+            let path = d.strip_prefix("::").unwrap_or(d);
+            if let Some(crate_name) = path.split("::").next()
+                && crate_name != path
             {
                 let normalized = crate_name.replace('-', "_");
                 if !deps.contains_key(&normalized) {
@@ -119,6 +120,21 @@ pub struct UtoipaConfig {
     pub dependency: Option<String>,
 }
 
+/// Deserialization policy for untagged unions; serialization stays untagged.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub enum UntaggedUnionStrategy {
+    /// Select the first structural match, preferring concrete members to fallbacks.
+    #[default]
+    #[serde(rename = "firstMatch")]
+    FirstMatch,
+    /// Reject multiple concrete matches before decoding the selected member.
+    #[serde(rename = "strict")]
+    Strict,
+    /// Emit a raw JSON wrapper instead of selecting typed members.
+    #[serde(rename = "raw")]
+    Raw,
+}
+
 /// Base configuration for Rust generators.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RustGeneratorConfig {
@@ -132,6 +148,8 @@ pub struct RustGeneratorConfig {
     pub workspace_deps: Option<WorkspaceDepsMode>,
     #[serde(default)]
     pub utoipa: Option<UtoipaConfig>,
+    #[serde(default)]
+    pub untagged_union_strategy: UntaggedUnionStrategy,
     #[serde(default)]
     pub aioduct: Option<crate::generators::rust::aioduct::config::AioductFeatureConfig>,
 }
@@ -165,6 +183,26 @@ mod tests {
         let config = RustGeneratorConfig::default();
         assert!(config.crate_name.is_none());
         assert!(config.extra_derives.is_none());
+    }
+
+    #[test]
+    fn untagged_union_strategy_is_explicit_and_defaults_to_first_match() {
+        assert_eq!(
+            RustGeneratorConfig::default().untagged_union_strategy,
+            UntaggedUnionStrategy::FirstMatch
+        );
+        for (value, expected) in [
+            ("firstMatch", UntaggedUnionStrategy::FirstMatch),
+            ("strict", UntaggedUnionStrategy::Strict),
+            ("raw", UntaggedUnionStrategy::Raw),
+        ] {
+            let config: RustGeneratorConfig =
+                toml::from_str(&format!("untagged_union_strategy = '{value}'")).unwrap();
+            assert_eq!(config.untagged_union_strategy, expected);
+        }
+        assert!(
+            toml::from_str::<RustGeneratorConfig>("untagged_union_strategy = 'unknown'").is_err()
+        );
     }
 
     #[test]
@@ -393,5 +431,16 @@ mod tests {
             per_type: None,
         };
         extra.warn_missing_dependencies();
+    }
+
+    #[test]
+    #[tracing_test::traced_test]
+    fn absolute_derive_paths_check_the_named_crate_dependency() {
+        let deps = BTreeMap::from([("custom".into(), "\"1\"".into())]);
+        ExtraDerivesConfig::check_derives(&["::custom::Derive".into()], &deps);
+        assert!(!logs_contain("no matching entry"));
+        ExtraDerivesConfig::check_derives(&["::missing::Derive".into()], &deps);
+        assert!(logs_contain("references crate `missing`"));
+        assert!(!logs_contain("references crate ``"));
     }
 }

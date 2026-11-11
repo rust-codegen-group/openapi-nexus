@@ -4,12 +4,88 @@
 // Nested Union Type Test — 1.0.0
 // Test fixture for union types that reference other union types
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum Foo {
     Qux(super::Qux),
     String(String),
     Number(f64),
+}
+
+impl<'de> serde::Deserialize<'de> for Foo {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let candidate = < serde_json::Value as serde::Deserialize >::deserialize(deserializer)?;
+        let mut selected = None;
+        if selected.is_none() && __nexus_matches_0(&candidate) {
+            selected = Some(0);
+        }
+        if selected.is_none() && __nexus_matches_2(&candidate) {
+            selected = Some(1);
+        }
+        if selected.is_none() && __nexus_matches_6(&candidate) {
+            selected = Some(2);
+        }
+        match selected {
+            Some(0) => serde_json::from_value::<super::Qux>(candidate).map(Self::Qux).map_err(serde::de::Error::custom),
+            Some(1) => serde_json::from_value::<String>(candidate).map(Self::String).map_err(serde::de::Error::custom),
+            Some(2) => serde_json::from_value::<f64>(candidate).map(Self::Number).map_err(serde::de::Error::custom),
+            _ => Err(serde::de::Error::custom("value does not match any member of untagged union Foo")),
+        }
+    }
+}
+
+fn __nexus_matches_0(candidate: &serde_json::Value) -> bool {
+    if __nexus_matches_1(candidate) {
+        return true;
+    }
+    if __nexus_matches_4(candidate) {
+        return true;
+    }
+    false
+}
+
+fn __nexus_matches_1(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("endpoint").is_some_and(|item | __nexus_matches_2(item)) {
+        return false;
+    }
+    if!object.get("type").is_some_and(|item | __nexus_matches_3(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_2(candidate: &serde_json::Value) -> bool {
+    candidate.is_string()
+}
+
+fn __nexus_matches_3(candidate: &serde_json::Value) -> bool {
+    candidate.as_str() == Some("bar")
+}
+
+fn __nexus_matches_4(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("path").is_some_and(|item | __nexus_matches_2(item)) {
+        return false;
+    }
+    if!object.get("type").is_some_and(|item | __nexus_matches_5(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_5(candidate: &serde_json::Value) -> bool {
+    candidate.as_str() == Some("baz")
+}
+
+fn __nexus_matches_6(candidate: &serde_json::Value) -> bool {
+    candidate.is_number()
 }

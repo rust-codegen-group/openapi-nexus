@@ -62,6 +62,8 @@ pub(crate) struct PropertyMatch {
 
 #[derive(Debug, Clone)]
 pub(crate) struct UnionMemberMatch {
+    /// Index of the authored member, before concrete/fallback partitioning.
+    pub source_index: usize,
     pub type_expr: IrTypeExpr,
     pub shape: JsonShape,
     pub fallback: bool,
@@ -90,7 +92,8 @@ fn plan_members(
 ) -> Vec<UnionMemberMatch> {
     let mut members: Vec<_> = types
         .iter()
-        .flat_map(|type_expr| {
+        .enumerate()
+        .flat_map(|(source_index, type_expr)| {
             let mut visiting = current_schema
                 .map(|name| HashMap::from([(name.to_string(), 0)]))
                 .unwrap_or_default();
@@ -100,6 +103,7 @@ fn plan_members(
                 .into_iter()
                 .filter_map(move |(shape, fallback)| {
                     (shape != JsonShape::Never).then(|| UnionMemberMatch {
+                        source_index,
                         type_expr: type_expr.clone(),
                         shape,
                         fallback,
@@ -734,8 +738,10 @@ mod tests {
         };
         let members = plan_union_members("FallbackUnion", &union, &ir);
         assert!(!members[0].fallback);
+        assert_eq!(members[0].source_index, 1);
         assert!(matches!(&members[0].type_expr, IrTypeExpr::Named(name) if name == "ClientTool"));
         assert!(members[1].fallback);
+        assert_eq!(members[1].source_index, 0);
     }
 
     #[test]

@@ -167,7 +167,7 @@ components:
 }
 
 #[test]
-fn scalar_enum_metadata_keeps_other_generators_on_the_legacy_representation() {
+fn scalar_enum_metadata_changes_only_rust_union_dispatch_and_not_public_representations() {
     let source = r#"openapi: 3.1.0
 info: {title: Scalar representations, version: '1'}
 paths:
@@ -296,6 +296,20 @@ components:
         let actual = files(&decorated);
         let expected = files(&legacy);
         for (filename, expected) in &expected {
+            if generator.generator_type().language() == openapi_nexus::codegen::Language::Rust
+                && filename == "Models/choice.rs"
+            {
+                let actual = &actual[filename];
+                assert_ne!(actual, expected, "Rust dispatch consumes finite facts");
+                assert_eq!(
+                    actual.split("\nimpl").next(),
+                    expected.split("\nimpl").next(),
+                    "typed variants and payloads do not change"
+                );
+                assert!(actual.contains("Some(1_i64)"));
+                assert!(actual.contains("Some(true)"));
+                continue;
+            }
             assert_eq!(
                 actual.get(filename),
                 Some(expected),

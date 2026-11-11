@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Select Rust untagged-union members using retained scalar enum and structural
+  facts instead of Serde's unconstrained first-success dispatch. Preserve typed
+  variants and payloads across reqwest, ureq, and aioduct, including nested
+  containers and recursive members. Add `firstMatch`, `strict`, and explicit
+  `Raw(serde_json::Value)` policies; propagate selected-member decoding errors
+  without hiding them behind another member or an opaque fallback.
 - Convert Python httpx/requests untagged-union members in models, nested containers,
   aliases, JSON/multipart requests, responses, and lazy error bodies. Share enum-
   aware selection across both transports with `firstMatch`, `strict`, and dynamic

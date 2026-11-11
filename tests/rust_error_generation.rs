@@ -5,15 +5,22 @@ use openapi_nexus::generators::rust::aioduct::RustAioductCodeGenerator;
 use openapi_nexus::generators::rust::reqwest::RustReqwestCodeGenerator;
 use openapi_nexus::generators::rust::ureq::RustUreqCodeGenerator;
 use openapi_nexus::generators::{ArtifactKind, GeneratorError};
-use openapi_nexus::ir::types::{IrPrimitive, IrResponse, IrSpec, IrTypeExpr};
+use openapi_nexus::ir::types::{
+    IrPrimitive, IrResponse, IrSchema, IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant,
+    IrTypeExpr, TaggingStyle,
+};
 use openapi_nexus::test_utils::read_fixture;
 use sigil_stitch::error::SigilStitchError;
 
 fn generators() -> [Box<dyn CodeGenerator>; 3] {
+    generators_with_config(toml::value::Table::new())
+}
+
+fn generators_with_config(config: toml::value::Table) -> [Box<dyn CodeGenerator>; 3] {
     [
-        Box::new(RustReqwestCodeGenerator::new(toml::value::Table::new())),
-        Box::new(RustUreqCodeGenerator::new(toml::value::Table::new())),
-        Box::new(RustAioductCodeGenerator::new(toml::value::Table::new())),
+        Box::new(RustReqwestCodeGenerator::new(config.clone())),
+        Box::new(RustUreqCodeGenerator::new(config.clone())),
+        Box::new(RustAioductCodeGenerator::new(config)),
     ]
 }
 
@@ -185,6 +192,55 @@ fn invalid_error_payload_returns_a_contextual_emission_error() {
                 }
             }
             other => panic!("{backend}: expected a typed emission error, got {other:?}"),
+        }
+    }
+}
+
+#[test]
+fn invalid_tagged_schema_returns_a_contextual_emission_error_instead_of_omitting_the_model() {
+    let mut ir = minimal_ir();
+    ir.schemas.insert(
+        "TaggedChoice".into(),
+        IrSchema {
+            name: "TaggedChoice".into(),
+            description: None,
+            deprecated: false,
+            is_component: true,
+            kind: IrSchemaKind::TaggedUnion(IrTaggedUnion {
+                discriminator_field: "kind".into(),
+                tagging: TaggingStyle::External,
+                variants: vec![IrTaggedVariant {
+                    discriminator_value: "payload".into(),
+                    content_type: IrTypeExpr::Named(String::new()),
+                    description: None,
+                    additional_properties: None,
+                }],
+            }),
+        },
+    );
+    let config = toml::from_str("[utoipa]\nenabled = true").unwrap();
+    for generator in generators_with_config(config) {
+        let backend = generator.generator_type();
+        let error = generator
+            .generate(&ir)
+            .expect_err("invalid model must not be skipped");
+        match error {
+            GeneratorError::Emission {
+                artifact,
+                name,
+                source,
+            } => {
+                assert!(
+                    matches!(artifact, ArtifactKind::Model),
+                    "{backend}: {artifact}"
+                );
+                assert_eq!(name, "TaggedChoice", "{backend}");
+                assert!(
+                    matches!(*source, SigilStitchError::InvalidTypeName { .. }),
+                    "{backend}: {source}"
+                );
+            }
+            other => panic!("{backend}: expected a typed model emission error, got {other:?}"),
         }
     }
 }

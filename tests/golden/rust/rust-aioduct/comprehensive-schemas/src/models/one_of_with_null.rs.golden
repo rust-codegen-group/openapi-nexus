@@ -4,12 +4,59 @@
 // Comprehensive Schema Types Example — 1.0.0
 // Comprehensive test for all OpenAPI v3.1.2 schema types
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Union of string, null, and schema reference
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum OneOfWithNull {
     String(String),
     BasicObject(super::BasicObject),
+}
+
+impl<'de> serde::Deserialize<'de> for OneOfWithNull {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let candidate = < serde_json::Value as serde::Deserialize >::deserialize(deserializer)?;
+        let mut selected = None;
+        if selected.is_none() && __nexus_matches_0(&candidate) {
+            selected = Some(0);
+        }
+        if selected.is_none() && __nexus_matches_1(&candidate) {
+            selected = Some(1);
+        }
+        match selected {
+            Some(0) => serde_json::from_value::<String>(candidate).map(Self::String).map_err(serde::de::Error::custom),
+            Some(1) => serde_json::from_value::<super::BasicObject>(candidate).map(Self::BasicObject).map_err(serde::de::Error::custom),
+            _ => Err(serde::de::Error::custom("value does not match any member of untagged union OneOfWithNull")),
+        }
+    }
+}
+
+fn __nexus_matches_0(candidate: &serde_json::Value) -> bool {
+    candidate.is_string()
+}
+
+fn __nexus_matches_1(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if object.get("active").is_some_and(|item | !__nexus_matches_2(item)) {
+        return false;
+    }
+    if!object.get("id").is_some_and(|item | __nexus_matches_3(item)) {
+        return false;
+    }
+    if!object.get("name").is_some_and(|item | __nexus_matches_0(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_2(candidate: &serde_json::Value) -> bool {
+    candidate.is_boolean()
+}
+
+fn __nexus_matches_3(candidate: &serde_json::Value) -> bool {
+    candidate.is_i64() || candidate.is_u64()
 }
