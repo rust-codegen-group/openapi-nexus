@@ -1,10 +1,23 @@
 use std::collections::HashSet;
 
-use crate::ir::types::{IrPrimitive, IrTypeExpr};
+use crate::ir::types::{IrIntersection, IrPrimitive, IrTypeExpr};
 use heck::{ToLowerCamelCase, ToPascalCase};
 #[allow(unused_imports)]
 use sigil_stitch::lang::java::Java;
 use sigil_stitch::prelude::*;
+
+/// Field names of Java's existing allOf wrapper representation.
+pub(super) fn intersection_fields(intersection: &IrIntersection) -> Vec<(String, &IrTypeExpr)> {
+    let mut used = HashSet::new();
+    intersection
+        .members
+        .iter()
+        .map(|member| {
+            let name = unique_name(&java_type_str(member).to_lower_camel_case(), &mut used);
+            (name, member)
+        })
+        .collect()
+}
 
 pub fn java_type_str(expr: &IrTypeExpr) -> String {
     match expr {

@@ -2,6 +2,14 @@
 
 Java and Kotlin each have an independent Gradle consumer build. The public CLI
 generates the six inputs in `fixtures.txt` into ignored `generated/` directories.
+Each backend can add independent cases through its own `java/fixtures.txt` or
+`kotlin/fixtures.txt`; the same manifests drive generation and Gradle discovery.
+An optional third column selects `firstMatch`, `strict`, or `raw`. Java's union
+consumers cover finite constraints, recursive checks, wrapped alias/composition
+boundaries, raw null preservation, and OkHttp response/error-body integration.
+Independent helper-type projects also compile recursive unions alongside models
+named `Integer` and `Boolean`; numeric controls exercise extreme exponents without
+weakening native delegate errors or finite-value precision.
 Generated manifests and source are used unchanged. Each fixture has a separate
 consumer subproject, so identically named SDK classes do not share a classpath.
 

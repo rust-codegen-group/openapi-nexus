@@ -1,0 +1,16 @@
+openapi: 3.1.0
+info: {title: Java union helper types, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    Boolean: {type: object, properties: {}}
+    Integer: {type: object, properties: {}}
+    Branch:
+      type: object
+      required: [children]
+      properties:
+        children: {type: array, items: {$ref: '#/components/schemas/Tree'}}
+    Tree:
+      anyOf:
+        - {$ref: '#/components/schemas/Branch'}
+        - {type: string}

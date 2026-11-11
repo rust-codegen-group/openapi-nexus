@@ -31,15 +31,22 @@ final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
     private final Gson gson = new Gson();
 
     @Override
-    public OneOfObjects read (JsonReader reader) throws java.io.IOException {
+    public OneOfObjects read(JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
         }
-        if (((element.isJsonObject() && element.getAsJsonObject().has("id")) && element.getAsJsonObject().has("name"))) {
+        int selected = -1;
+        if (selected < 0 && matches0(element)) {
+            selected = 0;
+        }
+        if (selected < 0 && matches4(element)) {
+            selected = 1;
+        }
+        if (selected == 0) {
             return new OneOfObjects.VariantBasicObject(gson.fromJson(element, new TypeToken<BasicObject>() {}.getType()));
         }
-        if (element.isJsonObject()) {
+        if (selected == 1) {
             return new OneOfObjects.VariantNestedObject(gson.fromJson(element, new TypeToken<NestedObject>() {}.getType()));
         }
         throw new JsonParseException("unknown OneOfObjects union value");
@@ -59,5 +66,88 @@ final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
             gson.toJson(gson.toJsonTree(((OneOfObjects.VariantNestedObject) value).value0()), writer);
             return;
         }
+    }
+
+    private static boolean matches0(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (object.has("active") && !matches1(object.get("active"))) {
+            return false;
+        }
+        if (!object.has("id") || !matches2(object.get("id"))) {
+            return false;
+        }
+        if (!object.has("name") || !matches3(object.get("name"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matches1(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isBoolean();
+    }
+
+    private static boolean matches2(JsonElement candidate) {
+        if (!candidate.isJsonPrimitive() || !candidate.getAsJsonPrimitive().isNumber()) {
+            return false;
+        }
+        java.lang.String literal = candidate.getAsString();
+        java.math.BigDecimal significand = numberSignificand(literal);
+        return significand.signum() == 0 || numberExponent(literal).compareTo(java.math.BigInteger.valueOf(significand.scale())) >= 0;
+    }
+
+    private static boolean matches3(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isString();
+    }
+
+    private static boolean matches4(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (object.has("metadata") && !matches5(object.get("metadata"))) {
+            return false;
+        }
+        if (object.has("user") && !matches6(object.get("user"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matches5(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (object.has("created") && !matches3(object.get("created"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matches6(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (!object.has("id") || !matches2(object.get("id"))) {
+            return false;
+        }
+        if (object.has("name") && !matches3(object.get("name"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static java.math.BigDecimal numberSignificand(java.lang.String literal) {
+        int exponent = java.lang.Math.max(literal.indexOf('e'), literal.indexOf('E'));
+        return new java.math.BigDecimal(exponent < 0 ? literal : literal.substring(0, exponent)).stripTrailingZeros();
+    }
+
+    private static java.math.BigInteger numberExponent(java.lang.String literal) {
+        int exponent = java.lang.Math.max(literal.indexOf('e'), literal.indexOf('E'));
+        return exponent < 0 ? java.math.BigInteger.ZERO : new java.math.BigInteger(literal.substring(exponent + 1));
     }
 }
