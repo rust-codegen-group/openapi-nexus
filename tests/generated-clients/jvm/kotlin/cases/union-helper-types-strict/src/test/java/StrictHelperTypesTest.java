@@ -1,0 +1,1 @@
+class StrictHelperTypesTest extends RecursiveHelperTypesTest {}

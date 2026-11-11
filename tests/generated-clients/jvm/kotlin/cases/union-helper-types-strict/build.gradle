@@ -1,0 +1,1 @@
+sourceSets.test.java.srcDir("../union-helper-types/src/test/java")

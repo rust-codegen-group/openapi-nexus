@@ -10,6 +10,9 @@ boundaries, raw null preservation, and OkHttp response/error-body integration.
 Independent helper-type projects also compile recursive unions alongside models
 named `Integer` and `Boolean`; numeric controls exercise extreme exponents without
 weakening native delegate errors or finite-value precision.
+Kotlin's independent policy consumers use the same schema fixtures, preserving
+transparent type aliases and its own native scalar decoding behavior while
+checking exact finite matching, recursion, wrapped intersections and raw trees.
 Generated manifests and source are used unchanged. Each fixture has a separate
 consumer subproject, so identically named SDK classes do not share a classpath.
 

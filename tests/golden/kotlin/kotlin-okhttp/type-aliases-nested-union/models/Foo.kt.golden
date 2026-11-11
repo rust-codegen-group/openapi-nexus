@@ -27,18 +27,34 @@ sealed class Foo private constructor() {
     data class VariantNumber(val value0: Double) : Foo()
 }
 
-private class FooJsonAdapter: TypeAdapter<Foo>() {
-    private val gson = Gson()
+private class FooJsonAdapter : TypeAdapter<Foo>() {
+    private val gson: Gson = Gson()
 
-    override fun read (reader: JsonReader): Foo? {
+    override fun read(reader: JsonReader): Foo? {
         val element = JsonParser.parseReader(reader)
-        return when {
-            element.isJsonNull -> null
-            (((element.isJsonObject && element.asJsonObject.has("endpoint")) && element.asJsonObject.has("type")) || ((element.isJsonObject && element.asJsonObject.has("path")) && element.asJsonObject.has("type"))) -> Foo.VariantQux(gson.fromJson(element, object: TypeToken<Qux>() {}.type))
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Foo.VariantString(element.asString)
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> Foo.VariantNumber(element.asDouble)
-            else -> throw JsonParseException("unknown Foo union value")
+        if (element.isJsonNull) {
+            return null
         }
+        var selected = -1
+        if (selected < 0 && matches0(element)) {
+            selected = 0
+        }
+        if (selected < 0 && matches2(element)) {
+            selected = 1
+        }
+        if (selected < 0 && matches6(element)) {
+            selected = 2
+        }
+        if (selected == 0) {
+            return Foo.VariantQux(gson.fromJson(element, object: TypeToken<Qux>() {}.type))
+        }
+        if (selected == 1) {
+            return Foo.VariantString(element.asString)
+        }
+        if (selected == 2) {
+            return Foo.VariantNumber(element.asDouble)
+        }
+        throw JsonParseException("unknown Foo union value")
     }
 
     override fun write(writer: JsonWriter, value: Foo?) {
@@ -48,14 +64,68 @@ private class FooJsonAdapter: TypeAdapter<Foo>() {
         }
         when (value) {
             is Foo.VariantQux -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<Qux>() {}.type, writer)
             }
             is Foo.VariantString -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<String>() {}.type, writer)
             }
             is Foo.VariantNumber -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<Double>() {}.type, writer)
             }
         }
+    }
+
+    private fun matches0(candidate: JsonElement): kotlin.Boolean {
+        if (matches1(candidate)) {
+            return true
+        }
+        if (matches4(candidate)) {
+            return true
+        }
+        return false
+    }
+
+    private fun matches1(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (!jsonObject.has("endpoint") || !matches2(jsonObject.get("endpoint"))) {
+            return false
+        }
+        if (!jsonObject.has("type") || !matches3(jsonObject.get("type"))) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches2(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString
+    }
+
+    private fun matches3(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "bar"
+    }
+
+    private fun matches4(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (!jsonObject.has("path") || !matches2(jsonObject.get("path"))) {
+            return false
+        }
+        if (!jsonObject.has("type") || !matches5(jsonObject.get("type"))) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches5(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "baz"
+    }
+
+    private fun matches6(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isNumber
     }
 }

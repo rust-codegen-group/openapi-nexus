@@ -204,3 +204,84 @@ fn kotlin_primary_constructor_annotations_preserve_wire_names() {
         "the generated property keeps its Kotlin identifier:\n{model}"
     );
 }
+
+#[test]
+fn untagged_union_policies_preserve_typed_or_raw_apis() {
+    for (name, policy) in [
+        ("union-first-match", "firstMatch"),
+        ("union-strict", "strict"),
+        ("union-raw", "raw"),
+    ] {
+        let config = toml::from_str(&format!("untagged_union_strategy = {policy:?}")).unwrap();
+        run_golden_test(
+            &KotlinOkhttpCodeGenerator::new(config),
+            golden_dir(),
+            name,
+            "valid/java-union-policies.yaml",
+            UPDATE_HINT,
+        );
+    }
+    run_golden_test(
+        &KotlinOkhttpCodeGenerator::new(Default::default()),
+        golden_dir(),
+        "union-selection",
+        "valid/union-selection.yaml",
+        UPDATE_HINT,
+    );
+    for (name, policy) in [
+        ("union-helper-types", "firstMatch"),
+        ("union-helper-types-strict", "strict"),
+    ] {
+        run_golden_test(
+            &KotlinOkhttpCodeGenerator::new(
+                toml::from_str(&format!("untagged_union_strategy = {policy:?}")).unwrap(),
+            ),
+            golden_dir(),
+            name,
+            "valid/java-union-helper-types.yaml",
+            UPDATE_HINT,
+        );
+    }
+}
+
+#[test]
+fn policy_changes_are_confined_to_untagged_union_adapters_and_raw_cases() {
+    use heck::ToPascalCase;
+    use openapi_nexus::ir::{lower::lower, types::IrSchemaKind};
+    use openapi_nexus::parser::parse_content_yaml;
+
+    for fixture in [
+        "valid/comprehensive-schemas.yaml",
+        "valid/java-union-policies.yaml",
+        "valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml",
+    ] {
+        let source = read_fixture(fixture);
+        let ir = lower(parse_content_yaml(&source).unwrap()).unwrap();
+        let unions: std::collections::HashSet<_> = ir
+            .schemas
+            .values()
+            .filter(|schema| matches!(schema.kind, IrSchemaKind::Union(_)))
+            .map(|schema| format!("models/{}.kt", schema.name.to_pascal_case()))
+            .collect();
+        let typed =
+            generate_files(&KotlinOkhttpCodeGenerator::new(Default::default()), &source).unwrap();
+        for policy in ["strict", "raw"] {
+            let generator = KotlinOkhttpCodeGenerator::new(
+                toml::from_str(&format!("untagged_union_strategy = {policy:?}")).unwrap(),
+            );
+            let changed = generate_files(&generator, &source).unwrap();
+            assert_eq!(typed.len(), changed.len());
+            for (file, content) in &typed {
+                if !unions.contains(file) {
+                    assert_eq!(content, &changed[file], "{fixture} {policy} {file}");
+                } else if policy == "strict" {
+                    assert_eq!(
+                        content.split("\nprivate class").next(),
+                        changed[file].split("\nprivate class").next(),
+                        "typed API {file}"
+                    );
+                }
+            }
+        }
+    }
+}

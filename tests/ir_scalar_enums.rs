@@ -324,6 +324,20 @@ components:
                 assert!(actual.contains("candidate.getAsBoolean() == true"));
                 continue;
             }
+            if generator.generator_type().language() == openapi_nexus::codegen::Language::Kotlin
+                && filename == "Models/Choice.kt"
+            {
+                let actual = &actual[filename];
+                assert_ne!(actual, expected, "Kotlin dispatch consumes finite facts");
+                assert_eq!(
+                    actual.split("\nprivate class ChoiceJsonAdapter").next(),
+                    expected.split("\nprivate class ChoiceJsonAdapter").next(),
+                    "Kotlin typed cases and payloads do not change"
+                );
+                assert!(actual.contains("matchesNumber(candidate, \"1\")"));
+                assert!(actual.contains("candidate.asBoolean == true"));
+                continue;
+            }
             assert_eq!(
                 actual.get(filename),
                 Some(expected),

@@ -10,6 +10,7 @@
 - [TypeScript Generator Configuration](ts_config.md)
 - [Python Generator Configuration](python_config.md)
 - [Java Generator Configuration](java_config.md)
+- [Kotlin Generator Configuration](kotlin_config.md)
 - [Architecture](architecture.md)
 - [Adding a Generator](adding_a_generator.md)
 - [IR Reference](ir_reference.md)
