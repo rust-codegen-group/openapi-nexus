@@ -7,8 +7,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from . import _union
+
 type Config = (
     str
     | float
     | Any
 )
+
+def config_from_dict(value: object) -> Config:
+    return _union.value_0_from_dict(value)
+
+def config_to_dict(value: Config) -> object:
+    return _union.value_0_to_dict(value)

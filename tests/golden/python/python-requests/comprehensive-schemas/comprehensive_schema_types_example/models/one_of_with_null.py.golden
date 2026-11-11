@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from . import _union
 from .basic_object import BasicObject
 
 # Union of string, null, and schema reference
@@ -14,3 +17,9 @@ type OneOfWithNull = (
     | BasicObject
     | None
 )
+
+def one_of_with_null_from_dict(value: object) -> OneOfWithNull:
+    return cast(OneOfWithNull, _union.value_8_from_dict(value))
+
+def one_of_with_null_to_dict(value: OneOfWithNull) -> object:
+    return _union.value_8_to_dict(value)

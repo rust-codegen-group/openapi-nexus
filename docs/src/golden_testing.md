@@ -178,6 +178,27 @@ round-trips, not only wrapper identity or discriminator substrings.
 There are no JVM build subprocesses or global directory locks in the Rust test
 suite. The independent JVM Client Tests CI matrix and `just ci` run these checks.
 
+## Native Python Union Consumers
+
+`just golden-python-clients::test httpx` and
+`just golden-python-clients::test requests` generate fresh clients for
+`firstMatch`, `strict`, and `raw`, run strict pyright on the unchanged files, then
+run ordinary `unittest` consumers. The same contracts cover dataclasses, nested
+containers, aliases, finite values, recursion, JSON/multipart transport encoding,
+tagged payloads, nulls, and lazy error decoding. In-process HTTP transports avoid
+network IO without bypassing each library's request encoder. Native tests do not
+launch generation, type checkers, or other runners.
+
+The same `just golden-python::build-httpx` / `build-requests` entrypoints run all
+golden checks, fresh public-declaration checks and native consumers, both locally
+and in CI. `golden-build-all` and `just ci` inherit this complete validation; CI
+does not append a Python-specific test step. Dependencies are installed once in
+a temporary environment created with the active Python (locally 3.15.0, CI `3.x`),
+and the same checker and interpreter are used throughout the backend's checks.
+The generated SDK's minimum and explicit pyright target remain 3.12, a static contract,
+not a claim that the native tests execute on the minimum runtime. See the
+[Python configuration](python_config.md) for selection-policy semantics.
+
 ## Validation Contracts and Toolchains
 
 - Missing fixture files fail their parser tests. Nested fixture paths are relative
@@ -190,7 +211,8 @@ suite. The independent JVM Client Tests CI matrix and `just ci` run these checks
 - Rust golden builds retain their cache under `target/golden-build/rust-<backend>`
   or the explicitly configured `CARGO_TARGET_DIR`. CI caches the same directory.
 - Python prepares dependencies and resolves pyright once per backend, sharing
-  that environment across its fixtures. `PYTHON` selects the install interpreter;
+  that environment across goldens, declaration checks and runtime consumers.
+  `PYTHON` selects the interpreter used to create the temporary environment;
   the active `pyright` is used when available, otherwise npm resolves it once.
 - Development and ordinary CI validation select current Rust `stable` (locally
   validated with Rust 1.99.0). MSRV checks explicitly select Rust 1.90.0; they do
@@ -211,7 +233,7 @@ normally; no test harness launches a compiler, build tool, or validation script.
 to just/CI, which directly run the golden builds and ordinary consumer projects.
 
 `just ci` includes generator tests and coverage, all nine generators' native
-golden builds, and TypeScript/Rust/JVM consumer tests. Golden comparison is already included
+golden builds, and TypeScript/Python/Rust/JVM consumer tests. Golden comparison is already included
 in `test-all`, so the full recipe does not repeat it as another standalone step.
 
 ## Extra File Detection

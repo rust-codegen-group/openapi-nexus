@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from . import _union
 from .foo_member1 import FooMember1
 from .foo_member2 import FooMember2
 from .foo_member3 import FooMember3
@@ -16,3 +19,9 @@ type Foo = (
     | FooMember2
     | FooMember3
 )
+
+def foo_from_dict(value: object) -> Foo:
+    return cast(Foo, _union.value_0_from_dict(value))
+
+def foo_to_dict(value: Foo) -> object:
+    return _union.value_0_to_dict(value)

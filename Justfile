@@ -7,6 +7,7 @@ mod golden-typescript-clients 'just/golden-typescript-clients.just'
 mod golden-go 'just/golden-go.just'
 mod golden-rust 'just/golden-rust.just'
 mod golden-python 'just/golden-python.just'
+mod golden-python-clients 'just/golden-python-clients.just'
 mod golden-java 'just/golden-java.just'
 mod golden-kotlin 'just/golden-kotlin.just'
 mod golden-jvm 'just/golden-jvm.just'
@@ -154,7 +155,7 @@ golden-check:
 # Update .golden files for all generators
 golden-update: golden-typescript::update golden-go::update golden-rust::update golden-python::update golden-java::update golden-kotlin::update
 
-# Compile-check all goldens
+# Validate all goldens and their integrated consumer contracts
 golden-build-all: golden-typescript::build golden-go::build golden-rust::build golden-python::build golden-java::build golden-kotlin::build
 
 # ---------- Publish ----------

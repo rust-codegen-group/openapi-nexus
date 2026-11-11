@@ -38,4 +38,3 @@ def volume_kind_to_dict(obj: VolumeKind) -> dict[str, object]:
         result["kind"] = "VOLUME_KIND_REMOTE"
         return result
     raise ValueError(f"Unknown variant for VolumeKind: {type(obj)}")
-

@@ -35,4 +35,3 @@ def externally_tagged_enum_to_dict(obj: ExternallyTaggedEnum) -> dict[str, objec
     elif isinstance(obj, VariantB):
         return {"EXTERNALLY_TAGGED_ENUM_VARIANT_B": obj.to_dict()}
     raise ValueError(f"Unknown variant for ExternallyTaggedEnum: {type(obj)}")
-

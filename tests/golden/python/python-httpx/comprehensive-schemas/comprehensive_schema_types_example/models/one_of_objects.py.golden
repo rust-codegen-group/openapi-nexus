@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from . import _union
 from .basic_object import BasicObject
 from .nested_object import NestedObject
 
@@ -14,3 +17,9 @@ type OneOfObjects = (
     BasicObject
     | NestedObject
 )
+
+def one_of_objects_from_dict(value: object) -> OneOfObjects:
+    return cast(OneOfObjects, _union.value_3_from_dict(value))
+
+def one_of_objects_to_dict(value: OneOfObjects) -> object:
+    return _union.value_3_to_dict(value)

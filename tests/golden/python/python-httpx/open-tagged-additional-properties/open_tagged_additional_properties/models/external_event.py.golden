@@ -28,4 +28,3 @@ def external_event_to_dict(obj: ExternalEvent) -> dict[str, object]:
     elif isinstance(obj, Payload):
         return {"finished": obj.to_dict()}
     raise ValueError(f"Unknown variant for ExternalEvent: {type(obj)}")
-

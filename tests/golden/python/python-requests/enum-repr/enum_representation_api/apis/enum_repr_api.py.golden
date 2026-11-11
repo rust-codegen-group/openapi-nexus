@@ -5,8 +5,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import json
 
+from collections.abc import Mapping
+from typing import cast
+
+from ..models import _union
 from ..models.adjacently_tagged_enum import AdjacentlyTaggedEnum
 from ..models.externally_tagged_enum import ExternallyTaggedEnum
 from ..models.internally_tagged_enum import InternallyTaggedEnum
@@ -210,14 +214,16 @@ class EnumReprApi:
         path = "/mixed"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
-        response = self._client.request("POST", path, json=body, headers=headers)
+        _union_body = _union.value_0_to_dict(body)
+        response = self._client.request("POST", path, headers=headers, data = json.dumps(_union_body, allow_nan = False))
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
                 detail = HandleMixedBadRequest(response.status_code, response.headers, response.content)
             else:
                 detail = HandleMixedUnexpected(response.status_code, response.headers, response.content)
             raise HandleMixedError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
-        data = response.json()  # type: ignore[return-value]
+        _union_data = cast(MixedEnum, _union.value_0_from_dict(response.json()))
+        data = _union_data
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
     def handle_mixed(self, *, body: MixedEnum) -> MixedEnum:
@@ -229,14 +235,16 @@ class EnumReprApi:
         path = "/untagged"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
-        response = self._client.request("POST", path, json=body, headers=headers)
+        _union_body = _union.value_5_to_dict(body)
+        response = self._client.request("POST", path, headers=headers, data = json.dumps(_union_body, allow_nan = False))
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
                 detail = HandleUntaggedBadRequest(response.status_code, response.headers, response.content)
             else:
                 detail = HandleUntaggedUnexpected(response.status_code, response.headers, response.content)
             raise HandleUntaggedError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
-        data = response.json()  # type: ignore[return-value]
+        _union_data = cast(UntaggedEnum, _union.value_5_from_dict(response.json()))
+        data = _union_data
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
     def handle_untagged(self, *, body: UntaggedEnum) -> UntaggedEnum:

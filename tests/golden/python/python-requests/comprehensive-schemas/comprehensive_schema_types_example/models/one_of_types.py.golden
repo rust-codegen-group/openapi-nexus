@@ -5,6 +5,10 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from . import _union
+
 # Union of multiple primitive types
 
 type OneOfTypes = (
@@ -12,3 +16,9 @@ type OneOfTypes = (
     | float
     | bool
 )
+
+def one_of_types_from_dict(value: object) -> OneOfTypes:
+    return cast(OneOfTypes, _union.value_6_from_dict(value))
+
+def one_of_types_to_dict(value: OneOfTypes) -> object:
+    return _union.value_6_to_dict(value)

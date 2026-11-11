@@ -40,4 +40,3 @@ def internally_tagged_enum_to_dict(obj: InternallyTaggedEnum) -> dict[str, objec
         result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_B"
         return result
     raise ValueError(f"Unknown variant for InternallyTaggedEnum: {type(obj)}")
-

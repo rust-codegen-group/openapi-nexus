@@ -45,4 +45,3 @@ def very_long_discriminated_union_type_name_for_testing20260630_to_dict(obj: Ver
         result["kind"] = "GAMMA"
         return result
     raise ValueError(f"Unknown variant for VeryLongDiscriminatedUnionTypeNameForTesting20260630: {type(obj)}")
-

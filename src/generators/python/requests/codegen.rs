@@ -53,13 +53,19 @@ impl PythonRequestsCodeGenerator {
 
         let mut files = Vec::new();
 
-        files.extend(emit_models::generate_model_files(
+        files.extend(emit_models::generate_model_files_with_strategy(
             ir,
             &header,
             &request_inputs,
+            self.config.untagged_union_strategy,
         )?);
 
-        files.extend(emit_api::generate_api_files(ir, &header, &request_inputs));
+        files.extend(emit_api::generate_api_files_with_strategy(
+            ir,
+            &header,
+            &request_inputs,
+            self.config.untagged_union_strategy,
+        ));
 
         files.extend(runtime_files(&header, request_inputs.has_uploads()));
 

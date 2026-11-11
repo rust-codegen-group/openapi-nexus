@@ -33,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Convert Python httpx/requests untagged-union members in models, nested containers,
+  aliases, JSON/multipart requests, responses, and lazy error bodies. Share enum-
+  aware selection across both transports with `firstMatch`, `strict`, and dynamic
+  `raw` policies, preserving nested strict errors and productive recursion. Keep
+  shared helpers import-safe and restore tagged wire wrappers from typed payload
+  members. Encode required nullable union request bodies as JSON `null` instead
+  of omitting them.
 - Convert camelCase TypeScript untagged-union members in both JSON directions,
   including mixed client/search tools and containing requests. Add configurable
   `firstMatch`, `strict`, and wire-preserving `raw` selection policies instead
