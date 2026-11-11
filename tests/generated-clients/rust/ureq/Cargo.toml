@@ -11,4 +11,10 @@ resolver = "3"
 typed-error-responses-api = { path = "generated/typed-error-responses" }
 rust-error-payload-shapes-api = { path = "generated/rust-error-payload-shapes" }
 nested-nullable-api = { path = "generated/nested-nullable" }
+union-selection-contract = { path = "generated/union-selection" }
+rust-union-first-match = { path = "generated/union-first-match" }
+rust-union-strict = { path = "generated/union-strict" }
+rust-union-raw = { path = "generated/union-raw" }
+utoipa = "5"
+serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

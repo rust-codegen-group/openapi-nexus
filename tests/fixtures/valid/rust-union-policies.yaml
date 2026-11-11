@@ -1,0 +1,194 @@
+openapi: 3.1.0
+info: {title: Rust union policies, version: 1.0.0}
+paths:
+  /choice:
+    get:
+      tags: [Selection]
+      operationId: getChoice
+      responses:
+        '200':
+          description: Selected member
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FiniteChoice'}
+        '400':
+          description: Selected error member
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FiniteChoice'}
+components:
+  schemas:
+    Alpha:
+      type: object
+      required: [wire_name]
+      properties:
+        wire_name: {type: string}
+        first_value: {type: string}
+    Beta:
+      type: object
+      required: [wire_name]
+      properties:
+        wire_name: {type: string}
+        second_value: {type: string}
+    Ambiguous:
+      anyOf:
+        - {$ref: '#/components/schemas/Alpha'}
+        - {$ref: '#/components/schemas/Beta'}
+    AmbiguousAlias: {$ref: '#/components/schemas/Ambiguous'}
+    OpenNested:
+      anyOf:
+        - {$ref: '#/components/schemas/AmbiguousAlias'}
+        - {}
+    OpaqueFirst:
+      anyOf:
+        - {}
+        - {$ref: '#/components/schemas/Alpha'}
+    OpenMap:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/OpaqueFirst'}
+    MapOuter:
+      anyOf:
+        - {}
+        - {$ref: '#/components/schemas/OpenMap'}
+    FiniteOne:
+      type: object
+      required: [revision, values, flags]
+      properties:
+        revision: {type: integer, enum: [1]}
+        values: {type: array, items: {type: number, enum: [1, 1.5]}}
+        flags: {type: object, additionalProperties: {type: boolean, enum: [false]}}
+        first_value: {type: string}
+    FiniteTwo:
+      type: object
+      required: [revision, values, flags]
+      properties:
+        revision: {type: integer, enum: [2]}
+        values: {type: array, items: {type: number, enum: [2, 2.5]}}
+        flags: {type: object, additionalProperties: {type: boolean, enum: [true]}}
+        second_value: {type: string}
+    FiniteChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/FiniteOne'}
+        - {$ref: '#/components/schemas/FiniteTwo'}
+    ContainerOne:
+      type: object
+      required: [values]
+      properties:
+        values: {type: array, items: {type: integer, enum: [1]}}
+        first_value: {type: string}
+    ContainerTwo:
+      type: object
+      required: [values]
+      properties:
+        values: {type: array, items: {type: integer, enum: [2]}}
+        second_value: {type: string}
+    ContainerChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/ContainerOne'}
+        - {$ref: '#/components/schemas/ContainerTwo'}
+    MapOne:
+      type: object
+      additionalProperties: {type: integer, enum: [1]}
+    MapTwo:
+      type: object
+      additionalProperties: {type: integer, enum: [2]}
+    MapChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/MapOne'}
+        - {$ref: '#/components/schemas/MapTwo'}
+    LargeOne:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, format: uint64, enum: [9007199254740992]}
+    LargeTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, format: uint64, enum: [9007199254740993, 18446744073709551615]}
+        second_value: {type: string}
+    LargeChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/LargeOne'}
+        - {$ref: '#/components/schemas/LargeTwo'}
+    ExcludedNull:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          anyOf: [{type: integer, enum: [1]}, {type: 'null'}]
+          enum: [1]
+    IncludedNull:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: [integer, 'null'], enum: [2, null]}
+        second_value: {type: string}
+    NullableFields:
+      oneOf:
+        - {$ref: '#/components/schemas/ExcludedNull'}
+        - {$ref: '#/components/schemas/IncludedNull'}
+    NullableChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/FiniteOne'}
+        - {$ref: '#/components/schemas/FiniteTwo'}
+        - {type: 'null'}
+    NullableEnvelope:
+      type: object
+      required: [choice]
+      properties:
+        choice:
+          anyOf:
+            - {$ref: '#/components/schemas/NullableChoice'}
+            - {type: 'null'}
+    BranchOne:
+      type: object
+      required: [revision, children]
+      properties:
+        revision: {type: integer, enum: [1]}
+        children: {type: array, items: {$ref: '#/components/schemas/Tree'}}
+    BranchTwo:
+      type: object
+      required: [revision, children]
+      properties:
+        revision: {type: integer, enum: [2]}
+        children: {type: array, items: {$ref: '#/components/schemas/Tree'}}
+        second_value: {type: string}
+    Tree:
+      oneOf:
+        - {$ref: '#/components/schemas/BranchOne'}
+        - {$ref: '#/components/schemas/BranchTwo'}
+    OpenBranch:
+      type: object
+      required: [wire_name, children]
+      properties:
+        wire_name: {type: string}
+        children: {type: array, items: {$ref: '#/components/schemas/OpenTree'}}
+    OpenTree:
+      anyOf:
+        - {$ref: '#/components/schemas/OpenBranch'}
+        - {}
+    OpenTreeMap:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/OpenTree'}
+    RecursiveMapOuter:
+      anyOf:
+        - {}
+        - {$ref: '#/components/schemas/OpenTreeMap'}
+    BinaryChoice:
+      oneOf:
+        - {type: string, format: binary}
+        - {type: string}
+    ScalarChoice:
+      oneOf:
+        - {type: integer, enum: [1]}
+        - {type: number, enum: [2.5]}
+        - {type: boolean, enum: [true]}
+    OptionalOpaque:
+      type: object
+      properties:
+        metadata: {}
+    OptionalOpaqueChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/OptionalOpaque'}
+        - {type: string}

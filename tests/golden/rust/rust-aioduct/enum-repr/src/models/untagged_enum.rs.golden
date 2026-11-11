@@ -4,15 +4,77 @@
 // Enum Representation API — 1.0.0
 // This API demonstrates all 4 kinds of enum representation types: Externally Tagged, Internally Tagged, Adjacently Tagged, and Untagged
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Untagged enum
 ///
 /// No tag is used, variants are distinguished by their structure:
 /// `{"field1": "...", "field2": 123}` or `{"field3": true, "field4": 1.23}`
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum UntaggedEnum {
     VariantA(super::VariantA),
     VariantB(super::VariantB),
+}
+
+impl<'de> serde::Deserialize<'de> for UntaggedEnum {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let candidate = < serde_json::Value as serde::Deserialize >::deserialize(deserializer)?;
+        let mut selected = None;
+        if selected.is_none() && __nexus_matches_0(&candidate) {
+            selected = Some(0);
+        }
+        if selected.is_none() && __nexus_matches_3(&candidate) {
+            selected = Some(1);
+        }
+        match selected {
+            Some(0) => serde_json::from_value::<super::VariantA>(candidate).map(Self::VariantA).map_err(serde::de::Error::custom),
+            Some(1) => serde_json::from_value::<super::VariantB>(candidate).map(Self::VariantB).map_err(serde::de::Error::custom),
+            _ => Err(serde::de::Error::custom("value does not match any member of untagged union UntaggedEnum")),
+        }
+    }
+}
+
+fn __nexus_matches_0(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("field1").is_some_and(|item | __nexus_matches_1(item)) {
+        return false;
+    }
+    if!object.get("field2").is_some_and(|item | __nexus_matches_2(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_1(candidate: &serde_json::Value) -> bool {
+    candidate.is_string()
+}
+
+fn __nexus_matches_2(candidate: &serde_json::Value) -> bool {
+    candidate.is_i64() || candidate.is_u64()
+}
+
+fn __nexus_matches_3(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("field3").is_some_and(|item | __nexus_matches_4(item)) {
+        return false;
+    }
+    if!object.get("field4").is_some_and(|item | __nexus_matches_5(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_4(candidate: &serde_json::Value) -> bool {
+    candidate.is_boolean()
+}
+
+fn __nexus_matches_5(candidate: &serde_json::Value) -> bool {
+    candidate.is_number()
 }

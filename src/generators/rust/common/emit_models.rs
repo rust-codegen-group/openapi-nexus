@@ -6,7 +6,7 @@
 //! - `Object` — struct with serde derives and `#[serde(rename)]` tags.
 //! - `Enum` — Rust enum with serde rename per variant.
 //! - `Alias` — `pub type X = Y;`
-//! - `Union` — `#[serde(untagged)]` enum.
+//! - `Union` — typed untagged enum with structural member selection, or raw JSON.
 //! - `Intersection` — struct with `#[serde(flatten)]` fields.
 //! - `TaggedUnion` — serde-tagged enum (internal/adjacent/external).
 
@@ -19,12 +19,16 @@ use crate::generators::request_inputs::{
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
-    IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
+    IrTaggedUnion, IrTypeExpr, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
+use sigil_stitch::error::SigilStitchError;
+use sigil_stitch::lang::rust::Rust;
 use sigil_stitch::prelude::{CodeBlock, sigil_quote};
 use sigil_stitch::spec::file_spec::FileSpec;
+use sigil_stitch::spec::fun_spec::FunSpec;
 use sigil_stitch::spec::import_spec::ImportSpec;
+use sigil_stitch::spec::modifiers::DeclarationContext;
 use sigil_stitch::spec::where_spec::TypeArgument;
 use sigil_stitch::type_name::TypeName;
 
@@ -91,7 +95,10 @@ pub fn generate_model_files(
         if inlined_schemas.contains(schema.name.as_str()) {
             continue;
         }
-        let Some(file_spec) = emit_model_file(schema, config, ir) else {
+        let Some(file_spec) = emit_model_file(schema, config, ir).map_err(|source| {
+            GeneratorError::emission(ArtifactKind::Model, &schema.name, source)
+        })?
+        else {
             continue;
         };
         let stem = schema.name.to_snake_case();
@@ -160,13 +167,13 @@ fn emit_model_file(
     schema: &IrSchema,
     config: &RustGeneratorConfig,
     ir: &IrSpec,
-) -> Option<FileSpec> {
+) -> Result<Option<FileSpec>, SigilStitchError> {
     let extra = config.extra_derives.as_ref();
     let utoipa_enabled = config.utoipa.as_ref().is_some_and(|u| u.enabled);
     let per_type_cfg = extra
         .and_then(|e| e.per_type.as_ref())
         .and_then(|m| m.get(&schema.name));
-    match &schema.kind {
+    Ok(match &schema.kind {
         IrSchemaKind::Object(obj) => {
             let derives = merge_utoipa(
                 per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref())),
@@ -188,7 +195,16 @@ fn emit_model_file(
             );
             emit_alias(schema, expr, derives.as_ref())
         }
-        IrSchemaKind::Union(u) => emit_union(schema, u, per_type_cfg, utoipa_enabled),
+        IrSchemaKind::Union(u) => {
+            return super::union::emit_union(
+                schema,
+                u,
+                per_type_cfg.or_else(|| extra.and_then(|e| e.unions.as_ref())),
+                config,
+                ir,
+            )
+            .map(Some);
+        }
         IrSchemaKind::Intersection(i) => {
             let derives = merge_utoipa(
                 per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref())),
@@ -200,9 +216,9 @@ fn emit_model_file(
             let derives = per_type_cfg
                 .or_else(|| extra.and_then(|e| e.unions.as_ref()))
                 .cloned();
-            emit_tagged_union(schema, tu, derives.as_ref(), ir, utoipa_enabled)
+            return emit_tagged_union(schema, tu, derives.as_ref(), ir, utoipa_enabled);
         }
-    }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -474,62 +490,10 @@ fn emit_type_alias_file(schema: &IrSchema, rhs_str: &str) -> Option<FileSpec> {
 }
 
 // ---------------------------------------------------------------------------
-// Union -> #[serde(untagged)] enum
+// Union variant naming (the typed public API is independent of dispatch policy)
 // ---------------------------------------------------------------------------
 
-fn emit_union(
-    schema: &IrSchema,
-    union: &IrUnion,
-    extra: Option<&ExtraDeriveConfig>,
-    utoipa_enabled: bool,
-) -> Option<FileSpec> {
-    let name = schema.name.to_pascal_case();
-    let stem = schema.name.to_snake_case();
-
-    let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
-    fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
-    fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
-
-    let variants: Vec<(String, String)> = union
-        .members
-        .iter()
-        .enumerate()
-        .map(|(i, member)| {
-            let variant_name = union_variant_name(member, i);
-            let rust_type = rust_type_str_model(member);
-            (variant_name, rust_type)
-        })
-        .collect();
-
-    let body = sigil_quote!(RustLang {
-        $if(schema.description.is_some()) {
-            $L(doc_comment_block(schema.description.as_deref().unwrap()).trim_end())
-        }
-        $attr(derive_attr("Debug, Clone, Serialize, Deserialize", extra))
-        #[serde(untagged)]
-        pub enum $N(name.as_str()) {
-            $for((variant_name, rust_type) in variants.iter()) {
-                $N(variant_name.as_str())($L(rust_type.as_str())),
-            }
-        }
-    })
-    .ok()?;
-
-    fsb = fsb.add_code(body);
-
-    if utoipa_enabled {
-        let variant_types: Vec<String> = variants
-            .iter()
-            .map(|(_, rust_type)| rust_type.clone())
-            .collect();
-        let impl_block = build_utoipa_one_of_impl(&name, &variant_types)?;
-        fsb = fsb.add_code(impl_block);
-    }
-
-    fsb.build().ok()
-}
-
-fn union_variant_name(expr: &IrTypeExpr, index: usize) -> String {
+pub(super) fn union_variant_name(expr: &IrTypeExpr, index: usize) -> String {
     match expr.representation() {
         IrTypeExpr::Named(n) => n.to_pascal_case(),
         IrTypeExpr::Primitive(p) => primitive_variant_name(p),
@@ -562,9 +526,9 @@ fn emit_tagged_union(
     extra: Option<&ExtraDeriveConfig>,
     ir: &IrSpec,
     utoipa_enabled: bool,
-) -> Option<FileSpec> {
+) -> Result<Option<FileSpec>, SigilStitchError> {
     if tu.variants.is_empty() {
-        return None;
+        return Ok(None);
     }
 
     let name = schema.name.to_pascal_case();
@@ -621,8 +585,7 @@ fn emit_tagged_union(
                             $attr(rename_attr.as_str())
                         }
                         $N(variant_name.as_str()),
-                    })
-                    .ok()?
+                    })?
                 } else {
                     let field_blocks: Vec<CodeBlock> = non_tag_fields
                         .iter()
@@ -645,9 +608,8 @@ fn emit_tagged_union(
                                 }
                                 $N(field_name.as_str()): $T(field_type),
                             })
-                            .ok()
                         })
-                        .collect::<Option<_>>()?;
+                        .collect::<Result<_, _>>()?;
 
                     let additional_blocks: Vec<CodeBlock> =
                         if let Some(ap) = &obj.additional_properties {
@@ -659,13 +621,10 @@ fn emit_tagged_union(
                                     TypeArgument::Single(TypeName::raw(&ty)),
                                 ],
                             );
-                            vec![
-                                sigil_quote!(RustLang {
-                                    #[serde(flatten)]
-                                    additional_properties: $T(additional_type),
-                                })
-                                .ok()?,
-                            ]
+                            vec![sigil_quote!(RustLang {
+                                #[serde(flatten)]
+                                additional_properties: $T(additional_type),
+                            })?]
                         } else {
                             vec![]
                         };
@@ -678,14 +637,13 @@ fn emit_tagged_union(
                             $C_each(field_blocks)
                             $C_each(additional_blocks)
                         }
-                    })
-                    .ok()?;
+                    })?;
                     // The renderer's structured block emits a trailing newline;
                     // trim it so the static enum-item comma stays adjacent.
                     let mut variant_block = CodeBlock::builder();
                     variant_block.add_code(variant_body.__sigil_trim_trailing_newline());
                     variant_block.add(",", ());
-                    variant_block.build().ok()?
+                    variant_block.build()?
                 }
             } else {
                 let content_ty = rust_type_str_model(&variant.content_type);
@@ -694,8 +652,7 @@ fn emit_tagged_union(
                         $attr(rename_attr.as_str())
                     }
                     $N(variant_name.as_str())($L(content_ty.as_str())),
-                })
-                .ok()?
+                })?
             }
         } else {
             let content_ty = rust_type_str_model(&variant.content_type);
@@ -704,8 +661,7 @@ fn emit_tagged_union(
                     $attr(rename_attr.as_str())
                 }
                 $N(variant_name.as_str())($L(content_ty.as_str())),
-            })
-            .ok()?
+            })?
         };
 
         variant_blocks.push(variant_block);
@@ -722,22 +678,21 @@ fn emit_tagged_union(
         pub enum $N(name.as_str()) {
             $C_each(variant_blocks);
         }
-    })
-    .ok()?;
+    })?;
 
     fsb = fsb.add_code(body);
 
     if utoipa_enabled {
-        let variant_types: Vec<String> = tu
+        let variant_types: Vec<TypeName> = tu
             .variants
             .iter()
-            .map(|v| rust_type_str_model(&v.content_type))
+            .map(|v| rust_model_type(&v.content_type))
             .collect();
         let impl_block = build_utoipa_one_of_impl(&name, &variant_types)?;
         fsb = fsb.add_code(impl_block);
     }
 
-    fsb.build().ok()
+    fsb.build().map(Some)
 }
 
 // ---------------------------------------------------------------------------
@@ -793,30 +748,45 @@ fn emit_intersection(
 // Utoipa impl helpers
 // ---------------------------------------------------------------------------
 
-fn build_utoipa_one_of_impl(name: &str, variant_types: &[String]) -> Option<CodeBlock> {
-    let items: Vec<String> = variant_types
-        .iter()
-        .map(|rt| format!("    .item(<{rt} as utoipa::PartialSchema>::schema())"))
-        .collect();
-
+pub(super) fn build_utoipa_one_of_impl(
+    name: &str,
+    variant_types: &[TypeName],
+) -> Result<CodeBlock, SigilStitchError> {
+    let schema = FunSpec::builder("schema")
+        .returns(vec![crate::generators::type_application(
+            TypeName::qualified("utoipa::openapi", "RefOr"),
+            vec![TypeName::qualified("utoipa::openapi::schema", "Schema")],
+        )])
+        .body(sigil_quote!(RustLang {
+            utoipa::openapi::schema::Schema::OneOf(
+                utoipa::openapi::schema::OneOfBuilder::new()
+                    $for(variant in variant_types) {
+                        .item(<$T(variant.clone()) as utoipa::PartialSchema>::schema())
+                    }
+                    .build()
+            ).into()
+        })?)
+        .build()?
+        .emit(&Rust::new(), DeclarationContext::Member)?;
+    let schema_name = FunSpec::builder("name")
+        // TypeArgument cannot represent lifetimes in sigil-stitch 0.7.5.
+        .returns(vec![crate::generators::type_application(
+            TypeName::qualified("std::borrow", "Cow"),
+            vec![TypeName::raw("'static"), TypeName::primitive("str")],
+        )])
+        .body(sigil_quote!(RustLang { std::borrow::Cow::Borrowed($S(name)) })?)
+        .build()?
+        .emit(&Rust::new(), DeclarationContext::Member)?;
+    // No trait-implementation spec exists; keep the methods structured and
+    // quote only the surrounding implementation blocks.
     sigil_quote!(RustLang {
         impl utoipa::PartialSchema for $N(name) {
-            fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
-                $L("utoipa::openapi::schema::Schema::OneOf(utoipa::openapi::schema::OneOfBuilder::new()")
-                $for(item in items.iter()) {
-                    $L(item.as_str())
-                }
-                $L("    .build()).into()")
-            }
+            $C(schema)
         }
-
         impl utoipa::ToSchema for $N(name) {
-            fn name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed($S(name))
-            }
+            $C(schema_name)
         }
     })
-    .ok()
 }
 
 // ---------------------------------------------------------------------------
@@ -924,6 +894,29 @@ pub fn rust_type_str_qualified(expr: &IrTypeExpr, ir: &IrSpec) -> String {
 }
 
 /// Map an IR type for use within model files (sibling references use `super::`).
+pub(super) fn rust_model_type(expr: &IrTypeExpr) -> TypeName {
+    use crate::generators::type_application;
+
+    match expr.representation() {
+        IrTypeExpr::Named(name) => TypeName::qualified("super", &name.to_pascal_case()),
+        IrTypeExpr::Array(inner) => {
+            type_application(TypeName::primitive("Vec"), vec![rust_model_type(inner)])
+        }
+        IrTypeExpr::Map(inner) => type_application(
+            TypeName::qualified("std::collections", "HashMap"),
+            vec![TypeName::primitive("String"), rust_model_type(inner)],
+        ),
+        IrTypeExpr::Nullable(inner) => TypeName::optional(rust_model_type(inner)),
+        IrTypeExpr::Primitive(IrPrimitive::Binary) => {
+            type_application(TypeName::primitive("Vec"), vec![TypeName::primitive("u8")])
+        }
+        IrTypeExpr::Primitive(primitive) => TypeName::primitive(rust_primitive(primitive)),
+        IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => TypeName::primitive("String"),
+        IrTypeExpr::Union(_) | IrTypeExpr::Any => TypeName::qualified("serde_json", "Value"),
+        IrTypeExpr::ScalarEnum { .. } => unreachable!("representation unwraps scalar enums"),
+    }
+}
+
 fn rust_type_str_model(expr: &IrTypeExpr) -> String {
     match expr.representation() {
         IrTypeExpr::Named(name) => format!("super::{}", name.to_pascal_case()),

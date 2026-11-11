@@ -82,30 +82,80 @@ struct AppError {
 }
 ```
 
+## Untagged Union Deserialization
+
+Untagged unions keep their existing typed variants and untagged serialization.
+Deserialization selects members using the shared IR's JSON shapes, required wire
+keys, finite scalar values (including numeric and boolean enums), nested arrays
+and maps, and productive recursive references. This prevents an earlier member
+with an unconstrained Rust integer field from swallowing a later member's payload.
+Repeated recursive checks reuse results within one member-selection pass, without
+changing candidate order or sharing cached results across decoded values.
+
+### `untagged_union_strategy`
+
+| Value | Generated API and behavior |
+| --- | --- |
+| `"firstMatch"` (default) | Keep typed variants; select the first structural match in schema order, preferring concrete members to opaque fallbacks. |
+| `"strict"` | Keep the same typed API; reject multiple concrete matches before deserializing any member. Use an opaque fallback only when no concrete member matches. |
+| `"raw"` | Explicitly replace each untagged union with an untagged enum containing only `Raw(serde_json::Value)`. Preserve known, ambiguous, unmatched, and null JSON without typed selection. |
+
+Both typed policies reject unmatched values. After selection, the chosen member
+is deserialized once; its errors (including nested strict-union errors) propagate
+instead of being hidden by another member or an opaque fallback. Structural
+matching is not a full JSON Schema validator: formats, bounds, and other validation
+keywords are not selection rules, and native Serde decoding can still reject a
+selected payload. Serialization does not add schema validation.
+
+The typed enum does not gain synthetic `Raw` or `Null` variants. Explicitly nullable
+use-site expressions continue to use `Option<Union>`; decode a standalone nullable
+union through `Option<Union>` as well. As before, a named union's root nullable
+flag alone does not change its Rust enum or automatically wrap references to it.
+Explicit `raw` changes the union's Rust API, so callers
+construct and match `Union::Raw(value)` rather than typed variants. It does not
+change tagged unions or turn ordinary models into raw JSON.
+
+```toml
+[rust-reqwest]
+untagged_union_strategy = "strict"
+```
+
+The same setting works for `rust-ureq` and `rust-aioduct`, or as a CLI override:
+
+```sh
+openapi-nexus generate --input api.yaml --output sdk --generators rust-reqwest \
+  --generator-config rust-reqwest.untagged_union_strategy=raw
+```
+
+Typed decoding retains the selected member's declared payload, not arbitrary
+unknown fields. Dictionary/additional-property representation and multi-member
+`allOf` behavior are unchanged. Choose `raw` when the full JSON must be retained.
+
 ## Full Example
 
 ```toml
-[generators.rust-reqwest]
+[rust-reqwest]
 crate_name = "my-api-client"
 workspace_mode = true
 workspace_deps = "workspace_version"
+untagged_union_strategy = "firstMatch"
 
-[generators.rust-reqwest.extra_derives.structs]
+[rust-reqwest.extra_derives.structs]
 derives = ["PartialEq", "Eq"]
 
-[generators.rust-reqwest.extra_derives.enums]
+[rust-reqwest.extra_derives.enums]
 derives = ["Hash"]
 
-[generators.rust-reqwest.extra_derives.unions]
+[rust-reqwest.extra_derives.unions]
 derives = ["PartialEq"]
 
-[generators.rust-reqwest.extra_derives.response_structs]
+[rust-reqwest.extra_derives.response_structs]
 derives = ["PartialEq"]
 
-[generators.rust-reqwest.extra_derives.per_type.MySpecialSchema]
+[rust-reqwest.extra_derives.per_type.MySpecialSchema]
 derives = ["Default"]
 
-[generators.rust-reqwest.utoipa]
+[rust-reqwest.utoipa]
 enabled = true
 dependency = '{ version = "5" }'
 ```
@@ -148,23 +198,27 @@ Add custom derive macros to generated types. Each category targets a different s
 
 - `structs` — object schemas
 - `enums` — string and integer enums
-- `unions` — tagged unions (external tagging)
+- `unions` — tagged and untagged unions (including explicit raw wrappers)
 - `response_structs` — per-operation response type wrappers
 
 ```toml
-[generators.rust-reqwest.extra_derives.structs]
+[rust-reqwest.extra_derives.structs]
 derives = ["PartialEq", "Eq"]
 dependencies = { fake = '"2"' }
 ```
 
 The `dependencies` field adds entries to the generated `Cargo.toml`.
+For untagged unions, the emitter owns Serde implementations and, when enabled,
+utoipa implementations. Equivalent short, crate-qualified, and absolute derive
+paths (such as `Deserialize`, `serde::Deserialize`, and `::serde::Deserialize`)
+do not add conflicting implementations.
 
 ### `extra_derives.per_type`
 
 Target a specific schema by name:
 
 ```toml
-[generators.rust-reqwest.extra_derives.per_type.UserProfile]
+[rust-reqwest.extra_derives.per_type.UserProfile]
 derives = ["Default", "Hash"]
 ```
 
@@ -173,7 +227,7 @@ derives = ["Default", "Hash"]
 Native [utoipa](https://github.com/juhaku/utoipa) integration for OpenAPI schema generation at runtime.
 
 ```toml
-[generators.rust-reqwest.utoipa]
+[rust-reqwest.utoipa]
 enabled = true
 dependency = '{ version = "5" }'
 ```
@@ -194,7 +248,7 @@ You do NOT need to add `utoipa::ToSchema` to `extra_derives` when using this con
 Configure aioduct-specific dependency features for the generated crate. This section only applies to the `rust-aioduct` generator.
 
 ```toml
-[generators.rust-aioduct.aioduct]
+[rust-aioduct.aioduct]
 version = "0.2"
 runtime = "tokio"
 tls = "rustls-ring"

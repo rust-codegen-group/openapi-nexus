@@ -4,17 +4,117 @@
 // Enum Representation API — 1.0.0
 // This API demonstrates all 4 kinds of enum representation types: Externally Tagged, Internally Tagged, Adjacently Tagged, and Untagged
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
 ///
 /// Serializes as externally tagged: `{"SimpleA": null}`, `{"VariantA": {"field1": "...", "field2": 123}}`,
 /// `{"SimpleB": null}`, `{"VariantB": {"field3": true, "field4": 1.23}}`
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum MixedEnum {
     Variant0(String),
     MixedEnumMember2(super::MixedEnumMember2),
     Variant2(String),
     MixedEnumMember4(super::MixedEnumMember4),
+}
+
+impl<'de> serde::Deserialize<'de> for MixedEnum {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let candidate = < serde_json::Value as serde::Deserialize >::deserialize(deserializer)?;
+        let mut selected = None;
+        if selected.is_none() && __nexus_matches_0(&candidate) {
+            selected = Some(0);
+        }
+        if selected.is_none() && __nexus_matches_1(&candidate) {
+            selected = Some(1);
+        }
+        if selected.is_none() && __nexus_matches_5(&candidate) {
+            selected = Some(2);
+        }
+        if selected.is_none() && __nexus_matches_6(&candidate) {
+            selected = Some(3);
+        }
+        match selected {
+            Some(0) => serde_json::from_value::<String>(candidate).map(Self::Variant0).map_err(serde::de::Error::custom),
+            Some(1) => serde_json::from_value::<super::MixedEnumMember2>(candidate).map(Self::MixedEnumMember2).map_err(serde::de::Error::custom),
+            Some(2) => serde_json::from_value::<String>(candidate).map(Self::Variant2).map_err(serde::de::Error::custom),
+            Some(3) => serde_json::from_value::<super::MixedEnumMember4>(candidate).map(Self::MixedEnumMember4).map_err(serde::de::Error::custom),
+            _ => Err(serde::de::Error::custom("value does not match any member of untagged union MixedEnum")),
+        }
+    }
+}
+
+fn __nexus_matches_0(candidate: &serde_json::Value) -> bool {
+    candidate.as_str() == Some("SimpleA")
+}
+
+fn __nexus_matches_1(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("VariantA").is_some_and(|item | __nexus_matches_2(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_2(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("field1").is_some_and(|item | __nexus_matches_3(item)) {
+        return false;
+    }
+    if!object.get("field2").is_some_and(|item | __nexus_matches_4(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_3(candidate: &serde_json::Value) -> bool {
+    candidate.is_string()
+}
+
+fn __nexus_matches_4(candidate: &serde_json::Value) -> bool {
+    candidate.is_i64() || candidate.is_u64()
+}
+
+fn __nexus_matches_5(candidate: &serde_json::Value) -> bool {
+    candidate.as_str() == Some("SimpleB")
+}
+
+fn __nexus_matches_6(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("VariantB").is_some_and(|item | __nexus_matches_7(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_7(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("field3").is_some_and(|item | __nexus_matches_8(item)) {
+        return false;
+    }
+    if!object.get("field4").is_some_and(|item | __nexus_matches_9(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_8(candidate: &serde_json::Value) -> bool {
+    candidate.is_boolean()
+}
+
+fn __nexus_matches_9(candidate: &serde_json::Value) -> bool {
+    candidate.is_number()
 }

@@ -582,6 +582,7 @@ impl<'a> ValuePlan<'a> {
             type_expr,
             shape,
             fallback,
+            ..
         } in candidates
         {
             let check = condition(

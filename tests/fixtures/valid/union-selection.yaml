@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info: {title: Union selection contract, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    ClientTool:
+      type: object
+      required: [name, input_schema]
+      properties:
+        name: {type: string}
+        input_schema: {type: object, additionalProperties: true}
+    SearchTool:
+      type: object
+      required: [type, name]
+      properties:
+        type: {type: string, enum: [web_search_20250305]}
+        name: {type: string, enum: [web_search]}
+        max_uses: {type: integer}
+    Tool:
+      oneOf:
+        - {$ref: '#/components/schemas/ClientTool'}
+        - {$ref: '#/components/schemas/SearchTool'}
+    Request:
+      type: object
+      required: [tools]
+      properties:
+        tools: {type: array, items: {$ref: '#/components/schemas/Tool'}}
+    NumericOne:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, enum: [1]}
+        first_value: {type: string}
+    NumericTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, enum: [2]}
+        second_value: {type: string}
+    Choice:
+      oneOf:
+        - {$ref: '#/components/schemas/NumericOne'}
+        - {$ref: '#/components/schemas/NumericTwo'}
+    RequiredOne:
+      type: object
+      required: [revision, first_value]
+      properties:
+        revision: {type: integer, enum: [1]}
+        first_value: {type: string}
+    RequiredTwo:
+      type: object
+      required: [revision, second_value]
+      properties:
+        revision: {type: integer, enum: [2]}
+        second_value: {type: string}
+    RequiredChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/RequiredOne'}
+        - {$ref: '#/components/schemas/RequiredTwo'}
+    Envelope:
+      type: object
+      required: [choice, choice_list, choice_map]
+      properties:
+        choice: {$ref: '#/components/schemas/Choice'}
+        choice_list: {type: array, items: {$ref: '#/components/schemas/Choice'}}
+        choice_map: {type: object, additionalProperties: {$ref: '#/components/schemas/Choice'}}

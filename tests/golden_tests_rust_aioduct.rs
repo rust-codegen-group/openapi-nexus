@@ -247,3 +247,36 @@ fn test_utoipa_with_extra_derives_golden() {
         UPDATE_HINT,
     );
 }
+
+#[test]
+fn test_union_selection_golden() {
+    run_golden_test(
+        &RustAioductCodeGenerator::new(Default::default()),
+        golden_dir(),
+        "union-selection",
+        "valid/union-selection.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+fn test_untagged_union_policies_golden() {
+    let configs: toml::value::Table =
+        toml::from_str(include_str!("generated-clients/rust/union-policies.toml")).unwrap();
+    for (strategy, suffix) in [
+        ("firstMatch", "first-match"),
+        ("strict", "strict"),
+        ("raw", "raw"),
+    ] {
+        let mut config = configs["rust-aioduct"].as_table().unwrap().clone();
+        config.insert("untagged_union_strategy".into(), strategy.into());
+        config.insert("crate_name".into(), format!("rust-union-{suffix}").into());
+        run_golden_test(
+            &RustAioductCodeGenerator::new(config),
+            golden_dir(),
+            &format!("union-{suffix}"),
+            "valid/rust-union-policies.yaml",
+            UPDATE_HINT,
+        );
+    }
+}

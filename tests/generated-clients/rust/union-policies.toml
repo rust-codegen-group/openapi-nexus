@@ -1,0 +1,31 @@
+# Exercise the same policy options, extra derives, and utoipa integration in
+# every transport. The generation entrypoint overrides only name and policy.
+[rust-reqwest.utoipa]
+enabled = true
+dependency = '"5"'
+[rust-reqwest.extra_derives.structs]
+derives = ["PartialEq"]
+[rust-reqwest.extra_derives.unions]
+derives = ["PartialEq", "::serde::Deserialize", "::serde::Serialize", "::utoipa::ToSchema"]
+[rust-reqwest.extra_derives.per_type.ScalarChoice]
+derives = ["PartialEq", "Deserialize", "serde::Deserialize", "serde::Serialize", "::serde::Deserialize", "::serde::Serialize", "utoipa::ToSchema", "::utoipa::ToSchema"]
+
+[rust-ureq.utoipa]
+enabled = true
+dependency = '"5"'
+[rust-ureq.extra_derives.structs]
+derives = ["PartialEq"]
+[rust-ureq.extra_derives.unions]
+derives = ["PartialEq", "::serde::Deserialize", "::serde::Serialize", "::utoipa::ToSchema"]
+[rust-ureq.extra_derives.per_type.ScalarChoice]
+derives = ["PartialEq", "Deserialize", "serde::Deserialize", "serde::Serialize", "::serde::Deserialize", "::serde::Serialize", "utoipa::ToSchema", "::utoipa::ToSchema"]
+
+[rust-aioduct.utoipa]
+enabled = true
+dependency = '"5"'
+[rust-aioduct.extra_derives.structs]
+derives = ["PartialEq"]
+[rust-aioduct.extra_derives.unions]
+derives = ["PartialEq", "::serde::Deserialize", "::serde::Serialize", "::utoipa::ToSchema"]
+[rust-aioduct.extra_derives.per_type.ScalarChoice]
+derives = ["PartialEq", "Deserialize", "serde::Deserialize", "serde::Serialize", "::serde::Deserialize", "::serde::Serialize", "utoipa::ToSchema", "::utoipa::ToSchema"]

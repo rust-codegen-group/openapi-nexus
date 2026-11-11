@@ -4,25 +4,78 @@
 // Utoipa Mixed Types Test — 1.0.0
 // Test fixture covering all schema kinds with utoipa enabled
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// A payment method (card or bank transfer)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum PaymentMethod {
     CardPayment(super::CardPayment),
     BankTransfer(super::BankTransfer),
 }
 
-impl utoipa::PartialSchema for PaymentMethod {
-    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
-        utoipa::openapi::schema::Schema::OneOf(utoipa::openapi::schema::OneOfBuilder::new()
-            .item(<super::CardPayment as utoipa::PartialSchema>::schema())
-            .item(<super::BankTransfer as utoipa::PartialSchema>::schema())
-            .build()).into()
+impl<'de> serde::Deserialize<'de> for PaymentMethod {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let candidate = < serde_json::Value as serde::Deserialize >::deserialize(deserializer)?;
+        let mut selected = None;
+        if selected.is_none() && __nexus_matches_0(&candidate) {
+            selected = Some(0);
+        }
+        if selected.is_none() && __nexus_matches_2(&candidate) {
+            selected = Some(1);
+        }
+        match selected {
+            Some(0) => serde_json::from_value::<super::CardPayment>(candidate).map(Self::CardPayment).map_err(serde::de::Error::custom),
+            Some(1) => serde_json::from_value::<super::BankTransfer>(candidate).map(Self::BankTransfer).map_err(serde::de::Error::custom),
+            _ => Err(serde::de::Error::custom("value does not match any member of untagged union PaymentMethod")),
+        }
     }
 }
 
+fn __nexus_matches_0(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("card_number").is_some_and(|item | __nexus_matches_1(item)) {
+        return false;
+    }
+    if!object.get("cvv").is_some_and(|item | __nexus_matches_1(item)) {
+        return false;
+    }
+    if!object.get("expiry").is_some_and(|item | __nexus_matches_1(item)) {
+        return false;
+    }
+    true
+}
+
+fn __nexus_matches_1(candidate: &serde_json::Value) -> bool {
+    candidate.is_string()
+}
+
+fn __nexus_matches_2(candidate: &serde_json::Value) -> bool {
+    let object = match candidate.as_object() {
+        Some(object) => object,
+        None => return false,
+    };
+    if!object.get("account_number").is_some_and(|item | __nexus_matches_1(item)) {
+        return false;
+    }
+    if!object.get("routing_number").is_some_and(|item | __nexus_matches_1(item)) {
+        return false;
+    }
+    true
+}
+
+impl utoipa::PartialSchema for PaymentMethod {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        utoipa::openapi::schema::Schema::OneOf(
+        utoipa::openapi::schema::OneOfBuilder::new()
+            .item(<super::CardPayment as utoipa::PartialSchema >::schema()).item(<super::BankTransfer as utoipa::PartialSchema >::schema())
+
+        .build()).into()
+    }
+}
 impl utoipa::ToSchema for PaymentMethod {
     fn name() -> std::borrow::Cow<'static, str> {
         std::borrow::Cow::Borrowed("PaymentMethod")
