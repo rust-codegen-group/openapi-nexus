@@ -30,18 +30,34 @@ sealed class OneOfTypes private constructor() {
     data class VariantBoolean(val value0: Boolean) : OneOfTypes()
 }
 
-private class OneOfTypesJsonAdapter: TypeAdapter<OneOfTypes>() {
-    private val gson = Gson()
+private class OneOfTypesJsonAdapter : TypeAdapter<OneOfTypes>() {
+    private val gson: Gson = Gson()
 
-    override fun read (reader: JsonReader): OneOfTypes? {
+    override fun read(reader: JsonReader): OneOfTypes? {
         val element = JsonParser.parseReader(reader)
-        return when {
-            element.isJsonNull -> null
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> OneOfTypes.VariantString(element.asString)
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> OneOfTypes.VariantNumber(element.asDouble)
-            element.isJsonPrimitive && element.asJsonPrimitive.isBoolean -> OneOfTypes.VariantBoolean(element.asBoolean)
-            else -> throw JsonParseException("unknown OneOfTypes union value")
+        if (element.isJsonNull) {
+            return null
         }
+        var selected = -1
+        if (selected < 0 && matches0(element)) {
+            selected = 0
+        }
+        if (selected < 0 && matches1(element)) {
+            selected = 1
+        }
+        if (selected < 0 && matches2(element)) {
+            selected = 2
+        }
+        if (selected == 0) {
+            return OneOfTypes.VariantString(element.asString)
+        }
+        if (selected == 1) {
+            return OneOfTypes.VariantNumber(element.asDouble)
+        }
+        if (selected == 2) {
+            return OneOfTypes.VariantBoolean(element.asBoolean)
+        }
+        throw JsonParseException("unknown OneOfTypes union value")
     }
 
     override fun write(writer: JsonWriter, value: OneOfTypes?) {
@@ -51,14 +67,26 @@ private class OneOfTypesJsonAdapter: TypeAdapter<OneOfTypes>() {
         }
         when (value) {
             is OneOfTypes.VariantString -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<String>() {}.type, writer)
             }
             is OneOfTypes.VariantNumber -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<Double>() {}.type, writer)
             }
             is OneOfTypes.VariantBoolean -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<Boolean>() {}.type, writer)
             }
         }
+    }
+
+    private fun matches0(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString
+    }
+
+    private fun matches1(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isNumber
+    }
+
+    private fun matches2(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isBoolean
     }
 }

@@ -1,0 +1,7 @@
+# Consumer project name and input under tests/fixtures/.
+union-selection valid/union-selection.yaml
+union-first-match valid/java-union-policies.yaml firstMatch
+union-strict valid/java-union-policies.yaml strict
+union-raw valid/java-union-policies.yaml raw
+union-helper-types valid/java-union-helper-types.yaml firstMatch
+union-helper-types-strict valid/java-union-helper-types.yaml strict

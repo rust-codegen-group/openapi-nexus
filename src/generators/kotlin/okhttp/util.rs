@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::ir::types::{IrPrimitive, IrTypeExpr};
+use crate::ir::types::{IrIntersection, IrPrimitive, IrTypeExpr};
 use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::lang::kotlin::Kotlin;
 use sigil_stitch::prelude::RendererLang;
@@ -90,6 +90,20 @@ pub fn unique_name(desired: &str, used: &mut HashSet<String>) -> String {
     unreachable!()
 }
 
+/// Preserve the same member order and wrapper keys for declarations and matching.
+pub(super) fn intersection_fields(intersection: &IrIntersection) -> Vec<(String, &IrTypeExpr)> {
+    let mut used_names = HashSet::new();
+    intersection
+        .members
+        .iter()
+        .map(|member| {
+            let field_name =
+                unique_name(&kt_type_str(member).to_lower_camel_case(), &mut used_names);
+            (field_name, member)
+        })
+        .collect()
+}
+
 pub fn sanitize_operation_id(op_id: &str, method: &str, path: &str) -> String {
     if !op_id.is_empty() {
         return op_id.to_string();
@@ -135,7 +149,8 @@ pub fn render_value_as_string(value_expr: &str, t: &IrTypeExpr) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{kt_decl_name, kt_param_name, kt_ref};
+    use super::{intersection_fields, kt_decl_name, kt_param_name, kt_ref};
+    use crate::ir::types::{IrIntersection, IrTypeExpr};
 
     #[test]
     fn kotlin_reserved_identifiers_are_escaped_at_emission() {
@@ -145,5 +160,28 @@ mod tests {
         assert_eq!(kt_ref("class"), "`class`");
         assert_eq!(kt_ref("file"), "`file`");
         assert_eq!(kt_ref("name"), "name");
+    }
+
+    #[test]
+    fn intersection_wrapper_fields_retain_order_and_disambiguate_type_spellings() {
+        let intersection = IrIntersection {
+            members: vec![
+                IrTypeExpr::Named("foo_bar".into()),
+                IrTypeExpr::Named("FooBar".into()),
+                IrTypeExpr::Nullable(Box::new(IrTypeExpr::Named("FooBar".into()))),
+                IrTypeExpr::Array(Box::new(IrTypeExpr::Named("FooBar".into()))),
+            ],
+        };
+        let fields = intersection_fields(&intersection);
+        assert_eq!(
+            fields
+                .iter()
+                .map(|(name, _)| name.as_str())
+                .collect::<Vec<_>>(),
+            ["fooBar", "fooBar2", "fooBar3", "listFooBar"]
+        );
+        for ((_, member), original) in fields.iter().zip(&intersection.members) {
+            assert!(std::ptr::eq(*member, original));
+        }
     }
 }

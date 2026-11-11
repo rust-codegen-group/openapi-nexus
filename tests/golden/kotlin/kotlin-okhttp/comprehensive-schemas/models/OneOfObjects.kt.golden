@@ -28,17 +28,28 @@ sealed class OneOfObjects private constructor() {
     data class VariantNestedObject(val value0: NestedObject) : OneOfObjects()
 }
 
-private class OneOfObjectsJsonAdapter: TypeAdapter<OneOfObjects>() {
-    private val gson = Gson()
+private class OneOfObjectsJsonAdapter : TypeAdapter<OneOfObjects>() {
+    private val gson: Gson = Gson()
 
-    override fun read (reader: JsonReader): OneOfObjects? {
+    override fun read(reader: JsonReader): OneOfObjects? {
         val element = JsonParser.parseReader(reader)
-        return when {
-            element.isJsonNull -> null
-            ((element.isJsonObject && element.asJsonObject.has("id")) && element.asJsonObject.has("name")) -> OneOfObjects.VariantBasicObject(gson.fromJson(element, object: TypeToken<BasicObject>() {}.type))
-            element.isJsonObject -> OneOfObjects.VariantNestedObject(gson.fromJson(element, object: TypeToken<NestedObject>() {}.type))
-            else -> throw JsonParseException("unknown OneOfObjects union value")
+        if (element.isJsonNull) {
+            return null
         }
+        var selected = -1
+        if (selected < 0 && matches0(element)) {
+            selected = 0
+        }
+        if (selected < 0 && matches4(element)) {
+            selected = 1
+        }
+        if (selected == 0) {
+            return OneOfObjects.VariantBasicObject(gson.fromJson(element, object: TypeToken<BasicObject>() {}.type))
+        }
+        if (selected == 1) {
+            return OneOfObjects.VariantNestedObject(gson.fromJson(element, object: TypeToken<NestedObject>() {}.type))
+        }
+        throw JsonParseException("unknown OneOfObjects union value")
     }
 
     override fun write(writer: JsonWriter, value: OneOfObjects?) {
@@ -48,11 +59,122 @@ private class OneOfObjectsJsonAdapter: TypeAdapter<OneOfObjects>() {
         }
         when (value) {
             is OneOfObjects.VariantBasicObject -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<BasicObject>() {}.type, writer)
             }
             is OneOfObjects.VariantNestedObject -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<NestedObject>() {}.type, writer)
             }
         }
+    }
+
+    private fun matches0(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (jsonObject.has("active") && !matches1(jsonObject.get("active"))) {
+            return false
+        }
+        if (!jsonObject.has("id") || !matches2(jsonObject.get("id"))) {
+            return false
+        }
+        if (!jsonObject.has("name") || !matches3(jsonObject.get("name"))) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches1(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isBoolean
+    }
+
+    private fun matches2(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isNumber && isIntegerNumber(candidate)
+    }
+
+    private fun matches3(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString
+    }
+
+    private fun matches4(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (jsonObject.has("metadata") && !matches5(jsonObject.get("metadata"))) {
+            return false
+        }
+        if (jsonObject.has("user") && !matches6(jsonObject.get("user"))) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches5(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (jsonObject.has("created") && !matches3(jsonObject.get("created"))) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches6(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (!jsonObject.has("id") || !matches2(jsonObject.get("id"))) {
+            return false
+        }
+        if (jsonObject.has("name") && !matches3(jsonObject.get("name"))) {
+            return false
+        }
+        return true
+    }
+
+    private fun numberSignificand(literal: kotlin.String): java.math.BigDecimal {
+        val exponent = maxOf(literal.indexOf('e'), literal.indexOf('E'))
+        return java.math.BigDecimal(if (exponent < 0) literal else literal.substring(0, exponent)).stripTrailingZeros()
+    }
+
+    private fun numberExponent(literal: kotlin.String): java.math.BigInteger {
+        val exponent = maxOf(literal.indexOf('e'), literal.indexOf('E'))
+        return if (exponent < 0) java.math.BigInteger.ZERO else java.math.BigInteger(literal.substring(exponent + 1))
+    }
+
+    private fun isIntegerNumber(candidate: JsonElement): kotlin.Boolean {
+        val literal = candidate.asString
+        val significand = numberSignificand(literal)
+        return significand.signum() == 0 || numberExponent(literal).compareTo(java.math.BigInteger.valueOf(significand.scale().toLong())) >= 0
+    }
+
+    private fun isBinaryNumber(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonPrimitive || !candidate.asJsonPrimitive.isNumber || !isIntegerNumber(candidate)) {
+            return false
+        }
+        val literal = candidate.asString
+        val significand = numberSignificand(literal)
+        if (significand.signum() == 0) {
+            return true
+        }
+        val scale = numberExponent(literal).subtract(java.math.BigInteger.valueOf(significand.scale().toLong()))
+        if (scale.compareTo(java.math.BigInteger.valueOf(2)) > 0) {
+            return false
+        }
+        val number = significand.unscaledValue().multiply(java.math.BigInteger.TEN.pow(scale.toInt()))
+        return number.compareTo(java.math.BigInteger.valueOf(-128)) >= 0 && number.compareTo(java.math.BigInteger.valueOf(255)) <= 0
+    }
+
+    private fun matchesNumber(candidate: JsonElement, expected: kotlin.String): kotlin.Boolean {
+        val literal = candidate.asString
+        val significand = numberSignificand(literal)
+        val expectedNumber = java.math.BigDecimal(expected).stripTrailingZeros()
+        if (significand.unscaledValue() != expectedNumber.unscaledValue()) {
+            return false
+        }
+        return significand.signum() == 0 || numberExponent(literal) == java.math.BigInteger.valueOf(significand.scale().toLong() - expectedNumber.scale())
     }
 }

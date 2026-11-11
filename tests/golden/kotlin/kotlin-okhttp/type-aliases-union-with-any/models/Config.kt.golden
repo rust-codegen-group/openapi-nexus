@@ -27,17 +27,34 @@ sealed class Config private constructor() {
     data class VariantAny(val value0: JsonElement) : Config()
 }
 
-private class ConfigJsonAdapter: TypeAdapter<Config>() {
-    private val gson = Gson()
+private class ConfigJsonAdapter : TypeAdapter<Config>() {
+    private val gson: Gson = Gson()
 
-    override fun read (reader: JsonReader): Config? {
+    override fun read(reader: JsonReader): Config? {
         val element = JsonParser.parseReader(reader)
-        return when {
-            element.isJsonNull -> null
-            element.isJsonPrimitive && element.asJsonPrimitive.isString -> Config.VariantString(element.asString)
-            element.isJsonPrimitive && element.asJsonPrimitive.isNumber -> Config.VariantNumber(element.asDouble)
-            else -> Config.VariantAny(gson.fromJson(element, object: TypeToken<JsonElement>() {}.type))
+        if (element.isJsonNull) {
+            return null
         }
+        var selected = -1
+        if (selected < 0 && matches0(element)) {
+            selected = 0
+        }
+        if (selected < 0 && matches1(element)) {
+            selected = 1
+        }
+        if (selected < 0 && true) {
+            selected = 2
+        }
+        if (selected == 0) {
+            return Config.VariantString(element.asString)
+        }
+        if (selected == 1) {
+            return Config.VariantNumber(element.asDouble)
+        }
+        if (selected == 2) {
+            return Config.VariantAny(gson.fromJson(element, object: TypeToken<JsonElement>() {}.type))
+        }
+        throw JsonParseException("unknown Config union value")
     }
 
     override fun write(writer: JsonWriter, value: Config?) {
@@ -47,14 +64,22 @@ private class ConfigJsonAdapter: TypeAdapter<Config>() {
         }
         when (value) {
             is Config.VariantString -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<String>() {}.type, writer)
             }
             is Config.VariantNumber -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<Double>() {}.type, writer)
             }
             is Config.VariantAny -> {
-                gson.toJson(gson.toJsonTree(value.value0), writer)
+                gson.toJson(value.value0, object: TypeToken<JsonElement>() {}.type, writer)
             }
         }
+    }
+
+    private fun matches0(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString
+    }
+
+    private fun matches1(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isNumber
     }
 }
