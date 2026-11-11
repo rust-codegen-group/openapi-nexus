@@ -5,8 +5,11 @@
 
 from __future__ import annotations
 
+import json
+
 from collections.abc import Mapping
 
+from ..models import _union
 from ..models.config import Config
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
@@ -39,11 +42,13 @@ class DefaultApi:
         path = "/test"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
-        response = self._client.request("POST", path, json=body, headers=headers)
+        _union_body = _union.value_0_to_dict(body)
+        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
         if not (200 <= response.status_code < 300):
             detail = TestUnionWithAnyUnexpected(response.status_code, response.headers, response.content)
             raise TestUnionWithAnyError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
-        data = response.json()  # type: ignore[return-value]
+        _union_data = _union.value_0_from_dict(response.json())
+        data = _union_data
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
     def test_union_with_any(self, *, body: Config) -> Config:

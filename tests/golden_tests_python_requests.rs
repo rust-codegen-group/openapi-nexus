@@ -18,10 +18,26 @@ fn golden_dir() -> &'static Path {
 
 const UPDATE_HINT: &str = "UPDATE_GOLDEN=1 cargo test --test golden_tests_python_requests";
 
+#[test]
+fn test_untagged_union_policies_golden() {
+    for strategy in ["strict", "raw"] {
+        let config = toml::toml! { untagged_union_strategy = strategy };
+        let generator = PythonRequestsCodeGenerator::new(config);
+        run_golden_test(
+            &generator,
+            golden_dir(),
+            &format!("untagged-union-{strategy}"),
+            "valid/python-untagged-union.yaml",
+            UPDATE_HINT,
+        );
+    }
+}
+
 #[rustfmt::skip]
 fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
     test_cases_from_slice(&[
         ("petstore", "valid/petstore.yaml"),
+        ("untagged-union", "valid/python-untagged-union.yaml"),
 
         ("comprehensive-schemas", "valid/comprehensive-schemas.yaml"),
         ("delete-with-response-schema", "valid/delete-with-response-schema.yaml"),
@@ -111,6 +127,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_untagged_union_golden: "untagged-union",
     test_nested_nullable_golden: "nested-nullable",
     test_petstore_golden: "petstore",
 

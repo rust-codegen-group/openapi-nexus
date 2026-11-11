@@ -37,4 +37,3 @@ def adjacently_tagged_enum_to_dict(obj: AdjacentlyTaggedEnum) -> dict[str, objec
     elif isinstance(obj, VariantB):
         return {"ty": "ADJACENTLY_TAGGED_ENUM_VARIANT_B", "data": obj.to_dict()}
     raise ValueError(f"Unknown variant for AdjacentlyTaggedEnum: {type(obj)}")
-

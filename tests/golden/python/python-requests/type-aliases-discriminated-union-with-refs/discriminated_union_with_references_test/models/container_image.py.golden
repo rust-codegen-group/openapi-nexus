@@ -36,4 +36,3 @@ def container_image_to_dict(obj: ContainerImage) -> dict[str, object]:
         result["kind"] = "CONTAINER_IMAGE_CUSTOM"
         return result
     raise ValueError(f"Unknown variant for ContainerImage: {type(obj)}")
-

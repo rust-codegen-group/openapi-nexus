@@ -10,7 +10,7 @@ golden="$root/tests/golden/python/python-$backend"
 source "$root/scripts/golden-build-common.sh"
 golden_require_projects "$golden" pyproject.toml.golden
 
-# One dependency installation and checker resolution per backend, not per fixture.
+# One active-interpreter environment for goldens and fresh native consumers.
 deps=$(mktemp -d)
 tmp=""; log=""
 cleanup() {
@@ -19,7 +19,9 @@ cleanup() {
   [ -z "$log" ] || rm -f "$log"
 }
 trap cleanup EXIT
-"${PYTHON:-python3}" -m pip install "$backend" --quiet --target "$deps"
+"${PYTHON:-python3}" -m venv "$deps"
+python="$deps/bin/python"
+"$python" -m pip install "$backend" --quiet
 if command -v pyright >/dev/null 2>&1; then
   checker=$(command -v pyright)
 else
@@ -47,13 +49,12 @@ for test_dir in "$golden"/*/; do
 {
     "pythonVersion": "3.12",
     "typeCheckingMode": "strict",
-    "extraPaths": ["$deps"],
     "reportUnnecessaryIsInstance": "none"
 }
 PYRIGHT
 
   log=$(mktemp)
-  if (cd "$tmp" && "$checker") >"$log" 2>&1; then
+  if (cd "$tmp" && "$checker" --pythonpath "$python") >"$log" 2>&1; then
     echo "ok"
     passed=$((passed + 1))
   else
@@ -75,3 +76,8 @@ if [ "$failed" -gt 0 ]; then
   for n in "${fails[@]}"; do echo "  - $n"; done
   exit 1
 fi
+
+# The public golden-build entrypoint owns the complete backend contract. CI and
+# `just ci` must not append a second, Python-specific validation path.
+export PYTHON="$python" PYRIGHT="$checker"
+(cd "$root" && just golden-python-clients::test "$backend")

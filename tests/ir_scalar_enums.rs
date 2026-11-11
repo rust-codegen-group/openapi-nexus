@@ -275,8 +275,6 @@ components:
         Box::new(GoHttpCodeGenerator::new(Default::default())),
         Box::new(JavaOkhttpCodeGenerator::new(Default::default())),
         Box::new(KotlinOkhttpCodeGenerator::new(Default::default())),
-        Box::new(PythonHttpxCodeGenerator::new(Default::default())),
-        Box::new(PythonRequestsCodeGenerator::new(Default::default())),
         Box::new(RustAioductCodeGenerator::new(Default::default())),
         Box::new(RustReqwestCodeGenerator::new(Default::default())),
         Box::new(RustUreqCodeGenerator::new(Default::default())),
@@ -311,5 +309,46 @@ components:
             "{} file count",
             generator.generator_type()
         );
+    }
+    // Python now consumes these facts for union dispatch, while keeping ordinary
+    // model declarations and the other codecs on their existing representations.
+    // Retain exact comparison outside the new matcher, not a blanket exclusion.
+    let python: Vec<Box<dyn CodeGenerator>> = vec![
+        Box::new(PythonHttpxCodeGenerator::new(Default::default())),
+        Box::new(PythonRequestsCodeGenerator::new(Default::default())),
+    ];
+    for generator in python {
+        let files = |ir| {
+            generator
+                .generate(ir)
+                .unwrap()
+                .into_iter()
+                .map(|file| ((file.category, file.filename), file.content))
+                .collect::<std::collections::HashMap<_, _>>()
+        };
+        let actual = files(&decorated);
+        let expected = files(&legacy);
+        assert_eq!(actual.len(), expected.len());
+        for (key, legacy_source) in expected {
+            let source = actual.get(&key).unwrap();
+            if key.1 == "_union.py" {
+                assert_ne!(
+                    source,
+                    &legacy_source,
+                    "{} uses retained union constraints",
+                    generator.generator_type()
+                );
+                assert!(source.contains("_union_support.equal(value, True)"));
+                assert!(source.contains("_union_support.equal(value, 1)"));
+            } else {
+                assert_eq!(
+                    source,
+                    &legacy_source,
+                    "{} {}",
+                    generator.generator_type(),
+                    key.1
+                );
+            }
+        }
     }
 }

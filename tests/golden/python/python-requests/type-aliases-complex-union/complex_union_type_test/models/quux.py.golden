@@ -6,7 +6,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
+from . import _union
 from .foo import Foo
 
 @dataclass
@@ -16,13 +18,13 @@ class Quux:
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result["foo"] = self.foo
+        result['foo'] = _union.value_0_to_dict(self.foo)
         result["name"] = self.name
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> Quux:
         return cls(
-            foo=data["foo"],  # type: ignore[assignment]
+            foo = cast(Foo, _union.value_0_from_dict(data['foo'])),
             name=data["name"],  # type: ignore[assignment]
         )

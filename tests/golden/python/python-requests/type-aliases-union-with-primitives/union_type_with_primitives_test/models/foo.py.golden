@@ -5,9 +5,19 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from . import _union
+
 type Foo = (
     str
     | float
     | bool
     | None
 )
+
+def foo_from_dict(value: object) -> Foo:
+    return cast(Foo, _union.value_0_from_dict(value))
+
+def foo_to_dict(value: Foo) -> object:
+    return _union.value_0_to_dict(value)

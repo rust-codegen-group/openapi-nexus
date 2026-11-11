@@ -5,8 +5,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import json
 
+from collections.abc import Mapping
+from typing import cast
+
+from ..models import _union
 from ..models.foo import Foo
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
@@ -39,11 +43,13 @@ class DefaultApi:
         path = "/test"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
-        response = self._client.request("POST", path, json=body, headers=headers)
+        _union_body = _union.value_0_to_dict(body)
+        response = self._client.request("POST", path, headers=headers, data = json.dumps(_union_body, allow_nan = False))
         if not (200 <= response.status_code < 300):
             detail = TestNestedUnionUnexpected(response.status_code, response.headers, response.content)
             raise TestNestedUnionError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
-        data = response.json()  # type: ignore[return-value]
+        _union_data = cast(Foo, _union.value_0_from_dict(response.json()))
+        data = _union_data
         return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
 
     def test_nested_union(self, *, body: Foo) -> Foo:

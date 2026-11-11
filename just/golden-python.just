@@ -13,13 +13,13 @@ update: update-httpx update-requests
 @update-requests:
     UPDATE_GOLDEN=1 cargo test --test golden_tests_python_requests -- --nocapture
 
-# Type-check all Python goldens
+# Validate all Python goldens, public declarations and native consumers
 build: build-httpx build-requests
 
-# Type-check Python httpx goldens with pyright
+# Validate Python httpx goldens and fresh native consumers
 @build-httpx:
     ./scripts/golden-build-python.sh httpx
 
-# Type-check Python requests goldens with pyright
+# Validate Python requests goldens and fresh native consumers
 @build-requests:
     ./scripts/golden-build-python.sh requests

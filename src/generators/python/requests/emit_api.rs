@@ -26,8 +26,12 @@ use sigil_stitch::spec::fun_spec::FunSpecBuilder;
 use super::emit_models::{
     api_type_name, future_annotations_header, is_object_schema, python_field_name,
 };
+use crate::generators::python::emit_api_values::{
+    MultipartPart, multipart_data, union_error_body_property,
+};
 use crate::generators::python::operation_names::plan_python_operation_names;
 use crate::generators::python::response_headers::build_header_accessors;
+use crate::generators::python::value::{Direction, UntaggedUnionStrategy, ValuePlan};
 use crate::generators::type_application;
 
 /// Generate every API file from the IR.
@@ -36,12 +40,28 @@ pub fn generate_api_files(
     header: &str,
     request_inputs: &RequestInputPlan,
 ) -> Vec<FileInfo> {
+    generate_api_files_with_strategy(
+        ir,
+        header,
+        request_inputs,
+        UntaggedUnionStrategy::FirstMatch,
+    )
+}
+
+/// Generate API files with the same union policy used by the model emitter.
+pub fn generate_api_files_with_strategy(
+    ir: &IrSpec,
+    header: &str,
+    request_inputs: &RequestInputPlan,
+    strategy: UntaggedUnionStrategy,
+) -> Vec<FileInfo> {
+    let values = ValuePlan::new(ir, strategy);
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
         let stem = tag.to_snake_case();
         let filename = format!("{stem}_api.py");
-        let body = emit_api_file(tag, ops, ir, header, request_inputs);
+        let body = emit_api_file(tag, ops, ir, header, request_inputs, &values);
         files.push(FileInfo::api(filename, body));
     }
     files
@@ -68,6 +88,7 @@ fn emit_api_file(
     ir: &IrSpec,
     header: &str,
     request_inputs: &RequestInputPlan,
+    values: &ValuePlan<'_>,
 ) -> String {
     let class_name = format!("{}Api", tag.to_pascal_case());
     let mut plans: Vec<OpPlan> = ops
@@ -97,25 +118,50 @@ fn emit_api_file(
     let mut cls = TypeSpec::builder(&class_name, TypeKind::Class).add_method(init);
 
     for plan in &plans {
-        cls = cls.add_method(build_api_method_with_http_info(plan, ir, &error_type));
-        cls = cls.add_method(build_api_method(plan, ir, &error_type));
+        cls = cls.add_method(build_api_method_with_http_info(
+            plan,
+            ir,
+            &error_type,
+            values,
+        ));
+        cls = cls.add_method(build_api_method(plan, ir, &error_type, values));
     }
 
     let mut fb = FileSpec::builder_with(&format!("{}_api.py", tag.to_snake_case()), Python::new())
         .header(future_annotations_header());
     for plan in &plans {
         if !plan.success_headers.is_empty() {
-            fb = fb.add_type(build_response_class(plan));
+            fb = fb.add_type(build_response_class(plan, values));
         }
     }
     fb = fb
-        .add_code(build_error_classes_block(&plans, ir))
+        .add_code(build_error_classes_block(&plans, ir, values))
         .add_type(cls.build().expect("API TypeSpec builds"));
     if plans
         .iter()
         .flat_map(|plan| &plan.error_responses)
         .any(|response| response.decoding == Some(ResponseDecoding::Json))
     {
+        fb = fb.add_import(ImportSpec::side_effect("json"));
+    }
+    if plans.iter().any(|plan| {
+        plan.body.as_ref().is_some_and(|body| {
+            body.multipart_parts
+                .as_ref()
+                .is_some_and(|parts| parts.iter().any(|part| values.has_union(&part.type_expr)))
+        })
+    }) || ops.iter().any(|op| {
+        op.request_body
+            .iter()
+            .flat_map(|body| body.content.values())
+            .chain(
+                op.responses
+                    .iter()
+                    .flat_map(|response| response.content.values()),
+            )
+            .any(|expr| values.has_union(expr))
+    }) {
+        fb = fb.add_import(ImportSpec::named("..models", "_union"));
         fb = fb.add_import(ImportSpec::side_effect("json"));
     }
     if plans.iter().any(|plan| {
@@ -159,10 +205,15 @@ fn emit_api_file(
     content
 }
 
-fn build_api_method(plan: &OpPlan<'_>, ir: &IrSpec, error_type: &TypeName) -> FunSpec {
+fn build_api_method(
+    plan: &OpPlan<'_>,
+    ir: &IrSpec,
+    error_type: &TypeName,
+    values: &ValuePlan<'_>,
+) -> FunSpec {
     let mut fun = FunSpec::builder(&plan.method_name);
-    fun = add_api_method_params(fun, plan);
-    fun = fun.returns(vec![response_payload_type(plan)]);
+    fun = add_api_method_params(fun, plan, values);
+    fun = fun.returns(vec![response_payload_type(plan, values)]);
 
     if let Some(summary) = &plan.op.summary {
         fun = fun.doc(&format!("{summary}."));
@@ -201,27 +252,32 @@ fn build_api_method_with_http_info(
     plan: &OpPlan<'_>,
     ir: &IrSpec,
     error_type: &TypeName,
+    values: &ValuePlan<'_>,
 ) -> FunSpec {
     let mut fun = FunSpec::builder(&plan.with_http_info_method_name);
-    fun = add_api_method_params(fun, plan);
-    fun = fun.returns(vec![response_metadata_type(plan)]);
+    fun = add_api_method_params(fun, plan, values);
+    fun = fun.returns(vec![response_metadata_type(plan, values)]);
 
     if let Some(summary) = &plan.op.summary {
         fun = fun.doc(&format!("{summary}, including HTTP response metadata."));
     }
 
-    fun = fun.body(build_method_body(plan, ir, error_type));
+    fun = fun.body(build_method_body(plan, ir, error_type, values));
     fun.build()
         .expect("API with-http-info method FunSpec builds")
 }
 
-fn add_api_method_params(mut fun: FunSpecBuilder, plan: &OpPlan<'_>) -> FunSpecBuilder {
+fn add_api_method_params(
+    mut fun: FunSpecBuilder,
+    plan: &OpPlan<'_>,
+    values: &ValuePlan<'_>,
+) -> FunSpecBuilder {
     fun = fun.add_param(ParameterSpec::of("self", TypeName::primitive("")));
 
     for p in &plan.path_params {
         fun = fun.add_param(ParameterSpec::of(
             &p.var_name,
-            api_type_name(&p.param.type_expr),
+            values.api_type(&p.param.type_expr),
         ));
     }
 
@@ -237,14 +293,14 @@ fn add_api_method_params(mut fun: FunSpecBuilder, plan: &OpPlan<'_>) -> FunSpecB
         if p.param.required {
             fun = fun.add_param(ParameterSpec::of(
                 &p.var_name,
-                api_type_name(&p.param.type_expr),
+                values.api_type(&p.param.type_expr),
             ));
         }
     }
 
     // Body param
     if let Some(b) = &plan.body {
-        let ty = api_type_name(&b.type_expr);
+        let ty = values.api_type(&b.type_expr);
         if b.required {
             fun = fun.add_param(ParameterSpec::of(&b.var_name, ty));
         } else {
@@ -260,7 +316,7 @@ fn add_api_method_params(mut fun: FunSpecBuilder, plan: &OpPlan<'_>) -> FunSpecB
     // Optional query/header params last
     for p in plan.query_params.iter().chain(&plan.header_params) {
         if !p.param.required {
-            let param_ty = api_type_name(&p.param.type_expr);
+            let param_ty = values.api_type(&p.param.type_expr);
             let param_ty = if is_already_optional(&p.param.type_expr) {
                 param_ty
             } else {
@@ -278,26 +334,31 @@ fn add_api_method_params(mut fun: FunSpecBuilder, plan: &OpPlan<'_>) -> FunSpecB
     fun
 }
 
-fn response_payload_type(plan: &OpPlan<'_>) -> TypeName {
+fn response_payload_type(plan: &OpPlan<'_>, values: &ValuePlan<'_>) -> TypeName {
     if plan.typed_responses.is_empty() {
         TypeName::primitive("None")
     } else {
-        response_type_name(&plan.typed_responses[0])
+        response_type_name(&plan.typed_responses[0], values)
     }
 }
 
-fn response_metadata_type(plan: &OpPlan<'_>) -> TypeName {
+fn response_metadata_type(plan: &OpPlan<'_>, values: &ValuePlan<'_>) -> TypeName {
     if plan.success_headers.is_empty() {
         type_application(
             TypeName::importable("..runtime.client", "ApiResponse"),
-            vec![response_payload_type(plan)],
+            vec![response_payload_type(plan, values)],
         )
     } else {
         TypeName::primitive(&plan.response_type)
     }
 }
 
-fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, _error_type: &TypeName) -> CodeBlock {
+fn build_method_body(
+    plan: &OpPlan<'_>,
+    ir: &IrSpec,
+    _error_type: &TypeName,
+    values: &ValuePlan<'_>,
+) -> CodeBlock {
     let mut cb = CodeBlock::builder();
 
     // Path interpolation
@@ -359,7 +420,15 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, _error_type: &TypeName) -> 
 
     // Body serialization
     let body_expr = if let Some(b) = &plan.body {
-        if is_object_type(&b.type_expr, ir) {
+        if values.has_union(&b.type_expr) {
+            let access = sigil_quote!(Python { $N(b.var_name.as_str()) })
+                .expect("Python HTTP union input builds");
+            let converted = values.call(&b.type_expr, access, Direction::To);
+            cb.add_code(sigil_quote!(Python {
+                _union_body = $if(b.required) { $C(converted) } $else { None if $N(b.var_name.as_str()) is None else $C(converted) }
+            }).expect("Python HTTP union request conversion builds"));
+            "_union_body".to_string()
+        } else if is_object_type(&b.type_expr, ir) {
             if b.required {
                 format!("{}.to_dict()", b.var_name)
             } else {
@@ -389,13 +458,20 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, _error_type: &TypeName) -> 
         format!("\"{}\"", plan.op.method.to_uppercase()),
         "path".to_string(),
     ];
+    let mut union_json_argument = None;
     if has_query {
         request_args.push("params=params".to_string());
     }
     if let Some(body) = &plan.body {
         if media_type_base(&body.media_type) == "multipart/form-data" {
             if let Some(parts) = &body.multipart_parts {
-                emit_multipart_data(&mut cb, body, parts, ir);
+                cb.add_code(multipart_data(
+                    &body.var_name,
+                    body.required,
+                    parts,
+                    ir,
+                    values,
+                ));
                 request_args.push("files=files if files else None".to_string());
             } else {
                 cb.add_statement(
@@ -405,6 +481,11 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, _error_type: &TypeName) -> 
             }
         } else {
             match body.encoding {
+                BodyEncoding::Json if values.has_union(&body.type_expr) => {
+                    union_json_argument = Some(sigil_quote!(Python {
+                        data = $if(body.required) { json.dumps(_union_body, allow_nan = False) } $else { None if $N(body.var_name.as_str()) is None else json.dumps(_union_body, allow_nan = False) }
+                    }).expect("Python requests union JSON argument builds"));
+                }
                 BodyEncoding::Json => request_args.push(format!("json={body_expr}")),
                 BodyEncoding::FormUrlEncoded
                 | BodyEncoding::TextPlain
@@ -437,17 +518,39 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, _error_type: &TypeName) -> 
         request_args.push("headers=headers".to_string());
     }
 
-    cb.add_code(
+    let request_call = if let Some(argument) = union_json_argument {
+        sigil_quote!(Python {
+            response = self._client.request($for(arg in &request_args; separator = ", ") { $L(arg.as_str()) }, $C(argument))
+        })
+    } else {
         sigil_quote!(Python {
             response = self._client.request($for(arg in &request_args; separator = ", ") { $L(arg.as_str()) })
         })
-        .expect("request call"),
-    );
+    }.expect("Python HTTP request call builds");
+    cb.add_code(request_call);
 
     // Error handling
     cb.add_code(emit_error_raise(plan, "response.reason"));
 
-    let data_expr = if !plan.typed_responses.is_empty() {
+    let union_response = plan.typed_responses.first().filter(|response| {
+        response.decoding == ResponseDecoding::Json && values.has_union(&response.type_expr)
+    });
+    if let Some(response) = union_response {
+        let converted = values.call(
+            &response.type_expr,
+            sigil_quote!(Python { response.json() }).expect("Python HTTP union JSON input builds"),
+            Direction::From,
+        );
+        let ty = values.api_type(&response.type_expr);
+        let converted = values.coerce(&response.type_expr, ty, converted);
+        cb.add_code(
+            sigil_quote!(Python { _union_data = $C(converted) })
+                .expect("Python HTTP union response conversion builds"),
+        );
+    }
+    let data_expr = if union_response.is_some() {
+        "_union_data".to_string()
+    } else if !plan.typed_responses.is_empty() {
         let tr = &plan.typed_responses[0];
         render_response_parse(tr, ir)
     } else {
@@ -467,87 +570,6 @@ fn build_method_body(plan: &OpPlan<'_>, ir: &IrSpec, _error_type: &TypeName) -> 
     );
 
     cb.build().expect("API method body builds")
-}
-
-fn emit_multipart_data(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
-    body: &BodyBinding,
-    parts: &[MultipartPart],
-    ir: &IrSpec,
-) {
-    cb.add_statement("files: dict[str, object] = {}", ());
-    if !body.required {
-        cb.add_statement(&format!("if {} is not None:%>", body.var_name), ());
-    }
-    for part in parts {
-        let access = format!("{}.{}", body.var_name, part.field_name);
-        if part.required {
-            emit_required_multipart_part(cb, part, &access, ir);
-        } else {
-            cb.add_statement(&format!("if {access} is not None:%>"), ());
-            emit_required_multipart_part(cb, part, &access, ir);
-            cb.add_statement("%<", ());
-        }
-    }
-    if !body.required {
-        cb.add_statement("%<", ());
-    }
-}
-
-fn emit_required_multipart_part(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
-    part: &MultipartPart,
-    access: &str,
-    ir: &IrSpec,
-) {
-    cb.add_code(multipart_part_assignment(part, access, ir));
-}
-
-fn multipart_part_assignment(part: &MultipartPart, access: &str, ir: &IrSpec) -> CodeBlock {
-    let binary_stmt = format!(
-        "files[\"{}\"] = ({}.filename_or_default(\"{}\"), {}.data, \"{}\")",
-        part.wire_name, access, part.wire_name, access, part.content_type
-    );
-    let json_value = render_multipart_json_value(access, &part.type_expr, ir);
-    let json_stmt = format!(
-        "files[\"{}\"] = (None, json.dumps({json_value}), \"{}\")",
-        part.wire_name, part.content_type
-    );
-    let unsupported_stmt = "raise ValueError(\"unsupported multipart part content type\")";
-    let scalar_stmt = format!(
-        "files[\"{}\"] = (None, str({access}), \"{}\")",
-        part.wire_name, part.content_type
-    );
-
-    sigil_quote!(Python {
-        $if(part.is_binary) {
-            $L(binary_stmt.as_str())
-        } $else_if(part.value_encoding == MultipartValueEncoding::Json) {
-            $L(json_stmt.as_str())
-        } $else_if(part.value_encoding == MultipartValueEncoding::Unsupported) {
-            $L(unsupported_stmt)
-        } $else {
-            $L(scalar_stmt.as_str())
-        }
-    })
-    .expect("multipart part assignment builds")
-}
-
-fn render_multipart_json_value(access: &str, expr: &IrTypeExpr, ir: &IrSpec) -> String {
-    match expr {
-        IrTypeExpr::Named(name) if is_object_schema(name, ir) => format!("{access}.to_dict()"),
-        IrTypeExpr::Nullable(inner) => render_multipart_json_value(access, inner, ir),
-        IrTypeExpr::Array(inner) => {
-            if let IrTypeExpr::Named(name) = inner.as_ref()
-                && is_object_schema(name, ir)
-            {
-                format!("[item.to_dict() for item in {access}]")
-            } else {
-                access.to_string()
-            }
-        }
-        _ => access.to_string(),
-    }
 }
 
 fn render_stringify(var: &str, type_expr: &IrTypeExpr) -> String {
@@ -575,9 +597,9 @@ fn render_stringify(var: &str, type_expr: &IrTypeExpr) -> String {
     }
 }
 
-fn response_type_name(response: &TypedResponse) -> TypeName {
+fn response_type_name(response: &TypedResponse, values: &ValuePlan<'_>) -> TypeName {
     match response.decoding {
-        ResponseDecoding::Json => api_type_name(&response.type_expr),
+        ResponseDecoding::Json => values.api_type(&response.type_expr),
         ResponseDecoding::Text => TypeName::primitive("str"),
         ResponseDecoding::Bytes => TypeName::primitive("bytes"),
     }
@@ -617,7 +639,11 @@ fn render_json_response_parse(type_expr: &IrTypeExpr, ir: &IrSpec) -> String {
     }
 }
 
-fn build_error_classes_block(plans: &[OpPlan<'_>], ir: &IrSpec) -> CodeBlock {
+fn build_error_classes_block(
+    plans: &[OpPlan<'_>],
+    ir: &IrSpec,
+    values: &ValuePlan<'_>,
+) -> CodeBlock {
     let mut cb = CodeBlock::builder();
     for plan in plans {
         let mut seen = HashSet::new();
@@ -638,12 +664,12 @@ fn build_error_classes_block(plans: &[OpPlan<'_>], ir: &IrSpec) -> CodeBlock {
                 (TypeName::importable("collections.abc", "Mapping"),),
             );
             if let (Some(type_expr), Some(decoding)) = (&response.type_expr, response.decoding) {
-                let return_ty = error_body_return_type(type_expr, decoding);
+                let return_ty = error_body_return_type(type_expr, decoding, values);
                 cb.add_statement("self.raw_body: bytes = raw_body", ());
                 cb.add_statement("self._body_loaded: bool = False", ());
                 cb.add_statement("self._body_value: %T | None = None", (return_ty,));
                 cb.add_statement("self._body_error: Exception | None = None%<", ());
-                cb.add_code(error_body_property(type_expr, decoding, ir));
+                cb.add_code(error_body_property(type_expr, decoding, ir, values));
             } else {
                 cb.add_statement("self.raw_body: bytes = raw_body%<", ());
             }
@@ -710,11 +736,11 @@ fn build_error_classes_block(plans: &[OpPlan<'_>], ir: &IrSpec) -> CodeBlock {
     cb.build().expect("Python error classes block builds")
 }
 
-fn build_response_class(plan: &OpPlan<'_>) -> TypeSpec {
+fn build_response_class(plan: &OpPlan<'_>, values: &ValuePlan<'_>) -> TypeSpec {
     let mut response =
         TypeSpec::builder(&plan.response_type, TypeKind::Class).extends(type_application(
             TypeName::importable("..runtime.client", "ApiResponse"),
-            vec![response_payload_type(plan)],
+            vec![response_payload_type(plan, values)],
         ));
     for accessor in build_header_accessors(&plan.success_headers, false) {
         response = response.add_method(accessor);
@@ -726,7 +752,11 @@ fn error_body_property(
     type_expr: &IrTypeExpr,
     decoding: ResponseDecoding,
     ir: &IrSpec,
+    values: &ValuePlan<'_>,
 ) -> CodeBlock {
+    if decoding == ResponseDecoding::Json && values.has_union(type_expr) {
+        return union_error_body_property(type_expr, ir, values);
+    }
     let mut cb = CodeBlock::builder();
     match decoding {
         ResponseDecoding::Json => {
@@ -775,9 +805,13 @@ fn error_body_property(
     cb.build().expect("Python error body property builds")
 }
 
-fn error_body_return_type(type_expr: &IrTypeExpr, decoding: ResponseDecoding) -> TypeName {
+fn error_body_return_type(
+    type_expr: &IrTypeExpr,
+    decoding: ResponseDecoding,
+    values: &ValuePlan<'_>,
+) -> TypeName {
     match decoding {
-        ResponseDecoding::Json => api_type_name(type_expr),
+        ResponseDecoding::Json => values.api_type(type_expr),
         ResponseDecoding::Text => TypeName::primitive("str"),
         ResponseDecoding::Bytes => TypeName::primitive("bytes"),
     }
@@ -956,16 +990,6 @@ struct BodyBinding {
     media_type: String,
     encoding: BodyEncoding,
     multipart_parts: Option<Vec<MultipartPart>>,
-}
-
-struct MultipartPart {
-    wire_name: String,
-    field_name: String,
-    type_expr: IrTypeExpr,
-    is_binary: bool,
-    required: bool,
-    content_type: String,
-    value_encoding: MultipartValueEncoding,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

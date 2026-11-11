@@ -52,4 +52,3 @@ def event_to_dict(obj: Event) -> dict[str, object]:
         result["kind"] = "EVENT_UPDATED"
         return result
     raise ValueError(f"Unknown variant for Event: {type(obj)}")
-

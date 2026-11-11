@@ -1,0 +1,284 @@
+openapi: 3.1.0
+info: {title: Python union conversion, version: 1.0.0}
+paths:
+  /tagged-member:
+    post:
+      operationId: sendTaggedMember
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {$ref: '#/components/schemas/TaggedMemberChoice'}}
+      responses:
+        '200':
+          description: Tagged member inside an untagged union
+          content:
+            application/json: {schema: {$ref: '#/components/schemas/TaggedMemberChoice'}}
+  /tagged:
+    post:
+      operationId: sendTagged
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {$ref: '#/components/schemas/TaggedChoice'}}
+      responses:
+        '200':
+          description: Tagged union payload
+          content:
+            application/json: {schema: {$ref: '#/components/schemas/TaggedChoice'}}
+  /multipart:
+    post:
+      operationId: sendMultipart
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [choice]
+              properties:
+                choice: {$ref: '#/components/schemas/Choice'}
+                attachment: {type: string, format: binary}
+            encoding:
+              choice: {contentType: application/json}
+      responses:
+        '204': {description: Uploaded}
+  /nullable:
+    post:
+      operationId: sendNullable
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {$ref: '#/components/schemas/NullableChoice'}}
+      responses:
+        '200':
+          description: Nullable member
+          content:
+            application/json: {schema: {$ref: '#/components/schemas/NullableChoice'}}
+  /choice:
+    post:
+      operationId: sendChoice
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {$ref: '#/components/schemas/Choice'}}
+      responses:
+        '200':
+          description: Selected member
+          content:
+            application/json: {schema: {$ref: '#/components/schemas/Choice'}}
+        '400':
+          description: Selected error member
+          content:
+            application/json: {schema: {$ref: '#/components/schemas/Choice'}}
+  /envelope:
+    post:
+      operationId: sendEnvelope
+      requestBody:
+        required: true
+        content:
+          application/json: {schema: {$ref: '#/components/schemas/Envelope'}}
+      responses:
+        '200':
+          description: Nested members
+          content:
+            application/json: {schema: {$ref: '#/components/schemas/Envelope'}}
+  /choices:
+    post:
+      operationId: sendChoices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: array, items: {$ref: '#/components/schemas/Choice'}}
+      responses:
+        '200':
+          description: Members in a map
+          content:
+            application/json:
+              schema: {type: object, additionalProperties: {$ref: '#/components/schemas/Choice'}}
+components:
+  schemas:
+    AcyclicEnvelope:
+      type: object
+      required: [value]
+      properties:
+        value: {$ref: '#/components/schemas/AcyclicScalar'}
+    AcyclicScalar:
+      anyOf:
+        - {type: integer}
+        - {type: string}
+    DependentEnvelope:
+      type: object
+      required: [envelope]
+      properties:
+        envelope: {$ref: '#/components/schemas/AcyclicEnvelope'}
+    DependentChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/DependentEnvelope'}
+        - {type: boolean}
+    ClientTool:
+      type: object
+      required: [name, input_schema]
+      properties:
+        name: {type: string}
+        input_schema: {type: object, additionalProperties: true}
+    SearchTool:
+      type: object
+      required: [type, name]
+      properties:
+        type: {type: string, enum: [web_search_20250305]}
+        name: {type: string, enum: [web_search]}
+        max_uses: {type: integer}
+    Tool:
+      oneOf:
+        - {$ref: '#/components/schemas/ClientTool'}
+        - {$ref: '#/components/schemas/SearchTool'}
+    Request:
+      type: object
+      required: [tools]
+      properties:
+        tools: {type: array, items: {$ref: '#/components/schemas/Tool'}}
+    NumericOne:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, enum: [1]}
+        first_value: {type: string}
+    NumericTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, enum: [2]}
+        second_value: {type: string}
+    Choice:
+      oneOf:
+        - {$ref: '#/components/schemas/NumericOne'}
+        - {$ref: '#/components/schemas/NumericTwo'}
+    ChoiceAlias: {$ref: '#/components/schemas/Choice'}
+    Envelope:
+      type: object
+      required: [choice, choice_list, choice_map, deep]
+      properties:
+        choice: {$ref: '#/components/schemas/ChoiceAlias'}
+        choice_list: {type: array, items: {$ref: '#/components/schemas/Choice'}}
+        choice_map: {type: object, additionalProperties: {$ref: '#/components/schemas/Choice'}}
+        deep:
+          type: array
+          items: {type: object, additionalProperties: {type: array, items: {$ref: '#/components/schemas/Choice'}}}
+        optional_choice: {$ref: '#/components/schemas/Choice'}
+    Ambiguous:
+      oneOf:
+        - {$ref: '#/components/schemas/NumericTwo'}
+        - {$ref: '#/components/schemas/NumericTwo'}
+    OpenChoice:
+      anyOf:
+        - {}
+        - {$ref: '#/components/schemas/NumericTwo'}
+    NestedAmbiguous:
+      anyOf:
+        - {$ref: '#/components/schemas/Ambiguous'}
+        - {type: string}
+    NullableChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/Choice'}
+        - {type: 'null'}
+    ScalarChoice:
+      anyOf:
+        - {type: integer, enum: [1, 2]}
+        - {type: boolean, enum: [true]}
+    InnerNullChoice:
+      anyOf:
+        - {enum: [null]}
+        - {type: [string, 'null'], enum: [x, null]}
+    WrappedNullChoice:
+      type: [object, 'null']
+      anyOf:
+        - {$ref: '#/components/schemas/InnerNullChoice'}
+        - {type: integer}
+    NullableEnvelope:
+      type: object
+      required: [choice]
+      properties:
+        choice: {$ref: '#/components/schemas/NullableChoice'}
+        ambiguous: {$ref: '#/components/schemas/WrappedNullChoice'}
+    FiniteEnvelope:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: [integer, boolean, 'null']
+          enum: [1, true, null]
+    Recursive:
+      anyOf:
+        - {$ref: '#/components/schemas/Branch'}
+        - {type: string}
+    Branch:
+      type: object
+      required: [children]
+      properties:
+        children: {type: array, items: {$ref: '#/components/schemas/Recursive'}}
+    TaggedChoice:
+      oneOf:
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [choice]}
+            payload: {$ref: '#/components/schemas/Choice'}
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [text]}
+            payload: {type: string}
+    TaggedAmbiguous:
+      oneOf:
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [choice]}
+            payload: {$ref: '#/components/schemas/Ambiguous'}
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [text]}
+            payload: {type: string}
+    TaggedRecord:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    AdjacentMember:
+      oneOf:
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [record]}
+            payload: {$ref: '#/components/schemas/TaggedRecord'}
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [numeric]}
+            payload: {$ref: '#/components/schemas/NumericTwo'}
+    TaggedMemberChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/AdjacentMember'}
+        - {type: integer}
+    TaggedMemberAlias: {$ref: '#/components/schemas/TaggedMemberChoice'}
+    AmbiguousTaggedMember:
+      anyOf:
+        - {$ref: '#/components/schemas/AdjacentMember'}
+        - {$ref: '#/components/schemas/AdjacentMember'}
+    TaggedMemberEnvelope:
+      type: object
+      required: [value, values, mapping]
+      properties:
+        value: {$ref: '#/components/schemas/TaggedMemberChoice'}
+        values: {type: array, items: {$ref: '#/components/schemas/TaggedMemberAlias'}}
+        mapping: {type: object, additionalProperties: {$ref: '#/components/schemas/TaggedMemberChoice'}}
+    TaggedContainerChoice:
+      anyOf:
+        - {type: array, items: {$ref: '#/components/schemas/AdjacentMember'}}
+        - {type: string}
+    TaggedObjectChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/TaggedMemberEnvelope'}
+        - {type: integer}

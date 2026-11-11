@@ -5,9 +5,19 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from . import _union
+
 # Any of multiple types
 
 type AnyOfTypes = (
     str
     | float
 )
+
+def any_of_types_from_dict(value: object) -> AnyOfTypes:
+    return cast(AnyOfTypes, _union.value_0_from_dict(value))
+
+def any_of_types_to_dict(value: AnyOfTypes) -> object:
+    return _union.value_0_to_dict(value)

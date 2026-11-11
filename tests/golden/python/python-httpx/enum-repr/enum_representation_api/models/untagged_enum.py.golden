@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+from . import _union
 from .variant_a import VariantA
 from .variant_b import VariantB
 
@@ -14,3 +17,9 @@ type UntaggedEnum = (
     VariantA
     | VariantB
 )
+
+def untagged_enum_from_dict(value: object) -> UntaggedEnum:
+    return cast(UntaggedEnum, _union.value_5_from_dict(value))
+
+def untagged_enum_to_dict(value: UntaggedEnum) -> object:
+    return _union.value_5_to_dict(value)

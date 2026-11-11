@@ -1,0 +1,4 @@
+{
+  "extends": "./pyrightconfig.json",
+  "extraPaths": ["generated/httpx/default", "generated/httpx/strict", "generated/httpx/raw"]
+}
