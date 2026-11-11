@@ -30,18 +30,31 @@ final class ConfigJsonAdapter extends TypeAdapter<Config> {
     private final Gson gson = new Gson();
 
     @Override
-    public Config read (JsonReader reader) throws java.io.IOException {
+    public Config read(JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        int selected = -1;
+        if (selected < 0 && matches0(element)) {
+            selected = 0;
+        }
+        if (selected < 0 && matches1(element)) {
+            selected = 1;
+        }
+        if (selected < 0 && true) {
+            selected = 2;
+        }
+        if (selected == 0) {
             return new Config.VariantString(element.getAsString());
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+        if (selected == 1) {
             return new Config.VariantNumber(gson.fromJson(element, Double.class));
         }
-        return new Config.VariantAny(gson.fromJson(element, new TypeToken<JsonElement>() {}.getType()));
+        if (selected == 2) {
+            return new Config.VariantAny(gson.fromJson(element, new TypeToken<JsonElement>() {}.getType()));
+        }
+        throw new JsonParseException("unknown Config union value");
     }
 
     @Override
@@ -62,5 +75,13 @@ final class ConfigJsonAdapter extends TypeAdapter<Config> {
             gson.toJson(gson.toJsonTree(((Config.VariantAny) value).value0()), writer);
             return;
         }
+    }
+
+    private static boolean matches0(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isString();
+    }
+
+    private static boolean matches1(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isNumber();
     }
 }

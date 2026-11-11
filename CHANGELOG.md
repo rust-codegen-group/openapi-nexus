@@ -33,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Select Java OkHttp untagged-union members using retained scalar enum and
+  structural facts instead of unconstrained Gson dispatch. Preserve typed member
+  payloads in models, containers, recursive values, and HTTP response/error bodies.
+  Add `firstMatch`, `strict`, and explicit `VariantRaw(JsonElement)` policies,
+  retaining existing typed APIs, Gson codecs, null handling, and wrapper boundaries.
+  Match scientific notation without Gson's decimal scale limit and keep recursive
+  helpers independent of model names such as `Integer` and `Boolean`.
 - Select Rust untagged-union members using retained scalar enum and structural
   facts instead of Serde's unconstrained first-success dispatch. Preserve typed
   variants and payloads across reqwest, ureq, and aioduct, including nested

@@ -1,0 +1,213 @@
+openapi: 3.1.0
+info: {title: Java union policies, version: 1.0.0}
+paths:
+  /choice:
+    get:
+      tags: [Selection]
+      operationId: getChoice
+      responses:
+        '200':
+          description: Selected member
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FiniteChoice'}
+        '400':
+          description: Selected error member
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FiniteChoice'}
+components:
+  schemas:
+    FiniteOne:
+      type: object
+      required: [revision, values, flags]
+      properties:
+        revision: {type: integer, enum: [1]}
+        values: {type: array, items: {type: number, enum: [1, 1.5]}}
+        flags: {type: object, additionalProperties: {type: boolean, enum: [false]}}
+        first_value: {type: string}
+    FiniteTwo:
+      type: object
+      required: [revision, values, flags]
+      properties:
+        revision: {type: integer, enum: [2]}
+        values: {type: array, items: {type: number, enum: [2, 2.5]}}
+        flags: {type: object, additionalProperties: {type: boolean, enum: [true]}}
+        second_value: {type: string}
+    FiniteChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/FiniteOne'}
+        - {$ref: '#/components/schemas/FiniteTwo'}
+    ContainerOne:
+      type: object
+      required: [values]
+      properties:
+        values: {type: array, items: {type: integer, enum: [1]}}
+    ContainerTwo:
+      type: object
+      required: [values]
+      properties:
+        values: {type: array, items: {type: integer, enum: [2]}}
+        second_value: {type: string}
+    ContainerChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/ContainerOne'}
+        - {$ref: '#/components/schemas/ContainerTwo'}
+    Alpha:
+      type: object
+      required: [wire_name]
+      properties:
+        wire_name: {type: string}
+        first_value: {type: string}
+    Beta:
+      type: object
+      required: [wire_name]
+      properties:
+        wire_name: {type: string}
+        second_value: {type: string}
+    Ambiguous:
+      anyOf:
+        - {$ref: '#/components/schemas/Alpha'}
+        - {$ref: '#/components/schemas/Beta'}
+    AmbiguousAlias: {$ref: '#/components/schemas/Ambiguous'}
+    OpenNested:
+      anyOf:
+        - {$ref: '#/components/schemas/AmbiguousAlias'}
+        - {}
+    OpaqueFirst:
+      anyOf:
+        - {}
+        - {$ref: '#/components/schemas/FiniteTwo'}
+    LargeOne:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, format: int64, enum: [9007199254740992]}
+    LargeTwo:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: integer, format: int64, enum: [9007199254740993]}
+        second_value: {type: string}
+    LargeChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/LargeOne'}
+        - {$ref: '#/components/schemas/LargeTwo'}
+    ExcludedNull:
+      type: object
+      required: [revision]
+      properties:
+        revision:
+          anyOf: [{type: integer, enum: [1]}, {type: 'null'}]
+          enum: [1]
+    IncludedNull:
+      type: object
+      required: [revision]
+      properties:
+        revision: {type: [integer, 'null'], enum: [2, null]}
+        second_value: {type: string}
+    NullableFields:
+      oneOf:
+        - {$ref: '#/components/schemas/ExcludedNull'}
+        - {$ref: '#/components/schemas/IncludedNull'}
+    NullableChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/Alpha'}
+        - {type: 'null'}
+    BranchOne:
+      type: object
+      required: [revision, children]
+      properties:
+        children: {type: array, items: {$ref: '#/components/schemas/Tree'}}
+        revision: {type: integer, enum: [1]}
+    BranchTwo:
+      type: object
+      required: [revision, children]
+      properties:
+        children: {type: array, items: {$ref: '#/components/schemas/Tree'}}
+        revision: {type: integer, enum: [2]}
+        second_value: {type: string}
+    Tree:
+      oneOf:
+        - {$ref: '#/components/schemas/BranchOne'}
+        - {$ref: '#/components/schemas/BranchTwo'}
+    ScalarChoice:
+      oneOf:
+        - {type: integer, enum: [1]}
+        - {type: number, enum: [2.5]}
+        - {type: boolean, enum: [true]}
+    BinaryChoice:
+      oneOf:
+        - {type: string, format: binary}
+        - {type: string}
+    Narrow:
+      type: object
+      required: [identifier]
+      properties:
+        identifier: {type: integer, format: int32}
+    Wide:
+      type: object
+      required: [identifier]
+      properties:
+        identifier: {type: integer, format: int64}
+        second_value: {type: string}
+    FormatChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/Narrow'}
+        - {$ref: '#/components/schemas/Wide'}
+    FormatFallback:
+      anyOf:
+        - {$ref: '#/components/schemas/Narrow'}
+        - {}
+    NumberAlias: {type: integer}
+    AliasChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/NumberAlias'}
+        - {$ref: '#/components/schemas/Alpha'}
+    ChoiceEnvelope:
+      type: object
+      required: [caption, choice, choices, by_name]
+      properties:
+        caption: {type: string}
+        choice: {$ref: '#/components/schemas/FiniteChoice'}
+        choices: {type: array, items: {$ref: '#/components/schemas/FiniteChoice'}}
+        by_name: {type: object, additionalProperties: {$ref: '#/components/schemas/FiniteChoice'}}
+        ordinary_null: {type: string}
+    LeftPart:
+      type: object
+      required: [left_value]
+      properties:
+        left_value: {type: string}
+    RightPart:
+      type: object
+      required: [right_value]
+      properties:
+        right_value: {type: integer, enum: [2]}
+    WrappedPair:
+      allOf:
+        - {$ref: '#/components/schemas/LeftPart'}
+        - {$ref: '#/components/schemas/RightPart'}
+    WrappedChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/WrappedPair'}
+        - {$ref: '#/components/schemas/Alpha'}
+    VariantRaw:
+      anyOf:
+        - {$ref: '#/components/schemas/Alpha'}
+        - {$ref: '#/components/schemas/Beta'}
+    recursive_choice:
+      anyOf:
+        - {$ref: '#/components/schemas/recursive_choice'}
+        - {type: string}
+    NumericZero:
+      anyOf:
+        - {type: number, enum: [0]}
+        - {}
+    NumericFinite:
+      anyOf:
+        - {type: number, enum: [1.25]}
+        - {}
+    IntegerFallback:
+      anyOf:
+        - {type: integer}
+        - {}

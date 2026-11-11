@@ -82,6 +82,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("response-body-no-response-body", "valid/response-body/no-response-body.yaml"),
         ("typed-error-responses", "valid/typed-error-responses.yaml"),
         ("nested-nullable", "valid/nested-nullable.yaml"),
+        ("union-selection", "valid/union-selection.yaml"),
 
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
         ("open-tagged-additional-properties", "valid/open-tagged-additional-properties.yaml"),
@@ -113,6 +114,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_union_selection_golden: "union-selection",
     test_nested_nullable_golden: "nested-nullable",
     test_petstore_golden: "petstore",
 
@@ -182,4 +184,39 @@ generate_golden_tests! {
     test_query_param_enum_golden: "query-param-enum",
     test_server_path_prefix_golden: "server-path-prefix",
     test_reserved_word_fields_golden: "reserved-word-fields",
+}
+
+#[test]
+fn test_untagged_union_policies_golden() {
+    for (strategy, suffix) in [
+        ("firstMatch", "first-match"),
+        ("strict", "strict"),
+        ("raw", "raw"),
+    ] {
+        let config = toml::from_str(&format!("untagged_union_strategy = '{strategy}'")).unwrap();
+        run_golden_test(
+            &JavaOkhttpCodeGenerator::new(config),
+            golden_dir(),
+            &format!("union-{suffix}"),
+            "valid/java-union-policies.yaml",
+            UPDATE_HINT,
+        );
+    }
+}
+
+#[test]
+fn test_recursive_union_helper_types_golden() {
+    for (strategy, case) in [
+        ("firstMatch", "union-helper-types"),
+        ("strict", "union-helper-types-strict"),
+    ] {
+        let config = toml::from_str(&format!("untagged_union_strategy = '{strategy}'")).unwrap();
+        run_golden_test(
+            &JavaOkhttpCodeGenerator::new(config),
+            golden_dir(),
+            case,
+            "valid/java-union-helper-types.yaml",
+            UPDATE_HINT,
+        );
+    }
 }

@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::closed_sum::{
     ClosedSumCasePlan, ClosedSumEncoding, ClosedSumPlan, plan_tagged_union, plan_union,
@@ -12,17 +10,18 @@ use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
     IrTaggedUnion, IrTypeExpr, IrUnion,
 };
-use heck::{ToLowerCamelCase, ToPascalCase};
+use heck::ToPascalCase;
 use sigil_stitch::lang::java::Java;
 use sigil_stitch::prelude::*;
 use sigil_stitch::spec::closed_sum_case_spec::ClosedSumCaseSpec;
 use sigil_stitch::spec::closed_sum_spec::ClosedSumSpec;
 use sigil_stitch::spec::where_spec::TypeArgument;
 
+use super::config::UntaggedUnionStrategy;
 use super::util::{
-    build_java_getter, escape_java_string, java_boxed_type_str, java_field_name, java_getter_name,
-    java_primitive, java_primitive_boxed, java_type_str, type_uses_list, type_uses_map,
-    unique_name,
+    build_java_getter, escape_java_string, intersection_fields, java_boxed_type_str,
+    java_field_name, java_getter_name, java_primitive, java_primitive_boxed, java_type_str,
+    type_uses_list, type_uses_map,
 };
 
 const RENDER_WIDTH: usize = 100;
@@ -32,10 +31,12 @@ pub(crate) fn generate_model_files(
     package_name: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
+    strategy: UntaggedUnionStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
+    let matching_ir = super::matching::wire_ir(ir);
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema, ir, package_name)
+        let body = emit_model_body(schema, ir, &matching_ir, package_name, strategy)
             .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
         let class_name = schema.name.to_pascal_case();
         let filename = format!("{class_name}.java");
@@ -134,13 +135,15 @@ fn request_input_java_type(field: &RequestInputField) -> String {
 fn emit_model_body(
     schema: &IrSchema,
     ir: &IrSpec,
+    matching_ir: &IrSpec,
     package_name: &str,
+    strategy: UntaggedUnionStrategy,
 ) -> Result<String, SigilStitchError> {
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr, package_name),
-        IrSchemaKind::Union(u) => emit_union(schema, u, ir, package_name),
+        IrSchemaKind::Union(u) => emit_union(schema, u, matching_ir, package_name, strategy),
         IrSchemaKind::Intersection(i) => emit_intersection(schema, i, package_name),
         IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name),
     }?;
@@ -395,15 +398,28 @@ fn emit_union(
     union: &IrUnion,
     ir: &IrSpec,
     package_name: &str,
+    strategy: UntaggedUnionStrategy,
 ) -> Result<FileSpec, SigilStitchError> {
-    if union.members.is_empty() && !union.nullable {
+    if union.members.is_empty() && !union.nullable && strategy != UntaggedUnionStrategy::Raw {
         return emit_empty_model(schema, package_name);
     }
-    emit_closed_sum(
-        &plan_union(&schema.name, schema.description.as_deref(), union),
-        &ir.schemas,
-        package_name,
-    )
+    let mut plan = plan_union(&schema.name, schema.description.as_deref(), union);
+    if strategy == UntaggedUnionStrategy::Raw {
+        plan.cases = vec![ClosedSumCasePlan {
+            name: if plan.name == "VariantRaw" {
+                "VariantRawVariant"
+            } else {
+                "VariantRaw"
+            }
+            .into(),
+            payload: Some(IrTypeExpr::Any),
+            doc: None,
+            wire_name: None,
+            is_null: false,
+        }];
+    }
+    let adapter = super::union::adapter(schema, &plan, ir, strategy)?;
+    emit_closed_sum(&plan, package_name, adapter)
 }
 
 // ---------------------------------------------------------------------------
@@ -424,15 +440,9 @@ fn emit_intersection(
         tb = tb.doc(doc);
     }
 
-    let mut used_names: HashSet<String> = HashSet::new();
-    let member_bindings: Vec<(String, String)> = inter
-        .members
-        .iter()
-        .map(|member| {
-            let member_type = java_type_str(member);
-            let field_name = unique_name(&member_type.to_lower_camel_case(), &mut used_names);
-            (member_type, field_name)
-        })
+    let member_bindings: Vec<(String, String)> = intersection_fields(inter)
+        .into_iter()
+        .map(|(field_name, member)| (java_type_str(member), field_name))
         .collect();
     if member_bindings
         .iter()
@@ -499,11 +509,9 @@ fn emit_tagged_union(
     if tu.variants.is_empty() {
         return emit_empty_model(schema, package_name);
     }
-    emit_closed_sum(
-        &plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir),
-        &ir.schemas,
-        package_name,
-    )
+    let plan = plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir);
+    let adapter = java_closed_sum_adapter(&plan)?;
+    emit_closed_sum(&plan, package_name, adapter)
 }
 
 fn emit_empty_model(schema: &IrSchema, package_name: &str) -> Result<FileSpec, SigilStitchError> {
@@ -527,8 +535,8 @@ fn emit_empty_model(schema: &IrSchema, package_name: &str) -> Result<FileSpec, S
 
 fn emit_closed_sum(
     plan: &ClosedSumPlan,
-    schemas: &indexmap::IndexMap<String, IrSchema>,
     package_name: &str,
+    adapter: CodeBlock,
 ) -> Result<FileSpec, SigilStitchError> {
     let mut sum = ClosedSumSpec::builder(&plan.name).visibility(Visibility::Public);
     for doc in &plan.docs {
@@ -554,9 +562,7 @@ fn emit_closed_sum(
     for import in java_adapter_imports() {
         file = file.add_import(import);
     }
-    file.add_closed_sum(sum.build()?)
-        .add_code(java_closed_sum_adapter(plan, schemas)?)
-        .build()
+    file.add_closed_sum(sum.build()?).add_code(adapter).build()
 }
 
 fn java_closed_sum_case(case: &ClosedSumCasePlan) -> Result<ClosedSumCaseSpec, SigilStitchError> {
@@ -614,12 +620,9 @@ fn java_adapter_imports() -> [ImportSpec; 11] {
     ]
 }
 
-fn java_closed_sum_adapter(
-    plan: &ClosedSumPlan,
-    schemas: &indexmap::IndexMap<String, IrSchema>,
-) -> Result<CodeBlock, SigilStitchError> {
+fn java_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
     let read_dispatch =
-        java_adapter_read_dispatch(plan, schemas).map_err(|error| SigilStitchError::Render {
+        java_adapter_read_dispatch(plan).map_err(|error| SigilStitchError::Render {
             context: format!("Java {} Gson adapter read dispatch", plan.name),
             message: error.to_string(),
         })?;
@@ -662,64 +665,10 @@ fn java_closed_sum_adapter(
     })
 }
 
-fn java_adapter_read_dispatch(
-    plan: &ClosedSumPlan,
-    schemas: &indexmap::IndexMap<String, IrSchema>,
-) -> Result<CodeBlock, SigilStitchError> {
+fn java_adapter_read_dispatch(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
     match &plan.encoding {
         ClosedSumEncoding::Untagged => {
-            let null_case = plan.cases.iter().find(|case| case.is_null);
-            let null_result = match null_case {
-                Some(case) => sigil_quote!(Java {
-                    return $N(plan.name.as_str()).$N(case.name.as_str()).INSTANCE;
-                })?,
-                None => sigil_quote!(Java { return null; })?,
-            };
-            let mut branches = vec![sigil_quote!(Java {
-                if (element.isJsonNull()) {
-                    $C(null_result)
-                }
-            })?];
-            let mut catch_all = None;
-            let cases = plan
-                .cases
-                .iter()
-                .filter(|case| !case.is_null && !is_catch_all_case(case))
-                .chain(
-                    plan.cases
-                        .iter()
-                        .filter(|case| !case.is_null && is_catch_all_case(case)),
-                );
-            for case in cases {
-                let Some(payload) = &case.payload else {
-                    continue;
-                };
-                let condition = java_json_condition(payload, schemas)?;
-                let source = sigil_quote!(Java { element })?;
-                let result = java_adapter_read_value(plan, case, payload, source)?;
-                if is_catch_all_case(case) {
-                    catch_all = Some(result);
-                } else {
-                    branches.push(sigil_quote!(Java {
-                        if ($C(condition)) {
-                            $C(result)
-                        }
-                    })?);
-                }
-            }
-            let fallback = match catch_all {
-                Some(result) => result,
-                None => sigil_quote!(Java {
-                    throw new JsonParseException($S(format!(
-                        "unknown {} union value",
-                        plan.name
-                    )));
-                })?,
-            };
-            sigil_quote!(Java {
-                $C_each(branches)
-                $C(fallback)
-            })
+            unreachable!("untagged adapters own structural member selection")
         }
         ClosedSumEncoding::Internal {
             discriminator_field,
@@ -812,7 +761,7 @@ fn java_external_read_case(
     })
 }
 
-fn java_adapter_read_value(
+pub(super) fn java_adapter_read_value(
     plan: &ClosedSumPlan,
     case: &ClosedSumCasePlan,
     payload: &IrTypeExpr,
@@ -860,7 +809,7 @@ fn java_adapter_read_value(
     })
 }
 
-fn java_adapter_write_case(
+pub(super) fn java_adapter_write_case(
     plan: &ClosedSumPlan,
     case: &ClosedSumCasePlan,
 ) -> Result<CodeBlock, SigilStitchError> {
@@ -937,142 +886,6 @@ fn java_adapter_write_case(
             return;
         }
     })
-}
-
-fn java_json_condition(
-    expr: &IrTypeExpr,
-    schemas: &indexmap::IndexMap<String, IrSchema>,
-) -> Result<CodeBlock, SigilStitchError> {
-    match expr {
-        IrTypeExpr::ScalarEnum { representation, .. } => {
-            java_json_condition(representation, schemas)
-        }
-        IrTypeExpr::Primitive(
-            IrPrimitive::String
-            | IrPrimitive::StringWithFormat(_)
-            | IrPrimitive::Date
-            | IrPrimitive::DateTime
-            | IrPrimitive::Uuid,
-        )
-        | IrTypeExpr::StringLiteral(_)
-        | IrTypeExpr::StringEnum(_) => {
-            let base = sigil_quote!(Java {
-                element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-            })?;
-            match expr {
-                IrTypeExpr::StringLiteral(value) => sigil_quote!(Java {
-                    $C(base) && element.getAsString().equals($S(value))
-                }),
-                IrTypeExpr::StringEnum(values) => {
-                    let checks = values
-                        .iter()
-                        .map(|value| sigil_quote!(Java { element.getAsString().equals($S(value)) }))
-                        .collect::<Result<Vec<_>, _>>()?;
-                    let Some((first, rest)) = checks.split_first() else {
-                        return sigil_quote!(Java { false });
-                    };
-                    let values = java_join_conditions(first.clone(), rest.to_vec(), true)?;
-                    sigil_quote!(Java { ($C(base) && $C(values)) })
-                }
-                _ => Ok(base),
-            }
-        }
-        IrTypeExpr::Primitive(IrPrimitive::Boolean) => {
-            sigil_quote!(Java {
-                element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()
-            })
-        }
-        IrTypeExpr::Primitive(
-            IrPrimitive::Integer
-            | IrPrimitive::IntegerWithFormat(_)
-            | IrPrimitive::Number
-            | IrPrimitive::NumberWithFormat(_),
-        ) => sigil_quote!(Java {
-            element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
-        }),
-        IrTypeExpr::Primitive(IrPrimitive::Binary) => {
-            sigil_quote!(Java { element.isJsonPrimitive() && element.getAsJsonPrimitive().isString() })
-        }
-        IrTypeExpr::Array(_) => sigil_quote!(Java { element.isJsonArray() }),
-        IrTypeExpr::Map(_) => sigil_quote!(Java { element.isJsonObject() }),
-        IrTypeExpr::Nullable(inner) => {
-            let inner = java_json_condition(inner, schemas)?;
-            sigil_quote!(Java { element.isJsonNull() || $C(inner) })
-        }
-        IrTypeExpr::Any => sigil_quote!(Java { true }),
-        IrTypeExpr::Union(members) => {
-            let conditions = members
-                .iter()
-                .map(|member| java_json_condition(member, schemas))
-                .collect::<Result<Vec<_>, _>>()?;
-            let Some((first, rest)) = conditions.split_first() else {
-                return sigil_quote!(Java { false });
-            };
-            java_join_conditions(first.clone(), rest.to_vec(), true)
-        }
-        IrTypeExpr::Named(name) => match schemas.get(name).map(|schema| &schema.kind) {
-            Some(IrSchemaKind::Object(object)) => {
-                let required = object
-                    .properties
-                    .iter()
-                    .filter(|(_, property)| property.required)
-                    .map(|(wire_name, _)| wire_name)
-                    .collect::<Vec<_>>();
-                let checks = required
-                    .iter()
-                    .map(|wire_name| {
-                        sigil_quote!(Java {
-                            element.getAsJsonObject().has($S(wire_name.as_str()))
-                        })
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-                let object_check = sigil_quote!(Java { element.isJsonObject() })?;
-                Ok(java_join_conditions(object_check, checks, false)?)
-            }
-            Some(IrSchemaKind::Enum(en)) => match en.value_type {
-                IrEnumValueType::String => sigil_quote!(Java {
-                    element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
-                }),
-                IrEnumValueType::Integer | IrEnumValueType::Number => sigil_quote!(Java {
-                    element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()
-                }),
-                IrEnumValueType::Mixed => sigil_quote!(Java { element.isJsonPrimitive() }),
-            },
-            Some(IrSchemaKind::Alias(inner)) => java_json_condition(inner, schemas),
-            Some(IrSchemaKind::Union(union)) => {
-                let conditions = union
-                    .members
-                    .iter()
-                    .map(|member| java_json_condition(member, schemas))
-                    .collect::<Result<Vec<_>, _>>()?;
-                let Some((first, rest)) = conditions.split_first() else {
-                    return sigil_quote!(Java { false });
-                };
-                java_join_conditions(first.clone(), rest.to_vec(), true)
-            }
-            _ => sigil_quote!(Java { element.isJsonObject() }),
-        },
-    }
-}
-
-fn is_catch_all_case(case: &ClosedSumCasePlan) -> bool {
-    matches!(case.payload.as_ref(), Some(IrTypeExpr::Any))
-}
-
-fn java_join_conditions(
-    first: CodeBlock,
-    rest: Vec<CodeBlock>,
-    disjunction: bool,
-) -> Result<CodeBlock, SigilStitchError> {
-    let mut result = first;
-    for condition in rest {
-        result = if disjunction {
-            sigil_quote!(Java { ($C(result) || $C(condition)) })?
-        } else {
-            sigil_quote!(Java { ($C(result) && $C(condition)) })?
-        };
-    }
-    Ok(result)
 }
 
 // ---------------------------------------------------------------------------
@@ -1165,21 +978,51 @@ mod tests {
             }],
             encoding: ClosedSumEncoding::Untagged,
         };
-        let adapter = java_closed_sum_adapter(&plan, &indexmap::IndexMap::new()).unwrap();
+        let union = IrUnion {
+            members: vec![IrTypeExpr::Primitive(IrPrimitive::String)],
+            nullable: false,
+        };
+        let ir = crate::ir::lower::lower(
+            crate::parser::parse_content_yaml(include_str!(
+                "../../../../tests/fixtures/valid/minimal.yaml"
+            ))
+            .unwrap(),
+        )
+        .unwrap();
+        let schema = IrSchema {
+            name: "Choice".into(),
+            description: None,
+            deprecated: false,
+            is_component: true,
+            kind: IrSchemaKind::Union(union),
+        };
+        let adapter =
+            super::super::union::adapter(&schema, &plan, &ir, UntaggedUnionStrategy::FirstMatch)
+                .unwrap();
         assert_rendered!(
             Java::new(),
             width = 100,
             adapter,
-            r#"final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
+            r#"import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
+final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
     private final Gson gson = new Gson();
 
     @Override
-    public Choice read (JsonReader reader) throws java.io.IOException {
+    public Choice read(JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        int selected = -1;
+        if (selected < 0 && matches0(element)) {
+            selected = 0;
+        }
+        if (selected == 0) {
             return new Choice.VariantString(element.getAsString());
         }
         throw new JsonParseException("unknown Choice union value");
@@ -1195,6 +1038,10 @@ mod tests {
             gson.toJson(gson.toJsonTree(((Choice.VariantString) value).value0()), writer);
             return;
         }
+    }
+
+    private static boolean matches0(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isString();
     }
 }
 "#,

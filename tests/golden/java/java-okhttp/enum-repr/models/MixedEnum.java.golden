@@ -38,21 +38,34 @@ final class MixedEnumJsonAdapter extends TypeAdapter<MixedEnum> {
     private final Gson gson = new Gson();
 
     @Override
-    public MixedEnum read (JsonReader reader) throws java.io.IOException {
+    public MixedEnum read(JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return null;
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString() && element.getAsString().equals("SimpleA")) {
+        int selected = -1;
+        if (selected < 0 && matches0(element)) {
+            selected = 0;
+        }
+        if (selected < 0 && matches1(element)) {
+            selected = 1;
+        }
+        if (selected < 0 && matches5(element)) {
+            selected = 2;
+        }
+        if (selected < 0 && matches6(element)) {
+            selected = 3;
+        }
+        if (selected == 0) {
             return new MixedEnum.VariantSimpleA(element.getAsString());
         }
-        if ((element.isJsonObject() && element.getAsJsonObject().has("VariantA"))) {
+        if (selected == 1) {
             return new MixedEnum.VariantMixedEnumMember2(gson.fromJson(element, new TypeToken<MixedEnumMember2>() {}.getType()));
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString() && element.getAsString().equals("SimpleB")) {
+        if (selected == 2) {
             return new MixedEnum.VariantSimpleB(element.getAsString());
         }
-        if ((element.isJsonObject() && element.getAsJsonObject().has("VariantB"))) {
+        if (selected == 3) {
             return new MixedEnum.VariantMixedEnumMember4(gson.fromJson(element, new TypeToken<MixedEnumMember4>() {}.getType()));
         }
         throw new JsonParseException("unknown MixedEnum union value");
@@ -80,5 +93,94 @@ final class MixedEnumJsonAdapter extends TypeAdapter<MixedEnum> {
             gson.toJson(gson.toJsonTree(((MixedEnum.VariantMixedEnumMember4) value).value0()), writer);
             return;
         }
+    }
+
+    private static boolean matches0(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isString() && candidate.getAsString().equals("SimpleA");
+    }
+
+    private static boolean matches1(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (!object.has("VariantA") || !matches2(object.get("VariantA"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matches2(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (!object.has("field1") || !matches3(object.get("field1"))) {
+            return false;
+        }
+        if (!object.has("field2") || !matches4(object.get("field2"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matches3(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isString();
+    }
+
+    private static boolean matches4(JsonElement candidate) {
+        if (!candidate.isJsonPrimitive() || !candidate.getAsJsonPrimitive().isNumber()) {
+            return false;
+        }
+        java.lang.String literal = candidate.getAsString();
+        java.math.BigDecimal significand = numberSignificand(literal);
+        return significand.signum() == 0 || numberExponent(literal).compareTo(java.math.BigInteger.valueOf(significand.scale())) >= 0;
+    }
+
+    private static boolean matches5(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isString() && candidate.getAsString().equals("SimpleB");
+    }
+
+    private static boolean matches6(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (!object.has("VariantB") || !matches7(object.get("VariantB"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matches7(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        JsonObject object = candidate.getAsJsonObject();
+        if (!object.has("field3") || !matches8(object.get("field3"))) {
+            return false;
+        }
+        if (!object.has("field4") || !matches9(object.get("field4"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean matches8(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isBoolean();
+    }
+
+    private static boolean matches9(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isNumber();
+    }
+
+    private static java.math.BigDecimal numberSignificand(java.lang.String literal) {
+        int exponent = java.lang.Math.max(literal.indexOf('e'), literal.indexOf('E'));
+        return new java.math.BigDecimal(exponent < 0 ? literal : literal.substring(0, exponent)).stripTrailingZeros();
+    }
+
+    private static java.math.BigInteger numberExponent(java.lang.String literal) {
+        int exponent = java.lang.Math.max(literal.indexOf('e'), literal.indexOf('E'));
+        return exponent < 0 ? java.math.BigInteger.ZERO : new java.math.BigInteger(literal.substring(exponent + 1));
     }
 }

@@ -43,6 +43,7 @@ impl JavaOkhttpCodeGenerator {
             &package_name,
             &header,
             &request_inputs,
+            self.config.untagged_union_strategy,
         )?);
 
         files.extend(sigil_emit_api::generate_api_files(

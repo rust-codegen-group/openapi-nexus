@@ -38,18 +38,28 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
     private final Gson gson = new Gson();
 
     @Override
-    public Choice read (JsonReader reader) throws java.io.IOException {
+    public Choice read(JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         if (element.isJsonNull()) {
             return Choice.VariantNull.INSTANCE;
         }
-        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+        int selected = -1;
+        if (selected < 0 && matches0(element)) {
+            selected = 0;
+        }
+        if (selected < 0 && matches1(element)) {
+            selected = 1;
+        }
+        if (selected < 0 && matches3(element)) {
+            selected = 2;
+        }
+        if (selected == 0) {
             return new Choice.VariantString(element.getAsString());
         }
-        if (element.isJsonArray()) {
+        if (selected == 1) {
             return new Choice.VariantArray(gson.fromJson(element, new TypeToken<List<Integer>>() {}.getType()));
         }
-        if (element.isJsonObject()) {
+        if (selected == 2) {
             return new Choice.VariantMap(gson.fromJson(element, new TypeToken<Map<String,
             Boolean>>() {}.getType()));
         }
@@ -78,5 +88,56 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
             writer.nullValue();
             return;
         }
+    }
+
+    private static boolean matches0(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isString();
+    }
+
+    private static boolean matches1(JsonElement candidate) {
+        if (!candidate.isJsonArray()) {
+            return false;
+        }
+        for (JsonElement item : candidate.getAsJsonArray()) {
+            if (!matches2(item)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean matches2(JsonElement candidate) {
+        if (!candidate.isJsonPrimitive() || !candidate.getAsJsonPrimitive().isNumber()) {
+            return false;
+        }
+        java.lang.String literal = candidate.getAsString();
+        java.math.BigDecimal significand = numberSignificand(literal);
+        return significand.signum() == 0 || numberExponent(literal).compareTo(java.math.BigInteger.valueOf(significand.scale())) >= 0;
+    }
+
+    private static boolean matches3(JsonElement candidate) {
+        if (!candidate.isJsonObject()) {
+            return false;
+        }
+        for (JsonElement item : candidate.getAsJsonObject().asMap().values()) {
+            if (!matches4(item)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean matches4(JsonElement candidate) {
+        return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isBoolean();
+    }
+
+    private static java.math.BigDecimal numberSignificand(java.lang.String literal) {
+        int exponent = java.lang.Math.max(literal.indexOf('e'), literal.indexOf('E'));
+        return new java.math.BigDecimal(exponent < 0 ? literal : literal.substring(0, exponent)).stripTrailingZeros();
+    }
+
+    private static java.math.BigInteger numberExponent(java.lang.String literal) {
+        int exponent = java.lang.Math.max(literal.indexOf('e'), literal.indexOf('E'));
+        return exponent < 0 ? java.math.BigInteger.ZERO : new java.math.BigInteger(literal.substring(exponent + 1));
     }
 }

@@ -167,7 +167,7 @@ components:
 }
 
 #[test]
-fn scalar_enum_metadata_changes_only_rust_union_dispatch_and_not_public_representations() {
+fn scalar_enum_metadata_changes_union_dispatch_without_changing_public_representations() {
     let source = r#"openapi: 3.1.0
 info: {title: Scalar representations, version: '1'}
 paths:
@@ -308,6 +308,20 @@ components:
                 );
                 assert!(actual.contains("Some(1_i64)"));
                 assert!(actual.contains("Some(true)"));
+                continue;
+            }
+            if generator.generator_type().language() == openapi_nexus::codegen::Language::Java
+                && filename == "Models/Choice.java"
+            {
+                let actual = &actual[filename];
+                assert_ne!(actual, expected, "Java dispatch consumes finite facts");
+                assert_eq!(
+                    actual.split("\nfinal class ChoiceJsonAdapter").next(),
+                    expected.split("\nfinal class ChoiceJsonAdapter").next(),
+                    "Java typed cases and payloads do not change"
+                );
+                assert!(actual.contains("matchesNumber(candidate, \"1\")"));
+                assert!(actual.contains("candidate.getAsBoolean() == true"));
                 continue;
             }
             assert_eq!(

@@ -1,0 +1,2 @@
+sourceSets.test.java.srcDir("../../support/union-policies")
+sourceSets.test.java.srcDir("../../support/http")
