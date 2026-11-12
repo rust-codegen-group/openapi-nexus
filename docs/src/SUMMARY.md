@@ -7,6 +7,7 @@
 - [Multipart and Binary Bodies](multipart_and_binary.md)
 - [Response Headers](response_headers.md)
 - [Rust Generator Configuration](rust_config.md)
+- [Go Generator Configuration](go_config.md)
 - [TypeScript Generator Configuration](ts_config.md)
 - [Python Generator Configuration](python_config.md)
 - [Java Generator Configuration](java_config.md)

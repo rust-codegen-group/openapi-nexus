@@ -1,0 +1,120 @@
+openapi: 3.1.0
+info: {title: Go allOf composition, version: '1.0.0'}
+paths:
+  /composition:
+    post:
+      operationId: echoComposition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Pair'}
+      responses:
+        '200':
+          description: Flat composed object
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Pair'}
+        '400':
+          description: Composed error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Pair'}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: true
+    OpenAllOf:
+      allOf:
+        - {$ref: '#/components/schemas/Base'}
+        - {type: object, additionalProperties: true}
+    Other:
+      type: object
+      required: [other_field]
+      properties:
+        other_field: {type: integer}
+    Pair:
+      allOf:
+        - {$ref: '#/components/schemas/Base'}
+        - {$ref: '#/components/schemas/Other'}
+    Nested:
+      allOf:
+        - {$ref: '#/components/schemas/Pair'}
+        - {type: object, additionalProperties: true}
+    Alias: {$ref: '#/components/schemas/Base'}
+    Aliased:
+      allOf:
+        - {$ref: '#/components/schemas/Alias'}
+        - {$ref: '#/components/schemas/Other'}
+    Repeated:
+      allOf:
+        - {$ref: '#/components/schemas/Base'}
+        - {$ref: '#/components/schemas/Base'}
+    Strings:
+      type: object
+      additionalProperties: {type: string}
+    StringField:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    TypedMap:
+      allOf:
+        - {$ref: '#/components/schemas/StringField'}
+        - {type: object, additionalProperties: {type: string}}
+    NamedMap:
+      allOf:
+        - {$ref: '#/components/schemas/StringField'}
+        - {$ref: '#/components/schemas/Strings'}
+    Maps:
+      allOf:
+        - {type: object, additionalProperties: true}
+        - {type: object, additionalProperties: true}
+    AdditionalProperties:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    StorageCollision:
+      allOf:
+        - {type: object, additionalProperties: true}
+        - {$ref: '#/components/schemas/AdditionalProperties'}
+    Single:
+      allOf: [{$ref: '#/components/schemas/Base'}]
+    Scalar:
+      allOf: [{type: integer}, {type: number}]
+    ArrayValue:
+      allOf: [{type: array, items: {type: string}}]
+    Cycle:
+      allOf: [{$ref: '#/components/schemas/Cycle'}]
+    Incompatible:
+      allOf:
+        - {$ref: '#/components/schemas/StringField'}
+        - {type: object, additionalProperties: {type: integer}}
+    Holder:
+      type: object
+      required: [pair, nested, single]
+      properties:
+        pair: {$ref: '#/components/schemas/Pair'}
+        nested: {$ref: '#/components/schemas/Nested'}
+        single: {$ref: '#/components/schemas/Single'}
+    CaseBase:
+      type: object
+      required: [ID]
+      properties:
+        ID: {type: string}
+      additionalProperties: true
+    CaseSingle:
+      allOf: [{$ref: '#/components/schemas/CaseBase'}]
+    CasePair:
+      allOf:
+        - {$ref: '#/components/schemas/CaseBase'}
+        - {$ref: '#/components/schemas/Other'}
+    CaseNested:
+      allOf:
+        - {$ref: '#/components/schemas/CasePair'}
+        - {type: object, additionalProperties: true}

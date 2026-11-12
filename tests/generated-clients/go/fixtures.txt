@@ -1,0 +1,3 @@
+composition valid/go-allof-composition.yaml
+raw valid/go-allof-composition.yaml raw
+nullable valid/go-allof-nullable.yaml

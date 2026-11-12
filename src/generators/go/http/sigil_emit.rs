@@ -8,7 +8,7 @@
 //! - `Enum` — typed string/int constants + named type alias.
 //! - `Alias` — `type X = Y` alias.
 //! - `Union` — `interface{}` alias plus variant structs (untagged, simplified).
-//! - `Intersection` — struct composed by embedding each named member.
+//! - `Intersection` — flat object/map composition or raw JSON fallback.
 //! - `TaggedUnion` — typed marker interface + one struct per variant.
 //!
 //! Imports for cross-schema references are tracked via sigil-stitch's
@@ -22,8 +22,8 @@ use crate::generators::request_inputs::{
 };
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
-    IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
-    IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
+    IrEnum, IrEnumValueType, IrObject, IrPrimitive, IrProperty, IrSchema, IrSchemaKind, IrSpec,
+    IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::lang::go::Go;
@@ -45,10 +45,11 @@ pub fn generate_model_files(
     module_path: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
+    all_of_strategy: super::config::AllOfStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema).map_err(|source| {
+        let body = emit_model_body(schema, ir, all_of_strategy).map_err(|source| {
             GeneratorError::emission(ArtifactKind::Model, &schema.name, source)
         })?;
         files.push(model_file(&schema.name, header, &body));
@@ -119,13 +120,17 @@ fn request_input_go_type(field: &RequestInputField) -> String {
 
 /// Dispatch on schema kind. Returns the rendered file body (package + imports
 /// + declarations) but not the pre-package header comment.
-fn emit_model_body(schema: &IrSchema) -> Result<String, sigil_stitch::error::SigilStitchError> {
+fn emit_model_body(
+    schema: &IrSchema,
+    ir: &IrSpec,
+    all_of_strategy: super::config::AllOfStrategy,
+) -> Result<String, sigil_stitch::error::SigilStitchError> {
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj),
         IrSchemaKind::Enum(en) => emit_enum(schema, en),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr),
         IrSchemaKind::Union(u) => emit_union(schema, u),
-        IrSchemaKind::Intersection(i) => emit_intersection(schema, i),
+        IrSchemaKind::Intersection(i) => super::composition::emit(schema, i, ir, all_of_strategy),
         IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu),
     }?;
     Ok(file_spec)
@@ -370,30 +375,6 @@ fn emit_union(
 }
 
 // ---------------------------------------------------------------------------
-// Intersection -> struct with embedded members
-// ---------------------------------------------------------------------------
-
-fn emit_intersection(
-    schema: &IrSchema,
-    inter: &IrIntersection,
-) -> Result<String, sigil_stitch::error::SigilStitchError> {
-    let name = schema.name.to_pascal_case();
-    let mut tb = TypeSpec::builder(&name, TypeKind::Struct);
-    if let Some(doc) = &schema.description {
-        tb = tb.doc(doc);
-    }
-    for member in &inter.members {
-        tb = tb.add_embedded(go_type_name(member));
-    }
-
-    let fb = FileSpec::builder(&format!("{}.go", name))
-        .header(package_header()?)
-        .add_type(tb.build()?);
-    let file = fb.build()?;
-    file.render(RENDER_WIDTH)
-}
-
-// ---------------------------------------------------------------------------
 // TaggedUnion -> marker interface + variant wrappers (simplified)
 // ---------------------------------------------------------------------------
 
@@ -431,7 +412,7 @@ fn emit_tagged_union(
 // ---------------------------------------------------------------------------
 
 /// Build a `package models` header block.
-fn package_header() -> Result<CodeBlock, sigil_stitch::error::SigilStitchError> {
+pub(super) fn package_header() -> Result<CodeBlock, sigil_stitch::error::SigilStitchError> {
     sigil_quote!(Go {
         package $L(MODELS_PACKAGE)
     })
@@ -464,7 +445,7 @@ fn render_alias_file(
 /// All same-package references (named schemas, primitives) resolve to a plain
 /// `TypeName::primitive` with the Go identifier. Cross-package imports aren't
 /// needed within the `models/` tree.
-fn go_type_name(expr: &IrTypeExpr) -> TypeName {
+pub(super) fn go_type_name(expr: &IrTypeExpr) -> TypeName {
     match expr {
         IrTypeExpr::ScalarEnum { representation, .. } => go_type_name(representation),
         IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
