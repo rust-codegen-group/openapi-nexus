@@ -13,6 +13,10 @@ weakening native delegate errors or finite-value precision.
 Kotlin's independent policy consumers use the same schema fixtures, preserving
 transparent type aliases and its own native scalar decoding behavior while
 checking exact finite matching, recursion, wrapped intersections and raw trees.
+The Kotlin dictionary consumer checks flat typed/opaque maps, null entries,
+recursive values, native integer decode errors, containing models and HTTP
+request/response/error boundaries. Its helper-type consumer also verifies authored
+models and dictionaries named after Gson helpers retain their declared identities.
 Generated manifests and source are used unchanged. Each fixture has a separate
 consumer subproject, so identically named SDK classes do not share a classpath.
 

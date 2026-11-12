@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info: {title: Kotlin dictionary helper types, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    TypeToken:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    JsonElement:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    JsonNull:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    Gson:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    TokenValues:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/TypeToken'}
+    ElementValues:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/JsonElement'}
+    NullValues:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/JsonNull'}
+    GsonValues:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/Gson'}
+    NestedValues:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            anyOf: [{$ref: '#/components/schemas/JsonElement'}, {type: 'null'}]
+    JsonAdapter:
+      type: object
+      additionalProperties: true
+    JsonReader:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/TypeToken'}
+    TypeAdapter:
+      type: object
+      additionalProperties: {type: string}
