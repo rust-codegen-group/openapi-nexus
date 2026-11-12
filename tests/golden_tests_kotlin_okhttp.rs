@@ -93,6 +93,8 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("reserved-word-fields", "valid/reserved-word-fields.yaml"),
         ("dictionaries", "valid/kotlin-dictionaries.yaml"),
         ("dictionary-helper-types", "valid/kotlin-dictionary-helper-types.yaml"),
+        ("mixed-additional-properties", "valid/kotlin-additional-properties.yaml"),
+        ("additional-helper-types", "valid/kotlin-additional-helper-types.yaml"),
     ])
 }
 
@@ -188,6 +190,8 @@ generate_golden_tests! {
     test_reserved_word_fields_golden: "reserved-word-fields",
     test_dictionaries_golden: "dictionaries",
     test_dictionary_helper_types_golden: "dictionary-helper-types",
+    test_mixed_additional_properties_golden: "mixed-additional-properties",
+    test_additional_helper_types_golden: "additional-helper-types",
 }
 
 #[test]

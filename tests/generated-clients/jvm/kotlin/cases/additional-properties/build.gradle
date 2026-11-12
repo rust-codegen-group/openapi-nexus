@@ -1,0 +1,9 @@
+plugins { id("org.jetbrains.kotlin.jvm") version "2.2.21" }
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+kotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17 } }
+
+sourceSets.test.java.srcDir("../../support/additional-properties")
