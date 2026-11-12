@@ -167,6 +167,9 @@ fn emit_object(
 ) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
 
+    let additional =
+        super::additional_properties::AdditionalProperties::new(schema, obj, package_name);
+
     let mut file =
         FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name)?);
 
@@ -271,7 +274,16 @@ fn emit_object(
         tb = tb.add_method(build_java_getter(&getter_name, &type_str, &field_name));
     }
 
+    if let Some(additional) = &additional {
+        tb = tb
+            .annotate(additional.annotation())
+            .extra_member(additional.storage()?)
+            .add_method(additional.getter()?);
+    }
     file = file.add_type(tb.build()?);
+    if let Some(additional) = &additional {
+        file = file.add_type(additional.factory(package_name)?);
+    }
     file.build()
 }
 

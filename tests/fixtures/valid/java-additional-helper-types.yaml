@@ -1,0 +1,23 @@
+openapi: 3.1.0
+info: {title: Java additional helper types, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    JsonElement:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    Map:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/JsonElement'}
+    Integer:
+      type: object
+      additionalProperties: {type: integer}
+    Gson:
+      type: object
+      additionalProperties: {type: integer, format: int64}

@@ -5,3 +5,7 @@ union-strict valid/java-union-policies.yaml strict
 union-raw valid/java-union-policies.yaml raw
 union-helper-types valid/java-union-helper-types.yaml firstMatch
 union-helper-types-strict valid/java-union-helper-types.yaml strict
+additional-properties valid/java-additional-properties.yaml
+additional-properties-strict valid/java-additional-properties.yaml strict
+additional-properties-raw valid/java-additional-properties.yaml raw
+additional-helper-types valid/java-additional-helper-types.yaml

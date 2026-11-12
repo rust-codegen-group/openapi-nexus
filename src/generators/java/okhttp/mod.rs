@@ -1,3 +1,4 @@
+mod additional_properties;
 pub mod codegen;
 pub mod config;
 mod matching;
