@@ -5,3 +5,5 @@ union-strict valid/java-union-policies.yaml strict
 union-raw valid/java-union-policies.yaml raw
 union-helper-types valid/java-union-helper-types.yaml firstMatch
 union-helper-types-strict valid/java-union-helper-types.yaml strict
+dictionaries valid/kotlin-dictionaries.yaml
+dictionary-helper-types valid/kotlin-dictionary-helper-types.yaml

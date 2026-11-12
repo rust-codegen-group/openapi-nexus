@@ -106,7 +106,7 @@ fn emit_model_body(
     file_spec.render(RENDER_WIDTH)
 }
 
-fn package_header(package_name: &str) -> Result<CodeBlock, SigilStitchError> {
+pub(super) fn package_header(package_name: &str) -> Result<CodeBlock, SigilStitchError> {
     sigil_quote!(Kotlin {
         package $L(format!("{package_name}.models"))
     })
@@ -121,6 +121,11 @@ fn emit_object(
     obj: &IrObject,
     package_name: &str,
 ) -> Result<FileSpec, SigilStitchError> {
+    if obj.properties.is_empty()
+        && let Some(values) = &obj.additional_properties
+    {
+        return super::dictionary::file(schema, values, package_name);
+    }
     let name = schema.name.to_pascal_case();
 
     let mut file =
@@ -383,23 +388,42 @@ fn kotlin_closed_sum_case(case: &ClosedSumCasePlan) -> Result<ClosedSumCaseSpec,
 }
 
 pub(super) fn kotlin_type_name(expr: &IrTypeExpr) -> TypeName {
+    kotlin_type_name_in(expr, None)
+}
+
+/// Authored model identities must remain distinct from an adapter's imports.
+pub(super) fn kotlin_type_name_in(expr: &IrTypeExpr, models_package: Option<&str>) -> TypeName {
+    let builtin = |module: &str, name: &str| match models_package {
+        Some(_) => TypeName::qualified(module, name),
+        None => TypeName::primitive(name),
+    };
     match expr {
-        IrTypeExpr::ScalarEnum { representation, .. } => kotlin_type_name(representation),
-        IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
-        IrTypeExpr::Primitive(primitive) => TypeName::primitive(kt_primitive(primitive)),
+        IrTypeExpr::ScalarEnum { representation, .. } => {
+            kotlin_type_name_in(representation, models_package)
+        }
+        IrTypeExpr::Named(name) => match models_package {
+            Some(package) => TypeName::qualified(package, &name.to_pascal_case()),
+            None => TypeName::primitive(&name.to_pascal_case()),
+        },
+        IrTypeExpr::Primitive(primitive) => builtin("kotlin", kt_primitive(primitive)),
         IrTypeExpr::Array(inner) => TypeName::application(
-            TypeName::primitive("List"),
-            vec![TypeArgument::Single(kotlin_type_name(inner))],
+            builtin("kotlin.collections", "List"),
+            vec![TypeArgument::Single(kotlin_type_name_in(
+                inner,
+                models_package,
+            ))],
         ),
         IrTypeExpr::Map(inner) => TypeName::application(
-            TypeName::primitive("Map"),
+            builtin("kotlin.collections", "Map"),
             vec![
-                TypeArgument::Single(TypeName::primitive("String")),
-                TypeArgument::Single(kotlin_type_name(inner)),
+                TypeArgument::Single(builtin("kotlin", "String")),
+                TypeArgument::Single(kotlin_type_name_in(inner, models_package)),
             ],
         ),
-        IrTypeExpr::Nullable(inner) => TypeName::optional(kotlin_type_name(inner)),
-        IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => TypeName::primitive("String"),
+        IrTypeExpr::Nullable(inner) => {
+            TypeName::optional(kotlin_type_name_in(inner, models_package))
+        }
+        IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => builtin("kotlin", "String"),
         IrTypeExpr::Union(_) | IrTypeExpr::Any => {
             TypeName::importable("com.google.gson", "JsonElement")
         }
@@ -729,6 +753,32 @@ fn emit_typealias(
 mod tests {
     use super::*;
     use sigil_stitch::assert_rendered;
+
+    #[test]
+    fn dictionary_value_types_keep_qualified_model_identities() {
+        let expr = IrTypeExpr::Map(Box::new(IrTypeExpr::Array(Box::new(IrTypeExpr::Nullable(
+            Box::new(IrTypeExpr::Named("JsonElement".into())),
+        )))));
+        let value_type = kotlin_type_name_in(&expr, Some("sdk.models"));
+        let token = crate::generators::type_application(
+            TypeName::importable("com.google.gson.reflect", "TypeToken"),
+            vec![kotlin_type_name_in(
+                &IrTypeExpr::Named("TypeToken".into()),
+                Some("sdk.models"),
+            )],
+        );
+        let body = sigil_quote!(Kotlin {
+            val values: $T(value_type)
+            val token = object : $T(token)() {}
+        })
+        .unwrap();
+        assert_rendered!(
+            Kotlin::new(),
+            width = 120,
+            body,
+            "import com.google.gson.reflect.TypeToken\n\nval values: kotlin.collections.Map<kotlin.String, kotlin.collections.List<sdk.models.JsonElement?>>\nval token = object: TypeToken<sdk.models.TypeToken>() {\n}\n",
+        );
+    }
 
     #[test]
     fn tagged_adapter_render_is_pinned() {

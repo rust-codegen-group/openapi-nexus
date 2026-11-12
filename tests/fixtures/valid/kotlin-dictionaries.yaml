@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info: {title: Kotlin dictionaries, version: '1.0.0'}
+paths:
+  /labels:
+    post:
+      tags: [Dictionary]
+      operationId: echoLabels
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Labels'}
+      responses:
+        '200':
+          description: Preserved dictionary
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Labels'}
+        '400':
+          description: Dictionary error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Values'}
+components:
+  schemas:
+    Labels:
+      description: Verbatim labels indexed by their wire keys.
+      type: object
+      additionalProperties: {type: string}
+    NestedValue:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+        ordinary_null: {type: string}
+        native_int: {type: integer}
+    ValueHolder:
+      type: object
+      properties:
+        value: {$ref: '#/components/schemas/NestedValue'}
+    Values:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/NestedValue'}
+    JsonValues:
+      type: object
+      additionalProperties: true
+    EmptySchemaValues:
+      type: object
+      additionalProperties: {}
+    Numbers:
+      type: object
+      additionalProperties: {type: integer, format: int64}
+    Integers:
+      type: object
+      additionalProperties: {type: integer}
+    Flags:
+      type: object
+      additionalProperties: {type: boolean}
+    NullableValues:
+      type: object
+      additionalProperties:
+        anyOf: [{$ref: '#/components/schemas/NestedValue'}, {type: 'null'}]
+    Lists:
+      type: object
+      additionalProperties: {type: array, items: {$ref: '#/components/schemas/NestedValue'}}
+    NestedMaps:
+      type: object
+      additionalProperties: {type: object, additionalProperties: {$ref: '#/components/schemas/NestedValue'}}
+    NestedNullableMaps:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          anyOf: [{$ref: '#/components/schemas/NestedValue'}, {type: 'null'}]
+    RawLists:
+      type: object
+      additionalProperties: {type: array, items: true}
+    Alias: {$ref: '#/components/schemas/Values'}
+    Node:
+      type: object
+      required: [wire_value, children]
+      properties:
+        wire_value: {type: string}
+        children: {$ref: '#/components/schemas/Nodes'}
+    Nodes:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/Node'}
+    LabelChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/Labels'}
+        - {type: integer}
+    Choices:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/LabelChoice'}
+    Envelope:
+      type: object
+      required: [labels, values, dictionaries, aliases, json_values]
+      properties:
+        labels: {$ref: '#/components/schemas/Labels'}
+        values: {$ref: '#/components/schemas/Values'}
+        dictionaries: {type: array, items: {$ref: '#/components/schemas/Values'}}
+        aliases: {$ref: '#/components/schemas/Alias'}
+        json_values: {$ref: '#/components/schemas/JsonValues'}
+        ordinary_null: {type: string}

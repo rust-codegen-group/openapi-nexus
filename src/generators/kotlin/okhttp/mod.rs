@@ -1,5 +1,6 @@
 pub mod codegen;
 pub mod config;
+mod dictionary;
 mod matching;
 pub mod runtime;
 pub mod sigil_emit;
