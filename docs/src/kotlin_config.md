@@ -33,8 +33,8 @@ return Kotlin `null`, while nullable unions use `VariantNull`.
 Kotlin `typealias` declarations remain transparent. Intersections retain their
 existing wrapper fields (for example, `leftPart` and `rightPart`); this is not an
 `allOf` codec redesign. Ordinary objects, aliases, enum declarations, and tagged
-unions keep their existing APIs/codecs. Pure dictionaries have the representation
-described below; mixed-object additional-property repair remains separate.
+unions keep their existing APIs/codecs. Explicit dictionary and mixed-object
+additional properties have the representations described below.
 
 Raw mode uses Gson's native tree adapter and temporarily enables writer null
 serialization, restoring its prior value even on failure. This preserves null
@@ -72,6 +72,47 @@ Dictionary entry nulls are preserved without changing the writer's surrounding
 null policy. Values decode from the original JSON reader through their declared
 Gson codecs, preserving native decode errors as well as ordinary model null-field
 omission. Authored model types remain distinct from Gson helper types, even when
-they share names such as `TypeToken` or `JsonElement`. This does not preserve
-unspecified fields in mixed objects or redesign `allOf` wrappers; those repairs
-remain separate.
+they share names such as `TypeToken` or `JsonElement`. Mixed-object preservation
+is described below; `allOf` wrapper redesign remains separate.
+
+## Mixed-object additional properties
+
+An object with named fields and explicit `additionalProperties` gets a typed
+`var additionalProperties: MutableMap<String, V>` as its final defaulted primary
+constructor property. Each instance starts with an independent empty map.
+
+```kotlin
+val value = MixedMap(knownField = "fixed")
+value.additionalProperties["keep_key"] = NestedValue(wireValue = "nested")
+// Gson writes {"known_field":"fixed","keep_key":{"wire_value":"nested"}}
+val duplicate = value.copy() // Retains the same map, as a normal shallow copy.
+```
+
+Existing named constructor arguments and component positions remain unchanged;
+an overload retains the old Java named-field constructor entrypoint. The appended
+storage participates in generated copy, equality, hash and component operations.
+Adding a data-class property changes generated binary signatures: regenerate and
+recompile consumers rather than mixing old and new SDK binaries.
+
+The storage field is transient to Gson's ordinary delegate, and the flat-object
+adapter handles it separately. Extension keys stay verbatim. A storage-name clash
+adds a numeric suffix such as `additionalProperties2`, without renaming authored
+members. An extension key equal to a declared wire key raises
+`IllegalArgumentException` on writing, even if that named field is omitted.
+
+Opaque values (`true` or `{}`) use `JsonElement` to retain null entries and large
+numeric literals. Declared models, enums, containers, nullable values, recursive
+references and transparent aliases keep their native value codecs; union values
+retain the configured selection policy. The actual configured Gson instance
+continues to own named fields, field naming and custom value adapters.
+
+Native streaming/tree coercion differences, configured numeric writing and
+ordinary null omission are retained. Extension entry nulls do not force null
+fields inside ordinary model values or alter the surrounding writer's policy,
+including on failure. This support uses the tree reader/writer implementation
+classes from the unchanged Gson 2.11.0 dependency; native consumers cover both
+input modes.
+
+Pure-dictionary codecs are unchanged. Closed/implicit objects, general inline
+composition lowering, opaque named-alias codecs, multi-member `allOf`, tagged
+wrapper extension storage and generation formatting remain separate concerns.

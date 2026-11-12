@@ -96,7 +96,7 @@ fn emit_model_body(
     strategy: UntaggedUnionStrategy,
 ) -> Result<String, SigilStitchError> {
     let file_spec = match &schema.kind {
-        IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name),
+        IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name, ir),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr, package_name),
         IrSchemaKind::Union(u) => emit_union(schema, u, matching_ir, package_name, strategy),
@@ -120,6 +120,7 @@ fn emit_object(
     schema: &IrSchema,
     obj: &IrObject,
     package_name: &str,
+    ir: &IrSpec,
 ) -> Result<FileSpec, SigilStitchError> {
     if obj.properties.is_empty()
         && let Some(values) = &obj.additional_properties
@@ -127,6 +128,9 @@ fn emit_object(
         return super::dictionary::file(schema, values, package_name);
     }
     let name = schema.name.to_pascal_case();
+
+    let additional =
+        super::additional_properties::AdditionalProperties::new(schema, obj, package_name, ir);
 
     let mut file =
         FileSpec::builder_with("model.kt", Kotlin::new()).header(package_header(package_name)?);
@@ -157,7 +161,16 @@ fn emit_object(
         tb = tb.add_primary_constructor_param(param);
     }
 
+    if let Some(additional) = &additional {
+        tb = tb
+            .annotate(additional.annotation())
+            .add_primary_constructor_param(additional.parameter()?)
+            .add_method(additional.legacy_constructor()?);
+    }
     file = file.add_type(tb.build()?);
+    if let Some(additional) = &additional {
+        file = file.add_type(additional.factory(package_name)?);
+    }
     file.build()
 }
 

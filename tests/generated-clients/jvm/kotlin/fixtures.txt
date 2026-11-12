@@ -7,3 +7,7 @@ union-helper-types valid/java-union-helper-types.yaml firstMatch
 union-helper-types-strict valid/java-union-helper-types.yaml strict
 dictionaries valid/kotlin-dictionaries.yaml
 dictionary-helper-types valid/kotlin-dictionary-helper-types.yaml
+additional-properties valid/kotlin-additional-properties.yaml
+additional-properties-strict valid/kotlin-additional-properties.yaml strict
+additional-properties-raw valid/kotlin-additional-properties.yaml raw
+additional-helper-types valid/kotlin-additional-helper-types.yaml

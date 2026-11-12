@@ -20,6 +20,9 @@ The Kotlin dictionary consumer checks flat typed/opaque maps, null entries,
 recursive values, native integer decode errors, containing models and HTTP
 request/response/error boundaries. Its helper-type consumer also verifies authored
 models and dictionaries named after Gson helpers retain their declared identities.
+Kotlin's mixed-object consumers additionally cover default/strict/raw policies,
+old Java constructor entrypoints, copy/components, typed transient storage,
+configured Gson delegates, native stream/tree behavior and HTTP mixed payloads.
 Generated manifests and source are used unchanged. Each fixture has a separate
 consumer subproject, so identically named SDK classes do not share a classpath.
 

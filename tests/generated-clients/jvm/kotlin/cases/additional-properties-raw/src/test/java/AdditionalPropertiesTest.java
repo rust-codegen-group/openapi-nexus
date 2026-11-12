@@ -1,0 +1,1 @@
+class AdditionalPropertiesTest extends AdditionalPropertiesContracts {}

@@ -5,7 +5,12 @@ const API_EXCEPTION_KT: &str = include_str!("runtime/api_exception.kt.txt");
 const AUTH_KT: &str = include_str!("runtime/auth.kt.txt");
 const UPLOAD_FILE_KT: &str = include_str!("runtime/upload_file.kt.txt");
 
-pub fn runtime_files(header: &str, package_name: &str, include_upload_file: bool) -> Vec<FileInfo> {
+pub fn runtime_files(
+    header: &str,
+    package_name: &str,
+    include_upload_file: bool,
+    include_additional_properties: bool,
+) -> Vec<FileInfo> {
     let runtime_package = format!("{package_name}.runtime");
     let mut files = vec![
         FileInfo::runtime(
@@ -25,6 +30,16 @@ pub fn runtime_files(header: &str, package_name: &str, include_upload_file: bool
         files.push(FileInfo::runtime(
             "UploadFile.kt".to_string(),
             repackage(header, UPLOAD_FILE_KT, &runtime_package),
+        ));
+    }
+    if include_additional_properties {
+        files.push(FileInfo::runtime(
+            "AdditionalPropertiesAdapterFactory.kt".to_string(),
+            repackage(
+                header,
+                include_str!("runtime/additional_properties_adapter_factory.kt.txt"),
+                &runtime_package,
+            ),
         ));
     }
     files

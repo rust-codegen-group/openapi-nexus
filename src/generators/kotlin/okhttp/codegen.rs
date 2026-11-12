@@ -57,6 +57,10 @@ impl KotlinOkhttpCodeGenerator {
             &header,
             &package_name,
             request_inputs.has_uploads(),
+            ir.schemas.values().any(|schema| {
+                matches!(&schema.kind, crate::ir::types::IrSchemaKind::Object(object)
+                    if !object.properties.is_empty() && object.additional_properties.is_some())
+            }),
         ));
 
         files.push(build_gradle_file(&package_name, &ir.info));

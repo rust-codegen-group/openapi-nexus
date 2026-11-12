@@ -4,5 +4,41 @@
 
 package com.example.sdk.models
 
-data class EventCompleted(val type: String) {
+@com.google.gson.annotations.JsonAdapter(EventCompletedAdditionalPropertiesAdapterFactory::class, nullSafe = false)
+data class EventCompleted(val type: String, @field:kotlin.jvm.Transient
+    var additionalProperties: kotlin.collections.MutableMap<kotlin.String,
+    com.google.gson.JsonElement> = linkedMapOf()) {
+    constructor(type: kotlin.String) : this(type, linkedMapOf()) {
+
+    }
+}
+
+private class EventCompletedAdditionalPropertiesAdapterFactory : com.example.sdk.runtime.AdditionalPropertiesAdapterFactory<com.example.sdk.models.EventCompleted,
+com.google.gson.JsonElement> {
+    constructor() : super(com.example.sdk.models.EventCompleted::class.java, object: com.google.gson.reflect.TypeToken<com.google.gson.JsonElement>() {}, "type") {
+
+    }
+
+    override fun properties(value: com.example.sdk.models.EventCompleted): kotlin.collections.MutableMap<kotlin.String,
+    com.google.gson.JsonElement> {
+        return value.additionalProperties
+    }
+
+    override fun setProperties(value: com.example.sdk.models.EventCompleted,
+        entries: kotlin.collections.MutableMap<kotlin.String, com.google.gson.JsonElement>) {
+        value.additionalProperties = entries
+    }
+
+    override fun encode(gson: com.google.gson.Gson,
+        value: com.google.gson.JsonElement?): com.google.gson.JsonElement {
+        return additionalValue0(gson, value)
+    }
+
+    private fun additionalValue0(gson: com.google.gson.Gson,
+        value: com.google.gson.JsonElement?): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return value
+    }
 }

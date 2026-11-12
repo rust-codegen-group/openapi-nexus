@@ -1,0 +1,32 @@
+openapi: 3.1.0
+info: {title: Kotlin additional helper types, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    JsonElement:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: true
+    Map:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties:
+        type: array
+        items:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/JsonElement'}
+    Gson:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: {type: integer, format: int64}
+    GsonAdditionalPropertiesAdapterFactory:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
