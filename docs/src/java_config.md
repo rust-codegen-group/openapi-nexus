@@ -49,7 +49,7 @@ not an alias-codec or multi-member `allOf` redesign. Tagged unions and ordinary
 models keep their existing APIs and codecs.
 
 Typed variants retain declared member payloads, not arbitrary unknown fields.
-Dictionary/additional-property repairs remain separate. Use raw mode when all
+Explicit additional-property storage is described below. Use raw mode when all
 JSON must be retained, including unknown keys, null-valued object entries, and
 large numeric literals. Raw writing restores the surrounding Gson writer's null
 policy; ordinary sibling model fields keep their normal null omission.
@@ -60,3 +60,44 @@ The policy can also be set through the CLI:
 openapi-nexus generate --input api.yaml --output sdk --generators java-okhttp \
   --generator-config java-okhttp.untagged_union_strategy=strict
 ```
+
+## Additional properties
+
+Objects with explicit `additionalProperties` expose typed, mutable storage through
+`getAdditionalProperties()`. This includes pure dictionaries with no named fields;
+they remain ordinary model classes rather than `Map` subtypes. Existing named
+constructor parameters and getters stay unchanged, with an independent empty map
+available on each constructed or decoded object.
+
+```java
+MixedMap value = new MixedMap("fixed");
+value.getAdditionalProperties().put("keep_key", new NestedValue("nested"));
+// Gson writes {"known_field":"fixed","keep_key":{"wire_value":"nested"}}
+```
+
+The Gson adapter flattens extensions into the same JSON object, retaining keys
+verbatim. Opaque values (`true` or `{}`) use `JsonElement` so null entries and large
+numeric literals survive without coercion to `Object`/double. Declared typed
+values use their native Gson adapters, including model/enum/nullable values,
+containers, recursive references and configured untagged-union policies.
+
+Storage is transient to the ordinary Gson model delegate. Known fields retain
+their configured codecs, native scalar failures and null omission; extension
+entries preserve their own nulls without changing surrounding writer settings.
+The runtime distinguishes Gson's streaming and tree readers and uses its native
+tree writer so their existing coercion and configured numeric output stay intact.
+This support depends on the tree reader/writer classes in the unchanged Gson
+2.11.0 dependency; native contracts cover both input modes.
+Aliases keep their existing `value` wrapper instead of acquiring a different wire
+shape. No generated dependency version or general validation policy changes.
+
+If an authored field/getter already uses the storage name, the storage and getter
+receive a numeric suffix, such as `additionalProperties2` and
+`getAdditionalProperties2()`. Authored members are not renamed. An extension key
+equal to a declared wire key raises `IllegalArgumentException` on serialization,
+even if the named field is currently omitted, rather than silently overwriting it.
+
+Closed objects and those without explicit additional properties keep their
+existing behavior. Shared lowering, general inline-composition type loss,
+multi-member `allOf`, tagged-wrapper extension storage and generation formatting
+are separate concerns, not redesigned by this object-storage repair.

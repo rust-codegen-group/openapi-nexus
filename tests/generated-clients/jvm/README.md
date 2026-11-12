@@ -10,6 +10,9 @@ boundaries, raw null preservation, and OkHttp response/error-body integration.
 Independent helper-type projects also compile recursive unions alongside models
 named `Integer` and `Boolean`; numeric controls exercise extreme exponents without
 weakening native delegate errors or finite-value precision.
+Java's additional-property consumers cover pure and mixed objects under all
+three union policies, typed mutable storage, opaque JSON precision/nulls, native
+integer errors, storage/helper collisions, recursion and configured Gson delegates.
 Kotlin's independent policy consumers use the same schema fixtures, preserving
 transparent type aliases and its own native scalar decoding behavior while
 checking exact finite matching, recursion, wrapped intersections and raw trees.

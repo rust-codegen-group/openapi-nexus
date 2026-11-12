@@ -1,0 +1,172 @@
+openapi: 3.1.0
+info: {title: Java additional properties, version: '1.0.0'}
+paths:
+  /mixed:
+    post:
+      operationId: echoMixed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MixedMap'}
+      responses:
+        '200':
+          description: Mixed object
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MixedMap'}
+        '400':
+          description: Dictionary error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TypedMap'}
+  /dictionary:
+    post:
+      operationId: echoDictionary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TypedMap'}
+      responses:
+        '200':
+          description: Typed dictionary
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TypedMap'}
+components:
+  schemas:
+    NestedValue:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    OpaqueMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: true
+    MixedMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: {$ref: '#/components/schemas/NestedValue'}
+    TypedMap:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/NestedValue'}
+    RawMap:
+      type: object
+      additionalProperties: {}
+    LongValues:
+      type: object
+      additionalProperties: {type: integer, format: int64}
+    IntegerValues:
+      type: object
+      additionalProperties: {type: integer}
+    Status:
+      type: string
+      enum: [active, inactive]
+    StatusValues:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/Status'}
+    NullableValues:
+      type: object
+      additionalProperties:
+        anyOf: [{$ref: '#/components/schemas/NestedValue'}, {type: 'null'}]
+    DeepValues:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/NestedValue'}
+    RawContainers:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+    ValueAlias: {$ref: '#/components/schemas/NestedValue'}
+    AliasValues:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/ValueAlias'}
+    DictionaryAlias: {$ref: '#/components/schemas/TypedMap'}
+    Choices:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/ValueChoice'}
+    ValueChoice:
+      anyOf: [{$ref: '#/components/schemas/NestedValue'}, {type: integer}]
+    AmbiguousValues:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/AmbiguousNumber'}
+    AmbiguousNumber:
+      anyOf: [{type: integer}, {type: number}]
+    DictionaryChoice:
+      anyOf: [{$ref: '#/components/schemas/TypedMap'}, {type: integer}]
+    MixedChoice:
+      anyOf: [{$ref: '#/components/schemas/MixedMap'}, {type: string}]
+    Recursive:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+      additionalProperties: {$ref: '#/components/schemas/Recursive'}
+    PureRecursive:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/PureRecursive'}
+    Node:
+      type: object
+      required: [wire_value, children]
+      properties:
+        wire_value: {type: string}
+        children: {$ref: '#/components/schemas/Nodes'}
+    Nodes:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/Node'}
+    StorageCollision:
+      type: object
+      required: [additionalProperties]
+      properties:
+        additionalProperties: {type: string}
+      additionalProperties: {$ref: '#/components/schemas/NestedValue'}
+    OptionalKnown:
+      type: object
+      properties:
+        known_field: {type: string}
+      additionalProperties: true
+    OpenNumbers:
+      type: object
+      required: [count]
+      properties:
+        count: {type: integer}
+        optional_count: {type: integer}
+        nullable_value: {$ref: '#/components/schemas/NestedValue'}
+        weight: {type: number}
+      additionalProperties: true
+    PlainNumbers:
+      type: object
+      required: [count]
+      properties:
+        count: {type: integer}
+        optional_count: {type: integer}
+        nullable_value: {$ref: '#/components/schemas/NestedValue'}
+        weight: {type: number}
+    Closed:
+      type: object
+      properties:
+        known_field: {type: string}
+      additionalProperties: false
+    Implicit:
+      type: object
+      properties:
+        known_field: {type: string}
+    Holder:
+      type: object
+      required: [mixed, opaque, dictionaries]
+      properties:
+        mixed: {$ref: '#/components/schemas/MixedMap'}
+        opaque: {$ref: '#/components/schemas/OpaqueMap'}
+        dictionaries: {type: array, items: {$ref: '#/components/schemas/TypedMap'}}

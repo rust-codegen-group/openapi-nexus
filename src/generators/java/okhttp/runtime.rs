@@ -8,7 +8,12 @@ const API_KEY_AUTH_JAVA: &str = include_str!("runtime/ApiKeyAuth.java.txt");
 const API_KEY_LOCATION_JAVA: &str = include_str!("runtime/ApiKeyLocation.java.txt");
 const UPLOAD_FILE_JAVA: &str = include_str!("runtime/UploadFile.java.txt");
 
-pub fn runtime_files(header: &str, package_name: &str, include_upload_file: bool) -> Vec<FileInfo> {
+pub fn runtime_files(
+    header: &str,
+    package_name: &str,
+    include_upload_file: bool,
+    include_additional_properties: bool,
+) -> Vec<FileInfo> {
     let runtime_package = format!("{package_name}.runtime");
     let mut files = vec![
         FileInfo::runtime(
@@ -40,6 +45,16 @@ pub fn runtime_files(header: &str, package_name: &str, include_upload_file: bool
         files.push(FileInfo::runtime(
             "UploadFile.java".to_string(),
             repackage(header, UPLOAD_FILE_JAVA, &runtime_package),
+        ));
+    }
+    if include_additional_properties {
+        files.push(FileInfo::runtime(
+            "AdditionalPropertiesAdapterFactory.java".to_string(),
+            repackage(
+                header,
+                include_str!("runtime/AdditionalPropertiesAdapterFactory.java.txt"),
+                &runtime_package,
+            ),
         ));
     }
     files

@@ -8,6 +8,7 @@ package com.example.sdk.models;
 /**
  * Object allowing any additional properties
  */
+@com.google.gson.annotations.JsonAdapter(value = ObjectWithAdditionalPropertiesTrueAdditionalPropertiesAdapterFactory.class, nullSafe = false)
 public class ObjectWithAdditionalPropertiesTrue {
     private String name;
 
@@ -17,5 +18,41 @@ public class ObjectWithAdditionalPropertiesTrue {
 
     public String getName() {
         return this.name;
+    }
+
+    public java.util.Map<java.lang.String, com.google.gson.JsonElement> getAdditionalProperties() {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new java.util.LinkedHashMap<>();
+        }
+        return this.additionalProperties;
+    }
+    private transient java.util.Map<java.lang.String,
+    com.google.gson.JsonElement> additionalProperties = new java.util.LinkedHashMap<>();
+}
+
+class ObjectWithAdditionalPropertiesTrueAdditionalPropertiesAdapterFactory extends com.example.sdk.runtime.AdditionalPropertiesAdapterFactory<com.example.sdk.models.ObjectWithAdditionalPropertiesTrue,
+com.google.gson.JsonElement> {
+    public ObjectWithAdditionalPropertiesTrueAdditionalPropertiesAdapterFactory() {
+        super(com.example.sdk.models.ObjectWithAdditionalPropertiesTrue.class, new com.google.gson.reflect.TypeToken<com.google.gson.JsonElement>() {}, new java.lang.String[] {"name"});
+    }
+
+    @Override
+    protected java.util.Map<java.lang.String,
+    com.google.gson.JsonElement> properties(com.example.sdk.models.ObjectWithAdditionalPropertiesTrue value) {
+        return value.getAdditionalProperties();
+    }
+
+    @Override
+    protected com.google.gson.JsonElement encode(com.google.gson.Gson gson,
+        com.google.gson.JsonElement value) {
+        return additionalValue0(gson, value);
+    }
+
+    private com.google.gson.JsonElement additionalValue0(com.google.gson.Gson gson,
+        com.google.gson.JsonElement value) {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE;
+        }
+        return value;
     }
 }
