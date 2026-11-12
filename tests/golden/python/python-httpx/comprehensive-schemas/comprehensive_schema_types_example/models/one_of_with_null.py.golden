@@ -19,7 +19,7 @@ type OneOfWithNull = (
 )
 
 def one_of_with_null_from_dict(value: object) -> OneOfWithNull:
-    return cast(OneOfWithNull, _union.value_8_from_dict(value))
+    return cast(OneOfWithNull, _union.value_11_from_dict(value))
 
 def one_of_with_null_to_dict(value: OneOfWithNull) -> object:
-    return _union.value_8_to_dict(value)
+    return _union.value_11_to_dict(value)

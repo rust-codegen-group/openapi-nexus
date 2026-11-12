@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any as _Any
 
 # Request to create a new test resource (type alias - no properties)
 
-type CreateTestResourceRequest = (Any)
+type CreateTestResourceRequest = (_Any)

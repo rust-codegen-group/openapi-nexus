@@ -38,54 +38,74 @@ def value_2_to_dict(value: object) -> object:
     return _union_support.scalar(value)
 
 def value_3_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (not _union_support.has(value, 'active', 'active', False) or isinstance(_union_support.get(value, 'active', 'active'), bool))
-     and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
-        return value_4_from_dict(value)
-
-    if (_union_support.is_object(value)
-     and (not _union_support.has(value, 'metadata', 'metadata', False) or (_union_support.is_object(_union_support.get(value, 'metadata', 'metadata'))
-     and (not _union_support.has(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created', False) or isinstance(_union_support.get(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created'), str))))
-     and (not _union_support.has(value, 'user', 'user', False) or (_union_support.is_object(_union_support.get(value, 'user', 'user'))
-     and (_union_support.has(_union_support.get(value, 'user', 'user'), 'id', 'id', True) and _union_support.number(_union_support.get(_union_support.get(value, 'user', 'user'), 'id', 'id'), True))
-     and (not _union_support.has(_union_support.get(value, 'user', 'user'), 'name', 'name', False) or isinstance(_union_support.get(_union_support.get(value, 'user', 'user'), 'name', 'name'), str))))):
-        return value_5_from_dict(value)
-
-    return value
+    return _union_support.scalar(value)
 
 def value_3_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (not _union_support.has(value, 'active', 'active', False) or isinstance(_union_support.get(value, 'active', 'active'), bool))
-     and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
-        return value_4_to_dict(value)
-
-    if (_union_support.is_object(value)
-     and (not _union_support.has(value, 'metadata', 'metadata', False) or (_union_support.is_object(_union_support.get(value, 'metadata', 'metadata'))
-     and (not _union_support.has(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created', False) or isinstance(_union_support.get(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created'), str))))
-     and (not _union_support.has(value, 'user', 'user', False) or (_union_support.is_object(_union_support.get(value, 'user', 'user'))
-     and (_union_support.has(_union_support.get(value, 'user', 'user'), 'id', 'id', True) and _union_support.number(_union_support.get(_union_support.get(value, 'user', 'user'), 'id', 'id'), True))
-     and (not _union_support.has(_union_support.get(value, 'user', 'user'), 'name', 'name', False) or isinstance(_union_support.get(_union_support.get(value, 'user', 'user'), 'name', 'name'), str))))):
-        return value_5_to_dict(value)
-
-    return value
+    return _union_support.scalar(value)
 
 def value_4_from_dict(value: object) -> object:
-    from.import basic_object
-    return basic_object.BasicObject.from_dict(_union_support.as_dict(value))
+    from.import object_with_additional_properties_true
+    return object_with_additional_properties_true.ObjectWithAdditionalPropertiesTrue.from_dict(_union_support.as_dict(value))
 
 def value_4_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
 def value_5_from_dict(value: object) -> object:
-    from.import nested_object
-    return nested_object.NestedObject.from_dict(_union_support.as_dict(value))
+    from.import object_with_typed_additional_properties
+    return object_with_typed_additional_properties.ObjectWithTypedAdditionalProperties.from_dict(_union_support.as_dict(value))
 
 def value_5_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
 def value_6_from_dict(value: object) -> object:
+    if (_union_support.is_object(value)
+     and (not _union_support.has(value, 'active', 'active', False) or isinstance(_union_support.get(value, 'active', 'active'), bool))
+     and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
+     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
+        return value_7_from_dict(value)
+
+    if (_union_support.is_object(value)
+     and (not _union_support.has(value, 'metadata', 'metadata', False) or (_union_support.is_object(_union_support.get(value, 'metadata', 'metadata'))
+     and (not _union_support.has(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created', False) or isinstance(_union_support.get(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created'), str))))
+     and (not _union_support.has(value, 'user', 'user', False) or (_union_support.is_object(_union_support.get(value, 'user', 'user'))
+     and (_union_support.has(_union_support.get(value, 'user', 'user'), 'id', 'id', True) and _union_support.number(_union_support.get(_union_support.get(value, 'user', 'user'), 'id', 'id'), True))
+     and (not _union_support.has(_union_support.get(value, 'user', 'user'), 'name', 'name', False) or isinstance(_union_support.get(_union_support.get(value, 'user', 'user'), 'name', 'name'), str))))):
+        return value_8_from_dict(value)
+
+    return value
+
+def value_6_to_dict(value: object) -> object:
+    if (_union_support.is_object(value)
+     and (not _union_support.has(value, 'active', 'active', False) or isinstance(_union_support.get(value, 'active', 'active'), bool))
+     and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
+     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
+        return value_7_to_dict(value)
+
+    if (_union_support.is_object(value)
+     and (not _union_support.has(value, 'metadata', 'metadata', False) or (_union_support.is_object(_union_support.get(value, 'metadata', 'metadata'))
+     and (not _union_support.has(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created', False) or isinstance(_union_support.get(_union_support.get(value, 'metadata', 'metadata'), 'created', 'created'), str))))
+     and (not _union_support.has(value, 'user', 'user', False) or (_union_support.is_object(_union_support.get(value, 'user', 'user'))
+     and (_union_support.has(_union_support.get(value, 'user', 'user'), 'id', 'id', True) and _union_support.number(_union_support.get(_union_support.get(value, 'user', 'user'), 'id', 'id'), True))
+     and (not _union_support.has(_union_support.get(value, 'user', 'user'), 'name', 'name', False) or isinstance(_union_support.get(_union_support.get(value, 'user', 'user'), 'name', 'name'), str))))):
+        return value_8_to_dict(value)
+
+    return value
+
+def value_7_from_dict(value: object) -> object:
+    from.import basic_object
+    return basic_object.BasicObject.from_dict(_union_support.as_dict(value))
+
+def value_7_to_dict(value: object) -> object:
+    return _union_support.model_to_dict(value)
+
+def value_8_from_dict(value: object) -> object:
+    from.import nested_object
+    return nested_object.NestedObject.from_dict(_union_support.as_dict(value))
+
+def value_8_to_dict(value: object) -> object:
+    return _union_support.model_to_dict(value)
+
+def value_9_from_dict(value: object) -> object:
     if isinstance(value, str):
         return value_1_from_dict(value)
 
@@ -93,11 +113,11 @@ def value_6_from_dict(value: object) -> object:
         return value_2_from_dict(value)
 
     if isinstance(value, bool):
-        return value_7_from_dict(value)
+        return value_10_from_dict(value)
 
     return value
 
-def value_6_to_dict(value: object) -> object:
+def value_9_to_dict(value: object) -> object:
     if isinstance(value, str):
         return value_1_to_dict(value)
 
@@ -105,17 +125,17 @@ def value_6_to_dict(value: object) -> object:
         return value_2_to_dict(value)
 
     if isinstance(value, bool):
-        return value_7_to_dict(value)
+        return value_10_to_dict(value)
 
     return value
 
-def value_7_from_dict(value: object) -> object:
+def value_10_from_dict(value: object) -> object:
     return _union_support.scalar(value)
 
-def value_7_to_dict(value: object) -> object:
+def value_10_to_dict(value: object) -> object:
     return _union_support.scalar(value)
 
-def value_8_from_dict(value: object) -> object:
+def value_11_from_dict(value: object) -> object:
     if isinstance(value, str):
         return value_1_from_dict(value)
 
@@ -123,14 +143,14 @@ def value_8_from_dict(value: object) -> object:
      and (not _union_support.has(value, 'active', 'active', False) or isinstance(_union_support.get(value, 'active', 'active'), bool))
      and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
      and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
-        return value_4_from_dict(value)
+        return value_7_from_dict(value)
 
     if value is None:
         return None
 
     return value
 
-def value_8_to_dict(value: object) -> object:
+def value_11_to_dict(value: object) -> object:
     if isinstance(value, str):
         return value_1_to_dict(value)
 
@@ -138,7 +158,7 @@ def value_8_to_dict(value: object) -> object:
      and (not _union_support.has(value, 'active', 'active', False) or isinstance(_union_support.get(value, 'active', 'active'), bool))
      and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
      and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
-        return value_4_to_dict(value)
+        return value_7_to_dict(value)
 
     if value is None:
         return None

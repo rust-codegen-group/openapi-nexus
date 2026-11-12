@@ -4,6 +4,7 @@
 //! sigil_quote!) for structured code generation with automatic import tracking.
 //! Each schema produces one `.py` file via `FileSpec`.
 
+use super::additional_properties::AdditionalProperties;
 use super::value::{Direction, UntaggedUnionStrategy, ValuePlan, optional_type};
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::GeneratorError;
@@ -73,7 +74,7 @@ fn request_input_model_file(
     if model
         .fields
         .iter()
-        .any(|field| values.has_union(&field.type_expr))
+        .any(|field| values.needs_conversion(&field.type_expr))
     {
         let mut declaration =
             TypeSpec::builder(&model.name.to_pascal_case(), TypeKind::Class).annotate(
@@ -204,24 +205,31 @@ fn emit_object(
     values: &ValuePlan<'_>,
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
+    let additional = AdditionalProperties::new(obj);
 
     let mut file =
         FileSpec::builder_with("model.py", Python::new()).header(future_annotations_header());
 
-    if needs_typing_literal_in_props(&obj.properties) {
+    if needs_typing_literal_in_props(&obj.properties)
+        || obj
+            .additional_properties
+            .as_ref()
+            .is_some_and(needs_typing_literal)
+    {
         file = file.add_import(ImportSpec::named("typing", "Literal"));
     }
     if obj
         .properties
         .values()
-        .any(|property| values.has_union(&property.type_expr))
+        .any(|property| values.needs_conversion(&property.type_expr))
+        || additional.is_some()
     {
         file = file.add_import(ImportSpec::named(".", "_union"));
     }
 
     // Import tagged-union helper functions for fields referencing TaggedUnion schemas
     for (_, prop) in &obj.properties {
-        if values.has_union(&prop.type_expr) {
+        if values.needs_conversion(&prop.type_expr) {
             continue;
         }
         for named_ref in collect_tagged_union_refs(&prop.type_expr, ir) {
@@ -253,7 +261,7 @@ fn emit_object(
     let all_fields: Vec<(&String, &IrProperty)> =
         required.iter().chain(optional.iter()).copied().collect();
 
-    if all_fields.is_empty() {
+    if all_fields.is_empty() && additional.is_none() {
         cls = cls.extra_member(CodeBlock::of("pass", ()).expect("pass"));
     } else {
         for (_json_name, prop) in &required {
@@ -276,11 +284,16 @@ fn emit_object(
             );
         }
 
+        if let Some(additional) = &additional {
+            cls = cls.add_field(additional.field(&schema.name, values));
+        }
+
         cls = cls.add_method(build_to_dict_method(
             &all_fields,
             ir,
             &obj.properties,
             values,
+            additional.as_ref(),
         ));
         cls = cls.add_method(build_from_dict_method(
             &name,
@@ -289,6 +302,7 @@ fn emit_object(
             &obj.properties,
             values,
             &schema.name,
+            additional.as_ref(),
         ));
     }
 
@@ -301,6 +315,7 @@ fn build_to_dict_method(
     ir: &IrSpec,
     properties: &indexmap::IndexMap<String, IrProperty>,
     values: &ValuePlan<'_>,
+    additional: Option<&AdditionalProperties<'_>>,
 ) -> FunSpec {
     let self_param = ParameterSpec::of("self", TypeName::primitive(""));
     let return_type = type_application(
@@ -312,13 +327,16 @@ fn build_to_dict_method(
     body.add_statement("result: dict[str, object] = {}", ());
     for (json_name, prop) in all_fields {
         let field_name = python_field_name(&prop.name);
-        if values.has_union(&prop.type_expr) {
+        if values.needs_conversion(&prop.type_expr) {
             let access = sigil_quote!(Python { self.$N(field_name.as_str()) })
-                .expect("Python union field access builds");
+                .expect("Python planned field access builds");
             let converted = values.call(&values.property_expr(prop), access, Direction::To);
+            // Newly planned object paths retain ordinary nullable-field omission.
+            let is_required =
+                prop.required && (values.has_union(&prop.type_expr) || !prop.nullable);
             body.add_code(
                 sigil_quote!(Python {
-                    $if(prop.required) {
+                    $if(is_required) {
                         result[$S(json_name.as_str())] = $C(converted)
                     } $else {
                         if self.$N(field_name) is not None {
@@ -326,7 +344,7 @@ fn build_to_dict_method(
                         }
                     }
                 })
-                .expect("Python union field serialization builds"),
+                .expect("Python planned field serialization builds"),
             );
             continue;
         }
@@ -337,6 +355,9 @@ fn build_to_dict_method(
             body.add_statement(&format!("if self.{field_name} is not None:%>"), ());
             body.add_statement(&format!("result[\"{json_name}\"] = {to_expr}%<"), ());
         }
+    }
+    if let Some(additional) = additional {
+        body.add_code(additional.write_entries(values));
     }
     body.add_statement("return result", ());
 
@@ -355,6 +376,7 @@ fn build_from_dict_method(
     properties: &indexmap::IndexMap<String, IrProperty>,
     values: &ValuePlan<'_>,
     schema_name: &str,
+    additional: Option<&AdditionalProperties<'_>>,
 ) -> FunSpec {
     let cls_param = ParameterSpec::of("cls", TypeName::primitive(""));
     let data_param = ParameterSpec::of(
@@ -370,22 +392,34 @@ fn build_from_dict_method(
     for (json_name, prop) in all_fields {
         let field_name = python_field_name(&prop.name);
         let is_required = prop.required && !prop.nullable;
-        if values.has_union(&prop.type_expr) {
-            let access = if prop.required {
+        if values.needs_conversion(&prop.type_expr) {
+            let has_union = values.has_union(&prop.type_expr);
+            let requires_key = if has_union {
+                prop.required
+            } else {
+                is_required
+            };
+            let access = if requires_key {
                 sigil_quote!(Python { data[$S(json_name.as_str())] })
             } else {
                 sigil_quote!(Python { data.get($S(json_name.as_str())) })
             }
-            .expect("Python union field wire access builds");
+            .expect("Python planned field wire access builds");
             let expression = values.property_expr(prop);
             let converted = values.call(&expression, access.clone(), Direction::From);
             let ty = values.model_type(&prop.type_expr, schema_name);
             let ty = if is_required { ty } else { optional_type(ty) };
-            let converted = sigil_quote!(Python { $if(prop.required) { $C(converted) } $else { None if $S(json_name.as_str()) not in data else $C(converted) } }).expect("Python optional union field projection builds");
+            // Union fields keep their existing explicit-null policy. Ordinary
+            // optional/nullable objects never pass None into their converter.
+            let converted = sigil_quote!(Python {
+                $if(requires_key) { $C(converted) }
+                $else_if(has_union) { None if $S(json_name.as_str()) not in data else $C(converted) }
+                $else { None if $C(access) is None else $C(converted) }
+            }).expect("Python optional planned field projection builds");
             let converted = values.coerce(&expression, ty, converted);
             body.add_code(
                 sigil_quote!(Python { $N(field_name) = $C(converted), })
-                    .expect("Python union field deserialization builds"),
+                    .expect("Python planned field deserialization builds"),
             );
             continue;
         }
@@ -400,6 +434,9 @@ fn build_from_dict_method(
         } else {
             body.add_statement(&format!("{field_name}={expr},"), ());
         }
+    }
+    if let Some(additional) = additional {
+        body.add_code(additional.read_entries(schema_name, values));
     }
     body.add("%<", ());
     body.add_statement(")", ());
@@ -674,7 +711,7 @@ fn emit_intersection_as_dataclass(
     }
     if all_props
         .values()
-        .any(|property| values.has_union(&property.type_expr))
+        .any(|property| values.needs_conversion(&property.type_expr))
     {
         file = file.add_import(ImportSpec::named(".", "_union"));
     }
@@ -722,7 +759,13 @@ fn emit_intersection_as_dataclass(
 
         let all_fields: Vec<(&String, &IrProperty)> =
             required.iter().chain(optional.iter()).copied().collect();
-        cls = cls.add_method(build_to_dict_method(&all_fields, ir, all_props, values));
+        cls = cls.add_method(build_to_dict_method(
+            &all_fields,
+            ir,
+            all_props,
+            values,
+            None,
+        ));
         cls = cls.add_method(build_from_dict_method(
             &name,
             &all_fields,
@@ -730,6 +773,7 @@ fn emit_intersection_as_dataclass(
             all_props,
             values,
             &schema.name,
+            None,
         ));
     }
 

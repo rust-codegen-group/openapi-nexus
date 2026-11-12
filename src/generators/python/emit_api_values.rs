@@ -25,10 +25,13 @@ pub(super) fn multipart_data(
     ir: &IrSpec,
     values: &ValuePlan<'_>,
 ) -> CodeBlock {
-    if parts.iter().any(|part| values.has_union(&part.type_expr)) {
+    if parts
+        .iter()
+        .any(|part| values.needs_conversion(&part.type_expr))
+    {
         let assignments = parts.iter().map(|part| {
             let source = sigil_quote!(Python { $N(body_name).$N(part.field_name.as_str()) }).expect("Python multipart input access builds");
-            let assignment = if part.value_encoding == MultipartValueEncoding::Json && values.has_union(&part.type_expr) {
+            let assignment = if part.value_encoding == MultipartValueEncoding::Json && values.needs_conversion(&part.type_expr) {
                 let converted = values.call(&part.type_expr, source.clone(), Direction::To);
                 sigil_quote!(Python {
                     files[$S(part.wire_name.as_str())] = (None, json.dumps($C(converted)), $S(part.content_type.as_str()))

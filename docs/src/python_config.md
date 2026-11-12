@@ -78,3 +78,41 @@ proving validation. Choose `strict` to reject unmatched inputs.
 
 Dictionary/additional-property model preservation and multi-member `allOf`
 composition are separate concerns and are not redesigned by this option.
+
+## Additional properties
+
+An object with explicit `additionalProperties` gets typed mutable
+`additional_properties` storage, including a pure dictionary with no named fields.
+The storage is a keyword-only dataclass field with an independent empty-dict
+default. `from_dict` separates known wire keys from extension keys; `to_dict`
+flattens the entries back into the same JSON object, without a storage wrapper.
+
+```python
+value = MixedMap(
+    known_field="fixed",
+    additional_properties={"keep_key": NestedValue(wire_value="nested")},
+)
+value.to_dict()  # {"known_field": "fixed", "keep_key": {"wire_value": "nested"}}
+```
+
+Extension keys remain verbatim, even when they resemble renamed Python fields.
+Opaque values (`true` or `{}`) keep arbitrary JSON, including null entries and
+large integers. Typed values use the declared model/container/alias converters;
+recursive references and union policies use the same boundaries as ordinary
+values. The storage does not make a pure dictionary a `dict` subtype: use its
+`additional_properties` field and normal `from_dict` / `to_dict` entrypoints.
+
+If an authored field already uses the Python name `additional_properties`, the
+storage name gains trailing underscores until it is distinct. Authored fields
+are not renamed. Supplying an extension key equal to a declared wire key raises
+`ValueError` on serialization, even when that named field is currently omitted;
+extensions never overwrite or impersonate named fields.
+
+Objects without explicit additional properties and closed objects keep their
+existing behavior. Ordinary named-field codecs and optional-null omission are
+unchanged. This is not new JSON Schema validation or an `allOf`/tagged-wrapper
+representation redesign.
+
+Value conversion follows the retained schema facts. General inline composed
+additional-property schemas currently lowered as opaque values remain opaque;
+this storage repair does not change that shared lowering behavior.

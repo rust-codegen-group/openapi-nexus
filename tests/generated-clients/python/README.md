@@ -1,9 +1,13 @@
-# Native Python union consumers
+# Native Python generated-client consumers
 
 Generation and type checking are separate from the standard-library `unittest`
 runner. Tests exercise generated dataclasses, aliases, policy behavior, and each
 transport's actual JSON request encoder with in-process transports. No test
 launches a generator, compiler, shell, or another runner.
+
+Additional-property consumers cover pure and mixed objects, verbatim keys, opaque
+null/number preservation, typed containers and aliases, recursive dependencies,
+storage-name collisions, union boundaries and HTTP response/error conversion.
 
 Install `httpx`, `requests`, and `pyright` in the active Python environment, then:
 
@@ -12,7 +16,7 @@ just golden-python-clients::test httpx
 just golden-python-clients::test requests
 ```
 
-`prepare` generates all three policies; `build` runs strict pyright against the
+`prepare` generates both fixtures under all three policies; `build` runs strict pyright against the
 unchanged output; `test` uses `${PYTHON:-python3}` (locally Python 3.15.0).
 The declared SDK minimum remains Python 3.12, which is also the type-check target.
 Both backends run the same contracts. Tests never patch generated source.
