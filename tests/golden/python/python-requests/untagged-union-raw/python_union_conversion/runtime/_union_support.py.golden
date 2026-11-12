@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from dataclasses import is_dataclass
+from dataclasses import fields, is_dataclass
 from enum import Enum
 from math import isfinite
 from typing import Protocol, TypeGuard, cast
@@ -30,6 +30,24 @@ def is_dict(value: object) -> TypeGuard[dict[str, object]]:
 
 def is_list(value: object) -> TypeGuard[list[object]]:
     return isinstance(value, list)
+
+
+def _additional_properties(value: object, dictionary_only: bool = False) -> dict[str, object] | None:
+    if not isinstance(value, type) and is_dataclass(value):
+        for field in fields(value):
+            if field.metadata.get("openapi_additional_properties") is True:
+                if not dictionary_only or field.metadata.get("openapi_dictionary") is True:
+                    return as_dict(getattr(value, field.name))
+    return None
+
+
+def is_mapping(value: object) -> bool:
+    return is_dict(value) or _additional_properties(value, True) is not None
+
+
+def mapping(value: object) -> dict[str, object]:
+    properties = _additional_properties(value, True)
+    return properties if properties is not None else as_dict(value)
 
 
 def scalar(value: object) -> object:
@@ -57,9 +75,10 @@ def get(value: object, wire: str, field: str) -> object:
 
 
 def extras(value: object, known: list[str]) -> list[object]:
-    if not is_dict(value):
-        return []
-    return [item for key, item in as_dict(value).items() if key not in known]
+    if is_dict(value):
+        return [item for key, item in as_dict(value).items() if key not in known]
+    properties = _additional_properties(value)
+    return list(properties.values()) if properties is not None else []
 
 
 def number(value: object, integer: bool) -> bool:

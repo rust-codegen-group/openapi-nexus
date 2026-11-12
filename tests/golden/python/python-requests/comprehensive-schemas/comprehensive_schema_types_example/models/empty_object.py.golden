@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any as _Any
 
 # Object without properties
 
-type EmptyObject = (Any)
+type EmptyObject = (_Any)

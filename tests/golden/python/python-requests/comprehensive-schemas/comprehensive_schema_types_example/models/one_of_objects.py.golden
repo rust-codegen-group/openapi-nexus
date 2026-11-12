@@ -19,7 +19,7 @@ type OneOfObjects = (
 )
 
 def one_of_objects_from_dict(value: object) -> OneOfObjects:
-    return cast(OneOfObjects, _union.value_3_from_dict(value))
+    return cast(OneOfObjects, _union.value_6_from_dict(value))
 
 def one_of_objects_to_dict(value: OneOfObjects) -> object:
-    return _union.value_3_to_dict(value)
+    return _union.value_6_to_dict(value)

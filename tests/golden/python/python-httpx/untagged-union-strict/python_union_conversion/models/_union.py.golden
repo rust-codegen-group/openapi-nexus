@@ -307,7 +307,7 @@ def value_18_from_dict(value: object) -> object:
     return {key: value_11_from_dict(item) for key, item in _union_support.as_dict(value).items()}
 
 def value_18_to_dict(value: object) -> object:
-    return {key: value_11_to_dict(item) for key, item in _union_support.as_dict(value).items()}
+    return {key: value_11_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
 def value_19_from_dict(value: object) -> object:
     return [value_20_from_dict(item) for item in _union_support.as_list(value)]
@@ -319,7 +319,7 @@ def value_20_from_dict(value: object) -> object:
     return {key: value_17_from_dict(item) for key, item in _union_support.as_dict(value).items()}
 
 def value_20_to_dict(value: object) -> object:
-    return {key: value_17_to_dict(item) for key, item in _union_support.as_dict(value).items()}
+    return {key: value_17_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
 def value_21_from_dict(value: object) -> object:
     return value_22_from_dict(value)
@@ -591,7 +591,7 @@ def value_34_from_dict(value: object) -> object:
 
 def value_34_to_dict(value: object) -> object:
     matches = [(_union_support.is_object(value)
-     and (_union_support.has(value, 'input_schema', 'input_schema', True) and (_union_support.is_dict(_union_support.get(value, 'input_schema', 'input_schema')) and all(True for _item in _union_support.as_dict(_union_support.get(value, 'input_schema', 'input_schema')).values())))
+     and (_union_support.has(value, 'input_schema', 'input_schema', True) and (_union_support.is_mapping(_union_support.get(value, 'input_schema', 'input_schema')) and all(True for _item in _union_support.mapping(_union_support.get(value, 'input_schema', 'input_schema')).values())))
      and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))), (_union_support.is_object(value)
      and (not _union_support.has(value, 'max_uses', 'max_uses', False) or _union_support.number(_union_support.get(value, 'max_uses', 'max_uses'), True))
      and (_union_support.has(value, 'name', 'name', True) and _union_support.equal(_union_support.get(value, 'name', 'name'), 'web_search'))
@@ -819,7 +819,7 @@ def value_46_from_dict(value: object) -> object:
     return {key: value_45_from_dict(item) for key, item in _union_support.as_dict(value).items()}
 
 def value_46_to_dict(value: object) -> object:
-    return {key: value_45_to_dict(item) for key, item in _union_support.as_dict(value).items()}
+    return {key: value_45_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
 def value_47_from_dict(value: object) -> object:
     return [value_44_from_dict(item) for item in _union_support.as_list(value)]
@@ -875,13 +875,13 @@ def value_48_from_dict(value: object) -> object:
 
 def value_48_to_dict(value: object) -> object:
     matches = [(_union_support.is_object(value)
-     and (_union_support.has(value, 'mapping', 'mapping', True) and (_union_support.is_dict(_union_support.get(value, 'mapping', 'mapping')) and all(((_union_support.is_object(_item)
+     and (_union_support.has(value, 'mapping', 'mapping', True) and (_union_support.is_mapping(_union_support.get(value, 'mapping', 'mapping')) and all(((_union_support.is_object(_item)
      and (_union_support.has(_item, 'name', 'name', True) and isinstance(_union_support.get(_item, 'name', 'name'), str)))
      or (_union_support.is_object(_item)
      and (_union_support.has(_item, 'revision', 'revision', True) and (_union_support.number(_union_support.get(_item, 'revision', 'revision'), True)
      and _union_support.equal(_union_support.get(_item, 'revision', 'revision'), 2)))
      and (not _union_support.has(_item, 'second_value', 'second_value', False) or isinstance(_union_support.get(_item, 'second_value', 'second_value'), str)))
-     or _union_support.number(_item, True)) for _item in _union_support.as_dict(_union_support.get(value, 'mapping', 'mapping')).values())))
+     or _union_support.number(_item, True)) for _item in _union_support.mapping(_union_support.get(value, 'mapping', 'mapping')).values())))
      and (_union_support.has(value, 'value', 'value', True) and ((_union_support.is_object(_union_support.get(value, 'value', 'value'))
      and (_union_support.has(_union_support.get(value, 'value', 'value'), 'name', 'name', True) and isinstance(_union_support.get(_union_support.get(value, 'value', 'value'), 'name', 'name'), str)))
      or (_union_support.is_object(_union_support.get(value, 'value', 'value'))

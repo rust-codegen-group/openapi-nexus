@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any as _Any
 
 from . import _union
 from .numeric_two import NumericTwo
 
 type OpenChoice = (
-    Any
+    _Any
     | NumericTwo
 )
 

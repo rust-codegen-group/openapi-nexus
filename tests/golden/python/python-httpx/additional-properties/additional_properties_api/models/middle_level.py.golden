@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any as _Any
 
 from .leaf_value import LeafValue
 
@@ -16,7 +16,7 @@ class MiddleLevel:
     count: int
     key: str
     nested: dict[str, LeafValue]
-    extras: dict[str, Any] | None = None
+    extras: dict[str, _Any] | None = None
     flags: dict[str, bool] | None = None
 
     def to_dict(self) -> dict[str, object]:

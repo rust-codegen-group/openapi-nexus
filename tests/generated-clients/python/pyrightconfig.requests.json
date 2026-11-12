@@ -1,4 +1,4 @@
 {
   "extends": "./pyrightconfig.json",
-  "extraPaths": ["generated/requests/default", "generated/requests/strict", "generated/requests/raw"]
+  "extraPaths": ["generated/requests/default", "generated/requests/strict", "generated/requests/raw", "generated/requests/additional/default", "generated/requests/additional/strict", "generated/requests/additional/raw"]
 }

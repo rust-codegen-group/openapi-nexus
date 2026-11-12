@@ -5,14 +5,14 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any as _Any
 
 from . import _union
 
 type Config = (
     str
     | float
-    | Any
+    | _Any
 )
 
 def config_from_dict(value: object) -> Config:

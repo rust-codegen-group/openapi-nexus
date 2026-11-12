@@ -1,4 +1,4 @@
-//! Python value conversion at untagged-union boundaries, shared by both transports.
+//! Python union and explicit-extension value conversion, shared by both transports.
 //!
 //! Matching consumes the target-independent shape plan. Codecs keep original
 //! member boundaries: count candidates first, then invoke exactly one delegate.
@@ -99,16 +99,19 @@ impl<'a> ValuePlan<'a> {
         for schema in ir.schemas.values() {
             if let IrSchemaKind::Object(object) = &schema.kind {
                 for property in object.properties.values() {
-                    if plan.has_union(&property.type_expr) {
+                    if plan.needs_conversion(&property.type_expr) {
                         plan.register(&plan.property_expr(property));
                     }
                 }
+                if let Some(values) = &object.additional_properties {
+                    plan.register(values);
+                }
             }
-            if plan.has_union(&IrTypeExpr::Named(schema.name.clone())) {
+            if plan.needs_conversion(&IrTypeExpr::Named(schema.name.clone())) {
                 plan.register(&IrTypeExpr::Named(schema.name.clone()));
             }
             for expr in schema_expressions(&schema.kind) {
-                if plan.has_union(expr) {
+                if plan.needs_conversion(expr) {
                     plan.register(expr);
                 }
             }
@@ -123,7 +126,7 @@ impl<'a> ValuePlan<'a> {
                 .iter()
                 .flat_map(|response| response.content.values());
             for expr in request.chain(responses) {
-                if plan.has_union(expr) {
+                if plan.needs_conversion(expr) {
                     plan.register(expr);
                 }
             }
@@ -131,29 +134,52 @@ impl<'a> ValuePlan<'a> {
         plan
     }
 
+    /// Boundaries requiring planned codecs, through aliases and containers.
+    pub fn needs_conversion(&self, expr: &IrTypeExpr) -> bool {
+        self.contains_conversion(expr, true)
+    }
+
+    /// Preserve union-specific public helpers and field null semantics.
     pub fn has_union(&self, expr: &IrTypeExpr) -> bool {
-        fn visit(expr: &IrTypeExpr, ir: &IrSpec, seen: &mut BTreeSet<String>) -> bool {
+        self.contains_conversion(expr, false)
+    }
+
+    fn contains_conversion(&self, expr: &IrTypeExpr, include_extensions: bool) -> bool {
+        fn visit(
+            expr: &IrTypeExpr,
+            ir: &IrSpec,
+            seen: &mut BTreeSet<String>,
+            include_extensions: bool,
+        ) -> bool {
             match expr {
                 IrTypeExpr::Union(_) => true,
-                IrTypeExpr::ScalarEnum { representation, .. } => visit(representation, ir, seen),
+                IrTypeExpr::ScalarEnum { representation, .. } => {
+                    visit(representation, ir, seen, include_extensions)
+                }
                 IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
-                    visit(inner, ir, seen)
+                    visit(inner, ir, seen, include_extensions)
                 }
                 IrTypeExpr::Named(name) if seen.insert(name.clone()) => {
                     match ir.schemas.get(name).map(|schema| &schema.kind) {
                         Some(IrSchemaKind::Union(_)) => true,
-                        Some(IrSchemaKind::Alias(inner)) => visit(inner, ir, seen),
-                        Some(IrSchemaKind::TaggedUnion(union)) => union
-                            .variants
-                            .iter()
-                            .any(|variant| visit(&variant.content_type, ir, seen)),
+                        Some(IrSchemaKind::Object(object)) => {
+                            include_extensions && object.additional_properties.is_some()
+                        }
+                        Some(IrSchemaKind::Alias(inner)) => {
+                            visit(inner, ir, seen, include_extensions)
+                        }
+                        Some(IrSchemaKind::TaggedUnion(union)) => {
+                            union.variants.iter().any(|variant| {
+                                visit(&variant.content_type, ir, seen, include_extensions)
+                            })
+                        }
                         _ => false,
                     }
                 }
                 _ => false,
             }
         }
-        visit(expr, self.ir, &mut BTreeSet::new())
+        visit(expr, self.ir, &mut BTreeSet::new(), include_extensions)
     }
 
     pub fn property_expr(&self, property: &crate::ir::types::IrProperty) -> IrTypeExpr {
@@ -210,7 +236,7 @@ impl<'a> ValuePlan<'a> {
             .expressions
             .iter()
             .position(|candidate| candidate == expr)
-            .expect("union conversion expression belongs to the value plan");
+            .expect("conversion expression belongs to the Python value plan");
         format!("value_{index}_{}", direction.suffix())
     }
 
@@ -280,6 +306,8 @@ impl<'a> ValuePlan<'a> {
 
     fn type_name(&self, expr: &IrTypeExpr, current: Option<&str>) -> TypeName {
         match expr {
+            // Keep the runtime typing helper distinct from an authored Any model.
+            IrTypeExpr::Any => TypeName::importable("typing", "Any").with_alias("_Any"),
             IrTypeExpr::Union(_) if self.strategy == UntaggedUnionStrategy::Raw => {
                 TypeName::primitive("object")
             }
@@ -467,7 +495,7 @@ impl<'a> ValuePlan<'a> {
                     let conversion = self.invoke(inner, value, direction)?;
                     sigil_quote!(Python { return $C(conversion) })
                 }
-                Some(IrSchemaKind::TaggedUnion(union)) if self.has_union(expr) => {
+                Some(IrSchemaKind::TaggedUnion(union)) if self.needs_conversion(expr) => {
                     self.tagged_body(union, direction, references)
                 }
                 Some(IrSchemaKind::TaggedUnion(_)) => {
@@ -536,7 +564,7 @@ impl<'a> ValuePlan<'a> {
             }
             IrTypeExpr::Map(inner) => {
                 let item = self.invoke(inner, sigil_quote!(Python { item })?, direction)?;
-                sigil_quote!(Python { return {key: $C(item) for key, item in _union_support.as_dict(value).items()} })
+                sigil_quote!(Python { return {key: $C(item) for key, item in $if(direction == Direction::To) { _union_support.mapping(value) } $else { _union_support.as_dict(value) }.items()} })
             }
             IrTypeExpr::Nullable(inner) => {
                 let conversion = self.invoke(inner, value, direction)?;
@@ -792,7 +820,13 @@ fn condition(
                 direction,
                 references,
             )?;
-            sigil_quote!(Python { (_union_support.is_dict($C(value.clone())) and all($C(inner) for _item in _union_support.as_dict($C(value)).values())) })
+            sigil_quote!(Python {
+                $if(direction == Direction::To) {
+                    (_union_support.is_mapping($C(value.clone())) and all($C(inner) for _item in _union_support.mapping($C(value)).values()))
+                } $else {
+                    (_union_support.is_dict($C(value.clone())) and all($C(inner) for _item in _union_support.as_dict($C(value)).values()))
+                }
+            })
         }
         JsonShape::MapWithConcreteValue { values, concrete } => {
             let all = condition(
@@ -807,7 +841,7 @@ fn condition(
                 direction,
                 references,
             )?;
-            sigil_quote!(Python { ($C(all) and any($C(one) for _item in _union_support.as_dict($C(value)).values())) })
+            sigil_quote!(Python { ($C(all) and any($C(one) for _item in $if(direction == Direction::To) { _union_support.mapping($C(value)) } $else { _union_support.as_dict($C(value)) }.values())) })
         }
         JsonShape::Object(properties) | JsonShape::ObjectWithAdditional { properties, .. } => {
             let mut checks =

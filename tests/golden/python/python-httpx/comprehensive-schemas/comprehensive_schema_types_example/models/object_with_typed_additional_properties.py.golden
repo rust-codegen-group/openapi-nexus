@@ -5,20 +5,34 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from builtins import dict as _dict, str as _str
+from dataclasses import dataclass, field as _dataclass_field
+from typing import cast
+
+from . import _union
 
 @dataclass
 class ObjectWithTypedAdditionalProperties:
     """Object with typed additional properties."""
     name: str
+    additional_properties: _dict[_str,
+    float] = _dataclass_field(default_factory = lambda: _dict[_str,
+    float](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": False})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
         result["name"] = self.name
+        for key, item in self.additional_properties.items():
+            if key in ['name']:
+                raise ValueError("Additional property collides with declared wire field: " + key)
+
+            result[key] = _union.value_2_to_dict(item)
+
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> ObjectWithTypedAdditionalProperties:
         return cls(
             name=data["name"],  # type: ignore[assignment]
+            additional_properties = {key: cast(float, _union.value_2_from_dict(item)) for key, item in data.items() if key not in ['name']},
         )

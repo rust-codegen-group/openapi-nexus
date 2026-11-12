@@ -146,9 +146,11 @@ fn emit_api_file(
     }
     if plans.iter().any(|plan| {
         plan.body.as_ref().is_some_and(|body| {
-            body.multipart_parts
-                .as_ref()
-                .is_some_and(|parts| parts.iter().any(|part| values.has_union(&part.type_expr)))
+            body.multipart_parts.as_ref().is_some_and(|parts| {
+                parts
+                    .iter()
+                    .any(|part| values.needs_conversion(&part.type_expr))
+            })
         })
     }) || ops.iter().any(|op| {
         op.request_body
@@ -159,7 +161,7 @@ fn emit_api_file(
                     .iter()
                     .flat_map(|response| response.content.values()),
             )
-            .any(|expr| values.has_union(expr))
+            .any(|expr| values.needs_conversion(expr))
     }) {
         fb = fb.add_import(ImportSpec::named("..models", "_union"));
         fb = fb.add_import(ImportSpec::side_effect("json"));
@@ -420,7 +422,7 @@ fn build_method_body(
 
     // Body serialization
     let body_expr = if let Some(b) = &plan.body {
-        if values.has_union(&b.type_expr) {
+        if values.needs_conversion(&b.type_expr) {
             let access = sigil_quote!(Python { $N(b.var_name.as_str()) })
                 .expect("Python HTTP union input builds");
             let converted = values.call(&b.type_expr, access, Direction::To);
@@ -481,7 +483,7 @@ fn build_method_body(
             }
         } else {
             match body.encoding {
-                BodyEncoding::Json if values.has_union(&body.type_expr) => {
+                BodyEncoding::Json if values.needs_conversion(&body.type_expr) => {
                     union_json_argument = Some(sigil_quote!(Python {
                         data = $if(body.required) { json.dumps(_union_body, allow_nan = False) } $else { None if $N(body.var_name.as_str()) is None else json.dumps(_union_body, allow_nan = False) }
                     }).expect("Python requests union JSON argument builds"));
@@ -533,7 +535,7 @@ fn build_method_body(
     cb.add_code(emit_error_raise(plan, "response.reason"));
 
     let union_response = plan.typed_responses.first().filter(|response| {
-        response.decoding == ResponseDecoding::Json && values.has_union(&response.type_expr)
+        response.decoding == ResponseDecoding::Json && values.needs_conversion(&response.type_expr)
     });
     if let Some(response) = union_response {
         let converted = values.call(
@@ -754,7 +756,7 @@ fn error_body_property(
     ir: &IrSpec,
     values: &ValuePlan<'_>,
 ) -> CodeBlock {
-    if decoding == ResponseDecoding::Json && values.has_union(type_expr) {
+    if decoding == ResponseDecoding::Json && values.needs_conversion(type_expr) {
         return union_error_body_property(type_expr, ir, values);
     }
     let mut cb = CodeBlock::builder();

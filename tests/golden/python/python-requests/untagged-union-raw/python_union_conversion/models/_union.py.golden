@@ -127,7 +127,7 @@ def value_18_from_dict(value: object) -> object:
     return {key: value_11_from_dict(item) for key, item in _union_support.as_dict(value).items()}
 
 def value_18_to_dict(value: object) -> object:
-    return {key: value_11_to_dict(item) for key, item in _union_support.as_dict(value).items()}
+    return {key: value_11_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
 def value_19_from_dict(value: object) -> object:
     return [value_20_from_dict(item) for item in _union_support.as_list(value)]
@@ -139,7 +139,7 @@ def value_20_from_dict(value: object) -> object:
     return {key: value_17_from_dict(item) for key, item in _union_support.as_dict(value).items()}
 
 def value_20_to_dict(value: object) -> object:
-    return {key: value_17_to_dict(item) for key, item in _union_support.as_dict(value).items()}
+    return {key: value_17_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
 def value_21_from_dict(value: object) -> object:
     return value_22_from_dict(value)
@@ -333,7 +333,7 @@ def value_46_from_dict(value: object) -> object:
     return {key: value_45_from_dict(item) for key, item in _union_support.as_dict(value).items()}
 
 def value_46_to_dict(value: object) -> object:
-    return {key: value_45_to_dict(item) for key, item in _union_support.as_dict(value).items()}
+    return {key: value_45_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
 def value_47_from_dict(value: object) -> object:
     return [value_44_from_dict(item) for item in _union_support.as_list(value)]

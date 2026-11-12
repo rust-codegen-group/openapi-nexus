@@ -5,11 +5,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any as _Any
 
 @dataclass
 class ClientTool:
-    input_schema: dict[str, Any]
+    input_schema: dict[str, _Any]
     name: str
 
     def to_dict(self) -> dict[str, object]:
