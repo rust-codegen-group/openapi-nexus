@@ -55,6 +55,7 @@ impl GoHttpCodeGenerator {
             &module_path,
             &header,
             &request_inputs,
+            self.config.all_of_strategy,
         )?);
 
         // APIs

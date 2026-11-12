@@ -1,4 +1,5 @@
 pub mod codegen;
+mod composition;
 pub mod config;
 pub mod runtime;
 pub mod sigil_emit;

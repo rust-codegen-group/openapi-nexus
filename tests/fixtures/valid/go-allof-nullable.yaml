@@ -1,0 +1,32 @@
+openapi: 3.1.0
+info: {title: Nullable Go allOf composition, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+      additionalProperties: true
+    InlineNullable:
+      allOf:
+        - anyOf: [{$ref: '#/components/schemas/Base'}, {type: 'null'}]
+    NullableMap:
+      allOf:
+        - {type: [object, 'null'], additionalProperties: true}
+    DoubleNullable:
+      allOf:
+        - anyOf:
+            - {type: 'null'}
+            - anyOf: [{type: 'null'}, {$ref: '#/components/schemas/Base'}]
+    NestedNullable:
+      allOf: [{$ref: '#/components/schemas/InlineNullable'}]
+    MapAlias: {$ref: '#/components/schemas/NullableMap'}
+    AliasComposition:
+      allOf: [{$ref: '#/components/schemas/MapAlias'}]
+    Holder:
+      type: object
+      required: [value]
+      properties:
+        value: {$ref: '#/components/schemas/DoubleNullable'}
