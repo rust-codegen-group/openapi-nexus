@@ -4,6 +4,7 @@
 //!
 //! Dispatches to version-specific lowering functions that all produce the same `IrSpec`.
 
+mod composition;
 pub mod v30;
 pub mod v31;
 pub mod v32;

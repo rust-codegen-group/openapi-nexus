@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info: {title: Overlapping allOf views, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    LeftNode:
+      type: object
+      required: [first_name]
+      properties:
+        first_name: {type: string}
+        next_node:
+          oneOf:
+            - {$ref: '#/components/schemas/LeftNode'}
+            - {type: 'null'}
+        children:
+          type: array
+          items: {$ref: '#/components/schemas/LeftNode'}
+        by_key:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/LeftNode'}
+        json_schema: {}
+    RightNode:
+      type: object
+      required: [last_name]
+      properties:
+        last_name: {type: string}
+        next_node:
+          oneOf:
+            - {$ref: '#/components/schemas/RightNode'}
+            - {type: 'null'}
+        children:
+          type: array
+          items: {$ref: '#/components/schemas/RightNode'}
+        by_key:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/RightNode'}
+        json_schema: {}
+    Left:
+      type: object
+      properties:
+        config: {$ref: '#/components/schemas/LeftNode'}
+    Right:
+      type: object
+      properties:
+        config: {$ref: '#/components/schemas/RightNode'}
+    Overlap:
+      allOf:
+        - {$ref: '#/components/schemas/Left'}
+        - {$ref: '#/components/schemas/Right'}
+    # Authored symbols must not be replaced by projection helpers.
+    OverlapConfig:
+      type: object
+      required: [authored_field]
+      properties:
+        authored_field: {type: boolean}
+    LeftArray:
+      type: array
+      items: {$ref: '#/components/schemas/LeftNode'}
+    RightArray:
+      type: array
+      items: {$ref: '#/components/schemas/RightNode'}
+    ArrayOverlap:
+      allOf:
+        - type: object
+          required: [config]
+          properties:
+            config: {$ref: '#/components/schemas/LeftArray'}
+        - type: object
+          required: [config]
+          properties:
+            config: {$ref: '#/components/schemas/RightArray'}
+    NumericLeft:
+      type: object
+      required: [config, count]
+      properties:
+        config: {$ref: '#/components/schemas/LeftNode'}
+        count: {type: number}
+    NumericRight:
+      type: object
+      required: [config, count]
+      properties:
+        config: {$ref: '#/components/schemas/RightNode'}
+        count: {type: integer}
+    NumericOverlap:
+      allOf:
+        - {$ref: '#/components/schemas/NumericLeft'}
+        - {$ref: '#/components/schemas/NumericRight'}
+    NumericChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/NumericOverlap'}
+        - {type: boolean}

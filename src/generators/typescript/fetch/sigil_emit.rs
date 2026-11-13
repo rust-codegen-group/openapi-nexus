@@ -488,12 +488,13 @@ fn build_json_converter(
             plan,
             direction,
         )?;
-        if prop.nullable
+        let converted = value.clone();
+        let guard_null = prop.nullable
             && needs_conversion(&prop.type_expr, plan)
             && !plan
                 .value(&prop.type_expr, Scope::model(current_schema))
-                .accepts_null()
-        {
+                .accepts_null();
+        if guard_null {
             value = sigil_quote!(TypeScript {
                 $C(access.clone()) === null ? null : $C(value)
             })?;
@@ -511,12 +512,28 @@ fn build_json_converter(
             TypeScript::new().render_string_literal(&target_key)
         };
         let value = super::layout::inline(value);
-        let format =
-            if 4 + key.chars().count() + 2 + super::layout::fragment_width(&value)? + 1 > 100 {
-                "%L:\n%>%L,%<\n"
+        let break_value =
+            4 + key.chars().count() + 2 + super::layout::fragment_width(&value)? + 1 > 100;
+        if break_value && guard_null && !prop.required && obj.additional_properties.is_none() {
+            let key = if target_key == "__proto__" {
+                sigil_quote!(TypeScript { [$S(target_key)] })?
+            } else if is_valid_ts_identifier(&target_key) {
+                sigil_quote!(TypeScript { $N(target_key) })?
             } else {
-                "%L: %L,\n"
+                sigil_quote!(TypeScript { $S(target_key) })?
             };
+            fields.push(super::layout::optional_nullable_property(
+                key,
+                json_property_access(source, &source_key)?,
+                converted,
+            )?);
+            continue;
+        }
+        let format = if break_value {
+            "%L:\n%>%L,%<\n"
+        } else {
+            "%L: %L,\n"
+        };
         let field = if !prop.required && obj.additional_properties.is_some() {
             let condition = sigil_quote!(TypeScript { Object.prototype.hasOwnProperty.call($N(source), $S(source_key)) })?;
             let object = CodeBlock::of(
@@ -1353,9 +1370,7 @@ fn emit_intersection_file_camel_case(
             })
             .collect::<Result<Vec<_>, SigilStitchError>>()?;
         let output_type = TypeName::primitive(output);
-        let body = sigil_quote!(TypeScript {
-            return { $for(spread in &spreads; separator = ", ") { $C(spread.clone()) } } as $T(output_type.clone());
-        })?;
+        let body = super::layout::return_object(&spreads, Some(output_type.clone()), 2)?;
         fb = fb.add_function(
             FunSpec::builder(&format!("{}{}", fn_base_name(name), direction.suffix()))
                 .visibility(Visibility::Public)
@@ -2046,11 +2061,11 @@ export type AllOfJsonDictionary$Wire = Detail$Wire & Record<string, AnyJsonValue
 export type AllOfJsonDictionary = Detail & Record<string, AnyJsonValue> & string;
 
 export function allOfJsonDictionaryFromJSON(json: AllOfJsonDictionary$Wire): AllOfJsonDictionary {
-  return {...detailFromJSON(json as Detail$Wire)} as AllOfJsonDictionary;
+  return { ...detailFromJSON(json as Detail$Wire) } as AllOfJsonDictionary;
 }
 
 export function allOfJsonDictionaryToJSON(value: AllOfJsonDictionary): AllOfJsonDictionary$Wire {
-  return {...detailToJSON(value as Detail)} as AllOfJsonDictionary$Wire;
+  return { ...detailToJSON(value as Detail) } as AllOfJsonDictionary$Wire;
 }
 "#
         );

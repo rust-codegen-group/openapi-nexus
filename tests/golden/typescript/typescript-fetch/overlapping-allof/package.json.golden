@@ -1,0 +1,32 @@
+{
+  "name": "overlapping-all-of-views",
+  "version": "1.0.0",
+  "description": "TypeScript client for Overlapping allOf views",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "default": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "fmt": "vp fmt"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.5.0"
+  }
+}

@@ -4,11 +4,11 @@
 just golden-typescript-clients::test
 ```
 
-Requires Rust, Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`, and Vite+ 1.5.1
+Requires Rust, Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`, and Vite+ 1.6.0
 installed alongside TypeScript 7.0.2:
 
 ```sh
-npm install -g typescript@7.0.2 vite-plus@1.5.1
+npm install -g typescript@7.0.2 vite-plus@1.6.0
 ```
 
 The current global Vite+ CLI resolves the TypeScript API beside the CLI when
@@ -18,6 +18,8 @@ The strict consumer check itself uses that package's installed compiler.
 - `prepare` runs the public generator CLI with an explicit empty configuration,
   producing fresh, unmodified preserve and camelCase clients plus untagged-union
   clients using the default, strict, and raw policies with tagged type guards.
+   Separate camelCase/preserve packages cover tagged allOf payload composition.
+   A separate overlapping-allOf package covers compatible nested object views.
 - `build` copies each client to a temporary build directory, runs `vp install`,
   reports the resolved Vite+ component versions with `vp --version`, runs
   full `vp check` and `vp pack`, then checks again after packing and
@@ -30,6 +32,10 @@ The strict consumer check itself uses that package's installed compiler.
   `exactOptionalPropertyTypes`, including negative dictionary-type and readonly
   `allOf` assertions for preserve, ergonomic, and wire declarations, as well as
   ergonomic versus raw-wire union contracts and readonly union arrays.
+- `typecheck.tagged-allof.ts` checks required function fields, recursive namespace
+  tools, nested shell environments, readonly payloads, type guards, and the
+   distinct ergonomic/wire/preserve declarations of composed tagged variants.
+   Overlapping views retain both nested required fields and authored-name collisions.
 - `tests/*.test.mjs` uses Node's native test runner against the packed camelCase
   client. It asserts full payload equality in both JSON conversion directions,
   typed/nested/recursive dictionaries, JSON/model allOf composition, search-event variants,
@@ -61,11 +67,16 @@ The strict consumer check itself uses that package's installed compiler.
   indexes, and the established readonly-outer/plain-inner nested array contract.
   Frozen nested inputs remain usable; static conversion/matching helpers do not
   leak into the public barrel.
+  Tagged allOf cases independently assert both directions for function,
+  namespace, shell and search-output payloads, multiple references, inline-only
+   payloads, fields beside the tag or allOf, and unchanged ordinary/unit controls.
+   Overlapping allOf cases retain recursive objects, nullable/optional fields,
+   arrays and maps while leaving opaque JSON subtrees and dictionary keys alone.
 - `isolation-consumer.ts` is an ordinary consumer of one generated model. Its
   native `tsc` project and Node test prove helper imports do not pull unrelated
   model graphs into that consumer. The separate isolation fixture intentionally
   contains an unsupported same-value circular alias: only the selected usable
-  graph is compiled here, not its entire barrel. The five supported packages
+   graph is compiled here, not its entire barrel. The eight supported packages
   above still receive their full unmodified Vite+ checks and packed-declaration
   checks. Compilation stays in the just recipe, never inside a test program.
 

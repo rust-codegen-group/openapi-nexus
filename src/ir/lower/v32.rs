@@ -261,8 +261,11 @@ impl<'a> LowerCtx<'a> {
 
         // allOf → intersection
         if !obj.all_of.is_empty() {
-            let members = obj
-                .all_of
+            let composition = super::composition::members(obj, |reference| {
+                let name = reference.strip_prefix("#/components/schemas/")?;
+                self.spec.components.as_ref()?.schemas.get(name).cloned()
+            });
+            let members = composition
                 .iter()
                 .enumerate()
                 .map(|(idx, m)| {
@@ -496,33 +499,26 @@ impl<'a> LowerCtx<'a> {
             TaggedEnumPattern::InternallyTagged { tag_field, .. } => {
                 if let ObjectOrReference::Object(obj) = member {
                     if !obj.all_of.is_empty() {
-                        // allOf with [ref, tag_object]
-                        // The ref is the content type, the tag_object contains the discriminator value
-                        let mut content_ref = None;
                         let mut disc_value = None;
 
                         for item in &obj.all_of {
-                            match item {
-                                ObjectOrReference::Ref { ref_path, .. } => {
-                                    content_ref = Some(extract_schema_name(ref_path));
-                                }
-                                ObjectOrReference::Object(tag_obj) => {
-                                    // Extract discriminator value from the tag object
-                                    if let Some(ObjectOrReference::Object(prop_schema)) =
-                                        tag_obj.properties.get(tag_field.as_str())
-                                        && let Some(first_enum) = prop_schema.enum_values.first()
-                                    {
-                                        disc_value = first_enum.as_str().map(String::from);
-                                    }
-                                }
+                            if let ObjectOrReference::Object(tag_obj) = item
+                                && let Some(ObjectOrReference::Object(prop_schema)) =
+                                    tag_obj.properties.get(tag_field.as_str())
+                                && let Some(first_enum) = prop_schema.enum_values.first()
+                            {
+                                disc_value = first_enum.as_str().map(String::from);
                             }
                         }
 
-                        let content_type = content_ref
-                            .map(IrTypeExpr::Named)
-                            .unwrap_or(IrTypeExpr::Any);
                         let disc_value =
                             disc_value.unwrap_or_else(|| pattern.variant_name().to_string());
+                        let content_type = self.lower_tagged_allof_payload(
+                            parent_name,
+                            obj,
+                            tag_field,
+                            &disc_value,
+                        )?;
                         Ok((disc_value, content_type))
                     } else {
                         // Plain object with tag property embedded
@@ -629,6 +625,25 @@ impl<'a> LowerCtx<'a> {
                 self.lower_schema_ref(member)?,
             )),
         }
+    }
+
+    /// A tag identifies the variant; it does not replace the other allOf members.
+    /// Strip only that field, then reuse ordinary payload/intersection lowering.
+    fn lower_tagged_allof_payload(
+        &mut self,
+        parent_name: &str,
+        obj: &ObjectSchema,
+        tag_field: &str,
+        disc_value: &str,
+    ) -> Result<IrTypeExpr, LowerError> {
+        let payload = super::composition::tagged_payload(obj, tag_field, |reference| {
+            let name = reference.strip_prefix("#/components/schemas/")?;
+            self.spec.components.as_ref()?.schemas.get(name).cloned()
+        });
+        self.lower_schema_ref_with_promotion(
+            &format!("{}{}", parent_name, disc_value.to_pascal_case()),
+            &payload,
+        )
     }
 
     fn lower_object(

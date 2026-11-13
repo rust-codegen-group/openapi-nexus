@@ -59,7 +59,7 @@ impl TypeScriptFetchCodeGenerator {
         request_inputs: &RequestInputPlan,
     ) -> Result<Vec<FileInfo>, GeneratorError> {
         let plan = TypeScriptPlan::new(ir, self.emit_flags());
-        self.generate_models_with_plan(ir, request_inputs, &plan)
+        self.generate_models_with_plan(plan.ir(), request_inputs, &plan)
     }
 
     fn emit_flags(&self) -> super::sigil_emit::EmitFlags {
@@ -224,8 +224,9 @@ impl TypeScriptFetchCodeGenerator {
     /// Generate ALL files from the IR spec.
     fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         let mut files = Vec::new();
-        let request_inputs = plan_multipart_request_inputs(ir);
         let plan = TypeScriptPlan::new(ir, self.emit_flags());
+        let ir = plan.ir();
+        let request_inputs = plan_multipart_request_inputs(ir);
 
         files.extend(self.generate_apis_with_plan(ir, &request_inputs, &plan)?);
         files.extend(self.generate_models_with_plan(ir, &request_inputs, &plan)?);

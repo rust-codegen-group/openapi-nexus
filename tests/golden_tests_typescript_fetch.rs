@@ -285,6 +285,38 @@ fn test_property_naming_camel_case_additional_properties_golden() {
 }
 
 #[test]
+fn test_tagged_allof_payloads_golden() {
+    for (naming, suffix) in [("preserve", "preserve"), ("camelCase", "camel-case")] {
+        let config = toml::from_str(&format!(
+            "property_naming = '{naming}'\ntoolchain = 'vp'\nemit_type_guards = true"
+        ))
+        .unwrap();
+        run_golden_test(
+            &TypeScriptFetchCodeGenerator::new(config),
+            golden_dir(),
+            &format!("tagged-allof-payloads-{suffix}"),
+            "valid/tagged-allof-payloads.yaml",
+            UPDATE_HINT,
+        );
+    }
+}
+
+#[test]
+fn test_overlapping_allof_golden() {
+    let config = toml::from_str(
+        "property_naming = 'camelCase'\ntoolchain = 'vp'\nuntagged_union_strategy = 'strict'",
+    )
+    .unwrap();
+    run_golden_test(
+        &TypeScriptFetchCodeGenerator::new(config),
+        golden_dir(),
+        "overlapping-allof",
+        "valid/typescript-overlapping-allof.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
 fn test_camel_case_untagged_union_delegates_to_member_converters() {
     use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
 
