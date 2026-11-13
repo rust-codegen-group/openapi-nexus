@@ -12,13 +12,106 @@ use crate::ir::types::{IrSchema, IrSpec, IrTaggedUnion, IrTaggedVariant, Tagging
 
 use super::layout;
 use super::plan::{Direction, Scope, TypeScriptPlan, union_type};
-use super::sigil_emit::{build_type_alias, fn_base_name, is_guard_name, is_unspecified_variant};
+use super::sigil_emit::{
+    build_type_alias, fn_base_name, is_unspecified_variant, variant_guard_name,
+};
 
 fn record(plan: &TypeScriptPlan<'_>, key: &str, value: TypeName) -> TypeName {
     type_application(
         plan.utility_type("Record"),
         vec![TypeName::string_literal(key.to_string()), value],
     )
+}
+
+fn discriminator_values(variant: &IrTaggedVariant) -> Vec<String> {
+    if variant.discriminator_values.is_empty() {
+        vec![variant.discriminator_value.clone()]
+    } else {
+        variant.discriminator_values.clone()
+    }
+}
+
+fn discriminator_type(
+    plan: &TypeScriptPlan<'_>,
+    field: &str,
+    variant: &IrTaggedVariant,
+) -> TypeName {
+    let values = union_type(
+        discriminator_values(variant)
+            .into_iter()
+            .map(TypeName::string_literal)
+            .collect(),
+    );
+    let tag = record(plan, field, values);
+    if variant.discriminator_optional {
+        type_application(plan.utility_type("Partial"), vec![tag])
+    } else {
+        tag
+    }
+}
+
+fn discriminator_condition(
+    source: &str,
+    field: &str,
+    variant: &IrTaggedVariant,
+) -> Result<CodeBlock, SigilStitchError> {
+    let values = discriminator_values(variant);
+    let has_values = !values.is_empty();
+    let mut checks = CodeBlock::builder();
+    for (index, value) in values.into_iter().enumerate() {
+        if index > 0 {
+            checks.add(" || ", ());
+        }
+        checks.add_code(layout::inline(sigil_quote!(TypeScript {
+            $N(source)[$S(field)] === $S(value)
+        })?));
+    }
+    if variant.discriminator_optional {
+        if has_values {
+            checks.add(" || ", ());
+        }
+        checks.add_code(layout::inline(sigil_quote!(TypeScript {
+            $N(source)[$S(field)] === undefined
+        })?));
+    }
+    checks.build()
+}
+
+fn discriminator_output(
+    source: &str,
+    source_field: &str,
+    target_field: &str,
+    variant: &IrTaggedVariant,
+) -> Result<CodeBlock, SigilStitchError> {
+    if variant.discriminator_optional {
+        let source_tag = sigil_quote!(TypeScript {
+            $N(source)[$S(source_field)]
+        })?;
+        let key = sigil_quote!(TypeScript { [$S(target_field)] })?;
+        let object = CodeBlock::of(
+            "{ %L: %L }",
+            vec![
+                sigil_stitch::code_block::Arg::Code(layout::inline(key)),
+                sigil_stitch::code_block::Arg::Code(layout::inline(source_tag.clone())),
+            ],
+        )?;
+        return sigil_quote!(TypeScript {
+            ...($C(source_tag.clone()) !== undefined
+                ? $C(object)
+                : {})
+        });
+    }
+    if variant.discriminator_values.len() > 1 {
+        let source_tag = sigil_quote!(TypeScript {
+            $N(source)[$S(source_field)]
+        })?;
+        return sigil_quote!(TypeScript {
+            [$S(target_field)]: $C(source_tag)
+        });
+    }
+    sigil_quote!(TypeScript {
+        [$S(target_field)]: $S(variant.discriminator_value)
+    })
 }
 
 pub(super) fn open_external_variant_type(
@@ -69,11 +162,7 @@ fn variant_type(
     } else {
         value.public_type()
     };
-    let tag = record(
-        plan,
-        &disc,
-        TypeName::string_literal(variant.discriminator_value.clone()),
-    );
+    let tag = discriminator_type(plan, &disc, variant);
     match &union.tagging {
         TaggingStyle::Internal if is_tagged_unit_variant(ir, union, variant) => tag,
         TaggingStyle::Internal => TypeName::intersection(vec![tag, payload]),
@@ -125,7 +214,7 @@ pub(super) fn guards(
                 )
         })
         .map(|variant| {
-            let guard = is_guard_name(&variant.discriminator_value);
+            let guard = variant_guard_name(variant);
             let parent = TypeName::primitive(&schema.name.to_pascal_case());
             let narrowed = variant_type(schema, ir, union, variant, plan, false);
             let disc = if plan.flags().property_naming_camel_case {
@@ -133,10 +222,11 @@ pub(super) fn guards(
             } else {
                 union.discriminator_field.clone()
             };
-            let tag = &variant.discriminator_value;
             let check = match union.tagging {
-                TaggingStyle::External => sigil_quote!(TypeScript { $S(tag) in value })?,
-                _ => sigil_quote!(TypeScript { value[$S(disc)] === $S(tag) })?,
+                TaggingStyle::External => sigil_quote!(TypeScript {
+                    $S(variant.discriminator_value) in value
+                })?,
+                _ => discriminator_condition("value", &disc, variant)?,
             };
             layout::type_guard(
                 &guard,
@@ -191,7 +281,6 @@ pub(super) fn emit(
                 Direction::FromWire => union.discriminator_field.to_lower_camel_case(),
                 Direction::ToWire => union.discriminator_field.clone(),
             };
-            let tag = &variant.discriminator_value;
             let value = plan.value(&variant.content_type, Scope::model(&schema.name));
             let content_type = match direction {
                 Direction::FromWire => value.wire_type(),
@@ -200,11 +289,8 @@ pub(super) fn emit(
             let body = if is_tagged_unit_variant(ir, union, variant)
                 && !matches!(union.tagging, TaggingStyle::External)
             {
-                layout::return_object(
-                    &[sigil_quote!(TypeScript { [$S(target_disc)]: $S(tag) })?],
-                    Some(output_type.clone()),
-                    4,
-                )?
+                let tag = discriminator_output(source, &disc, &target_disc, variant)?;
+                layout::return_object(&[tag], Some(output_type.clone()), 4)?
             } else {
                 match &union.tagging {
                     TaggingStyle::Internal => {
@@ -212,11 +298,9 @@ pub(super) fn emit(
                             sigil_quote!(TypeScript { $N(source) as unknown as $T(content_type) })?,
                             direction,
                         )?;
+                        let tag = discriminator_output(source, &disc, &target_disc, variant)?;
                         layout::return_object(
-                            &[
-                                sigil_quote!(TypeScript { ...$C(content) })?,
-                                sigil_quote!(TypeScript { [$S(target_disc)]: $S(tag) })?,
-                            ],
+                            &[sigil_quote!(TypeScript { ...$C(content) })?, tag],
                             Some(output_type.clone()),
                             4,
                         )?
@@ -241,9 +325,10 @@ pub(super) fn emit(
                             8,
                         )?;
                         let content = value.convert_at(access, direction, column)?;
+                        let tag = discriminator_output(source, &disc, &target_disc, variant)?;
                         layout::return_object(
                             &[
-                                sigil_quote!(TypeScript { [$S(target_disc)]: $S(tag) })?,
+                                tag,
                                 sigil_quote!(TypeScript { [$S(target_key)]: $C(content) })?,
                             ],
                             Some(output_type.clone()),
@@ -251,6 +336,7 @@ pub(super) fn emit(
                         )?
                     }
                     TaggingStyle::External => {
+                        let tag = &variant.discriminator_value;
                         let column = 6
                             + layout::fragment_width(&sigil_quote!(TypeScript { [$S(tag)]: })?)?
                             + 1;
@@ -271,9 +357,10 @@ pub(super) fn emit(
             };
             let condition = match union.tagging {
                 TaggingStyle::External => {
+                    let tag = &variant.discriminator_value;
                     sigil_quote!(TypeScript { Object.prototype.hasOwnProperty.call($N(source), $S(tag)) })?
                 }
-                _ => sigil_quote!(TypeScript { $N(source)[$S(disc)] === $S(tag) })?,
+                _ => discriminator_condition(source, &disc, variant)?,
             };
             branches.push(sigil_quote!(TypeScript { if ($C(condition)) { $C(body) } })?);
         }

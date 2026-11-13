@@ -89,6 +89,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("open-tagged-additional-properties", "valid/open-tagged-additional-properties.yaml"),
         ("typescript-additional-properties", "valid/typescript-additional-properties.yaml"),
         ("untagged-union", "valid/typescript-untagged-union.yaml"),
+        ("optional-tool-tags", "valid/optional-tool-tags.yaml"),
         ("enum-repr", "valid/enum-repr/enum-repr.yaml"),
         ("query-param-enum", "valid/query/query-param-enum.yaml"),
         ("server-path-prefix", "valid/server-path-prefix.yaml"),
@@ -116,6 +117,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_optional_tool_tags_golden: "optional-tool-tags",
     test_nested_nullable_golden: "nested-nullable",
     test_petstore_golden: "petstore",
 

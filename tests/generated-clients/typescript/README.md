@@ -20,6 +20,8 @@ The strict consumer check itself uses that package's installed compiler.
   clients using the default, strict, and raw policies with tagged type guards.
    Separate camelCase/preserve packages cover tagged allOf payload composition.
    A separate overlapping-allOf package covers compatible nested object views.
+   An optional-tool-tags package covers absent custom tags and referenced
+   multi-valued search tags.
 - `build` copies each client to a temporary build directory, runs `vp install`,
   reports the resolved Vite+ component versions with `vp --version`, runs
   full `vp check` and `vp pack`, then checks again after packing and
@@ -36,6 +38,7 @@ The strict consumer check itself uses that package's installed compiler.
   tools, nested shell environments, readonly payloads, type guards, and the
    distinct ergonomic/wire/preserve declarations of composed tagged variants.
    Overlapping views retain both nested required fields and authored-name collisions.
+   Optional and multi-valued tag declarations accept every legal wire shape.
 - `tests/*.test.mjs` uses Node's native test runner against the packed camelCase
   client. It asserts full payload equality in both JSON conversion directions,
   typed/nested/recursive dictionaries, JSON/model allOf composition, search-event variants,
@@ -72,11 +75,13 @@ The strict consumer check itself uses that package's installed compiler.
    payloads, fields beside the tag or allOf, and unchanged ordinary/unit controls.
    Overlapping allOf cases retain recursive objects, nullable/optional fields,
    arrays and maps while leaving opaque JSON subtrees and dictionary keys alone.
+   Optional/multi-valued tool tags independently cover omitted tags, explicit
+   custom tags and both referenced search enum values in both JSON directions.
 - `isolation-consumer.ts` is an ordinary consumer of one generated model. Its
   native `tsc` project and Node test prove helper imports do not pull unrelated
   model graphs into that consumer. The separate isolation fixture intentionally
   contains an unsupported same-value circular alias: only the selected usable
-   graph is compiled here, not its entire barrel. The eight supported packages
+   graph is compiled here, not its entire barrel. The nine supported packages
   above still receive their full unmodified Vite+ checks and packed-declaration
   checks. Compilation stays in the just recipe, never inside a test program.
 

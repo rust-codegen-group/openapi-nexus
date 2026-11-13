@@ -1,0 +1,26 @@
+{
+  "name": "optional-and-multi-valued-tool-tags",
+  "version": "1.0.0",
+  "description": "TypeScript client for Optional and multi-valued tool tags",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
