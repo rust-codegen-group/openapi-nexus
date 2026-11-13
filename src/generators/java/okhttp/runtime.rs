@@ -71,3 +71,14 @@ fn repackage(header: &str, body: &str, runtime_package: &str) -> String {
     out.push_str(&patched);
     out
 }
+
+pub(super) fn composition_file(header: &str, package: &str) -> FileInfo {
+    FileInfo::runtime(
+        "AllOfAdapterFactory.java".into(),
+        repackage(
+            header,
+            include_str!("runtime/AllOfAdapterFactory.java.txt"),
+            &format!("{package}.runtime"),
+        ),
+    )
+}

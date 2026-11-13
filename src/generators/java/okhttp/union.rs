@@ -17,9 +17,9 @@ pub(super) fn adapter(
     schema: &IrSchema,
     plan: &ClosedSumPlan,
     ir: &IrSpec,
-    strategy: UntaggedUnionStrategy,
+    untagged_union_strategy: UntaggedUnionStrategy,
 ) -> Result<CodeBlock, SigilStitchError> {
-    let raw = strategy == UntaggedUnionStrategy::Raw;
+    let raw = untagged_union_strategy == UntaggedUnionStrategy::Raw;
     let raw_case = &plan.cases[0].name;
     let mut matching = MatchPlan::default();
     let root = TypeName::primitive(&plan.name);
@@ -31,7 +31,7 @@ pub(super) fn adapter(
     let read_body = if raw {
         sigil_quote!(Java { return new $N(&plan.name).$N(raw_case)(element); })?
     } else {
-        typed_read(schema, plan, ir, strategy, &mut matching)?
+        typed_read(schema, plan, ir, untagged_union_strategy, &mut matching)?
     };
     let read = FunSpec::builder("read")
         .visibility(Visibility::Public)
@@ -116,7 +116,7 @@ fn typed_read(
     schema: &IrSchema,
     plan: &ClosedSumPlan,
     ir: &IrSpec,
-    strategy: UntaggedUnionStrategy,
+    untagged_union_strategy: UntaggedUnionStrategy,
     matching: &mut MatchPlan,
 ) -> Result<CodeBlock, SigilStitchError> {
     let IrSchemaKind::Union(union) = &schema.kind else {
@@ -130,7 +130,7 @@ fn typed_read(
         Some(case) => sigil_quote!(Java { return $N(&plan.name).$N(&case.name).INSTANCE; })?,
         None => sigil_quote!(Java { return null; })?,
     };
-    let strict = strategy == UntaggedUnionStrategy::Strict;
+    let strict = untagged_union_strategy == UntaggedUnionStrategy::Strict;
     let ambiguous = format!(
         "ambiguous untagged union {}: multiple concrete members match",
         plan.name

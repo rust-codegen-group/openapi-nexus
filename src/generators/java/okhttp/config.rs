@@ -1,5 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum AllOfStrategy {
+    #[default]
+    Composed,
+    Raw,
+}
+
 /// Structural selection policy for generated untagged Gson adapters.
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum UntaggedUnionStrategy {
@@ -18,6 +26,8 @@ pub struct JavaOkhttpConfig {
     pub package_name: Option<String>,
     #[serde(default)]
     pub untagged_union_strategy: UntaggedUnionStrategy,
+    #[serde(default)]
+    pub all_of_strategy: AllOfStrategy,
 }
 
 impl From<toml::value::Table> for JavaOkhttpConfig {
@@ -32,6 +42,22 @@ impl From<toml::value::Table> for JavaOkhttpConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn allof_policy_is_independent_and_defaults_to_composition() {
+        assert_eq!(
+            JavaOkhttpConfig::default().all_of_strategy,
+            AllOfStrategy::Composed
+        );
+        let config: JavaOkhttpConfig =
+            toml::from_str("all_of_strategy = 'raw'\nuntagged_union_strategy = 'strict'").unwrap();
+        assert_eq!(config.all_of_strategy, AllOfStrategy::Raw);
+        assert_eq!(
+            config.untagged_union_strategy,
+            UntaggedUnionStrategy::Strict
+        );
+        assert!(toml::from_str::<JavaOkhttpConfig>("all_of_strategy = 'unknown'").is_err());
+    }
 
     #[test]
     fn untagged_union_strategy_is_explicit_and_defaults_to_first_match() {

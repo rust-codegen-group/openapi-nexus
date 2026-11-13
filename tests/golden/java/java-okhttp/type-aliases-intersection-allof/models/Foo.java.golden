@@ -5,20 +5,67 @@
 
 package com.example.sdk.models;
 
+@com.google.gson.annotations.JsonAdapter(value = FooAllOfAdapterFactory.class, nullSafe = false)
 public class Foo {
-    private Bar bar;
-    private Baz baz;
+    private com.example.sdk.models.Bar bar;
+    private com.example.sdk.models.Baz baz;
 
-    public Foo(Bar bar, Baz baz) {
-        this.bar = bar;
-        this.baz = baz;
-    }
-
-    public Bar getBar() {
+    public com.example.sdk.models.Bar getBar() {
         return this.bar;
     }
 
-    public Baz getBaz() {
+    public com.example.sdk.models.Baz getBaz() {
         return this.baz;
+    }
+
+    public Foo(com.example.sdk.models.Bar bar, com.example.sdk.models.Baz baz) {
+        this.bar = bar;
+        this.baz = baz;
+    }
+}
+
+class FooAllOfAdapterFactory extends com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.Foo> {
+    public FooAllOfAdapterFactory() {
+        super(com.example.sdk.models.Foo.class , member(new java.lang.String[] {"id", "name"}
+        , com.example.sdk.models.Bar.class), member(new java.lang.String[] {"createdAt", "email"}
+        , com.example.sdk.models.Baz.class));
+    }
+
+    @Override
+    protected com.example.sdk.models.Foo decode(com.google.gson.Gson gson,
+        java.util.List<com.google.gson.stream.JsonReader> readers) throws java.io.IOException {
+        return new com.example.sdk.models.Foo(readMember0(gson, readers.get(0)), readMember2(gson, readers.get(1)));
+    }
+
+    @Override
+    protected java.util.List<com.google.gson.JsonElement> encode(com.google.gson.Gson gson,
+        com.example.sdk.models.Foo value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return java.util.Arrays.asList(
+        writeMember1(gson, value.getBar(), context)
+        , writeMember3(gson, value.getBaz(), context)
+        );
+    }
+
+    private com.example.sdk.models.Bar readMember0(com.google.gson.Gson gson,
+        com.google.gson.stream.JsonReader reader) throws java.io.IOException {
+        return gson.getAdapter(new com.google.gson.reflect.TypeToken<com.example.sdk.models.Bar>() {}).read(reader);
+    }
+
+    private com.google.gson.JsonElement writeMember1(com.google.gson.Gson gson,
+        com.example.sdk.models.Bar value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return tree(gson, value, new com.google.gson.reflect.TypeToken<com.example.sdk.models.Bar>() {}, context);
+    }
+
+    private com.example.sdk.models.Baz readMember2(com.google.gson.Gson gson,
+        com.google.gson.stream.JsonReader reader) throws java.io.IOException {
+        return gson.getAdapter(new com.google.gson.reflect.TypeToken<com.example.sdk.models.Baz>() {}).read(reader);
+    }
+
+    private com.google.gson.JsonElement writeMember3(com.google.gson.Gson gson,
+        com.example.sdk.models.Baz value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return tree(gson, value, new com.google.gson.reflect.TypeToken<com.example.sdk.models.Baz>() {}, context);
     }
 }

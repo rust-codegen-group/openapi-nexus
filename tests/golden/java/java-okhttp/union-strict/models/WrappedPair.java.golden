@@ -4,20 +4,68 @@
 
 package com.example.sdk.models;
 
+@com.google.gson.annotations.JsonAdapter(value = WrappedPairAllOfAdapterFactory.class, nullSafe = false)
 public class WrappedPair {
-    private LeftPart leftPart;
-    private RightPart rightPart;
+    private com.example.sdk.models.LeftPart leftPart;
+    private com.example.sdk.models.RightPart rightPart;
 
-    public WrappedPair(LeftPart leftPart, RightPart rightPart) {
-        this.leftPart = leftPart;
-        this.rightPart = rightPart;
-    }
-
-    public LeftPart getLeftPart() {
+    public com.example.sdk.models.LeftPart getLeftPart() {
         return this.leftPart;
     }
 
-    public RightPart getRightPart() {
+    public com.example.sdk.models.RightPart getRightPart() {
         return this.rightPart;
+    }
+
+    public WrappedPair(com.example.sdk.models.LeftPart leftPart,
+        com.example.sdk.models.RightPart rightPart) {
+        this.leftPart = leftPart;
+        this.rightPart = rightPart;
+    }
+}
+
+class WrappedPairAllOfAdapterFactory extends com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.WrappedPair> {
+    public WrappedPairAllOfAdapterFactory() {
+        super(com.example.sdk.models.WrappedPair.class , member(new java.lang.String[] {"left_value"}
+        , com.example.sdk.models.LeftPart.class), member(new java.lang.String[] {"right_value"}
+        , com.example.sdk.models.RightPart.class));
+    }
+
+    @Override
+    protected com.example.sdk.models.WrappedPair decode(com.google.gson.Gson gson,
+        java.util.List<com.google.gson.stream.JsonReader> readers) throws java.io.IOException {
+        return new com.example.sdk.models.WrappedPair(readMember0(gson, readers.get(0)), readMember2(gson, readers.get(1)));
+    }
+
+    @Override
+    protected java.util.List<com.google.gson.JsonElement> encode(com.google.gson.Gson gson,
+        com.example.sdk.models.WrappedPair value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return java.util.Arrays.asList(
+        writeMember1(gson, value.getLeftPart(), context)
+        , writeMember3(gson, value.getRightPart(), context)
+        );
+    }
+
+    private com.example.sdk.models.LeftPart readMember0(com.google.gson.Gson gson,
+        com.google.gson.stream.JsonReader reader) throws java.io.IOException {
+        return gson.getAdapter(new com.google.gson.reflect.TypeToken<com.example.sdk.models.LeftPart>() {}).read(reader);
+    }
+
+    private com.google.gson.JsonElement writeMember1(com.google.gson.Gson gson,
+        com.example.sdk.models.LeftPart value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return tree(gson, value, new com.google.gson.reflect.TypeToken<com.example.sdk.models.LeftPart>() {}, context);
+    }
+
+    private com.example.sdk.models.RightPart readMember2(com.google.gson.Gson gson,
+        com.google.gson.stream.JsonReader reader) throws java.io.IOException {
+        return gson.getAdapter(new com.google.gson.reflect.TypeToken<com.example.sdk.models.RightPart>() {}).read(reader);
+    }
+
+    private com.google.gson.JsonElement writeMember3(com.google.gson.Gson gson,
+        com.example.sdk.models.RightPart value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return tree(gson, value, new com.google.gson.reflect.TypeToken<com.example.sdk.models.RightPart>() {}, context);
     }
 }

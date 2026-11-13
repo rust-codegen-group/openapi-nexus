@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info: {title: Java allOf composition, version: '1.0.0'}
+paths:
+  /composition:
+    post:
+      operationId: echoComposition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Pair'}
+      responses:
+        '200':
+          description: Flat composition
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Pair'}
+        '400':
+          description: Composed error
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Pair'}
+components:
+  schemas:
+    NestedValue:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    MixedMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: {$ref: '#/components/schemas/NestedValue'}
+    MixedAlias:
+      allOf: [{$ref: '#/components/schemas/MixedMap'}]
+    OpaqueMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: true
+    OpenAllOf:
+      allOf:
+        - {$ref: '#/components/schemas/OpaqueMap'}
+        - {type: object, additionalProperties: true}
+    Other:
+      type: object
+      required: [other_field]
+      properties:
+        other_field: {type: integer}
+    Pair:
+      allOf:
+        - {$ref: '#/components/schemas/OpaqueMap'}
+        - {$ref: '#/components/schemas/Other'}
+    Nested:
+      allOf:
+        - {$ref: '#/components/schemas/Pair'}
+        - {type: object, additionalProperties: true}
+    Repeated:
+      allOf: [{$ref: '#/components/schemas/OpaqueMap'}, {$ref: '#/components/schemas/OpaqueMap'}]
+    Dictionary:
+      allOf: [{type: object, additionalProperties: true}]
+    IntDictionary:
+      allOf: [{type: object, additionalProperties: {type: integer}}]
+    Nullable:
+      allOf:
+        - anyOf: [{$ref: '#/components/schemas/OpaqueMap'}, {type: 'null'}]
+    Cycle:
+      allOf: [{$ref: '#/components/schemas/Cycle'}]
+    Scalar:
+      allOf: [{type: string}]
+    Incompatible:
+      allOf:
+        - {$ref: '#/components/schemas/OpaqueMap'}
+        - {type: object, additionalProperties: {type: integer}}
+    WrappedAlias: {$ref: '#/components/schemas/OpaqueMap'}
+    AliasComposition:
+      allOf: [{$ref: '#/components/schemas/WrappedAlias'}]
+    Choice:
+      oneOf: [{$ref: '#/components/schemas/Pair'}, {type: string}]
+    Partial:
+      type: object
+      properties:
+        left: {type: string}
+        right: {type: string}
+    Container:
+      type: object
+      required: [part]
+      properties:
+        part: {$ref: '#/components/schemas/Partial'}
+    ContainerAlias:
+      allOf: [{$ref: '#/components/schemas/Container'}]
+    Configured:
+      type: object
+      required: [camelName]
+      properties:
+        camelName: {type: string}
+      additionalProperties: true
+    ConfiguredPair:
+      allOf: [{$ref: '#/components/schemas/Configured'}, {$ref: '#/components/schemas/Other'}]
+    MixedAliasAllOfAdapterFactory:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    Class:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    ClassComposition:
+      allOf: [{$ref: '#/components/schemas/Class'}]
+    Gson:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    JsonElement:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    HelperComposition:
+      allOf: [{$ref: '#/components/schemas/Gson'}]
+    Numeric:
+      type: object
+      required: [amount]
+      properties:
+        amount: {type: number}
+        optional_name: {type: string}
+    NumericAlias:
+      allOf: [{$ref: '#/components/schemas/Numeric'}]
+    BinaryDictionary:
+      allOf: [{type: object, additionalProperties: {type: string, format: binary}}]
+    NestedDictionary:
+      allOf:
+        - type: object
+          additionalProperties:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+    TreeData:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+        next: {$ref: '#/components/schemas/Recursive'}
+    Recursive:
+      allOf: [{$ref: '#/components/schemas/TreeData'}]

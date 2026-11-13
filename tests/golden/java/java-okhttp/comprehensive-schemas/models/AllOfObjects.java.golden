@@ -8,20 +8,68 @@ package com.example.sdk.models;
 /**
  * Intersection of object types (merge)
  */
+@com.google.gson.annotations.JsonAdapter(value = AllOfObjectsAllOfAdapterFactory.class, nullSafe = false)
 public class AllOfObjects {
-    private BasicObject basicObject;
-    private AllOfObjectsAllOf2 allOfObjectsAllOf2;
+    private com.example.sdk.models.BasicObject basicObject;
+    private com.example.sdk.models.AllOfObjectsAllOf2 allOfObjectsAllOf2;
 
-    public AllOfObjects(BasicObject basicObject, AllOfObjectsAllOf2 allOfObjectsAllOf2) {
-        this.basicObject = basicObject;
-        this.allOfObjectsAllOf2 = allOfObjectsAllOf2;
-    }
-
-    public BasicObject getBasicObject() {
+    public com.example.sdk.models.BasicObject getBasicObject() {
         return this.basicObject;
     }
 
-    public AllOfObjectsAllOf2 getAllOfObjectsAllOf2() {
+    public com.example.sdk.models.AllOfObjectsAllOf2 getAllOfObjectsAllOf2() {
         return this.allOfObjectsAllOf2;
+    }
+
+    public AllOfObjects(com.example.sdk.models.BasicObject basicObject,
+        com.example.sdk.models.AllOfObjectsAllOf2 allOfObjectsAllOf2) {
+        this.basicObject = basicObject;
+        this.allOfObjectsAllOf2 = allOfObjectsAllOf2;
+    }
+}
+
+class AllOfObjectsAllOfAdapterFactory extends com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.AllOfObjects> {
+    public AllOfObjectsAllOfAdapterFactory() {
+        super(com.example.sdk.models.AllOfObjects.class , member(new java.lang.String[] {"active", "id", "name"}
+        , com.example.sdk.models.BasicObject.class), member(new java.lang.String[] {"metadata"}
+        , com.example.sdk.models.AllOfObjectsAllOf2.class));
+    }
+
+    @Override
+    protected com.example.sdk.models.AllOfObjects decode(com.google.gson.Gson gson,
+        java.util.List<com.google.gson.stream.JsonReader> readers) throws java.io.IOException {
+        return new com.example.sdk.models.AllOfObjects(readMember0(gson, readers.get(0)), readMember2(gson, readers.get(1)));
+    }
+
+    @Override
+    protected java.util.List<com.google.gson.JsonElement> encode(com.google.gson.Gson gson,
+        com.example.sdk.models.AllOfObjects value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return java.util.Arrays.asList(
+        writeMember1(gson, value.getBasicObject(), context)
+        , writeMember3(gson, value.getAllOfObjectsAllOf2(), context)
+        );
+    }
+
+    private com.example.sdk.models.BasicObject readMember0(com.google.gson.Gson gson,
+        com.google.gson.stream.JsonReader reader) throws java.io.IOException {
+        return gson.getAdapter(new com.google.gson.reflect.TypeToken<com.example.sdk.models.BasicObject>() {}).read(reader);
+    }
+
+    private com.google.gson.JsonElement writeMember1(com.google.gson.Gson gson,
+        com.example.sdk.models.BasicObject value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return tree(gson, value, new com.google.gson.reflect.TypeToken<com.example.sdk.models.BasicObject>() {}, context);
+    }
+
+    private com.example.sdk.models.AllOfObjectsAllOf2 readMember2(com.google.gson.Gson gson,
+        com.google.gson.stream.JsonReader reader) throws java.io.IOException {
+        return gson.getAdapter(new com.google.gson.reflect.TypeToken<com.example.sdk.models.AllOfObjectsAllOf2>() {}).read(reader);
+    }
+
+    private com.google.gson.JsonElement writeMember3(com.google.gson.Gson gson,
+        com.example.sdk.models.AllOfObjectsAllOf2 value,
+        com.google.gson.stream.JsonWriter context) throws java.io.IOException {
+        return tree(gson, value, new com.google.gson.reflect.TypeToken<com.example.sdk.models.AllOfObjectsAllOf2>() {}, context);
     }
 }

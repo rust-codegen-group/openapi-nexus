@@ -92,6 +92,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("query-param-enum", "valid/query/query-param-enum.yaml"),
         ("server-path-prefix", "valid/server-path-prefix.yaml"),
         ("reserved-word-fields", "valid/reserved-word-fields.yaml"),
+        ("allof-composition", "valid/java-allof-composition.yaml"),
     ])
 }
 
@@ -116,6 +117,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_allof_composition_golden: "allof-composition",
     test_object_extensions_golden: "object-extensions",
     test_object_extension_helper_types_golden: "object-extension-helper-types",
     test_union_selection_golden: "union-selection",
@@ -188,6 +190,17 @@ generate_golden_tests! {
     test_query_param_enum_golden: "query-param-enum",
     test_server_path_prefix_golden: "server-path-prefix",
     test_reserved_word_fields_golden: "reserved-word-fields",
+}
+
+#[test]
+fn test_allof_raw_golden() {
+    run_golden_test(
+        &JavaOkhttpCodeGenerator::new(toml::from_str("all_of_strategy = 'raw'").unwrap()),
+        golden_dir(),
+        "allof-raw",
+        "valid/java-allof-composition.yaml",
+        UPDATE_HINT,
+    );
 }
 
 #[test]

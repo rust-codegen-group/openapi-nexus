@@ -22,10 +22,13 @@ for manifest in "${manifests[@]}"; do
       --input "$root/tests/fixtures/$fixture" --output "$output" --generators "$backend-okhttp")
     if [ -n "$strategy" ]; then
       case "$strategy" in
-        firstMatch|strict|raw) ;;
+        firstMatch|strict|raw)
+          options+=(--generator-config "$backend-okhttp.untagged_union_strategy=$strategy") ;;
+        all_of_strategy=composed|all_of_strategy=raw)
+          if [ "$backend" != java ]; then echo "allOf policy is Java-only" >&2; exit 1; fi
+          options+=(--generator-config "$backend-okhttp.$strategy") ;;
         *) echo "invalid union strategy: $strategy" >&2; exit 1 ;;
       esac
-      options+=(--generator-config "$backend-okhttp.untagged_union_strategy=$strategy")
     fi
     # Only these fixed, ignored fixture output directories are disposable.
     rm -rf "$output"

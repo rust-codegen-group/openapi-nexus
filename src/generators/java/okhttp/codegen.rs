@@ -44,6 +44,7 @@ impl JavaOkhttpCodeGenerator {
             &header,
             &request_inputs,
             self.config.untagged_union_strategy,
+            self.config.all_of_strategy,
         )?);
 
         files.extend(sigil_emit_api::generate_api_files(
@@ -61,6 +62,13 @@ impl JavaOkhttpCodeGenerator {
                 crate::ir::types::IrSchemaKind::Object(object) if object.additional_properties.is_some()
             )),
         ));
+        if ir
+            .schemas
+            .values()
+            .any(|schema| matches!(schema.kind, crate::ir::types::IrSchemaKind::Intersection(_)))
+        {
+            files.push(super::runtime::composition_file(&header, &package_name));
+        }
 
         files.push(build_gradle_file(&package_name, &ir.info));
         files.push(readme_file(&ir.info));

@@ -39,7 +39,7 @@ final class WrappedChoiceJsonAdapter extends TypeAdapter<WrappedChoice> {
             }
             selected = 0;
         }
-        if (matches7(element)) {
+        if (matches8(element)) {
             if (selected >= 0) {
                 throw new JsonParseException("ambiguous untagged union WrappedChoice: multiple concrete members match");
             }
@@ -71,14 +71,13 @@ final class WrappedChoiceJsonAdapter extends TypeAdapter<WrappedChoice> {
     }
 
     private static boolean matches0(JsonElement candidate) {
-        if (!candidate.isJsonObject()) {
+        if (!matches1(candidate)) {
             return false;
         }
-        JsonObject object = candidate.getAsJsonObject();
-        if (!object.has("leftPart") || !matches1(object.get("leftPart"))) {
+        if (!matches3(candidate)) {
             return false;
         }
-        if (!object.has("rightPart") || !matches3(object.get("rightPart"))) {
+        if (!matches7(candidate)) {
             return false;
         }
         return true;
@@ -134,6 +133,16 @@ final class WrappedChoiceJsonAdapter extends TypeAdapter<WrappedChoice> {
     }
 
     private static boolean matches7(JsonElement candidate) {
+        if (matches1(candidate)) {
+            return true;
+        }
+        if (matches3(candidate)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean matches8(JsonElement candidate) {
         if (!candidate.isJsonObject()) {
             return false;
         }
