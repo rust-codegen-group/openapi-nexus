@@ -8,5 +8,5 @@
     "noEmit": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["typecheck.ts", "typecheck.tagged-allof.ts"]
+  "include": ["typecheck.ts", "typecheck.tagged-allof.ts", "typecheck.optional-tool-tags.ts"]
 }

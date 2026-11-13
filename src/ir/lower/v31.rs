@@ -359,6 +359,8 @@ impl<'a> LowerCtx<'a> {
                 };
                 variants.push(IrTaggedVariant {
                     discriminator_value: disc_value,
+                    discriminator_values: Vec::new(),
+                    discriminator_optional: false,
                     content_type,
                     description,
                     additional_properties,
@@ -414,12 +416,23 @@ impl<'a> LowerCtx<'a> {
             };
             let (disc_value, content_type) =
                 self.extract_tagged_variant(parent_name, member, &effective_pattern)?;
+            let facts =
+                super::tagged::facts::<ObjectSchema>(member, first_tag, &disc_value, |reference| {
+                    let name = reference.strip_prefix("#/components/schemas/")?;
+                    self.spec.components.as_ref()?.schemas.get(name).cloned()
+                });
             let description = match member {
                 ObjectOrReference::Object(obj) => obj.description.clone(),
                 _ => None,
             };
             variants.push(IrTaggedVariant {
                 discriminator_value: disc_value,
+                discriminator_values: if facts.values.len() > 1 {
+                    facts.values.clone()
+                } else {
+                    Vec::new()
+                },
+                discriminator_optional: facts.optional,
                 content_type,
                 description,
                 additional_properties: None,
@@ -447,6 +460,8 @@ impl<'a> LowerCtx<'a> {
                 let schema_name = extract_schema_name(ref_path);
                 variants.push(IrTaggedVariant {
                     discriminator_value: value.clone(),
+                    discriminator_values: Vec::new(),
+                    discriminator_optional: false,
                     content_type: IrTypeExpr::Named(schema_name),
                     description: None,
                     additional_properties: None,
@@ -460,6 +475,8 @@ impl<'a> LowerCtx<'a> {
                         let schema_name = extract_schema_name(ref_path);
                         variants.push(IrTaggedVariant {
                             discriminator_value: schema_name.clone(),
+                            discriminator_values: Vec::new(),
+                            discriminator_optional: false,
                             content_type: IrTypeExpr::Named(schema_name),
                             description: None,
                             additional_properties: None,
@@ -474,6 +491,8 @@ impl<'a> LowerCtx<'a> {
                         self.schemas.insert(variant_name.clone(), schema);
                         variants.push(IrTaggedVariant {
                             discriminator_value: disc_value,
+                            discriminator_values: Vec::new(),
+                            discriminator_optional: false,
                             content_type: IrTypeExpr::Named(variant_name),
                             description: None,
                             additional_properties: None,

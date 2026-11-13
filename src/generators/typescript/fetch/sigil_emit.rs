@@ -19,7 +19,7 @@ use crate::generators::type_application;
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
-    IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrUnion, TaggingStyle,
+    IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::code_block::CodeBlock;
@@ -97,7 +97,7 @@ pub(super) fn value_exports_for_schema(
                                 &v.content_type,
                             )
                         })
-                        .map(|v| is_guard_name(&v.discriminator_value)),
+                        .map(variant_guard_name),
                 );
             }
             exports
@@ -132,7 +132,7 @@ pub(super) fn value_exports_for_schema(
                     &v.content_type,
                 )
             })
-            .map(|v| is_guard_name(&v.discriminator_value))
+            .map(variant_guard_name)
             .collect(),
         _ => vec![],
     }
@@ -1545,6 +1545,13 @@ fn intersect_dictionary_values(
 /// Derive `isVariantName` from a discriminator value.
 pub(super) fn is_guard_name(disc_value: &str) -> String {
     format!("is{}", disc_value.to_pascal_case())
+}
+
+pub(super) fn variant_guard_name(variant: &IrTaggedVariant) -> String {
+    variant.discriminator_values.first().map_or_else(
+        || is_guard_name(&variant.discriminator_value),
+        |value| is_guard_name(value),
+    )
 }
 
 /// Variants that are placeholder sentinels with no meaningful content.

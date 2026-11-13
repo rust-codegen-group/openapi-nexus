@@ -439,13 +439,23 @@ fn plan_shape(
                         .variants
                         .iter()
                         .map(|variant| {
+                            let tag_values = if variant.discriminator_values.is_empty() {
+                                vec![variant.discriminator_value.clone()]
+                            } else {
+                                variant.discriminator_values.clone()
+                            };
                             let tag = PropertyMatch {
                                 wire_name: union.discriminator_field.clone(),
                                 rename: true,
-                                required: true,
-                                shape: JsonShape::Literal(serde_json::Value::String(
-                                    variant.discriminator_value.clone(),
-                                )),
+                                required: !variant.discriminator_optional,
+                                shape: any_of(
+                                    tag_values
+                                        .into_iter()
+                                        .map(|value| {
+                                            JsonShape::Literal(serde_json::Value::String(value))
+                                        })
+                                        .collect(),
+                                ),
                             };
                             let tag_only = is_tagged_unit_variant(ir, union, variant);
                             match &union.tagging {
@@ -945,6 +955,8 @@ mod tests {
             tagging: TaggingStyle::External,
             variants: vec![IrTaggedVariant {
                 discriminator_value: "snake_tag".into(),
+                discriminator_values: Vec::new(),
+                discriminator_optional: false,
                 content_type: IrTypeExpr::Named("SearchTool".into()),
                 description: None,
                 additional_properties: None,
