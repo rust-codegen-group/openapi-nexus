@@ -11,9 +11,12 @@ use crate::generators::union_match::{
 };
 use crate::ir::types::{IrObject, IrProperty, IrSchemaKind, IrSpec};
 
-/// Java aliases and intersections have ordinary Gson wrapper fields. Project
-/// only matcher facts; their declarations and codecs remain intact.
-pub(super) fn wire_ir(ir: &IrSpec) -> Cow<'_, IrSpec> {
+/// Ordinary aliases retain wrapper facts; composed allOf uses flat member facts,
+/// while a raw allOf is an unrestricted JSON fallback. Shared lowering is intact.
+pub(super) fn wire_ir(
+    ir: &IrSpec,
+    all_of_strategy: super::config::AllOfStrategy,
+) -> Cow<'_, IrSpec> {
     if !ir.schemas.values().any(|schema| {
         matches!(
             schema.kind,
@@ -25,9 +28,12 @@ pub(super) fn wire_ir(ir: &IrSpec) -> Cow<'_, IrSpec> {
     let mut wire = ir.clone();
     for schema in wire.schemas.values_mut() {
         let properties = match &schema.kind {
-            IrSchemaKind::Alias(expr) => vec![("value".into(), expr)],
+            IrSchemaKind::Alias(expr) => vec![("value".to_string(), expr)],
             IrSchemaKind::Intersection(intersection) => {
-                super::util::intersection_fields(intersection)
+                if !super::composition::is_composed(intersection, ir, all_of_strategy) {
+                    schema.kind = IrSchemaKind::Alias(crate::ir::types::IrTypeExpr::Any);
+                }
+                continue;
             }
             _ => continue,
         }
@@ -587,7 +593,7 @@ return matched;
     #[test]
     fn matcher_wire_projection_does_not_change_alias_or_intersection_declarations() {
         let ir = fixture();
-        let wire = wire_ir(&ir);
+        let wire = wire_ir(&ir, super::super::config::AllOfStrategy::Composed);
         assert!(matches!(
             ir.schemas["NumberAlias"].kind,
             IrSchemaKind::Alias(_)
@@ -600,15 +606,9 @@ return matched;
             panic!("alias wrapper facts")
         };
         assert!(alias.properties["value"].required);
-        let IrSchemaKind::Object(pair) = &wire.schemas["WrappedPair"].kind else {
-            panic!("composition wrapper facts")
-        };
-        assert_eq!(
-            pair.properties
-                .keys()
-                .map(String::as_str)
-                .collect::<Vec<_>>(),
-            ["leftPart", "rightPart"]
-        );
+        assert!(matches!(
+            wire.schemas["WrappedPair"].kind,
+            IrSchemaKind::Intersection(_)
+        ));
     }
 }

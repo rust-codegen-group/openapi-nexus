@@ -1,5 +1,6 @@
 mod additional_properties;
 pub mod codegen;
+mod composition;
 pub mod config;
 mod matching;
 pub mod runtime;

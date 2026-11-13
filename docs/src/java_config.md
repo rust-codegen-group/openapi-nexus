@@ -43,9 +43,9 @@ mode instead wraps JSON null in `VariantRaw(JsonNull.INSTANCE)`.
 As with typed cases, a case name equal to its enclosing interface is
 disambiguated (for example, `VariantRaw.VariantRawVariant`).
 
-Java aliases remain objects with a `value` field, and `allOf` models keep their
-existing member-wrapper fields. Matchers follow those wire boundaries; this is
-not an alias-codec or multi-member `allOf` redesign. Tagged unions and ordinary
+Java aliases remain objects with a `value` field. Compatible `allOf` models now
+have flat object codecs, described below; union matchers follow that flat wire
+shape rather than the source-facing member names. Tagged unions and ordinary
 models keep their existing APIs and codecs.
 
 Typed variants retain declared member payloads, not arbitrary unknown fields.
@@ -101,3 +101,65 @@ Closed objects and those without explicit additional properties keep their
 existing behavior. Shared lowering, general inline-composition type loss,
 multi-member `allOf`, tagged-wrapper extension storage and generation formatting
 are separate concerns, not redesigned by this object-storage repair.
+
+## allOf composition
+
+```toml
+[java-okhttp]
+all_of_strategy = "composed"
+```
+
+The default `composed` policy retains compatible object/map member constructor
+arguments and getters, but reads and writes a single flat JSON object:
+
+```java
+MixedAlias value = new MixedAlias(new MixedMap("fixed"));
+// Gson writes {"known_field":"fixed"}, not {"mixedMap":{...}}.
+value.getMixedMap(); // The source-facing member entrypoint remains available.
+```
+
+Members are decoded once through the configured Gson instance. Named model
+members keep their ordinary codecs, field naming, null omission and native
+failures. Projection excludes sibling declared keys from extension storage while
+retaining input order, repeated keys and numeric lexemes, including inside nested
+values. It preserves the distinction between streaming and tree input modes.
+Nested compositions and repeated members retain their member APIs; conflicting
+member write encodings raise `IllegalArgumentException` instead of losing data.
+
+Anonymous dictionary members retain their `Map` source-facing types. Their
+opaque `Object` entries decode as `JsonElement` values (with Java null for JSON
+null) so large numbers and null entries survive. Typed dictionary values use
+configured leaf adapters; containers retain explicit null entries. This is not a
+change to ordinary `Object` fields or ordinary dictionary model codecs.
+
+This is conservative representation planning, not full JSON Schema validation.
+Non-object, nullable, incompatible, cyclic and ordinary-wrapper-alias members use
+a raw representation rather than guessing a flat typed codec. Ordinary alias
+codecs themselves remain unchanged. Missing shared-lowering facts and implicit
+additional-property storage are not inferred. Nullable members conservatively
+choose raw even alongside a non-nullable sibling.
+
+Set `all_of_strategy = "raw"` to use raw representation for every intersection:
+
+```sh
+openapi-nexus generate --input api.yaml --output sdk --generators java-okhttp \
+  --generator-config java-okhttp.all_of_strategy=raw
+```
+
+A raw allOf model has a `JsonElement` constructor and `getValue()` accessor. It
+retains arbitrary JSON kinds, nulls and numeric literals without enforcing
+intersection constraints. Consumers of formerly unsupported or nested-wrapper
+representations must regenerate and adjust construction/serialization code; no
+binary-compatibility claim is made. Successful composed member APIs are retained.
+AllOf selection is independent of `untagged_union_strategy`.
+
+The private runtime uses Gson 2.11.0's `JsonTreeReader`, `JsonTreeWriter` and
+`LazilyParsedNumber` implementation classes to preserve input modes, configured
+numeric output and lexemes. Generated dependencies remain unchanged. Kotlin
+composition, ordinary alias repair and generation formatting remain separate.
+
+An existing typed-union writer limitation can omit explicit null entries when it
+re-emits a selected member's JSON tree, including ordinary open objects without
+any allOf. Flat matcher support does not repair that surrounding writer boundary;
+allOf model, ordinary containing-object and HTTP codec behavior are tested
+independently of it.

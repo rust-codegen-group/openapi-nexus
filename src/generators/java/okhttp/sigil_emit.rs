@@ -7,8 +7,8 @@ use crate::generators::request_inputs::{
 };
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
-    IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
-    IrTaggedUnion, IrTypeExpr, IrUnion,
+    IrEnum, IrEnumValueType, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec, IrTaggedUnion,
+    IrTypeExpr, IrUnion,
 };
 use heck::ToPascalCase;
 use sigil_stitch::lang::java::Java;
@@ -19,9 +19,8 @@ use sigil_stitch::spec::where_spec::TypeArgument;
 
 use super::config::UntaggedUnionStrategy;
 use super::util::{
-    build_java_getter, escape_java_string, intersection_fields, java_boxed_type_str,
-    java_field_name, java_getter_name, java_primitive, java_primitive_boxed, java_type_str,
-    type_uses_list, type_uses_map,
+    build_java_getter, escape_java_string, java_boxed_type_str, java_field_name, java_getter_name,
+    java_primitive, java_primitive_boxed, java_type_str, type_uses_list, type_uses_map,
 };
 
 const RENDER_WIDTH: usize = 100;
@@ -31,13 +30,21 @@ pub(crate) fn generate_model_files(
     package_name: &str,
     header: &str,
     request_inputs: &RequestInputPlan,
-    strategy: UntaggedUnionStrategy,
+    untagged_union_strategy: UntaggedUnionStrategy,
+    all_of_strategy: super::config::AllOfStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
-    let matching_ir = super::matching::wire_ir(ir);
+    let matching_ir = super::matching::wire_ir(ir, all_of_strategy);
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema, ir, &matching_ir, package_name, strategy)
-            .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
+        let body = emit_model_body(
+            schema,
+            ir,
+            &matching_ir,
+            package_name,
+            untagged_union_strategy,
+            all_of_strategy,
+        )
+        .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
         let class_name = schema.name.to_pascal_case();
         let filename = format!("{class_name}.java");
         let mut content = String::with_capacity(header.len() + body.len());
@@ -137,20 +144,29 @@ fn emit_model_body(
     ir: &IrSpec,
     matching_ir: &IrSpec,
     package_name: &str,
-    strategy: UntaggedUnionStrategy,
+    untagged_union_strategy: UntaggedUnionStrategy,
+    all_of_strategy: super::config::AllOfStrategy,
 ) -> Result<String, SigilStitchError> {
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr, package_name),
-        IrSchemaKind::Union(u) => emit_union(schema, u, matching_ir, package_name, strategy),
-        IrSchemaKind::Intersection(i) => emit_intersection(schema, i, package_name),
+        IrSchemaKind::Union(u) => emit_union(
+            schema,
+            u,
+            matching_ir,
+            package_name,
+            untagged_union_strategy,
+        ),
+        IrSchemaKind::Intersection(i) => {
+            super::composition::emit(schema, i, ir, package_name, all_of_strategy)
+        }
         IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name),
     }?;
     file_spec.render(RENDER_WIDTH)
 }
 
-fn package_header(package_name: &str) -> Result<CodeBlock, SigilStitchError> {
+pub(super) fn package_header(package_name: &str) -> Result<CodeBlock, SigilStitchError> {
     sigil_quote!(Java {
         package $L(format!("{package_name}.models"));
     })
@@ -410,13 +426,16 @@ fn emit_union(
     union: &IrUnion,
     ir: &IrSpec,
     package_name: &str,
-    strategy: UntaggedUnionStrategy,
+    untagged_union_strategy: UntaggedUnionStrategy,
 ) -> Result<FileSpec, SigilStitchError> {
-    if union.members.is_empty() && !union.nullable && strategy != UntaggedUnionStrategy::Raw {
+    if union.members.is_empty()
+        && !union.nullable
+        && untagged_union_strategy != UntaggedUnionStrategy::Raw
+    {
         return emit_empty_model(schema, package_name);
     }
     let mut plan = plan_union(&schema.name, schema.description.as_deref(), union);
-    if strategy == UntaggedUnionStrategy::Raw {
+    if untagged_union_strategy == UntaggedUnionStrategy::Raw {
         plan.cases = vec![ClosedSumCasePlan {
             name: if plan.name == "VariantRaw" {
                 "VariantRawVariant"
@@ -430,82 +449,8 @@ fn emit_union(
             is_null: false,
         }];
     }
-    let adapter = super::union::adapter(schema, &plan, ir, strategy)?;
+    let adapter = super::union::adapter(schema, &plan, ir, untagged_union_strategy)?;
     emit_closed_sum(&plan, package_name, adapter)
-}
-
-// ---------------------------------------------------------------------------
-// Intersection -> class with all merged properties
-// ---------------------------------------------------------------------------
-
-fn emit_intersection(
-    schema: &IrSchema,
-    inter: &IrIntersection,
-    package_name: &str,
-) -> Result<FileSpec, SigilStitchError> {
-    let name = schema.name.to_pascal_case();
-    let mut file =
-        FileSpec::builder_with("model.java", Java::new()).header(package_header(package_name)?);
-
-    let mut tb = TypeSpec::builder(&name, TypeKind::Struct).visibility(Visibility::Public);
-    if let Some(doc) = &schema.description {
-        tb = tb.doc(doc);
-    }
-
-    let member_bindings: Vec<(String, String)> = intersection_fields(inter)
-        .into_iter()
-        .map(|(field_name, member)| (java_type_str(member), field_name))
-        .collect();
-    if member_bindings
-        .iter()
-        .any(|(member_type, _)| member_type.contains("List<"))
-    {
-        file = file.add_import(ImportSpec::named("java.util", "List"));
-    }
-    if member_bindings
-        .iter()
-        .any(|(member_type, _)| member_type.contains("Map<"))
-    {
-        file = file.add_import(ImportSpec::named("java.util", "Map"));
-    }
-
-    for (member_type, field_name) in &member_bindings {
-        tb = tb.add_field(
-            FieldSpec::builder(field_name, TypeName::primitive(member_type))
-                .visibility(Visibility::Private)
-                .build()?,
-        );
-    }
-
-    // Constructor
-    let mut ctor = FunSpec::builder(&name);
-    ctor = ctor.visibility(Visibility::Public);
-    for (member_type, field_name) in &member_bindings {
-        ctor = ctor.add_param(ParameterSpec::new(
-            field_name,
-            TypeName::primitive(member_type),
-        )?);
-    }
-    let assignment_fields: Vec<String> = member_bindings
-        .iter()
-        .map(|(_member_type, field_name)| field_name.clone())
-        .collect();
-    let ctor_body = sigil_quote!(Java {
-        $for(field_name in &assignment_fields) {
-            this.$L(field_name.as_str()) = $L(field_name.as_str());
-        }
-    })?;
-    ctor = ctor.body(ctor_body);
-    tb = tb.add_method(ctor.build()?);
-
-    // Getters
-    for (member_type, field_name) in &member_bindings {
-        let getter_name = format!("get{}", field_name.to_pascal_case());
-        tb = tb.add_method(build_java_getter(&getter_name, member_type, field_name));
-    }
-
-    file = file.add_type(tb.build()?);
-    file.build()
 }
 
 // ---------------------------------------------------------------------------

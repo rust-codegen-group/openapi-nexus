@@ -6,14 +6,14 @@ use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::lang::java::Java;
 use sigil_stitch::prelude::*;
 
-/// Field names of Java's existing allOf wrapper representation.
+/// Stable source-facing member names; these are not allOf wire wrapper keys.
 pub(super) fn intersection_fields(intersection: &IrIntersection) -> Vec<(String, &IrTypeExpr)> {
     let mut used = HashSet::new();
     intersection
         .members
         .iter()
         .map(|member| {
-            let name = unique_name(&java_type_str(member).to_lower_camel_case(), &mut used);
+            let name = unique_name(&java_field_name(&java_type_str(member)), &mut used);
             (name, member)
         })
         .collect()
