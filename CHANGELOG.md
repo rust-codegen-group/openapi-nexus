@@ -16,9 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   packing, without a formatter preparation step. Exclude `dist/` from formatting
   and provide a `fmt` script for manual edits.
 - Upgrade generated TypeScript clients to Vite+ `^1.5.0`, resolving Vite `8.3.7`,
-  Vitest `5.1.0`, Rolldown `1.2.18`, Oxfmt `0.76.0`, Oxlint `1.91.0`,
-  oxlint-tsgolint `7.0.2005`, and tsdown `0.23.4`. Pin CI validation and
-  documented setup to Vite+ `1.5.1` and TypeScript `7.0.2`, and report the resolved
+  Vitest `5.1.0`, Rolldown `1.2.18`, Oxfmt `0.78.0`, Oxlint `1.93.0`,
+  oxlint-tsgolint `7.0.2006`, and tsdown `0.23.4`. Pin CI validation and
+  documented setup to Vite+ `1.6.0` and TypeScript `7.0.2`, and report the resolved
   tool versions during client builds. Vite+ projects require Node.js
   `^22.18.0 || ^24.11.0 || >=26.0.0`.
 
@@ -33,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Preserve inline fields and every referenced payload in inferred tagged `allOf`
+  variants across OpenAPI 3.0, 3.1 and 3.2 lowering. TypeScript declarations and
+  bidirectional JSON conversion retain function, namespace, shell and nested
+  search-result tool definitions without changing ordinary reference/tag pairs.
+  Keep nested `allOf` sibling fields and outer requiredness without mutating
+  referenced components. Compatible overlapping TypeScript object payloads use
+  one nested conversion view rather than overwriting earlier converted fields.
 - Select Java OkHttp untagged-union members using retained scalar enum and
   structural facts instead of unconstrained Gson dispatch. Preserve typed member
   payloads in models, containers, recursive values, and HTTP response/error bodies.

@@ -950,6 +950,34 @@ pub(super) fn return_object(
     }
 }
 
+/// Keep both guards visible when an optional nullable conversion exceeds a line.
+pub(super) fn optional_nullable_property(
+    key: CodeBlock,
+    access: CodeBlock,
+    value: CodeBlock,
+) -> Result<CodeBlock, SigilStitchError> {
+    use sigil_stitch::code_node::CodeNode;
+    // sigil_quote preserves these line boundaries but does not infer indentation
+    // for brace-free nested ternaries. Only that whitespace is supplied here;
+    // keys, guards, branch expressions and their imports remain quote trees.
+    let mut field = sigil_quote!(TypeScript { $C(key): })?;
+    field.nodes_mut().extend([
+        CodeNode::Indent,
+        CodeNode::Nested(sigil_quote!(TypeScript { $C(access.clone()) !== undefined })?),
+        CodeNode::Indent,
+        CodeNode::Nested(sigil_quote!(TypeScript { ? $C(access) === null })?),
+        CodeNode::Indent,
+        CodeNode::Nested(sigil_quote!(TypeScript { ? null })?),
+        CodeNode::Nested(sigil_quote!(TypeScript { : $C(value) })?),
+        CodeNode::Dedent,
+        CodeNode::Nested(inline(sigil_quote!(TypeScript { : undefined, })?)),
+        CodeNode::Dedent,
+        CodeNode::Dedent,
+        CodeNode::Newline,
+    ]);
+    Ok(field)
+}
+
 impl From<sigil_stitch::lang::typescript::TypeScript> for TypeScript {
     fn from(lang: sigil_stitch::lang::typescript::TypeScript) -> Self {
         Self(lang)
@@ -960,6 +988,36 @@ impl From<sigil_stitch::lang::typescript::TypeScript> for TypeScript {
 mod tests {
     use super::*;
     use sigil_stitch::assert_rendered;
+
+    #[test]
+    fn optional_nullable_property_breaks_both_guards_without_losing_imports() {
+        let converter = TypeName::importable("./Node", "nodeFromJSON");
+        let field = optional_nullable_property(
+            sigil_quote!(TypeScript { nextNode }).unwrap(),
+            sigil_quote!(TypeScript { json.next_node }).unwrap(),
+            sigil_quote!(TypeScript { $T(converter)(json.next_node) }).unwrap(),
+        )
+        .unwrap();
+        let fields = vec![field.clone()];
+        let body = sigil_quote!(TypeScript {
+            return {
+                $C_each(fields)
+            };
+        })
+        .unwrap();
+        assert_rendered!(
+            TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new()),
+            width = 100,
+            field,
+            "import { nodeFromJSON } from './Node';\n\nnextNode:\n  json.next_node !== undefined\n    ? json.next_node === null\n      ? null\n      : nodeFromJSON(json.next_node)\n    : undefined,\n"
+        );
+        assert_rendered!(
+            TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new()),
+            width = 100,
+            body,
+            "import { nodeFromJSON } from './Node';\n\nreturn {\n  nextNode:\n    json.next_node !== undefined\n      ? json.next_node === null\n        ? null\n        : nodeFromJSON(json.next_node)\n      : undefined,\n};\n"
+        );
+    }
 
     #[test]
     fn expression_layout_keeps_semantic_imports_and_object_punctuation() {
@@ -978,6 +1036,23 @@ mod tests {
             width = 100,
             block,
             "import type { Detail$Wire } from './Detail';\nimport { detailFromJSON } from './Detail';\n\nreturn {\n  ['payload']: detailFromJSON(\n    json as unknown as Detail$Wire,\n  ),\n} as Event;\n"
+        );
+    }
+
+    #[test]
+    fn intersection_return_spreads_use_formatted_object_layout() {
+        let fields = [
+            sigil_quote!(TypeScript { ...optionsToJSON(value as Options) }).unwrap(),
+            sigil_quote!(TypeScript { ...toolFunctionAllOf2ToJSON(value as ToolFunctionAllOf2) })
+                .unwrap(),
+        ];
+        let block =
+            return_object(&fields, Some(TypeName::primitive("ToolFunction$Wire")), 2).unwrap();
+        assert_rendered!(
+            TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new()),
+            width = 100,
+            block,
+            "return {\n  ...optionsToJSON(value as Options),\n  ...toolFunctionAllOf2ToJSON(value as ToolFunctionAllOf2),\n} as ToolFunction$Wire;\n"
         );
     }
 

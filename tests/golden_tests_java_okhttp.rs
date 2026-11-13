@@ -21,6 +21,7 @@ const UPDATE_HINT: &str = "UPDATE_GOLDEN=1 cargo test --test golden_tests_java_o
 #[rustfmt::skip]
 fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
     test_cases_from_slice(&[
+        ("tagged-allof-payloads", "valid/tagged-allof-payloads.yaml"),
         ("petstore", "valid/petstore.yaml"),
 
         ("comprehensive-schemas", "valid/comprehensive-schemas.yaml"),
@@ -117,6 +118,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_tagged_allof_payloads_golden: "tagged-allof-payloads",
     test_allof_composition_golden: "allof-composition",
     test_object_extensions_golden: "object-extensions",
     test_object_extension_helper_types_golden: "object-extension-helper-types",

@@ -117,7 +117,7 @@ struct ValueHelper {
 }
 
 pub(super) struct TypeScriptPlan<'a> {
-    ir: &'a IrSpec,
+    ir: Cow<'a, IrSpec>,
     flags: EmitFlags,
     converters: HashSet<String>,
     wire_symbols: HashSet<String>,
@@ -147,6 +147,36 @@ pub(super) fn representation_is_unknown(expr: &IrTypeExpr, aliases: &HashSet<Str
     }
 }
 
+fn unknown_aliases(ir: &IrSpec) -> HashSet<String> {
+    let mut unknown = HashSet::new();
+    loop {
+        let before = unknown.len();
+        for (name, schema) in &ir.schemas {
+            let opaque = match &schema.kind {
+                IrSchemaKind::Alias(expr) => representation_is_unknown(expr, &unknown),
+                IrSchemaKind::Union(union) => union
+                    .members
+                    .iter()
+                    .any(|expr| representation_is_unknown(expr, &unknown)),
+                IrSchemaKind::Intersection(all) => {
+                    !all.members.is_empty()
+                        && all
+                            .members
+                            .iter()
+                            .all(|expr| representation_is_unknown(expr, &unknown))
+                }
+                _ => false,
+            };
+            if opaque {
+                unknown.insert(name.clone());
+            }
+        }
+        if unknown.len() == before {
+            return unknown;
+        }
+    }
+}
+
 /// Normalize only the rendered representation. Candidate identity and runtime
 /// effects remain in the value plan, even when integer | number renders number.
 pub(super) fn union_type(members: Vec<TypeName>) -> TypeName {
@@ -173,12 +203,17 @@ pub(super) fn union_type(members: Vec<TypeName>) -> TypeName {
 
 impl<'a> TypeScriptPlan<'a> {
     pub(super) fn new(ir: &'a IrSpec, flags: EmitFlags) -> Self {
+        let projected = super::composition::project(ir);
+        // A separate scan borrow permits registering owned planning facts while
+        // the plan owns a projected graph. Borrowed, unchanged IR stays zero-copy.
+        let scan = projected.clone();
+        let ir = scan.as_ref();
         let mut result = Self {
-            ir,
+            ir: projected,
             flags,
             converters: HashSet::new(),
             wire_symbols: HashSet::new(),
-            unknown: HashSet::new(),
+            unknown: unknown_aliases(ir),
             unions: BTreeMap::new(),
             recursive_shapes: BTreeMap::new(),
             local_type_names: ir
@@ -198,20 +233,6 @@ impl<'a> TypeScriptPlan<'a> {
                 result.unknown.len(),
             );
             for (name, schema) in &ir.schemas {
-                let unknown = match &schema.kind {
-                    IrSchemaKind::Alias(expr) => result.is_unknown(expr),
-                    IrSchemaKind::Union(union) => {
-                        union.members.iter().any(|expr| result.is_unknown(expr))
-                    }
-                    IrSchemaKind::Intersection(all) => {
-                        !all.members.is_empty()
-                            && all.members.iter().all(|expr| result.is_unknown(expr))
-                    }
-                    _ => false,
-                };
-                if unknown {
-                    result.unknown.insert(name.clone());
-                }
                 if !flags.property_naming_camel_case {
                     continue;
                 }
@@ -395,8 +416,8 @@ impl<'a> TypeScriptPlan<'a> {
         result
     }
 
-    pub(super) fn ir(&self) -> &'a IrSpec {
-        self.ir
+    pub(super) fn ir(&self) -> &IrSpec {
+        self.ir.as_ref()
     }
     pub(super) fn flags(&self) -> EmitFlags {
         self.flags
@@ -489,9 +510,10 @@ impl<'a> TypeScriptPlan<'a> {
                 self.register_conversion_at(inner, readonly, child_nested);
             }
             IrTypeExpr::Union(members) => {
-                for member in
-                    crate::generators::union_match::plan_inline_union_members(members, self.ir)
-                {
+                for member in crate::generators::union_match::plan_inline_union_members(
+                    members,
+                    self.ir.as_ref(),
+                ) {
                     self.matching.register(&member.shape);
                 }
                 for member in members {
@@ -636,7 +658,7 @@ impl<'a> TypeScriptPlan<'a> {
                         // A wrapper adds null permission; it must not intercept
                         // null already owned by an inner union's strict policy.
                         let standalone_null =
-                            !crate::generators::union_match::accepts_null(inner, self.ir);
+                            !crate::generators::union_match::accepts_null(inner, self.ir.as_ref());
                         let converted = self.conversion(
                             inner,
                             sigil_quote!(TypeScript { $N(source) })?,
@@ -861,7 +883,10 @@ impl<'a> TypeScriptPlan<'a> {
                 .cloned()
                 .unwrap_or_default()
         } else {
-            crate::generators::union_match::plan_inline_union_members(&union.members, self.ir)
+            crate::generators::union_match::plan_inline_union_members(
+                &union.members,
+                self.ir.as_ref(),
+            )
         };
         let strict = self.flags.untagged_union_strategy == UntaggedUnionStrategy::Strict;
         let mut checks = Vec::new();
@@ -957,7 +982,7 @@ impl ValuePlan<'_, '_> {
             .conversion_at(self.expr, access, self.scope, direction, column)
     }
     pub(super) fn accepts_null(&self) -> bool {
-        crate::generators::union_match::accepts_null(self.expr, self.plan.ir)
+        crate::generators::union_match::accepts_null(self.expr, self.plan.ir())
     }
 
     pub(super) fn public_type(&self) -> TypeName {

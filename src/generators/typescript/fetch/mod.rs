@@ -1,4 +1,5 @@
 pub mod codegen;
+mod composition;
 pub mod config;
 mod layout;
 mod matching;

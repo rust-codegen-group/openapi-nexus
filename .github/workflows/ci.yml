@@ -178,7 +178,7 @@ jobs:
           node-version: 'lts/*'
       - if: contains(matrix.generator, 'typescript-fetch')
         run: |
-          npm install -g typescript@7.0.2 vite-plus@1.5.1
+          npm install -g typescript@7.0.2 vite-plus@1.6.0
           tsc --version
       - uses: actions/setup-go@v6
         if: matrix.generator == 'go-http'
