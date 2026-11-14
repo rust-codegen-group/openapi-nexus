@@ -25,6 +25,10 @@ pub(super) trait CompositionSchema: Clone + Default {
     fn object(member: &Self::Member) -> Option<&Self>;
     fn object_mut(member: &mut Self::Member) -> Option<&mut Self>;
     fn reference(member: &Self::Member) -> Option<&str>;
+    fn required(&self) -> &[String];
+    fn property(&self, name: &str) -> Option<&Self::Member>;
+    fn all_of(&self) -> &[Self::Member];
+    fn enum_values(&self) -> &[serde_json::Value];
     fn into_member(self) -> Self::Member;
     fn has_payload(&self) -> bool;
 }
@@ -69,6 +73,22 @@ macro_rules! adapt_schema {
                     Self::Member::Ref { ref_path, .. } => Some(ref_path.as_str()),
                     _ => None,
                 }
+            }
+
+            fn required(&self) -> &[String] {
+                &self.required
+            }
+
+            fn property(&self, name: &str) -> Option<&Self::Member> {
+                self.properties.get(name)
+            }
+
+            fn all_of(&self) -> &[Self::Member] {
+                &self.all_of
+            }
+
+            fn enum_values(&self) -> &[serde_json::Value] {
+                &self.enum_values
             }
 
             fn into_member(self) -> Self::Member {

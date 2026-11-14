@@ -1,0 +1,49 @@
+openapi: 3.1.0
+info: {title: Optional and multi-valued discriminators, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    PayloadA:
+      type: object
+      required: [payload_a, payload_a_schema]
+      properties:
+        payload_a: {type: string}
+        payload_a_schema: {type: object, additionalProperties: true}
+    PayloadD:
+      type: object
+      required: [payload_d]
+      properties:
+        kind: {type: string, enum: [variant_d]}
+        payload_d: {type: string}
+    DiscriminatorValues:
+      type: string
+      enum: [variant_b_1, variant_b_2]
+    PayloadB:
+      type: object
+      required: [kind, payload_b]
+      properties:
+        kind: {$ref: '#/components/schemas/DiscriminatorValues'}
+        payload_b: {type: integer}
+    SingleValue:
+      type: string
+      enum: [variant_c]
+    PayloadC:
+      type: object
+      required: [kind, payload_c]
+      properties:
+        kind: {$ref: '#/components/schemas/SingleValue'}
+        payload_c: {type: string}
+    Union:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/PayloadA'}
+            - type: object
+              properties:
+                kind: {type: string, enum: [variant_a]}
+        - {$ref: '#/components/schemas/PayloadB'}
+        - {$ref: '#/components/schemas/PayloadC'}
+        - {$ref: '#/components/schemas/PayloadD'}
+    UnionContainer:
+      oneOf:
+        - {$ref: '#/components/schemas/Union'}
+        - {$ref: '#/components/schemas/PayloadA'}

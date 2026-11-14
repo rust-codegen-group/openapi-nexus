@@ -7,7 +7,10 @@
 use std::collections::HashMap;
 
 use crate::generators::closed_sum::is_tagged_unit_variant;
-use crate::ir::types::{IrPrimitive, IrSchemaKind, IrSpec, IrTypeExpr, IrUnion, TaggingStyle};
+use crate::ir::types::{
+    IrPrimitive, IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion,
+    TaggingStyle,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum MatchScope {
@@ -74,7 +77,15 @@ pub(crate) fn plan_union_members(
     union: &IrUnion,
     ir: &IrSpec,
 ) -> Vec<UnionMemberMatch> {
-    plan_members(&union.members, ir, Some(name))
+    plan_members(&union.members, ir, Some(name), false)
+}
+
+pub(crate) fn plan_typescript_union_members(
+    name: &str,
+    union: &IrUnion,
+    ir: &IrSpec,
+) -> Vec<UnionMemberMatch> {
+    plan_members(&union.members, ir, Some(name), true)
 }
 
 /// Inline unions inside containers select a new value, not the enclosing schema.
@@ -82,13 +93,21 @@ pub(crate) fn plan_inline_union_members(
     members: &[IrTypeExpr],
     ir: &IrSpec,
 ) -> Vec<UnionMemberMatch> {
-    plan_members(members, ir, None)
+    plan_members(members, ir, None, false)
+}
+
+pub(crate) fn plan_inline_typescript_union_members(
+    members: &[IrTypeExpr],
+    ir: &IrSpec,
+) -> Vec<UnionMemberMatch> {
+    plan_members(members, ir, None, true)
 }
 
 fn plan_members(
     types: &[IrTypeExpr],
     ir: &IrSpec,
     current_schema: Option<&str>,
+    typescript_tag_facts: bool,
 ) -> Vec<UnionMemberMatch> {
     let mut members: Vec<_> = types
         .iter()
@@ -97,7 +116,8 @@ fn plan_members(
             let mut visiting = current_schema
                 .map(|name| HashMap::from([(name.to_string(), 0)]))
                 .unwrap_or_default();
-            let shape = plan_shape(type_expr, ir, &mut visiting, 0);
+            let shape =
+                plan_shape_with_policy(type_expr, ir, &mut visiting, 0, typescript_tag_facts);
             let (concrete, fallback) = selection_shapes(shape);
             [(concrete, false), (fallback, true)]
                 .into_iter()
@@ -278,11 +298,96 @@ pub(crate) fn selection_shapes(shape: JsonShape) -> (JsonShape, JsonShape) {
     }
 }
 
-fn plan_shape(
+fn plan_tagged_variant_shape_at(
+    union: &IrTaggedUnion,
+    variant: &IrTaggedVariant,
+    ir: &IrSpec,
+    visiting: &mut HashMap<String, usize>,
+    depth: usize,
+    typescript_tag_facts: bool,
+) -> JsonShape {
+    let tag_values = if typescript_tag_facts && !variant.discriminator_values.is_empty() {
+        variant.discriminator_values.clone()
+    } else {
+        vec![variant.discriminator_value.clone()]
+    };
+    let tag = PropertyMatch {
+        wire_name: union.discriminator_field.clone(),
+        rename: true,
+        required: !typescript_tag_facts || !variant.discriminator_optional,
+        shape: any_of(
+            tag_values
+                .into_iter()
+                .map(|value| JsonShape::Literal(serde_json::Value::String(value)))
+                .collect(),
+        ),
+    };
+    let tag_only = is_tagged_unit_variant(ir, union, variant);
+    match &union.tagging {
+        TaggingStyle::Internal | TaggingStyle::Adjacent { .. } if tag_only => {
+            JsonShape::Object(vec![tag])
+        }
+        TaggingStyle::Internal => all_of(vec![
+            JsonShape::Object(vec![tag]),
+            plan_shape_with_policy(
+                &variant.content_type,
+                ir,
+                visiting,
+                depth,
+                typescript_tag_facts,
+            ),
+        ]),
+        TaggingStyle::Adjacent { content_field } => JsonShape::Object(vec![
+            tag,
+            PropertyMatch {
+                wire_name: content_field.clone(),
+                rename: true,
+                required: true,
+                shape: plan_shape_with_policy(
+                    &variant.content_type,
+                    ir,
+                    visiting,
+                    depth + 1,
+                    typescript_tag_facts,
+                ),
+            },
+        ]),
+        TaggingStyle::External => {
+            let properties = vec![PropertyMatch {
+                wire_name: variant.discriminator_value.clone(),
+                rename: false,
+                required: true,
+                shape: plan_shape_with_policy(
+                    &variant.content_type,
+                    ir,
+                    visiting,
+                    depth + 1,
+                    typescript_tag_facts,
+                ),
+            }];
+            match &variant.additional_properties {
+                Some(expr) => JsonShape::ObjectWithAdditional {
+                    properties,
+                    values: Box::new(plan_shape_with_policy(
+                        expr,
+                        ir,
+                        visiting,
+                        depth + 1,
+                        typescript_tag_facts,
+                    )),
+                },
+                None => JsonShape::Object(properties),
+            }
+        }
+    }
+}
+
+fn plan_shape_with_policy(
     expr: &IrTypeExpr,
     ir: &IrSpec,
     visiting: &mut HashMap<String, usize>,
     depth: usize,
+    typescript_tag_facts: bool,
 ) -> JsonShape {
     match expr {
         IrTypeExpr::ScalarEnum {
@@ -292,7 +397,7 @@ fn plan_shape(
             values,
         } => {
             let shape = if *representation_is_constraint {
-                plan_shape(representation, ir, visiting, depth)
+                plan_shape_with_policy(representation, ir, visiting, depth, typescript_tag_facts)
             } else {
                 JsonShape::Any
             };
@@ -326,17 +431,33 @@ fn plan_shape(
                 .map(|value| JsonShape::Literal(serde_json::Value::String(value.clone())))
                 .collect(),
         ),
-        IrTypeExpr::Array(inner) => {
-            JsonShape::Array(Box::new(plan_shape(inner, ir, visiting, depth + 1)))
-        }
-        IrTypeExpr::Map(inner) => {
-            JsonShape::Map(Box::new(plan_shape(inner, ir, visiting, depth + 1)))
-        }
-        IrTypeExpr::Nullable(inner) => nullable(plan_shape(inner, ir, visiting, depth)),
+        IrTypeExpr::Array(inner) => JsonShape::Array(Box::new(plan_shape_with_policy(
+            inner,
+            ir,
+            visiting,
+            depth + 1,
+            typescript_tag_facts,
+        ))),
+        IrTypeExpr::Map(inner) => JsonShape::Map(Box::new(plan_shape_with_policy(
+            inner,
+            ir,
+            visiting,
+            depth + 1,
+            typescript_tag_facts,
+        ))),
+        IrTypeExpr::Nullable(inner) => nullable(plan_shape_with_policy(
+            inner,
+            ir,
+            visiting,
+            depth,
+            typescript_tag_facts,
+        )),
         IrTypeExpr::Union(members) => any_of(
             members
                 .iter()
-                .map(|member| plan_shape(member, ir, visiting, depth))
+                .map(|member| {
+                    plan_shape_with_policy(member, ir, visiting, depth, typescript_tag_facts)
+                })
                 .collect(),
         ),
         IrTypeExpr::Named(name) => {
@@ -364,7 +485,13 @@ fn plan_shape(
                         object.additional_properties.as_ref().map_or_else(
                             || JsonShape::Object(Vec::new()),
                             |value| {
-                                JsonShape::Map(Box::new(plan_shape(value, ir, visiting, depth + 1)))
+                                JsonShape::Map(Box::new(plan_shape_with_policy(
+                                    value,
+                                    ir,
+                                    visiting,
+                                    depth + 1,
+                                    typescript_tag_facts,
+                                )))
                             },
                         )
                     } else {
@@ -372,8 +499,13 @@ fn plan_shape(
                             .properties
                             .iter()
                             .map(|(wire_name, property)| {
-                                let shape =
-                                    plan_shape(&property.type_expr, ir, visiting, depth + 1);
+                                let shape = plan_shape_with_policy(
+                                    &property.type_expr,
+                                    ir,
+                                    visiting,
+                                    depth + 1,
+                                    typescript_tag_facts,
+                                );
                                 PropertyMatch {
                                     wire_name: wire_name.clone(),
                                     rename: true,
@@ -399,7 +531,13 @@ fn plan_shape(
                         match &object.additional_properties {
                             Some(value) => JsonShape::ObjectWithAdditional {
                                 properties,
-                                values: Box::new(plan_shape(value, ir, visiting, depth + 1)),
+                                values: Box::new(plan_shape_with_policy(
+                                    value,
+                                    ir,
+                                    visiting,
+                                    depth + 1,
+                                    typescript_tag_facts,
+                                )),
                             },
                             None => JsonShape::Object(properties),
                         }
@@ -412,13 +550,23 @@ fn plan_shape(
                         .map(|value| JsonShape::Literal(value.value.clone()))
                         .collect(),
                 ),
-                Some(IrSchemaKind::Alias(inner)) => plan_shape(inner, ir, visiting, depth),
+                Some(IrSchemaKind::Alias(inner)) => {
+                    plan_shape_with_policy(inner, ir, visiting, depth, typescript_tag_facts)
+                }
                 Some(IrSchemaKind::Union(union)) => {
                     let shape = any_of(
                         union
                             .members
                             .iter()
-                            .map(|member| plan_shape(member, ir, visiting, depth))
+                            .map(|member| {
+                                plan_shape_with_policy(
+                                    member,
+                                    ir,
+                                    visiting,
+                                    depth,
+                                    typescript_tag_facts,
+                                )
+                            })
                             .collect(),
                     );
                     if union.nullable {
@@ -431,7 +579,15 @@ fn plan_shape(
                     intersection
                         .members
                         .iter()
-                        .map(|member| plan_shape(member, ir, visiting, depth))
+                        .map(|member| {
+                            plan_shape_with_policy(
+                                member,
+                                ir,
+                                visiting,
+                                depth,
+                                typescript_tag_facts,
+                            )
+                        })
                         .collect(),
                 ),
                 Some(IrSchemaKind::TaggedUnion(union)) => any_of(
@@ -439,67 +595,14 @@ fn plan_shape(
                         .variants
                         .iter()
                         .map(|variant| {
-                            let tag = PropertyMatch {
-                                wire_name: union.discriminator_field.clone(),
-                                rename: true,
-                                required: true,
-                                shape: JsonShape::Literal(serde_json::Value::String(
-                                    variant.discriminator_value.clone(),
-                                )),
-                            };
-                            let tag_only = is_tagged_unit_variant(ir, union, variant);
-                            match &union.tagging {
-                                TaggingStyle::Internal | TaggingStyle::Adjacent { .. }
-                                    if tag_only =>
-                                {
-                                    JsonShape::Object(vec![tag])
-                                }
-                                TaggingStyle::Internal => all_of(vec![
-                                    JsonShape::Object(vec![tag]),
-                                    plan_shape(&variant.content_type, ir, visiting, depth),
-                                ]),
-                                TaggingStyle::Adjacent { content_field } => {
-                                    JsonShape::Object(vec![
-                                        tag,
-                                        PropertyMatch {
-                                            wire_name: content_field.clone(),
-                                            rename: true,
-                                            required: true,
-                                            shape: plan_shape(
-                                                &variant.content_type,
-                                                ir,
-                                                visiting,
-                                                depth + 1,
-                                            ),
-                                        },
-                                    ])
-                                }
-                                TaggingStyle::External => {
-                                    let properties = vec![PropertyMatch {
-                                        wire_name: variant.discriminator_value.clone(),
-                                        rename: false,
-                                        required: true,
-                                        shape: plan_shape(
-                                            &variant.content_type,
-                                            ir,
-                                            visiting,
-                                            depth + 1,
-                                        ),
-                                    }];
-                                    match &variant.additional_properties {
-                                        Some(expr) => JsonShape::ObjectWithAdditional {
-                                            properties,
-                                            values: Box::new(plan_shape(
-                                                expr,
-                                                ir,
-                                                visiting,
-                                                depth + 1,
-                                            )),
-                                        },
-                                        None => JsonShape::Object(properties),
-                                    }
-                                }
-                            }
+                            plan_tagged_variant_shape_at(
+                                union,
+                                variant,
+                                ir,
+                                visiting,
+                                depth,
+                                typescript_tag_facts,
+                            )
                         })
                         .collect(),
                 ),
@@ -509,6 +612,23 @@ fn plan_shape(
             shape
         }
     }
+}
+
+fn plan_shape(
+    expr: &IrTypeExpr,
+    ir: &IrSpec,
+    visiting: &mut HashMap<String, usize>,
+    depth: usize,
+) -> JsonShape {
+    plan_shape_with_policy(expr, ir, visiting, depth, false)
+}
+
+pub(crate) fn plan_tagged_variant_shape(
+    union: &IrTaggedUnion,
+    variant: &IrTaggedVariant,
+    ir: &IrSpec,
+) -> JsonShape {
+    plan_tagged_variant_shape_at(union, variant, ir, &mut HashMap::new(), 0, true)
 }
 
 /// Shapes are shared semantic data; target renderers decide property spelling
@@ -945,6 +1065,8 @@ mod tests {
             tagging: TaggingStyle::External,
             variants: vec![IrTaggedVariant {
                 discriminator_value: "snake_tag".into(),
+                discriminator_values: Vec::new(),
+                discriminator_optional: false,
                 content_type: IrTypeExpr::Named("SearchTool".into()),
                 description: None,
                 additional_properties: None,

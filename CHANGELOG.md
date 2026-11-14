@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Preserve optional and multi-valued inferred TypeScript discriminators. Omitted
+  variant tags remain valid, referenced discriminator enums retain every legal
+  wire value, and both JSON conversion directions keep the original spelling.
+  Emit strict declarations and type guards for the complete discriminator facts.
 - Preserve inline fields and every referenced payload in inferred tagged `allOf`
   variants across OpenAPI 3.0, 3.1 and 3.2 lowering. TypeScript declarations and
   bidirectional JSON conversion retain function, namespace, shell and nested
