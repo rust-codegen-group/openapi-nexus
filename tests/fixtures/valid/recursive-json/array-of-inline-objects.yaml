@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Array of Inline Objects Test
-  description: Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)
+  description: Test case for array of inline objects with snake_case to camelCase conversion.
   version: 1.0.0
 
 paths:
@@ -17,7 +17,7 @@ components:
   schemas:
     ResponseListInfrSvcs:
       type: object
-      description: Response containing a list of inference services - main test case for recursive JSON parsing
+      description: Response containing a list of items for recursive JSON parsing.
       properties:
         inference_services:
           type: array
@@ -43,4 +43,3 @@ components:
               - uid
       required:
         - inference_services
-

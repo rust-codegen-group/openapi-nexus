@@ -3,35 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import {
-  matches$3FromJSON,
-  matches$3ToJSON,
-  matches$5FromJSON,
-  matches$5ToJSON,
-} from '../runtime/unionMatch';
+import type { NamedValue, NamedValue$Wire } from '../models/NamedValue';
+import { namedValueFromJSON, namedValueToJSON } from '../models/NamedValue';
 
-export type Value$22Wire = number | boolean;
+export type Value$22Wire = readonly NamedValue$Wire[];
 
-export type Value$22 = number | boolean;
+export type Value$22 = readonly NamedValue[];
 
-export function convert$22FromJSON(json: number | boolean): Value$22 {
-  const candidate: unknown = json;
-  if (matches$3FromJSON(candidate)) {
-    return json as unknown as number;
-  }
-  if (matches$5FromJSON(candidate)) {
-    return json as unknown as boolean;
-  }
-  return json as unknown as Value$22;
+export function convert$22FromJSON(json: ReadonlyArray<NamedValue$Wire>): Value$22 {
+  return json.map(namedValueFromJSON);
 }
 
-export function convert$22ToJSON(value: number | boolean): Value$22Wire {
-  const candidate: unknown = value;
-  if (matches$3ToJSON(candidate)) {
-    return value as unknown as number;
-  }
-  if (matches$5ToJSON(candidate)) {
-    return value as unknown as boolean;
-  }
-  return value as unknown as Value$22Wire;
+export function convert$22ToJSON(value: ReadonlyArray<NamedValue>): Value$22Wire {
+  return value.map(namedValueToJSON);
 }

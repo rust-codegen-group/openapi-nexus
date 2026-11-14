@@ -4,9 +4,9 @@
  * Tagged allOf payload preservation — 1.0.0
  */
 export type {
-  ApiExchangeToolsRequest,
-  ExchangeToolsRawResponse,
-  ExchangeToolsErrorDetail,
+  ApiExchangeVariantsRequest,
+  ExchangeVariantsRawResponse,
+  ExchangeVariantsErrorDetail,
   DefaultApiInterface,
 } from './DefaultApi';
-export { DefaultApi, ExchangeToolsError } from './DefaultApi';
+export { DefaultApi, ExchangeVariantsError } from './DefaultApi';

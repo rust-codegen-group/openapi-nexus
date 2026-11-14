@@ -1,7 +1,7 @@
 {
   "name": "array-of-inline-objects-test",
   "version": "1.0.0",
-  "description": "Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)",
+  "description": "Test case for array of inline objects with snake_case to camelCase conversion.",
   "keywords": [
     "api-client",
     "generated",

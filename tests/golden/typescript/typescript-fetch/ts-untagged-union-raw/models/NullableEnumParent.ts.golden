@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$11FromJSON, convert$11ToJSON } from '../runtime/valueConversion$11';
+import { convert$16FromJSON, convert$16ToJSON } from '../runtime/valueConversion$16';
 import type { ScalarEnumChoice, ScalarEnumChoice$Wire } from './ScalarEnumChoice';
 
 export interface NullableEnumParent$Wire {
@@ -16,12 +16,12 @@ export interface NullableEnumParent {
 
 export function nullableEnumParentFromJSON(json: NullableEnumParent$Wire): NullableEnumParent {
   return {
-    scalarValue: convert$11FromJSON(json.scalar_value),
+    scalarValue: convert$16FromJSON(json.scalar_value),
   };
 }
 
 export function nullableEnumParentToJSON(value: NullableEnumParent): NullableEnumParent$Wire {
   return {
-    scalar_value: convert$11ToJSON(value.scalarValue),
+    scalar_value: convert$16ToJSON(value.scalarValue),
   };
 }

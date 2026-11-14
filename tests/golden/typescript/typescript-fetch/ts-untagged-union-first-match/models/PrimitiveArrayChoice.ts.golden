@@ -6,8 +6,8 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$70FromJSON,
-  matches$70ToJSON,
+  matches$74FromJSON,
+  matches$74ToJSON,
 } from '../runtime/unionMatch';
 import type { Value$3, Value$3Wire } from '../runtime/valueConversion$3';
 import { convert$3FromJSON, convert$3ToJSON } from '../runtime/valueConversion$3';
@@ -22,7 +22,7 @@ export function primitiveArrayChoiceFromJSON(
   json: PrimitiveArrayChoice$Wire,
 ): PrimitiveArrayChoice {
   const candidate: unknown = json;
-  if (matches$70FromJSON(candidate)) {
+  if (matches$74FromJSON(candidate)) {
     return convert$3FromJSON(json as unknown as Value$3Wire);
   }
   if (matches$1FromJSON(candidate)) {
@@ -33,7 +33,7 @@ export function primitiveArrayChoiceFromJSON(
 
 export function primitiveArrayChoiceToJSON(value: PrimitiveArrayChoice): PrimitiveArrayChoice$Wire {
   const candidate: unknown = value;
-  if (matches$70ToJSON(candidate)) {
+  if (matches$74ToJSON(candidate)) {
     return convert$3ToJSON(value as unknown as Value$3);
   }
   if (matches$1ToJSON(candidate)) {

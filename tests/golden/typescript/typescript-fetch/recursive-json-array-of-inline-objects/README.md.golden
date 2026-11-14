@@ -1,6 +1,6 @@
 # array-of-inline-objects-test
 
-Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)
+Test case for array of inline objects with snake_case to camelCase conversion.
 
 **Version:** 1.0.0
 

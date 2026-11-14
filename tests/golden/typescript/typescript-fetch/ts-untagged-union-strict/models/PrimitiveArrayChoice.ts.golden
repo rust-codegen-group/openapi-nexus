@@ -6,8 +6,8 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$70FromJSON,
-  matches$70ToJSON,
+  matches$74FromJSON,
+  matches$74ToJSON,
 } from '../runtime/unionMatch';
 import type { Value$3, Value$3Wire } from '../runtime/valueConversion$3';
 import { convert$3FromJSON, convert$3ToJSON } from '../runtime/valueConversion$3';
@@ -22,7 +22,7 @@ export function primitiveArrayChoiceFromJSON(
   json: PrimitiveArrayChoice$Wire,
 ): PrimitiveArrayChoice {
   const candidate: unknown = json;
-  const matches = [matches$70FromJSON(candidate), matches$1FromJSON(candidate)];
+  const matches = [matches$74FromJSON(candidate), matches$1FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous PrimitiveArrayChoice untagged union value');
   }
@@ -37,7 +37,7 @@ export function primitiveArrayChoiceFromJSON(
 
 export function primitiveArrayChoiceToJSON(value: PrimitiveArrayChoice): PrimitiveArrayChoice$Wire {
   const candidate: unknown = value;
-  const matches = [matches$70ToJSON(candidate), matches$1ToJSON(candidate)];
+  const matches = [matches$74ToJSON(candidate), matches$1ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous PrimitiveArrayChoice untagged union value');
   }

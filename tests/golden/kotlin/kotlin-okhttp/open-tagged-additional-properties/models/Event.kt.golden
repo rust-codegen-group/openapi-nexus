@@ -22,7 +22,7 @@ import com.google.gson.stream.JsonWriter
  */
 @JsonAdapter(EventJsonAdapter::class, nullSafe = false)
 sealed class Event private constructor() {
-    data class VariantSearching(val value0: EventSearching) : Event()
+    data class VariantActive(val value0: EventActive) : Event()
 
     data class VariantCompleted(val value0: EventCompleted) : Event()
 }
@@ -34,7 +34,7 @@ private class EventJsonAdapter: TypeAdapter<Event>() {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
         return when (jsonObject["type"]?.asString) {
-            "searching" -> Event.VariantSearching(gson.fromJson(jsonObject, object: TypeToken<EventSearching>() {}.type))
+            "active" -> Event.VariantActive(gson.fromJson(jsonObject, object: TypeToken<EventActive>() {}.type))
             "completed" -> Event.VariantCompleted(gson.fromJson(jsonObject, object: TypeToken<EventCompleted>() {}.type))
             else -> throw JsonParseException("unknown Event discriminator")
         }
@@ -46,9 +46,9 @@ private class EventJsonAdapter: TypeAdapter<Event>() {
             return
         }
         when (value) {
-            is Event.VariantSearching -> {
+            is Event.VariantActive -> {
                 val jsonObject = gson.toJsonTree(value.value0).asJsonObject
-                jsonObject.addProperty("type", "searching")
+                jsonObject.addProperty("type", "active")
                 gson.toJson(jsonObject, writer)
             }
             is Event.VariantCompleted -> {

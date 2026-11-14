@@ -8,7 +8,6 @@
     "openapi",
     "typescript"
   ],
-  "license": "MIT",
   "files": [
     "dist"
   ],

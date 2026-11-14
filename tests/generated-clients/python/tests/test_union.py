@@ -9,8 +9,8 @@ import unittest
 from unittest.mock import patch
 
 
-CLIENT = {"name": "weather", "input_schema": {"type": "object"}}
-SEARCH = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
+PAYLOAD_A = {"label": "weather", "payload_schema": {"type": "object"}}
+PAYLOAD_B = {"kind": "variant_b", "label": "payload_b", "limit": 1}
 NUMERIC = {"revision": 2, "second_value": "two"}
 
 
@@ -57,7 +57,7 @@ class UnionContracts(unittest.TestCase):
     def test_direct_member_controls(self):
         for policy in ("default", "strict", "raw"):
             models = importlib.import_module(f"union_{policy}.models")
-            for name, wire in (("ClientTool", CLIENT), ("SearchTool", SEARCH), ("NumericTwo", NUMERIC)):
+            for name, wire in (("PayloadA", PAYLOAD_A), ("PayloadB", PAYLOAD_B), ("NumericTwo", NUMERIC)):
                 with self.subTest(policy=policy, model=name):
                     self.assertEqual(getattr(models, name).from_dict(wire).to_dict(), wire)
 
@@ -65,16 +65,16 @@ class UnionContracts(unittest.TestCase):
         for policy in ("default", "strict"):
             models = importlib.import_module(f"union_{policy}.models")
             with self.subTest(policy=policy):
-                value = models.Request(tools=[models.ClientTool.from_dict(CLIENT), models.SearchTool.from_dict(SEARCH)])
-                self.assertEqual(json.loads(json.dumps(value.to_dict())), {"tools": [CLIENT, SEARCH]})
+                value = models.VariantRequest(choices=[models.PayloadA.from_dict(PAYLOAD_A), models.PayloadB.from_dict(PAYLOAD_B)])
+                self.assertEqual(json.loads(json.dumps(value.to_dict())), {"choices": [PAYLOAD_A, PAYLOAD_B]})
 
     def test_inbound_request_members(self):
         for policy in ("default", "strict"):
             models = importlib.import_module(f"union_{policy}.models")
             with self.subTest(policy=policy):
-                value = models.Request.from_dict({"tools": [CLIENT, SEARCH]})
-                self.assertIsInstance(value.tools[0], models.ClientTool)
-                self.assertIsInstance(value.tools[1], models.SearchTool)
+                value = models.VariantRequest.from_dict({"choices": [PAYLOAD_A, PAYLOAD_B]})
+                self.assertIsInstance(value.choices[0], models.PayloadA)
+                self.assertIsInstance(value.choices[1], models.PayloadB)
 
     def test_nested_scalar_array_map_alias_and_optional(self):
         wire = {"choice": NUMERIC, "choice_list": [NUMERIC], "choice_map": {"keep_key": NUMERIC}, "deep": [{"keep_key": [NUMERIC]}]}

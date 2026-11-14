@@ -6,14 +6,25 @@
 import type { Detail, Detail$Wire } from '../models/Detail';
 import { convert$19FromJSON, convert$19ToJSON } from './valueConversion$19';
 
-export type Value$18Wire = readonly Detail$Wire[][];
+export type Value$18Wire = globalThis.Record<
+  string,
+  globalThis.Record<string, Detail$Wire> | string
+>;
 
-export type Value$18 = readonly Detail[][];
+export type Value$18 = globalThis.Record<string, globalThis.Record<string, Detail> | string>;
 
-export function convert$18FromJSON(json: ReadonlyArray<ReadonlyArray<Detail$Wire>>): Value$18 {
-  return json.map(convert$19FromJSON);
+export function convert$18FromJSON(
+  json: globalThis.Record<string, globalThis.Record<string, Detail$Wire> | string>,
+): Value$18 {
+  return Object.fromEntries(
+    Object.entries(json ?? {}).map(([key, item]) => [key, convert$19FromJSON(item)]),
+  );
 }
 
-export function convert$18ToJSON(value: ReadonlyArray<ReadonlyArray<Detail>>): Value$18Wire {
-  return value.map(convert$19ToJSON);
+export function convert$18ToJSON(
+  value: globalThis.Record<string, globalThis.Record<string, Detail> | string>,
+): Value$18Wire {
+  return Object.fromEntries(
+    Object.entries(value ?? {}).map(([key, item]) => [key, convert$19ToJSON(item)]),
+  );
 }

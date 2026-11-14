@@ -50,16 +50,16 @@ export function matches$3FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'call_id')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'members')) {
     return false;
   }
-  if (!matches$0FromJSON(object['call_id'])) {
+  if (!matches$4FromJSON(object['members'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'tools')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'request_id')) {
     return false;
   }
-  if (!matches$4FromJSON(object['tools'])) {
+  if (!matches$0FromJSON(object['request_id'])) {
     return false;
   }
   if (!Object.prototype.hasOwnProperty.call(candidate, 'type')) {
@@ -76,16 +76,16 @@ export function matches$3ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'callId')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'members')) {
     return false;
   }
-  if (!matches$0ToJSON(object['callId'])) {
+  if (!matches$4ToJSON(object['members'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'tools')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'requestId')) {
     return false;
   }
-  if (!matches$4ToJSON(object['tools'])) {
+  if (!matches$0ToJSON(object['requestId'])) {
     return false;
   }
   if (!Object.prototype.hasOwnProperty.call(candidate, 'type')) {
@@ -246,11 +246,11 @@ export function matches$7ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$8FromJSON(candidate: unknown): boolean {
-  return candidate === 'function';
+  return candidate === 'variant_a';
 }
 
 export function matches$8ToJSON(candidate: unknown): boolean {
-  return candidate === 'function';
+  return candidate === 'variant_a';
 }
 
 export function matches$9FromJSON(candidate: unknown): boolean {
@@ -258,20 +258,20 @@ export function matches$9FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'allowed_callers')) {
-    const item = object['allowed_callers'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'allowed_sources')) {
+    const item = object['allowed_sources'];
     if (item !== undefined && !matches$10FromJSON(item)) {
       return false;
     }
   }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'defer_loading')) {
-    const item = object['defer_loading'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'deferred')) {
+    const item = object['deferred'];
     if (item !== undefined && !matches$11FromJSON(item)) {
       return false;
     }
   }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'output_schema')) {
-    const item = object['output_schema'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'output_shape')) {
+    const item = object['output_shape'];
     if (item !== undefined && !matches$12FromJSON(item)) {
       return false;
     }
@@ -284,20 +284,20 @@ export function matches$9ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'allowedCallers')) {
-    const item = object['allowedCallers'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'allowedSources')) {
+    const item = object['allowedSources'];
     if (item !== undefined && !matches$10ToJSON(item)) {
       return false;
     }
   }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'deferLoading')) {
-    const item = object['deferLoading'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'deferred')) {
+    const item = object['deferred'];
     if (item !== undefined && !matches$11ToJSON(item)) {
       return false;
     }
   }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'outputSchema')) {
-    const item = object['outputSchema'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'outputShape')) {
+    const item = object['outputShape'];
     if (item !== undefined && !matches$12ToJSON(item)) {
       return false;
     }
@@ -346,26 +346,26 @@ export function matches$14FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'description')) {
-    const item = object['description'];
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'arguments')) {
+    return false;
+  }
+  if (!matches$12FromJSON(object['arguments'])) {
+    return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(candidate, 'details')) {
+    const item = object['details'];
     if (item !== undefined && !matches$0FromJSON(item)) {
       return false;
     }
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
     return false;
   }
-  if (!matches$0FromJSON(object['name'])) {
+  if (!matches$0FromJSON(object['label'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'parameters')) {
-    return false;
-  }
-  if (!matches$12FromJSON(object['parameters'])) {
-    return false;
-  }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'strict')) {
-    const item = object['strict'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'strict_mode')) {
+    const item = object['strict_mode'];
     if (item !== undefined && !matches$11FromJSON(item)) {
       return false;
     }
@@ -378,26 +378,26 @@ export function matches$14ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'description')) {
-    const item = object['description'];
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'arguments')) {
+    return false;
+  }
+  if (!matches$12ToJSON(object['arguments'])) {
+    return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(candidate, 'details')) {
+    const item = object['details'];
     if (item !== undefined && !matches$0ToJSON(item)) {
       return false;
     }
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
     return false;
   }
-  if (!matches$0ToJSON(object['name'])) {
+  if (!matches$0ToJSON(object['label'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'parameters')) {
-    return false;
-  }
-  if (!matches$12ToJSON(object['parameters'])) {
-    return false;
-  }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'strict')) {
-    const item = object['strict'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'strictMode')) {
+    const item = object['strictMode'];
     if (item !== undefined && !matches$11ToJSON(item)) {
       return false;
     }
@@ -460,11 +460,11 @@ export function matches$16ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$17FromJSON(candidate: unknown): boolean {
-  return candidate === 'namespace';
+  return candidate === 'variant_b';
 }
 
 export function matches$17ToJSON(candidate: unknown): boolean {
-  return candidate === 'namespace';
+  return candidate === 'variant_b';
 }
 
 export function matches$18FromJSON(candidate: unknown): boolean {
@@ -472,22 +472,22 @@ export function matches$18FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'description')) {
-    const item = object['description'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'details')) {
+    const item = object['details'];
     if (item !== undefined && !matches$0FromJSON(item)) {
       return false;
     }
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
     return false;
   }
-  if (!matches$0FromJSON(object['name'])) {
+  if (!matches$0FromJSON(object['label'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'tools')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'members')) {
     return false;
   }
-  if (!matches$19FromJSON(object['tools'])) {
+  if (!matches$19FromJSON(object['members'])) {
     return false;
   }
   return true;
@@ -498,22 +498,22 @@ export function matches$18ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'description')) {
-    const item = object['description'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'details')) {
+    const item = object['details'];
     if (item !== undefined && !matches$0ToJSON(item)) {
       return false;
     }
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
     return false;
   }
-  if (!matches$0ToJSON(object['name'])) {
+  if (!matches$0ToJSON(object['label'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'tools')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'members')) {
     return false;
   }
-  if (!matches$19ToJSON(object['tools'])) {
+  if (!matches$19ToJSON(object['members'])) {
     return false;
   }
   return true;
@@ -534,11 +534,11 @@ export function matches$19ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$20FromJSON(candidate: unknown): boolean {
-  return matchToolFromJSON(candidate) > 0;
+  return matchVariantFromJSON(candidate) > 0;
 }
 
 export function matches$20ToJSON(candidate: unknown): boolean {
-  return matchToolToJSON(candidate) > 0;
+  return matchVariantToJSON(candidate) > 0;
 }
 
 export function matches$21FromJSON(candidate: unknown): boolean {
@@ -596,11 +596,11 @@ export function matches$22ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$23FromJSON(candidate: unknown): boolean {
-  return candidate === 'shell';
+  return candidate === 'variant_c';
 }
 
 export function matches$23ToJSON(candidate: unknown): boolean {
-  return candidate === 'shell';
+  return candidate === 'variant_c';
 }
 
 export function matches$24FromJSON(candidate: unknown): boolean {
@@ -608,10 +608,10 @@ export function matches$24FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'environment')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'configuration')) {
     return false;
   }
-  if (!matches$25FromJSON(object['environment'])) {
+  if (!matches$25FromJSON(object['configuration'])) {
     return false;
   }
   return true;
@@ -622,10 +622,10 @@ export function matches$24ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'environment')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'configuration')) {
     return false;
   }
-  if (!matches$25ToJSON(object['environment'])) {
+  if (!matches$25ToJSON(object['configuration'])) {
     return false;
   }
   return true;
@@ -636,22 +636,22 @@ export function matches$25FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'skills')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'entries')) {
     return false;
   }
-  if (!matches$26FromJSON(object['skills'])) {
+  if (!matches$26FromJSON(object['entries'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'location')) {
+    return false;
+  }
+  if (!matches$0FromJSON(object['location'])) {
     return false;
   }
   if (!Object.prototype.hasOwnProperty.call(candidate, 'type')) {
     return false;
   }
   if (!matches$28FromJSON(object['type'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'working_directory')) {
-    return false;
-  }
-  if (!matches$0FromJSON(object['working_directory'])) {
     return false;
   }
   return true;
@@ -662,22 +662,22 @@ export function matches$25ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'skills')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'entries')) {
     return false;
   }
-  if (!matches$26ToJSON(object['skills'])) {
+  if (!matches$26ToJSON(object['entries'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'location')) {
+    return false;
+  }
+  if (!matches$0ToJSON(object['location'])) {
     return false;
   }
   if (!Object.prototype.hasOwnProperty.call(candidate, 'type')) {
     return false;
   }
   if (!matches$28ToJSON(object['type'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'workingDirectory')) {
-    return false;
-  }
-  if (!matches$0ToJSON(object['workingDirectory'])) {
     return false;
   }
   return true;
@@ -702,10 +702,10 @@ export function matches$27FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'skill_path')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'entry_path')) {
     return false;
   }
-  if (!matches$0FromJSON(object['skill_path'])) {
+  if (!matches$0FromJSON(object['entry_path'])) {
     return false;
   }
   return true;
@@ -716,21 +716,21 @@ export function matches$27ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'skillPath')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'entryPath')) {
     return false;
   }
-  if (!matches$0ToJSON(object['skillPath'])) {
+  if (!matches$0ToJSON(object['entryPath'])) {
     return false;
   }
   return true;
 }
 
 export function matches$28FromJSON(candidate: unknown): boolean {
-  return candidate === 'local';
+  return candidate === 'nested';
 }
 
 export function matches$28ToJSON(candidate: unknown): boolean {
-  return candidate === 'local';
+  return candidate === 'nested';
 }
 
 export function matches$29FromJSON(candidate: unknown): boolean {
@@ -788,11 +788,11 @@ export function matches$30ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$31FromJSON(candidate: unknown): boolean {
-  return candidate === 'custom';
+  return candidate === 'variant_d';
 }
 
 export function matches$31ToJSON(candidate: unknown): boolean {
-  return candidate === 'custom';
+  return candidate === 'variant_d';
 }
 
 export function matches$32FromJSON(candidate: unknown): boolean {
@@ -800,10 +800,10 @@ export function matches$32FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'input_schema')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'input_shape')) {
     return false;
   }
-  if (!matches$12FromJSON(object['input_schema'])) {
+  if (!matches$12FromJSON(object['input_shape'])) {
     return false;
   }
   return true;
@@ -814,10 +814,10 @@ export function matches$32ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'inputSchema')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'inputShape')) {
     return false;
   }
-  if (!matches$12ToJSON(object['inputSchema'])) {
+  if (!matches$12ToJSON(object['inputShape'])) {
     return false;
   }
   return true;
@@ -872,11 +872,11 @@ export function matches$34ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$35FromJSON(candidate: unknown): boolean {
-  return candidate === 'inline_only';
+  return candidate === 'variant_e';
 }
 
 export function matches$35ToJSON(candidate: unknown): boolean {
-  return candidate === 'inline_only';
+  return candidate === 'variant_e';
 }
 
 export function matches$36FromJSON(candidate: unknown): boolean {
@@ -884,10 +884,10 @@ export function matches$36FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'inline_name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'inline_label')) {
     return false;
   }
-  if (!matches$0FromJSON(object['inline_name'])) {
+  if (!matches$0FromJSON(object['inline_label'])) {
     return false;
   }
   return true;
@@ -898,10 +898,10 @@ export function matches$36ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'inlineName')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'inlineLabel')) {
     return false;
   }
-  if (!matches$0ToJSON(object['inlineName'])) {
+  if (!matches$0ToJSON(object['inlineLabel'])) {
     return false;
   }
   return true;
@@ -962,11 +962,11 @@ export function matches$38ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$39FromJSON(candidate: unknown): boolean {
-  return candidate === 'multiple_refs';
+  return candidate === 'variant_f';
 }
 
 export function matches$39ToJSON(candidate: unknown): boolean {
-  return candidate === 'multiple_refs';
+  return candidate === 'variant_f';
 }
 
 export function matches$40FromJSON(candidate: unknown): boolean {
@@ -1052,11 +1052,11 @@ export function matches$42ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$43FromJSON(candidate: unknown): boolean {
-  return candidate === 'outer_properties';
+  return candidate === 'variant_g';
 }
 
 export function matches$43ToJSON(candidate: unknown): boolean {
-  return candidate === 'outer_properties';
+  return candidate === 'variant_g';
 }
 
 export function matches$44FromJSON(candidate: unknown): boolean {
@@ -1076,10 +1076,10 @@ export function matches$44FromJSON(candidate: unknown): boolean {
       return false;
     }
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'outer_name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'outer_label')) {
     return false;
   }
-  if (!matches$0FromJSON(object['outer_name'])) {
+  if (!matches$0FromJSON(object['outer_label'])) {
     return false;
   }
   return true;
@@ -1102,10 +1102,10 @@ export function matches$44ToJSON(candidate: unknown): boolean {
       return false;
     }
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'outerName')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'outerLabel')) {
     return false;
   }
-  if (!matches$0ToJSON(object['outerName'])) {
+  if (!matches$0ToJSON(object['outerLabel'])) {
     return false;
   }
   return true;
@@ -1168,11 +1168,11 @@ export function matches$47ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$48FromJSON(candidate: unknown): boolean {
-  return candidate === 'simple';
+  return candidate === 'variant_h';
 }
 
 export function matches$48ToJSON(candidate: unknown): boolean {
-  return candidate === 'simple';
+  return candidate === 'variant_h';
 }
 
 export function matches$49FromJSON(candidate: unknown): boolean {
@@ -1230,11 +1230,11 @@ export function matches$50ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$51FromJSON(candidate: unknown): boolean {
-  return candidate === 'outer_required';
+  return candidate === 'variant_i';
 }
 
 export function matches$51ToJSON(candidate: unknown): boolean {
-  return candidate === 'outer_required';
+  return candidate === 'variant_i';
 }
 
 export function matches$52FromJSON(candidate: unknown): boolean {
@@ -1242,8 +1242,8 @@ export function matches$52FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    const item = object['name'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    const item = object['label'];
     if (item !== undefined && !matches$0FromJSON(item)) {
       return false;
     }
@@ -1256,8 +1256,8 @@ export function matches$52ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    const item = object['name'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    const item = object['label'];
     if (item !== undefined && !matches$0ToJSON(item)) {
       return false;
     }
@@ -1270,10 +1270,10 @@ export function matches$53FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
     return false;
   }
-  if (!matches$0FromJSON(object['name'])) {
+  if (!matches$0FromJSON(object['label'])) {
     return false;
   }
   return true;
@@ -1284,10 +1284,10 @@ export function matches$53ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
     return false;
   }
-  if (!matches$0ToJSON(object['name'])) {
+  if (!matches$0ToJSON(object['label'])) {
     return false;
   }
   return true;
@@ -1342,11 +1342,11 @@ export function matches$55ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$56FromJSON(candidate: unknown): boolean {
-  return candidate === 'overlap';
+  return candidate === 'variant_j';
 }
 
 export function matches$56ToJSON(candidate: unknown): boolean {
-  return candidate === 'overlap';
+  return candidate === 'variant_j';
 }
 
 export function matches$57FromJSON(candidate: unknown): boolean {
@@ -1354,10 +1354,10 @@ export function matches$57FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'config')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'data')) {
     return false;
   }
-  if (!matches$58FromJSON(object['config'])) {
+  if (!matches$58FromJSON(object['data'])) {
     return false;
   }
   return true;
@@ -1368,10 +1368,10 @@ export function matches$57ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'config')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'data')) {
     return false;
   }
-  if (!matches$58ToJSON(object['config'])) {
+  if (!matches$58ToJSON(object['data'])) {
     return false;
   }
   return true;
@@ -1382,16 +1382,16 @@ export function matches$58FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'first_name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'first_value')) {
     return false;
   }
-  if (!matches$0FromJSON(object['first_name'])) {
+  if (!matches$0FromJSON(object['first_value'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'last_name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'second_value')) {
     return false;
   }
-  if (!matches$0FromJSON(object['last_name'])) {
+  if (!matches$0FromJSON(object['second_value'])) {
     return false;
   }
   return true;
@@ -1402,16 +1402,16 @@ export function matches$58ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'firstName')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'firstValue')) {
     return false;
   }
-  if (!matches$0ToJSON(object['firstName'])) {
+  if (!matches$0ToJSON(object['firstValue'])) {
     return false;
   }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'lastName')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'secondValue')) {
     return false;
   }
-  if (!matches$0ToJSON(object['lastName'])) {
+  if (!matches$0ToJSON(object['secondValue'])) {
     return false;
   }
   return true;
@@ -1478,11 +1478,11 @@ export function matches$60ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$61FromJSON(candidate: unknown): boolean {
-  return candidate === 'nested_fields';
+  return candidate === 'variant_k';
 }
 
 export function matches$61ToJSON(candidate: unknown): boolean {
-  return candidate === 'nested_fields';
+  return candidate === 'variant_k';
 }
 
 export function matches$62FromJSON(candidate: unknown): boolean {
@@ -1490,8 +1490,8 @@ export function matches$62FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'inner_name')) {
-    const item = object['inner_name'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'inner_label')) {
+    const item = object['inner_label'];
     if (item !== undefined && !matches$0FromJSON(item)) {
       return false;
     }
@@ -1504,8 +1504,8 @@ export function matches$62ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'innerName')) {
-    const item = object['innerName'];
+  if (Object.prototype.hasOwnProperty.call(candidate, 'innerLabel')) {
+    const item = object['innerLabel'];
     if (item !== undefined && !matches$0ToJSON(item)) {
       return false;
     }
@@ -1518,10 +1518,10 @@ export function matches$63FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'outer_name')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'outer_label')) {
     return false;
   }
-  if (!matches$0FromJSON(object['outer_name'])) {
+  if (!matches$0FromJSON(object['outer_label'])) {
     return false;
   }
   return true;
@@ -1532,10 +1532,10 @@ export function matches$63ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'outerName')) {
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'outerLabel')) {
     return false;
   }
-  if (!matches$0ToJSON(object['outerName'])) {
+  if (!matches$0ToJSON(object['outerLabel'])) {
     return false;
   }
   return true;
@@ -1570,19 +1570,19 @@ export function matches$64ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$65FromJSON(candidate: unknown): boolean {
-  return candidate === 'other';
+  return candidate === 'variant_l';
 }
 
 export function matches$65ToJSON(candidate: unknown): boolean {
-  return candidate === 'other';
+  return candidate === 'variant_l';
 }
 
 export function matches$66FromJSON(candidate: unknown): boolean {
-  return candidate === 'tool_search_output';
+  return candidate === 'result';
 }
 
 export function matches$66ToJSON(candidate: unknown): boolean {
-  return candidate === 'tool_search_output';
+  return candidate === 'result';
 }
 
 export function matches$67FromJSON(candidate: unknown): boolean {
@@ -2279,14 +2279,14 @@ export function matches$89ToJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matchToolFromJSON(candidate: unknown): number {
+export function matchVariantFromJSON(candidate: unknown): number {
   if (matches$67FromJSON(candidate)) {
     return 2;
   }
   return 0;
 }
 
-export function matchToolToJSON(candidate: unknown): number {
+export function matchVariantToJSON(candidate: unknown): number {
   if (matches$67ToJSON(candidate)) {
     return 2;
   }

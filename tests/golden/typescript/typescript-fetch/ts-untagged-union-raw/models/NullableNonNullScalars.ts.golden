@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$12FromJSON, convert$12ToJSON } from '../runtime/valueConversion$12';
+import { convert$17FromJSON, convert$17ToJSON } from '../runtime/valueConversion$17';
 import type {
   NullableNonNullScalarsItems,
   NullableNonNullScalarsItems$Wire,
@@ -16,11 +16,11 @@ export type NullableNonNullScalars = readonly (NullableNonNullScalarsItems | nul
 export function nullableNonNullScalarsFromJSON(
   json: NullableNonNullScalars$Wire,
 ): NullableNonNullScalars {
-  return convert$12FromJSON(json);
+  return convert$17FromJSON(json);
 }
 
 export function nullableNonNullScalarsToJSON(
   value: NullableNonNullScalars,
 ): NullableNonNullScalars$Wire {
-  return convert$12ToJSON(value);
+  return convert$17ToJSON(value);
 }

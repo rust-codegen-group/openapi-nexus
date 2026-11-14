@@ -114,25 +114,25 @@ export type { RecursiveMap, RecursiveMap$Wire } from './RecursiveMap';
 export { recursiveMapFromJSON, recursiveMapToJSON } from './RecursiveMap';
 export type { RenamedMap, RenamedMap$Wire } from './RenamedMap';
 export { renamedMapFromJSON, renamedMapToJSON } from './RenamedMap';
-export type { SearchItem, SearchItem$Wire } from './SearchItem';
-export { searchItemFromJSON, searchItemToJSON } from './SearchItem';
-export type { SearchStreamEvent, SearchStreamEvent$Wire } from './SearchStreamEvent';
-export { searchStreamEventFromJSON, searchStreamEventToJSON } from './SearchStreamEvent';
+export type { StreamEvent, StreamEvent$Wire } from './StreamEvent';
+export { streamEventFromJSON, streamEventToJSON } from './StreamEvent';
 export type {
-  SearchStreamEventResponseCompleted,
-  SearchStreamEventResponseCompleted$Wire,
-} from './SearchStreamEventResponseCompleted';
+  StreamEventStreamEventActive,
+  StreamEventStreamEventActive$Wire,
+} from './StreamEventStreamEventActive';
 export {
-  searchStreamEventResponseCompletedFromJSON,
-  searchStreamEventResponseCompletedToJSON,
-} from './SearchStreamEventResponseCompleted';
+  streamEventStreamEventActiveFromJSON,
+  streamEventStreamEventActiveToJSON,
+} from './StreamEventStreamEventActive';
 export type {
-  SearchStreamEventResponseWebSearchCallSearching,
-  SearchStreamEventResponseWebSearchCallSearching$Wire,
-} from './SearchStreamEventResponseWebSearchCallSearching';
+  StreamEventStreamEventComplete,
+  StreamEventStreamEventComplete$Wire,
+} from './StreamEventStreamEventComplete';
 export {
-  searchStreamEventResponseWebSearchCallSearchingFromJSON,
-  searchStreamEventResponseWebSearchCallSearchingToJSON,
-} from './SearchStreamEventResponseWebSearchCallSearching';
+  streamEventStreamEventCompleteFromJSON,
+  streamEventStreamEventCompleteToJSON,
+} from './StreamEventStreamEventComplete';
+export type { TaggedItem, TaggedItem$Wire } from './TaggedItem';
+export { taggedItemFromJSON, taggedItemToJSON } from './TaggedItem';
 export type { TypedExternalEvent, TypedExternalEvent$Wire } from './TypedExternalEvent';
 export { typedExternalEventFromJSON, typedExternalEventToJSON } from './TypedExternalEvent';

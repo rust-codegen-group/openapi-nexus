@@ -17,7 +17,7 @@ type TaggedChoice = (
 )
 
 def tagged_choice_from_dict(value: object) -> TaggedChoice:
-    return cast(TaggedChoice, _union.value_41_from_dict(value))
+    return cast(TaggedChoice, _union.value_37_from_dict(value))
 
 def tagged_choice_to_dict(value: object) -> dict[str, object]:
-    return cast(dict[str, object], _union.value_41_to_dict(value))
+    return cast(dict[str, object], _union.value_37_to_dict(value))

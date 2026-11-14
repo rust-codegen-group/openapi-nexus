@@ -3,17 +3,29 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { SearchTool, SearchTool$Wire } from '../models/SearchTool';
-import { searchToolFromJSON, searchToolToJSON } from '../models/SearchTool';
+import type {
+  NullableNonNullScalarsItems,
+  NullableNonNullScalarsItems$Wire,
+} from '../models/NullableNonNullScalarsItems';
+import {
+  nullableNonNullScalarsItemsFromJSON,
+  nullableNonNullScalarsItemsToJSON,
+} from '../models/NullableNonNullScalarsItems';
 
-export type Value$18Wire = readonly SearchTool$Wire[];
+export type Value$18Wire = NullableNonNullScalarsItems$Wire | null;
 
-export type Value$18 = readonly SearchTool[];
+export type Value$18 = NullableNonNullScalarsItems | null;
 
-export function convert$18FromJSON(json: ReadonlyArray<SearchTool$Wire>): Value$18 {
-  return json.map(searchToolFromJSON);
+export function convert$18FromJSON(json: NullableNonNullScalarsItems$Wire | null): Value$18 {
+  if (json == null) {
+    return null;
+  }
+  return nullableNonNullScalarsItemsFromJSON(json);
 }
 
-export function convert$18ToJSON(value: ReadonlyArray<SearchTool>): Value$18Wire {
-  return value.map(searchToolToJSON);
+export function convert$18ToJSON(value: NullableNonNullScalarsItems | null): Value$18Wire {
+  if (value == null) {
+    return null;
+  }
+  return nullableNonNullScalarsItemsToJSON(value);
 }

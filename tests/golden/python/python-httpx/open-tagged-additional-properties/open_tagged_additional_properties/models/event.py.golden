@@ -4,30 +4,30 @@
 
 from __future__ import annotations
 
+from .event_active import EventActive
 from .event_completed import EventCompleted
-from .event_searching import EventSearching
 
 # Discriminator: type (internal).
 
 type Event = (
-    EventSearching
+    EventActive
     | EventCompleted
 )
 
 
 def event_from_dict(data: dict[str, object]) -> Event:
     _tag = data["type"]
-    if _tag == "searching":
-        return EventSearching.from_dict(data)
+    if _tag == "active":
+        return EventActive.from_dict(data)
     elif _tag == "completed":
         return EventCompleted.from_dict(data)
     raise ValueError(f"Unknown discriminator value for Event: {data}")
 
 
 def event_to_dict(obj: Event) -> dict[str, object]:
-    if isinstance(obj, EventSearching):
+    if isinstance(obj, EventActive):
         result = obj.to_dict()
-        result["type"] = "searching"
+        result["type"] = "active"
         return result
     elif isinstance(obj, EventCompleted):
         result = obj.to_dict()

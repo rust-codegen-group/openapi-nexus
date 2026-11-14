@@ -6,11 +6,11 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$74FromJSON,
-  matches$74ToJSON,
+  matches$78FromJSON,
+  matches$78ToJSON,
 } from '../runtime/unionMatch';
-import type { Value$29, Value$29Wire } from '../runtime/valueConversion$29';
-import { convert$29FromJSON, convert$29ToJSON } from '../runtime/valueConversion$29';
+import type { Value$34, Value$34Wire } from '../runtime/valueConversion$34';
+import { convert$34FromJSON, convert$34ToJSON } from '../runtime/valueConversion$34';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
@@ -25,8 +25,8 @@ export function recursiveOpenDictionaryFromJSON(
   if (matches$1FromJSON(candidate)) {
     return detailFromJSON(json as unknown as Detail$Wire);
   }
-  if (matches$74FromJSON(candidate)) {
-    return convert$29FromJSON(json as unknown as Value$29Wire);
+  if (matches$78FromJSON(candidate)) {
+    return convert$34FromJSON(json as unknown as Value$34Wire);
   }
   return json as unknown as unknown;
 }
@@ -38,8 +38,8 @@ export function recursiveOpenDictionaryToJSON(
   if (matches$1ToJSON(candidate)) {
     return detailToJSON(value as unknown as Detail);
   }
-  if (matches$74ToJSON(candidate)) {
-    return convert$29ToJSON(value as unknown as Value$29);
+  if (matches$78ToJSON(candidate)) {
+    return convert$34ToJSON(value as unknown as Value$34);
   }
   return value as unknown as unknown;
 }

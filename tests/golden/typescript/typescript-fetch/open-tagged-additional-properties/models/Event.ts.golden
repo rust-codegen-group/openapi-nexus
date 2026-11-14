@@ -3,9 +3,9 @@
  *
  * Open tagged additional properties — 1.0.0
  */
+import type { EventActive } from './EventActive';
 import type { EventCompleted } from './EventCompleted';
-import type { EventSearching } from './EventSearching';
 
 export type Event =
-  | (Record<'type', 'searching'> & EventSearching)
+  | (Record<'type', 'active'> & EventActive)
   | (Record<'type', 'completed'> & EventCompleted);

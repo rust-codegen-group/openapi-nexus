@@ -4,38 +4,38 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$30FromJSON,
-  matches$30ToJSON,
-  matches$32FromJSON,
-  matches$32ToJSON,
+  matches$34FromJSON,
+  matches$34ToJSON,
+  matches$36FromJSON,
+  matches$36ToJSON,
 } from '../runtime/unionMatch';
+import type { NullableChoice, NullableChoice$Wire } from './NullableChoice';
+import { nullableChoiceFromJSON, nullableChoiceToJSON } from './NullableChoice';
 import type { NullableDetail, NullableDetail$Wire } from './NullableDetail';
 import { nullableDetailFromJSON, nullableDetailToJSON } from './NullableDetail';
-import type { NullableTool, NullableTool$Wire } from './NullableTool';
-import { nullableToolFromJSON, nullableToolToJSON } from './NullableTool';
 
-export type NullableOverlap$Wire = NullableDetail$Wire | NullableTool$Wire;
+export type NullableOverlap$Wire = NullableDetail$Wire | NullableChoice$Wire;
 
-export type NullableOverlap = NullableDetail | NullableTool;
+export type NullableOverlap = NullableDetail | NullableChoice;
 
 export function nullableOverlapFromJSON(json: NullableOverlap$Wire): NullableOverlap {
   const candidate: unknown = json;
-  if (matches$30FromJSON(candidate)) {
+  if (matches$34FromJSON(candidate)) {
     return nullableDetailFromJSON(json as unknown as NullableDetail$Wire);
   }
-  if (matches$32FromJSON(candidate)) {
-    return nullableToolFromJSON(json as unknown as NullableTool$Wire);
+  if (matches$36FromJSON(candidate)) {
+    return nullableChoiceFromJSON(json as unknown as NullableChoice$Wire);
   }
   return json as unknown as NullableOverlap;
 }
 
 export function nullableOverlapToJSON(value: NullableOverlap): NullableOverlap$Wire {
   const candidate: unknown = value;
-  if (matches$30ToJSON(candidate)) {
+  if (matches$34ToJSON(candidate)) {
     return nullableDetailToJSON(value as unknown as NullableDetail);
   }
-  if (matches$32ToJSON(candidate)) {
-    return nullableToolToJSON(value as unknown as NullableTool);
+  if (matches$36ToJSON(candidate)) {
+    return nullableChoiceToJSON(value as unknown as NullableChoice);
   }
   return value as unknown as NullableOverlap$Wire;
 }

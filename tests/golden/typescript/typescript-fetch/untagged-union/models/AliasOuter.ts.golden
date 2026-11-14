@@ -4,6 +4,6 @@
  * Untagged union conversion — 1.0.0
  */
 import type { OpenAlias } from './OpenAlias';
-import type { SearchTool } from './SearchTool';
+import type { PayloadB } from './PayloadB';
 
-export type AliasOuter = OpenAlias | SearchTool;
+export type AliasOuter = OpenAlias | PayloadB;

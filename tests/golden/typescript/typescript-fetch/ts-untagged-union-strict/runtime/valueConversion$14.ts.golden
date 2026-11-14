@@ -3,48 +3,23 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Detail, Detail$Wire } from '../models/Detail';
-import {
-  matches$0FromJSON,
-  matches$0ToJSON,
-  matches$2FromJSON,
-  matches$2ToJSON,
-} from '../runtime/unionMatch';
-import type { Value$12, Value$12Wire } from './valueConversion$12';
-import { convert$12FromJSON, convert$12ToJSON } from './valueConversion$12';
+import type { NullableScalarInner, NullableScalarInner$Wire } from '../models/NullableScalarInner';
+import { convert$15FromJSON, convert$15ToJSON } from './valueConversion$15';
 
-export type Value$14Wire = globalThis.Record<string, Detail$Wire> | string;
+export type Value$14Wire = NullableScalarInner$Wire | null;
 
-export type Value$14 = globalThis.Record<string, Detail> | string;
+export type Value$14 = NullableScalarInner | null;
 
-export function convert$14FromJSON(
-  json: globalThis.Record<string, Detail$Wire> | string,
-): Value$14 {
-  const candidate: unknown = json;
-  const matches = [matches$0FromJSON(candidate), matches$2FromJSON(candidate)];
-  if (matches.filter(Boolean).length > 1) {
-    throw new TypeError('Ambiguous inline untagged union value');
+export function convert$14FromJSON(json: NullableScalarInner$Wire | null): Value$14 {
+  if (json == null) {
+    return null;
   }
-  if (matches[0]) {
-    return convert$12FromJSON(json as unknown as Value$12Wire);
-  }
-  if (matches[1]) {
-    return json as unknown as string;
-  }
-  throw new TypeError('No matching inline untagged union member');
+  return convert$15FromJSON(json);
 }
 
-export function convert$14ToJSON(value: globalThis.Record<string, Detail> | string): Value$14Wire {
-  const candidate: unknown = value;
-  const matches = [matches$0ToJSON(candidate), matches$2ToJSON(candidate)];
-  if (matches.filter(Boolean).length > 1) {
-    throw new TypeError('Ambiguous inline untagged union value');
+export function convert$14ToJSON(value: NullableScalarInner | null): Value$14Wire {
+  if (value == null) {
+    return null;
   }
-  if (matches[0]) {
-    return convert$12ToJSON(value as unknown as Value$12);
-  }
-  if (matches[1]) {
-    return value as unknown as string;
-  }
-  throw new TypeError('No matching inline untagged union member');
+  return convert$15ToJSON(value);
 }

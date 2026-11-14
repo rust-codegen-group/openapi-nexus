@@ -30,7 +30,9 @@ use fixture_generator_petstore::{
     )
 )]
 async fn openapi_spec() -> String {
-    ApiDoc::openapi().to_json().unwrap()
+    let mut openapi = ApiDoc::openapi();
+    openapi.info.contact = None;
+    openapi.to_json().unwrap()
 }
 
 #[tokio::main]

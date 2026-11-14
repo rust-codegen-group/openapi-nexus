@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { matches$65FromJSON, matches$65ToJSON } from '../runtime/unionMatch';
+import { matches$70FromJSON, matches$70ToJSON } from '../runtime/unionMatch';
 import type { NullableOpenInner, NullableOpenInner$Wire } from './NullableOpenInner';
 import { nullableOpenInnerFromJSON, nullableOpenInnerToJSON } from './NullableOpenInner';
 
@@ -15,7 +15,7 @@ export function nullableOpenExplicitOuterFromJSON(
   json: NullableOpenExplicitOuter$Wire,
 ): NullableOpenExplicitOuter {
   const candidate: unknown = json;
-  const matches = [matches$65FromJSON(candidate)];
+  const matches = [matches$70FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NullableOpenExplicitOuter untagged union value');
   }
@@ -32,7 +32,7 @@ export function nullableOpenExplicitOuterToJSON(
   value: NullableOpenExplicitOuter,
 ): NullableOpenExplicitOuter$Wire {
   const candidate: unknown = value;
-  const matches = [matches$65ToJSON(candidate)];
+  const matches = [matches$70ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NullableOpenExplicitOuter untagged union value');
   }

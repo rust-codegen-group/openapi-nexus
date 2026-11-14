@@ -26,45 +26,45 @@ func NewDefaultAPI(client *runtime.Client) *DefaultAPI {
 	return &DefaultAPI{client: client}
 }
 
-// ExchangeToolsResponse carries the response from the corresponding operation.
-type ExchangeToolsResponse struct {
+// ExchangeVariantsResponse carries the response from the corresponding operation.
+type ExchangeVariantsResponse struct {
 	StatusCode int
 	Raw *http.Response
-	Status200 *models.Envelope
+	Status200 *models.Container
 }
 
-type ExchangeToolsError struct {
+type ExchangeVariantsError struct {
 	StatusCode int
 	Status string
 	Header http.Header
 	RawBody []byte
-	Detail ExchangeToolsErrorDetail
+	Detail ExchangeVariantsErrorDetail
 }
 
-func (e *ExchangeToolsError) Error() string {
+func (e *ExchangeVariantsError) Error() string {
 	return fmt.Sprintf("api error: %s", e.Status)
 }
 
-type ExchangeToolsErrorDetail interface {
-	isExchangeToolsErrorDetail()
+type ExchangeVariantsErrorDetail interface {
+	isExchangeVariantsErrorDetail()
 }
 
-type ExchangeToolsUnexpected struct {
+type ExchangeVariantsUnexpected struct {
 	StatusCode int
 	Header http.Header
 	RawBody []byte
 }
 
-func (*ExchangeToolsUnexpected) isExchangeToolsErrorDetail() {}
+func (*ExchangeVariantsUnexpected) isExchangeVariantsErrorDetail() {}
 
-func (d *ExchangeToolsUnexpected) Body() []byte {
+func (d *ExchangeVariantsUnexpected) Body() []byte {
 	return append([]byte(nil), d.RawBody...)
 }
 
-// ExchangeTools calls POST /tools.
-func (a *DefaultAPI) ExchangeTools(ctx context.Context,
-	body *models.Envelope) (*ExchangeToolsResponse, error) {
-	path := "/tools"
+// ExchangeVariants calls POST /variants.
+func (a *DefaultAPI) ExchangeVariants(ctx context.Context,
+	body *models.Container) (*ExchangeVariantsResponse, error) {
+	path := "/variants"
 	var bodyReader io.Reader
 	if body != nil {
 		buf, err := json.Marshal(body)
@@ -84,7 +84,7 @@ func (a *DefaultAPI) ExchangeTools(ctx context.Context,
 		return nil, err
 	}
 	defer httpResp.Body.Close()
-	resp := &ExchangeToolsResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
+	resp := &ExchangeVariantsResponse{StatusCode: httpResp.StatusCode, Raw: httpResp}
 	if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
 		responseBody, err := io.ReadAll(httpResp.Body)
 		if err != nil {
@@ -92,8 +92,8 @@ func (a *DefaultAPI) ExchangeTools(ctx context.Context,
 		}
 		switch httpResp.StatusCode {
 			default:
-				detail := &ExchangeToolsUnexpected{StatusCode: httpResp.StatusCode, Header: httpResp.Header.Clone(), RawBody: append([]byte(nil), responseBody...)}
-				return nil, &ExchangeToolsError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Header: httpResp.Header.Clone(), RawBody: append([]byte(nil), responseBody...), Detail: detail}
+				detail := &ExchangeVariantsUnexpected{StatusCode: httpResp.StatusCode, Header: httpResp.Header.Clone(), RawBody: append([]byte(nil), responseBody...)}
+				return nil, &ExchangeVariantsError{StatusCode: httpResp.StatusCode, Status: httpResp.Status, Header: httpResp.Header.Clone(), RawBody: append([]byte(nil), responseBody...), Detail: detail}
 		}
 	}
 	responseBody, err := io.ReadAll(httpResp.Body)
@@ -103,7 +103,7 @@ func (a *DefaultAPI) ExchangeTools(ctx context.Context,
 
 	switch httpResp.StatusCode {
 		case 200:
-			var payload models.Envelope
+			var payload models.Container
 			if err := json.Unmarshal(responseBody, &payload); err != nil {
 				return nil, fmt.Errorf("decode response: %w", err)
 			}

@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$17FromJSON,
-  matches$17ToJSON,
   matches$1FromJSON,
   matches$1ToJSON,
+  matches$20FromJSON,
+  matches$20ToJSON,
 } from '../runtime/unionMatch';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
@@ -20,7 +20,7 @@ export type AmbiguousInner = unknown;
 
 export function ambiguousInnerFromJSON(json: AmbiguousInner$Wire): AmbiguousInner {
   const candidate: unknown = json;
-  const matches = [matches$1FromJSON(candidate), matches$17FromJSON(candidate)];
+  const matches = [matches$1FromJSON(candidate), matches$20FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous AmbiguousInner untagged union value');
   }
@@ -35,7 +35,7 @@ export function ambiguousInnerFromJSON(json: AmbiguousInner$Wire): AmbiguousInne
 
 export function ambiguousInnerToJSON(value: AmbiguousInner): AmbiguousInner$Wire {
   const candidate: unknown = value;
-  const matches = [matches$1ToJSON(candidate), matches$17ToJSON(candidate)];
+  const matches = [matches$1ToJSON(candidate), matches$20ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous AmbiguousInner untagged union value');
   }

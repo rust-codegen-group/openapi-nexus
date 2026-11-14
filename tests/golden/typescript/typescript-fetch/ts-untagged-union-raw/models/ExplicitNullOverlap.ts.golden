@@ -3,10 +3,10 @@
  *
  * Untagged union conversion — 1.0.0
  */
+import type { NullableChoice$Wire } from './NullableChoice';
 import type { NullableDetail$Wire } from './NullableDetail';
-import type { NullableTool$Wire } from './NullableTool';
 
-export type ExplicitNullOverlap$Wire = NullableDetail$Wire | NullableTool$Wire | null;
+export type ExplicitNullOverlap$Wire = NullableDetail$Wire | NullableChoice$Wire | null;
 
 export type ExplicitNullOverlap = ExplicitNullOverlap$Wire;
 

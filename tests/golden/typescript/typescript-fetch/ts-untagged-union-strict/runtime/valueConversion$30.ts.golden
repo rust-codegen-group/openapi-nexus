@@ -3,17 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { ClientTool, ClientTool$Wire } from '../models/ClientTool';
-import { clientToolFromJSON, clientToolToJSON } from '../models/ClientTool';
+import type { NullableScalarInner, NullableScalarInner$Wire } from '../models/NullableScalarInner';
+import { convert$15FromJSON, convert$15ToJSON } from './valueConversion$15';
 
-export type Value$30Wire = readonly ClientTool$Wire[];
+export type Value$30Wire = readonly (NullableScalarInner$Wire | null)[];
 
-export type Value$30 = readonly ClientTool[];
+export type Value$30 = readonly (NullableScalarInner | null)[];
 
-export function convert$30FromJSON(json: ReadonlyArray<ClientTool$Wire>): Value$30 {
-  return json.map(clientToolFromJSON);
+export function convert$30FromJSON(json: ReadonlyArray<NullableScalarInner$Wire | null>): Value$30 {
+  return json.map(convert$15FromJSON);
 }
 
-export function convert$30ToJSON(value: ReadonlyArray<ClientTool>): Value$30Wire {
-  return value.map(clientToolToJSON);
+export function convert$30ToJSON(value: ReadonlyArray<NullableScalarInner | null>): Value$30Wire {
+  return value.map(convert$15ToJSON);
 }

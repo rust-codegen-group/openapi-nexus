@@ -6,9 +6,6 @@ openapi: 3.1.0
 info:
   title: Enum Representation API
   description: 'This API demonstrates all 4 kinds of enum representation types: Externally Tagged, Internally Tagged, Adjacently Tagged, and Untagged'
-  contact:
-    name: Adam Basfop Cavendish
-    email: GetbetterABC@yeah.net
   license:
     name: MIT OR Apache-2.0
     identifier: MIT OR Apache-2.0

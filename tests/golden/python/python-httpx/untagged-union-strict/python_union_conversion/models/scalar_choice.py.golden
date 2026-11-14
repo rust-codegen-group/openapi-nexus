@@ -14,7 +14,7 @@ type ScalarChoice = (
 )
 
 def scalar_choice_from_dict(value: object) -> ScalarChoice:
-    return cast(ScalarChoice, _union.value_37_from_dict(value))
+    return cast(ScalarChoice, _union.value_33_from_dict(value))
 
 def scalar_choice_to_dict(value: ScalarChoice) -> object:
-    return _union.value_37_to_dict(value)
+    return _union.value_33_to_dict(value)

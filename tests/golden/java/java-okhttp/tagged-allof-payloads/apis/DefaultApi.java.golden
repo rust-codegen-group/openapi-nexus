@@ -33,10 +33,10 @@ public class DefaultApi {
     }
 
     /**
-     * exchangeTools POST /tools.
+     * exchangeVariants POST /variants.
      */
-    public ExchangeToolsResponse exchangeTools(Envelope body) throws IOException {
-        String path = "/tools";
+    public ExchangeVariantsResponse exchangeVariants(Container body) throws IOException {
+        String path = "/variants";
         Request request;
         String jsonBody = gson.toJson(body);
         RequestBody requestBody = RequestBody.create(jsonBody, MediaType.get("application/json"));
@@ -48,19 +48,19 @@ public class DefaultApi {
             java.nio.charset.Charset responseCharset = responseBody != null && responseBody.contentType() != null ? responseBody.contentType().charset(StandardCharsets.UTF_8) : StandardCharsets.UTF_8;
             byte[] responseBytes = responseBody != null ? responseBody.bytes() : new byte[0];
             String responseText = new String(responseBytes, responseCharset);
-            ExchangeToolsExceptionDetail detail;
+            ExchangeVariantsExceptionDetail detail;
             switch (response.code()) {
                 default:
-                    detail = new ExchangeToolsUnexpected(response.code(), response.headers(), responseBytes);
+                    detail = new ExchangeVariantsUnexpected(response.code(), response.headers(), responseBytes);
             }
-            throw new ExchangeToolsException(response.code(), response.message(), responseText, response.headers(), responseBytes, detail);
+            throw new ExchangeVariantsException(response.code(), response.message(), responseText, response.headers(), responseBytes, detail);
         }
         byte[] responseBytes = response.body() != null ? response.body().bytes() : new byte[0];
         String responseText = new String(responseBytes, StandardCharsets.UTF_8);
-        Envelope status200 = null;
+        Container status200 = null;
         if (response.code() == 200) {
-            status200 = gson.fromJson(responseText.isEmpty() ? "null" : responseText, new TypeToken<Envelope>() {}.getType());
+            status200 = gson.fromJson(responseText.isEmpty() ? "null" : responseText, new TypeToken<Container>() {}.getType());
         }
-        return new ExchangeToolsResponse(response.code(), response, status200);
+        return new ExchangeVariantsResponse(response.code(), response, status200);
     }
 }

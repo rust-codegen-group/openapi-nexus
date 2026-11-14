@@ -3,23 +3,21 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { ScalarEnumChoice, ScalarEnumChoice$Wire } from '../models/ScalarEnumChoice';
-import { scalarEnumChoiceFromJSON, scalarEnumChoiceToJSON } from '../models/ScalarEnumChoice';
+import type { Detail, Detail$Wire } from '../models/Detail';
+import { convert$21FromJSON, convert$21ToJSON } from './valueConversion$21';
 
-export type Value$20Wire = ScalarEnumChoice$Wire | null;
+export type Value$20Wire = readonly (globalThis.Record<string, Detail$Wire> | number)[];
 
-export type Value$20 = ScalarEnumChoice | null;
+export type Value$20 = readonly (globalThis.Record<string, Detail> | number)[];
 
-export function convert$20FromJSON(json: ScalarEnumChoice$Wire | null): Value$20 {
-  if (json == null) {
-    return null;
-  }
-  return scalarEnumChoiceFromJSON(json);
+export function convert$20FromJSON(
+  json: ReadonlyArray<globalThis.Record<string, Detail$Wire> | number>,
+): Value$20 {
+  return json.map(convert$21FromJSON);
 }
 
-export function convert$20ToJSON(value: ScalarEnumChoice | null): Value$20Wire {
-  if (value == null) {
-    return null;
-  }
-  return scalarEnumChoiceToJSON(value);
+export function convert$20ToJSON(
+  value: ReadonlyArray<globalThis.Record<string, Detail> | number>,
+): Value$20Wire {
+  return value.map(convert$21ToJSON);
 }

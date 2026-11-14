@@ -3,17 +3,17 @@
  *
  * Tagged allOf payload preservation — 1.0.0
  */
-import type { Skill, Skill$Wire } from '../models/Skill';
-import { skillFromJSON, skillToJSON } from '../models/Skill';
+import type { ContainerItem, ContainerItem$Wire } from '../models/ContainerItem';
+import { containerItemFromJSON, containerItemToJSON } from '../models/ContainerItem';
 
-export type Value$1Wire = readonly Skill$Wire[];
+export type Value$1Wire = readonly ContainerItem$Wire[];
 
-export type Value$1 = readonly Skill[];
+export type Value$1 = readonly ContainerItem[];
 
-export function convert$1FromJSON(json: ReadonlyArray<Skill$Wire>): Value$1 {
-  return json.map(skillFromJSON);
+export function convert$1FromJSON(json: ReadonlyArray<ContainerItem$Wire>): Value$1 {
+  return json.map(containerItemFromJSON);
 }
 
-export function convert$1ToJSON(value: ReadonlyArray<Skill>): Value$1Wire {
-  return value.map(skillToJSON);
+export function convert$1ToJSON(value: ReadonlyArray<ContainerItem>): Value$1Wire {
+  return value.map(containerItemToJSON);
 }

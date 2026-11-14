@@ -235,8 +235,8 @@ Controls untagged-union conversion when `property_naming = "camelCase"`:
   multiple concrete matches or no matching member. A raw fallback is considered
   only after the concrete members, so it does not itself create ambiguity.
 - `"raw"`: do not select or convert union members. Both `Name` and `Name$Wire`
-  expose the wire representation; pass original wire keys such as `input_schema`,
-  not ergonomic keys such as `inputSchema`. This is an explicit escape hatch,
+  expose the wire representation; pass original wire keys such as `payload_schema`,
+  not ergonomic keys such as `payloadSchema`. This is an explicit escape hatch,
   not an identity cast pretending to return a renamed model. This applies to the
   entire union subtree, including inline container unions and aliases; ordinary
   enclosing objects and sibling properties still convert normally.
@@ -306,9 +306,9 @@ selection policy recursively, rather than returning their contents unchanged.
 A single-member `allOf` alias delegates without spreading its result,
 preserving primitive, array, and null values too.
 
-For example, a mixed `ClientTool | SearchTool` union can distinguish a required
-`input_schema` / `inputSchema` field from a search member's required literal
-`type`, then convert `inputSchema` and `maxUses` to `input_schema` and `max_uses`.
+For example, a mixed `PayloadA | PayloadB` union can distinguish a required
+`payload_schema` / `payloadSchema` field from a second member's required literal
+`kind`, then convert `payloadSchema` and `limit` without losing their wire names.
 Conversions also work through containing arrays, dictionaries, and model aliases.
 Declared additional-property behavior remains owned by the selected member's
 converter. Direct tagged payloads and optional type guards use the same type and

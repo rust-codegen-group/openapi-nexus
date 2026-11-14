@@ -4,30 +4,28 @@
  * Untagged union conversion — 1.0.0
  */
 import type {
-  RecursiveOpenDictionary,
-  RecursiveOpenDictionary$Wire,
-} from '../models/RecursiveOpenDictionary';
+  NullableNonNullScalarsItems,
+  NullableNonNullScalarsItems$Wire,
+} from '../models/NullableNonNullScalarsItems';
 import {
-  recursiveOpenDictionaryFromJSON,
-  recursiveOpenDictionaryToJSON,
-} from '../models/RecursiveOpenDictionary';
+  nullableNonNullScalarsItemsFromJSON,
+  nullableNonNullScalarsItemsToJSON,
+} from '../models/NullableNonNullScalarsItems';
 
-export type Value$29Wire = globalThis.Record<string, RecursiveOpenDictionary$Wire>;
+export type Value$29Wire = NullableNonNullScalarsItems$Wire | null;
 
-export type Value$29 = globalThis.Record<string, RecursiveOpenDictionary>;
+export type Value$29 = NullableNonNullScalarsItems | null;
 
-export function convert$29FromJSON(
-  json: globalThis.Record<string, RecursiveOpenDictionary$Wire>,
-): Value$29 {
-  return Object.fromEntries(
-    Object.entries(json ?? {}).map(([key, item]) => [key, recursiveOpenDictionaryFromJSON(item)]),
-  );
+export function convert$29FromJSON(json: NullableNonNullScalarsItems$Wire | null): Value$29 {
+  if (json == null) {
+    return null;
+  }
+  return nullableNonNullScalarsItemsFromJSON(json);
 }
 
-export function convert$29ToJSON(
-  value: globalThis.Record<string, RecursiveOpenDictionary>,
-): Value$29Wire {
-  return Object.fromEntries(
-    Object.entries(value ?? {}).map(([key, item]) => [key, recursiveOpenDictionaryToJSON(item)]),
-  );
+export function convert$29ToJSON(value: NullableNonNullScalarsItems | null): Value$29Wire {
+  if (value == null) {
+    return null;
+  }
+  return nullableNonNullScalarsItemsToJSON(value);
 }

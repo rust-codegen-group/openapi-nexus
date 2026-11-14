@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UnionSelectionTest {
     private final Gson gson = new Gson();
-    private static final String CLIENT = "{\"name\":\"weather\",\"input_schema\":{\"type\":\"object\"}}";
-    private static final String SEARCH = "{\"type\":\"web_search_20250305\",\"name\":\"web_search\",\"max_uses\":1}";
+    private static final String PAYLOAD_A = "{\"label\":\"weather\",\"payload_schema\":{\"type\":\"object\"}}";
+    private static final String PAYLOAD_B = "{\"kind\":\"variant_b\",\"label\":\"payload_b\",\"limit\":1}";
     private static final String NUMERIC = "{\"revision\":2,\"second_value\":\"two\"}";
 
     private <T> void roundTrip(String wire, Class<T> type) {
@@ -16,24 +16,24 @@ class UnionSelectionTest {
         assertEquals(JsonParser.parseString(wire), gson.toJsonTree(value, type));
     }
 
-    @Test void directToolMembersPreserveWire() {
-        roundTrip(CLIENT, ClientTool.class);
-        roundTrip(SEARCH, SearchTool.class);
+    @Test void directVariantMembersPreserveWire() {
+        roundTrip(PAYLOAD_A, PayloadA.class);
+        roundTrip(PAYLOAD_B, PayloadB.class);
     }
 
     @Test void typedUnionRequestIsJsonSerializable() {
-        Request request = new Request(List.of(
-            new Tool.VariantClientTool(gson.fromJson(CLIENT, ClientTool.class)),
-            new Tool.VariantSearchTool(gson.fromJson(SEARCH, SearchTool.class))
+        VariantRequest request = new VariantRequest(List.of(
+            new VariantSet.VariantPayloadA(gson.fromJson(PAYLOAD_A, PayloadA.class)),
+            new VariantSet.VariantPayloadB(gson.fromJson(PAYLOAD_B, PayloadB.class))
         ));
-        assertEquals(JsonParser.parseString("{\"tools\":[" + CLIENT + "," + SEARCH + "]}"), gson.toJsonTree(request));
+        assertEquals(JsonParser.parseString("{\"choices\":[" + PAYLOAD_A + "," + PAYLOAD_B + "]}"), gson.toJsonTree(request));
     }
 
-    @Test void inboundToolRequestConstructsUnionVariants() {
-        String wire = "{\"tools\":[" + CLIENT + "," + SEARCH + "]}";
-        Request request = gson.fromJson(wire, Request.class);
-        assertInstanceOf(Tool.VariantClientTool.class, request.getTools().get(0));
-        assertInstanceOf(Tool.VariantSearchTool.class, request.getTools().get(1));
+    @Test void inboundVariantRequestConstructsUnionVariants() {
+        String wire = "{\"choices\":[" + PAYLOAD_A + "," + PAYLOAD_B + "]}";
+        VariantRequest request = gson.fromJson(wire, VariantRequest.class);
+        assertInstanceOf(VariantSet.VariantPayloadA.class, request.getChoices().get(0));
+        assertInstanceOf(VariantSet.VariantPayloadB.class, request.getChoices().get(1));
         assertEquals(JsonParser.parseString(wire), gson.toJsonTree(request));
     }
 

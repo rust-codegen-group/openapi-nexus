@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$46FromJSON,
-  matches$46ToJSON,
   matches$50FromJSON,
   matches$50ToJSON,
+  matches$54FromJSON,
+  matches$54ToJSON,
 } from '../runtime/unionMatch';
 import type { NestedEnumNarrow, NestedEnumNarrow$Wire } from './NestedEnumNarrow';
 import { nestedEnumNarrowFromJSON, nestedEnumNarrowToJSON } from './NestedEnumNarrow';
@@ -20,10 +20,10 @@ export type NestedEnumChoice = NestedEnumNarrow | NumericTwo;
 
 export function nestedEnumChoiceFromJSON(json: NestedEnumChoice$Wire): NestedEnumChoice {
   const candidate: unknown = json;
-  if (matches$46FromJSON(candidate)) {
+  if (matches$50FromJSON(candidate)) {
     return nestedEnumNarrowFromJSON(json as unknown as NestedEnumNarrow$Wire);
   }
-  if (matches$50FromJSON(candidate)) {
+  if (matches$54FromJSON(candidate)) {
     return numericTwoFromJSON(json as unknown as NumericTwo$Wire);
   }
   return json as unknown as NestedEnumChoice;
@@ -31,10 +31,10 @@ export function nestedEnumChoiceFromJSON(json: NestedEnumChoice$Wire): NestedEnu
 
 export function nestedEnumChoiceToJSON(value: NestedEnumChoice): NestedEnumChoice$Wire {
   const candidate: unknown = value;
-  if (matches$46ToJSON(candidate)) {
+  if (matches$50ToJSON(candidate)) {
     return nestedEnumNarrowToJSON(value as unknown as NestedEnumNarrow);
   }
-  if (matches$50ToJSON(candidate)) {
+  if (matches$54ToJSON(candidate)) {
     return numericTwoToJSON(value as unknown as NumericTwo);
   }
   return value as unknown as NestedEnumChoice$Wire;

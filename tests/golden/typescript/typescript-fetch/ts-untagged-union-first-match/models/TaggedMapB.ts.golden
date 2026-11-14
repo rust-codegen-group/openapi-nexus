@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$11FromJSON, convert$11ToJSON } from '../runtime/valueConversion$11';
+import { convert$16FromJSON, convert$16ToJSON } from '../runtime/valueConversion$16';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
@@ -20,7 +20,7 @@ export function taggedMapBFromJSON(json: TaggedMapB$Wire): TaggedMapB {
     const additionalProperties = Object.fromEntries(
       entries.map(([key, value]) => {
         const additionalValue = value as readonly Detail$Wire[];
-        return [key, convert$11FromJSON(additionalValue)] as const;
+        return [key, convert$16FromJSON(additionalValue)] as const;
       }),
     );
     return { ...additionalProperties, ['payload_key']: detailFromJSON(contentValue) };
@@ -35,7 +35,7 @@ export function taggedMapBToJSON(value: TaggedMapB): TaggedMapB$Wire {
     const additionalProperties = Object.fromEntries(
       entries.map(([key, value]) => {
         const additionalValue = value as readonly Detail[];
-        return [key, convert$11ToJSON(additionalValue)] as const;
+        return [key, convert$16ToJSON(additionalValue)] as const;
       }),
     );
     return { ...additionalProperties, ['payload_key']: detailToJSON(contentValue) };

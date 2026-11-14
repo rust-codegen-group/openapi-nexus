@@ -1,7 +1,7 @@
 {
   "name": "discriminated-union-internally-tagged-test",
   "version": "1.0.0",
-  "description": "Test fixture for internally tagged (adjacently tagged) discriminator unions.\nThis tests that discriminator properties have literal types instead of union types.\nSee: https://www.openapis.org/understanding-openapi/specification/models/\n",
+  "description": "Test fixture for internally tagged (adjacently tagged) discriminator unions.\nThis tests that discriminator properties have literal types instead of union types.\n",
   "keywords": [
     "api-client",
     "generated",

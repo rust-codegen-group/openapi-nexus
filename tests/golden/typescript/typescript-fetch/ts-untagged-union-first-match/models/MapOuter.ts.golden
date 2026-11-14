@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { matches$40FromJSON, matches$40ToJSON } from '../runtime/unionMatch';
+import { matches$44FromJSON, matches$44ToJSON } from '../runtime/unionMatch';
 import type { OpenMap, OpenMap$Wire } from './OpenMap';
 import { openMapFromJSON, openMapToJSON } from './OpenMap';
 
@@ -13,7 +13,7 @@ export type MapOuter = unknown;
 
 export function mapOuterFromJSON(json: MapOuter$Wire): MapOuter {
   const candidate: unknown = json;
-  if (matches$40FromJSON(candidate)) {
+  if (matches$44FromJSON(candidate)) {
     return openMapFromJSON(json as unknown as OpenMap$Wire);
   }
   return json as unknown as unknown;
@@ -21,7 +21,7 @@ export function mapOuterFromJSON(json: MapOuter$Wire): MapOuter {
 
 export function mapOuterToJSON(value: MapOuter): MapOuter$Wire {
   const candidate: unknown = value;
-  if (matches$40ToJSON(candidate)) {
+  if (matches$44ToJSON(candidate)) {
     return openMapToJSON(value as unknown as OpenMap);
   }
   return value as unknown as unknown;

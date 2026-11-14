@@ -410,4 +410,4 @@ components:
                             type: string
       required:
         - id
-        - user 
+        - user

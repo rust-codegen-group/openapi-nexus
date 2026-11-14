@@ -3,114 +3,120 @@
  *
  * Tagged allOf payload preservation — 1.0.0
  */
-export type { Envelope, Envelope$Wire } from './Envelope';
-export { envelopeFromJSON, envelopeToJSON } from './Envelope';
-export type { Environment, Environment$Wire } from './Environment';
-export { environmentFromJSON, environmentToJSON } from './Environment';
+export type { Container, Container$Wire } from './Container';
+export { containerFromJSON, containerToJSON } from './Container';
+export type { ContainerInput, ContainerInput$Wire } from './ContainerInput';
+export { containerInputFromJSON, containerInputToJSON } from './ContainerInput';
+export type { ContainerItem, ContainerItem$Wire } from './ContainerItem';
+export { containerItemFromJSON, containerItemToJSON } from './ContainerItem';
 export type { ExtraFields, ExtraFields$Wire } from './ExtraFields';
 export { extraFieldsFromJSON, extraFieldsToJSON } from './ExtraFields';
-export type { FirstConfig, FirstConfig$Wire } from './FirstConfig';
-export { firstConfigFromJSON, firstConfigToJSON } from './FirstConfig';
-export type { FirstConfigConfig, FirstConfigConfig$Wire } from './FirstConfigConfig';
-export { firstConfigConfigFromJSON, firstConfigConfigToJSON } from './FirstConfigConfig';
-export type { Input, Input$Wire } from './Input';
-export { inputFromJSON, inputToJSON } from './Input';
-export type { InputItem, InputItem$Wire } from './InputItem';
-export { inputItemFromJSON, inputItemToJSON } from './InputItem';
-export type { OptionalName, OptionalName$Wire } from './OptionalName';
-export { optionalNameFromJSON, optionalNameToJSON } from './OptionalName';
-export type { Options, Options$Wire } from './Options';
-export { optionsFromJSON, optionsToJSON } from './Options';
-export type { SearchOutput, SearchOutput$Wire } from './SearchOutput';
-export { searchOutputFromJSON, searchOutputToJSON } from './SearchOutput';
-export type { SecondConfig, SecondConfig$Wire } from './SecondConfig';
-export { secondConfigFromJSON, secondConfigToJSON } from './SecondConfig';
-export type { SecondConfigConfig, SecondConfigConfig$Wire } from './SecondConfigConfig';
-export { secondConfigConfigFromJSON, secondConfigConfigToJSON } from './SecondConfigConfig';
-export type { Skill, Skill$Wire } from './Skill';
-export { skillFromJSON, skillToJSON } from './Skill';
-export type { Tool, Tool$Wire } from './Tool';
+export type { FirstShape, FirstShape$Wire } from './FirstShape';
+export { firstShapeFromJSON, firstShapeToJSON } from './FirstShape';
+export type { FirstShapeData, FirstShapeData$Wire } from './FirstShapeData';
+export { firstShapeDataFromJSON, firstShapeDataToJSON } from './FirstShapeData';
+export type { NestedConfig, NestedConfig$Wire } from './NestedConfig';
+export { nestedConfigFromJSON, nestedConfigToJSON } from './NestedConfig';
+export type { NestedEntry, NestedEntry$Wire } from './NestedEntry';
+export { nestedEntryFromJSON, nestedEntryToJSON } from './NestedEntry';
+export type { OptionalLabel, OptionalLabel$Wire } from './OptionalLabel';
+export { optionalLabelFromJSON, optionalLabelToJSON } from './OptionalLabel';
+export type { ResultItem, ResultItem$Wire } from './ResultItem';
+export { resultItemFromJSON, resultItemToJSON } from './ResultItem';
+export type { SecondShape, SecondShape$Wire } from './SecondShape';
+export { secondShapeFromJSON, secondShapeToJSON } from './SecondShape';
+export type { SecondShapeData, SecondShapeData$Wire } from './SecondShapeData';
+export { secondShapeDataFromJSON, secondShapeDataToJSON } from './SecondShapeData';
+export type { SharedFields, SharedFields$Wire } from './SharedFields';
+export { sharedFieldsFromJSON, sharedFieldsToJSON } from './SharedFields';
+export type { Variant, Variant$Wire } from './Variant';
 export {
-  toolFromJSON,
-  toolToJSON,
-  isFunction,
-  isNamespace,
-  isShell,
-  isCustom,
-  isInlineOnly,
-  isMultipleRefs,
-  isOuterProperties,
-  isSimple,
-  isOuterRequired,
-  isOverlap,
-  isNestedFields,
-} from './Tool';
-export type { ToolCustom, ToolCustom$Wire } from './ToolCustom';
-export { toolCustomFromJSON, toolCustomToJSON } from './ToolCustom';
-export type { ToolCustomAllOf2, ToolCustomAllOf2$Wire } from './ToolCustomAllOf2';
-export { toolCustomAllOf2FromJSON, toolCustomAllOf2ToJSON } from './ToolCustomAllOf2';
-export type { ToolFunction, ToolFunction$Wire } from './ToolFunction';
-export { toolFunctionFromJSON, toolFunctionToJSON } from './ToolFunction';
-export type { ToolFunctionAllOf2, ToolFunctionAllOf2$Wire } from './ToolFunctionAllOf2';
-export { toolFunctionAllOf2FromJSON, toolFunctionAllOf2ToJSON } from './ToolFunctionAllOf2';
-export type { ToolInlineOnly, ToolInlineOnly$Wire } from './ToolInlineOnly';
-export { toolInlineOnlyFromJSON, toolInlineOnlyToJSON } from './ToolInlineOnly';
-export type { ToolMultipleRefs, ToolMultipleRefs$Wire } from './ToolMultipleRefs';
-export { toolMultipleRefsFromJSON, toolMultipleRefsToJSON } from './ToolMultipleRefs';
-export type { ToolNamespace, ToolNamespace$Wire } from './ToolNamespace';
-export { toolNamespaceFromJSON, toolNamespaceToJSON } from './ToolNamespace';
-export type { ToolNamespaceAllOf2, ToolNamespaceAllOf2$Wire } from './ToolNamespaceAllOf2';
-export { toolNamespaceAllOf2FromJSON, toolNamespaceAllOf2ToJSON } from './ToolNamespaceAllOf2';
-export type { ToolNestedFields, ToolNestedFields$Wire } from './ToolNestedFields';
-export { toolNestedFieldsFromJSON, toolNestedFieldsToJSON } from './ToolNestedFields';
-export type { ToolNestedFieldsAllOf2, ToolNestedFieldsAllOf2$Wire } from './ToolNestedFieldsAllOf2';
+  variantFromJSON,
+  variantToJSON,
+  isVariantA,
+  isVariantB,
+  isVariantC,
+  isVariantD,
+  isVariantE,
+  isVariantF,
+  isVariantG,
+  isVariantH,
+  isVariantI,
+  isVariantJ,
+  isVariantK,
+} from './Variant';
+export type { VariantVariantA, VariantVariantA$Wire } from './VariantVariantA';
+export { variantVariantAFromJSON, variantVariantAToJSON } from './VariantVariantA';
+export type { VariantVariantAAllOf2, VariantVariantAAllOf2$Wire } from './VariantVariantAAllOf2';
 export {
-  toolNestedFieldsAllOf2FromJSON,
-  toolNestedFieldsAllOf2ToJSON,
-} from './ToolNestedFieldsAllOf2';
+  variantVariantAAllOf2FromJSON,
+  variantVariantAAllOf2ToJSON,
+} from './VariantVariantAAllOf2';
+export type { VariantVariantB, VariantVariantB$Wire } from './VariantVariantB';
+export { variantVariantBFromJSON, variantVariantBToJSON } from './VariantVariantB';
+export type { VariantVariantBAllOf2, VariantVariantBAllOf2$Wire } from './VariantVariantBAllOf2';
+export {
+  variantVariantBAllOf2FromJSON,
+  variantVariantBAllOf2ToJSON,
+} from './VariantVariantBAllOf2';
+export type { VariantVariantC, VariantVariantC$Wire } from './VariantVariantC';
+export { variantVariantCFromJSON, variantVariantCToJSON } from './VariantVariantC';
+export type { VariantVariantCAllOf2, VariantVariantCAllOf2$Wire } from './VariantVariantCAllOf2';
+export {
+  variantVariantCAllOf2FromJSON,
+  variantVariantCAllOf2ToJSON,
+} from './VariantVariantCAllOf2';
+export type { VariantVariantD, VariantVariantD$Wire } from './VariantVariantD';
+export { variantVariantDFromJSON, variantVariantDToJSON } from './VariantVariantD';
+export type { VariantVariantDAllOf2, VariantVariantDAllOf2$Wire } from './VariantVariantDAllOf2';
+export {
+  variantVariantDAllOf2FromJSON,
+  variantVariantDAllOf2ToJSON,
+} from './VariantVariantDAllOf2';
+export type { VariantVariantE, VariantVariantE$Wire } from './VariantVariantE';
+export { variantVariantEFromJSON, variantVariantEToJSON } from './VariantVariantE';
+export type { VariantVariantF, VariantVariantF$Wire } from './VariantVariantF';
+export { variantVariantFFromJSON, variantVariantFToJSON } from './VariantVariantF';
+export type { VariantVariantG, VariantVariantG$Wire } from './VariantVariantG';
+export { variantVariantGFromJSON, variantVariantGToJSON } from './VariantVariantG';
+export type { VariantVariantGAllOf2, VariantVariantGAllOf2$Wire } from './VariantVariantGAllOf2';
+export {
+  variantVariantGAllOf2FromJSON,
+  variantVariantGAllOf2ToJSON,
+} from './VariantVariantGAllOf2';
+export type { VariantVariantI, VariantVariantI$Wire } from './VariantVariantI';
+export { variantVariantIFromJSON, variantVariantIToJSON } from './VariantVariantI';
+export type { VariantVariantIAllOf2, VariantVariantIAllOf2$Wire } from './VariantVariantIAllOf2';
+export {
+  variantVariantIAllOf2FromJSON,
+  variantVariantIAllOf2ToJSON,
+} from './VariantVariantIAllOf2';
+export type { VariantVariantJ, VariantVariantJ$Wire } from './VariantVariantJ';
+export { variantVariantJFromJSON, variantVariantJToJSON } from './VariantVariantJ';
+export type { VariantVariantJData, VariantVariantJData$Wire } from './VariantVariantJData';
+export { variantVariantJDataFromJSON, variantVariantJDataToJSON } from './VariantVariantJData';
+export type { VariantVariantK, VariantVariantK$Wire } from './VariantVariantK';
+export { variantVariantKFromJSON, variantVariantKToJSON } from './VariantVariantK';
+export type { VariantVariantKAllOf2, VariantVariantKAllOf2$Wire } from './VariantVariantKAllOf2';
+export {
+  variantVariantKAllOf2FromJSON,
+  variantVariantKAllOf2ToJSON,
+} from './VariantVariantKAllOf2';
 export type {
-  ToolNestedFieldsAllOf2AllOf1,
-  ToolNestedFieldsAllOf2AllOf1$Wire,
-} from './ToolNestedFieldsAllOf2AllOf1';
+  VariantVariantKAllOf2AllOf1,
+  VariantVariantKAllOf2AllOf1$Wire,
+} from './VariantVariantKAllOf2AllOf1';
 export {
-  toolNestedFieldsAllOf2AllOf1FromJSON,
-  toolNestedFieldsAllOf2AllOf1ToJSON,
-} from './ToolNestedFieldsAllOf2AllOf1';
+  variantVariantKAllOf2AllOf1FromJSON,
+  variantVariantKAllOf2AllOf1ToJSON,
+} from './VariantVariantKAllOf2AllOf1';
 export type {
-  ToolNestedFieldsAllOf2AllOf2,
-  ToolNestedFieldsAllOf2AllOf2$Wire,
-} from './ToolNestedFieldsAllOf2AllOf2';
+  VariantVariantKAllOf2AllOf2,
+  VariantVariantKAllOf2AllOf2$Wire,
+} from './VariantVariantKAllOf2AllOf2';
 export {
-  toolNestedFieldsAllOf2AllOf2FromJSON,
-  toolNestedFieldsAllOf2AllOf2ToJSON,
-} from './ToolNestedFieldsAllOf2AllOf2';
-export type { ToolOther, ToolOther$Wire } from './ToolOther';
-export { toolOtherFromJSON, toolOtherToJSON } from './ToolOther';
-export type { ToolOuterProperties, ToolOuterProperties$Wire } from './ToolOuterProperties';
-export { toolOuterPropertiesFromJSON, toolOuterPropertiesToJSON } from './ToolOuterProperties';
-export type {
-  ToolOuterPropertiesAllOf2,
-  ToolOuterPropertiesAllOf2$Wire,
-} from './ToolOuterPropertiesAllOf2';
-export {
-  toolOuterPropertiesAllOf2FromJSON,
-  toolOuterPropertiesAllOf2ToJSON,
-} from './ToolOuterPropertiesAllOf2';
-export type { ToolOuterRequired, ToolOuterRequired$Wire } from './ToolOuterRequired';
-export { toolOuterRequiredFromJSON, toolOuterRequiredToJSON } from './ToolOuterRequired';
-export type {
-  ToolOuterRequiredAllOf2,
-  ToolOuterRequiredAllOf2$Wire,
-} from './ToolOuterRequiredAllOf2';
-export {
-  toolOuterRequiredAllOf2FromJSON,
-  toolOuterRequiredAllOf2ToJSON,
-} from './ToolOuterRequiredAllOf2';
-export type { ToolOverlap, ToolOverlap$Wire } from './ToolOverlap';
-export { toolOverlapFromJSON, toolOverlapToJSON } from './ToolOverlap';
-export type { ToolOverlapConfig, ToolOverlapConfig$Wire } from './ToolOverlapConfig';
-export { toolOverlapConfigFromJSON, toolOverlapConfigToJSON } from './ToolOverlapConfig';
-export type { ToolShell, ToolShell$Wire } from './ToolShell';
-export { toolShellFromJSON, toolShellToJSON } from './ToolShell';
-export type { ToolShellAllOf2, ToolShellAllOf2$Wire } from './ToolShellAllOf2';
-export { toolShellAllOf2FromJSON, toolShellAllOf2ToJSON } from './ToolShellAllOf2';
+  variantVariantKAllOf2AllOf2FromJSON,
+  variantVariantKAllOf2AllOf2ToJSON,
+} from './VariantVariantKAllOf2AllOf2';
+export type { VariantVariantL, VariantVariantL$Wire } from './VariantVariantL';
+export { variantVariantLFromJSON, variantVariantLToJSON } from './VariantVariantL';

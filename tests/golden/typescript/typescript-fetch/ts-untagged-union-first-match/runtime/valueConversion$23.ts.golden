@@ -3,24 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type {
-  NullableNonNullScalarsItems,
-  NullableNonNullScalarsItems$Wire,
-} from '../models/NullableNonNullScalarsItems';
+import type { Detail, Detail$Wire } from '../models/Detail';
 import { convert$24FromJSON, convert$24ToJSON } from './valueConversion$24';
 
-export type Value$23Wire = readonly (NullableNonNullScalarsItems$Wire | null)[];
+export type Value$23Wire = readonly Detail$Wire[][];
 
-export type Value$23 = readonly (NullableNonNullScalarsItems | null)[];
+export type Value$23 = readonly Detail[][];
 
-export function convert$23FromJSON(
-  json: ReadonlyArray<NullableNonNullScalarsItems$Wire | null>,
-): Value$23 {
+export function convert$23FromJSON(json: ReadonlyArray<ReadonlyArray<Detail$Wire>>): Value$23 {
   return json.map(convert$24FromJSON);
 }
 
-export function convert$23ToJSON(
-  value: ReadonlyArray<NullableNonNullScalarsItems | null>,
-): Value$23Wire {
+export function convert$23ToJSON(value: ReadonlyArray<ReadonlyArray<Detail>>): Value$23Wire {
   return value.map(convert$24ToJSON);
 }

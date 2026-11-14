@@ -10,7 +10,7 @@ components:
         - type: object
           required: [type, sequence_number]
           properties:
-            type: {type: string, enum: [searching]}
+            type: {type: string, enum: [active]}
             sequence_number: {type: integer}
           additionalProperties: true
         - type: object

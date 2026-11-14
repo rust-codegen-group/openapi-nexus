@@ -826,26 +826,26 @@ mod tests {
     #[test]
     fn mixed_members_retain_required_wire_fields_and_literal_constraints() {
         let ir = fixture();
-        let IrSchemaKind::Union(union) = &ir.schemas["Tool"].kind else {
-            panic!("mixed tool remains untagged");
+        let IrSchemaKind::Union(union) = &ir.schemas["Choice"].kind else {
+            panic!("mixed choice remains untagged");
         };
-        let members = plan_union_members("Tool", union, &ir);
+        let members = plan_union_members("Choice", union, &ir);
         let JsonShape::Object(properties) = &members[0].shape else {
-            panic!("client member is an object");
+            panic!("payload A member is an object");
         };
         assert!(
             properties
                 .iter()
-                .any(|property| property.wire_name == "input_schema" && property.required)
+                .any(|property| property.wire_name == "payload_schema" && property.required)
         );
         let JsonShape::Object(properties) = &members[1].shape else {
-            panic!("search member is an object");
+            panic!("payload B member is an object");
         };
         assert!(
             properties
                 .iter()
-                .any(|property| property.wire_name == "type"
-                    && property.shape == JsonShape::Literal("web_search_20250305".into()))
+                .any(|property| property.wire_name == "kind"
+                    && property.shape == JsonShape::Literal("variant_b".into()))
         );
     }
 
@@ -853,13 +853,13 @@ mod tests {
     fn raw_json_fallback_does_not_shadow_a_concrete_member() {
         let ir = fixture();
         let union = IrUnion {
-            members: vec![IrTypeExpr::Any, IrTypeExpr::Named("ClientTool".into())],
+            members: vec![IrTypeExpr::Any, IrTypeExpr::Named("PayloadA".into())],
             nullable: false,
         };
         let members = plan_union_members("FallbackUnion", &union, &ir);
         assert!(!members[0].fallback);
         assert_eq!(members[0].source_index, 1);
-        assert!(matches!(&members[0].type_expr, IrTypeExpr::Named(name) if name == "ClientTool"));
+        assert!(matches!(&members[0].type_expr, IrTypeExpr::Named(name) if name == "PayloadA"));
         assert!(members[1].fallback);
         assert_eq!(members[1].source_index, 0);
     }
@@ -874,7 +874,7 @@ mod tests {
         assert_eq!(members.len(), 3);
         assert!(matches!(&members[0].type_expr, IrTypeExpr::Named(name) if name == "OpenAlias"));
         assert!(!members[0].fallback);
-        assert!(matches!(&members[1].type_expr, IrTypeExpr::Named(name) if name == "SearchTool"));
+        assert!(matches!(&members[1].type_expr, IrTypeExpr::Named(name) if name == "PayloadB"));
         assert!(!members[1].fallback);
         assert!(matches!(&members[2].type_expr, IrTypeExpr::Named(name) if name == "OpenAlias"));
         assert!(members[2].fallback);
@@ -1010,11 +1010,11 @@ mod tests {
     #[test]
     fn recursive_alias_guard_expansion_terminates() {
         let mut ir = fixture();
-        ir.schemas.get_mut("ClientTool").unwrap().kind =
-            IrSchemaKind::Alias(IrTypeExpr::Named("ClientTool".into()));
+        ir.schemas.get_mut("PayloadA").unwrap().kind =
+            IrSchemaKind::Alias(IrTypeExpr::Named("PayloadA".into()));
         assert_eq!(
             plan_shape(
-                &IrTypeExpr::Named("ClientTool".into()),
+                &IrTypeExpr::Named("PayloadA".into()),
                 &ir,
                 &mut HashMap::new(),
                 0
@@ -1045,8 +1045,8 @@ mod tests {
         let ir = fixture();
         let union = IrUnion {
             members: vec![IrTypeExpr::Union(vec![
-                IrTypeExpr::Named("ClientTool".into()),
-                IrTypeExpr::Named("SearchTool".into()),
+                IrTypeExpr::Named("PayloadA".into()),
+                IrTypeExpr::Named("PayloadB".into()),
             ])],
             nullable: false,
         };
@@ -1060,20 +1060,20 @@ mod tests {
     fn external_variant_keys_are_not_ergonomic_property_names() {
         use crate::ir::types::{IrTaggedUnion, IrTaggedVariant};
         let mut ir = fixture();
-        ir.schemas.get_mut("ClientTool").unwrap().kind = IrSchemaKind::TaggedUnion(IrTaggedUnion {
+        ir.schemas.get_mut("PayloadA").unwrap().kind = IrSchemaKind::TaggedUnion(IrTaggedUnion {
             discriminator_field: String::new(),
             tagging: TaggingStyle::External,
             variants: vec![IrTaggedVariant {
                 discriminator_value: "snake_tag".into(),
                 discriminator_values: Vec::new(),
                 discriminator_optional: false,
-                content_type: IrTypeExpr::Named("SearchTool".into()),
+                content_type: IrTypeExpr::Named("PayloadB".into()),
                 description: None,
                 additional_properties: None,
             }],
         });
         let shape = plan_shape(
-            &IrTypeExpr::Named("ClientTool".into()),
+            &IrTypeExpr::Named("PayloadA".into()),
             &ir,
             &mut HashMap::new(),
             0,

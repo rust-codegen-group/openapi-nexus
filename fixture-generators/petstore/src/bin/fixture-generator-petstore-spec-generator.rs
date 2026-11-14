@@ -23,7 +23,8 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let openapi = ApiDoc::openapi();
+    let mut openapi = ApiDoc::openapi();
+    openapi.info.contact = None;
 
     let yaml = openapi
         .to_yaml()

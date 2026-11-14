@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { matches$30FromJSON, matches$30ToJSON } from '../runtime/unionMatch';
+import { matches$34FromJSON, matches$34ToJSON } from '../runtime/unionMatch';
 import type { NullableDetail, NullableDetail$Wire } from './NullableDetail';
 import { nullableDetailFromJSON, nullableDetailToJSON } from './NullableDetail';
 import type { TwiceNullableOpaque, TwiceNullableOpaque$Wire } from './TwiceNullableOpaque';
@@ -15,7 +15,7 @@ export type TwiceNullableOuter = unknown;
 
 export function twiceNullableOuterFromJSON(json: TwiceNullableOuter$Wire): TwiceNullableOuter {
   const candidate: unknown = json;
-  if (matches$30FromJSON(candidate)) {
+  if (matches$34FromJSON(candidate)) {
     return nullableDetailFromJSON(json as unknown as NullableDetail$Wire);
   }
   return twiceNullableOpaqueFromJSON(json as unknown as TwiceNullableOpaque$Wire);
@@ -23,7 +23,7 @@ export function twiceNullableOuterFromJSON(json: TwiceNullableOuter$Wire): Twice
 
 export function twiceNullableOuterToJSON(value: TwiceNullableOuter): TwiceNullableOuter$Wire {
   const candidate: unknown = value;
-  if (matches$30ToJSON(candidate)) {
+  if (matches$34ToJSON(candidate)) {
     return nullableDetailToJSON(value as unknown as NullableDetail);
   }
   return twiceNullableOpaqueToJSON(value as unknown as TwiceNullableOpaque);

@@ -9,7 +9,7 @@ from . import _union
 type TaggedContainerChoice = (object)
 
 def tagged_container_choice_from_dict(value: object) -> TaggedContainerChoice:
-    return _union.value_42_from_dict(value)
+    return _union.value_38_from_dict(value)
 
 def tagged_container_choice_to_dict(value: TaggedContainerChoice) -> object:
-    return _union.value_42_to_dict(value)
+    return _union.value_38_to_dict(value)

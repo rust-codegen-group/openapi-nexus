@@ -3,21 +3,20 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Detail, Detail$Wire } from '../models/Detail';
-import { convert$16FromJSON, convert$16ToJSON } from './valueConversion$16';
+import type { NullableScalarInner, NullableScalarInner$Wire } from '../models/NullableScalarInner';
+import {
+  nullableScalarInnerFromJSON,
+  nullableScalarInnerToJSON,
+} from '../models/NullableScalarInner';
 
-export type Value$15Wire = readonly (globalThis.Record<string, Detail$Wire> | number)[];
+export type Value$15Wire = NullableScalarInner$Wire | null;
 
-export type Value$15 = readonly (globalThis.Record<string, Detail> | number)[];
+export type Value$15 = NullableScalarInner | null;
 
-export function convert$15FromJSON(
-  json: ReadonlyArray<globalThis.Record<string, Detail$Wire> | number>,
-): Value$15 {
-  return json.map(convert$16FromJSON);
+export function convert$15FromJSON(json: NullableScalarInner$Wire | null): Value$15 {
+  return nullableScalarInnerFromJSON(json);
 }
 
-export function convert$15ToJSON(
-  value: ReadonlyArray<globalThis.Record<string, Detail> | number>,
-): Value$15Wire {
-  return value.map(convert$16ToJSON);
+export function convert$15ToJSON(value: NullableScalarInner | null): Value$15Wire {
+  return nullableScalarInnerToJSON(value);
 }

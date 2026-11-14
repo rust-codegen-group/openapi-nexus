@@ -3,17 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Tool, Tool$Wire } from '../models/Tool';
-import { toolFromJSON, toolToJSON } from '../models/Tool';
+import type { Choice, Choice$Wire } from '../models/Choice';
+import { choiceFromJSON, choiceToJSON } from '../models/Choice';
 
-export type Value$36Wire = Tool$Wire[];
+export type Value$36Wire = Choice$Wire[];
 
-export type Value$36 = Tool[];
+export type Value$36 = Choice[];
 
-export function convert$36FromJSON(json: ReadonlyArray<Tool$Wire>): Value$36 {
-  return json.map(toolFromJSON);
+export function convert$36FromJSON(json: ReadonlyArray<Choice$Wire>): Value$36 {
+  return json.map(choiceFromJSON);
 }
 
-export function convert$36ToJSON(value: ReadonlyArray<Tool>): Value$36Wire {
-  return value.map(toolToJSON);
+export function convert$36ToJSON(value: ReadonlyArray<Choice>): Value$36Wire {
+  return value.map(choiceToJSON);
 }

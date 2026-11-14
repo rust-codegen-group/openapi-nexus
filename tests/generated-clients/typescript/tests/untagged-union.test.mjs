@@ -4,79 +4,79 @@ import * as client from '../generated/union-default/dist/index.mjs';
 import * as strict from '../generated/union-strict/dist/index.mjs';
 import * as raw from '../generated/union-raw/dist/index.mjs';
 
-const clientValue = { name: 'weather', inputSchema: { type: 'object', opaque_key: { keep_name: true } } };
-const clientWire = { name: 'weather', input_schema: { type: 'object', opaque_key: { keep_name: true } } };
-const searchValue = { type: 'web_search_20250305', name: 'web_search', maxUses: 1 };
-const searchWire = { type: 'web_search_20250305', name: 'web_search', max_uses: 1 };
+const payloadAValue = { label: 'weather', payloadSchema: { type: 'object', opaque_key: { keep_name: true } } };
+const payloadAWire = { label: 'weather', payload_schema: { type: 'object', opaque_key: { keep_name: true } } };
+const payloadBValue = { kind: 'variant_b', label: 'payload_b', limit: 1 };
+const payloadBWire = { kind: 'variant_b', label: 'payload_b', limit: 1 };
 
-for (const [name, value, wire] of [['client', clientValue, clientWire], ['search', searchValue, searchWire]]) {
+for (const [name, value, wire] of [['payload A', payloadAValue, payloadAWire], ['payload B', payloadBValue, payloadBWire]]) {
   test(`${name} union conversion independently matches its member in both directions`, () => {
-    assert.deepEqual(client.toolFromJSON(wire), value);
-    assert.deepEqual(client.toolToJSON(value), wire);
-    assert.deepEqual(strict.toolFromJSON(wire), value);
-    assert.deepEqual(strict.toolToJSON(value), wire);
+    assert.deepEqual(client.choiceFromJSON(wire), value);
+    assert.deepEqual(client.choiceToJSON(value), wire);
+    assert.deepEqual(strict.choiceFromJSON(wire), value);
+    assert.deepEqual(strict.choiceToJSON(value), wire);
   });
 }
 
-test('a containing request converts its typed union elements', () => {
-  const value = { tools: [clientValue, searchValue] };
-  const wire = { tools: [clientWire, searchWire] };
-  assert.deepEqual(client.toolRequestFromJSON(wire), value);
-  assert.deepEqual(client.toolRequestToJSON(value), wire);
+test('a containing request converts its typed choice elements', () => {
+  const value = { choices: [payloadAValue, payloadBValue] };
+  const wire = { choices: [payloadAWire, payloadBWire] };
+  assert.deepEqual(client.choiceRequestFromJSON(wire), value);
+  assert.deepEqual(client.choiceRequestToJSON(value), wire);
 });
 
 test('nullable and alias unions delegate to the same conversion', () => {
-  assert.equal(client.nullableToolFromJSON(null), null);
-  assert.equal(client.nullableToolToJSON(null), null);
-  assert.deepEqual(client.nullableToolFromJSON(clientWire), clientValue);
-  assert.deepEqual(client.toolAliasToJSON(searchValue), searchWire);
+  assert.equal(client.nullableChoiceFromJSON(null), null);
+  assert.equal(client.nullableChoiceToJSON(null), null);
+  assert.deepEqual(client.nullableChoiceFromJSON(payloadAWire), payloadAValue);
+  assert.deepEqual(client.choiceAliasToJSON(payloadBValue), payloadBWire);
 });
 
 test('array and dictionary alternatives convert values, not dictionary keys', () => {
-  assert.deepEqual(client.toolListFromJSON([clientWire]), [clientValue]);
-  assert.deepEqual(client.toolListToJSON([searchValue]), [searchWire]);
-  assert.deepEqual(client.toolMapFromJSON({ opaque_key: clientWire }), { opaque_key: clientValue });
-  assert.deepEqual(client.toolMapToJSON({ opaque_key: searchValue }), { opaque_key: searchWire });
+  assert.deepEqual(client.choiceListFromJSON([payloadAWire]), [payloadAValue]);
+  assert.deepEqual(client.choiceListToJSON([payloadBValue]), [payloadBWire]);
+  assert.deepEqual(client.choiceMapFromJSON({ opaque_key: payloadAWire }), { opaque_key: payloadAValue });
+  assert.deepEqual(client.choiceMapToJSON({ opaque_key: payloadBValue }), { opaque_key: payloadBWire });
 });
 
 test('unconstrained JSON remains a fallback after a concrete convertible member', () => {
-  assert.deepEqual(client.openToolFromJSON(clientWire), clientValue);
-  assert.deepEqual(client.openToolToJSON(clientValue), clientWire);
+  assert.deepEqual(client.openChoiceFromJSON(payloadAWire), payloadAValue);
+  assert.deepEqual(client.openChoiceToJSON(payloadAValue), payloadAWire);
   const unmatched = { arbitrary_key: [7, null, 'opaque'] };
-  assert.deepEqual(client.openToolFromJSON(unmatched), unmatched);
-  assert.deepEqual(client.openToolToJSON(unmatched), unmatched);
+  assert.deepEqual(client.openChoiceFromJSON(unmatched), unmatched);
+  assert.deepEqual(client.openChoiceToJSON(unmatched), unmatched);
 });
 
 test('default ambiguous selection is deterministic and unmatched values stay intact', () => {
-  assert.deepEqual(client.ambiguousToolFromJSON(clientWire), clientValue);
-  assert.deepEqual(client.ambiguousToolToJSON(clientValue), clientWire);
+  assert.deepEqual(client.ambiguousChoiceFromJSON(payloadAWire), payloadAValue);
+  assert.deepEqual(client.ambiguousChoiceToJSON(payloadAValue), payloadAWire);
   const unmatched = { arbitrary_key: true };
-  assert.deepEqual(client.toolFromJSON(unmatched), unmatched);
-  assert.deepEqual(client.toolToJSON(unmatched), unmatched);
+  assert.deepEqual(client.choiceFromJSON(unmatched), unmatched);
+  assert.deepEqual(client.choiceToJSON(unmatched), unmatched);
 });
 
 test('strict policy rejects ambiguous and unmatched shapes without treating raw fallback as ambiguity', () => {
-  assert.throws(() => strict.ambiguousToolFromJSON(clientWire), TypeError);
-  assert.throws(() => strict.ambiguousToolToJSON(clientValue), TypeError);
-  assert.throws(() => strict.toolFromJSON({ arbitrary_key: true }), TypeError);
-  assert.throws(() => strict.toolToJSON({ arbitrary_key: true }), TypeError);
-  assert.deepEqual(strict.openToolFromJSON(clientWire), clientValue);
+  assert.throws(() => strict.ambiguousChoiceFromJSON(payloadAWire), TypeError);
+  assert.throws(() => strict.ambiguousChoiceToJSON(payloadAValue), TypeError);
+  assert.throws(() => strict.choiceFromJSON({ arbitrary_key: true }), TypeError);
+  assert.throws(() => strict.choiceToJSON({ arbitrary_key: true }), TypeError);
+  assert.deepEqual(strict.openChoiceFromJSON(payloadAWire), payloadAValue);
 });
 
 test('required literals, primitive kinds, and own fields determine member matches', () => {
-  assert.throws(() => strict.toolFromJSON({ type: 'wrong', name: 'web_search', max_uses: 1 }), TypeError);
-  assert.throws(() => strict.toolFromJSON({ name: 7, input_schema: {} }), TypeError);
-  assert.throws(() => strict.toolFromJSON(Object.create(clientWire)), TypeError);
+  assert.throws(() => strict.choiceFromJSON({ kind: 'wrong', label: 'payload_b', limit: 1 }), TypeError);
+  assert.throws(() => strict.choiceFromJSON({ label: 7, payload_schema: {} }), TypeError);
+  assert.throws(() => strict.choiceFromJSON(Object.create(payloadAWire)), TypeError);
 });
 
 test('raw policy explicitly preserves the original representation', () => {
-  assert.equal(raw.toolFromJSON(clientWire), clientWire);
-  assert.equal(raw.toolToJSON(searchWire), searchWire);
-  assert.deepEqual(raw.toolRequestToJSON({ tools: [clientWire, searchWire] }), { tools: [clientWire, searchWire] });
+  assert.equal(raw.choiceFromJSON(payloadAWire), payloadAWire);
+  assert.equal(raw.choiceToJSON(payloadBWire), payloadBWire);
+  assert.deepEqual(raw.choiceRequestToJSON({ choices: [payloadAWire, payloadBWire] }), { choices: [payloadAWire, payloadBWire] });
 });
 
-const detailValue = { wireName: 'Ada' };
-const detailWire = { wire_name: 'Ada' };
+const detailValue = { wireName: 'value' };
+const detailWire = { wire_name: 'value' };
 
 for (const [policy, generated] of [['default', client], ['strict', strict]]) {
   test(`${policy}: array-valued object members compile and convert in both directions`, () => {
@@ -87,8 +87,8 @@ for (const [policy, generated] of [['default', client], ['strict', strict]]) {
 
 for (const [policy, generated] of [['default', client], ['strict', strict]]) {
   test(`${policy}: allOf fallback aliases do not shadow a concrete outer member`, () => {
-    assert.deepEqual(generated.aliasOuterFromJSON(searchWire), searchValue);
-    assert.deepEqual(generated.aliasOuterToJSON(searchValue), searchWire);
+    assert.deepEqual(generated.aliasOuterFromJSON(payloadBWire), payloadBValue);
+    assert.deepEqual(generated.aliasOuterToJSON(payloadBValue), payloadBWire);
     assert.deepEqual(generated.aliasOuterFromJSON(detailWire), detailValue);
     assert.deepEqual(generated.aliasOuterToJSON(detailValue), detailWire);
     for (const unmatched of [null, 'opaque', 7, ['opaque'], { arbitrary_key: true }]) {
@@ -152,7 +152,7 @@ test('outer strict unions retain inner ambiguity errors in both directions', () 
 
 test('raw policy keeps nested, nullable, tagged, and binary union values unchanged', () => {
   for (const [base, wire] of [
-    ['outer', detailWire], ['aliasOuter', searchWire],
+    ['outer', detailWire], ['aliasOuter', payloadBWire],
     ['nullableMapFallback', detailWire], ['ambiguousOuter', detailWire],
     ['adjacentOrNumber', { event_type: 'empty' }],
     ['binaryUnion', { binary_data: new Blob(['x']), field_name: 'name' }],
@@ -243,8 +243,8 @@ test('raw: container unions preserve their wire values without nested conversion
 
 for (const [policy, generated] of [['default', client], ['strict', strict], ['raw', raw]]) {
   test(`${policy}: HTTP nested containers use the same value conversion as models`, async () => {
-    const wire = [[clientWire, searchWire]];
-    const value = policy === 'raw' ? wire : [[clientValue, searchValue]];
+    const wire = [[payloadAWire, payloadBWire]];
+    const value = policy === 'raw' ? wire : [[payloadAValue, payloadBValue]];
     let sent;
     const api = new generated.ConversionApi(new generated.Configuration({
       fetchApi: async (_url, init) => {
@@ -257,8 +257,8 @@ for (const [policy, generated] of [['default', client], ['strict', strict], ['ra
   });
 
   test(`${policy}: lazy HTTP errors use the same nested conversion`, async () => {
-    const wire = [[clientWire]];
-    const value = policy === 'raw' ? wire : [[clientValue]];
+    const wire = [[payloadAWire]];
+    const value = policy === 'raw' ? wire : [[payloadAValue]];
     const api = new generated.ConversionApi(new generated.Configuration({
       fetchApi: async () => new Response(JSON.stringify(wire), { status: 400, headers: { 'Content-Type': 'application/json' } }),
     }));
@@ -273,8 +273,8 @@ for (const [policy, generated] of [['default', client], ['strict', strict], ['ra
   });
 
   test(`${policy}: required nullable HTTP containers distinguish null from a missing body`, async () => {
-    for (const input of [null, [clientWire]]) {
-      const value = input === null || policy === 'raw' ? input : [clientValue];
+    for (const input of [null, [payloadAWire]]) {
+      const value = input === null || policy === 'raw' ? input : [payloadAValue];
       let sent;
       const api = new generated.ConversionApi(new generated.Configuration({
         fetchApi: async (_url, init) => {

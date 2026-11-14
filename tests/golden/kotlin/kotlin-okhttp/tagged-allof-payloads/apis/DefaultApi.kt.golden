@@ -14,20 +14,20 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
- * ExchangeToolsResponse carries the response from exchangeTools.
+ * ExchangeVariantsResponse carries the response from exchangeVariants.
  */
-data class ExchangeToolsResponse(val statusCode: Int, val raw: Response,
-    val status200: Envelope? = null) {
+data class ExchangeVariantsResponse(val statusCode: Int, val raw: Response,
+    val status200: Container? = null) {
 }
 
-sealed interface ExchangeToolsExceptionDetail {
+sealed interface ExchangeVariantsExceptionDetail {
     val statusCode: Int
     val headers: okhttp3.Headers
     fun rawBody(): ByteArray
 }
 
-class ExchangeToolsException(
-    val detail: ExchangeToolsExceptionDetail,
+class ExchangeVariantsException(
+    val detail: ExchangeVariantsExceptionDetail,
     statusCode: Int,
     status: String,
     body: String,
@@ -38,11 +38,11 @@ class ExchangeToolsException(
     fun rawBody(): ByteArray = this.rawBodyBytes.copyOf()
 }
 
-class ExchangeToolsUnexpected(
+class ExchangeVariantsUnexpected(
     override val statusCode: Int,
     override val headers: okhttp3.Headers,
     rawBodyBytes: ByteArray,
-) : ExchangeToolsExceptionDetail {
+) : ExchangeVariantsExceptionDetail {
     private val rawBodyBytes: ByteArray = rawBodyBytes.copyOf()
     override fun rawBody(): ByteArray = this.rawBodyBytes.copyOf()
     fun body(): ByteArray = rawBody()
@@ -55,10 +55,10 @@ class DefaultApi(private val client: ApiClient) {
     private val gson: Gson = Gson()
 
     /**
-     * exchangeTools POST /tools.
+     * exchangeVariants POST /variants.
      */
-    fun exchangeTools(body: Envelope): ExchangeToolsResponse {
-        val path = "/tools"
+    fun exchangeVariants(body: Container): ExchangeVariantsResponse {
+        val path = "/variants"
         val jsonBody = gson.toJson(body)
         val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
         val request = client.newRequestWithBody("POST", path, null, requestBody)
@@ -69,21 +69,21 @@ class DefaultApi(private val client: ApiClient) {
             val responseCharset = responseBody?.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
             val responseBytes = responseBody?.bytes() ?: ByteArray(0)
             val responseText = responseBytes.toString(responseCharset)
-            val detail: ExchangeToolsExceptionDetail = when (response.code)  {
+            val detail: ExchangeVariantsExceptionDetail = when (response.code)  {
                 else ->  {
-                    ExchangeToolsUnexpected(statusCode = response.code, headers = response.headers, rawBodyBytes = responseBytes)
+                    ExchangeVariantsUnexpected(statusCode = response.code, headers = response.headers, rawBodyBytes = responseBytes)
                 }
             }
-            throw ExchangeToolsException(detail = detail, statusCode = response.code, status = response.message, body = responseText, headers = response.headers, rawBodyBytes = responseBytes)
+            throw ExchangeVariantsException(detail = detail, statusCode = response.code, status = response.message, body = responseText, headers = response.headers, rawBodyBytes = responseBytes)
         }
 
         val responseBytes = response.body?.bytes() ?: ByteArray(0)
         val responseText = responseBytes.toString(Charsets.UTF_8)
-        var status200: Envelope? = null
+        var status200: Container? = null
 
         if (response.code == 200) {
-            status200 = gson.fromJson<Envelope>(responseText.ifEmpty { "null" }, object : TypeToken<Envelope>() {}.type)
+            status200 = gson.fromJson<Container>(responseText.ifEmpty { "null" }, object : TypeToken<Container>() {}.type)
         }
-        return ExchangeToolsResponse(statusCode = response.code, raw = response, status200 = status200)
+        return ExchangeVariantsResponse(statusCode = response.code, raw = response, status200 = status200)
     }
 }

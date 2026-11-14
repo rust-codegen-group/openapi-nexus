@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$64FromJSON,
-  matches$64ToJSON,
-  matches$65FromJSON,
-  matches$65ToJSON,
+  matches$69FromJSON,
+  matches$69ToJSON,
+  matches$70FromJSON,
+  matches$70ToJSON,
 } from '../runtime/unionMatch';
 import type { NullableOpenInner, NullableOpenInner$Wire } from './NullableOpenInner';
 import { nullableOpenInnerFromJSON, nullableOpenInnerToJSON } from './NullableOpenInner';
@@ -20,10 +20,10 @@ export function nullableOpenSiblingOuterFromJSON(
   json: NullableOpenSiblingOuter$Wire,
 ): NullableOpenSiblingOuter {
   const candidate: unknown = json;
-  if (matches$65FromJSON(candidate)) {
+  if (matches$70FromJSON(candidate)) {
     return nullableOpenInnerFromJSON(json as unknown as NullableOpenInner$Wire);
   }
-  if (matches$64FromJSON(candidate)) {
+  if (matches$69FromJSON(candidate)) {
     return json as unknown as boolean | null;
   }
   return nullableOpenInnerFromJSON(json as unknown as NullableOpenInner$Wire);
@@ -33,10 +33,10 @@ export function nullableOpenSiblingOuterToJSON(
   value: NullableOpenSiblingOuter,
 ): NullableOpenSiblingOuter$Wire {
   const candidate: unknown = value;
-  if (matches$65ToJSON(candidate)) {
+  if (matches$70ToJSON(candidate)) {
     return nullableOpenInnerToJSON(value as unknown as NullableOpenInner);
   }
-  if (matches$64ToJSON(candidate)) {
+  if (matches$69ToJSON(candidate)) {
     return value as unknown as boolean | null;
   }
   return nullableOpenInnerToJSON(value as unknown as NullableOpenInner);

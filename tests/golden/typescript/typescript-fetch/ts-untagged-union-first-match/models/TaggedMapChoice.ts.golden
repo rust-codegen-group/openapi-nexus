@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$83FromJSON,
-  matches$83ToJSON,
-  matches$85FromJSON,
-  matches$85ToJSON,
+  matches$87FromJSON,
+  matches$87ToJSON,
+  matches$89FromJSON,
+  matches$89ToJSON,
 } from '../runtime/unionMatch';
 import type { TaggedMapA, TaggedMapA$Wire } from './TaggedMapA';
 import { taggedMapAFromJSON, taggedMapAToJSON } from './TaggedMapA';
@@ -20,10 +20,10 @@ export type TaggedMapChoice = TaggedMapA | TaggedMapB;
 
 export function taggedMapChoiceFromJSON(json: TaggedMapChoice$Wire): TaggedMapChoice {
   const candidate: unknown = json;
-  if (matches$83FromJSON(candidate)) {
+  if (matches$87FromJSON(candidate)) {
     return taggedMapAFromJSON(json as unknown as TaggedMapA$Wire);
   }
-  if (matches$85FromJSON(candidate)) {
+  if (matches$89FromJSON(candidate)) {
     return taggedMapBFromJSON(json as unknown as TaggedMapB$Wire);
   }
   return json as unknown as TaggedMapChoice;
@@ -31,10 +31,10 @@ export function taggedMapChoiceFromJSON(json: TaggedMapChoice$Wire): TaggedMapCh
 
 export function taggedMapChoiceToJSON(value: TaggedMapChoice): TaggedMapChoice$Wire {
   const candidate: unknown = value;
-  if (matches$83ToJSON(candidate)) {
+  if (matches$87ToJSON(candidate)) {
     return taggedMapAToJSON(value as unknown as TaggedMapA);
   }
-  if (matches$85ToJSON(candidate)) {
+  if (matches$89ToJSON(candidate)) {
     return taggedMapBToJSON(value as unknown as TaggedMapB);
   }
   return value as unknown as TaggedMapChoice$Wire;

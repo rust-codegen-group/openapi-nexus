@@ -3,20 +3,21 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { NullableScalarInner, NullableScalarInner$Wire } from '../models/NullableScalarInner';
-import {
-  nullableScalarInnerFromJSON,
-  nullableScalarInnerToJSON,
-} from '../models/NullableScalarInner';
+import type { PayloadB, PayloadB$Wire } from '../models/PayloadB';
+import { payloadBFromJSON, payloadBToJSON } from '../models/PayloadB';
 
-export type Value$5Wire = NullableScalarInner$Wire | null;
+export type Value$5Wire = globalThis.Record<string, PayloadB$Wire>;
 
-export type Value$5 = NullableScalarInner | null;
+export type Value$5 = globalThis.Record<string, PayloadB>;
 
-export function convert$5FromJSON(json: NullableScalarInner$Wire | null): Value$5 {
-  return nullableScalarInnerFromJSON(json);
+export function convert$5FromJSON(json: globalThis.Record<string, PayloadB$Wire>): Value$5 {
+  return Object.fromEntries(
+    Object.entries(json ?? {}).map(([key, item]) => [key, payloadBFromJSON(item)]),
+  );
 }
 
-export function convert$5ToJSON(value: NullableScalarInner | null): Value$5Wire {
-  return nullableScalarInnerToJSON(value);
+export function convert$5ToJSON(value: globalThis.Record<string, PayloadB>): Value$5Wire {
+  return Object.fromEntries(
+    Object.entries(value ?? {}).map(([key, item]) => [key, payloadBToJSON(item)]),
+  );
 }

@@ -6,11 +6,11 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$72FromJSON,
-  matches$72ToJSON,
+  matches$76FromJSON,
+  matches$76ToJSON,
 } from '../runtime/unionMatch';
-import type { Value$26, Value$26Wire } from '../runtime/valueConversion$26';
-import { convert$26FromJSON, convert$26ToJSON } from '../runtime/valueConversion$26';
+import type { Value$31, Value$31Wire } from '../runtime/valueConversion$31';
+import { convert$31FromJSON, convert$31ToJSON } from '../runtime/valueConversion$31';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
@@ -20,12 +20,12 @@ export type PrimitiveMapChoice = globalThis.Record<string, number> | Detail;
 
 export function primitiveMapChoiceFromJSON(json: PrimitiveMapChoice$Wire): PrimitiveMapChoice {
   const candidate: unknown = json;
-  const matches = [matches$72FromJSON(candidate), matches$1FromJSON(candidate)];
+  const matches = [matches$76FromJSON(candidate), matches$1FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous PrimitiveMapChoice untagged union value');
   }
   if (matches[0]) {
-    return convert$26FromJSON(json as unknown as Value$26Wire);
+    return convert$31FromJSON(json as unknown as Value$31Wire);
   }
   if (matches[1]) {
     return detailFromJSON(json as unknown as Detail$Wire);
@@ -35,12 +35,12 @@ export function primitiveMapChoiceFromJSON(json: PrimitiveMapChoice$Wire): Primi
 
 export function primitiveMapChoiceToJSON(value: PrimitiveMapChoice): PrimitiveMapChoice$Wire {
   const candidate: unknown = value;
-  const matches = [matches$72ToJSON(candidate), matches$1ToJSON(candidate)];
+  const matches = [matches$76ToJSON(candidate), matches$1ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous PrimitiveMapChoice untagged union value');
   }
   if (matches[0]) {
-    return convert$26ToJSON(value as unknown as Value$26);
+    return convert$31ToJSON(value as unknown as Value$31);
   }
   if (matches[1]) {
     return detailToJSON(value as unknown as Detail);

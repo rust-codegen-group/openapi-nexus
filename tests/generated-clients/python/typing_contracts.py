@@ -3,7 +3,7 @@
 from typing import assert_type
 
 from union_default.apis.default_api import DefaultApi, SendChoiceBadRequest, SendChoiceError
-from union_default.models import AcyclicEnvelope, Branch, Choice, ClientTool, NumericTwo, Request, TaggedMemberChoice, TaggedRecord
+from union_default.models import AcyclicEnvelope, Branch, Choice, NumericTwo, PayloadA, TaggedMemberChoice, TaggedRecord, VariantRequest
 from union_default.models.choice import choice_from_dict, choice_to_dict
 from union_default.models.tagged_member_choice import tagged_member_choice_from_dict, tagged_member_choice_to_dict
 from union_raw.apis.default_api import DefaultApi as RawApi
@@ -13,8 +13,8 @@ from union_strict.models.choice import choice_from_dict as strict_choice_from_di
 from union_strict.models import Choice as StrictChoice
 
 
-def typed_models(member: ClientTool, wire: dict[str, object]) -> Request:
-    request = Request(tools=[member])
+def typed_models(member: PayloadA, wire: dict[str, object]) -> VariantRequest:
+    request = VariantRequest(choices=[member])
     assert_type(request.to_dict(), dict[str, object])
     assert_type(choice_from_dict(wire), Choice)
     assert_type(strict_choice_from_dict(wire), StrictChoice)

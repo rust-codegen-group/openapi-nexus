@@ -3,7 +3,8 @@ name = "fixture-generator-enum-repr"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
-authors.workspace = true
+# Utoipa maps package authors into fixture contact metadata.
+authors = []
 repository.workspace = true
 readme.workspace = true
 license.workspace = true

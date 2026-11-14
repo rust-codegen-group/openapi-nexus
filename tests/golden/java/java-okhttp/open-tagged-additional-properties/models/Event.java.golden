@@ -21,7 +21,7 @@ import com.google.gson.stream.JsonWriter;
  */
 @JsonAdapter(value = EventJsonAdapter.class, nullSafe = false)
 public sealed interface Event {
-    record VariantSearching(EventSearching value0) implements Event {}
+    record VariantActive(EventActive value0) implements Event {}
 
     record VariantCompleted(EventCompleted value0) implements Event {}
 }
@@ -34,8 +34,8 @@ final class EventJsonAdapter extends TypeAdapter<Event> {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
         String discriminator = object.has("type") ? object.get("type").getAsString() : null;
-        if ("searching".equals(discriminator)) {
-            return new Event.VariantSearching(gson.fromJson(object, new TypeToken<EventSearching>() {}.getType()));
+        if ("active".equals(discriminator)) {
+            return new Event.VariantActive(gson.fromJson(object, new TypeToken<EventActive>() {}.getType()));
         }
         if ("completed".equals(discriminator)) {
             return new Event.VariantCompleted(gson.fromJson(object, new TypeToken<EventCompleted>() {}.getType()));
@@ -49,9 +49,9 @@ final class EventJsonAdapter extends TypeAdapter<Event> {
             writer.nullValue();
             return;
         }
-        if (value instanceof Event.VariantSearching) {
-            JsonObject object = gson.toJsonTree(((Event.VariantSearching) value).value0()).getAsJsonObject();
-            object.addProperty("type", "searching");
+        if (value instanceof Event.VariantActive) {
+            JsonObject object = gson.toJsonTree(((Event.VariantActive) value).value0()).getAsJsonObject();
+            object.addProperty("type", "active");
             gson.toJson(object, writer);
             return;
         }

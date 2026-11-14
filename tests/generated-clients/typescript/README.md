@@ -34,14 +34,14 @@ The strict consumer check itself uses that package's installed compiler.
   `exactOptionalPropertyTypes`, including negative dictionary-type and readonly
   `allOf` assertions for preserve, ergonomic, and wire declarations, as well as
   ergonomic versus raw-wire union contracts and readonly union arrays.
-- `typecheck.tagged-allof.ts` checks required function fields, recursive namespace
-  tools, nested shell environments, readonly payloads, type guards, and the
+- `typecheck.tagged-allof.ts` checks required variant fields, recursive members,
+  nested configuration payloads, readonly values, type guards, and the
    distinct ergonomic/wire/preserve declarations of composed tagged variants.
    Overlapping views retain both nested required fields and authored-name collisions.
    Optional and multi-valued tag declarations accept every legal wire shape.
 - `tests/*.test.mjs` uses Node's native test runner against the packed camelCase
   client. It asserts full payload equality in both JSON conversion directions,
-  typed/nested/recursive dictionaries, JSON/model allOf composition, search-event variants,
+  typed/nested/recursive dictionaries, JSON/model allOf composition, tagged event variants,
   omitted fields, collisions with renamed fields, and prototype-sensitive keys.
   Union cases check member and containing-request conversion independently in
   both directions, nullable aliases, arrays/maps, raw fallback priority,
@@ -70,8 +70,8 @@ The strict consumer check itself uses that package's installed compiler.
   indexes, and the established readonly-outer/plain-inner nested array contract.
   Frozen nested inputs remain usable; static conversion/matching helpers do not
   leak into the public barrel.
-  Tagged allOf cases independently assert both directions for function,
-  namespace, shell and search-output payloads, multiple references, inline-only
+  Tagged allOf cases independently assert both directions for neutral variants,
+  recursive members, nested configuration and result payloads, multiple references, inline-only
    payloads, fields beside the tag or allOf, and unchanged ordinary/unit controls.
    Overlapping allOf cases retain recursive objects, nullable/optional fields,
    arrays and maps while leaving opaque JSON subtrees and dictionary keys alone.

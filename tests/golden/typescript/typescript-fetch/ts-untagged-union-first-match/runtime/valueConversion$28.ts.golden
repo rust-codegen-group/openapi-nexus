@@ -3,17 +3,24 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { RecursiveList, RecursiveList$Wire } from '../models/RecursiveList';
-import { recursiveListFromJSON, recursiveListToJSON } from '../models/RecursiveList';
+import type {
+  NullableNonNullScalarsItems,
+  NullableNonNullScalarsItems$Wire,
+} from '../models/NullableNonNullScalarsItems';
+import { convert$29FromJSON, convert$29ToJSON } from './valueConversion$29';
 
-export type Value$28Wire = readonly RecursiveList$Wire[];
+export type Value$28Wire = readonly (NullableNonNullScalarsItems$Wire | null)[];
 
-export type Value$28 = readonly RecursiveList[];
+export type Value$28 = readonly (NullableNonNullScalarsItems | null)[];
 
-export function convert$28FromJSON(json: ReadonlyArray<RecursiveList$Wire>): Value$28 {
-  return json.map(recursiveListFromJSON);
+export function convert$28FromJSON(
+  json: ReadonlyArray<NullableNonNullScalarsItems$Wire | null>,
+): Value$28 {
+  return json.map(convert$29FromJSON);
 }
 
-export function convert$28ToJSON(value: ReadonlyArray<RecursiveList>): Value$28Wire {
-  return value.map(recursiveListToJSON);
+export function convert$28ToJSON(
+  value: ReadonlyArray<NullableNonNullScalarsItems | null>,
+): Value$28Wire {
+  return value.map(convert$29ToJSON);
 }

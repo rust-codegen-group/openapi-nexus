@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$17FromJSON,
-  matches$17ToJSON,
   matches$1FromJSON,
   matches$1ToJSON,
+  matches$20FromJSON,
+  matches$20ToJSON,
 } from '../runtime/unionMatch';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
@@ -23,7 +23,7 @@ export function ambiguousInnerFromJSON(json: AmbiguousInner$Wire): AmbiguousInne
   if (matches$1FromJSON(candidate)) {
     return detailFromJSON(json as unknown as Detail$Wire);
   }
-  if (matches$17FromJSON(candidate)) {
+  if (matches$20FromJSON(candidate)) {
     return otherDetailFromJSON(json as unknown as OtherDetail$Wire);
   }
   return json as unknown as unknown;
@@ -34,7 +34,7 @@ export function ambiguousInnerToJSON(value: AmbiguousInner): AmbiguousInner$Wire
   if (matches$1ToJSON(candidate)) {
     return detailToJSON(value as unknown as Detail);
   }
-  if (matches$17ToJSON(candidate)) {
+  if (matches$20ToJSON(candidate)) {
     return otherDetailToJSON(value as unknown as OtherDetail);
   }
   return value as unknown as unknown;

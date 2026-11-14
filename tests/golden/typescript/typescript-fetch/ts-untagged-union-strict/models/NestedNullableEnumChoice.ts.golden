@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$50FromJSON,
-  matches$50ToJSON,
-  matches$53FromJSON,
-  matches$53ToJSON,
+  matches$54FromJSON,
+  matches$54ToJSON,
+  matches$57FromJSON,
+  matches$57ToJSON,
 } from '../runtime/unionMatch';
 import type {
   NestedNullableEnumNarrow,
@@ -28,7 +28,7 @@ export function nestedNullableEnumChoiceFromJSON(
   json: NestedNullableEnumChoice$Wire,
 ): NestedNullableEnumChoice {
   const candidate: unknown = json;
-  const matches = [matches$53FromJSON(candidate), matches$50FromJSON(candidate)];
+  const matches = [matches$57FromJSON(candidate), matches$54FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NestedNullableEnumChoice untagged union value');
   }
@@ -45,7 +45,7 @@ export function nestedNullableEnumChoiceToJSON(
   value: NestedNullableEnumChoice,
 ): NestedNullableEnumChoice$Wire {
   const candidate: unknown = value;
-  const matches = [matches$53ToJSON(candidate), matches$50ToJSON(candidate)];
+  const matches = [matches$57ToJSON(candidate), matches$54ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NestedNullableEnumChoice untagged union value');
   }

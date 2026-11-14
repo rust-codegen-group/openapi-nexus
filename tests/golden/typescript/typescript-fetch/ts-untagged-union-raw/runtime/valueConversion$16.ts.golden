@@ -3,31 +3,23 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type {
-  RecursiveOpenDictionary,
-  RecursiveOpenDictionary$Wire,
-} from '../models/RecursiveOpenDictionary';
-import {
-  recursiveOpenDictionaryFromJSON,
-  recursiveOpenDictionaryToJSON,
-} from '../models/RecursiveOpenDictionary';
+import type { ScalarEnumChoice, ScalarEnumChoice$Wire } from '../models/ScalarEnumChoice';
+import { scalarEnumChoiceFromJSON, scalarEnumChoiceToJSON } from '../models/ScalarEnumChoice';
 
-export type Value$16Wire = globalThis.Record<string, RecursiveOpenDictionary$Wire>;
+export type Value$16Wire = ScalarEnumChoice$Wire | null;
 
-export type Value$16 = globalThis.Record<string, RecursiveOpenDictionary>;
+export type Value$16 = ScalarEnumChoice | null;
 
-export function convert$16FromJSON(
-  json: globalThis.Record<string, RecursiveOpenDictionary$Wire>,
-): Value$16 {
-  return Object.fromEntries(
-    Object.entries(json ?? {}).map(([key, item]) => [key, recursiveOpenDictionaryFromJSON(item)]),
-  );
+export function convert$16FromJSON(json: ScalarEnumChoice$Wire | null): Value$16 {
+  if (json == null) {
+    return null;
+  }
+  return scalarEnumChoiceFromJSON(json);
 }
 
-export function convert$16ToJSON(
-  value: globalThis.Record<string, RecursiveOpenDictionary>,
-): Value$16Wire {
-  return Object.fromEntries(
-    Object.entries(value ?? {}).map(([key, item]) => [key, recursiveOpenDictionaryToJSON(item)]),
-  );
+export function convert$16ToJSON(value: ScalarEnumChoice | null): Value$16Wire {
+  if (value == null) {
+    return null;
+  }
+  return scalarEnumChoiceToJSON(value);
 }

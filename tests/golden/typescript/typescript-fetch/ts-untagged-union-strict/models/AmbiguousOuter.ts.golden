@@ -4,8 +4,8 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$21FromJSON,
-  matches$21ToJSON,
+  matches$24FromJSON,
+  matches$24ToJSON,
   matches$2FromJSON,
   matches$2ToJSON,
 } from '../runtime/unionMatch';
@@ -18,7 +18,7 @@ export type AmbiguousOuter = unknown;
 
 export function ambiguousOuterFromJSON(json: AmbiguousOuter$Wire): AmbiguousOuter {
   const candidate: unknown = json;
-  const matches = [matches$21FromJSON(candidate), matches$2FromJSON(candidate)];
+  const matches = [matches$24FromJSON(candidate), matches$2FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous AmbiguousOuter untagged union value');
   }
@@ -33,7 +33,7 @@ export function ambiguousOuterFromJSON(json: AmbiguousOuter$Wire): AmbiguousOute
 
 export function ambiguousOuterToJSON(value: AmbiguousOuter): AmbiguousOuter$Wire {
   const candidate: unknown = value;
-  const matches = [matches$21ToJSON(candidate), matches$2ToJSON(candidate)];
+  const matches = [matches$24ToJSON(candidate), matches$2ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous AmbiguousOuter untagged union value');
   }

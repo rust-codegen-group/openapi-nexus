@@ -5,18 +5,20 @@
  */
 import { convert$27FromJSON, convert$27ToJSON } from './valueConversion$27';
 
-export type Value$26Wire = globalThis.Record<string, number>;
+export type Value$26Wire = number | boolean | null;
 
-export type Value$26 = globalThis.Record<string, number>;
+export type Value$26 = number | boolean | null;
 
-export function convert$26FromJSON(json: globalThis.Record<string, number>): Value$26 {
-  return Object.fromEntries(
-    Object.entries(json ?? {}).map(([key, item]) => [key, convert$27FromJSON(item)]),
-  );
+export function convert$26FromJSON(json: number | boolean | null): Value$26 {
+  if (json == null) {
+    return null;
+  }
+  return convert$27FromJSON(json);
 }
 
-export function convert$26ToJSON(value: globalThis.Record<string, number>): Value$26Wire {
-  return Object.fromEntries(
-    Object.entries(value ?? {}).map(([key, item]) => [key, convert$27ToJSON(item)]),
-  );
+export function convert$26ToJSON(value: number | boolean | null): Value$26Wire {
+  if (value == null) {
+    return null;
+  }
+  return convert$27ToJSON(value);
 }

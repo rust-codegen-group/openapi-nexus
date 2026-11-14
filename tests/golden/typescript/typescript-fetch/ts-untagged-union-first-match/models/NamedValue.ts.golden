@@ -9,8 +9,8 @@ import {
   matches$2FromJSON,
   matches$2ToJSON,
 } from '../runtime/unionMatch';
-import type { Value$12, Value$12Wire } from '../runtime/valueConversion$12';
-import { convert$12FromJSON, convert$12ToJSON } from '../runtime/valueConversion$12';
+import type { Value$17, Value$17Wire } from '../runtime/valueConversion$17';
+import { convert$17FromJSON, convert$17ToJSON } from '../runtime/valueConversion$17';
 import type { Detail, Detail$Wire } from './Detail';
 
 export type NamedValue$Wire = globalThis.Record<string, Detail$Wire> | string;
@@ -20,7 +20,7 @@ export type NamedValue = globalThis.Record<string, Detail> | string;
 export function namedValueFromJSON(json: NamedValue$Wire): NamedValue {
   const candidate: unknown = json;
   if (matches$0FromJSON(candidate)) {
-    return convert$12FromJSON(json as unknown as Value$12Wire);
+    return convert$17FromJSON(json as unknown as Value$17Wire);
   }
   if (matches$2FromJSON(candidate)) {
     return json as unknown as string;
@@ -31,7 +31,7 @@ export function namedValueFromJSON(json: NamedValue$Wire): NamedValue {
 export function namedValueToJSON(value: NamedValue): NamedValue$Wire {
   const candidate: unknown = value;
   if (matches$0ToJSON(candidate)) {
-    return convert$12ToJSON(value as unknown as Value$12);
+    return convert$17ToJSON(value as unknown as Value$17);
   }
   if (matches$2ToJSON(candidate)) {
     return value as unknown as string;

@@ -3,22 +3,48 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$22FromJSON, convert$22ToJSON } from './valueConversion$22';
+import type { Detail, Detail$Wire } from '../models/Detail';
+import {
+  matches$0FromJSON,
+  matches$0ToJSON,
+  matches$3FromJSON,
+  matches$3ToJSON,
+  matches$4FromJSON,
+  matches$4ToJSON,
+} from '../runtime/unionMatch';
+import type { Value$2, Value$2Wire } from './valueConversion$2';
+import { convert$2FromJSON, convert$2ToJSON } from './valueConversion$2';
 
-export type Value$21Wire = number | boolean | null;
+export type Value$21Wire = globalThis.Record<string, Detail$Wire> | number;
 
-export type Value$21 = number | boolean | null;
+export type Value$21 = globalThis.Record<string, Detail> | number;
 
-export function convert$21FromJSON(json: number | boolean | null): Value$21 {
-  if (json == null) {
-    return null;
+export function convert$21FromJSON(
+  json: globalThis.Record<string, Detail$Wire> | number,
+): Value$21 {
+  const candidate: unknown = json;
+  if (matches$0FromJSON(candidate)) {
+    return convert$2FromJSON(json as unknown as Value$2Wire);
   }
-  return convert$22FromJSON(json);
+  if (matches$3FromJSON(candidate)) {
+    return json as unknown as number;
+  }
+  if (matches$4FromJSON(candidate)) {
+    return json as unknown as number;
+  }
+  return json as unknown as Value$21;
 }
 
-export function convert$21ToJSON(value: number | boolean | null): Value$21Wire {
-  if (value == null) {
-    return null;
+export function convert$21ToJSON(value: globalThis.Record<string, Detail> | number): Value$21Wire {
+  const candidate: unknown = value;
+  if (matches$0ToJSON(candidate)) {
+    return convert$2ToJSON(value as unknown as Value$2);
   }
-  return convert$22ToJSON(value);
+  if (matches$3ToJSON(candidate)) {
+    return value as unknown as number;
+  }
+  if (matches$4ToJSON(candidate)) {
+    return value as unknown as number;
+  }
+  return value as unknown as Value$21Wire;
 }

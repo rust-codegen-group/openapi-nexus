@@ -3,28 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Detail, Detail$Wire } from '../models/Detail';
+import type { NullableScalarInner, NullableScalarInner$Wire } from '../models/NullableScalarInner';
 import { convert$14FromJSON, convert$14ToJSON } from './valueConversion$14';
 
-export type Value$13Wire = globalThis.Record<
-  string,
-  globalThis.Record<string, Detail$Wire> | string
->;
+export type Value$13Wire = readonly (NullableScalarInner$Wire | null)[];
 
-export type Value$13 = globalThis.Record<string, globalThis.Record<string, Detail> | string>;
+export type Value$13 = readonly (NullableScalarInner | null)[];
 
-export function convert$13FromJSON(
-  json: globalThis.Record<string, globalThis.Record<string, Detail$Wire> | string>,
-): Value$13 {
-  return Object.fromEntries(
-    Object.entries(json ?? {}).map(([key, item]) => [key, convert$14FromJSON(item)]),
-  );
+export function convert$13FromJSON(json: ReadonlyArray<NullableScalarInner$Wire | null>): Value$13 {
+  return json.map(convert$14FromJSON);
 }
 
-export function convert$13ToJSON(
-  value: globalThis.Record<string, globalThis.Record<string, Detail> | string>,
-): Value$13Wire {
-  return Object.fromEntries(
-    Object.entries(value ?? {}).map(([key, item]) => [key, convert$14ToJSON(item)]),
-  );
+export function convert$13ToJSON(value: ReadonlyArray<NullableScalarInner | null>): Value$13Wire {
+  return value.map(convert$14ToJSON);
 }

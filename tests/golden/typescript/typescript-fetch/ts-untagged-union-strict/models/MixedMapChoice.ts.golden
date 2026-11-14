@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$43FromJSON,
-  matches$43ToJSON,
-  matches$45FromJSON,
-  matches$45ToJSON,
+  matches$47FromJSON,
+  matches$47ToJSON,
+  matches$49FromJSON,
+  matches$49ToJSON,
 } from '../runtime/unionMatch';
 import type { MixedMapA, MixedMapA$Wire } from './MixedMapA';
 import { mixedMapAFromJSON, mixedMapAToJSON } from './MixedMapA';
@@ -20,7 +20,7 @@ export type MixedMapChoice = MixedMapA | MixedMapB;
 
 export function mixedMapChoiceFromJSON(json: MixedMapChoice$Wire): MixedMapChoice {
   const candidate: unknown = json;
-  const matches = [matches$43FromJSON(candidate), matches$45FromJSON(candidate)];
+  const matches = [matches$47FromJSON(candidate), matches$49FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous MixedMapChoice untagged union value');
   }
@@ -35,7 +35,7 @@ export function mixedMapChoiceFromJSON(json: MixedMapChoice$Wire): MixedMapChoic
 
 export function mixedMapChoiceToJSON(value: MixedMapChoice): MixedMapChoice$Wire {
   const candidate: unknown = value;
-  const matches = [matches$43ToJSON(candidate), matches$45ToJSON(candidate)];
+  const matches = [matches$47ToJSON(candidate), matches$49ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous MixedMapChoice untagged union value');
   }
