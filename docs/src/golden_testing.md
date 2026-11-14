@@ -152,6 +152,14 @@ fixture still exposes a separately tracked unresolved-symbol defect and is not
 registered as a passing Python compile case; its render coverage and existing
 Python golden/consumer suites remain distinct checks.
 
+The `optional-discriminator-union` fixture covers inferred internal discriminators
+whose constraint is optional on one branch and a referenced string enum with
+multiple legal values on another. Its TypeScript consumer checks omitted and
+explicit neutral variant tags plus both referenced enum values in both JSON
+directions, including strict declaration and type-guard checks. The shared IR
+preserves these facts for all OpenAPI versions; the current runtime regression is
+intentionally scoped to the TypeScript target.
+
 ## Rust Client Runtime Tests
 
 Generated Rust clients also have standalone consumer test projects under

@@ -16,8 +16,8 @@ use sigil_stitch::spec::{
 
 use crate::generators::type_application;
 use crate::generators::union_match::{
-    JsonShape, UnionMemberMatch, plan_named_shape, plan_union_members, referenced_shapes,
-    selection_shapes,
+    JsonShape, UnionMemberMatch, plan_inline_typescript_union_members, plan_named_shape,
+    plan_tagged_variant_shape, plan_typescript_union_members, referenced_shapes, selection_shapes,
 };
 use crate::ir::types::{IrPrimitive, IrSchemaKind, IrSpec, IrTypeExpr, IrUnion};
 
@@ -224,6 +224,20 @@ impl<'a> TypeScriptPlan<'a> {
             conversions: Vec::new(),
             matching: MatchPlan::default(),
         };
+        if flags.property_naming_camel_case {
+            for schema in ir.schemas.values() {
+                if let IrSchemaKind::TaggedUnion(union) = &schema.kind {
+                    for variant in &union.variants {
+                        if variant.discriminator_optional || variant.discriminator_values.len() > 1
+                        {
+                            result
+                                .matching
+                                .register(&plan_tagged_variant_shape(union, variant, ir));
+                        }
+                    }
+                }
+            }
+        }
         // Monotone worklists retain named-reference edges, including recursive
         // payloads. No expression is expanded into an unbounded type tree.
         loop {
@@ -293,7 +307,7 @@ impl<'a> TypeScriptPlan<'a> {
                 if let IrSchemaKind::Union(union) = &schema.kind {
                     result
                         .unions
-                        .insert(name.clone(), plan_union_members(name, union, ir));
+                        .insert(name.clone(), plan_typescript_union_members(name, union, ir));
                 }
             }
         }
@@ -448,6 +462,15 @@ impl<'a> TypeScriptPlan<'a> {
             .file(&self.recursive_shapes, &self.utility_type("Record"), ts)
     }
 
+    pub(super) fn matching_condition(
+        &self,
+        shape: &JsonShape,
+        value: CodeBlock,
+        direction: Direction,
+    ) -> Result<CodeBlock, SigilStitchError> {
+        self.matching.condition(shape, value, direction, false)
+    }
+
     fn register_conversion(&mut self, expr: &IrTypeExpr, readonly: bool) {
         self.register_conversion_at(expr, readonly, false);
     }
@@ -510,10 +533,7 @@ impl<'a> TypeScriptPlan<'a> {
                 self.register_conversion_at(inner, readonly, child_nested);
             }
             IrTypeExpr::Union(members) => {
-                for member in crate::generators::union_match::plan_inline_union_members(
-                    members,
-                    self.ir.as_ref(),
-                ) {
+                for member in plan_inline_typescript_union_members(members, self.ir.as_ref()) {
                     self.matching.register(&member.shape);
                 }
                 for member in members {
@@ -883,10 +903,7 @@ impl<'a> TypeScriptPlan<'a> {
                 .cloned()
                 .unwrap_or_default()
         } else {
-            crate::generators::union_match::plan_inline_union_members(
-                &union.members,
-                self.ir.as_ref(),
-            )
+            plan_inline_typescript_union_members(&union.members, self.ir.as_ref())
         };
         let strict = self.flags.untagged_union_strategy == UntaggedUnionStrategy::Strict;
         let mut checks = Vec::new();

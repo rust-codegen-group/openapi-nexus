@@ -107,12 +107,24 @@ pub enum TaggingStyle {
 #[derive(Debug, Clone, Serialize)]
 pub struct IrTaggedVariant {
     pub discriminator_value: String,
+    /// Legal values for this variant's discriminator when it has more than one
+    /// wire spelling. An empty vector keeps the historical single-value
+    /// representation in `discriminator_value`.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub discriminator_values: Vec<String>,
+    /// Whether the discriminator property may be absent for this variant.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub discriminator_optional: bool,
     pub content_type: IrTypeExpr,
     pub description: Option<String>,
     /// Additional values on an external wrapper, outside its variant key.
     /// Internal variants retain their dictionaries in `content_type` instead.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<IrTypeExpr>,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 // ---------------------------------------------------------------------------
