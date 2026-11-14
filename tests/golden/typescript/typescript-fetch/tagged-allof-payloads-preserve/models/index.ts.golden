@@ -3,51 +3,51 @@
  *
  * Tagged allOf payload preservation — 1.0.0
  */
-export type { Envelope } from './Envelope';
-export type { Environment } from './Environment';
+export type { Container } from './Container';
+export type { ContainerInput } from './ContainerInput';
+export type { ContainerItem } from './ContainerItem';
 export type { ExtraFields } from './ExtraFields';
-export type { FirstConfig } from './FirstConfig';
-export type { FirstConfigConfig } from './FirstConfigConfig';
-export type { Input } from './Input';
-export type { InputItem } from './InputItem';
-export type { OptionalName } from './OptionalName';
-export type { Options } from './Options';
-export type { SearchOutput } from './SearchOutput';
-export type { SecondConfig } from './SecondConfig';
-export type { SecondConfigConfig } from './SecondConfigConfig';
-export type { Skill } from './Skill';
-export type { Tool } from './Tool';
+export type { FirstShape } from './FirstShape';
+export type { FirstShapeData } from './FirstShapeData';
+export type { NestedConfig } from './NestedConfig';
+export type { NestedEntry } from './NestedEntry';
+export type { OptionalLabel } from './OptionalLabel';
+export type { ResultItem } from './ResultItem';
+export type { SecondShape } from './SecondShape';
+export type { SecondShapeData } from './SecondShapeData';
+export type { SharedFields } from './SharedFields';
+export type { Variant } from './Variant';
 export {
-  isFunction,
-  isNamespace,
-  isShell,
-  isCustom,
-  isInlineOnly,
-  isMultipleRefs,
-  isOuterProperties,
-  isSimple,
-  isOuterRequired,
-  isOverlap,
-  isNestedFields,
-} from './Tool';
-export type { ToolCustom } from './ToolCustom';
-export type { ToolCustomAllOf2 } from './ToolCustomAllOf2';
-export type { ToolFunction } from './ToolFunction';
-export type { ToolFunctionAllOf2 } from './ToolFunctionAllOf2';
-export type { ToolInlineOnly } from './ToolInlineOnly';
-export type { ToolMultipleRefs } from './ToolMultipleRefs';
-export type { ToolNamespace } from './ToolNamespace';
-export type { ToolNamespaceAllOf2 } from './ToolNamespaceAllOf2';
-export type { ToolNestedFields } from './ToolNestedFields';
-export type { ToolNestedFieldsAllOf2 } from './ToolNestedFieldsAllOf2';
-export type { ToolNestedFieldsAllOf2AllOf1 } from './ToolNestedFieldsAllOf2AllOf1';
-export type { ToolNestedFieldsAllOf2AllOf2 } from './ToolNestedFieldsAllOf2AllOf2';
-export type { ToolOther } from './ToolOther';
-export type { ToolOuterProperties } from './ToolOuterProperties';
-export type { ToolOuterPropertiesAllOf2 } from './ToolOuterPropertiesAllOf2';
-export type { ToolOuterRequired } from './ToolOuterRequired';
-export type { ToolOuterRequiredAllOf2 } from './ToolOuterRequiredAllOf2';
-export type { ToolOverlap } from './ToolOverlap';
-export type { ToolOverlapConfig } from './ToolOverlapConfig';
-export type { ToolShell } from './ToolShell';
-export type { ToolShellAllOf2 } from './ToolShellAllOf2';
+  isVariantA,
+  isVariantB,
+  isVariantC,
+  isVariantD,
+  isVariantE,
+  isVariantF,
+  isVariantG,
+  isVariantH,
+  isVariantI,
+  isVariantJ,
+  isVariantK,
+} from './Variant';
+export type { VariantVariantA } from './VariantVariantA';
+export type { VariantVariantAAllOf2 } from './VariantVariantAAllOf2';
+export type { VariantVariantB } from './VariantVariantB';
+export type { VariantVariantBAllOf2 } from './VariantVariantBAllOf2';
+export type { VariantVariantC } from './VariantVariantC';
+export type { VariantVariantCAllOf2 } from './VariantVariantCAllOf2';
+export type { VariantVariantD } from './VariantVariantD';
+export type { VariantVariantDAllOf2 } from './VariantVariantDAllOf2';
+export type { VariantVariantE } from './VariantVariantE';
+export type { VariantVariantF } from './VariantVariantF';
+export type { VariantVariantG } from './VariantVariantG';
+export type { VariantVariantGAllOf2 } from './VariantVariantGAllOf2';
+export type { VariantVariantI } from './VariantVariantI';
+export type { VariantVariantIAllOf2 } from './VariantVariantIAllOf2';
+export type { VariantVariantJ } from './VariantVariantJ';
+export type { VariantVariantJData } from './VariantVariantJData';
+export type { VariantVariantK } from './VariantVariantK';
+export type { VariantVariantKAllOf2 } from './VariantVariantKAllOf2';
+export type { VariantVariantKAllOf2AllOf1 } from './VariantVariantKAllOf2AllOf1';
+export type { VariantVariantKAllOf2AllOf2 } from './VariantVariantKAllOf2AllOf2';
+export type { VariantVariantL } from './VariantVariantL';

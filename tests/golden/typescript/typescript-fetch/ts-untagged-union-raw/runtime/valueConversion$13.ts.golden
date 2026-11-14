@@ -3,29 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type {
-  NullableNonNullScalarsItems,
-  NullableNonNullScalarsItems$Wire,
-} from '../models/NullableNonNullScalarsItems';
-import {
-  nullableNonNullScalarsItemsFromJSON,
-  nullableNonNullScalarsItemsToJSON,
-} from '../models/NullableNonNullScalarsItems';
+import type { NamedValue, NamedValue$Wire } from '../models/NamedValue';
+import { namedValueFromJSON, namedValueToJSON } from '../models/NamedValue';
 
-export type Value$13Wire = NullableNonNullScalarsItems$Wire | null;
+export type Value$13Wire = readonly NamedValue$Wire[];
 
-export type Value$13 = NullableNonNullScalarsItems | null;
+export type Value$13 = readonly NamedValue[];
 
-export function convert$13FromJSON(json: NullableNonNullScalarsItems$Wire | null): Value$13 {
-  if (json == null) {
-    return null;
-  }
-  return nullableNonNullScalarsItemsFromJSON(json);
+export function convert$13FromJSON(json: ReadonlyArray<NamedValue$Wire>): Value$13 {
+  return json.map(namedValueFromJSON);
 }
 
-export function convert$13ToJSON(value: NullableNonNullScalarsItems | null): Value$13Wire {
-  if (value == null) {
-    return null;
-  }
-  return nullableNonNullScalarsItemsToJSON(value);
+export function convert$13ToJSON(value: ReadonlyArray<NamedValue>): Value$13Wire {
+  return value.map(namedValueToJSON);
 }

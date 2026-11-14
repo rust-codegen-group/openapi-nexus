@@ -4,8 +4,8 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$52FromJSON,
-  matches$52ToJSON,
+  matches$56FromJSON,
+  matches$56ToJSON,
   matches$5FromJSON,
   matches$5ToJSON,
 } from '../runtime/unionMatch';
@@ -20,7 +20,7 @@ export function nestedExplicitNullOverlapFromJSON(
   json: NestedExplicitNullOverlap$Wire,
 ): NestedExplicitNullOverlap {
   const candidate: unknown = json;
-  const matches = [matches$52FromJSON(candidate), matches$5FromJSON(candidate)];
+  const matches = [matches$56FromJSON(candidate), matches$5FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NestedExplicitNullOverlap untagged union value');
   }
@@ -40,7 +40,7 @@ export function nestedExplicitNullOverlapToJSON(
   value: NestedExplicitNullOverlap,
 ): NestedExplicitNullOverlap$Wire {
   const candidate: unknown = value;
-  const matches = [matches$52ToJSON(candidate), matches$5ToJSON(candidate)];
+  const matches = [matches$56ToJSON(candidate), matches$5ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NestedExplicitNullOverlap untagged union value');
   }

@@ -332,10 +332,10 @@ fn test_camel_case_untagged_union_delegates_to_member_converters() {
     let files = generator.generate(&ir).unwrap();
     let union = files
         .iter()
-        .find(|file| file.filename == "Tool.ts")
+        .find(|file| file.filename == "Choice.ts")
         .unwrap();
-    assert!(union.content.contains("clientToolFromJSON("));
-    assert!(union.content.contains("searchToolToJSON("));
+    assert!(union.content.contains("payloadAFromJSON("));
+    assert!(union.content.contains("payloadBToJSON("));
 }
 
 #[test]
@@ -348,7 +348,7 @@ fn test_invalid_untagged_union_member_retains_model_emission_context() {
     ))
     .unwrap();
     let mut ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
-    let IrSchemaKind::Union(union) = &mut ir.schemas.get_mut("Tool").unwrap().kind else {
+    let IrSchemaKind::Union(union) = &mut ir.schemas.get_mut("Choice").unwrap().kind else {
         panic!("untagged union")
     };
     union.members.push(IrTypeExpr::Named(String::new()));
@@ -358,7 +358,7 @@ fn test_invalid_untagged_union_member_retains_model_emission_context() {
         .generate(&ir)
         .expect_err("invalid type must retain its error, not panic");
     assert!(
-        matches!(error, GeneratorError::Emission { artifact: ArtifactKind::Model, name, .. } if name == "Tool")
+        matches!(error, GeneratorError::Emission { artifact: ArtifactKind::Model, name, .. } if name == "Choice")
     );
 }
 

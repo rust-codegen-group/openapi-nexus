@@ -3,17 +3,31 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Tool, Tool$Wire } from '../models/Tool';
-import { toolFromJSON, toolToJSON } from '../models/Tool';
+import type {
+  RecursiveOpenDictionary,
+  RecursiveOpenDictionary$Wire,
+} from '../models/RecursiveOpenDictionary';
+import {
+  recursiveOpenDictionaryFromJSON,
+  recursiveOpenDictionaryToJSON,
+} from '../models/RecursiveOpenDictionary';
 
-export type Value$21Wire = readonly Tool$Wire[];
+export type Value$21Wire = globalThis.Record<string, RecursiveOpenDictionary$Wire>;
 
-export type Value$21 = readonly Tool[];
+export type Value$21 = globalThis.Record<string, RecursiveOpenDictionary>;
 
-export function convert$21FromJSON(json: ReadonlyArray<Tool$Wire>): Value$21 {
-  return json.map(toolFromJSON);
+export function convert$21FromJSON(
+  json: globalThis.Record<string, RecursiveOpenDictionary$Wire>,
+): Value$21 {
+  return Object.fromEntries(
+    Object.entries(json ?? {}).map(([key, item]) => [key, recursiveOpenDictionaryFromJSON(item)]),
+  );
 }
 
-export function convert$21ToJSON(value: ReadonlyArray<Tool>): Value$21Wire {
-  return value.map(toolToJSON);
+export function convert$21ToJSON(
+  value: globalThis.Record<string, RecursiveOpenDictionary>,
+): Value$21Wire {
+  return Object.fromEntries(
+    Object.entries(value ?? {}).map(([key, item]) => [key, recursiveOpenDictionaryToJSON(item)]),
+  );
 }

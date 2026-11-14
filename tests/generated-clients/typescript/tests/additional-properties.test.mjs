@@ -13,8 +13,8 @@ const cases = [
   ['mixedBooleanMap', { known: 'fixed', extra_dynamic: { nested_key: ['opaque', null, 7] } }],
   ['mixedNumberMap', { known: 1, extra_dynamic: 2 }],
   ['allOfMixedStringMap', { known: 'fixed', extra_dynamic: 'opaque' }],
-  ['searchItem', { type: 'web_search_call', id: 'ws-1', status: 'completed', opaque_engine_payload: { encrypted: 'opaque', results: [{ title: 'Python' }] } }],
-  ['searchStreamEvent', { type: 'response.web_search_call.searching', sequence_number: 7, item_id: 'ws-1', opaque_engine_payload: { encrypted: 'opaque' } }],
+  ['taggedItem', { type: 'item_event', id: 'item-1', status: 'completed', opaque_engine_payload: { encrypted: 'opaque', results: [{ title: 'value' }] } }],
+  ['streamEvent', { type: 'stream_event_active', sequence_number: 7, item_id: 'item-1', opaque_engine_payload: { encrypted: 'opaque' } }],
 ];
 
 for (const [name, input] of cases) {

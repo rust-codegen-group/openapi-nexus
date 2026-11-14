@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$8FromJSON, convert$8ToJSON } from '../runtime/valueConversion$8';
+import { convert$13FromJSON, convert$13ToJSON } from '../runtime/valueConversion$13';
 import type { NullableScalarInner, NullableScalarInner$Wire } from './NullableScalarInner';
 
 export type ContainerOuterEnum$Wire = readonly (NullableScalarInner$Wire | null)[];
@@ -11,9 +11,9 @@ export type ContainerOuterEnum$Wire = readonly (NullableScalarInner$Wire | null)
 export type ContainerOuterEnum = readonly (NullableScalarInner | null)[];
 
 export function containerOuterEnumFromJSON(json: ContainerOuterEnum$Wire): ContainerOuterEnum {
-  return convert$8FromJSON(json);
+  return convert$13FromJSON(json);
 }
 
 export function containerOuterEnumToJSON(value: ContainerOuterEnum): ContainerOuterEnum$Wire {
-  return convert$8ToJSON(value);
+  return convert$13ToJSON(value);
 }

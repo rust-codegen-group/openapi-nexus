@@ -6,11 +6,11 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$81FromJSON,
-  matches$81ToJSON,
+  matches$85FromJSON,
+  matches$85ToJSON,
 } from '../runtime/unionMatch';
-import type { Value$28, Value$28Wire } from '../runtime/valueConversion$28';
-import { convert$28FromJSON, convert$28ToJSON } from '../runtime/valueConversion$28';
+import type { Value$33, Value$33Wire } from '../runtime/valueConversion$33';
+import { convert$33FromJSON, convert$33ToJSON } from '../runtime/valueConversion$33';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
@@ -20,12 +20,12 @@ export type RecursiveList = readonly RecursiveList[] | Detail;
 
 export function recursiveListFromJSON(json: RecursiveList$Wire): RecursiveList {
   const candidate: unknown = json;
-  const matches = [matches$81FromJSON(candidate), matches$1FromJSON(candidate)];
+  const matches = [matches$85FromJSON(candidate), matches$1FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous RecursiveList untagged union value');
   }
   if (matches[0]) {
-    return convert$28FromJSON(json as unknown as Value$28Wire);
+    return convert$33FromJSON(json as unknown as Value$33Wire);
   }
   if (matches[1]) {
     return detailFromJSON(json as unknown as Detail$Wire);
@@ -35,12 +35,12 @@ export function recursiveListFromJSON(json: RecursiveList$Wire): RecursiveList {
 
 export function recursiveListToJSON(value: RecursiveList): RecursiveList$Wire {
   const candidate: unknown = value;
-  const matches = [matches$81ToJSON(candidate), matches$1ToJSON(candidate)];
+  const matches = [matches$85ToJSON(candidate), matches$1ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous RecursiveList untagged union value');
   }
   if (matches[0]) {
-    return convert$28ToJSON(value as unknown as Value$28);
+    return convert$33ToJSON(value as unknown as Value$33);
   }
   if (matches[1]) {
     return detailToJSON(value as unknown as Detail);

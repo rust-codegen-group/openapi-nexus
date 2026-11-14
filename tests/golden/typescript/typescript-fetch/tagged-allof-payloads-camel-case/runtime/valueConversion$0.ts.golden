@@ -3,17 +3,17 @@
  *
  * Tagged allOf payload preservation — 1.0.0
  */
-import type { Tool, Tool$Wire } from '../models/Tool';
-import { toolFromJSON, toolToJSON } from '../models/Tool';
+import type { Variant, Variant$Wire } from '../models/Variant';
+import { variantFromJSON, variantToJSON } from '../models/Variant';
 
-export type Value$0Wire = readonly Tool$Wire[];
+export type Value$0Wire = readonly Variant$Wire[];
 
-export type Value$0 = readonly Tool[];
+export type Value$0 = readonly Variant[];
 
-export function convert$0FromJSON(json: ReadonlyArray<Tool$Wire>): Value$0 {
-  return json.map(toolFromJSON);
+export function convert$0FromJSON(json: ReadonlyArray<Variant$Wire>): Value$0 {
+  return json.map(variantFromJSON);
 }
 
-export function convert$0ToJSON(value: ReadonlyArray<Tool>): Value$0Wire {
-  return value.map(toolToJSON);
+export function convert$0ToJSON(value: ReadonlyArray<Variant>): Value$0Wire {
+  return value.map(variantToJSON);
 }

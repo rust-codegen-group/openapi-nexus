@@ -11,8 +11,8 @@ import {
 } from '../runtime/unionMatch';
 import type { OpenAlias, OpenAlias$Wire } from './OpenAlias';
 import { openAliasFromJSON, openAliasToJSON } from './OpenAlias';
-import type { SearchTool, SearchTool$Wire } from './SearchTool';
-import { searchToolFromJSON, searchToolToJSON } from './SearchTool';
+import type { PayloadB, PayloadB$Wire } from './PayloadB';
+import { payloadBFromJSON, payloadBToJSON } from './PayloadB';
 
 export type AliasOuter$Wire = unknown;
 
@@ -28,7 +28,7 @@ export function aliasOuterFromJSON(json: AliasOuter$Wire): AliasOuter {
     return openAliasFromJSON(json as unknown as OpenAlias$Wire);
   }
   if (matches[1]) {
-    return searchToolFromJSON(json as unknown as SearchTool$Wire);
+    return payloadBFromJSON(json as unknown as PayloadB$Wire);
   }
   return openAliasFromJSON(json as unknown as OpenAlias$Wire);
 }
@@ -43,7 +43,7 @@ export function aliasOuterToJSON(value: AliasOuter): AliasOuter$Wire {
     return openAliasToJSON(value as unknown as OpenAlias);
   }
   if (matches[1]) {
-    return searchToolToJSON(value as unknown as SearchTool);
+    return payloadBToJSON(value as unknown as PayloadB);
   }
   return openAliasToJSON(value as unknown as OpenAlias);
 }

@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$6FromJSON, convert$6ToJSON } from '../runtime/valueConversion$6';
+import { convert$11FromJSON, convert$11ToJSON } from '../runtime/valueConversion$11';
 import type { Detail, Detail$Wire } from './Detail';
 
 export interface MixedMapB$Wire extends Readonly<Record<string, readonly Detail$Wire[] | string>> {
@@ -22,7 +22,7 @@ export function mixedMapBFromJSON(json: MixedMapB$Wire): MixedMapB {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as readonly Detail$Wire[];
-      return [key, convert$6FromJSON(additionalValue)] as const;
+      return [key, convert$11FromJSON(additionalValue)] as const;
     }),
   );
   const result = {
@@ -40,7 +40,7 @@ export function mixedMapBToJSON(value: MixedMapB): MixedMapB$Wire {
   const additionalProperties = Object.fromEntries(
     additionalEntries.map(([key, value]) => {
       const additionalValue = value as readonly Detail[];
-      return [key, convert$6ToJSON(additionalValue)] as const;
+      return [key, convert$11ToJSON(additionalValue)] as const;
     }),
   );
   const result = {

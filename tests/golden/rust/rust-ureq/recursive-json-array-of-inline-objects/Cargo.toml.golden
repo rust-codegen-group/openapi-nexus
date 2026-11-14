@@ -2,7 +2,7 @@
 name = "array-of-inline-objects-test"
 version = "0.1.0"
 edition = "2024"
-description = "Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)"
+description = "Test case for array of inline objects with snake_case to camelCase conversion."
 
 [dependencies]
 ureq = { version = "3", features = ["json"] }

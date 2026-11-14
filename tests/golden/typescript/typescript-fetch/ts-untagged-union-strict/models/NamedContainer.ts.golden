@@ -9,8 +9,8 @@ import {
   matches$1FromJSON,
   matches$1ToJSON,
 } from '../runtime/unionMatch';
-import type { Value$17, Value$17Wire } from '../runtime/valueConversion$17';
-import { convert$17FromJSON, convert$17ToJSON } from '../runtime/valueConversion$17';
+import type { Value$22, Value$22Wire } from '../runtime/valueConversion$22';
+import { convert$22FromJSON, convert$22ToJSON } from '../runtime/valueConversion$22';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 import type { NamedValue, NamedValue$Wire } from './NamedValue';
@@ -26,7 +26,7 @@ export function namedContainerFromJSON(json: NamedContainer$Wire): NamedContaine
     throw new TypeError('Ambiguous NamedContainer untagged union value');
   }
   if (matches[0]) {
-    return convert$17FromJSON(json as unknown as Value$17Wire);
+    return convert$22FromJSON(json as unknown as Value$22Wire);
   }
   if (matches[1]) {
     return detailFromJSON(json as unknown as Detail$Wire);
@@ -41,7 +41,7 @@ export function namedContainerToJSON(value: NamedContainer): NamedContainer$Wire
     throw new TypeError('Ambiguous NamedContainer untagged union value');
   }
   if (matches[0]) {
-    return convert$17ToJSON(value as unknown as Value$17);
+    return convert$22ToJSON(value as unknown as Value$22);
   }
   if (matches[1]) {
     return detailToJSON(value as unknown as Detail);

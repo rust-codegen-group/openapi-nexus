@@ -30,18 +30,18 @@ import type {
   MixedModelMap as PreservedModelMap,
   MixedStringMap as PreservedStringMap,
 } from './generated/preserve/dist/index.mjs';
-import type { Tool, Tool$Wire, ToolList, ToolMap, ToolRequest, BinaryUnion, AdjacentOrNumber, Outer, OpenAlias, InlineMixedValues, InlineMixedValues$Wire, MapWrapped, ArrayWrapped, DictionaryAlias, DictionaryAlias$Wire } from './generated/union-default/dist/index.mjs';
-import type { Tool as RawTool, BinaryUnion as RawBinaryUnion, AdjacentOrNumber as RawAdjacentOrNumber, AliasChoice as RawAliasChoice, ValueAlias as RawValueAlias, RawEnvelope } from './generated/union-raw/dist/index.mjs';
+import type { Choice, Choice$Wire, ChoiceList, ChoiceMap, ChoiceRequest, BinaryUnion, AdjacentOrNumber, Outer, OpenAlias, InlineMixedValues, InlineMixedValues$Wire, MapWrapped, ArrayWrapped, DictionaryAlias, DictionaryAlias$Wire } from './generated/union-default/dist/index.mjs';
+import type { Choice as RawChoice, BinaryUnion as RawBinaryUnion, AdjacentOrNumber as RawAdjacentOrNumber, AliasChoice as RawAliasChoice, ValueAlias as RawValueAlias, RawEnvelope } from './generated/union-raw/dist/index.mjs';
 import type { DictionaryAlias as StrictDictionaryAlias } from './generated/union-strict/dist/index.mjs';
 import type { ExchangeMultipartMultipartRequestBody as RawMultipartInput } from './generated/union-raw/dist/index.mjs';
 import type { NestedDetailLists } from './generated/union-default/dist/index.mjs';
 
-const unionTool: Tool = { name: 'weather', inputSchema: { type: 'object' } };
-const unionWire: Tool$Wire = { name: 'weather', input_schema: { type: 'object' } };
-const unionRequest: ToolRequest = { tools: [unionTool] };
-const unionList: ToolList = [{ name: 'weather', inputSchema: {} }];
-const unionMap: ToolMap = { arbitrary_key: { name: 'weather', inputSchema: {} } };
-const rawUnion: RawTool = unionWire;
+const unionChoice: Choice = { label: 'weather', payloadSchema: { type: 'object' } };
+const unionWire: Choice$Wire = { label: 'weather', payload_schema: { type: 'object' } };
+const unionRequest: ChoiceRequest = { choices: [unionChoice] };
+const unionList: ChoiceList = [{ label: 'weather', payloadSchema: {} }];
+const unionMap: ChoiceMap = { arbitrary_key: { label: 'weather', payloadSchema: {} } };
+const rawUnion: RawChoice = unionWire;
 const binaryUnion: BinaryUnion = { binaryData: new Blob(['x']), fieldName: 'name' };
 const binaryUnionWire: RawBinaryUnion = { binary_data: new Blob(['x']), field_name: 'name' };
 const unitUnion: AdjacentOrNumber = { eventType: 'empty' };
@@ -78,11 +78,11 @@ const invalidBinaryUnion: BinaryUnion = { binaryData: 'wrong', fieldName: 'name'
 // @ts-expect-error Normal tagged members keep ergonomic names.
 const invalidUnitUnion: AdjacentOrNumber = { event_type: 'empty' };
 // @ts-expect-error Normal unions retain the ergonomic member contract.
-const invalidUnion: Tool = { name: 'weather', input_schema: {} };
+const invalidUnion: Choice = { label: 'weather', payload_schema: {} };
 // @ts-expect-error Raw unions expose wire members rather than ergonomic members.
-const invalidRawUnion: RawTool = { name: 'weather', inputSchema: {} };
+const invalidRawUnion: RawChoice = { label: 'weather', payloadSchema: {} };
 // @ts-expect-error Union array alternatives remain readonly.
-unionList[0] = { name: 'changed', inputSchema: {} };
+unionList[0] = { label: 'changed', payloadSchema: {} };
 
 function expectType<T>(_value: T): void {}
 

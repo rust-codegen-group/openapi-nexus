@@ -3,28 +3,28 @@ info: {title: Union selection contract, version: 1.0.0}
 paths: {}
 components:
   schemas:
-    ClientTool:
+    PayloadA:
       type: object
-      required: [name, input_schema]
+      required: [label, payload_schema]
       properties:
-        name: {type: string}
-        input_schema: {type: object, additionalProperties: true}
-    SearchTool:
+        label: {type: string}
+        payload_schema: {type: object, additionalProperties: true}
+    PayloadB:
       type: object
-      required: [type, name]
+      required: [kind, label]
       properties:
-        type: {type: string, enum: [web_search_20250305]}
-        name: {type: string, enum: [web_search]}
-        max_uses: {type: integer}
-    Tool:
+        kind: {type: string, enum: [variant_b]}
+        label: {type: string, enum: [payload_b]}
+        limit: {type: integer}
+    VariantSet:
       oneOf:
-        - {$ref: '#/components/schemas/ClientTool'}
-        - {$ref: '#/components/schemas/SearchTool'}
-    Request:
+        - {$ref: '#/components/schemas/PayloadA'}
+        - {$ref: '#/components/schemas/PayloadB'}
+    VariantRequest:
       type: object
-      required: [tools]
+      required: [choices]
       properties:
-        tools: {type: array, items: {$ref: '#/components/schemas/Tool'}}
+        choices: {type: array, items: {$ref: '#/components/schemas/VariantSet'}}
     NumericOne:
       type: object
       required: [revision]

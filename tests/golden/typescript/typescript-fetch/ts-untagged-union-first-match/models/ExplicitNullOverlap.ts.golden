@@ -4,27 +4,27 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$30FromJSON,
-  matches$30ToJSON,
-  matches$32FromJSON,
-  matches$32ToJSON,
+  matches$34FromJSON,
+  matches$34ToJSON,
+  matches$36FromJSON,
+  matches$36ToJSON,
 } from '../runtime/unionMatch';
+import type { NullableChoice, NullableChoice$Wire } from './NullableChoice';
+import { nullableChoiceFromJSON, nullableChoiceToJSON } from './NullableChoice';
 import type { NullableDetail, NullableDetail$Wire } from './NullableDetail';
 import { nullableDetailFromJSON, nullableDetailToJSON } from './NullableDetail';
-import type { NullableTool, NullableTool$Wire } from './NullableTool';
-import { nullableToolFromJSON, nullableToolToJSON } from './NullableTool';
 
-export type ExplicitNullOverlap$Wire = NullableDetail$Wire | NullableTool$Wire | null;
+export type ExplicitNullOverlap$Wire = NullableDetail$Wire | NullableChoice$Wire | null;
 
-export type ExplicitNullOverlap = NullableDetail | NullableTool | null;
+export type ExplicitNullOverlap = NullableDetail | NullableChoice | null;
 
 export function explicitNullOverlapFromJSON(json: ExplicitNullOverlap$Wire): ExplicitNullOverlap {
   const candidate: unknown = json;
-  if (matches$30FromJSON(candidate)) {
+  if (matches$34FromJSON(candidate)) {
     return nullableDetailFromJSON(json as unknown as NullableDetail$Wire);
   }
-  if (matches$32FromJSON(candidate)) {
-    return nullableToolFromJSON(json as unknown as NullableTool$Wire);
+  if (matches$36FromJSON(candidate)) {
+    return nullableChoiceFromJSON(json as unknown as NullableChoice$Wire);
   }
   if (candidate === null) {
     return null;
@@ -34,11 +34,11 @@ export function explicitNullOverlapFromJSON(json: ExplicitNullOverlap$Wire): Exp
 
 export function explicitNullOverlapToJSON(value: ExplicitNullOverlap): ExplicitNullOverlap$Wire {
   const candidate: unknown = value;
-  if (matches$30ToJSON(candidate)) {
+  if (matches$34ToJSON(candidate)) {
     return nullableDetailToJSON(value as unknown as NullableDetail);
   }
-  if (matches$32ToJSON(candidate)) {
-    return nullableToolToJSON(value as unknown as NullableTool);
+  if (matches$36ToJSON(candidate)) {
+    return nullableChoiceToJSON(value as unknown as NullableChoice);
   }
   if (candidate === null) {
     return null;

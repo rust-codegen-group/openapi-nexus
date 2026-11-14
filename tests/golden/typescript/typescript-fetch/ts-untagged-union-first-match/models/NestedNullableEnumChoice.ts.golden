@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$50FromJSON,
-  matches$50ToJSON,
-  matches$53FromJSON,
-  matches$53ToJSON,
+  matches$54FromJSON,
+  matches$54ToJSON,
+  matches$57FromJSON,
+  matches$57ToJSON,
 } from '../runtime/unionMatch';
 import type {
   NestedNullableEnumNarrow,
@@ -28,10 +28,10 @@ export function nestedNullableEnumChoiceFromJSON(
   json: NestedNullableEnumChoice$Wire,
 ): NestedNullableEnumChoice {
   const candidate: unknown = json;
-  if (matches$53FromJSON(candidate)) {
+  if (matches$57FromJSON(candidate)) {
     return nestedNullableEnumNarrowFromJSON(json as unknown as NestedNullableEnumNarrow$Wire);
   }
-  if (matches$50FromJSON(candidate)) {
+  if (matches$54FromJSON(candidate)) {
     return numericTwoFromJSON(json as unknown as NumericTwo$Wire);
   }
   return json as unknown as NestedNullableEnumChoice;
@@ -41,10 +41,10 @@ export function nestedNullableEnumChoiceToJSON(
   value: NestedNullableEnumChoice,
 ): NestedNullableEnumChoice$Wire {
   const candidate: unknown = value;
-  if (matches$53ToJSON(candidate)) {
+  if (matches$57ToJSON(candidate)) {
     return nestedNullableEnumNarrowToJSON(value as unknown as NestedNullableEnumNarrow);
   }
-  if (matches$50ToJSON(candidate)) {
+  if (matches$54ToJSON(candidate)) {
     return numericTwoToJSON(value as unknown as NumericTwo);
   }
   return value as unknown as NestedNullableEnumChoice$Wire;

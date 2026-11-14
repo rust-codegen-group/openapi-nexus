@@ -4,16 +4,47 @@
  * Untagged union conversion — 1.0.0
  */
 import type { Detail, Detail$Wire } from '../models/Detail';
-import { detailFromJSON, detailToJSON } from '../models/Detail';
+import {
+  matches$0FromJSON,
+  matches$0ToJSON,
+  matches$2FromJSON,
+  matches$2ToJSON,
+} from '../runtime/unionMatch';
+import type { Value$17, Value$17Wire } from './valueConversion$17';
+import { convert$17FromJSON, convert$17ToJSON } from './valueConversion$17';
 
-export type Value$19Wire = Detail$Wire[];
+export type Value$19Wire = globalThis.Record<string, Detail$Wire> | string;
 
-export type Value$19 = Detail[];
+export type Value$19 = globalThis.Record<string, Detail> | string;
 
-export function convert$19FromJSON(json: ReadonlyArray<Detail$Wire>): Value$19 {
-  return json.map(detailFromJSON);
+export function convert$19FromJSON(
+  json: globalThis.Record<string, Detail$Wire> | string,
+): Value$19 {
+  const candidate: unknown = json;
+  const matches = [matches$0FromJSON(candidate), matches$2FromJSON(candidate)];
+  if (matches.filter(Boolean).length > 1) {
+    throw new TypeError('Ambiguous inline untagged union value');
+  }
+  if (matches[0]) {
+    return convert$17FromJSON(json as unknown as Value$17Wire);
+  }
+  if (matches[1]) {
+    return json as unknown as string;
+  }
+  throw new TypeError('No matching inline untagged union member');
 }
 
-export function convert$19ToJSON(value: ReadonlyArray<Detail>): Value$19Wire {
-  return value.map(detailToJSON);
+export function convert$19ToJSON(value: globalThis.Record<string, Detail> | string): Value$19Wire {
+  const candidate: unknown = value;
+  const matches = [matches$0ToJSON(candidate), matches$2ToJSON(candidate)];
+  if (matches.filter(Boolean).length > 1) {
+    throw new TypeError('Ambiguous inline untagged union value');
+  }
+  if (matches[0]) {
+    return convert$17ToJSON(value as unknown as Value$17);
+  }
+  if (matches[1]) {
+    return value as unknown as string;
+  }
+  throw new TypeError('No matching inline untagged union member');
 }

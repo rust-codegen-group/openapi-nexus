@@ -3,23 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { ScalarEnumChoice, ScalarEnumChoice$Wire } from '../models/ScalarEnumChoice';
-import { scalarEnumChoiceFromJSON, scalarEnumChoiceToJSON } from '../models/ScalarEnumChoice';
+import type { Detail, Detail$Wire } from '../models/Detail';
+import { detailFromJSON, detailToJSON } from '../models/Detail';
 
-export type Value$11Wire = ScalarEnumChoice$Wire | null;
+export type Value$11Wire = readonly Detail$Wire[];
 
-export type Value$11 = ScalarEnumChoice | null;
+export type Value$11 = readonly Detail[];
 
-export function convert$11FromJSON(json: ScalarEnumChoice$Wire | null): Value$11 {
-  if (json == null) {
-    return null;
-  }
-  return scalarEnumChoiceFromJSON(json);
+export function convert$11FromJSON(json: ReadonlyArray<Detail$Wire>): Value$11 {
+  return json.map(detailFromJSON);
 }
 
-export function convert$11ToJSON(value: ScalarEnumChoice | null): Value$11Wire {
-  if (value == null) {
-    return null;
-  }
-  return scalarEnumChoiceToJSON(value);
+export function convert$11ToJSON(value: ReadonlyArray<Detail>): Value$11Wire {
+  return value.map(detailToJSON);
 }

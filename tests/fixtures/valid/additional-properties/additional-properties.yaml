@@ -6,9 +6,6 @@ openapi: 3.1.0
 info:
   title: Additional Properties API
   description: API demonstrating OpenAPI additionalProperties with multiple levels of structs (RootLevel -> MiddleLevel -> LeafValue), each with HashMap fields.
-  contact:
-    name: Adam Basfop Cavendish
-    email: GetbetterABC@yeah.net
   license:
     name: MIT OR Apache-2.0
     identifier: MIT OR Apache-2.0

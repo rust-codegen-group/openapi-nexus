@@ -1,14 +1,14 @@
 use serde_json::{Value, json};
 use union_selection_contract::models::{
-    Choice, ClientTool, Envelope, NumericTwo, Request, RequiredChoice, SearchTool, Tool,
+    Choice, Envelope, NumericTwo, PayloadA, PayloadB, RequiredChoice, VariantRequest, VariantSet,
 };
 
-fn client_wire() -> Value {
-    json!({"name": "weather", "input_schema": {"type": "object"}})
+fn payload_a_wire() -> Value {
+    json!({"label": "weather", "payload_schema": {"type": "object"}})
 }
 
-fn search_wire() -> Value {
-    json!({"type": "web_search_20250305", "name": "web_search", "max_uses": 1})
+fn payload_b_wire() -> Value {
+    json!({"kind": "variant_b", "label": "payload_b", "limit": 1})
 }
 
 fn numeric_wire() -> Value {
@@ -16,33 +16,33 @@ fn numeric_wire() -> Value {
 }
 
 #[test]
-fn direct_tool_members_preserve_wire() {
-    let client: ClientTool = serde_json::from_value(client_wire()).unwrap();
-    let search: SearchTool = serde_json::from_value(search_wire()).unwrap();
-    assert_eq!(serde_json::to_value(client).unwrap(), client_wire());
-    assert_eq!(serde_json::to_value(search).unwrap(), search_wire());
+fn direct_variant_members_preserve_wire() {
+    let payload_a: PayloadA = serde_json::from_value(payload_a_wire()).unwrap();
+    let payload_b: PayloadB = serde_json::from_value(payload_b_wire()).unwrap();
+    assert_eq!(serde_json::to_value(payload_a).unwrap(), payload_a_wire());
+    assert_eq!(serde_json::to_value(payload_b).unwrap(), payload_b_wire());
 }
 
 #[test]
-fn typed_union_request_is_json_serializable() {
-    let request = Request {
-        tools: vec![
-            Tool::ClientTool(serde_json::from_value(client_wire()).unwrap()),
-            Tool::SearchTool(serde_json::from_value(search_wire()).unwrap()),
+fn typed_variant_request_is_json_serializable() {
+    let request = VariantRequest {
+        choices: vec![
+            VariantSet::PayloadA(serde_json::from_value(payload_a_wire()).unwrap()),
+            VariantSet::PayloadB(serde_json::from_value(payload_b_wire()).unwrap()),
         ],
     };
     assert_eq!(
         serde_json::to_value(request).unwrap(),
-        json!({"tools": [client_wire(), search_wire()]})
+        json!({"choices": [payload_a_wire(), payload_b_wire()]})
     );
 }
 
 #[test]
-fn inbound_tool_request_constructs_union_variants() {
-    let wire = json!({"tools": [client_wire(), search_wire()]});
-    let request: Request = serde_json::from_value(wire.clone()).unwrap();
-    assert!(matches!(request.tools[0], Tool::ClientTool(_)));
-    assert!(matches!(request.tools[1], Tool::SearchTool(_)));
+fn inbound_variant_request_constructs_union_variants() {
+    let wire = json!({"choices": [payload_a_wire(), payload_b_wire()]});
+    let request: VariantRequest = serde_json::from_value(wire.clone()).unwrap();
+    assert!(matches!(request.choices[0], VariantSet::PayloadA(_)));
+    assert!(matches!(request.choices[1], VariantSet::PayloadB(_)));
     assert_eq!(serde_json::to_value(request).unwrap(), wire);
 }
 

@@ -3,17 +3,17 @@
  *
  * Tagged allOf payload preservation — 1.0.0
  */
-import type { InputItem, InputItem$Wire } from '../models/InputItem';
-import { inputItemFromJSON, inputItemToJSON } from '../models/InputItem';
+import type { NestedEntry, NestedEntry$Wire } from '../models/NestedEntry';
+import { nestedEntryFromJSON, nestedEntryToJSON } from '../models/NestedEntry';
 
-export type Value$2Wire = readonly InputItem$Wire[];
+export type Value$2Wire = readonly NestedEntry$Wire[];
 
-export type Value$2 = readonly InputItem[];
+export type Value$2 = readonly NestedEntry[];
 
-export function convert$2FromJSON(json: ReadonlyArray<InputItem$Wire>): Value$2 {
-  return json.map(inputItemFromJSON);
+export function convert$2FromJSON(json: ReadonlyArray<NestedEntry$Wire>): Value$2 {
+  return json.map(nestedEntryFromJSON);
 }
 
-export function convert$2ToJSON(value: ReadonlyArray<InputItem>): Value$2Wire {
-  return value.map(inputItemToJSON);
+export function convert$2ToJSON(value: ReadonlyArray<NestedEntry>): Value$2Wire {
+  return value.map(nestedEntryToJSON);
 }

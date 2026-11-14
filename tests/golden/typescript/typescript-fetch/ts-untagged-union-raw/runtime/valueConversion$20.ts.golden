@@ -3,21 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { SearchTool, SearchTool$Wire } from '../models/SearchTool';
-import { searchToolFromJSON, searchToolToJSON } from '../models/SearchTool';
+import type { RecursiveList, RecursiveList$Wire } from '../models/RecursiveList';
+import { recursiveListFromJSON, recursiveListToJSON } from '../models/RecursiveList';
 
-export type Value$20Wire = globalThis.Record<string, SearchTool$Wire>;
+export type Value$20Wire = readonly RecursiveList$Wire[];
 
-export type Value$20 = globalThis.Record<string, SearchTool>;
+export type Value$20 = readonly RecursiveList[];
 
-export function convert$20FromJSON(json: globalThis.Record<string, SearchTool$Wire>): Value$20 {
-  return Object.fromEntries(
-    Object.entries(json ?? {}).map(([key, item]) => [key, searchToolFromJSON(item)]),
-  );
+export function convert$20FromJSON(json: ReadonlyArray<RecursiveList$Wire>): Value$20 {
+  return json.map(recursiveListFromJSON);
 }
 
-export function convert$20ToJSON(value: globalThis.Record<string, SearchTool>): Value$20Wire {
-  return Object.fromEntries(
-    Object.entries(value ?? {}).map(([key, item]) => [key, searchToolToJSON(item)]),
-  );
+export function convert$20ToJSON(value: ReadonlyArray<RecursiveList>): Value$20Wire {
+  return value.map(recursiveListToJSON);
 }

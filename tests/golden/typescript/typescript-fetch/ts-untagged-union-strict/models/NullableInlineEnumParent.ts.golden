@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$21FromJSON, convert$21ToJSON } from '../runtime/valueConversion$21';
+import { convert$26FromJSON, convert$26ToJSON } from '../runtime/valueConversion$26';
 
 export interface NullableInlineEnumParent$Wire {
   readonly scalar_value: number | boolean | null;
@@ -17,7 +17,7 @@ export function nullableInlineEnumParentFromJSON(
   json: NullableInlineEnumParent$Wire,
 ): NullableInlineEnumParent {
   return {
-    scalarValue: convert$21FromJSON(json.scalar_value),
+    scalarValue: convert$26FromJSON(json.scalar_value),
   };
 }
 
@@ -25,6 +25,6 @@ export function nullableInlineEnumParentToJSON(
   value: NullableInlineEnumParent,
 ): NullableInlineEnumParent$Wire {
   return {
-    scalar_value: convert$21ToJSON(value.scalarValue),
+    scalar_value: convert$26ToJSON(value.scalarValue),
   };
 }

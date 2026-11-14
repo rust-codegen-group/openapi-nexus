@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$66FromJSON,
-  matches$66ToJSON,
-  matches$67FromJSON,
-  matches$67ToJSON,
+  matches$71FromJSON,
+  matches$71ToJSON,
+  matches$72FromJSON,
+  matches$72ToJSON,
 } from '../runtime/unionMatch';
 
 export type NullableOpenInner$Wire = unknown;
@@ -16,10 +16,10 @@ export type NullableOpenInner = unknown;
 
 export function nullableOpenInnerFromJSON(json: NullableOpenInner$Wire): NullableOpenInner {
   const candidate: unknown = json;
-  if (matches$66FromJSON(candidate)) {
+  if (matches$71FromJSON(candidate)) {
     return json as unknown as string | null;
   }
-  if (matches$67FromJSON(candidate)) {
+  if (matches$72FromJSON(candidate)) {
     return json as unknown as number | null;
   }
   return json as unknown as unknown;
@@ -27,10 +27,10 @@ export function nullableOpenInnerFromJSON(json: NullableOpenInner$Wire): Nullabl
 
 export function nullableOpenInnerToJSON(value: NullableOpenInner): NullableOpenInner$Wire {
   const candidate: unknown = value;
-  if (matches$66ToJSON(candidate)) {
+  if (matches$71ToJSON(candidate)) {
     return value as unknown as string | null;
   }
-  if (matches$67ToJSON(candidate)) {
+  if (matches$72ToJSON(candidate)) {
     return value as unknown as number | null;
   }
   return value as unknown as unknown;

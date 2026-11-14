@@ -3,17 +3,17 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Detail, Detail$Wire } from '../models/Detail';
-import { detailFromJSON, detailToJSON } from '../models/Detail';
+import type { Choice, Choice$Wire } from '../models/Choice';
+import { choiceFromJSON, choiceToJSON } from '../models/Choice';
 
-export type Value$11Wire = readonly Detail$Wire[];
+export type Value$11Wire = readonly Choice$Wire[];
 
-export type Value$11 = readonly Detail[];
+export type Value$11 = readonly Choice[];
 
-export function convert$11FromJSON(json: ReadonlyArray<Detail$Wire>): Value$11 {
-  return json.map(detailFromJSON);
+export function convert$11FromJSON(json: ReadonlyArray<Choice$Wire>): Value$11 {
+  return json.map(choiceFromJSON);
 }
 
-export function convert$11ToJSON(value: ReadonlyArray<Detail>): Value$11Wire {
-  return value.map(detailToJSON);
+export function convert$11ToJSON(value: ReadonlyArray<Choice>): Value$11Wire {
+  return value.map(choiceToJSON);
 }

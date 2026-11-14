@@ -6,10 +6,10 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$57FromJSON,
-  matches$57ToJSON,
   matches$5FromJSON,
   matches$5ToJSON,
+  matches$62FromJSON,
+  matches$62ToJSON,
 } from '../runtime/unionMatch';
 import type { MapWrapped, MapWrapped$Wire } from './MapWrapped';
 import { mapWrappedFromJSON, mapWrappedToJSON } from './MapWrapped';
@@ -26,7 +26,7 @@ export function wrappedMapOrBooleanFromJSON(json: WrappedMapOrBoolean$Wire): Wra
   if (matches$5FromJSON(candidate)) {
     return json as unknown as boolean;
   }
-  if (matches$57FromJSON(candidate)) {
+  if (matches$62FromJSON(candidate)) {
     return mapWrappedFromJSON(json as unknown as MapWrapped$Wire);
   }
   return json as unknown as WrappedMapOrBoolean;
@@ -40,7 +40,7 @@ export function wrappedMapOrBooleanToJSON(value: WrappedMapOrBoolean): WrappedMa
   if (matches$5ToJSON(candidate)) {
     return value as unknown as boolean;
   }
-  if (matches$57ToJSON(candidate)) {
+  if (matches$62ToJSON(candidate)) {
     return mapWrappedToJSON(value as unknown as MapWrapped);
   }
   return value as unknown as WrappedMapOrBoolean$Wire;

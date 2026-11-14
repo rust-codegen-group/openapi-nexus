@@ -19,19 +19,19 @@ impl<'a> DefaultApi<'a> {
         }
     }
 
-    /// POST /tools
-    pub async fn exchange_tools(
+    /// POST /variants
+    pub async fn exchange_variants(
         &self,
-        body: &crate::models::Envelope,
-    ) -> Result<ExchangeToolsResponse, ExchangeToolsError> {
-        let path = "/tools".to_string();
+        body: &crate::models::Container,
+    ) -> Result<ExchangeVariantsResponse, ExchangeVariantsError> {
+        let path = "/variants".to_string();
         let mut req = self.client.request(reqwest::Method::POST, &path).await?;
         req = req.json(&body);
         let resp = self.client.send(req).await?;
         let status_code = resp.status().as_u16();
         let response_headers = resp.headers().clone();
         let body_bytes = resp.bytes().await.map_err(Error::Network)?;
-        let mut result = ExchangeToolsResponse { status_code, headers: response_headers.clone(), data: None };
+        let mut result = ExchangeVariantsResponse { status_code, headers: response_headers.clone(), data: None };
         match status_code {
             200 => {
                 result.data = Some(serde_json::from_slice(&body_bytes).map_err(Error::Deserialize)?);
@@ -42,7 +42,7 @@ impl<'a> DefaultApi<'a> {
             match status_code {
                 _ => {
                     let body = Ok::<Vec<u8>, Error>(body_bytes.to_vec());
-                    return Err(ExchangeToolsError::Unexpected(ApiError::new(status_code, response_headers.clone(), body_bytes.to_vec(), body)));
+                    return Err(ExchangeVariantsError::Unexpected(ApiError::new(status_code, response_headers.clone(), body_bytes.to_vec(), body)));
                 }
             }
         }
@@ -50,37 +50,37 @@ impl<'a> DefaultApi<'a> {
     }
 }
 
-/// Response from `exchange_tools`.
+/// Response from `exchange_variants`.
 #[derive(Debug)]
-pub struct ExchangeToolsResponse {
+pub struct ExchangeVariantsResponse {
     pub status_code: u16,
     pub headers: reqwest::header::HeaderMap,
-    pub data: Option<crate::models::Envelope>,
+    pub data: Option<crate::models::Container>,
 }
 
-/// Error from `exchange_tools`.
+/// Error from `exchange_variants`.
 #[derive(Debug)]
-pub enum ExchangeToolsError {
+pub enum ExchangeVariantsError {
     Unexpected(ApiError<Vec<u8>>),
     Transport(Error),
 }
 
-impl From<Error> for ExchangeToolsError {
+impl From<Error> for ExchangeVariantsError {
     fn from(error: Error) -> Self {
         Self::Transport(error)
     }
 }
 
-impl From<ExchangeToolsError> for ApiCallError {
-    fn from(error: ExchangeToolsError) -> Self {
+impl From<ExchangeVariantsError> for ApiCallError {
+    fn from(error: ExchangeVariantsError) -> Self {
         match error {
-            ExchangeToolsError::Unexpected(error) => Self::from_api_error("exchange_tools", error),
-            ExchangeToolsError::Transport(error) => Self::from_runtime_error("exchange_tools", error),
+            ExchangeVariantsError::Unexpected(error) => Self::from_api_error("exchange_variants", error),
+            ExchangeVariantsError::Transport(error) => Self::from_runtime_error("exchange_variants", error),
         }
     }
 }
 
-impl std::fmt::Display for ExchangeToolsError {
+impl std::fmt::Display for ExchangeVariantsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Unexpected(err) => write!(f, "unexpected HTTP error {}", err.status_code()),
@@ -89,7 +89,7 @@ impl std::fmt::Display for ExchangeToolsError {
     }
 }
 
-impl std::error::Error for ExchangeToolsError {
+impl std::error::Error for ExchangeVariantsError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Transport(err) => Some(err),

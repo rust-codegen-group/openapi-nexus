@@ -31,7 +31,7 @@ fn inferred_tagged_variants_retain_outer_additional_properties_in_every_version(
                     IrTypeExpr::Primitive(IrPrimitive::String)
                 };
                 assert_eq!(object.additional_properties, Some(expected), "{version}");
-                if variant.discriminator_value == "searching" {
+                if variant.discriminator_value == "active" {
                     assert!(object.properties.contains_key("sequence_number"));
                 }
             }

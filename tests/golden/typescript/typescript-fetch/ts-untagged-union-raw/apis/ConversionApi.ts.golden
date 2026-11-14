@@ -3,6 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
+import type { Choice, Choice$Wire } from '../models/Choice';
 import type { ExchangeMultipartMultipartRequestBody } from '../models/ExchangeMultipartMultipartRequestBody';
 import type { NullableDetail } from '../models/NullableDetail';
 import { nullableDetailToJSON } from '../models/NullableDetail';
@@ -10,7 +11,6 @@ import type { NullableScalarInner } from '../models/NullableScalarInner';
 import { nullableScalarInnerToJSON } from '../models/NullableScalarInner';
 import type { SendOptionalInlineScalarRequest } from '../models/SendOptionalInlineScalarRequest';
 import { sendOptionalInlineScalarRequestToJSON } from '../models/SendOptionalInlineScalarRequest';
-import type { Tool, Tool$Wire } from '../models/Tool';
 import type {
   Configuration,
   HTTPQuery,
@@ -32,7 +32,7 @@ import { convert$22FromJSON, convert$22ToJSON } from '../runtime/valueConversion
 import { convert$24FromJSON, convert$24ToJSON } from '../runtime/valueConversion$24';
 
 export interface ApiExchangeMatrixRequest {
-  body: Tool[][];
+  body: Choice[][];
 }
 
 export interface ApiExchangeMultipartRequest {
@@ -40,7 +40,7 @@ export interface ApiExchangeMultipartRequest {
 }
 
 export interface ApiExchangeNullableRequest {
-  body: Tool[] | null;
+  body: Choice[] | null;
 }
 
 export interface ApiSendOptionalDetailRequest {
@@ -60,13 +60,13 @@ export interface ApiSendRequiredScalarRequest {
 }
 
 export type ExchangeMatrixRawResponse =
-  | (JSONApiResponse<Tool[][]> & { status: 200 })
+  | (JSONApiResponse<Choice[][]> & { status: 200 })
   | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type ExchangeMultipartRawResponse =
   | (VoidApiResponse & { status: 204 })
   | (VoidApiResponse & HttpSuccessResponse);
 export type ExchangeNullableRawResponse =
-  | (JSONApiResponse<Tool[] | null> & { status: 200 })
+  | (JSONApiResponse<Choice[] | null> & { status: 200 })
   | (JSONApiResponse<unknown> & HttpSuccessResponse);
 export type SendOptionalDetailRawResponse =
   | (VoidApiResponse & { status: 204 })
@@ -86,7 +86,7 @@ export type ExchangeMatrixErrorDetail =
       kind: 'badRequest';
       status: 400;
       raw: Response;
-      value(): Promise<Tool[][]>;
+      value(): Promise<Choice[][]>;
     }
   | {
       kind: 'unexpected';
@@ -236,7 +236,7 @@ export interface ConversionApiInterface {
   exchangeMatrix: (
     requestParameters: ApiExchangeMatrixRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ) => Promise<Tool[][]>;
+  ) => Promise<Choice[][]>;
   exchangeMultipartRaw: (
     requestParameters: ApiExchangeMultipartRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
@@ -252,7 +252,7 @@ export interface ConversionApiInterface {
   exchangeNullable: (
     requestParameters: ApiExchangeNullableRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ) => Promise<Tool[] | null>;
+  ) => Promise<Choice[] | null>;
   sendOptionalDetailRaw: (
     requestParameters: ApiSendOptionalDetailRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
@@ -332,14 +332,14 @@ export class ConversionApi extends BaseAPI implements ConversionApiInterface {
     if (!(response.status >= 200 && response.status < 300)) {
       const errorRaw = response.clone();
       if (response.status === 400) {
-        let errorValue: Promise<Tool[][]> | undefined;
+        let errorValue: Promise<Choice[][]> | undefined;
         throw new ExchangeMatrixError(response, {
           kind: 'badRequest',
           status: response.status as 400,
           raw: response,
           value: () => {
-            errorValue ??= new JSONApiResponse<Tool[][]>(errorRaw.clone(), (json) => {
-              return convert$22FromJSON(json as Tool$Wire[][]);
+            errorValue ??= new JSONApiResponse<Choice[][]>(errorRaw.clone(), (json) => {
+              return convert$22FromJSON(json as Choice$Wire[][]);
             }).value();
             return errorValue;
           },
@@ -359,8 +359,8 @@ export class ConversionApi extends BaseAPI implements ConversionApiInterface {
     }
     if (response.status === 200) {
       return new JSONApiResponse(response, (json) => {
-        return convert$22FromJSON(json as Tool$Wire[][]);
-      }) as JSONApiResponse<Tool[][]> & { status: 200 };
+        return convert$22FromJSON(json as Choice$Wire[][]);
+      }) as JSONApiResponse<Choice[][]> & { status: 200 };
     } else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
@@ -369,9 +369,9 @@ export class ConversionApi extends BaseAPI implements ConversionApiInterface {
   async exchangeMatrix(
     requestParameters: ApiExchangeMatrixRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ): Promise<Tool[][]> {
+  ): Promise<Choice[][]> {
     const response = await this.exchangeMatrixRaw(requestParameters, initOverrides);
-    return (await response.value()) as Tool[][];
+    return (await response.value()) as Choice[][];
   }
 
   async exchangeMultipartRaw(
@@ -513,8 +513,8 @@ export class ConversionApi extends BaseAPI implements ConversionApiInterface {
     }
     if (response.status === 200) {
       return new JSONApiResponse(response, (json) => {
-        return convert$24FromJSON(json as Tool$Wire[] | null);
-      }) as JSONApiResponse<Tool[] | null> & { status: 200 };
+        return convert$24FromJSON(json as Choice$Wire[] | null);
+      }) as JSONApiResponse<Choice[] | null> & { status: 200 };
     } else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
@@ -523,9 +523,9 @@ export class ConversionApi extends BaseAPI implements ConversionApiInterface {
   async exchangeNullable(
     requestParameters: ApiExchangeNullableRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ): Promise<Tool[] | null> {
+  ): Promise<Choice[] | null> {
     const response = await this.exchangeNullableRaw(requestParameters, initOverrides);
-    return (await response.value()) as Tool[] | null;
+    return (await response.value()) as Choice[] | null;
   }
 
   async sendOptionalDetailRaw(

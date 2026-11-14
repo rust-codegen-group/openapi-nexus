@@ -43,8 +43,8 @@ export {
   alreadyNullableOuterEnumParentFromJSON,
   alreadyNullableOuterEnumParentToJSON,
 } from './AlreadyNullableOuterEnumParent';
-export type { AlternativeTool, AlternativeTool$Wire } from './AlternativeTool';
-export { alternativeToolFromJSON, alternativeToolToJSON } from './AlternativeTool';
+export type { AmbiguousChoice, AmbiguousChoice$Wire } from './AmbiguousChoice';
+export { ambiguousChoiceFromJSON, ambiguousChoiceToJSON } from './AmbiguousChoice';
 export type { AmbiguousInner, AmbiguousInner$Wire } from './AmbiguousInner';
 export { ambiguousInnerFromJSON, ambiguousInnerToJSON } from './AmbiguousInner';
 export type { AmbiguousMap, AmbiguousMap$Wire } from './AmbiguousMap';
@@ -53,8 +53,6 @@ export type { AmbiguousMapOuter, AmbiguousMapOuter$Wire } from './AmbiguousMapOu
 export { ambiguousMapOuterFromJSON, ambiguousMapOuterToJSON } from './AmbiguousMapOuter';
 export type { AmbiguousOuter, AmbiguousOuter$Wire } from './AmbiguousOuter';
 export { ambiguousOuterFromJSON, ambiguousOuterToJSON } from './AmbiguousOuter';
-export type { AmbiguousTool, AmbiguousTool$Wire } from './AmbiguousTool';
-export { ambiguousToolFromJSON, ambiguousToolToJSON } from './AmbiguousTool';
 export type { ArrayPayload, ArrayPayload$Wire } from './ArrayPayload';
 export { arrayPayloadFromJSON, arrayPayloadToJSON } from './ArrayPayload';
 export type { ArrayPayloadOrBoolean, ArrayPayloadOrBoolean$Wire } from './ArrayPayloadOrBoolean';
@@ -68,8 +66,16 @@ export type { BinaryModel, BinaryModel$Wire } from './BinaryModel';
 export { binaryModelFromJSON, binaryModelToJSON } from './BinaryModel';
 export type { BinaryUnion, BinaryUnion$Wire } from './BinaryUnion';
 export { binaryUnionFromJSON, binaryUnionToJSON } from './BinaryUnion';
-export type { ClientTool, ClientTool$Wire } from './ClientTool';
-export { clientToolFromJSON, clientToolToJSON } from './ClientTool';
+export type { Choice, Choice$Wire } from './Choice';
+export { choiceFromJSON, choiceToJSON } from './Choice';
+export type { ChoiceAlias, ChoiceAlias$Wire } from './ChoiceAlias';
+export { choiceAliasFromJSON, choiceAliasToJSON } from './ChoiceAlias';
+export type { ChoiceList, ChoiceList$Wire } from './ChoiceList';
+export { choiceListFromJSON, choiceListToJSON } from './ChoiceList';
+export type { ChoiceMap, ChoiceMap$Wire } from './ChoiceMap';
+export { choiceMapFromJSON, choiceMapToJSON } from './ChoiceMap';
+export type { ChoiceRequest, ChoiceRequest$Wire } from './ChoiceRequest';
+export { choiceRequestFromJSON, choiceRequestToJSON } from './ChoiceRequest';
 export type {
   ConstrainedOuterEnumParent,
   ConstrainedOuterEnumParent$Wire,
@@ -159,6 +165,8 @@ export {
   nestedNullableEnumNarrowFromJSON,
   nestedNullableEnumNarrowToJSON,
 } from './NestedNullableEnumNarrow';
+export type { NullableChoice, NullableChoice$Wire } from './NullableChoice';
+export { nullableChoiceFromJSON, nullableChoiceToJSON } from './NullableChoice';
 export type { NullableDetail, NullableDetail$Wire } from './NullableDetail';
 export { nullableDetailFromJSON, nullableDetailToJSON } from './NullableDetail';
 export type { NullableEnumParent, NullableEnumParent$Wire } from './NullableEnumParent';
@@ -241,8 +249,6 @@ export type { NullableScalarMap, NullableScalarMap$Wire } from './NullableScalar
 export { nullableScalarMapFromJSON, nullableScalarMapToJSON } from './NullableScalarMap';
 export type { NullableScalarParent, NullableScalarParent$Wire } from './NullableScalarParent';
 export { nullableScalarParentFromJSON, nullableScalarParentToJSON } from './NullableScalarParent';
-export type { NullableTool, NullableTool$Wire } from './NullableTool';
-export { nullableToolFromJSON, nullableToolToJSON } from './NullableTool';
 export type { NumericEnumChoice, NumericEnumChoice$Wire } from './NumericEnumChoice';
 export { numericEnumChoiceFromJSON, numericEnumChoiceToJSON } from './NumericEnumChoice';
 export type { NumericOne, NumericOne$Wire } from './NumericOne';
@@ -253,16 +259,22 @@ export type { OnceNullableOuter, OnceNullableOuter$Wire } from './OnceNullableOu
 export { onceNullableOuterFromJSON, onceNullableOuterToJSON } from './OnceNullableOuter';
 export type { OpenAlias, OpenAlias$Wire } from './OpenAlias';
 export { openAliasFromJSON, openAliasToJSON } from './OpenAlias';
+export type { OpenChoice, OpenChoice$Wire } from './OpenChoice';
+export { openChoiceFromJSON, openChoiceToJSON } from './OpenChoice';
 export type { OpenInner, OpenInner$Wire } from './OpenInner';
 export { openInnerFromJSON, openInnerToJSON } from './OpenInner';
 export type { OpenMap, OpenMap$Wire } from './OpenMap';
 export { openMapFromJSON, openMapToJSON } from './OpenMap';
-export type { OpenTool, OpenTool$Wire } from './OpenTool';
-export { openToolFromJSON, openToolToJSON } from './OpenTool';
 export type { OtherDetail, OtherDetail$Wire } from './OtherDetail';
 export { otherDetailFromJSON, otherDetailToJSON } from './OtherDetail';
 export type { Outer, Outer$Wire } from './Outer';
 export { outerFromJSON, outerToJSON } from './Outer';
+export type { PayloadA, PayloadA$Wire } from './PayloadA';
+export { payloadAFromJSON, payloadAToJSON } from './PayloadA';
+export type { PayloadB, PayloadB$Wire } from './PayloadB';
+export { payloadBFromJSON, payloadBToJSON } from './PayloadB';
+export type { PayloadC, PayloadC$Wire } from './PayloadC';
+export { payloadCFromJSON, payloadCToJSON } from './PayloadC';
 export type { PrimitiveArrayChoice, PrimitiveArrayChoice$Wire } from './PrimitiveArrayChoice';
 export { primitiveArrayChoiceFromJSON, primitiveArrayChoiceToJSON } from './PrimitiveArrayChoice';
 export type { PrimitiveMapChoice, PrimitiveMapChoice$Wire } from './PrimitiveMapChoice';
@@ -297,24 +309,12 @@ export {
 } from './RecursiveOpenDictionary';
 export type { ScalarEnumChoice, ScalarEnumChoice$Wire } from './ScalarEnumChoice';
 export { scalarEnumChoiceFromJSON, scalarEnumChoiceToJSON } from './ScalarEnumChoice';
-export type { SearchTool, SearchTool$Wire } from './SearchTool';
-export { searchToolFromJSON, searchToolToJSON } from './SearchTool';
 export type { TaggedMapA, TaggedMapA$Wire } from './TaggedMapA';
 export { taggedMapAFromJSON, taggedMapAToJSON } from './TaggedMapA';
 export type { TaggedMapB, TaggedMapB$Wire } from './TaggedMapB';
 export { taggedMapBFromJSON, taggedMapBToJSON } from './TaggedMapB';
 export type { TaggedMapChoice, TaggedMapChoice$Wire } from './TaggedMapChoice';
 export { taggedMapChoiceFromJSON, taggedMapChoiceToJSON } from './TaggedMapChoice';
-export type { Tool, Tool$Wire } from './Tool';
-export { toolFromJSON, toolToJSON } from './Tool';
-export type { ToolAlias, ToolAlias$Wire } from './ToolAlias';
-export { toolAliasFromJSON, toolAliasToJSON } from './ToolAlias';
-export type { ToolList, ToolList$Wire } from './ToolList';
-export { toolListFromJSON, toolListToJSON } from './ToolList';
-export type { ToolMap, ToolMap$Wire } from './ToolMap';
-export { toolMapFromJSON, toolMapToJSON } from './ToolMap';
-export type { ToolRequest, ToolRequest$Wire } from './ToolRequest';
-export { toolRequestFromJSON, toolRequestToJSON } from './ToolRequest';
 export type { TwiceNullableOpaque, TwiceNullableOpaque$Wire } from './TwiceNullableOpaque';
 export { twiceNullableOpaqueFromJSON, twiceNullableOpaqueToJSON } from './TwiceNullableOpaque';
 export type { TwiceNullableOuter, TwiceNullableOuter$Wire } from './TwiceNullableOuter';

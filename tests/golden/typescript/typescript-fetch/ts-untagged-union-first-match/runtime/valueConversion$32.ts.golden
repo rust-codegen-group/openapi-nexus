@@ -3,21 +3,35 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { ClientTool, ClientTool$Wire } from '../models/ClientTool';
-import { clientToolFromJSON, clientToolToJSON } from '../models/ClientTool';
+import {
+  matches$3FromJSON,
+  matches$3ToJSON,
+  matches$4FromJSON,
+  matches$4ToJSON,
+} from '../runtime/unionMatch';
 
-export type Value$32Wire = globalThis.Record<string, ClientTool$Wire>;
+export type Value$32Wire = number;
 
-export type Value$32 = globalThis.Record<string, ClientTool>;
+export type Value$32 = number;
 
-export function convert$32FromJSON(json: globalThis.Record<string, ClientTool$Wire>): Value$32 {
-  return Object.fromEntries(
-    Object.entries(json ?? {}).map(([key, item]) => [key, clientToolFromJSON(item)]),
-  );
+export function convert$32FromJSON(json: number): Value$32 {
+  const candidate: unknown = json;
+  if (matches$3FromJSON(candidate)) {
+    return json as unknown as number;
+  }
+  if (matches$4FromJSON(candidate)) {
+    return json as unknown as number;
+  }
+  return json as unknown as Value$32;
 }
 
-export function convert$32ToJSON(value: globalThis.Record<string, ClientTool>): Value$32Wire {
-  return Object.fromEntries(
-    Object.entries(value ?? {}).map(([key, item]) => [key, clientToolToJSON(item)]),
-  );
+export function convert$32ToJSON(value: number): Value$32Wire {
+  const candidate: unknown = value;
+  if (matches$3ToJSON(candidate)) {
+    return value as unknown as number;
+  }
+  if (matches$4ToJSON(candidate)) {
+    return value as unknown as number;
+  }
+  return value as unknown as Value$32Wire;
 }

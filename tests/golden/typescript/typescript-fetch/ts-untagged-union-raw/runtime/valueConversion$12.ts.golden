@@ -3,24 +3,21 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type {
-  NullableNonNullScalarsItems,
-  NullableNonNullScalarsItems$Wire,
-} from '../models/NullableNonNullScalarsItems';
-import { convert$13FromJSON, convert$13ToJSON } from './valueConversion$13';
+import type { Detail, Detail$Wire } from '../models/Detail';
+import { detailFromJSON, detailToJSON } from '../models/Detail';
 
-export type Value$12Wire = readonly (NullableNonNullScalarsItems$Wire | null)[];
+export type Value$12Wire = globalThis.Record<string, Detail$Wire>;
 
-export type Value$12 = readonly (NullableNonNullScalarsItems | null)[];
+export type Value$12 = globalThis.Record<string, Detail>;
 
-export function convert$12FromJSON(
-  json: ReadonlyArray<NullableNonNullScalarsItems$Wire | null>,
-): Value$12 {
-  return json.map(convert$13FromJSON);
+export function convert$12FromJSON(json: globalThis.Record<string, Detail$Wire>): Value$12 {
+  return Object.fromEntries(
+    Object.entries(json ?? {}).map(([key, item]) => [key, detailFromJSON(item)]),
+  );
 }
 
-export function convert$12ToJSON(
-  value: ReadonlyArray<NullableNonNullScalarsItems | null>,
-): Value$12Wire {
-  return value.map(convert$13ToJSON);
+export function convert$12ToJSON(value: globalThis.Record<string, Detail>): Value$12Wire {
+  return Object.fromEntries(
+    Object.entries(value ?? {}).map(([key, item]) => [key, detailToJSON(item)]),
+  );
 }

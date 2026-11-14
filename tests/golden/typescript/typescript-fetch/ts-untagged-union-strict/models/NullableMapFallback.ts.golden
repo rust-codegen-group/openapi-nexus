@@ -6,8 +6,8 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$57FromJSON,
-  matches$57ToJSON,
+  matches$62FromJSON,
+  matches$62ToJSON,
 } from '../runtime/unionMatch';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
@@ -25,7 +25,7 @@ export function nullableMapFallbackFromJSON(json: NullableMapFallback$Wire): Nul
   if (matches[0]) {
     return detailFromJSON(json as unknown as Detail$Wire);
   }
-  if (matches$57FromJSON(candidate)) {
+  if (matches$62FromJSON(candidate)) {
     return json as unknown as globalThis.Record<string, unknown> | null;
   }
   throw new TypeError('No matching NullableMapFallback untagged union member');
@@ -40,7 +40,7 @@ export function nullableMapFallbackToJSON(value: NullableMapFallback): NullableM
   if (matches[0]) {
     return detailToJSON(value as unknown as Detail);
   }
-  if (matches$57ToJSON(candidate)) {
+  if (matches$62ToJSON(candidate)) {
     return value as unknown as globalThis.Record<string, unknown> | null;
   }
   throw new TypeError('No matching NullableMapFallback untagged union member');

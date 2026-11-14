@@ -72,12 +72,8 @@ use crate::models::{
         title = "Petstore API",
         version = "1.0.0",
         description = "This is a sample Pet Store Server based on the OpenAPI 3.1 specification",
-        contact(
-            email = "apiteam@swagger.io"
-        ),
         license(
-            name = "Apache 2.0",
-            url = "https://www.apache.org/licenses/LICENSE-2.0.html"
+            name = "Apache 2.0"
         )
     )
 )]

@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$43FromJSON,
-  matches$43ToJSON,
-  matches$45FromJSON,
-  matches$45ToJSON,
+  matches$47FromJSON,
+  matches$47ToJSON,
+  matches$49FromJSON,
+  matches$49ToJSON,
 } from '../runtime/unionMatch';
 import type { MixedMapA, MixedMapA$Wire } from './MixedMapA';
 import { mixedMapAFromJSON, mixedMapAToJSON } from './MixedMapA';
@@ -20,10 +20,10 @@ export type MixedMapChoice = MixedMapA | MixedMapB;
 
 export function mixedMapChoiceFromJSON(json: MixedMapChoice$Wire): MixedMapChoice {
   const candidate: unknown = json;
-  if (matches$43FromJSON(candidate)) {
+  if (matches$47FromJSON(candidate)) {
     return mixedMapAFromJSON(json as unknown as MixedMapA$Wire);
   }
-  if (matches$45FromJSON(candidate)) {
+  if (matches$49FromJSON(candidate)) {
     return mixedMapBFromJSON(json as unknown as MixedMapB$Wire);
   }
   return json as unknown as MixedMapChoice;
@@ -31,10 +31,10 @@ export function mixedMapChoiceFromJSON(json: MixedMapChoice$Wire): MixedMapChoic
 
 export function mixedMapChoiceToJSON(value: MixedMapChoice): MixedMapChoice$Wire {
   const candidate: unknown = value;
-  if (matches$43ToJSON(candidate)) {
+  if (matches$47ToJSON(candidate)) {
     return mixedMapAToJSON(value as unknown as MixedMapA);
   }
-  if (matches$45ToJSON(candidate)) {
+  if (matches$49ToJSON(candidate)) {
     return mixedMapBToJSON(value as unknown as MixedMapB);
   }
   return value as unknown as MixedMapChoice$Wire;

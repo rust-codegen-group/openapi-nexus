@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$58FromJSON,
-  matches$58ToJSON,
-  matches$61FromJSON,
-  matches$61ToJSON,
+  matches$63FromJSON,
+  matches$63ToJSON,
+  matches$66FromJSON,
+  matches$66ToJSON,
 } from '../runtime/unionMatch';
 import type { NullableNumericOne, NullableNumericOne$Wire } from './NullableNumericOne';
 import { nullableNumericOneFromJSON, nullableNumericOneToJSON } from './NullableNumericOne';
@@ -22,7 +22,7 @@ export function nullableNumericChoiceFromJSON(
   json: NullableNumericChoice$Wire,
 ): NullableNumericChoice {
   const candidate: unknown = json;
-  const matches = [matches$58FromJSON(candidate), matches$61FromJSON(candidate)];
+  const matches = [matches$63FromJSON(candidate), matches$66FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NullableNumericChoice untagged union value');
   }
@@ -39,7 +39,7 @@ export function nullableNumericChoiceToJSON(
   value: NullableNumericChoice,
 ): NullableNumericChoice$Wire {
   const candidate: unknown = value;
-  const matches = [matches$58ToJSON(candidate), matches$61ToJSON(candidate)];
+  const matches = [matches$63ToJSON(candidate), matches$66ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NullableNumericChoice untagged union value');
   }

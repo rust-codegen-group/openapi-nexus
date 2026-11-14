@@ -10,62 +10,62 @@ const parameters = {
   properties: { title: { type: 'string' }, keep_key: { enum: [0, false, null] } },
   required: ['title'],
 };
-const options = { allowedCallers: ['direct'], deferLoading: false, outputSchema: { keep_key: true } };
-const optionsWire = { allowed_callers: ['direct'], defer_loading: false, output_schema: { keep_key: true } };
-const fn = { type: 'function', name: 'create_event', description: '', parameters, strict: false, ...options };
-const fnWire = { type: 'function', name: 'create_event', description: '', parameters, strict: false, ...optionsWire };
-const shell = {
-  type: 'shell',
-  environment: { type: 'local', workingDirectory: '/workspace', skills: [{ skillPath: '/skills/calendar' }] },
+const options = { allowedSources: ['direct'], deferred: false, outputShape: { keep_key: true } };
+const optionsWire = { allowed_sources: ['direct'], deferred: false, output_shape: { keep_key: true } };
+const first = { type: 'variant_a', label: 'item', details: '', arguments: parameters, strictMode: false, ...options };
+const firstWire = { type: 'variant_a', label: 'item', details: '', arguments: parameters, strict_mode: false, ...optionsWire };
+const third = {
+  type: 'variant_c',
+  configuration: { type: 'nested', location: '/root', entries: [{ entryPath: '/entry' }] },
 };
-const shellWire = {
-  type: 'shell',
-  environment: { type: 'local', working_directory: '/workspace', skills: [{ skill_path: '/skills/calendar' }] },
+const thirdWire = {
+  type: 'variant_c',
+  configuration: { type: 'nested', location: '/root', entries: [{ entry_path: '/entry' }] },
 };
-const namespace = { type: 'namespace', name: 'calendar', description: '', tools: [fn, shell] };
-const namespaceWire = { type: 'namespace', name: 'calendar', description: '', tools: [fnWire, shellWire] };
+const second = { type: 'variant_b', label: 'group', details: '', members: [first, third] };
+const secondWire = { type: 'variant_b', label: 'group', details: '', members: [firstWire, thirdWire] };
 
 for (const [name, value, wire] of [
-  ['function', fn, fnWire],
-  ['recursive namespace', namespace, namespaceWire],
-  ['shell with nested environment', shell, shellWire],
-  ['tag and payload in one member', { type: 'custom', inputSchema: parameters, ...options }, { type: 'custom', input_schema: parameters, ...optionsWire }],
-  ['inline-only payload', { type: 'inline_only', inlineName: 'kept' }, { type: 'inline_only', inline_name: 'kept' }],
-  ['multiple references', { type: 'multiple_refs', displayName: 'kept', ...options }, { type: 'multiple_refs', display_name: 'kept', ...optionsWire }],
-  ['outer properties', { type: 'outer_properties', outerName: 'kept', outerFlag: false, outerCount: 0, ...options }, { type: 'outer_properties', outer_name: 'kept', outer_flag: false, outer_count: 0, ...optionsWire }],
-  ['nested sibling properties', { type: 'nested_fields', innerName: 'in', outerName: 'out' }, { type: 'nested_fields', inner_name: 'in', outer_name: 'out' }],
-  ['overlapping nested objects', { type: 'overlap', config: { firstName: 'Ada', lastName: 'Lovelace' } }, { type: 'overlap', config: { first_name: 'Ada', last_name: 'Lovelace' } }],
-  ['outer requiredness', { type: 'outer_required', name: 'required' }, { type: 'outer_required', name: 'required' }],
-  ['reference-plus-tag control', { type: 'simple', ...options }, { type: 'simple', ...optionsWire }],
-  ['unit variant control', { type: 'other' }, { type: 'other' }],
+  ['variant A', first, firstWire],
+  ['recursive variant B', second, secondWire],
+  ['variant C with nested config', third, thirdWire],
+  ['tag and payload in variant D', { type: 'variant_d', inputShape: parameters, ...options }, { type: 'variant_d', input_shape: parameters, ...optionsWire }],
+  ['inline-only payload', { type: 'variant_e', inlineLabel: 'kept' }, { type: 'variant_e', inline_label: 'kept' }],
+  ['multiple references', { type: 'variant_f', displayName: 'kept', ...options }, { type: 'variant_f', display_name: 'kept', ...optionsWire }],
+  ['outer properties', { type: 'variant_g', outerLabel: 'kept', outerFlag: false, outerCount: 0, ...options }, { type: 'variant_g', outer_label: 'kept', outer_flag: false, outer_count: 0, ...optionsWire }],
+  ['nested sibling properties', { type: 'variant_k', innerLabel: 'in', outerLabel: 'out' }, { type: 'variant_k', inner_label: 'in', outer_label: 'out' }],
+  ['overlapping nested objects', { type: 'variant_j', data: { firstValue: 'one', secondValue: 'two' } }, { type: 'variant_j', data: { first_value: 'one', second_value: 'two' } }],
+  ['outer requiredness', { type: 'variant_i', label: 'required' }, { type: 'variant_i', label: 'required' }],
+  ['reference-plus-tag control', { type: 'variant_h', ...options }, { type: 'variant_h', ...optionsWire }],
+  ['unit variant control', { type: 'variant_l' }, { type: 'variant_l' }],
 ]) {
   test(`tagged allOf ${name}: serialization retains payload and renames fields`, () => {
-    assert.deepEqual(json(client.toolToJSON(value)), wire);
+    assert.deepEqual(json(client.variantToJSON(value)), wire);
   });
   test(`tagged allOf ${name}: deserialization retains payload and renames fields`, () => {
-    assert.deepEqual(json(client.toolFromJSON(wire)), value);
+    assert.deepEqual(json(client.variantFromJSON(wire)), value);
   });
 }
 
-test('search-output wrappers retain discovered function and namespace declarations', () => {
-  const value = [{ type: 'tool_search_output', callId: 'search-1', tools: [fn, namespace] }];
-  const wire = [{ type: 'tool_search_output', call_id: 'search-1', tools: [fnWire, namespaceWire] }];
-  assert.deepEqual(json(client.inputToJSON(value)), wire);
-  assert.deepEqual(json(client.inputFromJSON(wire)), value);
+test('result wrappers retain nested variant declarations', () => {
+  const value = [{ type: 'result', requestId: 'request-1', members: [first, second] }];
+  const wire = [{ type: 'result', request_id: 'request-1', members: [firstWire, secondWire] }];
+  assert.deepEqual(json(client.containerInputToJSON(value)), wire);
+  assert.deepEqual(json(client.containerInputFromJSON(wire)), value);
 });
 
-test('a containing request retains declarations and nested search-output tools', () => {
-  const value = { tools: [namespace], input: [{ type: 'tool_search_output', callId: 'search-1', tools: [fn] }] };
-  const wire = { tools: [namespaceWire], input: [{ type: 'tool_search_output', call_id: 'search-1', tools: [fnWire] }] };
-  assert.deepEqual(json(client.envelopeToJSON(value)), wire);
-  assert.deepEqual(json(client.envelopeFromJSON(wire)), value);
+test('a containing object retains declarations and nested result members', () => {
+  const value = { members: [second], input: [{ type: 'result', requestId: 'request-1', members: [first] }] };
+  const wire = { members: [secondWire], input: [{ type: 'result', request_id: 'request-1', members: [firstWire] }] };
+  assert.deepEqual(json(client.containerToJSON(value)), wire);
+  assert.deepEqual(json(client.containerFromJSON(wire)), value);
 });
 
-test('nested namespaces recurse without rewriting arbitrary JSON schema keys', () => {
-  const value = { type: 'namespace', name: 'outer', tools: [namespace] };
-  const wire = { type: 'namespace', name: 'outer', tools: [namespaceWire] };
-  assert.deepEqual(json(client.toolToJSON(value)), wire);
-  assert.deepEqual(json(client.toolFromJSON(wire)), value);
-  assert.equal(client.isFunction(fn), true);
-  assert.equal(client.isNamespace(fn), false);
+test('nested variants recurse without rewriting arbitrary JSON schema keys', () => {
+  const value = { type: 'variant_b', label: 'outer', members: [second] };
+  const wire = { type: 'variant_b', label: 'outer', members: [secondWire] };
+  assert.deepEqual(json(client.variantToJSON(value)), wire);
+  assert.deepEqual(json(client.variantFromJSON(wire)), value);
+  assert.equal(client.isVariantA(first), true);
+  assert.equal(client.isVariantB(first), false);
 });

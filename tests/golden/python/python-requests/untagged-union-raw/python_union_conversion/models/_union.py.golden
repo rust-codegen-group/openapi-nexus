@@ -214,50 +214,24 @@ def value_32_to_dict(value: object) -> object:
     return _union_support.scalar(value)
 
 def value_33_from_dict(value: object) -> object:
-    return [value_34_from_dict(item) for item in _union_support.as_list(value)]
+    return value
 
 def value_33_to_dict(value: object) -> object:
-    return [value_34_to_dict(item) for item in _union_support.as_list(value)]
+    return value
 
 def value_34_from_dict(value: object) -> object:
-    return value
-
-def value_34_to_dict(value: object) -> object:
-    return value
-
-def value_35_from_dict(value: object) -> object:
-    from.import client_tool
-    return client_tool.ClientTool.from_dict(_union_support.as_dict(value))
-
-def value_35_to_dict(value: object) -> object:
-    return _union_support.model_to_dict(value)
-
-def value_36_from_dict(value: object) -> object:
-    from.import search_tool
-    return search_tool.SearchTool.from_dict(_union_support.as_dict(value))
-
-def value_36_to_dict(value: object) -> object:
-    return _union_support.model_to_dict(value)
-
-def value_37_from_dict(value: object) -> object:
-    return value
-
-def value_37_to_dict(value: object) -> object:
-    return value
-
-def value_38_from_dict(value: object) -> object:
     return value_1_from_dict(value)
 
-def value_38_to_dict(value: object) -> object:
+def value_34_to_dict(value: object) -> object:
     return value_1_to_dict(value)
 
-def value_39_from_dict(value: object) -> object:
+def value_35_from_dict(value: object) -> object:
     return value_16_from_dict(value)
 
-def value_39_to_dict(value: object) -> object:
+def value_35_to_dict(value: object) -> object:
     return value_16_to_dict(value)
 
-def value_40_from_dict(value: object) -> object:
+def value_36_from_dict(value: object) -> object:
     data = _union_support.as_dict(value)
     if data.get('kind') == 'choice':
         return value_3_from_dict(data['payload'])
@@ -267,7 +241,7 @@ def value_40_from_dict(value: object) -> object:
 
     raise ValueError("No matching tagged union variant")
 
-def value_40_to_dict(value: object) -> object:
+def value_36_to_dict(value: object) -> object:
     if ((_union_support.is_object(value)
      and (_union_support.has(value, 'revision', 'revision', True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
      and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
@@ -279,7 +253,7 @@ def value_40_to_dict(value: object) -> object:
 
     raise ValueError("No matching tagged union variant")
 
-def value_41_from_dict(value: object) -> object:
+def value_37_from_dict(value: object) -> object:
     data = _union_support.as_dict(value)
     if data.get('kind') == 'choice':
         return value_11_from_dict(data['payload'])
@@ -289,7 +263,7 @@ def value_41_from_dict(value: object) -> object:
 
     raise ValueError("No matching tagged union variant")
 
-def value_41_to_dict(value: object) -> object:
+def value_37_to_dict(value: object) -> object:
     if (((_union_support.is_object(value)
      and (not _union_support.has(value, 'first_value', 'first_value', False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
      and (_union_support.has(value, 'revision', 'revision', True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
@@ -305,51 +279,77 @@ def value_41_to_dict(value: object) -> object:
 
     raise ValueError("No matching tagged union variant")
 
-def value_42_from_dict(value: object) -> object:
+def value_38_from_dict(value: object) -> object:
     return value
 
-def value_42_to_dict(value: object) -> object:
+def value_38_to_dict(value: object) -> object:
     return value
 
-def value_43_from_dict(value: object) -> object:
+def value_39_from_dict(value: object) -> object:
     return [value_6_from_dict(item) for item in _union_support.as_list(value)]
 
-def value_43_to_dict(value: object) -> object:
+def value_39_to_dict(value: object) -> object:
     return [value_6_to_dict(item) for item in _union_support.as_list(value)]
 
+def value_40_from_dict(value: object) -> object:
+    return value_41_from_dict(value)
+
+def value_40_to_dict(value: object) -> object:
+    return value_41_to_dict(value)
+
+def value_41_from_dict(value: object) -> object:
+    return value
+
+def value_41_to_dict(value: object) -> object:
+    return value
+
+def value_42_from_dict(value: object) -> object:
+    return {key: value_41_from_dict(item) for key, item in _union_support.as_dict(value).items()}
+
+def value_42_to_dict(value: object) -> object:
+    return {key: value_41_to_dict(item) for key, item in _union_support.mapping(value).items()}
+
+def value_43_from_dict(value: object) -> object:
+    return [value_40_from_dict(item) for item in _union_support.as_list(value)]
+
+def value_43_to_dict(value: object) -> object:
+    return [value_40_to_dict(item) for item in _union_support.as_list(value)]
+
 def value_44_from_dict(value: object) -> object:
-    return value_45_from_dict(value)
+    return value
 
 def value_44_to_dict(value: object) -> object:
-    return value_45_to_dict(value)
+    return value
 
 def value_45_from_dict(value: object) -> object:
-    return value
-
-def value_45_to_dict(value: object) -> object:
-    return value
-
-def value_46_from_dict(value: object) -> object:
-    return {key: value_45_from_dict(item) for key, item in _union_support.as_dict(value).items()}
-
-def value_46_to_dict(value: object) -> object:
-    return {key: value_45_to_dict(item) for key, item in _union_support.mapping(value).items()}
-
-def value_47_from_dict(value: object) -> object:
-    return [value_44_from_dict(item) for item in _union_support.as_list(value)]
-
-def value_47_to_dict(value: object) -> object:
-    return [value_44_to_dict(item) for item in _union_support.as_list(value)]
-
-def value_48_from_dict(value: object) -> object:
-    return value
-
-def value_48_to_dict(value: object) -> object:
-    return value
-
-def value_49_from_dict(value: object) -> object:
     from.import tagged_member_envelope
     return tagged_member_envelope.TaggedMemberEnvelope.from_dict(_union_support.as_dict(value))
+
+def value_45_to_dict(value: object) -> object:
+    return _union_support.model_to_dict(value)
+
+def value_46_from_dict(value: object) -> object:
+    return [value_47_from_dict(item) for item in _union_support.as_list(value)]
+
+def value_46_to_dict(value: object) -> object:
+    return [value_47_to_dict(item) for item in _union_support.as_list(value)]
+
+def value_47_from_dict(value: object) -> object:
+    return value
+
+def value_47_to_dict(value: object) -> object:
+    return value
+
+def value_48_from_dict(value: object) -> object:
+    from.import payload_a
+    return payload_a.PayloadA.from_dict(_union_support.as_dict(value))
+
+def value_48_to_dict(value: object) -> object:
+    return _union_support.model_to_dict(value)
+
+def value_49_from_dict(value: object) -> object:
+    from.import payload_b
+    return payload_b.PayloadB.from_dict(_union_support.as_dict(value))
 
 def value_49_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)

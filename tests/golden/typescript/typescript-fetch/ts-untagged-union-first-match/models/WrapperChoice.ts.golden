@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$58FromJSON,
-  matches$58ToJSON,
-  matches$61FromJSON,
-  matches$61ToJSON,
+  matches$63FromJSON,
+  matches$63ToJSON,
+  matches$66FromJSON,
+  matches$66ToJSON,
 } from '../runtime/unionMatch';
 import type { WrapperOne, WrapperOne$Wire } from './WrapperOne';
 import { wrapperOneFromJSON, wrapperOneToJSON } from './WrapperOne';
@@ -20,10 +20,10 @@ export type WrapperChoice = WrapperOne | WrapperTwo;
 
 export function wrapperChoiceFromJSON(json: WrapperChoice$Wire): WrapperChoice {
   const candidate: unknown = json;
-  if (matches$58FromJSON(candidate)) {
+  if (matches$63FromJSON(candidate)) {
     return wrapperOneFromJSON(json as unknown as WrapperOne$Wire);
   }
-  if (matches$61FromJSON(candidate)) {
+  if (matches$66FromJSON(candidate)) {
     return wrapperTwoFromJSON(json as unknown as WrapperTwo$Wire);
   }
   return json as unknown as WrapperChoice;
@@ -31,10 +31,10 @@ export function wrapperChoiceFromJSON(json: WrapperChoice$Wire): WrapperChoice {
 
 export function wrapperChoiceToJSON(value: WrapperChoice): WrapperChoice$Wire {
   const candidate: unknown = value;
-  if (matches$58ToJSON(candidate)) {
+  if (matches$63ToJSON(candidate)) {
     return wrapperOneToJSON(value as unknown as WrapperOne);
   }
-  if (matches$61ToJSON(candidate)) {
+  if (matches$66ToJSON(candidate)) {
     return wrapperTwoToJSON(value as unknown as WrapperTwo);
   }
   return value as unknown as WrapperChoice$Wire;

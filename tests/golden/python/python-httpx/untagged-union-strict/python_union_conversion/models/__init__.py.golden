@@ -10,7 +10,6 @@ from .ambiguous_tagged_member import AmbiguousTaggedMember as AmbiguousTaggedMem
 from .branch import Branch as Branch
 from .choice import Choice as Choice
 from .choice_alias import ChoiceAlias as ChoiceAlias
-from .client_tool import ClientTool as ClientTool
 from .dependent_choice import DependentChoice as DependentChoice
 from .dependent_envelope import DependentEnvelope as DependentEnvelope
 from .envelope import Envelope as Envelope
@@ -22,10 +21,10 @@ from .nullable_envelope import NullableEnvelope as NullableEnvelope
 from .numeric_one import NumericOne as NumericOne
 from .numeric_two import NumericTwo as NumericTwo
 from .open_choice import OpenChoice as OpenChoice
+from .payload_a import PayloadA as PayloadA
+from .payload_b import PayloadB as PayloadB
 from .recursive import Recursive as Recursive
-from .request import Request as Request
 from .scalar_choice import ScalarChoice as ScalarChoice
-from .search_tool import SearchTool as SearchTool
 from .send_multipart_multipart_request_body import SendMultipartMultipartRequestBody as SendMultipartMultipartRequestBody
 from .send_multipart_request import SendMultipartRequest as SendMultipartRequest
 from .tagged_ambiguous import TaggedAmbiguous as TaggedAmbiguous
@@ -36,5 +35,6 @@ from .tagged_member_choice import TaggedMemberChoice as TaggedMemberChoice
 from .tagged_member_envelope import TaggedMemberEnvelope as TaggedMemberEnvelope
 from .tagged_object_choice import TaggedObjectChoice as TaggedObjectChoice
 from .tagged_record import TaggedRecord as TaggedRecord
-from .tool import Tool as Tool
+from .variant_request import VariantRequest as VariantRequest
+from .variant_set import VariantSet as VariantSet
 from .wrapped_null_choice import WrappedNullChoice as WrappedNullChoice

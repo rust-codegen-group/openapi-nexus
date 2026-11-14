@@ -5,6 +5,6 @@ build-backend = "hatchling.build"
 [project]
 name = "array_of_inline_objects_test"
 version = "1.0.0"
-description = "Test case for array of inline objects with snake_case to camelCase conversion (main case from user issue)"
+description = "Test case for array of inline objects with snake_case to camelCase conversion."
 requires-python = ">=3.12"
 dependencies = ["requests>=2.32"]

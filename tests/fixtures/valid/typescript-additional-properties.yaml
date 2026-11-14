@@ -72,26 +72,26 @@ components:
           properties:
             other_field: {type: string}
           additionalProperties: {type: string}
-    SearchItem:
+    TaggedItem:
       type: object
       required: [type]
       properties:
-        type: {type: string, enum: [web_search_call]}
+        type: {type: string, enum: [item_event]}
         id: {type: [string, 'null']}
         status: {type: [string, 'null']}
       additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
-    SearchStreamEvent:
+    StreamEvent:
       oneOf:
         - type: object
           required: [type, sequence_number]
           properties:
-            type: {type: string, enum: [response.web_search_call.searching]}
+            type: {type: string, enum: [stream_event_active]}
             sequence_number: {type: integer, format: int64}
           additionalProperties: {$ref: '#/components/schemas/AnyJsonValue'}
         - type: object
           required: [type]
           properties:
-            type: {type: string, enum: [response.completed]}
+            type: {type: string, enum: [stream_event_complete]}
     Detail:
       type: object
       required: [display_name]

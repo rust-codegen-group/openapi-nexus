@@ -3,21 +3,21 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Tool, Tool$Wire } from '../models/Tool';
+import type { Choice, Choice$Wire } from '../models/Choice';
 import { convert$25FromJSON, convert$25ToJSON } from './valueConversion$25';
 
-export type Value$24Wire = Tool$Wire[] | null;
+export type Value$24Wire = Choice$Wire[] | null;
 
-export type Value$24 = Tool[] | null;
+export type Value$24 = Choice[] | null;
 
-export function convert$24FromJSON(json: ReadonlyArray<Tool$Wire> | null): Value$24 {
+export function convert$24FromJSON(json: ReadonlyArray<Choice$Wire> | null): Value$24 {
   if (json == null) {
     return null;
   }
   return convert$25FromJSON(json);
 }
 
-export function convert$24ToJSON(value: ReadonlyArray<Tool> | null): Value$24Wire {
+export function convert$24ToJSON(value: ReadonlyArray<Choice> | null): Value$24Wire {
   if (value == null) {
     return null;
   }

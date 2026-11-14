@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$58FromJSON,
-  matches$58ToJSON,
-  matches$61FromJSON,
-  matches$61ToJSON,
+  matches$63FromJSON,
+  matches$63ToJSON,
+  matches$66FromJSON,
+  matches$66ToJSON,
 } from '../runtime/unionMatch';
 import type { NullableNumericOne, NullableNumericOne$Wire } from './NullableNumericOne';
 import { nullableNumericOneFromJSON, nullableNumericOneToJSON } from './NullableNumericOne';
@@ -22,10 +22,10 @@ export function nullableNumericChoiceFromJSON(
   json: NullableNumericChoice$Wire,
 ): NullableNumericChoice {
   const candidate: unknown = json;
-  if (matches$58FromJSON(candidate)) {
+  if (matches$63FromJSON(candidate)) {
     return nullableNumericOneFromJSON(json as unknown as NullableNumericOne$Wire);
   }
-  if (matches$61FromJSON(candidate)) {
+  if (matches$66FromJSON(candidate)) {
     return nullableNumericTwoFromJSON(json as unknown as NullableNumericTwo$Wire);
   }
   return json as unknown as NullableNumericChoice;
@@ -35,10 +35,10 @@ export function nullableNumericChoiceToJSON(
   value: NullableNumericChoice,
 ): NullableNumericChoice$Wire {
   const candidate: unknown = value;
-  if (matches$58ToJSON(candidate)) {
+  if (matches$63ToJSON(candidate)) {
     return nullableNumericOneToJSON(value as unknown as NullableNumericOne);
   }
-  if (matches$61ToJSON(candidate)) {
+  if (matches$66ToJSON(candidate)) {
     return nullableNumericTwoToJSON(value as unknown as NullableNumericTwo);
   }
   return value as unknown as NullableNumericChoice$Wire;

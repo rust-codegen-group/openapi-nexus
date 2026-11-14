@@ -6,8 +6,8 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$33FromJSON,
-  matches$33ToJSON,
+  matches$37FromJSON,
+  matches$37ToJSON,
 } from '../runtime/unionMatch';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
@@ -20,7 +20,7 @@ export function explicitNullableEnumChoiceFromJSON(
   json: ExplicitNullableEnumChoice$Wire,
 ): ExplicitNullableEnumChoice {
   const candidate: unknown = json;
-  const matches = [matches$33FromJSON(candidate), matches$1FromJSON(candidate)];
+  const matches = [matches$37FromJSON(candidate), matches$1FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous ExplicitNullableEnumChoice untagged union value');
   }
@@ -37,7 +37,7 @@ export function explicitNullableEnumChoiceToJSON(
   value: ExplicitNullableEnumChoice,
 ): ExplicitNullableEnumChoice$Wire {
   const candidate: unknown = value;
-  const matches = [matches$33ToJSON(candidate), matches$1ToJSON(candidate)];
+  const matches = [matches$37ToJSON(candidate), matches$1ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous ExplicitNullableEnumChoice untagged union value');
   }

@@ -4,23 +4,23 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$30FromJSON,
-  matches$30ToJSON,
-  matches$32FromJSON,
-  matches$32ToJSON,
+  matches$34FromJSON,
+  matches$34ToJSON,
+  matches$36FromJSON,
+  matches$36ToJSON,
 } from '../runtime/unionMatch';
+import type { NullableChoice, NullableChoice$Wire } from './NullableChoice';
+import { nullableChoiceFromJSON, nullableChoiceToJSON } from './NullableChoice';
 import type { NullableDetail, NullableDetail$Wire } from './NullableDetail';
 import { nullableDetailFromJSON, nullableDetailToJSON } from './NullableDetail';
-import type { NullableTool, NullableTool$Wire } from './NullableTool';
-import { nullableToolFromJSON, nullableToolToJSON } from './NullableTool';
 
-export type ExplicitNullOverlap$Wire = NullableDetail$Wire | NullableTool$Wire | null;
+export type ExplicitNullOverlap$Wire = NullableDetail$Wire | NullableChoice$Wire | null;
 
-export type ExplicitNullOverlap = NullableDetail | NullableTool | null;
+export type ExplicitNullOverlap = NullableDetail | NullableChoice | null;
 
 export function explicitNullOverlapFromJSON(json: ExplicitNullOverlap$Wire): ExplicitNullOverlap {
   const candidate: unknown = json;
-  const matches = [matches$30FromJSON(candidate), matches$32FromJSON(candidate)];
+  const matches = [matches$34FromJSON(candidate), matches$36FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous ExplicitNullOverlap untagged union value');
   }
@@ -28,7 +28,7 @@ export function explicitNullOverlapFromJSON(json: ExplicitNullOverlap$Wire): Exp
     return nullableDetailFromJSON(json as unknown as NullableDetail$Wire);
   }
   if (matches[1]) {
-    return nullableToolFromJSON(json as unknown as NullableTool$Wire);
+    return nullableChoiceFromJSON(json as unknown as NullableChoice$Wire);
   }
   if (candidate === null) {
     return null;
@@ -38,7 +38,7 @@ export function explicitNullOverlapFromJSON(json: ExplicitNullOverlap$Wire): Exp
 
 export function explicitNullOverlapToJSON(value: ExplicitNullOverlap): ExplicitNullOverlap$Wire {
   const candidate: unknown = value;
-  const matches = [matches$30ToJSON(candidate), matches$32ToJSON(candidate)];
+  const matches = [matches$34ToJSON(candidate), matches$36ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous ExplicitNullOverlap untagged union value');
   }
@@ -46,7 +46,7 @@ export function explicitNullOverlapToJSON(value: ExplicitNullOverlap): ExplicitN
     return nullableDetailToJSON(value as unknown as NullableDetail);
   }
   if (matches[1]) {
-    return nullableToolToJSON(value as unknown as NullableTool);
+    return nullableChoiceToJSON(value as unknown as NullableChoice);
   }
   if (candidate === null) {
     return null;

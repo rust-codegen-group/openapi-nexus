@@ -220,23 +220,23 @@ export function matches$13FromJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'max_uses')) {
-    const item = object['max_uses'];
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'kind')) {
+    return false;
+  }
+  if (!matches$14FromJSON(object['kind'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    return false;
+  }
+  if (!matches$15FromJSON(object['label'])) {
+    return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(candidate, 'limit')) {
+    const item = object['limit'];
     if (item !== undefined && !matches$3FromJSON(item)) {
       return false;
     }
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    return false;
-  }
-  if (!matches$14FromJSON(object['name'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'type')) {
-    return false;
-  }
-  if (!matches$15FromJSON(object['type'])) {
-    return false;
   }
   return true;
 }
@@ -246,44 +246,150 @@ export function matches$13ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'maxUses')) {
-    const item = object['maxUses'];
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'kind')) {
+    return false;
+  }
+  if (!matches$14ToJSON(object['kind'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    return false;
+  }
+  if (!matches$15ToJSON(object['label'])) {
+    return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(candidate, 'limit')) {
+    const item = object['limit'];
     if (item !== undefined && !matches$3ToJSON(item)) {
       return false;
     }
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    return false;
-  }
-  if (!matches$14ToJSON(object['name'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'type')) {
-    return false;
-  }
-  if (!matches$15ToJSON(object['type'])) {
-    return false;
   }
   return true;
 }
 
 export function matches$14FromJSON(candidate: unknown): boolean {
-  return candidate === 'web_search';
+  return candidate === 'variant_b';
 }
 
 export function matches$14ToJSON(candidate: unknown): boolean {
-  return candidate === 'web_search';
+  return candidate === 'variant_b';
 }
 
 export function matches$15FromJSON(candidate: unknown): boolean {
-  return candidate === 'web_search_20250305';
+  return candidate === 'payload_b';
 }
 
 export function matches$15ToJSON(candidate: unknown): boolean {
-  return candidate === 'web_search_20250305';
+  return candidate === 'payload_b';
 }
 
 export function matches$17FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    return false;
+  }
+  if (!matches$2FromJSON(object['label'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'payload_schema')) {
+    return false;
+  }
+  if (!matches$18FromJSON(object['payload_schema'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$17ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    return false;
+  }
+  if (!matches$2ToJSON(object['label'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'payloadSchema')) {
+    return false;
+  }
+  if (!matches$18ToJSON(object['payloadSchema'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$18FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$18ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$19FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(candidate, 'alternate_flag')) {
+    const item = object['alternate_flag'];
+    if (item !== undefined && !matches$5FromJSON(item)) {
+      return false;
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    return false;
+  }
+  if (!matches$2FromJSON(object['label'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'payload_schema')) {
+    return false;
+  }
+  if (!matches$18FromJSON(object['payload_schema'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$19ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(candidate, 'alternateFlag')) {
+    const item = object['alternateFlag'];
+    if (item !== undefined && !matches$5ToJSON(item)) {
+      return false;
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'label')) {
+    return false;
+  }
+  if (!matches$2ToJSON(object['label'])) {
+    return false;
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'payloadSchema')) {
+    return false;
+  }
+  if (!matches$18ToJSON(object['payloadSchema'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$20FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -303,7 +409,7 @@ export function matches$17FromJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$17ToJSON(candidate: unknown): boolean {
+export function matches$20ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -323,52 +429,18 @@ export function matches$17ToJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$18FromJSON(candidate: unknown): boolean {
-  if (!matches$19FromJSON(candidate)) {
-    return false;
-  }
-  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$21FromJSON);
-}
-
-export function matches$18ToJSON(candidate: unknown): boolean {
-  if (!matches$19ToJSON(candidate)) {
-    return false;
-  }
-  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$21ToJSON);
-}
-
-export function matches$19FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$19ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return true;
-}
-
 export function matches$21FromJSON(candidate: unknown): boolean {
-  if (matches$1FromJSON(candidate)) {
-    return true;
+  if (!matches$22FromJSON(candidate)) {
+    return false;
   }
-  if (matches$17FromJSON(candidate)) {
-    return true;
-  }
-  return false;
+  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$24FromJSON);
 }
 
 export function matches$21ToJSON(candidate: unknown): boolean {
-  if (matches$1ToJSON(candidate)) {
-    return true;
+  if (!matches$22ToJSON(candidate)) {
+    return false;
   }
-  if (matches$17ToJSON(candidate)) {
-    return true;
-  }
-  return false;
+  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$24ToJSON);
 }
 
 export function matches$22FromJSON(candidate: unknown): boolean {
@@ -385,96 +457,24 @@ export function matches$22ToJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$23FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'input_schema')) {
-    return false;
-  }
-  if (!matches$22FromJSON(object['input_schema'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    return false;
-  }
-  if (!matches$2FromJSON(object['name'])) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$23ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'inputSchema')) {
-    return false;
-  }
-  if (!matches$22ToJSON(object['inputSchema'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    return false;
-  }
-  if (!matches$2ToJSON(object['name'])) {
-    return false;
-  }
-  return true;
-}
-
 export function matches$24FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
+  if (matches$1FromJSON(candidate)) {
+    return true;
   }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'input_schema')) {
-    return false;
+  if (matches$20FromJSON(candidate)) {
+    return true;
   }
-  if (!matches$22FromJSON(object['input_schema'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    return false;
-  }
-  if (!matches$2FromJSON(object['name'])) {
-    return false;
-  }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'second_option')) {
-    const item = object['second_option'];
-    if (item !== undefined && !matches$5FromJSON(item)) {
-      return false;
-    }
-  }
-  return true;
+  return false;
 }
 
 export function matches$24ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
+  if (matches$1ToJSON(candidate)) {
+    return true;
   }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'inputSchema')) {
-    return false;
+  if (matches$20ToJSON(candidate)) {
+    return true;
   }
-  if (!matches$22ToJSON(object['inputSchema'])) {
-    return false;
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'name')) {
-    return false;
-  }
-  if (!matches$2ToJSON(object['name'])) {
-    return false;
-  }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'secondOption')) {
-    const item = object['secondOption'];
-    if (item !== undefined && !matches$5ToJSON(item)) {
-      return false;
-    }
-  }
-  return true;
+  return false;
 }
 
 export function matches$25FromJSON(candidate: unknown): boolean {
@@ -577,18 +577,74 @@ export function matches$29FromJSON(candidate: unknown): boolean {
   if (!Array.isArray(candidate)) {
     return false;
   }
-  return candidate.every(matches$1FromJSON);
+  return candidate.every(matches$17FromJSON);
 }
 
 export function matches$29ToJSON(candidate: unknown): boolean {
   if (!Array.isArray(candidate)) {
     return false;
   }
-  return candidate.every(matches$1ToJSON);
+  return candidate.every(matches$17ToJSON);
 }
 
 export function matches$30FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$13FromJSON);
+}
+
+export function matches$30ToJSON(candidate: unknown): boolean {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$13ToJSON);
+}
+
+export function matches$31FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$17FromJSON);
+}
+
+export function matches$31ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$17ToJSON);
+}
+
+export function matches$32FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$13FromJSON);
+}
+
+export function matches$32ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$13ToJSON);
+}
+
+export function matches$33FromJSON(candidate: unknown): boolean {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$1FromJSON);
+}
+
+export function matches$33ToJSON(candidate: unknown): boolean {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$1ToJSON);
+}
+
+export function matches$34FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
     return true;
   }
   if (matches$1FromJSON(candidate)) {
@@ -597,8 +653,8 @@ export function matches$30FromJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$30ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
+export function matches$34ToJSON(candidate: unknown): boolean {
+  if (matches$35ToJSON(candidate)) {
     return true;
   }
   if (matches$1ToJSON(candidate)) {
@@ -607,19 +663,19 @@ export function matches$30ToJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$31FromJSON(candidate: unknown): boolean {
+export function matches$35FromJSON(candidate: unknown): boolean {
   return candidate === null;
 }
 
-export function matches$31ToJSON(candidate: unknown): boolean {
+export function matches$35ToJSON(candidate: unknown): boolean {
   return candidate === null;
 }
 
-export function matches$32FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
+export function matches$36FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
     return true;
   }
-  if (matches$23FromJSON(candidate)) {
+  if (matches$17FromJSON(candidate)) {
     return true;
   }
   if (matches$13FromJSON(candidate)) {
@@ -628,11 +684,11 @@ export function matches$32FromJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$32ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
+export function matches$36ToJSON(candidate: unknown): boolean {
+  if (matches$35ToJSON(candidate)) {
     return true;
   }
-  if (matches$23ToJSON(candidate)) {
+  if (matches$17ToJSON(candidate)) {
     return true;
   }
   if (matches$13ToJSON(candidate)) {
@@ -641,85 +697,85 @@ export function matches$32ToJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$33FromJSON(candidate: unknown): boolean {
+export function matches$37FromJSON(candidate: unknown): boolean {
   if (!Array.isArray(candidate)) {
     return false;
   }
-  return candidate.every(matches$34FromJSON);
+  return candidate.every(matches$38FromJSON);
 }
 
-export function matches$33ToJSON(candidate: unknown): boolean {
+export function matches$37ToJSON(candidate: unknown): boolean {
   if (!Array.isArray(candidate)) {
     return false;
   }
-  return candidate.every(matches$34ToJSON);
+  return candidate.every(matches$38ToJSON);
 }
 
-export function matches$34FromJSON(candidate: unknown): boolean {
-  return candidate === null || matches$35FromJSON(candidate);
+export function matches$38FromJSON(candidate: unknown): boolean {
+  return candidate === null || matches$39FromJSON(candidate);
 }
 
-export function matches$34ToJSON(candidate: unknown): boolean {
-  return candidate === null || matches$35ToJSON(candidate);
+export function matches$38ToJSON(candidate: unknown): boolean {
+  return candidate === null || matches$39ToJSON(candidate);
 }
 
-export function matches$35FromJSON(candidate: unknown): boolean {
+export function matches$39FromJSON(candidate: unknown): boolean {
   if (!matches$3FromJSON(candidate)) {
     return false;
   }
-  if (!matches$36FromJSON(candidate)) {
+  if (!matches$40FromJSON(candidate)) {
     return false;
   }
   return true;
 }
 
-export function matches$35ToJSON(candidate: unknown): boolean {
+export function matches$39ToJSON(candidate: unknown): boolean {
   if (!matches$3ToJSON(candidate)) {
     return false;
   }
-  if (!matches$36ToJSON(candidate)) {
+  if (!matches$40ToJSON(candidate)) {
     return false;
   }
   return true;
 }
 
-export function matches$36FromJSON(candidate: unknown): boolean {
+export function matches$40FromJSON(candidate: unknown): boolean {
   return candidate === 1;
 }
 
-export function matches$36ToJSON(candidate: unknown): boolean {
+export function matches$40ToJSON(candidate: unknown): boolean {
   return candidate === 1;
 }
 
-export function matches$37FromJSON(candidate: unknown): boolean {
+export function matches$41FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
   return Object.values(candidate).every(matches$12FromJSON);
 }
 
-export function matches$37ToJSON(candidate: unknown): boolean {
+export function matches$41ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
   return Object.values(candidate).every(matches$12ToJSON);
 }
 
-export function matches$38FromJSON(candidate: unknown): boolean {
+export function matches$42FromJSON(candidate: unknown): boolean {
   if (!Array.isArray(candidate)) {
     return false;
   }
-  return candidate.every(matches$39FromJSON);
+  return candidate.every(matches$43FromJSON);
 }
 
-export function matches$38ToJSON(candidate: unknown): boolean {
+export function matches$42ToJSON(candidate: unknown): boolean {
   if (!Array.isArray(candidate)) {
     return false;
   }
-  return candidate.every(matches$39ToJSON);
+  return candidate.every(matches$43ToJSON);
 }
 
-export function matches$39FromJSON(candidate: unknown): boolean {
+export function matches$43FromJSON(candidate: unknown): boolean {
   if (matches$0FromJSON(candidate)) {
     return true;
   }
@@ -732,7 +788,7 @@ export function matches$39FromJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$39ToJSON(candidate: unknown): boolean {
+export function matches$43ToJSON(candidate: unknown): boolean {
   if (matches$0ToJSON(candidate)) {
     return true;
   }
@@ -745,36 +801,36 @@ export function matches$39ToJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$40FromJSON(candidate: unknown): boolean {
-  if (!matches$41FromJSON(candidate)) {
+export function matches$44FromJSON(candidate: unknown): boolean {
+  if (!matches$45FromJSON(candidate)) {
     return false;
   }
   return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$1FromJSON);
 }
 
-export function matches$40ToJSON(candidate: unknown): boolean {
-  if (!matches$41ToJSON(candidate)) {
+export function matches$44ToJSON(candidate: unknown): boolean {
+  if (!matches$45ToJSON(candidate)) {
     return false;
   }
   return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$1ToJSON);
 }
 
-export function matches$41FromJSON(candidate: unknown): boolean {
+export function matches$45FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
   return true;
 }
 
-export function matches$41ToJSON(candidate: unknown): boolean {
+export function matches$45ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
   return true;
 }
 
-export function matches$43FromJSON(candidate: unknown): boolean {
-  if (!matches$44FromJSON(candidate)) {
+export function matches$47FromJSON(candidate: unknown): boolean {
+  if (!matches$48FromJSON(candidate)) {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
@@ -787,8 +843,8 @@ export function matches$43FromJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$43ToJSON(candidate: unknown): boolean {
-  if (!matches$44ToJSON(candidate)) {
+export function matches$47ToJSON(candidate: unknown): boolean {
+  if (!matches$48ToJSON(candidate)) {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
@@ -801,7 +857,7 @@ export function matches$43ToJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$44FromJSON(candidate: unknown): boolean {
+export function matches$48FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -815,7 +871,7 @@ export function matches$44FromJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$44ToJSON(candidate: unknown): boolean {
+export function matches$48ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -829,35 +885,35 @@ export function matches$44ToJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$45FromJSON(candidate: unknown): boolean {
-  if (!matches$44FromJSON(candidate)) {
+export function matches$49FromJSON(candidate: unknown): boolean {
+  if (!matches$48FromJSON(candidate)) {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
   const declared = ['marker'];
   for (const [key, item] of Object.entries(object)) {
-    if (!declared.includes(key) && !matches$29FromJSON(item)) {
+    if (!declared.includes(key) && !matches$33FromJSON(item)) {
       return false;
     }
   }
   return true;
 }
 
-export function matches$45ToJSON(candidate: unknown): boolean {
-  if (!matches$44ToJSON(candidate)) {
+export function matches$49ToJSON(candidate: unknown): boolean {
+  if (!matches$48ToJSON(candidate)) {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
   const declared = ['marker'];
   for (const [key, item] of Object.entries(object)) {
-    if (!declared.includes(key) && !matches$29ToJSON(item)) {
+    if (!declared.includes(key) && !matches$33ToJSON(item)) {
       return false;
     }
   }
   return true;
 }
 
-export function matches$46FromJSON(candidate: unknown): boolean {
+export function matches$50FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -871,96 +927,8 @@ export function matches$46FromJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$47FromJSON(object['revision'])) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$46ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'firstValue')) {
-    const item = object['firstValue'];
-    if (item !== undefined && !matches$2ToJSON(item)) {
-      return false;
-    }
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
-    return false;
-  }
-  if (!matches$47ToJSON(object['revision'])) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$47FromJSON(candidate: unknown): boolean {
-  if (!matches$34FromJSON(candidate)) {
-    return false;
-  }
-  if (!matches$48FromJSON(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$47ToJSON(candidate: unknown): boolean {
-  if (!matches$34ToJSON(candidate)) {
-    return false;
-  }
-  if (!matches$48ToJSON(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$48FromJSON(candidate: unknown): boolean {
-  if (matches$36FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$49FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$48ToJSON(candidate: unknown): boolean {
-  if (matches$36ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$49ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$49FromJSON(candidate: unknown): boolean {
-  return candidate === 2;
-}
-
-export function matches$49ToJSON(candidate: unknown): boolean {
-  return candidate === 2;
-}
-
-export function matches$50FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
-    return false;
-  }
   if (!matches$51FromJSON(object['revision'])) {
     return false;
-  }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'second_value')) {
-    const item = object['second_value'];
-    if (item !== undefined && !matches$2FromJSON(item)) {
-      return false;
-    }
   }
   return true;
 }
@@ -970,250 +938,70 @@ export function matches$50ToJSON(candidate: unknown): boolean {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(candidate, 'firstValue')) {
+    const item = object['firstValue'];
+    if (item !== undefined && !matches$2ToJSON(item)) {
+      return false;
+    }
+  }
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
   if (!matches$51ToJSON(object['revision'])) {
     return false;
   }
-  if (Object.prototype.hasOwnProperty.call(candidate, 'secondValue')) {
-    const item = object['secondValue'];
-    if (item !== undefined && !matches$2ToJSON(item)) {
-      return false;
-    }
-  }
   return true;
 }
 
 export function matches$51FromJSON(candidate: unknown): boolean {
-  if (!matches$3FromJSON(candidate)) {
+  if (!matches$38FromJSON(candidate)) {
     return false;
   }
-  if (!matches$49FromJSON(candidate)) {
+  if (!matches$52FromJSON(candidate)) {
     return false;
   }
   return true;
 }
 
 export function matches$51ToJSON(candidate: unknown): boolean {
-  if (!matches$3ToJSON(candidate)) {
+  if (!matches$38ToJSON(candidate)) {
     return false;
   }
-  if (!matches$49ToJSON(candidate)) {
+  if (!matches$52ToJSON(candidate)) {
     return false;
   }
   return true;
 }
 
 export function matches$52FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
+  if (matches$40FromJSON(candidate)) {
     return true;
   }
-  if (matches$1FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$23FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$13FromJSON(candidate)) {
+  if (matches$53FromJSON(candidate)) {
     return true;
   }
   return false;
 }
 
 export function matches$52ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
+  if (matches$40ToJSON(candidate)) {
     return true;
   }
-  if (matches$1ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$23ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$13ToJSON(candidate)) {
+  if (matches$53ToJSON(candidate)) {
     return true;
   }
   return false;
 }
 
 export function matches$53FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'first_value')) {
-    const item = object['first_value'];
-    if (item !== undefined && !matches$2FromJSON(item)) {
-      return false;
-    }
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
-    return false;
-  }
-  if (!matches$54FromJSON(object['revision'])) {
-    return false;
-  }
-  return true;
+  return candidate === 2;
 }
 
 export function matches$53ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'firstValue')) {
-    const item = object['firstValue'];
-    if (item !== undefined && !matches$2ToJSON(item)) {
-      return false;
-    }
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
-    return false;
-  }
-  if (!matches$54ToJSON(object['revision'])) {
-    return false;
-  }
-  return true;
+  return candidate === 2;
 }
 
 export function matches$54FromJSON(candidate: unknown): boolean {
-  if (!matches$34FromJSON(candidate)) {
-    return false;
-  }
-  if (!matches$55FromJSON(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$54ToJSON(candidate: unknown): boolean {
-  if (!matches$34ToJSON(candidate)) {
-    return false;
-  }
-  if (!matches$55ToJSON(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$55FromJSON(candidate: unknown): boolean {
-  if (matches$36FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$56FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$55ToJSON(candidate: unknown): boolean {
-  if (matches$36ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$56ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$56FromJSON(candidate: unknown): boolean {
-  return candidate === null;
-}
-
-export function matches$56ToJSON(candidate: unknown): boolean {
-  return candidate === null;
-}
-
-export function matches$57FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$22FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$57ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$22ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$58FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'first_value')) {
-    const item = object['first_value'];
-    if (item !== undefined && !matches$2FromJSON(item)) {
-      return false;
-    }
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
-    return false;
-  }
-  if (!matches$59FromJSON(object['revision'])) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$58ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  if (Object.prototype.hasOwnProperty.call(candidate, 'firstValue')) {
-    const item = object['firstValue'];
-    if (item !== undefined && !matches$2ToJSON(item)) {
-      return false;
-    }
-  }
-  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
-    return false;
-  }
-  if (!matches$59ToJSON(object['revision'])) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$59FromJSON(candidate: unknown): boolean {
-  if (!matches$60FromJSON(candidate)) {
-    return false;
-  }
-  if (!matches$36FromJSON(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$59ToJSON(candidate: unknown): boolean {
-  if (!matches$60ToJSON(candidate)) {
-    return false;
-  }
-  if (!matches$36ToJSON(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$60FromJSON(candidate: unknown): boolean {
-  return candidate === null || matches$3FromJSON(candidate);
-}
-
-export function matches$60ToJSON(candidate: unknown): boolean {
-  return candidate === null || matches$3ToJSON(candidate);
-}
-
-export function matches$61FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -1221,7 +1009,7 @@ export function matches$61FromJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$62FromJSON(object['revision'])) {
+  if (!matches$55FromJSON(object['revision'])) {
     return false;
   }
   if (Object.prototype.hasOwnProperty.call(candidate, 'second_value')) {
@@ -1233,7 +1021,7 @@ export function matches$61FromJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$61ToJSON(candidate: unknown): boolean {
+export function matches$54ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -1241,7 +1029,7 @@ export function matches$61ToJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$62ToJSON(object['revision'])) {
+  if (!matches$55ToJSON(object['revision'])) {
     return false;
   }
   if (Object.prototype.hasOwnProperty.call(candidate, 'secondValue')) {
@@ -1253,134 +1041,34 @@ export function matches$61ToJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$62FromJSON(candidate: unknown): boolean {
-  if (!matches$60FromJSON(candidate)) {
+export function matches$55FromJSON(candidate: unknown): boolean {
+  if (!matches$3FromJSON(candidate)) {
     return false;
   }
-  if (!matches$63FromJSON(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$62ToJSON(candidate: unknown): boolean {
-  if (!matches$60ToJSON(candidate)) {
-    return false;
-  }
-  if (!matches$63ToJSON(candidate)) {
+  if (!matches$53FromJSON(candidate)) {
     return false;
   }
   return true;
 }
 
-export function matches$63FromJSON(candidate: unknown): boolean {
-  if (matches$49FromJSON(candidate)) {
-    return true;
+export function matches$55ToJSON(candidate: unknown): boolean {
+  if (!matches$3ToJSON(candidate)) {
+    return false;
   }
-  if (matches$56FromJSON(candidate)) {
-    return true;
+  if (!matches$53ToJSON(candidate)) {
+    return false;
   }
-  return false;
+  return true;
 }
 
-export function matches$63ToJSON(candidate: unknown): boolean {
-  if (matches$49ToJSON(candidate)) {
+export function matches$56FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
     return true;
   }
-  if (matches$56ToJSON(candidate)) {
+  if (matches$1FromJSON(candidate)) {
     return true;
   }
-  return false;
-}
-
-export function matches$64FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$5FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$64ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$5ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$65FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$2FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$4FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$65ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$2ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$4ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$66FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$2FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$66ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$2ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$67FromJSON(candidate: unknown): boolean {
-  if (matches$31FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$4FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$67ToJSON(candidate: unknown): boolean {
-  if (matches$31ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$4ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$68FromJSON(candidate: unknown): boolean {
-  if (matches$23FromJSON(candidate)) {
+  if (matches$17FromJSON(candidate)) {
     return true;
   }
   if (matches$13FromJSON(candidate)) {
@@ -1389,8 +1077,14 @@ export function matches$68FromJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$68ToJSON(candidate: unknown): boolean {
-  if (matches$23ToJSON(candidate)) {
+export function matches$56ToJSON(candidate: unknown): boolean {
+  if (matches$35ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$1ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$17ToJSON(candidate)) {
     return true;
   }
   if (matches$13ToJSON(candidate)) {
@@ -1399,7 +1093,7 @@ export function matches$68ToJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$69FromJSON(candidate: unknown): boolean {
+export function matches$57FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -1413,13 +1107,13 @@ export function matches$69FromJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$35FromJSON(object['revision'])) {
+  if (!matches$58FromJSON(object['revision'])) {
     return false;
   }
   return true;
 }
 
-export function matches$69ToJSON(candidate: unknown): boolean {
+export function matches$57ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -1433,27 +1127,389 @@ export function matches$69ToJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$35ToJSON(object['revision'])) {
+  if (!matches$58ToJSON(object['revision'])) {
     return false;
   }
   return true;
 }
 
-export function matches$70FromJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
+export function matches$58FromJSON(candidate: unknown): boolean {
+  if (!matches$38FromJSON(candidate)) {
     return false;
   }
-  return candidate.every(matches$71FromJSON);
+  if (!matches$59FromJSON(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$58ToJSON(candidate: unknown): boolean {
+  if (!matches$38ToJSON(candidate)) {
+    return false;
+  }
+  if (!matches$59ToJSON(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$59FromJSON(candidate: unknown): boolean {
+  if (matches$40FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$60FromJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$59ToJSON(candidate: unknown): boolean {
+  if (matches$40ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$60ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$60FromJSON(candidate: unknown): boolean {
+  return candidate === null;
+}
+
+export function matches$60ToJSON(candidate: unknown): boolean {
+  return candidate === null;
+}
+
+export function matches$61FromJSON(candidate: unknown): boolean {
+  if (matches$17FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$13FromJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$61ToJSON(candidate: unknown): boolean {
+  if (matches$17ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$13ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$62FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$18FromJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$62ToJSON(candidate: unknown): boolean {
+  if (matches$35ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$18ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$63FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(candidate, 'first_value')) {
+    const item = object['first_value'];
+    if (item !== undefined && !matches$2FromJSON(item)) {
+      return false;
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
+    return false;
+  }
+  if (!matches$64FromJSON(object['revision'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$63ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(candidate, 'firstValue')) {
+    const item = object['firstValue'];
+    if (item !== undefined && !matches$2ToJSON(item)) {
+      return false;
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
+    return false;
+  }
+  if (!matches$64ToJSON(object['revision'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$64FromJSON(candidate: unknown): boolean {
+  if (!matches$65FromJSON(candidate)) {
+    return false;
+  }
+  if (!matches$40FromJSON(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$64ToJSON(candidate: unknown): boolean {
+  if (!matches$65ToJSON(candidate)) {
+    return false;
+  }
+  if (!matches$40ToJSON(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$65FromJSON(candidate: unknown): boolean {
+  return candidate === null || matches$3FromJSON(candidate);
+}
+
+export function matches$65ToJSON(candidate: unknown): boolean {
+  return candidate === null || matches$3ToJSON(candidate);
+}
+
+export function matches$66FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
+    return false;
+  }
+  if (!matches$67FromJSON(object['revision'])) {
+    return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(candidate, 'second_value')) {
+    const item = object['second_value'];
+    if (item !== undefined && !matches$2FromJSON(item)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function matches$66ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
+    return false;
+  }
+  if (!matches$67ToJSON(object['revision'])) {
+    return false;
+  }
+  if (Object.prototype.hasOwnProperty.call(candidate, 'secondValue')) {
+    const item = object['secondValue'];
+    if (item !== undefined && !matches$2ToJSON(item)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function matches$67FromJSON(candidate: unknown): boolean {
+  if (!matches$65FromJSON(candidate)) {
+    return false;
+  }
+  if (!matches$68FromJSON(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$67ToJSON(candidate: unknown): boolean {
+  if (!matches$65ToJSON(candidate)) {
+    return false;
+  }
+  if (!matches$68ToJSON(candidate)) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$68FromJSON(candidate: unknown): boolean {
+  if (matches$53FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$60FromJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$68ToJSON(candidate: unknown): boolean {
+  if (matches$53ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$60ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$69FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$5FromJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$69ToJSON(candidate: unknown): boolean {
+  if (matches$35ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$5ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$70FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$2FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$4FromJSON(candidate)) {
+    return true;
+  }
+  return false;
 }
 
 export function matches$70ToJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
-    return false;
+  if (matches$35ToJSON(candidate)) {
+    return true;
   }
-  return candidate.every(matches$71ToJSON);
+  if (matches$2ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$4ToJSON(candidate)) {
+    return true;
+  }
+  return false;
 }
 
 export function matches$71FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$2FromJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$71ToJSON(candidate: unknown): boolean {
+  if (matches$35ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$2ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$72FromJSON(candidate: unknown): boolean {
+  if (matches$35FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$4FromJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$72ToJSON(candidate: unknown): boolean {
+  if (matches$35ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$4ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$73FromJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(candidate, 'first_value')) {
+    const item = object['first_value'];
+    if (item !== undefined && !matches$2FromJSON(item)) {
+      return false;
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
+    return false;
+  }
+  if (!matches$39FromJSON(object['revision'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$73ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  const object = candidate as globalThis.Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(candidate, 'firstValue')) {
+    const item = object['firstValue'];
+    if (item !== undefined && !matches$2ToJSON(item)) {
+      return false;
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
+    return false;
+  }
+  if (!matches$39ToJSON(object['revision'])) {
+    return false;
+  }
+  return true;
+}
+
+export function matches$74FromJSON(candidate: unknown): boolean {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$75FromJSON);
+}
+
+export function matches$74ToJSON(candidate: unknown): boolean {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$75ToJSON);
+}
+
+export function matches$75FromJSON(candidate: unknown): boolean {
   if (matches$3FromJSON(candidate)) {
     return true;
   }
@@ -1463,7 +1519,7 @@ export function matches$71FromJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$71ToJSON(candidate: unknown): boolean {
+export function matches$75ToJSON(candidate: unknown): boolean {
   if (matches$3ToJSON(candidate)) {
     return true;
   }
@@ -1473,130 +1529,130 @@ export function matches$71ToJSON(candidate: unknown): boolean {
   return false;
 }
 
-export function matches$72FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return Object.values(candidate).every(matches$71FromJSON);
-}
-
-export function matches$72ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return Object.values(candidate).every(matches$71ToJSON);
-}
-
-export function matches$73FromJSON(candidate: unknown): boolean {
-  if (matches$1FromJSON(candidate)) {
-    return true;
-  }
-  if (matches$74FromJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$73ToJSON(candidate: unknown): boolean {
-  if (matches$1ToJSON(candidate)) {
-    return true;
-  }
-  if (matches$74ToJSON(candidate)) {
-    return true;
-  }
-  return false;
-}
-
-export function matches$74FromJSON(candidate: unknown): boolean {
-  if (!matches$75FromJSON(candidate)) {
-    return false;
-  }
-  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$77FromJSON);
-}
-
-export function matches$74ToJSON(candidate: unknown): boolean {
-  if (!matches$75ToJSON(candidate)) {
-    return false;
-  }
-  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$77ToJSON);
-}
-
-export function matches$75FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return true;
-}
-
-export function matches$75ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return true;
-}
-
 export function matches$76FromJSON(candidate: unknown): boolean {
-  return matchRecursiveOpenDictionaryFromJSON(candidate) > 0;
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$75FromJSON);
 }
 
 export function matches$76ToJSON(candidate: unknown): boolean {
-  return matchRecursiveOpenDictionaryToJSON(candidate) > 0;
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$75ToJSON);
 }
 
 export function matches$77FromJSON(candidate: unknown): boolean {
-  return matchRecursiveOpenDictionaryFromJSON(candidate) === 2;
+  if (matches$1FromJSON(candidate)) {
+    return true;
+  }
+  if (matches$78FromJSON(candidate)) {
+    return true;
+  }
+  return false;
 }
 
 export function matches$77ToJSON(candidate: unknown): boolean {
-  return matchRecursiveOpenDictionaryToJSON(candidate) === 2;
+  if (matches$1ToJSON(candidate)) {
+    return true;
+  }
+  if (matches$78ToJSON(candidate)) {
+    return true;
+  }
+  return false;
+}
+
+export function matches$78FromJSON(candidate: unknown): boolean {
+  if (!matches$79FromJSON(candidate)) {
+    return false;
+  }
+  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$81FromJSON);
+}
+
+export function matches$78ToJSON(candidate: unknown): boolean {
+  if (!matches$79ToJSON(candidate)) {
+    return false;
+  }
+  return Object.values(candidate as globalThis.Record<string, unknown>).some(matches$81ToJSON);
 }
 
 export function matches$79FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
-  return Object.values(candidate).every(matches$80FromJSON);
+  return true;
 }
 
 export function matches$79ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
-  return Object.values(candidate).every(matches$80ToJSON);
+  return true;
 }
 
 export function matches$80FromJSON(candidate: unknown): boolean {
-  return matchRecursiveOpenDictionaryFromJSON(candidate) === 1;
+  return matchRecursiveOpenDictionaryFromJSON(candidate) > 0;
 }
 
 export function matches$80ToJSON(candidate: unknown): boolean {
-  return matchRecursiveOpenDictionaryToJSON(candidate) === 1;
+  return matchRecursiveOpenDictionaryToJSON(candidate) > 0;
 }
 
 export function matches$81FromJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
-    return false;
-  }
-  return candidate.every(matches$82FromJSON);
+  return matchRecursiveOpenDictionaryFromJSON(candidate) === 2;
 }
 
 export function matches$81ToJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
-    return false;
-  }
-  return candidate.every(matches$82ToJSON);
-}
-
-export function matches$82FromJSON(candidate: unknown): boolean {
-  return matchRecursiveListFromJSON(candidate) > 0;
-}
-
-export function matches$82ToJSON(candidate: unknown): boolean {
-  return matchRecursiveListToJSON(candidate) > 0;
+  return matchRecursiveOpenDictionaryToJSON(candidate) === 2;
 }
 
 export function matches$83FromJSON(candidate: unknown): boolean {
-  if (!matches$84FromJSON(candidate)) {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$84FromJSON);
+}
+
+export function matches$83ToJSON(candidate: unknown): boolean {
+  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return false;
+  }
+  return Object.values(candidate).every(matches$84ToJSON);
+}
+
+export function matches$84FromJSON(candidate: unknown): boolean {
+  return matchRecursiveOpenDictionaryFromJSON(candidate) === 1;
+}
+
+export function matches$84ToJSON(candidate: unknown): boolean {
+  return matchRecursiveOpenDictionaryToJSON(candidate) === 1;
+}
+
+export function matches$85FromJSON(candidate: unknown): boolean {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$86FromJSON);
+}
+
+export function matches$85ToJSON(candidate: unknown): boolean {
+  if (!Array.isArray(candidate)) {
+    return false;
+  }
+  return candidate.every(matches$86ToJSON);
+}
+
+export function matches$86FromJSON(candidate: unknown): boolean {
+  return matchRecursiveListFromJSON(candidate) > 0;
+}
+
+export function matches$86ToJSON(candidate: unknown): boolean {
+  return matchRecursiveListToJSON(candidate) > 0;
+}
+
+export function matches$87FromJSON(candidate: unknown): boolean {
+  if (!matches$88FromJSON(candidate)) {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
@@ -1609,8 +1665,8 @@ export function matches$83FromJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$83ToJSON(candidate: unknown): boolean {
-  if (!matches$84ToJSON(candidate)) {
+export function matches$87ToJSON(candidate: unknown): boolean {
+  if (!matches$88ToJSON(candidate)) {
     return false;
   }
   const object = candidate as globalThis.Record<string, unknown>;
@@ -1623,7 +1679,7 @@ export function matches$83ToJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$84FromJSON(candidate: unknown): boolean {
+export function matches$88FromJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -1637,7 +1693,7 @@ export function matches$84FromJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$84ToJSON(candidate: unknown): boolean {
+export function matches$88ToJSON(candidate: unknown): boolean {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     return false;
   }
@@ -1651,88 +1707,32 @@ export function matches$84ToJSON(candidate: unknown): boolean {
   return true;
 }
 
-export function matches$85FromJSON(candidate: unknown): boolean {
-  if (!matches$84FromJSON(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  const declared = ['payload_key'];
-  for (const [key, item] of Object.entries(object)) {
-    if (!declared.includes(key) && !matches$29FromJSON(item)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export function matches$85ToJSON(candidate: unknown): boolean {
-  if (!matches$84ToJSON(candidate)) {
-    return false;
-  }
-  const object = candidate as globalThis.Record<string, unknown>;
-  const declared = ['payload_key'];
-  for (const [key, item] of Object.entries(object)) {
-    if (!declared.includes(key) && !matches$29ToJSON(item)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export function matches$86FromJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
-    return false;
-  }
-  return candidate.every(matches$23FromJSON);
-}
-
-export function matches$86ToJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
-    return false;
-  }
-  return candidate.every(matches$23ToJSON);
-}
-
-export function matches$87FromJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
-    return false;
-  }
-  return candidate.every(matches$13FromJSON);
-}
-
-export function matches$87ToJSON(candidate: unknown): boolean {
-  if (!Array.isArray(candidate)) {
-    return false;
-  }
-  return candidate.every(matches$13ToJSON);
-}
-
-export function matches$88FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return Object.values(candidate).every(matches$23FromJSON);
-}
-
-export function matches$88ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
-    return false;
-  }
-  return Object.values(candidate).every(matches$23ToJSON);
-}
-
 export function matches$89FromJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+  if (!matches$88FromJSON(candidate)) {
     return false;
   }
-  return Object.values(candidate).every(matches$13FromJSON);
+  const object = candidate as globalThis.Record<string, unknown>;
+  const declared = ['payload_key'];
+  for (const [key, item] of Object.entries(object)) {
+    if (!declared.includes(key) && !matches$33FromJSON(item)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function matches$89ToJSON(candidate: unknown): boolean {
-  if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
+  if (!matches$88ToJSON(candidate)) {
     return false;
   }
-  return Object.values(candidate).every(matches$13ToJSON);
+  const object = candidate as globalThis.Record<string, unknown>;
+  const declared = ['payload_key'];
+  for (const [key, item] of Object.entries(object)) {
+    if (!declared.includes(key) && !matches$33ToJSON(item)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function matches$90FromJSON(candidate: unknown): boolean {
@@ -1749,7 +1749,7 @@ export function matches$90FromJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$36FromJSON(object['revision'])) {
+  if (!matches$40FromJSON(object['revision'])) {
     return false;
   }
   return true;
@@ -1769,7 +1769,7 @@ export function matches$90ToJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$36ToJSON(object['revision'])) {
+  if (!matches$40ToJSON(object['revision'])) {
     return false;
   }
   return true;
@@ -1783,7 +1783,7 @@ export function matches$91FromJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$49FromJSON(object['revision'])) {
+  if (!matches$53FromJSON(object['revision'])) {
     return false;
   }
   if (Object.prototype.hasOwnProperty.call(candidate, 'second_value')) {
@@ -1803,7 +1803,7 @@ export function matches$91ToJSON(candidate: unknown): boolean {
   if (!Object.prototype.hasOwnProperty.call(candidate, 'revision')) {
     return false;
   }
-  if (!matches$49ToJSON(object['revision'])) {
+  if (!matches$53ToJSON(object['revision'])) {
     return false;
   }
   if (Object.prototype.hasOwnProperty.call(candidate, 'secondValue')) {
@@ -1816,7 +1816,7 @@ export function matches$91ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$92FromJSON(candidate: unknown): boolean {
-  if (matches$29FromJSON(candidate)) {
+  if (matches$33FromJSON(candidate)) {
     return true;
   }
   if (matches$1FromJSON(candidate)) {
@@ -1826,7 +1826,7 @@ export function matches$92FromJSON(candidate: unknown): boolean {
 }
 
 export function matches$92ToJSON(candidate: unknown): boolean {
-  if (matches$29ToJSON(candidate)) {
+  if (matches$33ToJSON(candidate)) {
     return true;
   }
   if (matches$1ToJSON(candidate)) {
@@ -1836,7 +1836,7 @@ export function matches$92ToJSON(candidate: unknown): boolean {
 }
 
 export function matches$93FromJSON(candidate: unknown): boolean {
-  if (matches$81FromJSON(candidate)) {
+  if (matches$85FromJSON(candidate)) {
     return true;
   }
   if (matches$1FromJSON(candidate)) {
@@ -1846,7 +1846,7 @@ export function matches$93FromJSON(candidate: unknown): boolean {
 }
 
 export function matches$93ToJSON(candidate: unknown): boolean {
-  if (matches$81ToJSON(candidate)) {
+  if (matches$85ToJSON(candidate)) {
     return true;
   }
   if (matches$1ToJSON(candidate)) {
@@ -1870,14 +1870,14 @@ export function matchRecursiveListToJSON(candidate: unknown): number {
 }
 
 export function matchRecursiveOpenDictionaryFromJSON(candidate: unknown): number {
-  if (matches$73FromJSON(candidate)) {
+  if (matches$77FromJSON(candidate)) {
     return 2;
   }
   return 1;
 }
 
 export function matchRecursiveOpenDictionaryToJSON(candidate: unknown): number {
-  if (matches$73ToJSON(candidate)) {
+  if (matches$77ToJSON(candidate)) {
     return 2;
   }
   return 1;

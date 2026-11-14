@@ -4,13 +4,13 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$37FromJSON,
-  matches$37ToJSON,
+  matches$41FromJSON,
+  matches$41ToJSON,
   matches$5FromJSON,
   matches$5ToJSON,
 } from '../runtime/unionMatch';
-import type { Value$13, Value$13Wire } from '../runtime/valueConversion$13';
-import { convert$13FromJSON, convert$13ToJSON } from '../runtime/valueConversion$13';
+import type { Value$18, Value$18Wire } from '../runtime/valueConversion$18';
+import { convert$18FromJSON, convert$18ToJSON } from '../runtime/valueConversion$18';
 import type { Detail, Detail$Wire } from './Detail';
 
 export type InlineDictionaryValues$Wire =
@@ -25,12 +25,12 @@ export function inlineDictionaryValuesFromJSON(
   json: InlineDictionaryValues$Wire,
 ): InlineDictionaryValues {
   const candidate: unknown = json;
-  const matches = [matches$37FromJSON(candidate), matches$5FromJSON(candidate)];
+  const matches = [matches$41FromJSON(candidate), matches$5FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous InlineDictionaryValues untagged union value');
   }
   if (matches[0]) {
-    return convert$13FromJSON(json as unknown as Value$13Wire);
+    return convert$18FromJSON(json as unknown as Value$18Wire);
   }
   if (matches[1]) {
     return json as unknown as boolean;
@@ -42,12 +42,12 @@ export function inlineDictionaryValuesToJSON(
   value: InlineDictionaryValues,
 ): InlineDictionaryValues$Wire {
   const candidate: unknown = value;
-  const matches = [matches$37ToJSON(candidate), matches$5ToJSON(candidate)];
+  const matches = [matches$41ToJSON(candidate), matches$5ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous InlineDictionaryValues untagged union value');
   }
   if (matches[0]) {
-    return convert$13ToJSON(value as unknown as Value$13);
+    return convert$18ToJSON(value as unknown as Value$18);
   }
   if (matches[1]) {
     return value as unknown as boolean;

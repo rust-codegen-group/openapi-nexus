@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$50FromJSON,
-  matches$50ToJSON,
-  matches$69FromJSON,
-  matches$69ToJSON,
+  matches$54FromJSON,
+  matches$54ToJSON,
+  matches$73FromJSON,
+  matches$73ToJSON,
 } from '../runtime/unionMatch';
 import type { NumericOne, NumericOne$Wire } from './NumericOne';
 import { numericOneFromJSON, numericOneToJSON } from './NumericOne';
@@ -20,10 +20,10 @@ export type NumericEnumChoice = NumericOne | NumericTwo;
 
 export function numericEnumChoiceFromJSON(json: NumericEnumChoice$Wire): NumericEnumChoice {
   const candidate: unknown = json;
-  if (matches$69FromJSON(candidate)) {
+  if (matches$73FromJSON(candidate)) {
     return numericOneFromJSON(json as unknown as NumericOne$Wire);
   }
-  if (matches$50FromJSON(candidate)) {
+  if (matches$54FromJSON(candidate)) {
     return numericTwoFromJSON(json as unknown as NumericTwo$Wire);
   }
   return json as unknown as NumericEnumChoice;
@@ -31,10 +31,10 @@ export function numericEnumChoiceFromJSON(json: NumericEnumChoice$Wire): Numeric
 
 export function numericEnumChoiceToJSON(value: NumericEnumChoice): NumericEnumChoice$Wire {
   const candidate: unknown = value;
-  if (matches$69ToJSON(candidate)) {
+  if (matches$73ToJSON(candidate)) {
     return numericOneToJSON(value as unknown as NumericOne);
   }
-  if (matches$50ToJSON(candidate)) {
+  if (matches$54ToJSON(candidate)) {
     return numericTwoToJSON(value as unknown as NumericTwo);
   }
   return value as unknown as NumericEnumChoice$Wire;

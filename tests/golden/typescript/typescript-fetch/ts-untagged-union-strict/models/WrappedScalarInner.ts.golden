@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { matches$65FromJSON, matches$65ToJSON } from '../runtime/unionMatch';
+import { matches$70FromJSON, matches$70ToJSON } from '../runtime/unionMatch';
 import type { NullableScalarInner, NullableScalarInner$Wire } from './NullableScalarInner';
 import { nullableScalarInnerFromJSON, nullableScalarInnerToJSON } from './NullableScalarInner';
 
@@ -13,7 +13,7 @@ export type WrappedScalarInner = NullableScalarInner | null;
 
 export function wrappedScalarInnerFromJSON(json: WrappedScalarInner$Wire): WrappedScalarInner {
   const candidate: unknown = json;
-  const matches = [matches$65FromJSON(candidate)];
+  const matches = [matches$70FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous WrappedScalarInner untagged union value');
   }
@@ -28,7 +28,7 @@ export function wrappedScalarInnerFromJSON(json: WrappedScalarInner$Wire): Wrapp
 
 export function wrappedScalarInnerToJSON(value: WrappedScalarInner): WrappedScalarInner$Wire {
   const candidate: unknown = value;
-  const matches = [matches$65ToJSON(candidate)];
+  const matches = [matches$70ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous WrappedScalarInner untagged union value');
   }

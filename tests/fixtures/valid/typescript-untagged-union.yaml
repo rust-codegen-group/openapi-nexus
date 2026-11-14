@@ -16,7 +16,7 @@ paths:
               items:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                     $ref: '#/components/schemas/Choice'
       responses:
         '200':
           description: Matrix
@@ -27,7 +27,7 @@ paths:
                 items:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Tool'
+                    $ref: '#/components/schemas/Choice'
         '400':
           description: Matrix error
           content:
@@ -37,7 +37,7 @@ paths:
                 items:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Tool'
+                     $ref: '#/components/schemas/Choice'
   /nullable:
     post:
       tags: [Conversion]
@@ -49,7 +49,7 @@ paths:
             schema:
               type: [array, 'null']
               items:
-                $ref: '#/components/schemas/Tool'
+                   $ref: '#/components/schemas/Choice'
       responses:
         '200':
           description: Nullable array
@@ -58,7 +58,7 @@ paths:
               schema:
                 type: [array, 'null']
                 items:
-                  $ref: '#/components/schemas/Tool'
+                   $ref: '#/components/schemas/Choice'
   /multipart:
     post:
       tags: [Conversion]
@@ -135,81 +135,81 @@ paths:
         '204': {description: Accepted}
 components:
   schemas:
-    ClientTool:
+    PayloadA:
       type: object
-      required: [name, input_schema]
+      required: [label, payload_schema]
       properties:
-        name:
+        label:
           type: string
-        input_schema:
+        payload_schema:
           type: object
           additionalProperties: true
-    SearchTool:
+    PayloadB:
       type: object
-      required: [type, name]
+      required: [kind, label]
       properties:
-        type:
+        kind:
           type: string
-          enum: [web_search_20250305]
-        name:
+          enum: [variant_b]
+        label:
           type: string
-          enum: [web_search]
-        max_uses:
+          enum: [payload_b]
+        limit:
           type: integer
-    Tool:
+    Choice:
       oneOf:
-        - $ref: '#/components/schemas/ClientTool'
-        - $ref: '#/components/schemas/SearchTool'
-    NullableTool:
+        - $ref: '#/components/schemas/PayloadA'
+        - $ref: '#/components/schemas/PayloadB'
+    NullableChoice:
       anyOf:
-        - $ref: '#/components/schemas/Tool'
+        - $ref: '#/components/schemas/Choice'
         - type: 'null'
-    ToolAlias:
+    ChoiceAlias:
       allOf:
-        - $ref: '#/components/schemas/Tool'
-    ToolList:
+        - $ref: '#/components/schemas/Choice'
+    ChoiceList:
       oneOf:
         - type: array
           items:
-            $ref: '#/components/schemas/ClientTool'
+            $ref: '#/components/schemas/PayloadA'
         - type: array
           items:
-            $ref: '#/components/schemas/SearchTool'
-    ToolMap:
+            $ref: '#/components/schemas/PayloadB'
+    ChoiceMap:
       oneOf:
         - type: object
           additionalProperties:
-            $ref: '#/components/schemas/ClientTool'
+            $ref: '#/components/schemas/PayloadA'
         - type: object
           additionalProperties:
-            $ref: '#/components/schemas/SearchTool'
-    OpenTool:
+            $ref: '#/components/schemas/PayloadB'
+    OpenChoice:
       anyOf:
         - {}
-        - $ref: '#/components/schemas/ClientTool'
-    AlternativeTool:
+        - $ref: '#/components/schemas/PayloadA'
+    PayloadC:
       type: object
-      required: [name, input_schema]
+      required: [label, payload_schema]
       properties:
-        name:
+        label:
           type: string
-        input_schema:
+        payload_schema:
           type: object
           additionalProperties: true
-        second_option:
+        alternate_flag:
           type: boolean
-    AmbiguousTool:
+    AmbiguousChoice:
       anyOf:
-        - $ref: '#/components/schemas/ClientTool'
-        - $ref: '#/components/schemas/AlternativeTool'
-    ToolRequest:
+        - $ref: '#/components/schemas/PayloadA'
+        - $ref: '#/components/schemas/PayloadC'
+    ChoiceRequest:
       type: object
-      required: [tools]
+      required: [choices]
       properties:
-        tools:
+        choices:
           type: array
           items:
-            $ref: '#/components/schemas/Tool'
+            $ref: '#/components/schemas/Choice'
     Detail:
       type: object
       required: [wire_name]
@@ -238,7 +238,7 @@ components:
     AliasOuter:
       anyOf:
         - $ref: '#/components/schemas/OpenAlias'
-        - $ref: '#/components/schemas/SearchTool'
+        - $ref: '#/components/schemas/PayloadB'
     NullableMapFallback:
       anyOf:
         - type: [object, 'null']
@@ -627,12 +627,12 @@ components:
     NullableOverlap:
       anyOf:
         - $ref: '#/components/schemas/NullableDetail'
-        - $ref: '#/components/schemas/NullableTool'
+        - $ref: '#/components/schemas/NullableChoice'
     ExplicitNullOverlap:
       anyOf:
         - {type: 'null'}
         - $ref: '#/components/schemas/NullableDetail'
-        - $ref: '#/components/schemas/NullableTool'
+        - $ref: '#/components/schemas/NullableChoice'
     NestedExplicitNullOverlap:
       anyOf:
         - {type: 'null'}

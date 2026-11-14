@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$46FromJSON,
-  matches$46ToJSON,
   matches$50FromJSON,
   matches$50ToJSON,
+  matches$54FromJSON,
+  matches$54ToJSON,
 } from '../runtime/unionMatch';
 import type { NestedEnumNarrow, NestedEnumNarrow$Wire } from './NestedEnumNarrow';
 import { nestedEnumNarrowFromJSON, nestedEnumNarrowToJSON } from './NestedEnumNarrow';
@@ -20,7 +20,7 @@ export type NestedEnumChoice = NestedEnumNarrow | NumericTwo;
 
 export function nestedEnumChoiceFromJSON(json: NestedEnumChoice$Wire): NestedEnumChoice {
   const candidate: unknown = json;
-  const matches = [matches$46FromJSON(candidate), matches$50FromJSON(candidate)];
+  const matches = [matches$50FromJSON(candidate), matches$54FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NestedEnumChoice untagged union value');
   }
@@ -35,7 +35,7 @@ export function nestedEnumChoiceFromJSON(json: NestedEnumChoice$Wire): NestedEnu
 
 export function nestedEnumChoiceToJSON(value: NestedEnumChoice): NestedEnumChoice$Wire {
   const candidate: unknown = value;
-  const matches = [matches$46ToJSON(candidate), matches$50ToJSON(candidate)];
+  const matches = [matches$50ToJSON(candidate), matches$54ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous NestedEnumChoice untagged union value');
   }

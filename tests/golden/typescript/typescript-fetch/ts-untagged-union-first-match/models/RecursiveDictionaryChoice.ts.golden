@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { matches$73FromJSON, matches$73ToJSON } from '../runtime/unionMatch';
+import { matches$77FromJSON, matches$77ToJSON } from '../runtime/unionMatch';
 import type {
   RecursiveOpenDictionary,
   RecursiveOpenDictionary$Wire,
@@ -21,7 +21,7 @@ export function recursiveDictionaryChoiceFromJSON(
   json: RecursiveDictionaryChoice$Wire,
 ): RecursiveDictionaryChoice {
   const candidate: unknown = json;
-  if (matches$73FromJSON(candidate)) {
+  if (matches$77FromJSON(candidate)) {
     return recursiveOpenDictionaryFromJSON(json as unknown as RecursiveOpenDictionary$Wire);
   }
   return json as unknown as unknown;
@@ -31,7 +31,7 @@ export function recursiveDictionaryChoiceToJSON(
   value: RecursiveDictionaryChoice,
 ): RecursiveDictionaryChoice$Wire {
   const candidate: unknown = value;
-  if (matches$73ToJSON(candidate)) {
+  if (matches$77ToJSON(candidate)) {
     return recursiveOpenDictionaryToJSON(value as unknown as RecursiveOpenDictionary);
   }
   return value as unknown as unknown;

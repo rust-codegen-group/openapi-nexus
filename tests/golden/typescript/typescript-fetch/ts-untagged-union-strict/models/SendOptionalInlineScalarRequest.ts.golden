@@ -4,10 +4,10 @@
  * Untagged union conversion — 1.0.0
  */
 import {
-  matches$66FromJSON,
-  matches$66ToJSON,
-  matches$67FromJSON,
-  matches$67ToJSON,
+  matches$71FromJSON,
+  matches$71ToJSON,
+  matches$72FromJSON,
+  matches$72ToJSON,
 } from '../runtime/unionMatch';
 
 export type SendOptionalInlineScalarRequest$Wire = string | null | number;
@@ -18,7 +18,7 @@ export function sendOptionalInlineScalarRequestFromJSON(
   json: SendOptionalInlineScalarRequest$Wire,
 ): SendOptionalInlineScalarRequest {
   const candidate: unknown = json;
-  const matches = [matches$66FromJSON(candidate), matches$67FromJSON(candidate)];
+  const matches = [matches$71FromJSON(candidate), matches$72FromJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous SendOptionalInlineScalarRequest untagged union value');
   }
@@ -35,7 +35,7 @@ export function sendOptionalInlineScalarRequestToJSON(
   value: SendOptionalInlineScalarRequest,
 ): SendOptionalInlineScalarRequest$Wire {
   const candidate: unknown = value;
-  const matches = [matches$66ToJSON(candidate), matches$67ToJSON(candidate)];
+  const matches = [matches$71ToJSON(candidate), matches$72ToJSON(candidate)];
   if (matches.filter(Boolean).length > 1) {
     throw new TypeError('Ambiguous SendOptionalInlineScalarRequest untagged union value');
   }

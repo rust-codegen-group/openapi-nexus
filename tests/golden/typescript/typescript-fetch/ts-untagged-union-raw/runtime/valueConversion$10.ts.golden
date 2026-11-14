@@ -3,17 +3,20 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import type { Detail, Detail$Wire } from '../models/Detail';
-import { detailFromJSON, detailToJSON } from '../models/Detail';
+import type { NullableScalarInner, NullableScalarInner$Wire } from '../models/NullableScalarInner';
+import {
+  nullableScalarInnerFromJSON,
+  nullableScalarInnerToJSON,
+} from '../models/NullableScalarInner';
 
-export type Value$10Wire = Detail$Wire[];
+export type Value$10Wire = NullableScalarInner$Wire | null;
 
-export type Value$10 = Detail[];
+export type Value$10 = NullableScalarInner | null;
 
-export function convert$10FromJSON(json: ReadonlyArray<Detail$Wire>): Value$10 {
-  return json.map(detailFromJSON);
+export function convert$10FromJSON(json: NullableScalarInner$Wire | null): Value$10 {
+  return nullableScalarInnerFromJSON(json);
 }
 
-export function convert$10ToJSON(value: ReadonlyArray<Detail>): Value$10Wire {
-  return value.map(detailToJSON);
+export function convert$10ToJSON(value: NullableScalarInner | null): Value$10Wire {
+  return nullableScalarInnerToJSON(value);
 }

@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
+import type { NullableChoice } from './NullableChoice';
 import type { NullableDetail } from './NullableDetail';
-import type { NullableTool } from './NullableTool';
 
-export type NullableOverlap = NullableDetail | NullableTool;
+export type NullableOverlap = NullableDetail | NullableChoice;

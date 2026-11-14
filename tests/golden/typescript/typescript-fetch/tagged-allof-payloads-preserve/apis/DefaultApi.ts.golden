@@ -3,7 +3,7 @@
  *
  * Tagged allOf payload preservation — 1.0.0
  */
-import type { Envelope } from '../models/Envelope';
+import type { Container } from '../models/Container';
 import type {
   Configuration,
   HTTPQuery,
@@ -18,27 +18,27 @@ import {
   ResponseError,
 } from '../runtime/runtime';
 
-export interface ApiExchangeToolsRequest {
-  body: Envelope;
+export interface ApiExchangeVariantsRequest {
+  body: Container;
 }
 
-export type ExchangeToolsRawResponse =
-  | (JSONApiResponse<Envelope> & { status: 200 })
+export type ExchangeVariantsRawResponse =
+  | (JSONApiResponse<Container> & { status: 200 })
   | (JSONApiResponse<unknown> & HttpSuccessResponse);
 
-export type ExchangeToolsErrorDetail = {
+export type ExchangeVariantsErrorDetail = {
   kind: 'unexpected';
   status: number;
   raw: Response;
   value(): Promise<Blob>;
 };
 
-export class ExchangeToolsError extends ResponseError {
-  readonly detail: ExchangeToolsErrorDetail;
+export class ExchangeVariantsError extends ResponseError {
+  readonly detail: ExchangeVariantsErrorDetail;
 
   constructor(
     response: Response,
-    detail: ExchangeToolsErrorDetail,
+    detail: ExchangeVariantsErrorDetail,
     msg = 'Response returned an error code',
   ) {
     super(response, msg);
@@ -47,14 +47,14 @@ export class ExchangeToolsError extends ResponseError {
 }
 
 export interface DefaultApiInterface {
-  exchangeToolsRaw: (
-    requestParameters: ApiExchangeToolsRequest,
+  exchangeVariantsRaw: (
+    requestParameters: ApiExchangeVariantsRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ) => Promise<ExchangeToolsRawResponse>;
-  exchangeTools: (
-    requestParameters: ApiExchangeToolsRequest,
+  ) => Promise<ExchangeVariantsRawResponse>;
+  exchangeVariants: (
+    requestParameters: ApiExchangeVariantsRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ) => Promise<Envelope>;
+  ) => Promise<Container>;
 }
 
 export class DefaultApi extends BaseAPI implements DefaultApiInterface {
@@ -65,18 +65,18 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
     super(configuration ?? DefaultConfig);
   }
 
-  async exchangeToolsRaw(
-    requestParameters: ApiExchangeToolsRequest,
+  async exchangeVariantsRaw(
+    requestParameters: ApiExchangeVariantsRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ): Promise<ExchangeToolsRawResponse> {
+  ): Promise<ExchangeVariantsRawResponse> {
     if (requestParameters['body'] === undefined || requestParameters['body'] === null) {
       throw new RequiredError(
         'body',
-        'Required parameter "body" was null or undefined when calling exchangeToolsRaw().',
+        'Required parameter "body" was null or undefined when calling exchangeVariantsRaw().',
       );
     }
     // Build path with path parameters
-    const urlPath = `/tools`;
+    const urlPath = `/variants`;
     // Build query parameters
     const queryParameters: HTTPQuery = {};
     // Build headers
@@ -103,7 +103,7 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       const errorRaw = response.clone();
       {
         let errorValue: Promise<Blob> | undefined;
-        throw new ExchangeToolsError(response, {
+        throw new ExchangeVariantsError(response, {
           kind: 'unexpected',
           status: response.status,
           raw: response,
@@ -115,17 +115,17 @@ export class DefaultApi extends BaseAPI implements DefaultApiInterface {
       }
     }
     if (response.status === 200) {
-      return new JSONApiResponse(response) as JSONApiResponse<Envelope> & { status: 200 };
+      return new JSONApiResponse(response) as JSONApiResponse<Container> & { status: 200 };
     } else {
       return new JSONApiResponse(response) as JSONApiResponse<unknown> & HttpSuccessResponse;
     }
   }
 
-  async exchangeTools(
-    requestParameters: ApiExchangeToolsRequest,
+  async exchangeVariants(
+    requestParameters: ApiExchangeVariantsRequest,
     initOverrides?: RequestInit | InitOverrideFunction,
-  ): Promise<Envelope> {
-    const response = await this.exchangeToolsRaw(requestParameters, initOverrides);
-    return (await response.value()) as Envelope;
+  ): Promise<Container> {
+    const response = await this.exchangeVariantsRaw(requestParameters, initOverrides);
+    return (await response.value()) as Container;
   }
 }

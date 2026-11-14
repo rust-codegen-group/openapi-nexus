@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$9FromJSON, convert$9ToJSON } from '../runtime/valueConversion$9';
+import { convert$14FromJSON, convert$14ToJSON } from '../runtime/valueConversion$14';
 import type { Detail, Detail$Wire } from './Detail';
 
 export type NestedDetailLists$Wire = readonly Detail$Wire[][];
@@ -11,9 +11,9 @@ export type NestedDetailLists$Wire = readonly Detail$Wire[][];
 export type NestedDetailLists = readonly Detail[][];
 
 export function nestedDetailListsFromJSON(json: NestedDetailLists$Wire): NestedDetailLists {
-  return convert$9FromJSON(json);
+  return convert$14FromJSON(json);
 }
 
 export function nestedDetailListsToJSON(value: NestedDetailLists): NestedDetailLists$Wire {
-  return convert$9ToJSON(value);
+  return convert$14ToJSON(value);
 }

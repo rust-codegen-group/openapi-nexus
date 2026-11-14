@@ -12,8 +12,8 @@ fn spec(version: &str) -> IrSpec {
 }
 
 fn variant<'a>(ir: &'a IrSpec, tag: &str) -> &'a IrTaggedVariant {
-    let IrSchemaKind::TaggedUnion(union) = &ir.schemas["Tool"].kind else {
-        panic!("Tool must retain internal tagging");
+    let IrSchemaKind::TaggedUnion(union) = &ir.schemas["Variant"].kind else {
+        panic!("Variant must retain internal tagging");
     };
     union
         .variants
@@ -52,26 +52,26 @@ fn properties<'a>(ir: &'a IrSpec, expr: &IrTypeExpr) -> BTreeMap<&'a str, &'a Ir
 fn tagged_allof_keeps_inline_payload_metadata_and_common_options() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let fields = properties(&ir, &variant(&ir, "function").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_a").content_type);
         assert!(
-            fields.contains_key("name"),
-            "{version}: inline name was lost"
+            fields.contains_key("label"),
+            "{version}: inline label was lost"
         );
-        assert!(fields["name"].required);
+        assert!(fields["label"].required);
         assert_eq!(
-            fields["name"].description.as_deref(),
-            Some("Authored function name")
+            fields["label"].description.as_deref(),
+            Some("Variant label")
         );
         assert_eq!(
-            fields["name"].validation.as_ref().unwrap().min_length,
+            fields["label"].validation.as_ref().unwrap().min_length,
             Some(1)
         );
-        assert!(fields["parameters"].required);
-        assert!(!fields["strict"].required);
-        assert!(fields.contains_key("description"));
-        assert!(fields.contains_key("defer_loading"));
-        assert!(fields.contains_key("allowed_callers"));
-        assert!(fields.contains_key("output_schema"));
+        assert!(fields["arguments"].required);
+        assert!(!fields["strict_mode"].required);
+        assert!(fields.contains_key("details"));
+        assert!(fields.contains_key("deferred"));
+        assert!(fields.contains_key("allowed_sources"));
+        assert!(fields.contains_key("output_shape"));
         assert!(
             !fields.contains_key("type"),
             "tag is owned by the union, not its payload"
@@ -80,22 +80,24 @@ fn tagged_allof_keeps_inline_payload_metadata_and_common_options() {
 }
 
 #[test]
-fn tagged_allof_keeps_recursive_namespace_and_nested_shell_payloads() {
+fn tagged_allof_keeps_recursive_members_and_nested_config_payloads() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let namespace = properties(&ir, &variant(&ir, "namespace").content_type);
+        let members = properties(&ir, &variant(&ir, "variant_b").content_type);
         assert!(
-            namespace.contains_key("tools"),
-            "{version}: namespace tools were lost"
+            members.contains_key("members"),
+            "{version}: nested members were lost"
         );
         assert_eq!(
-            namespace["tools"].type_expr,
-            IrTypeExpr::Array(Box::new(IrTypeExpr::Named("Tool".into())))
+            members["members"].type_expr,
+            IrTypeExpr::Array(Box::new(IrTypeExpr::Named("Variant".into())))
         );
-        let shell = properties(&ir, &variant(&ir, "shell").content_type);
+        let configuration = properties(&ir, &variant(&ir, "variant_c").content_type);
         assert_eq!(
-            shell.get("environment").map(|prop| &prop.type_expr),
-            Some(&IrTypeExpr::Named("Environment".into()))
+            configuration
+                .get("configuration")
+                .map(|prop| &prop.type_expr),
+            Some(&IrTypeExpr::Named("NestedConfig".into()))
         );
     }
 }
@@ -104,13 +106,13 @@ fn tagged_allof_keeps_recursive_namespace_and_nested_shell_payloads() {
 fn tag_object_can_also_carry_payload_fields() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let fields = properties(&ir, &variant(&ir, "custom").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_d").content_type);
         assert!(
-            fields.contains_key("input_schema"),
+            fields.contains_key("input_shape"),
             "{version}: fields beside the tag were lost"
         );
-        assert!(fields["input_schema"].required);
-        assert!(fields.contains_key("defer_loading"));
+        assert!(fields["input_shape"].required);
+        assert!(fields.contains_key("deferred"));
         assert!(!fields.contains_key("type"));
     }
 }
@@ -119,9 +121,9 @@ fn tag_object_can_also_carry_payload_fields() {
 fn tagged_allof_does_not_need_a_reference_to_retain_its_payload() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let fields = properties(&ir, &variant(&ir, "inline_only").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_e").content_type);
         assert!(
-            fields.contains_key("inline_name"),
+            fields.contains_key("inline_label"),
             "{version}: inline-only payload was lost"
         );
         assert!(!fields.contains_key("type"));
@@ -132,9 +134,9 @@ fn tagged_allof_does_not_need_a_reference_to_retain_its_payload() {
 fn tagged_allof_retains_every_reference_not_only_the_last_one() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let fields = properties(&ir, &variant(&ir, "multiple_refs").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_f").content_type);
         assert!(
-            fields.contains_key("defer_loading"),
+            fields.contains_key("deferred"),
             "{version}: first reference was lost"
         );
         assert!(fields.contains_key("display_name"));
@@ -146,13 +148,13 @@ fn tagged_allof_retains_every_reference_not_only_the_last_one() {
 fn tagged_allof_retains_properties_authored_alongside_allof() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let fields = properties(&ir, &variant(&ir, "outer_properties").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_g").content_type);
         assert!(
-            fields.contains_key("outer_name"),
+            fields.contains_key("outer_label"),
             "{version}: outer properties were lost"
         );
-        assert!(fields["outer_name"].required);
-        assert!(fields.contains_key("defer_loading"));
+        assert!(fields["outer_label"].required);
+        assert!(fields.contains_key("deferred"));
     }
 }
 
@@ -160,13 +162,13 @@ fn tagged_allof_retains_properties_authored_alongside_allof() {
 fn nested_composition_keeps_its_own_properties_and_required_fields() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let fields = properties(&ir, &variant(&ir, "nested_fields").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_k").content_type);
         assert!(
-            fields.contains_key("outer_name"),
+            fields.contains_key("outer_label"),
             "{version}: nested sibling field was lost"
         );
-        assert!(fields["outer_name"].required);
-        assert!(fields.contains_key("inner_name"));
+        assert!(fields["outer_label"].required);
+        assert!(fields.contains_key("inner_label"));
     }
 }
 
@@ -174,14 +176,14 @@ fn nested_composition_keeps_its_own_properties_and_required_fields() {
 fn outer_requiredness_strengthens_only_the_variant_payload() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
-        let fields = properties(&ir, &variant(&ir, "outer_required").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_i").content_type);
         assert!(
-            fields["name"].required,
+            fields["label"].required,
             "{version}: outer requiredness was lost"
         );
-        let original = properties(&ir, &IrTypeExpr::Named("OptionalName".into()));
+        let original = properties(&ir, &IrTypeExpr::Named("OptionalLabel".into()));
         assert!(
-            !original["name"].required,
+            !original["label"].required,
             "requiredness must not mutate the referenced component"
         );
     }
@@ -190,26 +192,26 @@ fn outer_requiredness_strengthens_only_the_variant_payload() {
 #[test]
 fn repeated_required_only_members_do_not_hide_outer_requiredness() {
     let mut source: serde_norway::Value = serde_norway::from_str(FIXTURE).unwrap();
-    let variants = source["components"]["schemas"]["Tool"]["oneOf"]
+    let variants = source["components"]["schemas"]["Variant"]["oneOf"]
         .as_sequence_mut()
         .unwrap();
     let required = variants
         .iter_mut()
-        .find(|variant| variant["required"][0].as_str() == Some("name"))
+        .find(|variant| variant["required"][0].as_str() == Some("label"))
         .unwrap();
     required["allOf"]
         .as_sequence_mut()
         .unwrap()
-        .push(serde_norway::from_str("{required: [name]}").unwrap());
+        .push(serde_norway::from_str("{required: [label]}").unwrap());
     let source = serde_norway::to_string(&source).unwrap();
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = lower(parse_content_yaml(&source.replacen("3.1.0", version, 1)).unwrap()).unwrap();
-        let fields = properties(&ir, &variant(&ir, "outer_required").content_type);
+        let fields = properties(&ir, &variant(&ir, "variant_i").content_type);
         assert!(
-            fields["name"].required,
+            fields["label"].required,
             "{version}: a repeated constraint must not erase requiredness"
         );
-        assert!(!properties(&ir, &IrTypeExpr::Named("OptionalName".into()))["name"].required);
+        assert!(!properties(&ir, &IrTypeExpr::Named("OptionalLabel".into()))["label"].required);
     }
 }
 
@@ -218,8 +220,8 @@ fn ordinary_reference_plus_tag_keeps_its_existing_payload_identity() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = spec(version);
         assert_eq!(
-            variant(&ir, "simple").content_type,
-            IrTypeExpr::Named("Options".into())
+            variant(&ir, "variant_h").content_type,
+            IrTypeExpr::Named("SharedFields".into())
         );
     }
 }
@@ -227,31 +229,31 @@ fn ordinary_reference_plus_tag_keeps_its_existing_payload_identity() {
 #[test]
 fn payload_promotion_does_not_overwrite_authored_schema_names() {
     let source = FIXTURE.replace(
-        "    Tool:\n",
-        "    ToolFunction: {type: string}\n    ToolFunctionAllOf2: {type: integer}\n    Tool:\n",
+        "    Variant:\n",
+        "    VariantFunction: {type: string}\n    VariantFunctionAllOf2: {type: integer}\n    Variant:\n",
     );
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let ir = lower(parse_content_yaml(&source.replacen("3.1.0", version, 1)).unwrap()).unwrap();
         assert!(matches!(
-            ir.schemas["ToolFunction"].kind,
+            ir.schemas["VariantFunction"].kind,
             IrSchemaKind::Alias(_)
         ));
         assert!(matches!(
-            ir.schemas["ToolFunctionAllOf2"].kind,
+            ir.schemas["VariantFunctionAllOf2"].kind,
             IrSchemaKind::Alias(_)
         ));
         assert_ne!(
-            variant(&ir, "function").content_type,
-            IrTypeExpr::Named("ToolFunction".into())
+            variant(&ir, "variant_a").content_type,
+            IrTypeExpr::Named("VariantFunction".into())
         );
-        assert!(properties(&ir, &variant(&ir, "function").content_type).contains_key("name"));
+        assert!(properties(&ir, &variant(&ir, "variant_a").content_type).contains_key("label"));
     }
 }
 
 #[test]
 fn allof_member_order_does_not_change_retained_payload_fields() {
     let mut source: serde_norway::Value = serde_norway::from_str(FIXTURE).unwrap();
-    for member in source["components"]["schemas"]["Tool"]["oneOf"]
+    for member in source["components"]["schemas"]["Variant"]["oneOf"]
         .as_sequence_mut()
         .unwrap()
     {
@@ -268,14 +270,14 @@ fn allof_member_order_does_not_change_retained_payload_fields() {
         let after =
             lower(parse_content_yaml(&source.replacen("3.1.0", version, 1)).unwrap()).unwrap();
         for tag in [
-            "function",
-            "namespace",
-            "shell",
-            "custom",
-            "inline_only",
-            "multiple_refs",
-            "outer_properties",
-            "simple",
+            "variant_a",
+            "variant_b",
+            "variant_c",
+            "variant_d",
+            "variant_e",
+            "variant_f",
+            "variant_g",
+            "variant_h",
         ] {
             let before = properties(&before, &variant(&before, tag).content_type);
             let after = properties(&after, &variant(&after, tag).content_type);

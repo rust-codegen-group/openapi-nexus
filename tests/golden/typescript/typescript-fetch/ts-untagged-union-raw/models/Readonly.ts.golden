@@ -3,7 +3,7 @@
  *
  * Untagged union conversion — 1.0.0
  */
-import { convert$6FromJSON, convert$6ToJSON } from '../runtime/valueConversion$6';
+import { convert$11FromJSON, convert$11ToJSON } from '../runtime/valueConversion$11';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
 
@@ -20,7 +20,7 @@ export function readonlyFromJSON(json: Readonly$Wire): Readonly {
     const additionalProperties = Object.fromEntries(
       entries.map(([key, value]) => {
         const additionalValue = value as readonly Detail$Wire[];
-        return [key, convert$6FromJSON(additionalValue)] as const;
+        return [key, convert$11FromJSON(additionalValue)] as const;
       }),
     );
     return { ...additionalProperties, ['extension_key']: detailFromJSON(contentValue) };
@@ -35,7 +35,7 @@ export function readonlyToJSON(value: Readonly): Readonly$Wire {
     const additionalProperties = Object.fromEntries(
       entries.map(([key, value]) => {
         const additionalValue = value as readonly Detail[];
-        return [key, convert$6ToJSON(additionalValue)] as const;
+        return [key, convert$11ToJSON(additionalValue)] as const;
       }),
     );
     return { ...additionalProperties, ['extension_key']: detailToJSON(contentValue) };

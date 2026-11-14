@@ -6,8 +6,8 @@
 import {
   matches$1FromJSON,
   matches$1ToJSON,
-  matches$33FromJSON,
-  matches$33ToJSON,
+  matches$37FromJSON,
+  matches$37ToJSON,
 } from '../runtime/unionMatch';
 import type { Detail, Detail$Wire } from './Detail';
 import { detailFromJSON, detailToJSON } from './Detail';
@@ -20,7 +20,7 @@ export function explicitNullableEnumChoiceFromJSON(
   json: ExplicitNullableEnumChoice$Wire,
 ): ExplicitNullableEnumChoice {
   const candidate: unknown = json;
-  if (matches$33FromJSON(candidate)) {
+  if (matches$37FromJSON(candidate)) {
     return json as unknown as readonly (number | null)[];
   }
   if (matches$1FromJSON(candidate)) {
@@ -33,7 +33,7 @@ export function explicitNullableEnumChoiceToJSON(
   value: ExplicitNullableEnumChoice,
 ): ExplicitNullableEnumChoice$Wire {
   const candidate: unknown = value;
-  if (matches$33ToJSON(candidate)) {
+  if (matches$37ToJSON(candidate)) {
     return value as unknown as readonly (number | null)[];
   }
   if (matches$1ToJSON(candidate)) {
