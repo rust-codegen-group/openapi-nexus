@@ -18,9 +18,14 @@ use sigil_stitch::spec::closed_sum_spec::ClosedSumSpec;
 use sigil_stitch::spec::where_spec::TypeArgument;
 
 use super::config::{AllOfStrategy, UntaggedUnionStrategy};
+use super::opaque;
 use super::util::{escape_kt_string, kt_decl_name, kt_primitive, kt_ref, kt_type_str};
 
 const RENDER_WIDTH: usize = 100;
+
+pub(super) fn opaque_runtime_needed(ir: &IrSpec) -> bool {
+    opaque::is_needed(ir)
+}
 
 pub(crate) fn generate_model_files(
     ir: &IrSpec,
@@ -134,7 +139,7 @@ fn emit_object(
     if obj.properties.is_empty()
         && let Some(values) = &obj.additional_properties
     {
-        return super::dictionary::file(schema, values, package_name);
+        return super::dictionary::file(schema, values, package_name, ir);
     }
     let name = schema.name.to_pascal_case();
 
@@ -162,6 +167,9 @@ fn emit_object(
             ParameterSpec::builder(&field_name, TypeName::primitive(&type_str)).is_property();
         if *_json_name != field_name {
             param_builder = param_builder.annotate_storage(serialized_name_annotation(_json_name));
+        }
+        if opaque::uses_alias(&prop.type_expr, ir) {
+            param_builder = param_builder.annotate_storage(opaque::annotation(package_name));
         }
         if !required {
             param_builder = param_builder.default_value(CodeBlock::of("null", ())?);

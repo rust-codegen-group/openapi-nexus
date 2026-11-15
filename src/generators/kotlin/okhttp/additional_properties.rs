@@ -8,6 +8,7 @@ use sigil_stitch::prelude::*;
 use crate::generators::type_application;
 use crate::ir::types::{IrObject, IrSchema, IrSpec, IrTypeExpr};
 
+use super::opaque::uses_alias;
 use super::sigil_emit::kotlin_type_name_in;
 use super::util::kt_decl_name;
 
@@ -18,6 +19,7 @@ pub(super) struct AdditionalProperties<'a> {
     package: String,
     root: TypeName,
     factory: String,
+    opaque: bool,
 }
 
 impl<'a> AdditionalProperties<'a> {
@@ -58,6 +60,7 @@ impl<'a> AdditionalProperties<'a> {
             values,
             root: TypeName::qualified(&package, &class),
             factory,
+            opaque: uses_alias(values, ir),
             package,
         })
     }
@@ -138,9 +141,11 @@ impl<'a> AdditionalProperties<'a> {
             ),
             vec![self.root.clone(), value.clone()],
         );
+        let opaque_factory =
+            TypeName::qualified(&format!("{package}.runtime"), "OpaqueJsonAdapterFactory");
         let constructor = FunSpec::builder("constructor").is_constructor()
             .delegation(sigil_quote!(Kotlin {
-                super($T(self.root.clone())::class.java, object : $T(token)() {}, $for(key in self.object.properties.keys(); separator = ", ") { $S(key) })
+                super($T(self.root.clone())::class.java, object : $T(token.clone())() {}, $for(key in self.object.properties.keys(); separator = ", ") { $S(key) })
             })?.__sigil_trim_trailing_newline())
             .body(sigil_quote!(Kotlin {})?).build()?;
         let properties = FunSpec::builder("properties")
@@ -155,8 +160,39 @@ impl<'a> AdditionalProperties<'a> {
             .add_param(ParameterSpec::of("entries", self.map_type()))
             .body(sigil_quote!(Kotlin { value.$N(&self.name) = entries })?)
             .build()?;
+        let mut factory = TypeSpec::builder(&self.factory, TypeKind::Class)
+            .visibility(Visibility::Private)
+            .extends(parent)
+            .add_method(constructor)
+            .add_method(properties)
+            .add_method(setter);
+        if self.opaque {
+            let adapter_type = type_application(
+                TypeName::qualified("com.google.gson", "TypeAdapter"),
+                vec![value.clone()],
+            );
+            let value_adapter = FunSpec::builder("valueAdapter")
+                .is_override()
+                .add_param(ParameterSpec::of(
+                    "gson",
+                    TypeName::qualified("com.google.gson", "Gson"),
+                ))
+                .returns(vec![adapter_type])
+                .body(sigil_quote!(Kotlin {
+                    return $T(opaque_factory.clone())().create(gson, object : $T(token.clone())() {})!!
+                })?)
+                .build()?;
+            factory = factory.add_method(value_adapter);
+        }
         let mut helpers = Vec::new();
-        let function = encode_value(self.values, &self.package, &mut helpers)?;
+        let encode_body = if self.opaque {
+            sigil_quote!(Kotlin {
+                return $T(opaque_factory.clone())().tree(gson, value)
+            })?
+        } else {
+            let function = encode_value(self.values, &self.package, &mut helpers)?;
+            sigil_quote!(Kotlin { return $N(function)(gson, value) })?
+        };
         let encode = FunSpec::builder("encode")
             .is_override()
             .add_param(ParameterSpec::of(
@@ -165,15 +201,9 @@ impl<'a> AdditionalProperties<'a> {
             ))
             .add_param(ParameterSpec::of("value", optional(value)))
             .returns(vec![TypeName::qualified("com.google.gson", "JsonElement")])
-            .body(sigil_quote!(Kotlin { return $N(function)(gson, value) })?)
+            .body(encode_body)
             .build()?;
-        let mut factory = TypeSpec::builder(&self.factory, TypeKind::Class)
-            .visibility(Visibility::Private)
-            .extends(parent)
-            .add_method(constructor)
-            .add_method(properties)
-            .add_method(setter)
-            .add_method(encode);
+        factory = factory.add_method(encode);
         for helper in helpers {
             factory = factory.add_method(helper);
         }

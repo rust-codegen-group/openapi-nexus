@@ -65,6 +65,7 @@ impl KotlinOkhttpCodeGenerator {
             ir.schemas.values().any(|schema| {
                 matches!(schema.kind, crate::ir::types::IrSchemaKind::Intersection(_))
             }),
+            sigil_emit::opaque_runtime_needed(ir),
         ));
 
         files.push(build_gradle_file(&package_name, &ir.info));

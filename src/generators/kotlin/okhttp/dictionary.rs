@@ -5,14 +5,16 @@ use sigil_stitch::lang::kotlin::Kotlin;
 use sigil_stitch::prelude::*;
 
 use crate::generators::type_application;
-use crate::ir::types::{IrSchema, IrTypeExpr};
+use crate::ir::types::{IrSchema, IrSpec, IrTypeExpr};
 
+use super::opaque;
 use super::sigil_emit::{kotlin_type_name_in, package_header};
 
 pub(super) fn file(
     schema: &IrSchema,
     values: &IrTypeExpr,
     package_name: &str,
+    ir: &IrSpec,
 ) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
     let models_package = format!("{package_name}.models");
@@ -49,9 +51,14 @@ pub(super) fn file(
     let element = TypeName::importable("com.google.gson", "JsonElement");
     let exception = TypeName::importable("com.google.gson", "JsonParseException");
     let json_token = TypeName::importable("com.google.gson.stream", "JsonToken");
+    let opaque = opaque::uses_alias(values, ir);
     let token = type_application(
         TypeName::importable("com.google.gson.reflect", "TypeToken"),
         vec![value_type.clone()],
+    );
+    let opaque_factory = TypeName::qualified(
+        &format!("{package_name}.runtime"),
+        "OpaqueJsonAdapterFactory",
     );
     // Delegate from the original reader: Gson's tree reader silently truncates
     // fractional/overflowing integer members that its streaming reader rejects.
@@ -65,7 +72,11 @@ pub(super) fn file(
             val result = $T(root.clone())()
             while (reader.hasNext()) {
                 val key = reader.nextName()
-                result.additionalProperties[key] = gson.fromJson(reader, object : $T(token.clone())() {}.type)
+                $if(opaque) {
+                    result.additionalProperties[key] = $T(opaque_factory.clone())().create(gson, object : $T(token.clone())() {})!!.read(reader)
+                } $else {
+                    result.additionalProperties[key] = gson.fromJson(reader, object : $T(token.clone())() {}.type)
+                }
             }
             reader.endObject()
             return result
@@ -83,12 +94,23 @@ pub(super) fn file(
             if (value == null) { writer.nullValue(); return }
             writer.beginObject()
             for (entry in value.additionalProperties.entries) {
-                val tree = $N(value_function)(entry.value)
-                writer.name(entry.key)
-                val serializeNulls = writer.serializeNulls
-                writer.serializeNulls = true
-                try { gson.getAdapter($T(element)::class.java).write(writer, tree) }
-                finally { writer.serializeNulls = serializeNulls }
+                $if(opaque) {
+                    writer.name(entry.key)
+                    val serializeNulls = writer.serializeNulls
+                    writer.serializeNulls = true
+                    try {
+                        $T(opaque_factory.clone())().create(gson, object : $T(token.clone())() {})!!.write(writer, entry.value)
+                    } finally {
+                        writer.serializeNulls = serializeNulls
+                    }
+                } $else {
+                    val tree = $N(value_function)(entry.value)
+                    writer.name(entry.key)
+                    val serializeNulls = writer.serializeNulls
+                    writer.serializeNulls = true
+                    try { gson.getAdapter($T(element)::class.java).write(writer, tree) }
+                    finally { writer.serializeNulls = serializeNulls }
+                }
             }
             writer.endObject()
         })?)
