@@ -43,7 +43,7 @@ final class NumericFiniteJsonAdapter extends TypeAdapter<NumericFinite> {
             selected = 1;
         }
         if (selected == 0) {
-            return new NumericFinite.VariantNumber(gson.fromJson(element, Double.class));
+            return new NumericFinite.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         if (selected == 1) {
             return new NumericFinite.VariantAny(gson.fromJson(element, new TypeToken<JsonElement>() {}.getType()));

@@ -52,7 +52,7 @@ final class OneOfTypesJsonAdapter extends TypeAdapter<OneOfTypes> {
             return new OneOfTypes.VariantString(element.getAsString());
         }
         if (selected == 1) {
-            return new OneOfTypes.VariantNumber(gson.fromJson(element, Double.class));
+            return new OneOfTypes.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         if (selected == 2) {
             return new OneOfTypes.VariantBoolean(element.getAsBoolean());

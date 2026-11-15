@@ -45,10 +45,10 @@ final class ScalarChoiceJsonAdapter extends TypeAdapter<ScalarChoice> {
             selected = 2;
         }
         if (selected == 0) {
-            return new ScalarChoice.VariantInteger(gson.fromJson(element, Integer.class));
+            return new ScalarChoice.VariantInteger(gson.fromJson(element, java.lang.Integer.class));
         }
         if (selected == 1) {
-            return new ScalarChoice.VariantNumber(gson.fromJson(element, Double.class));
+            return new ScalarChoice.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         if (selected == 2) {
             return new ScalarChoice.VariantBoolean(element.getAsBoolean());

@@ -7,9 +7,12 @@ Each backend can add independent cases through its own `java/fixtures.txt` or
 An optional third column selects `firstMatch`, `strict`, or `raw`. Java's union
 consumers cover finite constraints, recursive checks, wrapped alias/composition
 boundaries, raw null preservation, and OkHttp response/error-body integration.
-Independent helper-type projects also compile recursive unions alongside models
-named `Integer` and `Boolean`; numeric controls exercise extreme exponents without
-weakening native delegate errors or finite-value precision.
+Independent helper-type projects also compile recursive and primitive unions
+alongside models named `Integer`, `Long`, `Float`, `Double` and `Boolean`. They
+verify numeric scalar delegates, primitive lists/maps and nested Boolean containers
+retain boxed identities while authored `Integer` members and lists keep their model
+identity. Numeric controls also exercise extreme exponents without weakening native
+delegate errors or finite-value precision.
 Java's additional-property consumers cover pure and mixed objects under all
 three union policies, typed mutable storage, opaque JSON precision/nulls, native
 integer errors, storage/helper collisions, recursion and configured Gson delegates.

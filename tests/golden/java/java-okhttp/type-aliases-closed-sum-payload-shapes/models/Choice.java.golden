@@ -24,9 +24,9 @@ import com.google.gson.stream.JsonWriter;
 public sealed interface Choice {
     record VariantString(String value0) implements Choice {}
 
-    record VariantArray(List<Integer> value0) implements Choice {}
+    record VariantArray(List<java.lang.Integer> value0) implements Choice {}
 
-    record VariantMap(Map<String, Boolean> value0) implements Choice {}
+    record VariantMap(Map<String, java.lang.Boolean> value0) implements Choice {}
 
     /**
      * The union's null value.
@@ -57,11 +57,11 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
             return new Choice.VariantString(element.getAsString());
         }
         if (selected == 1) {
-            return new Choice.VariantArray(gson.fromJson(element, new TypeToken<List<Integer>>() {}.getType()));
+            return new Choice.VariantArray(gson.fromJson(element, new TypeToken<List<java.lang.Integer>>() {}.getType()));
         }
         if (selected == 2) {
             return new Choice.VariantMap(gson.fromJson(element, new TypeToken<Map<String,
-            Boolean>>() {}.getType()));
+            java.lang.Boolean>>() {}.getType()));
         }
         throw new JsonParseException("unknown Choice union value");
     }

@@ -43,7 +43,7 @@ final class NumericZeroJsonAdapter extends TypeAdapter<NumericZero> {
             selected = 1;
         }
         if (selected == 0) {
-            return new NumericZero.VariantNumber(gson.fromJson(element, Double.class));
+            return new NumericZero.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         if (selected == 1) {
             return new NumericZero.VariantAny(gson.fromJson(element, new TypeToken<JsonElement>() {}.getType()));

@@ -40,10 +40,10 @@ final class AmbiguousNumberJsonAdapter extends TypeAdapter<AmbiguousNumber> {
             selected = 1;
         }
         if (selected == 0) {
-            return new AmbiguousNumber.VariantInteger(gson.fromJson(element, Integer.class));
+            return new AmbiguousNumber.VariantInteger(gson.fromJson(element, java.lang.Integer.class));
         }
         if (selected == 1) {
-            return new AmbiguousNumber.VariantNumber(gson.fromJson(element, Double.class));
+            return new AmbiguousNumber.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         throw new JsonParseException("unknown AmbiguousNumber union value");
     }

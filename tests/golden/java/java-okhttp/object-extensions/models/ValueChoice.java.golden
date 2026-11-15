@@ -43,7 +43,7 @@ final class ValueChoiceJsonAdapter extends TypeAdapter<ValueChoice> {
             return new ValueChoice.VariantNestedValue(gson.fromJson(element, new TypeToken<NestedValue>() {}.getType()));
         }
         if (selected == 1) {
-            return new ValueChoice.VariantInteger(gson.fromJson(element, Integer.class));
+            return new ValueChoice.VariantInteger(gson.fromJson(element, java.lang.Integer.class));
         }
         throw new JsonParseException("unknown ValueChoice union value");
     }

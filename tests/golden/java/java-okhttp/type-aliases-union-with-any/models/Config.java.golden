@@ -49,7 +49,7 @@ final class ConfigJsonAdapter extends TypeAdapter<Config> {
             return new Config.VariantString(element.getAsString());
         }
         if (selected == 1) {
-            return new Config.VariantNumber(gson.fromJson(element, Double.class));
+            return new Config.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         if (selected == 2) {
             return new Config.VariantAny(gson.fromJson(element, new TypeToken<JsonElement>() {}.getType()));

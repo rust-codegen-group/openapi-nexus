@@ -537,11 +537,21 @@ fn java_type_name(expr: &IrTypeExpr, boxed: bool) -> TypeName {
     match expr {
         IrTypeExpr::ScalarEnum { representation, .. } => java_type_name(representation, boxed),
         IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
-        IrTypeExpr::Primitive(primitive) => TypeName::primitive(if boxed {
-            java_primitive_boxed(primitive)
-        } else {
-            java_primitive(primitive)
-        }),
+        IrTypeExpr::Primitive(primitive)
+            if boxed
+                && matches!(
+                    primitive,
+                    IrPrimitive::Integer
+                        | IrPrimitive::IntegerWithFormat(_)
+                        | IrPrimitive::Number
+                        | IrPrimitive::NumberWithFormat(_)
+                        | IrPrimitive::Boolean
+                ) =>
+        {
+            // Boxed runtime helpers must not bind to same-package authored models.
+            TypeName::qualified("java.lang", java_primitive_boxed(primitive))
+        }
+        IrTypeExpr::Primitive(primitive) => TypeName::primitive(java_primitive(primitive)),
         IrTypeExpr::Array(inner) => TypeName::application(
             TypeName::importable("java.util", "List"),
             vec![TypeArgument::Single(java_type_name(inner, true))],
@@ -920,6 +930,108 @@ fn enum_variant_name(s: &str) -> String {
 mod tests {
     use super::*;
     use sigil_stitch::assert_rendered;
+
+    fn decode_case(payload: IrTypeExpr) -> CodeBlock {
+        let case = ClosedSumCasePlan {
+            name: "VariantValue".into(),
+            payload: Some(payload.clone()),
+            doc: None,
+            wire_name: None,
+            is_null: false,
+        };
+        let plan = ClosedSumPlan {
+            name: "Choice".into(),
+            docs: Vec::new(),
+            cases: vec![case.clone()],
+            encoding: ClosedSumEncoding::Untagged,
+        };
+        java_adapter_read_value(
+            &plan,
+            &case,
+            &payload,
+            sigil_quote!(Java { element }).expect("union decoder source expression builds"),
+        )
+        .expect("Java union decoder body builds")
+    }
+
+    #[test]
+    fn primitive_union_decoders_qualify_boxed_runtime_types() {
+        for (primitive, expected) in [
+            (
+                IrPrimitive::Integer,
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Integer.class));\n",
+            ),
+            (
+                IrPrimitive::IntegerWithFormat("int32".into()),
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Integer.class));\n",
+            ),
+            (
+                IrPrimitive::IntegerWithFormat("int64".into()),
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Long.class));\n",
+            ),
+            (
+                IrPrimitive::IntegerWithFormat("custom".into()),
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Integer.class));\n",
+            ),
+            (
+                IrPrimitive::Number,
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Double.class));\n",
+            ),
+            (
+                IrPrimitive::NumberWithFormat("float".into()),
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Float.class));\n",
+            ),
+            (
+                IrPrimitive::NumberWithFormat("double".into()),
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Double.class));\n",
+            ),
+            (
+                IrPrimitive::NumberWithFormat("custom".into()),
+                "return new Choice.VariantValue(gson.fromJson(element, java.lang.Double.class));\n",
+            ),
+        ] {
+            assert_rendered!(
+                Java::new(),
+                width = 200,
+                decode_case(IrTypeExpr::Primitive(primitive)),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn union_type_tokens_distinguish_boxed_primitives_from_authored_models() {
+        assert_rendered!(
+            Java::new(),
+            width = 200,
+            decode_case(IrTypeExpr::Array(Box::new(IrTypeExpr::Primitive(
+                IrPrimitive::Integer
+            )))),
+            "import java.util.List;\n\nreturn new Choice.VariantValue(gson.fromJson(element, new TypeToken<List<java.lang.Integer>>() {}.getType()));\n"
+        );
+        assert_rendered!(
+            Java::new(),
+            width = 200,
+            decode_case(IrTypeExpr::Map(Box::new(IrTypeExpr::Array(Box::new(
+                IrTypeExpr::Primitive(IrPrimitive::Boolean)
+            ))))),
+            "import java.util.List;\nimport java.util.Map;\n\nreturn new Choice.VariantValue(gson.fromJson(element, new TypeToken<Map<String, List<java.lang.Boolean>>>() {}.getType()));\n"
+        );
+        assert_rendered!(
+            Java::new(),
+            width = 200,
+            decode_case(IrTypeExpr::Named("Integer".into())),
+            "return new Choice.VariantValue(gson.fromJson(element, new TypeToken<Integer>() {}.getType()));\n"
+        );
+        assert_rendered!(
+            Java::new(),
+            width = 200,
+            decode_case(IrTypeExpr::Array(Box::new(IrTypeExpr::Named(
+                "Integer".into()
+            )))),
+            "import java.util.List;\n\nreturn new Choice.VariantValue(gson.fromJson(element, new TypeToken<List<Integer>>() {}.getType()));\n"
+        );
+    }
 
     #[test]
     fn closed_sum_adapter_render_is_pinned() {
