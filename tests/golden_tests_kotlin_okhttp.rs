@@ -98,6 +98,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("additional-helper-types", "valid/kotlin-additional-helper-types.yaml"),
         ("allof-composition", "valid/object-composition.yaml"),
         ("array-empty-items", "valid/array-empty-items.yaml"),
+        ("any-alias", "valid/kotlin-any-alias.yaml"),
     ])
 }
 
@@ -198,6 +199,7 @@ generate_golden_tests! {
     test_additional_helper_types_golden: "additional-helper-types",
     test_allof_composition_golden: "allof-composition",
     test_array_empty_items_golden: "array-empty-items",
+    test_any_alias_golden: "any-alias",
 }
 
 #[test]

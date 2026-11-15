@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info: {title: Opaque alias wire values, version: '1'}
+paths: {}
+components:
+  schemas:
+    Anything: {type: object}
+    AnyList: {type: array, items: true}
+    Ordinary:
+      type: object
+      required: [value, values]
+      properties:
+        value: {$ref: '#/components/schemas/Anything'}
+        values: {$ref: '#/components/schemas/AnyList'}
+    AliasChain:
+      $ref: '#/components/schemas/Anything'
+    NestedAliases:
+      type: object
+      required: [chain, lists, maps]
+      properties:
+        chain: {$ref: '#/components/schemas/AliasChain'}
+        lists:
+          type: array
+          items: {$ref: '#/components/schemas/AnyList'}
+        maps:
+          type: object
+          additionalProperties:
+            type: array
+            items: {$ref: '#/components/schemas/AliasChain'}
+    AliasMap:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Anything'
+    AliasListMap:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/AnyList'
+    MixedAliasMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties:
+        $ref: '#/components/schemas/Anything'
+    RawMap:
+      type: object
+      additionalProperties: true
+    TypedValue:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+        optional_note: {type: string}
+        nullable_note: {type: [string, 'null']}
+    OptionalAliases:
+      type: object
+      properties:
+        value: {$ref: '#/components/schemas/Anything'}
+        values: {$ref: '#/components/schemas/AnyList'}
+    MixedControls:
+      type: object
+      required: [value, typed]
+      properties:
+        value: {$ref: '#/components/schemas/Anything'}
+        typed: {$ref: '#/components/schemas/TypedValue'}
+      additionalProperties: {$ref: '#/components/schemas/Anything'}
+    SiblingControls:
+      type: object
+      required: [value, typed]
+      properties:
+        value: {$ref: '#/components/schemas/Anything'}
+        typed: {$ref: '#/components/schemas/TypedValue'}

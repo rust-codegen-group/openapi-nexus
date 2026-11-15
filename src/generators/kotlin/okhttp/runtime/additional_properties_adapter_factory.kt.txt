@@ -28,12 +28,13 @@ abstract class AdditionalPropertiesAdapterFactory<M : Any, V>(
     protected abstract fun properties(value: M): MutableMap<String, V>
     protected abstract fun setProperties(value: M, entries: MutableMap<String, V>)
     protected abstract fun encode(gson: Gson, value: V?): JsonElement
+    protected open fun valueAdapter(gson: Gson): TypeAdapter<V> = gson.getAdapter(valueType)
 
     override fun <T> create(gson: Gson, type: TypeToken<T>): TypeAdapter<T>? {
         val modelType: TypeToken<M> = TypeToken.get(modelClass)
         if (type.rawType != modelClass) return null
         val delegate: TypeAdapter<M> = gson.getDelegateAdapter(this, modelType)
-        val values: TypeAdapter<V> = gson.getAdapter(valueType)
+        val values: TypeAdapter<V> = valueAdapter(gson)
         val trees = gson.getAdapter(JsonElement::class.java)
         val known = declaredNames.toMutableSet()
         for (field in modelClass.declaredFields) {
@@ -108,7 +109,13 @@ abstract class AdditionalPropertiesAdapterFactory<M : Any, V>(
                 writer.beginObject()
                 for ((key, tree) in fields.entrySet()) {
                     writer.name(key)
-                    trees.write(writer, tree)
+                    val serializeNulls = writer.serializeNulls
+                    writer.serializeNulls = true
+                    try {
+                        trees.write(writer, tree)
+                    } finally {
+                        writer.serializeNulls = serializeNulls
+                    }
                 }
                 for ((key, item) in extras) {
                     require(!fields.has(key)) { "Additional property collides with declared wire field: $key" }

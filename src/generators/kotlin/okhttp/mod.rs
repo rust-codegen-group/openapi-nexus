@@ -4,6 +4,7 @@ mod composition;
 pub mod config;
 mod dictionary;
 mod matching;
+mod opaque;
 pub mod runtime;
 pub mod sigil_emit;
 pub mod sigil_emit_api;

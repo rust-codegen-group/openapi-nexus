@@ -5,6 +5,8 @@ const API_EXCEPTION_KT: &str = include_str!("runtime/api_exception.kt.txt");
 const AUTH_KT: &str = include_str!("runtime/auth.kt.txt");
 const UPLOAD_FILE_KT: &str = include_str!("runtime/upload_file.kt.txt");
 const ALL_OF_ADAPTER_FACTORY_KT: &str = include_str!("runtime/all_of_adapter_factory.kt.txt");
+const OPAQUE_JSON_ADAPTER_FACTORY_KT: &str =
+    include_str!("runtime/opaque_json_adapter_factory.kt.txt");
 
 pub fn runtime_files(
     header: &str,
@@ -12,6 +14,7 @@ pub fn runtime_files(
     include_upload_file: bool,
     include_additional_properties: bool,
     include_all_of: bool,
+    include_opaque: bool,
 ) -> Vec<FileInfo> {
     let runtime_package = format!("{package_name}.runtime");
     let mut files = vec![
@@ -48,6 +51,12 @@ pub fn runtime_files(
         files.push(FileInfo::runtime(
             "AllOfAdapterFactory.kt".to_string(),
             repackage(header, ALL_OF_ADAPTER_FACTORY_KT, &runtime_package),
+        ));
+    }
+    if include_opaque {
+        files.push(FileInfo::runtime(
+            "OpaqueJsonAdapterFactory.kt".to_string(),
+            repackage(header, OPAQUE_JSON_ADAPTER_FACTORY_KT, &runtime_package),
         ));
     }
     files
