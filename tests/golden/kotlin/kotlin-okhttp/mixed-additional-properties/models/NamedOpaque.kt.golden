@@ -9,11 +9,11 @@ import com.google.gson.annotations.SerializedName
 @com.google.gson.annotations.JsonAdapter(NamedOpaqueAdditionalPropertiesAdapterFactory::class, nullSafe = false)
 data class NamedOpaque(@field:SerializedName("known_field")
     val knownField: Any, @field:SerializedName("known_values")
-    val knownValues: List<String>? = null, @field:kotlin.jvm.Transient
+    val knownValues: List<Any>? = null, @field:kotlin.jvm.Transient
     var additionalProperties: kotlin.collections.MutableMap<kotlin.String,
     com.google.gson.JsonElement> = linkedMapOf()) {
     constructor(knownField: kotlin.Any,
-        knownValues: kotlin.collections.List<kotlin.String>?) : this(knownField, knownValues, linkedMapOf()) {
+        knownValues: kotlin.collections.List<kotlin.Any>?) : this(knownField, knownValues, linkedMapOf()) {
 
     }
 }

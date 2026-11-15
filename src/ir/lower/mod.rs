@@ -10,8 +10,24 @@ pub mod v30;
 pub mod v31;
 pub mod v32;
 
-use crate::ir::types::IrSpec;
+use crate::ir::types::{IrSpec, IrTypeExpr};
 use crate::parser::ParsedSpec;
+
+/// Preserve JSON Schema's unconstrained meaning for an explicitly empty array item.
+/// Version adapters provide the schema type because their parsed schema structs differ.
+pub(crate) fn unconstrained_array_item<T>(
+    schema: &T,
+    typed: impl FnOnce() -> IrTypeExpr,
+) -> IrTypeExpr
+where
+    T: Default + PartialEq,
+{
+    if schema == &T::default() {
+        IrTypeExpr::Any
+    } else {
+        typed()
+    }
+}
 
 mod error;
 pub use error::LowerError;
