@@ -36,7 +36,7 @@ private class WrappedChoiceJsonAdapter : TypeAdapter<WrappedChoice>() {
         if (selected < 0 && matches0(element)) {
             selected = 0
         }
-        if (selected < 0 && matches7(element)) {
+        if (selected < 0 && matches8(element)) {
             selected = 1
         }
         if (selected == 0) {
@@ -64,14 +64,13 @@ private class WrappedChoiceJsonAdapter : TypeAdapter<WrappedChoice>() {
     }
 
     private fun matches0(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
+        if (!matches1(candidate)) {
             return false
         }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("leftPart") || !matches1(jsonObject.get("leftPart"))) {
+        if (!matches3(candidate)) {
             return false
         }
-        if (!jsonObject.has("rightPart") || !matches3(jsonObject.get("rightPart"))) {
+        if (!matches7(candidate)) {
             return false
         }
         return true
@@ -122,6 +121,16 @@ private class WrappedChoiceJsonAdapter : TypeAdapter<WrappedChoice>() {
     }
 
     private fun matches7(candidate: JsonElement): kotlin.Boolean {
+        if (matches1(candidate)) {
+            return true
+        }
+        if (matches3(candidate)) {
+            return true
+        }
+        return false
+    }
+
+    private fun matches8(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }

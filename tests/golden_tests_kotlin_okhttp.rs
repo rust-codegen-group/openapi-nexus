@@ -96,6 +96,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("dictionary-helper-types", "valid/kotlin-dictionary-helper-types.yaml"),
         ("mixed-additional-properties", "valid/kotlin-additional-properties.yaml"),
         ("additional-helper-types", "valid/kotlin-additional-helper-types.yaml"),
+        ("allof-composition", "valid/object-composition.yaml"),
     ])
 }
 
@@ -194,6 +195,18 @@ generate_golden_tests! {
     test_dictionary_helper_types_golden: "dictionary-helper-types",
     test_mixed_additional_properties_golden: "mixed-additional-properties",
     test_additional_helper_types_golden: "additional-helper-types",
+    test_allof_composition_golden: "allof-composition",
+}
+
+#[test]
+fn test_allof_raw_golden() {
+    run_golden_test(
+        &KotlinOkhttpCodeGenerator::new(toml::from_str("all_of_strategy = 'raw'").unwrap()),
+        golden_dir(),
+        "allof-raw",
+        "valid/object-composition.yaml",
+        UPDATE_HINT,
+    );
 }
 
 #[test]

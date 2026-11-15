@@ -6,6 +6,16 @@ pub struct KotlinOkhttpConfig {
     pub package_name: Option<String>,
     #[serde(default)]
     pub untagged_union_strategy: UntaggedUnionStrategy,
+    #[serde(default)]
+    pub all_of_strategy: AllOfStrategy,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum AllOfStrategy {
+    #[default]
+    Composed,
+    Raw,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,6 +46,10 @@ mod tests {
             KotlinOkhttpConfig::default().untagged_union_strategy,
             UntaggedUnionStrategy::FirstMatch
         );
+        assert_eq!(
+            KotlinOkhttpConfig::default().all_of_strategy,
+            AllOfStrategy::Composed
+        );
         for (value, policy) in [
             ("firstMatch", UntaggedUnionStrategy::FirstMatch),
             ("strict", UntaggedUnionStrategy::Strict),
@@ -45,8 +59,11 @@ mod tests {
                 toml::from_str(&format!("untagged_union_strategy = {value:?}")).unwrap();
             assert_eq!(config.untagged_union_strategy, policy);
         }
+        let config: KotlinOkhttpConfig = toml::from_str("all_of_strategy = 'raw'").unwrap();
+        assert_eq!(config.all_of_strategy, AllOfStrategy::Raw);
         assert!(
             toml::from_str::<KotlinOkhttpConfig>("untagged_union_strategy = 'unknown'").is_err()
         );
+        assert!(toml::from_str::<KotlinOkhttpConfig>("all_of_strategy = 'unknown'").is_err());
     }
 }

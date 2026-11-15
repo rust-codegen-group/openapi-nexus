@@ -7,6 +7,7 @@ for untagged unions, selecting a member before invoking its existing Gson codec.
 [kotlin-okhttp]
 package_name = "com.example.sdk"
 untagged_union_strategy = "firstMatch"
+all_of_strategy = "composed"
 ```
 
 | Policy | Behavior |
@@ -30,11 +31,19 @@ adapter instead of reflecting its runtime `Variant*` wrapper as a `value0` field
 Both typed policies retain the existing root-null behavior: nonnullable unions
 return Kotlin `null`, while nullable unions use `VariantNull`.
 
-Kotlin `typealias` declarations remain transparent. Intersections retain their
-existing wrapper fields (for example, `leftPart` and `rightPart`); this is not an
-`allOf` codec redesign. Ordinary objects, aliases, enum declarations, and tagged
-unions keep their existing APIs/codecs. Explicit dictionary and mixed-object
-additional properties have the representations described below.
+Kotlin `typealias` declarations remain transparent. Compatible object/map
+`allOf` intersections retain their source-facing member properties while a
+private Gson adapter projects each member and merges one flat JSON object. A
+single-member alias therefore keeps its constructor/getter API without adding a
+wire wrapper key. Unsupported, nullable or incompatible intersections use the
+raw `JsonElement` representation. Ordinary objects, aliases, enum declarations,
+and tagged unions keep their existing APIs/codecs. Explicit dictionary and
+mixed-object additional properties have the representations described below.
+
+`all_of_strategy = "composed"` (default) enables the conservative compatible
+composition plan. Set it to `"raw"` to represent every intersection as a
+`JsonElement`-backed model while preserving the original JSON value. The
+allOf policy is independent of `untagged_union_strategy`.
 
 Raw mode uses Gson's native tree adapter and temporarily enables writer null
 serialization, restoring its prior value even on failure. This preserves null
@@ -46,6 +55,13 @@ The policy can also be set through the CLI:
 ```sh
 openapi-nexus generate --input api.yaml --output sdk --generators kotlin-okhttp \
   --generator-config kotlin-okhttp.untagged_union_strategy=strict
+```
+
+For raw allOf values, use:
+
+```sh
+openapi-nexus generate --input api.yaml --output sdk --generators kotlin-okhttp \
+  --generator-config kotlin-okhttp.all_of_strategy=raw
 ```
 
 ## Pure dictionary models
@@ -72,8 +88,9 @@ Dictionary entry nulls are preserved without changing the writer's surrounding
 null policy. Values decode from the original JSON reader through their declared
 Gson codecs, preserving native decode errors as well as ordinary model null-field
 omission. Authored model types remain distinct from Gson helper types, even when
-they share names such as `TypeToken` or `JsonElement`. Mixed-object preservation
-is described below; `allOf` wrapper redesign remains separate.
+they share names such as `TypeToken` or `JsonElement`. Mixed-object preservation and
+allOf composition use separate adapters so each member retains its configured
+codec and wire keys.
 
 ## Mixed-object additional properties
 
@@ -114,5 +131,6 @@ classes from the unchanged Gson 2.11.0 dependency; native consumers cover both
 input modes.
 
 Pure-dictionary codecs are unchanged. Closed/implicit objects, general inline
-composition lowering, opaque named-alias codecs, multi-member `allOf`, tagged
-wrapper extension storage and generation formatting remain separate concerns.
+composition lowering, opaque named-alias codecs, tagged wrapper extension storage
+and generation formatting remain separate concerns; compatible named/map `allOf`
+composition is handled by the policy described above.

@@ -8,10 +8,12 @@ use crate::generators::type_application;
 use crate::generators::union_match::{
     JsonShape, MatchScope, accepts_any, plan_named_shape, selection_shapes,
 };
-use crate::ir::types::{IrObject, IrProperty, IrSchemaKind, IrSpec};
+use crate::ir::types::{IrSchemaKind, IrSpec};
 
-/// Kotlin aliases are transparent; intersections retain their wrapper fields.
-pub(super) fn wire_ir(ir: &IrSpec) -> Cow<'_, IrSpec> {
+use super::config::AllOfStrategy;
+
+/// Kotlin aliases are transparent; composed intersections retain their member facts.
+pub(super) fn wire_ir(ir: &IrSpec, all_of_strategy: AllOfStrategy) -> Cow<'_, IrSpec> {
     if !ir
         .schemas
         .values()
@@ -21,33 +23,12 @@ pub(super) fn wire_ir(ir: &IrSpec) -> Cow<'_, IrSpec> {
     }
     let mut wire = ir.clone();
     for schema in wire.schemas.values_mut() {
-        let properties = match &schema.kind {
-            IrSchemaKind::Intersection(intersection) => {
-                super::util::intersection_fields(intersection)
-            }
-            _ => continue,
+        let IrSchemaKind::Intersection(intersection) = &schema.kind else {
+            continue;
+        };
+        if !super::composition::is_composed(intersection, ir, all_of_strategy) {
+            schema.kind = IrSchemaKind::Alias(crate::ir::types::IrTypeExpr::Any);
         }
-        .into_iter()
-        .map(|(name, expr)| {
-            (
-                name.clone(),
-                IrProperty {
-                    name,
-                    type_expr: expr.clone(),
-                    required: true,
-                    nullable: false,
-                    description: None,
-                    default_value: None,
-                    format: None,
-                    validation: None,
-                },
-            )
-        })
-        .collect();
-        schema.kind = IrSchemaKind::Object(IrObject {
-            properties,
-            additional_properties: None,
-        });
     }
     Cow::Owned(wire)
 }
@@ -66,6 +47,32 @@ mod tests {
             .unwrap(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn composed_tagged_allof_payloads_keep_flat_matcher_facts() {
+        let ir = crate::ir::lower::lower(
+            crate::parser::parse_content_yaml(include_str!(
+                "../../../../tests/fixtures/valid/tagged-allof-payloads.yaml"
+            ))
+            .unwrap(),
+        )
+        .unwrap();
+        let composed = wire_ir(&ir, AllOfStrategy::Composed);
+        assert!(matches!(
+            plan_named_shape("VariantVariantA", &composed),
+            JsonShape::AllOf(_)
+        ));
+
+        let raw = wire_ir(&ir, AllOfStrategy::Raw);
+        assert!(matches!(
+            raw.schemas["VariantVariantA"].kind,
+            IrSchemaKind::Alias(crate::ir::types::IrTypeExpr::Any)
+        ));
+        assert!(matches!(
+            plan_named_shape("VariantVariantA", &raw),
+            JsonShape::Any
+        ));
     }
 
     #[test]
@@ -142,7 +149,7 @@ return matched
     #[test]
     fn wire_projection_preserves_transparent_aliases_and_wrapped_intersections() {
         let ir = fixture();
-        let wire = wire_ir(&ir);
+        let wire = wire_ir(&ir, AllOfStrategy::Composed);
         assert_eq!(
             serde_json::to_value(&wire.schemas["NumberAlias"]).unwrap(),
             serde_json::to_value(&ir.schemas["NumberAlias"]).unwrap()
@@ -151,16 +158,9 @@ return matched
             ir.schemas["WrappedPair"].kind,
             IrSchemaKind::Intersection(_)
         ));
-        let IrSchemaKind::Object(pair) = &wire.schemas["WrappedPair"].kind else {
-            panic!("intersection wrapper facts")
+        let IrSchemaKind::Intersection(_) = &wire.schemas["WrappedPair"].kind else {
+            panic!("composed intersection facts")
         };
-        assert_eq!(
-            pair.properties
-                .keys()
-                .map(String::as_str)
-                .collect::<Vec<_>>(),
-            ["leftPart", "rightPart"]
-        );
     }
 }
 

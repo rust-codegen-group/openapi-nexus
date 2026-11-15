@@ -1,0 +1,31 @@
+openapi: 3.1.0
+info: {title: Flat object composition, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    NestedValue:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    OpaqueMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties: true
+    MixedMap:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+      additionalProperties:
+        $ref: '#/components/schemas/NestedValue'
+    MixedAlias:
+      allOf:
+        - $ref: '#/components/schemas/MixedMap'
+    OpenAllOf:
+      allOf:
+        - $ref: '#/components/schemas/OpaqueMap'
+        - type: object
+          additionalProperties: true

@@ -44,6 +44,7 @@ impl KotlinOkhttpCodeGenerator {
             &header,
             &request_inputs,
             self.config.untagged_union_strategy,
+            self.config.all_of_strategy,
         )?);
 
         files.extend(sigil_emit_api::generate_api_files(
@@ -60,6 +61,9 @@ impl KotlinOkhttpCodeGenerator {
             ir.schemas.values().any(|schema| {
                 matches!(&schema.kind, crate::ir::types::IrSchemaKind::Object(object)
                     if !object.properties.is_empty() && object.additional_properties.is_some())
+            }),
+            ir.schemas.values().any(|schema| {
+                matches!(schema.kind, crate::ir::types::IrSchemaKind::Intersection(_))
             }),
         ));
 

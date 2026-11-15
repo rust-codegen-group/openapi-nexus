@@ -4,5 +4,52 @@
 
 package com.example.sdk.models
 
-data class WrappedPair(val leftPart: LeftPart, val rightPart: RightPart) {
+@com.google.gson.annotations.JsonAdapter(WrappedPairAllOfAdapterFactory::class, nullSafe = false)
+data class WrappedPair(val leftPart: com.example.sdk.models.LeftPart,
+    val rightPart: com.example.sdk.models.RightPart) {
+}
+
+private class WrappedPairAllOfAdapterFactory : com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.WrappedPair> {
+    constructor() : super(com.example.sdk.models.WrappedPair::class.java , member(arrayOf<kotlin.String>("left_value")
+    , com.example.sdk.models.LeftPart::class.java), member(arrayOf<kotlin.String>("right_value")
+    , com.example.sdk.models.RightPart::class.java)) {
+
+    }
+
+    override fun decode(gson: com.google.gson.Gson,
+        readers: kotlin.collections.List<com.google.gson.stream.JsonReader>): com.example.sdk.models.WrappedPair {
+        return com.example.sdk.models.WrappedPair(readMember0(gson, readers[0]), readMember2(gson, readers[1]))
+    }
+
+    override fun encode(gson: com.google.gson.Gson, value: com.example.sdk.models.WrappedPair,
+        context: com.google.gson.stream.JsonWriter): kotlin.collections.List<com.google.gson.JsonElement> {
+        return listOf(writeMember1(gson, value.leftPart, context)
+        , writeMember3(gson, value.rightPart, context))
+    }
+
+    private fun readMember0(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.LeftPart {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.LeftPart>() {}).read(reader)
+    }
+
+    private fun writeMember1(gson: com.google.gson.Gson, value: com.example.sdk.models.LeftPart?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.LeftPart>() {}, context)
+    }
+
+    private fun readMember2(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.RightPart {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.RightPart>() {}).read(reader)
+    }
+
+    private fun writeMember3(gson: com.google.gson.Gson, value: com.example.sdk.models.RightPart?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.RightPart>() {}, context)
+    }
 }

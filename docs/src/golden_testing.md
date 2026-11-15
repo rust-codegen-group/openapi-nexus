@@ -144,13 +144,16 @@ golden-build job; no separate consumer job is added. `just ci` includes these ch
 The `tagged-allof-payloads` fixture has recurring golden compile coverage for
 TypeScript, Go, all three Rust transports, Java and Kotlin. Native TypeScript
 consumers also check both conversion directions, nested sibling fields and outer
-requiredness. The TypeScript-specific `overlapping-allof` fixture checks recursive
-object views, arrays/maps, null/optional values, opaque JSON and authored-name
-collisions. These are not cross-language wire-round-trip guarantees: Kotlin's
-existing allOf wire representation is unchanged. The retained recursive Python
-fixture still exposes a separately tracked unresolved-symbol defect and is not
-registered as a passing Python compile case; its render coverage and existing
-Python golden/consumer suites remain distinct checks.
+requiredness. Kotlin's allOf golden and JVM consumer cases additionally verify
+compatible named/map compositions serialize to one flat object while retaining
+The tagged-allof cases are included because their generated intersection payloads
+use the same flat codec and are reachable through containing unions; their matcher
+facts must therefore change with the emitted wire representation rather than
+retain the removed wrapper shape.
+arrays/maps, null/optional values, opaque JSON and authored-name collisions. The
+retained recursive Python fixture still exposes a separately tracked unresolved-
+symbol defect and is not registered as a passing Python compile case; its render
+coverage and existing Python golden/consumer suites remain distinct checks.
 
 The `optional-discriminator-union` fixture covers inferred internal discriminators
 whose constraint is optional on one branch and a referenced string enum with

@@ -39,7 +39,7 @@ private class WrappedChoiceJsonAdapter : TypeAdapter<WrappedChoice>() {
             }
             selected = 0
         }
-        if (matches7(element)) {
+        if (matches8(element)) {
             if (selected >= 0) {
                 throw JsonParseException("ambiguous untagged union WrappedChoice: multiple concrete members match")
             }
@@ -70,14 +70,13 @@ private class WrappedChoiceJsonAdapter : TypeAdapter<WrappedChoice>() {
     }
 
     private fun matches0(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
+        if (!matches1(candidate)) {
             return false
         }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("leftPart") || !matches1(jsonObject.get("leftPart"))) {
+        if (!matches3(candidate)) {
             return false
         }
-        if (!jsonObject.has("rightPart") || !matches3(jsonObject.get("rightPart"))) {
+        if (!matches7(candidate)) {
             return false
         }
         return true
@@ -128,6 +127,16 @@ private class WrappedChoiceJsonAdapter : TypeAdapter<WrappedChoice>() {
     }
 
     private fun matches7(candidate: JsonElement): kotlin.Boolean {
+        if (matches1(candidate)) {
+            return true
+        }
+        if (matches3(candidate)) {
+            return true
+        }
+        return false
+    }
+
+    private fun matches8(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }

@@ -4,6 +4,54 @@
 
 package com.example.sdk.models
 
-data class VariantVariantD(val sharedFields: SharedFields,
-    val variantVariantDAllOf2: VariantVariantDAllOf2) {
+@com.google.gson.annotations.JsonAdapter(VariantVariantDAllOfAdapterFactory::class, nullSafe = false)
+data class VariantVariantD(val sharedFields: com.example.sdk.models.SharedFields,
+    val variantVariantDAllOf2: com.example.sdk.models.VariantVariantDAllOf2) {
+}
+
+private class VariantVariantDAllOfAdapterFactory : com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.VariantVariantD> {
+    constructor() : super(com.example.sdk.models.VariantVariantD::class.java , member(arrayOf<kotlin.String>("allowed_sources", "deferred", "output_shape")
+    , com.example.sdk.models.SharedFields::class.java), member(arrayOf<kotlin.String>("input_shape")
+    , com.example.sdk.models.VariantVariantDAllOf2::class.java)) {
+
+    }
+
+    override fun decode(gson: com.google.gson.Gson,
+        readers: kotlin.collections.List<com.google.gson.stream.JsonReader>): com.example.sdk.models.VariantVariantD {
+        return com.example.sdk.models.VariantVariantD(readMember0(gson, readers[0]), readMember2(gson, readers[1]))
+    }
+
+    override fun encode(gson: com.google.gson.Gson, value: com.example.sdk.models.VariantVariantD,
+        context: com.google.gson.stream.JsonWriter): kotlin.collections.List<com.google.gson.JsonElement> {
+        return listOf(writeMember1(gson, value.sharedFields, context)
+        , writeMember3(gson, value.variantVariantDAllOf2, context))
+    }
+
+    private fun readMember0(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.SharedFields {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.SharedFields>() {}).read(reader)
+    }
+
+    private fun writeMember1(gson: com.google.gson.Gson,
+        value: com.example.sdk.models.SharedFields?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.SharedFields>() {}, context)
+    }
+
+    private fun readMember2(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.VariantVariantDAllOf2 {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.VariantVariantDAllOf2>() {}).read(reader)
+    }
+
+    private fun writeMember3(gson: com.google.gson.Gson,
+        value: com.example.sdk.models.VariantVariantDAllOf2?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.VariantVariantDAllOf2>() {}, context)
+    }
 }
