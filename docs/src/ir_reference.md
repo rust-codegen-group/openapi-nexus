@@ -98,6 +98,38 @@ A type alias wrapping a single type expression (e.g., from a `$ref`):
 Alias(IrTypeExpr)
 ```
 
+OpenAPI 3.1/3.2 boolean component schemas are schema documents, not boolean-valued
+primitives. A `true` component lowers to `Alias(IrTypeExpr::Any)`; `{type: boolean}`
+continues to lower to `Alias(IrTypeExpr::Primitive(IrPrimitive::Boolean))`.
+The parser retains a `false` component (which rejects every value). Lowering
+omits that component from the IR and generated models when no retained model or
+operation references it, so an unused declaration cannot block a usable client.
+Ordinary components and named aliases remain public models even when no operation
+uses them; a reference to `false` from any such model still requires an
+uninhabited/bottom type and produces an explicit error naming the component.
+Retained model constraints are checked before tagged/composition lowering can
+consume discriminator fields. Operation references are also checked in the final
+IR, including nested containers, request and response bodies, response headers,
+and 3.2 streaming item types. Overridden parameters that leave no reference in
+the final IR do not force an error.
+`false` must never be silently widened to `Any`.
+
+Dependency collection and support policy are separate. The crate-private
+`SchemaDependencies` interface returns borrowed target names, deduplicated in
+first-use order. Its native schema adapters collect structural dependencies before
+projection; its IR adapter collects retained named-type dependencies afterward.
+It does not resolve aliases or decide whether a dependency is valid or supported.
+The boolean-component policy consumes those facts without owning schema/IR
+traversal. This separation does not introduce a bottom type or change composition
+normalization.
+
+For raw-spec integrations, the 3.1/3.2 `Components.schemas` maps contain `Schema`
+values. Match `Schema::Boolean` / `Schema::Object`, and use `Schema::resolve` or
+`Schema::from_ref` to retain boolean targets through references. The object-only
+`ObjectSchema::from_ref` API reports `ErrorRef::BooleanSchema` for either boolean
+target. OpenAPI 3.0 component parsing and other schema positions are unchanged;
+this is not full support for boolean schemas at every JSON Schema position.
+
 ## Type Expressions
 
 `IrTypeExpr` represents type references throughout the IR:

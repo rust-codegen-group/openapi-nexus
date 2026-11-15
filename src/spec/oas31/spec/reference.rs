@@ -67,6 +67,10 @@ pub enum ErrorRef {
     /// Reference path points outside the given spec file.
     #[snafu(display("Unresolvable path: {}", path))]
     Unresolvable { path: String },
+
+    /// An object-only caller referenced a boolean schema.
+    #[snafu(display("Expected an object schema at {path}, found boolean schema {value}"))]
+    BooleanSchema { path: String, value: bool },
 }
 
 /// Component type of a reference.

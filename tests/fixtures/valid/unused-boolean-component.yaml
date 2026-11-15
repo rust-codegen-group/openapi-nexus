@@ -1,0 +1,18 @@
+openapi: 3.1.0
+info:
+  title: Unused boolean component
+  version: '1'
+paths:
+  /values:
+    get:
+      operationId: getValue
+      responses:
+        '200':
+          description: A value
+          content:
+            application/json:
+              schema:
+                type: string
+components:
+  schemas:
+    Nothing: false

@@ -203,7 +203,28 @@ impl ObjectSchema {
     }
 }
 
-impl FromRef for ObjectSchema {
+impl Schema {
+    /// Returns the fully resolved component schema, retaining boolean schemas.
+    pub fn resolve(&self, spec: &OpenApiV32Spec) -> Result<Self, ErrorRef> {
+        match self {
+            Self::Boolean(boolean) => Ok(Self::Boolean(boolean.clone())),
+            Self::Object(object) => match object.as_ref() {
+                ObjectOrReference::Object(_) => Ok(self.clone()),
+                ObjectOrReference::Ref { ref_path, .. } => Self::from_ref(spec, ref_path),
+            },
+        }
+    }
+
+    /// Borrows an object-or-reference schema for object-only composition helpers.
+    pub fn as_object(&self) -> Option<&ObjectOrReference<ObjectSchema>> {
+        match self {
+            Self::Object(object) => Some(object.as_ref()),
+            Self::Boolean(_) => None,
+        }
+    }
+}
+
+impl FromRef for Schema {
     fn from_ref(spec: &OpenApiV32Spec, path: &str) -> Result<Self, ErrorRef> {
         let refpath = path.parse::<Ref>()?;
 
@@ -211,15 +232,27 @@ impl FromRef for ObjectSchema {
             RefType::Schema => spec
                 .components
                 .as_ref()
-                .and_then(|cs| cs.schemas.get(&refpath.name))
+                .and_then(|components| components.schemas.get(&refpath.name))
                 .ok_or_else(|| ErrorRef::Unresolvable {
                     path: path.to_owned(),
                 })
-                .and_then(|oor| oor.resolve(spec)),
+                .and_then(|schema| schema.resolve(spec)),
 
             typ => Err(ErrorRef::MismatchedType {
                 expected: typ,
                 actual: RefType::Schema,
+            }),
+        }
+    }
+}
+
+impl FromRef for ObjectSchema {
+    fn from_ref(spec: &OpenApiV32Spec, path: &str) -> Result<Self, ErrorRef> {
+        match Schema::from_ref(spec, path)? {
+            Schema::Object(object) => object.resolve(spec),
+            Schema::Boolean(BooleanSchema(value)) => Err(ErrorRef::BooleanSchema {
+                path: path.to_owned(),
+                value,
             }),
         }
     }

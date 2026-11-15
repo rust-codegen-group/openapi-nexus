@@ -33,6 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Accept boolean component schemas in OpenAPI 3.1 and 3.2 YAML/JSON documents,
+  retaining `true`/`false` through parsing, serialization, and schema references.
+  Their public raw `Components.schemas` maps now contain `Schema` values rather
+  than only `ObjectOrReference<ObjectSchema>` values. Lower `true` components to
+  unconstrained aliases. Omit unused `false` components from generated models
+  without blocking usable clients; report an explicit lowering error only when
+  retained models or operations reference them. The current IR has no
+  uninhabited type, so `false` is never silently widened to `Any`.
 - Preserve optional and multi-valued inferred TypeScript discriminators. Omitted
   variant tags remain valid, referenced discriminator enums retain every legal
   wire value, and both JSON conversion directions keep the original spelling.
