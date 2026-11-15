@@ -26,29 +26,33 @@ type Event = (
     | EventEventUpdated
 )
 
-
 def event_from_dict(data: dict[str, object]) -> Event:
-    _tag = data["kind"]
-    if _tag == "EVENT_UNSPECIFIED":
+    _tag = data['kind']
+    if _tag == 'EVENT_UNSPECIFIED':
         return EventEventUnspecified.from_dict(data)
-    elif _tag == "EVENT_CREATED":
-        return EventEventCreated.from_dict(data)
-    elif _tag == "EVENT_UPDATED":
-        return EventEventUpdated.from_dict(data)
-    raise ValueError(f"Unknown discriminator value for Event: {data}")
 
+    if _tag == 'EVENT_CREATED':
+        return EventEventCreated.from_dict(data)
+
+    if _tag == 'EVENT_UPDATED':
+        return EventEventUpdated.from_dict(data)
+
+    raise ValueError('Unknown discriminator value for Event: ' + str(data))
 
 def event_to_dict(obj: Event) -> dict[str, object]:
     if isinstance(obj, EventEventUnspecified):
         result = obj.to_dict()
-        result["kind"] = "EVENT_UNSPECIFIED"
+        result['kind'] = 'EVENT_UNSPECIFIED'
         return result
-    elif isinstance(obj, EventEventCreated):
+
+    if isinstance(obj, EventEventCreated):
         result = obj.to_dict()
-        result["kind"] = "EVENT_CREATED"
+        result['kind'] = 'EVENT_CREATED'
         return result
-    elif isinstance(obj, EventEventUpdated):
+
+    if isinstance(obj, EventEventUpdated):
         result = obj.to_dict()
-        result["kind"] = "EVENT_UPDATED"
+        result['kind'] = 'EVENT_UPDATED'
         return result
-    raise ValueError(f"Unknown variant for Event: {type(obj)}")
+
+    raise ValueError('Unknown variant for Event: ' + str(type (obj)))

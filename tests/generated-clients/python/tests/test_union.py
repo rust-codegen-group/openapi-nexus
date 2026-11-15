@@ -199,6 +199,17 @@ class UnionContracts(unittest.TestCase):
                     self.assertEqual(self.helper(policy, "adjacent_member", "to_dict")(value), wire)
                     self.assertEqual(self.helper(policy, "tagged_member_choice", "to_dict")(value), wire)
 
+    def test_adjacent_payload_lookup_keeps_error_precedence(self):
+        for policy in ("default", "strict", "raw"):
+            decode = self.helper(policy, "adjacent_member")
+            for tag in ("record", "unknown"):
+                with self.subTest(policy=policy, tag=tag):
+                    with self.assertRaisesRegex(KeyError, "payload"):
+                        decode({"kind": tag})
+            with self.subTest(policy=policy, payload="present"):
+                with self.assertRaisesRegex(ValueError, "Unknown discriminator value"):
+                    decode({"kind": "unknown", "payload": {}})
+
     def test_tagged_members_match_through_aliases_containers_and_objects(self):
         member = {"kind": "record", "payload": {"name": "weather"}}
         wire = {"value": member, "values": [member], "mapping": {"keep_key": member}}

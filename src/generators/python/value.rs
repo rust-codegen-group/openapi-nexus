@@ -343,23 +343,43 @@ impl<'a> ValuePlan<'a> {
                     .map(|member| self.type_name(member, current))
                     .collect(),
             ),
-            IrTypeExpr::Named(name)
-                if !self.expressions.is_empty()
-                    && current.is_some_and(|current| {
-                        name != current && self.reaches(name, current, &mut BTreeSet::new())
-                    }) =>
-            {
-                TypeName::associated_type(
-                    TypeName::importable(".", &name.to_snake_case()),
-                    None,
-                    &name.to_pascal_case(),
-                )
-            }
+            IrTypeExpr::Named(name) => match current {
+                Some(current) => self.model_symbol(name, &name.to_pascal_case(), current),
+                None => super::emit_models::api_type_name(expr),
+            },
             _ => match current {
                 Some(current) => python_type_name_for_schema(expr, current),
                 None => super::emit_models::api_type_name(expr),
             },
         }
+    }
+
+    /// A recursive dependency must load its module, not a possibly unfinished
+    /// class or converter. Use the same symbol policy for annotations and bodies.
+    pub fn recursive_reference(&self, name: &str, current: &str) -> bool {
+        name != current && self.reaches(name, current, &mut BTreeSet::new())
+    }
+
+    fn model_symbol(&self, name: &str, symbol: &str, current: &str) -> TypeName {
+        if name == current {
+            TypeName::primitive(symbol)
+        } else if self.recursive_reference(name, current) {
+            TypeName::associated_type(
+                TypeName::importable(".", &name.to_snake_case()),
+                None,
+                symbol,
+            )
+        } else {
+            TypeName::importable(&format!(".{}", name.to_snake_case()), symbol)
+        }
+    }
+
+    pub fn tagged_helper(&self, name: &str, current: &str, direction: Direction) -> TypeName {
+        self.model_symbol(
+            name,
+            &format!("{}_{}", name.to_snake_case(), direction.suffix()),
+            current,
+        )
     }
 
     fn matching_ir(&self, direction: Direction) -> &IrSpec {
@@ -993,6 +1013,25 @@ mod tests {
             Python::new(),
             code,
             "from . import recursive\n\nchildren: list[recursive.Recursive]\n"
+        );
+    }
+
+    #[test]
+    fn recursive_tagged_types_do_not_require_planned_union_codecs() {
+        let source = "openapi: 3.1.0\ninfo: {title: Recursive, version: '1'}\npaths: {}\ncomponents:\n  schemas:\n    Variant:\n      oneOf:\n        - {$ref: '#/components/schemas/Branch'}\n        - {$ref: '#/components/schemas/Leaf'}\n      discriminator: {propertyName: kind}\n    Branch:\n      type: object\n      required: [kind, children]\n      properties:\n        kind: {type: string, enum: [branch]}\n        children: {type: array, items: {$ref: '#/components/schemas/Variant'}}\n    Leaf:\n      type: object\n      required: [kind]\n      properties:\n        kind: {type: string, enum: [leaf]}\n";
+        let ir =
+            crate::ir::lower::lower(crate::parser::parse_content_yaml(source).unwrap()).unwrap();
+        let plan = ValuePlan::new(&ir, UntaggedUnionStrategy::FirstMatch);
+        assert!(
+            plan.expressions.is_empty(),
+            "pure tagged graph needs no union planner"
+        );
+        let ty = plan.model_type(&IrTypeExpr::Named("Variant".into()), "Branch");
+        let code = sigil_quote!(Python { children: list[$T(ty)] }).unwrap();
+        assert_rendered!(
+            Python::new(),
+            code,
+            "from . import variant\n\nchildren: list[variant.Variant]\n"
         );
     }
 
