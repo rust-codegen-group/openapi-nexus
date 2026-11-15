@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info: {title: Primitive union helper identity, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    Integer:
+      type: object
+      properties:
+        label: {type: string}
+    Choice:
+      anyOf: [{type: integer}, {type: string}]

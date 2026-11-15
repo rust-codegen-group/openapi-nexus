@@ -85,6 +85,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("typed-error-responses", "valid/typed-error-responses.yaml"),
         ("nested-nullable", "valid/nested-nullable.yaml"),
         ("union-selection", "valid/union-selection.yaml"),
+        ("primitive-union-helper-identity", "valid/java-primitive-union-helper-identity.yaml"),
 
         ("additional-properties", "valid/additional-properties/additional-properties.yaml"),
         ("open-tagged-additional-properties", "valid/open-tagged-additional-properties.yaml"),
@@ -124,6 +125,7 @@ generate_golden_tests! {
     test_object_extensions_golden: "object-extensions",
     test_object_extension_helper_types_golden: "object-extension-helper-types",
     test_union_selection_golden: "union-selection",
+    test_primitive_union_helper_identity_golden: "primitive-union-helper-identity",
     test_nested_nullable_golden: "nested-nullable",
     test_petstore_golden: "petstore",
 

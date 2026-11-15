@@ -1,5 +1,6 @@
 # Additional Java-only consumers; shared fixtures remain in ../fixtures.txt.
 union-selection valid/union-selection.yaml
+primitive-union-helper-identity valid/java-primitive-union-helper-identity.yaml
 union-first-match valid/java-union-policies.yaml firstMatch
 union-strict valid/java-union-policies.yaml strict
 union-raw valid/java-union-policies.yaml raw

@@ -47,7 +47,7 @@ final class AnyOfTypesJsonAdapter extends TypeAdapter<AnyOfTypes> {
             return new AnyOfTypes.VariantString(element.getAsString());
         }
         if (selected == 1) {
-            return new AnyOfTypes.VariantNumber(gson.fromJson(element, Double.class));
+            return new AnyOfTypes.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         throw new JsonParseException("unknown AnyOfTypes union value");
     }

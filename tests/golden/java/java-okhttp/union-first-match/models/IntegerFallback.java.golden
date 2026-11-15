@@ -40,7 +40,7 @@ final class IntegerFallbackJsonAdapter extends TypeAdapter<IntegerFallback> {
             selected = 1;
         }
         if (selected == 0) {
-            return new IntegerFallback.VariantInteger(gson.fromJson(element, Integer.class));
+            return new IntegerFallback.VariantInteger(gson.fromJson(element, java.lang.Integer.class));
         }
         if (selected == 1) {
             return new IntegerFallback.VariantAny(gson.fromJson(element, new TypeToken<JsonElement>() {}.getType()));

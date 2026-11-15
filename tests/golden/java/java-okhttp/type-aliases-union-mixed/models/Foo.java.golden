@@ -52,7 +52,7 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
             return new Foo.VariantString(element.getAsString());
         }
         if (selected == 2) {
-            return new Foo.VariantNumber(gson.fromJson(element, Double.class));
+            return new Foo.VariantNumber(gson.fromJson(element, java.lang.Double.class));
         }
         throw new JsonParseException("unknown Foo union value");
     }

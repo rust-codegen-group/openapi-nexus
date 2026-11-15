@@ -43,7 +43,7 @@ final class DictionaryChoiceJsonAdapter extends TypeAdapter<DictionaryChoice> {
             return new DictionaryChoice.VariantTypedMap(gson.fromJson(element, new TypeToken<TypedMap>() {}.getType()));
         }
         if (selected == 1) {
-            return new DictionaryChoice.VariantInteger(gson.fromJson(element, Integer.class));
+            return new DictionaryChoice.VariantInteger(gson.fromJson(element, java.lang.Integer.class));
         }
         throw new JsonParseException("unknown DictionaryChoice union value");
     }
