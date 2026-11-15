@@ -14,23 +14,25 @@ type Event = (
     | EventCompleted
 )
 
-
 def event_from_dict(data: dict[str, object]) -> Event:
-    _tag = data["type"]
-    if _tag == "active":
+    _tag = data['type']
+    if _tag == 'active':
         return EventActive.from_dict(data)
-    elif _tag == "completed":
-        return EventCompleted.from_dict(data)
-    raise ValueError(f"Unknown discriminator value for Event: {data}")
 
+    if _tag == 'completed':
+        return EventCompleted.from_dict(data)
+
+    raise ValueError('Unknown discriminator value for Event: ' + str(data))
 
 def event_to_dict(obj: Event) -> dict[str, object]:
     if isinstance(obj, EventActive):
         result = obj.to_dict()
-        result["type"] = "active"
+        result['type'] = 'active'
         return result
-    elif isinstance(obj, EventCompleted):
+
+    if isinstance(obj, EventCompleted):
         result = obj.to_dict()
-        result["type"] = "completed"
+        result['type'] = 'completed'
         return result
-    raise ValueError(f"Unknown variant for Event: {type(obj)}")
+
+    raise ValueError('Unknown variant for Event: ' + str(type (obj)))

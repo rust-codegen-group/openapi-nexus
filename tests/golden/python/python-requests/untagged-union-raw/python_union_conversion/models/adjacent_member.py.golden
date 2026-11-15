@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from .numeric_two import NumericTwo
 from .tagged_record import TaggedRecord
 
@@ -14,20 +16,22 @@ type AdjacentMember = (
     | NumericTwo
 )
 
-
 def adjacent_member_from_dict(data: dict[str, object]) -> AdjacentMember:
-    _tag = data["kind"]
-    _content = data["payload"]  # type: ignore[assignment]
-    if _tag == "record":
-        return TaggedRecord.from_dict(_content)  # type: ignore[arg-type]
-    elif _tag == "numeric":
-        return NumericTwo.from_dict(_content)  # type: ignore[arg-type]
-    raise ValueError(f"Unknown discriminator value for AdjacentMember: {data}")
+    _tag = data['kind']
+    _content = data['payload']
+    if _tag == 'record':
+        return TaggedRecord.from_dict(cast(dict[str, object], _content))
 
+    if _tag == 'numeric':
+        return NumericTwo.from_dict(cast(dict[str, object], _content))
+
+    raise ValueError('Unknown discriminator value for AdjacentMember: ' + str(data))
 
 def adjacent_member_to_dict(obj: AdjacentMember) -> dict[str, object]:
     if isinstance(obj, TaggedRecord):
-        return {"kind": "record", "payload": obj.to_dict()}
-    elif isinstance(obj, NumericTwo):
-        return {"kind": "numeric", "payload": obj.to_dict()}
-    raise ValueError(f"Unknown variant for AdjacentMember: {type(obj)}")
+        return {'kind': 'record', 'payload': obj.to_dict()}
+
+    if isinstance(obj, NumericTwo):
+        return {'kind': 'numeric', 'payload': obj.to_dict()}
+
+    raise ValueError('Unknown variant for AdjacentMember: ' + str(type (obj)))

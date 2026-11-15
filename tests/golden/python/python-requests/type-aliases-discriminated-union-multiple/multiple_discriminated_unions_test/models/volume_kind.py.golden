@@ -18,23 +18,25 @@ type VolumeKind = (
     | VolumeKindRemote
 )
 
-
 def volume_kind_from_dict(data: dict[str, object]) -> VolumeKind:
-    _tag = data["kind"]
-    if _tag == "VOLUME_KIND_LOCAL":
+    _tag = data['kind']
+    if _tag == 'VOLUME_KIND_LOCAL':
         return VolumeKindLocal.from_dict(data)
-    elif _tag == "VOLUME_KIND_REMOTE":
-        return VolumeKindRemote.from_dict(data)
-    raise ValueError(f"Unknown discriminator value for VolumeKind: {data}")
 
+    if _tag == 'VOLUME_KIND_REMOTE':
+        return VolumeKindRemote.from_dict(data)
+
+    raise ValueError('Unknown discriminator value for VolumeKind: ' + str(data))
 
 def volume_kind_to_dict(obj: VolumeKind) -> dict[str, object]:
     if isinstance(obj, VolumeKindLocal):
         result = obj.to_dict()
-        result["kind"] = "VOLUME_KIND_LOCAL"
+        result['kind'] = 'VOLUME_KIND_LOCAL'
         return result
-    elif isinstance(obj, VolumeKindRemote):
+
+    if isinstance(obj, VolumeKindRemote):
         result = obj.to_dict()
-        result["kind"] = "VOLUME_KIND_REMOTE"
+        result['kind'] = 'VOLUME_KIND_REMOTE'
         return result
-    raise ValueError(f"Unknown variant for VolumeKind: {type(obj)}")
+
+    raise ValueError('Unknown variant for VolumeKind: ' + str(type (obj)))

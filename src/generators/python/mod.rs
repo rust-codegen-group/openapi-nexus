@@ -2,6 +2,7 @@ mod additional_properties;
 mod emit_api_values;
 mod emit_models;
 pub mod httpx;
+mod model_values;
 mod operation_names;
 pub mod requests;
 mod response_headers;

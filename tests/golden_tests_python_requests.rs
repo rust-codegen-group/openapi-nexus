@@ -40,6 +40,7 @@ fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
         ("petstore", "valid/petstore.yaml"),
         ("untagged-union", "valid/python-untagged-union.yaml"),
         ("object-extensions", "valid/python-additional-properties.yaml"),
+        ("tagged-cycle-symbols", "valid/python-tagged-cycle-symbols.yaml"),
 
         ("comprehensive-schemas", "valid/comprehensive-schemas.yaml"),
         ("delete-with-response-schema", "valid/delete-with-response-schema.yaml"),
@@ -133,6 +134,7 @@ generate_golden_tests! {
     test_inline_additional_union_golden: "inline-additional-union",
     test_untagged_union_golden: "untagged-union",
     test_object_extensions_golden: "object-extensions",
+    test_tagged_cycle_symbols_golden: "tagged-cycle-symbols",
     test_nested_nullable_golden: "nested-nullable",
     test_petstore_golden: "petstore",
 

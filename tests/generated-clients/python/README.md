@@ -16,8 +16,13 @@ just golden-python-clients::test httpx
 just golden-python-clients::test requests
 ```
 
-`prepare` generates all three fixtures under all three policies; `build` runs strict pyright against the
-unchanged output; `test` uses `${PYTHON:-python3}` (locally Python 3.15.0).
+`prepare` generates the union, additional-property and inline additional-property
+fixtures under all three policies, plus the pure tagged recursive fixture in the
+`recursive-tagged` subdirectory with package name `recursive_tagged_payloads`.
+Its named `allOf` payload and plain-object control cover arrays, maps, optional
+recursive values, explicit construction, lossless decode/encode, unknown tags,
+and runtime imports. `build` runs strict pyright against the unchanged output;
+`test` uses `${PYTHON:-python3}` (locally Python 3.15.0).
 The declared SDK minimum remains Python 3.12, which is also the type-check target.
 Both backends run the same contracts. Tests never patch generated source.
 

@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: Recursive Tagged Payloads
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Variant:
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/VariantBranch'
+            - type: object
+              required: [kind]
+              properties:
+                kind: {type: string, enum: [branch]}
+        - allOf:
+            - $ref: '#/components/schemas/VariantLeaf'
+            - type: object
+              required: [kind]
+              properties:
+                kind: {type: string, enum: [leaf]}
+    VariantBranch:
+      allOf:
+        - $ref: '#/components/schemas/VariantBranchFields'
+        - type: object
+          required: [name]
+          properties:
+            name: {type: string}
+    VariantBranchFields:
+      type: object
+      required: [children]
+      properties:
+        children:
+          type: array
+          items: {$ref: '#/components/schemas/Variant'}
+        optional_child: {$ref: '#/components/schemas/Variant'}
+        mapped_children:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/Variant'}
+    VariantLeaf:
+      type: object
+      required: [value]
+      properties:
+        value: {type: string}
+    PlainVariant:
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/PlainVariantBranch'
+            - type: object
+              required: [kind]
+              properties:
+                kind: {type: string, enum: [branch]}
+        - allOf:
+            - $ref: '#/components/schemas/VariantLeaf'
+            - type: object
+              required: [kind]
+              properties:
+                kind: {type: string, enum: [leaf]}
+    PlainVariantBranch:
+      type: object
+      required: [children, name]
+      properties:
+        children:
+          type: array
+          items: {$ref: '#/components/schemas/PlainVariant'}
+        name: {type: string}
+        optional_child: {$ref: '#/components/schemas/PlainVariant'}
+        mapped_children:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/PlainVariant'}

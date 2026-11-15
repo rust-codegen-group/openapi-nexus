@@ -5,6 +5,7 @@
 //! Each schema produces one `.py` file via `FileSpec`.
 
 use super::additional_properties::AdditionalProperties;
+use super::model_values::model_conversion;
 use super::value::{Direction, UntaggedUnionStrategy, ValuePlan, optional_type};
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::GeneratorError;
@@ -227,19 +228,6 @@ fn emit_object(
         file = file.add_import(ImportSpec::named(".", "_union"));
     }
 
-    // Import tagged-union helper functions for fields referencing TaggedUnion schemas
-    for (_, prop) in &obj.properties {
-        if values.needs_conversion(&prop.type_expr) {
-            continue;
-        }
-        for named_ref in collect_tagged_union_refs(&prop.type_expr, ir) {
-            let snake = named_ref.to_snake_case();
-            let module = format!(".{snake}");
-            file = file.add_import(ImportSpec::named(&module, &format!("{snake}_from_dict")));
-            file = file.add_import(ImportSpec::named(&module, &format!("{snake}_to_dict")));
-        }
-    }
-
     let dataclass_tn = TypeName::importable("dataclasses", "dataclass");
     let mut cls = TypeSpec::builder(&name, TypeKind::Class)
         .annotate(AnnotationSpec::importable(dataclass_tn));
@@ -293,6 +281,7 @@ fn emit_object(
             ir,
             &obj.properties,
             values,
+            &schema.name,
             additional.as_ref(),
         ));
         cls = cls.add_method(build_from_dict_method(
@@ -315,6 +304,7 @@ fn build_to_dict_method(
     ir: &IrSpec,
     properties: &indexmap::IndexMap<String, IrProperty>,
     values: &ValuePlan<'_>,
+    schema_name: &str,
     additional: Option<&AdditionalProperties<'_>>,
 ) -> FunSpec {
     let self_param = ParameterSpec::of("self", TypeName::primitive(""));
@@ -345,6 +335,30 @@ fn build_to_dict_method(
                     }
                 })
                 .expect("Python planned field serialization builds"),
+            );
+            continue;
+        }
+        let access = sigil_quote!(Python { self.$N(field_name.as_str()) })
+            .expect("Python recursive model field access builds");
+        if let Some(converted) = model_conversion(
+            &prop.type_expr,
+            access,
+            ir,
+            values,
+            schema_name,
+            Direction::To,
+        ) {
+            body.add_code(
+                sigil_quote!(Python {
+                    $if(prop.required && !prop.nullable) {
+                        result[$S(json_name.as_str())] = $C(converted)
+                    } $else {
+                        if self.$N(field_name) is not None {
+                            result[$S(json_name.as_str())] = $C(converted)
+                        }
+                    }
+                })
+                .expect("Python recursive model field serialization builds"),
             );
             continue;
         }
@@ -423,6 +437,28 @@ fn build_from_dict_method(
             body.add_code(
                 sigil_quote!(Python { $C(argument), })
                     .expect("Python planned field deserialization builds"),
+            );
+            continue;
+        }
+        let access = if is_required {
+            sigil_quote!(Python { data[$S(json_name.as_str())] })
+        } else {
+            sigil_quote!(Python { data.get($S(json_name.as_str())) })
+        }
+        .expect("Python recursive model wire field access builds");
+        if let Some(converted) = model_conversion(
+            &prop.type_expr,
+            access.clone(),
+            ir,
+            values,
+            schema_name,
+            Direction::From,
+        ) {
+            body.add_code(
+                sigil_quote!(Python {
+                    $N(field_name) = $if(is_required) { $C(converted) } $else { $C(converted) if $C(access) is not None else None },
+                })
+                .expect("Python recursive model field deserialization builds"),
             );
             continue;
         }
@@ -767,6 +803,7 @@ fn emit_intersection_as_dataclass(
             ir,
             all_props,
             values,
+            &schema.name,
             None,
         ));
         cls = cls.add_method(build_from_dict_method(
@@ -874,172 +911,131 @@ fn emit_tagged_union(
             );
         }
     } else if !tu.variants.is_empty() {
-        let helpers = build_tagged_union_helpers(&name, &snake_name, tu, ir);
-        file = file.add_code(helpers);
+        for helper in build_tagged_union_helpers(schema, tu, ir, values) {
+            file = file.add_function(helper);
+        }
     }
 
     file.build().ok()
 }
 
 fn build_tagged_union_helpers(
-    pascal_name: &str,
-    snake_name: &str,
+    schema: &IrSchema,
     tu: &IrTaggedUnion,
     ir: &IrSpec,
-) -> CodeBlock {
+    values: &ValuePlan<'_>,
+) -> Vec<FunSpec> {
+    let name = schema.name.to_pascal_case();
+    let snake = schema.name.to_snake_case();
     let tag_field = &tu.discriminator_field;
-
-    // Only generate helpers for variants that resolve to Object schemas
-    let resolved_variants: Vec<(&IrTaggedVariant, String)> = tu
+    let variants: Vec<(&IrTaggedVariant, TypeName)> = tu
         .variants
         .iter()
-        .filter_map(|v| {
-            if let IrTypeExpr::Named(ref_name) = &v.content_type
-                && is_object_schema(ref_name, ir)
-            {
-                return Some((v, ref_name.to_pascal_case()));
-            }
-            None
+        .filter_map(|variant| match &variant.content_type {
+            IrTypeExpr::Named(name) if is_object_schema(name, ir) => Some((
+                variant,
+                values.model_type(&variant.content_type, &schema.name),
+            )),
+            _ => None,
         })
         .collect();
-
-    let mut cb = CodeBlock::builder();
-
-    if resolved_variants.is_empty() {
-        return cb.build_unwrap();
+    if variants.is_empty() {
+        return Vec::new();
     }
-
-    // from_dict
-    cb.add_line();
-    cb.begin_control_flow(
-        &format!("def {snake_name}_from_dict(data: dict[str, object]) -> {pascal_name}"),
-        (),
+    let dictionary = type_application(
+        TypeName::primitive("dict"),
+        vec![TypeName::primitive("str"), TypeName::primitive("object")],
     );
-    match &tu.tagging {
-        TaggingStyle::Internal => {
-            cb.add_statement(&format!("_tag = data[\"{tag_field}\"]"), ());
-            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let cond = format!("_tag == \"{}\"", variant.discriminator_value);
-                emit_elif(&mut cb, i == 0, false, &cond);
-                cb.add_statement(&format!("return {py_class}.from_dict(data)"), ());
+    let mut decoders = Vec::new();
+    let mut encoders = Vec::new();
+    for (variant, model) in variants {
+        let tag = &variant.discriminator_value;
+        let condition = match &tu.tagging {
+            TaggingStyle::Internal | TaggingStyle::Adjacent { .. } => {
+                sigil_quote!(Python { _tag == $S(tag.as_str()) })
             }
-            cb.end_control_flow_no_newline();
+            TaggingStyle::External => sigil_quote!(Python { $S(tag.as_str()) in data }),
         }
-        TaggingStyle::Adjacent { content_field } => {
-            cb.add_statement(&format!("_tag = data[\"{tag_field}\"]"), ());
-            cb.add_statement(
-                &format!("_content = data[\"{content_field}\"]  # type: ignore[assignment]"),
-                (),
-            );
-            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let cond = format!("_tag == \"{}\"", variant.discriminator_value);
-                emit_elif(&mut cb, i == 0, false, &cond);
-                cb.add_statement(
-                    &format!("return {py_class}.from_dict(_content)  # type: ignore[arg-type]"),
-                    (),
-                );
-            }
-            cb.end_control_flow_no_newline();
+        .expect("Python tagged payload selection builds");
+        let input = match &tu.tagging {
+            TaggingStyle::Internal => sigil_quote!(Python { data }),
+            TaggingStyle::Adjacent { .. } => sigil_quote!(Python {
+                $T(TypeName::importable("typing", "cast"))($T(dictionary.clone()), _content)
+            }),
+            TaggingStyle::External => sigil_quote!(Python {
+                $T(TypeName::importable("typing", "cast"))($T(dictionary.clone()), data[$S(tag.as_str())])
+            }),
         }
-        TaggingStyle::External => {
-            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let cond = format!("\"{}\" in data", variant.discriminator_value);
-                emit_elif(&mut cb, i == 0, false, &cond);
-                cb.add_statement(
-                    &format!(
-                        "return {py_class}.from_dict(data[\"{}\"])  # type: ignore[arg-type]",
-                        variant.discriminator_value
-                    ),
-                    (),
-                );
-            }
-            cb.end_control_flow_no_newline();
+        .expect("Python tagged payload wire access builds");
+        decoders.push(
+            sigil_quote!(Python {
+                if $C(condition) {
+                    return $T(model.clone()).from_dict($C(input))
+                }
+            })
+            .expect("Python tagged payload decoder branch builds"),
+        );
+        let output = match &tu.tagging {
+            TaggingStyle::Internal => sigil_quote!(Python {
+                result = obj.to_dict()
+                result[$S(tag_field.as_str())] = $S(tag.as_str())
+                return result
+            }),
+            TaggingStyle::Adjacent { content_field } => sigil_quote!(Python {
+                return {$S(tag_field.as_str()): $S(tag.as_str()), $S(content_field.as_str()): obj.to_dict()}
+            }),
+            TaggingStyle::External => sigil_quote!(Python {
+                return {$S(tag.as_str()): obj.to_dict()}
+            }),
         }
+        .expect("Python tagged payload wire encoding builds");
+        encoders.push(
+            sigil_quote!(Python {
+                if isinstance(obj, $T(model)) {
+                    $C(output)
+                }
+            })
+            .expect("Python tagged payload encoder branch builds"),
+        );
     }
-    cb.add_statement(
-        "raise ValueError(%V)",
-        VerbatimStrArg(format!(
-            "Unknown discriminator value for {pascal_name}: {{data}}"
-        )),
-    );
-    cb.end_control_flow();
-
-    // to_dict
-    cb.add_line();
-    cb.begin_control_flow(
-        &format!("def {snake_name}_to_dict(obj: {pascal_name}) -> dict[str, object]"),
-        (),
-    );
-    match &tu.tagging {
-        TaggingStyle::Internal => {
-            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, false, &cond);
-                cb.add_statement("result = obj.to_dict()", ());
-                cb.add_statement(
-                    &format!(
-                        "result[\"{tag_field}\"] = \"{}\"",
-                        variant.discriminator_value
-                    ),
-                    (),
-                );
-                cb.add_statement("return result", ());
-            }
-            cb.end_control_flow_no_newline();
+    // Preserve the adjacent decoder's eager content lookup, including its
+    // KeyError precedence for an unknown discriminator with missing content.
+    let content_fields: Vec<&str> = match &tu.tagging {
+        TaggingStyle::Adjacent { content_field } => vec![content_field.as_str()],
+        _ => Vec::new(),
+    };
+    let unknown_tag = format!("Unknown discriminator value for {name}: ");
+    let from_body = sigil_quote!(Python {
+        $if(!matches!(tu.tagging, TaggingStyle::External)) {
+            _tag = data[$S(tag_field.as_str())]
         }
-        TaggingStyle::Adjacent { content_field } => {
-            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, false, &cond);
-                cb.add_statement(
-                    &format!(
-                        "return {{\"{tag_field}\": \"{}\", \"{content_field}\": obj.to_dict()}}",
-                        variant.discriminator_value
-                    ),
-                    (),
-                );
-            }
-            cb.end_control_flow_no_newline();
+        $for(content_field in &content_fields) {
+            _content = data[$S(*content_field)]
         }
-        TaggingStyle::External => {
-            for (i, (variant, py_class)) in resolved_variants.iter().enumerate() {
-                let cond = format!("isinstance(obj, {py_class})");
-                emit_elif(&mut cb, i == 0, false, &cond);
-                cb.add_statement(
-                    &format!(
-                        "return {{\"{}\": obj.to_dict()}}",
-                        variant.discriminator_value
-                    ),
-                    (),
-                );
-            }
-            cb.end_control_flow_no_newline();
-        }
-    }
-    cb.add_statement(
-        "raise ValueError(%V)",
-        VerbatimStrArg(format!("Unknown variant for {pascal_name}: {{type(obj)}}")),
-    );
-    cb.end_control_flow_no_newline();
-
-    cb.build_unwrap()
-}
-
-fn emit_elif(
-    cb: &mut sigil_stitch::code_block::CodeBlockBuilder,
-    is_first: bool,
-    is_last: bool,
-    cond: &str,
-) {
-    if !is_first {
-        cb.end_control_flow_no_newline();
-    }
-    if is_last && !is_first {
-        cb.begin_control_flow("else", ());
-    } else {
-        let kw = if is_first { "if" } else { "elif" };
-        cb.begin_control_flow(&format!("{kw} {cond}"), ());
-    }
+        $C_each(decoders)
+        raise ValueError($S(unknown_tag) + str(data))
+    })
+    .expect("Python tagged payload decoder body builds");
+    let unknown_variant = format!("Unknown variant for {name}: ");
+    let to_body = sigil_quote!(Python {
+        $C_each(encoders)
+        raise ValueError($S(unknown_variant) + str(type(obj)))
+    })
+    .expect("Python tagged payload encoder body builds");
+    vec![
+        FunSpec::builder(&format!("{snake}_from_dict"))
+            .add_param(ParameterSpec::of("data", dictionary.clone()))
+            .returns(vec![TypeName::primitive(&name)])
+            .body(from_body)
+            .build()
+            .expect("Python tagged payload decoder builds"),
+        FunSpec::builder(&format!("{snake}_to_dict"))
+            .add_param(ParameterSpec::of("obj", TypeName::primitive(&name)))
+            .returns(vec![dictionary])
+            .body(to_body)
+            .build()
+            .expect("Python tagged payload encoder builds"),
+    ]
 }
 
 // ---------------------------------------------------------------------------
@@ -1405,26 +1401,6 @@ pub fn is_tagged_union_schema(name: &str, ir: &IrSpec) -> bool {
     ir.schemas
         .get(name)
         .is_some_and(|s| matches!(s.kind, IrSchemaKind::TaggedUnion(_)))
-}
-
-/// Collect all tagged-union schema names referenced (directly or nested) in a type expression.
-fn collect_tagged_union_refs(expr: &IrTypeExpr, ir: &IrSpec) -> Vec<String> {
-    let mut refs = Vec::new();
-    match expr {
-        IrTypeExpr::Named(name) => {
-            if is_tagged_union_schema(name, ir) {
-                refs.push(name.clone());
-            }
-        }
-        IrTypeExpr::Array(inner) | IrTypeExpr::Nullable(inner) => {
-            refs.extend(collect_tagged_union_refs(inner, ir));
-        }
-        IrTypeExpr::Map(inner) => {
-            refs.extend(collect_tagged_union_refs(inner, ir));
-        }
-        _ => {}
-    }
-    refs
 }
 
 // ---------------------------------------------------------------------------

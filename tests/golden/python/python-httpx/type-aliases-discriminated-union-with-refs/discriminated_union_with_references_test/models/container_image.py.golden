@@ -16,23 +16,25 @@ type ContainerImage = (
     | ContainerImageCustom
 )
 
-
 def container_image_from_dict(data: dict[str, object]) -> ContainerImage:
-    _tag = data["kind"]
-    if _tag == "CONTAINER_IMAGE_MANAGED":
+    _tag = data['kind']
+    if _tag == 'CONTAINER_IMAGE_MANAGED':
         return ContainerImageManaged.from_dict(data)
-    elif _tag == "CONTAINER_IMAGE_CUSTOM":
-        return ContainerImageCustom.from_dict(data)
-    raise ValueError(f"Unknown discriminator value for ContainerImage: {data}")
 
+    if _tag == 'CONTAINER_IMAGE_CUSTOM':
+        return ContainerImageCustom.from_dict(data)
+
+    raise ValueError('Unknown discriminator value for ContainerImage: ' + str(data))
 
 def container_image_to_dict(obj: ContainerImage) -> dict[str, object]:
     if isinstance(obj, ContainerImageManaged):
         result = obj.to_dict()
-        result["kind"] = "CONTAINER_IMAGE_MANAGED"
+        result['kind'] = 'CONTAINER_IMAGE_MANAGED'
         return result
-    elif isinstance(obj, ContainerImageCustom):
+
+    if isinstance(obj, ContainerImageCustom):
         result = obj.to_dict()
-        result["kind"] = "CONTAINER_IMAGE_CUSTOM"
+        result['kind'] = 'CONTAINER_IMAGE_CUSTOM'
         return result
-    raise ValueError(f"Unknown variant for ContainerImage: {type(obj)}")
+
+    raise ValueError('Unknown variant for ContainerImage: ' + str(type (obj)))
