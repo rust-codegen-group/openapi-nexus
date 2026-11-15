@@ -4,14 +4,14 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     Callback, Example, Header, Link, ObjectOrReference, Parameter, PathItem, RequestBody, Response,
-    SecurityScheme, schema::ObjectSchema, spec_extensions,
+    SecurityScheme, schema::Schema, spec_extensions,
 };
 
 /// Holds a set of reusable objects for different aspects of the OAS.
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct Components {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub schemas: BTreeMap<String, ObjectOrReference<ObjectSchema>>,
+    pub schemas: BTreeMap<String, Schema>,
 
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub responses: BTreeMap<String, ObjectOrReference<Response>>,

@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: Boolean component schemas
+  version: '1'
+paths: {}
+components:
+  schemas:
+    Anything: true
+    Nothing: false
+    Empty: {}
+    Flag:
+      type: boolean
+    AnythingAlias:
+      $ref: '#/components/schemas/Anything'
+    NothingAlias:
+      $ref: '#/components/schemas/Nothing'
+    AliasChain:
+      $ref: '#/components/schemas/AnythingAlias'
+    FlagAlias:
+      $ref: '#/components/schemas/Flag'

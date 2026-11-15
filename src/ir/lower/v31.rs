@@ -29,7 +29,9 @@ pub fn lower_v31(spec: &oas::OpenApiV31Spec) -> Result<IrSpec, LowerError> {
     ctx.in_component_phase = true;
     if let Some(components) = &spec.components {
         for (name, schema_ref) in &components.schemas {
-            let mut schema = ctx.lower_named_schema(name, schema_ref)?;
+            let Some(mut schema) = ctx.lower_named_schema(name, schema_ref)? else {
+                continue;
+            };
             schema.is_component = true;
             ctx.schemas.insert(name.clone(), schema);
         }
@@ -73,7 +75,7 @@ pub fn lower_v31(spec: &oas::OpenApiV31Spec) -> Result<IrSpec, LowerError> {
         })
         .collect();
 
-    Ok(IrSpec {
+    let ir = IrSpec {
         info: lower_info(&spec.info),
         servers: spec
             .servers
@@ -87,7 +89,9 @@ pub fn lower_v31(spec: &oas::OpenApiV31Spec) -> Result<IrSpec, LowerError> {
         operations,
         security_schemes,
         security,
-    })
+    };
+    super::boolean_components::validate(&ir, &ctx.false_schema_names)?;
+    Ok(ir)
 }
 
 /// Extract the path prefix from the first server URL, used to strip
@@ -142,6 +146,7 @@ struct LowerCtx<'a> {
     spec: &'a oas::OpenApiV31Spec,
     schemas: IndexMap<String, IrSchema>,
     used_names: std::collections::HashSet<String>,
+    false_schema_names: HashSet<String>,
     /// When true, promoted schemas are marked as component schemas.
     in_component_phase: bool,
 }
@@ -149,15 +154,20 @@ struct LowerCtx<'a> {
 impl<'a> LowerCtx<'a> {
     fn new(spec: &'a oas::OpenApiV31Spec) -> Self {
         let mut used_names = std::collections::HashSet::new();
+        let mut false_schema_names = HashSet::new();
         if let Some(components) = &spec.components {
-            for name in components.schemas.keys() {
+            for (name, schema) in &components.schemas {
                 used_names.insert(name.clone());
+                if matches!(schema, Schema::Boolean(boolean) if !boolean.0) {
+                    false_schema_names.insert(name.clone());
+                }
             }
         }
         LowerCtx {
             spec,
             schemas: IndexMap::new(),
             used_names,
+            false_schema_names,
             in_component_phase: false,
         }
     }
@@ -183,17 +193,22 @@ impl<'a> LowerCtx<'a> {
     fn lower_named_schema(
         &mut self,
         name: &str,
-        schema_ref: &ObjectOrReference<ObjectSchema>,
-    ) -> Result<IrSchema, LowerError> {
-        match schema_ref {
-            ObjectOrReference::Ref { ref_path, .. } => Ok(IrSchema {
-                name: name.to_string(),
-                description: None,
-                deprecated: false,
-                kind: IrSchemaKind::Alias(IrTypeExpr::Named(extract_schema_name(ref_path))),
-                is_component: false,
-            }),
-            ObjectOrReference::Object(obj) => self.lower_object_schema_to_ir_schema(name, obj),
+        schema: &Schema,
+    ) -> Result<Option<IrSchema>, LowerError> {
+        match schema {
+            Schema::Boolean(boolean) => Ok(super::boolean_components::lower(name, boolean.0)),
+            Schema::Object(object) => match object.as_ref() {
+                ObjectOrReference::Ref { ref_path, .. } => Ok(Some(IrSchema {
+                    name: name.to_string(),
+                    description: None,
+                    deprecated: false,
+                    kind: IrSchemaKind::Alias(IrTypeExpr::Named(extract_schema_name(ref_path))),
+                    is_component: false,
+                })),
+                ObjectOrReference::Object(obj) => {
+                    self.lower_object_schema_to_ir_schema(name, obj).map(Some)
+                }
+            },
         }
     }
 
@@ -202,6 +217,7 @@ impl<'a> LowerCtx<'a> {
         name: &str,
         obj: &ObjectSchema,
     ) -> Result<IrSchema, LowerError> {
+        super::boolean_components::validate(obj, &self.false_schema_names)?;
         let kind = self.classify_schema(name, obj)?;
         Ok(IrSchema {
             name: name.to_string(),
@@ -266,7 +282,12 @@ impl<'a> LowerCtx<'a> {
         if !obj.all_of.is_empty() {
             let composition = super::composition::members(obj, |reference| {
                 let name = reference.strip_prefix("#/components/schemas/")?;
-                self.spec.components.as_ref()?.schemas.get(name).cloned()
+                self.spec
+                    .components
+                    .as_ref()?
+                    .schemas
+                    .get(name)
+                    .and_then(|schema| schema.as_object().cloned())
             });
             let members = composition
                 .iter()
@@ -419,7 +440,12 @@ impl<'a> LowerCtx<'a> {
             let facts =
                 super::tagged::facts::<ObjectSchema>(member, first_tag, &disc_value, |reference| {
                     let name = reference.strip_prefix("#/components/schemas/")?;
-                    self.spec.components.as_ref()?.schemas.get(name).cloned()
+                    self.spec
+                        .components
+                        .as_ref()?
+                        .schemas
+                        .get(name)
+                        .and_then(|schema| schema.as_object().cloned())
                 });
             if facts.impossible {
                 return Err(LowerError::Other {
@@ -664,7 +690,12 @@ impl<'a> LowerCtx<'a> {
     ) -> Result<IrTypeExpr, LowerError> {
         let payload = super::composition::tagged_payload(obj, tag_field, |reference| {
             let name = reference.strip_prefix("#/components/schemas/")?;
-            self.spec.components.as_ref()?.schemas.get(name).cloned()
+            self.spec
+                .components
+                .as_ref()?
+                .schemas
+                .get(name)
+                .and_then(|schema| schema.as_object().cloned())
         });
         self.lower_schema_ref_with_promotion(
             &format!("{}{}", parent_name, disc_value.to_pascal_case()),

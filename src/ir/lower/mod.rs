@@ -4,6 +4,7 @@
 //!
 //! Dispatches to version-specific lowering functions that all produce the same `IrSpec`.
 
+mod boolean_components;
 mod composition;
 mod tagged;
 pub mod v30;
