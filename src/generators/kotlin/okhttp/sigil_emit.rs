@@ -7,8 +7,8 @@ use crate::generators::request_inputs::{
 };
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
-    IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec,
-    IrTaggedUnion, IrTypeExpr, IrUnion,
+    IrEnum, IrEnumValueType, IrObject, IrPrimitive, IrSchema, IrSchemaKind, IrSpec, IrTaggedUnion,
+    IrTypeExpr, IrUnion,
 };
 use heck::ToPascalCase;
 use sigil_stitch::lang::kotlin::Kotlin;
@@ -17,10 +17,8 @@ use sigil_stitch::spec::closed_sum_case_spec::ClosedSumCaseSpec;
 use sigil_stitch::spec::closed_sum_spec::ClosedSumSpec;
 use sigil_stitch::spec::where_spec::TypeArgument;
 
-use super::config::UntaggedUnionStrategy;
-use super::util::{
-    escape_kt_string, intersection_fields, kt_decl_name, kt_primitive, kt_ref, kt_type_str,
-};
+use super::config::{AllOfStrategy, UntaggedUnionStrategy};
+use super::util::{escape_kt_string, kt_decl_name, kt_primitive, kt_ref, kt_type_str};
 
 const RENDER_WIDTH: usize = 100;
 
@@ -30,12 +28,20 @@ pub(crate) fn generate_model_files(
     header: &str,
     request_inputs: &RequestInputPlan,
     strategy: UntaggedUnionStrategy,
+    all_of_strategy: AllOfStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
-    let matching_ir = super::matching::wire_ir(ir);
+    let matching_ir = super::matching::wire_ir(ir, all_of_strategy);
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema, ir, &matching_ir, package_name, strategy)
-            .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
+        let body = emit_model_body(
+            schema,
+            ir,
+            &matching_ir,
+            package_name,
+            strategy,
+            all_of_strategy,
+        )
+        .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
         let class_name = schema.name.to_pascal_case();
         let filename = format!("{class_name}.kt");
         let mut content = String::with_capacity(header.len() + body.len());
@@ -94,13 +100,16 @@ fn emit_model_body(
     matching_ir: &IrSpec,
     package_name: &str,
     strategy: UntaggedUnionStrategy,
+    all_of_strategy: AllOfStrategy,
 ) -> Result<String, SigilStitchError> {
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name, ir),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr, package_name),
         IrSchemaKind::Union(u) => emit_union(schema, u, matching_ir, package_name, strategy),
-        IrSchemaKind::Intersection(i) => emit_intersection(schema, i, package_name),
+        IrSchemaKind::Intersection(i) => {
+            super::composition::emit(schema, i, ir, package_name, all_of_strategy)
+        }
         IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name),
     }?;
     file_spec.render(RENDER_WIDTH)
@@ -305,41 +314,6 @@ fn emit_union(
     let adapter = super::union::adapter(schema, &plan, ir, strategy)?;
     closed_sum_file(&plan, package_name, adapter)
 }
-
-// ---------------------------------------------------------------------------
-// Intersection -> data class with all merged properties
-// ---------------------------------------------------------------------------
-
-fn emit_intersection(
-    schema: &IrSchema,
-    inter: &IrIntersection,
-    package_name: &str,
-) -> Result<FileSpec, SigilStitchError> {
-    let name = schema.name.to_pascal_case();
-    let mut file =
-        FileSpec::builder_with("model.kt", Kotlin::new()).header(package_header(package_name)?);
-
-    let mut tb = TypeSpec::builder(&name, TypeKind::Struct).visibility(Visibility::Public);
-    if let Some(doc) = &schema.description {
-        tb = tb.doc(doc);
-    }
-
-    for (field_name, member) in intersection_fields(inter) {
-        let member_type = kt_type_str(member);
-        tb = tb.add_primary_constructor_param(
-            ParameterSpec::builder(&field_name, TypeName::primitive(&member_type))
-                .is_property()
-                .build()?,
-        );
-    }
-
-    file = file.add_type(tb.build()?);
-    file.build()
-}
-
-// ---------------------------------------------------------------------------
-// TaggedUnion -> sealed class with typed cases
-// ---------------------------------------------------------------------------
 
 fn emit_tagged_union(
     schema: &IrSchema,

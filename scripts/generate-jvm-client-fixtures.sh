@@ -25,7 +25,7 @@ for manifest in "${manifests[@]}"; do
         firstMatch|strict|raw)
           options+=(--generator-config "$backend-okhttp.untagged_union_strategy=$strategy") ;;
         all_of_strategy=composed|all_of_strategy=raw)
-          if [ "$backend" != java ]; then echo "allOf policy is Java-only" >&2; exit 1; fi
+          if [ "$backend" != java ] && [ "$backend" != kotlin ]; then echo "allOf policy is JVM-only" >&2; exit 1; fi
           options+=(--generator-config "$backend-okhttp.$strategy") ;;
         *) echo "invalid union strategy: $strategy" >&2; exit 1 ;;
       esac

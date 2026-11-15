@@ -4,6 +4,55 @@
 
 package com.example.sdk.models
 
-data class VariantVariantKAllOf2(val variantVariantKAllOf2AllOf1: VariantVariantKAllOf2AllOf1,
-    val variantVariantKAllOf2AllOf2: VariantVariantKAllOf2AllOf2) {
+@com.google.gson.annotations.JsonAdapter(VariantVariantKAllOf2AllOfAdapterFactory::class, nullSafe = false)
+data class VariantVariantKAllOf2(val variantVariantKAllOf2AllOf1: com.example.sdk.models.VariantVariantKAllOf2AllOf1,
+    val variantVariantKAllOf2AllOf2: com.example.sdk.models.VariantVariantKAllOf2AllOf2) {
+}
+
+private class VariantVariantKAllOf2AllOfAdapterFactory : com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.VariantVariantKAllOf2> {
+    constructor() : super(com.example.sdk.models.VariantVariantKAllOf2::class.java , member(arrayOf<kotlin.String>("inner_label")
+    , com.example.sdk.models.VariantVariantKAllOf2AllOf1::class.java), member(arrayOf<kotlin.String>("outer_label")
+    , com.example.sdk.models.VariantVariantKAllOf2AllOf2::class.java)) {
+
+    }
+
+    override fun decode(gson: com.google.gson.Gson,
+        readers: kotlin.collections.List<com.google.gson.stream.JsonReader>): com.example.sdk.models.VariantVariantKAllOf2 {
+        return com.example.sdk.models.VariantVariantKAllOf2(readMember0(gson, readers[0]), readMember2(gson, readers[1]))
+    }
+
+    override fun encode(gson: com.google.gson.Gson,
+        value: com.example.sdk.models.VariantVariantKAllOf2,
+        context: com.google.gson.stream.JsonWriter): kotlin.collections.List<com.google.gson.JsonElement> {
+        return listOf(writeMember1(gson, value.variantVariantKAllOf2AllOf1, context)
+        , writeMember3(gson, value.variantVariantKAllOf2AllOf2, context))
+    }
+
+    private fun readMember0(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.VariantVariantKAllOf2AllOf1 {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.VariantVariantKAllOf2AllOf1>() {}).read(reader)
+    }
+
+    private fun writeMember1(gson: com.google.gson.Gson,
+        value: com.example.sdk.models.VariantVariantKAllOf2AllOf1?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.VariantVariantKAllOf2AllOf1>() {}, context)
+    }
+
+    private fun readMember2(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.VariantVariantKAllOf2AllOf2 {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.VariantVariantKAllOf2AllOf2>() {}).read(reader)
+    }
+
+    private fun writeMember3(gson: com.google.gson.Gson,
+        value: com.example.sdk.models.VariantVariantKAllOf2AllOf2?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.VariantVariantKAllOf2AllOf2>() {}, context)
+    }
 }

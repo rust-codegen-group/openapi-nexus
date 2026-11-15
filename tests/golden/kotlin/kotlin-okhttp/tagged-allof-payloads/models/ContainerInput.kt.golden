@@ -105,7 +105,7 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         if (!jsonObject.has("request_id") || !matches0(jsonObject.get("request_id"))) {
             return false
         }
-        if (!jsonObject.has("type") || !matches77(jsonObject.get("type"))) {
+        if (!jsonObject.has("type") || !matches62(jsonObject.get("type"))) {
             return false
         }
         return true
@@ -129,13 +129,16 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         if (matches6(candidate)) {
             return true
         }
-        if (matches15(candidate, memo)) {
+        if (matches14(candidate, memo)) {
             return true
         }
-        if (matches22(candidate)) {
+        if (matches20(candidate)) {
             return true
         }
-        if (matches31(candidate)) {
+        if (matches28(candidate)) {
+            return true
+        }
+        if (matches32(candidate)) {
             return true
         }
         if (matches36(candidate)) {
@@ -147,19 +150,16 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         if (matches45(candidate)) {
             return true
         }
-        if (matches51(candidate)) {
+        if (matches48(candidate)) {
             return true
         }
-        if (matches54(candidate)) {
+        if (matches53(candidate)) {
+            return true
+        }
+        if (matches55(candidate)) {
             return true
         }
         if (matches60(candidate)) {
-            return true
-        }
-        if (matches68(candidate)) {
-            return true
-        }
-        if (matches75(candidate)) {
             return true
         }
         return false
@@ -170,6 +170,9 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
             return false
         }
         if (!matches9(candidate)) {
+            return false
+        }
+        if (!matches13(candidate)) {
             return false
         }
         return true
@@ -195,33 +198,19 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("sharedFields") || !matches10(jsonObject.get("sharedFields"))) {
+        if (jsonObject.has("allowed_sources") && !matches10(jsonObject.get("allowed_sources"))) {
             return false
         }
-        if (!jsonObject.has("variantVariantAAllOf2") || !matches14(jsonObject.get("variantVariantAAllOf2"))) {
+        if (jsonObject.has("deferred") && !matches11(jsonObject.get("deferred"))) {
+            return false
+        }
+        if (jsonObject.has("output_shape") && !matches12(jsonObject.get("output_shape"))) {
             return false
         }
         return true
     }
 
     private fun matches10(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (jsonObject.has("allowed_sources") && !matches11(jsonObject.get("allowed_sources"))) {
-            return false
-        }
-        if (jsonObject.has("deferred") && !matches12(jsonObject.get("deferred"))) {
-            return false
-        }
-        if (jsonObject.has("output_shape") && !matches13(jsonObject.get("output_shape"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches11(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonArray) {
             return false
         }
@@ -233,11 +222,11 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         return true
     }
 
-    private fun matches12(candidate: JsonElement): kotlin.Boolean {
+    private fun matches11(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isBoolean
     }
 
-    private fun matches13(candidate: JsonElement): kotlin.Boolean {
+    private fun matches12(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
@@ -249,12 +238,12 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         return true
     }
 
-    private fun matches14(candidate: JsonElement): kotlin.Boolean {
+    private fun matches13(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("arguments") || !matches13(jsonObject.get("arguments"))) {
+        if (!jsonObject.has("arguments") || !matches12(jsonObject.get("arguments"))) {
             return false
         }
         if (jsonObject.has("details") && !matches0(jsonObject.get("details"))) {
@@ -263,54 +252,42 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         if (!jsonObject.has("label") || !matches0(jsonObject.get("label"))) {
             return false
         }
-        if (jsonObject.has("strict_mode") && !matches12(jsonObject.get("strict_mode"))) {
+        if (jsonObject.has("strict_mode") && !matches11(jsonObject.get("strict_mode"))) {
             return false
         }
         return true
     }
 
-    private fun matches15(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
+    private fun matches14(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
         kotlin.collections.MutableMap<kotlin.Int, kotlin.Boolean>>): kotlin.Boolean {
-        if (!matches16(candidate)) {
+        if (!matches15(candidate)) {
             return false
         }
-        if (!matches18(candidate, memo)) {
+        if (!matches9(candidate)) {
+            return false
+        }
+        if (!matches17(candidate, memo)) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches15(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (!jsonObject.has("type") || !matches16(jsonObject.get("type"))) {
             return false
         }
         return true
     }
 
     private fun matches16(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches17(jsonObject.get("type"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches17(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_b"
     }
 
-    private fun matches18(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
-        kotlin.collections.MutableMap<kotlin.Int, kotlin.Boolean>>): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("sharedFields") || !matches10(jsonObject.get("sharedFields"))) {
-            return false
-        }
-        if (!jsonObject.has("variantVariantBAllOf2") || !matches19(jsonObject.get("variantVariantBAllOf2"), memo)) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches19(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
+    private fun matches17(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
         kotlin.collections.MutableMap<kotlin.Int, kotlin.Boolean>>): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
@@ -322,47 +299,65 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         if (!jsonObject.has("label") || !matches0(jsonObject.get("label"))) {
             return false
         }
-        if (!jsonObject.has("members") || !matches20(jsonObject.get("members"), memo)) {
+        if (!jsonObject.has("members") || !matches18(jsonObject.get("members"), memo)) {
             return false
         }
         return true
     }
 
-    private fun matches20(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
+    private fun matches18(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
         kotlin.collections.MutableMap<kotlin.Int, kotlin.Boolean>>): kotlin.Boolean {
         if (!candidate.isJsonArray) {
             return false
         }
         for (item in candidate.asJsonArray) {
-            if (!matches21(item, memo)) {
+            if (!matches19(item, memo)) {
                 return false
             }
         }
         return true
     }
 
-    private fun matches21(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
+    private fun matches19(candidate: JsonElement, memo: java.util.IdentityHashMap<JsonElement,
         kotlin.collections.MutableMap<kotlin.Int, kotlin.Boolean>>): kotlin.Boolean {
         val results = memo.getOrPut(candidate) {
             mutableMapOf()
         }
-        val cached = results[21]
+        val cached = results[19]
         if (cached != null) {
             return cached
         }
         val matched = matches5(candidate, memo)
-        results[21] = matched
+        results[19] = matched
         return matched
     }
 
-    private fun matches22(candidate: JsonElement): kotlin.Boolean {
+    private fun matches20(candidate: JsonElement): kotlin.Boolean {
+        if (!matches21(candidate)) {
+            return false
+        }
+        if (!matches9(candidate)) {
+            return false
+        }
         if (!matches23(candidate)) {
             return false
         }
-        if (!matches25(candidate)) {
+        return true
+    }
+
+    private fun matches21(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (!jsonObject.has("type") || !matches22(jsonObject.get("type"))) {
             return false
         }
         return true
+    }
+
+    private fun matches22(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_c"
     }
 
     private fun matches23(candidate: JsonElement): kotlin.Boolean {
@@ -370,71 +365,42 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches24(jsonObject.get("type"))) {
+        if (!jsonObject.has("configuration") || !matches24(jsonObject.get("configuration"))) {
             return false
         }
         return true
     }
 
     private fun matches24(candidate: JsonElement): kotlin.Boolean {
-        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_c"
-    }
-
-    private fun matches25(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("sharedFields") || !matches10(jsonObject.get("sharedFields"))) {
-            return false
-        }
-        if (!jsonObject.has("variantVariantCAllOf2") || !matches26(jsonObject.get("variantVariantCAllOf2"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches26(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("configuration") || !matches27(jsonObject.get("configuration"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches27(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("entries") || !matches28(jsonObject.get("entries"))) {
+        if (!jsonObject.has("entries") || !matches25(jsonObject.get("entries"))) {
             return false
         }
         if (!jsonObject.has("location") || !matches0(jsonObject.get("location"))) {
             return false
         }
-        if (!jsonObject.has("type") || !matches30(jsonObject.get("type"))) {
+        if (!jsonObject.has("type") || !matches27(jsonObject.get("type"))) {
             return false
         }
         return true
     }
 
-    private fun matches28(candidate: JsonElement): kotlin.Boolean {
+    private fun matches25(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonArray) {
             return false
         }
         for (item in candidate.asJsonArray) {
-            if (!matches29(item)) {
+            if (!matches26(item)) {
                 return false
             }
         }
         return true
     }
 
-    private fun matches29(candidate: JsonElement): kotlin.Boolean {
+    private fun matches26(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
@@ -445,47 +411,72 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         return true
     }
 
-    private fun matches30(candidate: JsonElement): kotlin.Boolean {
+    private fun matches27(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "nested"
     }
 
-    private fun matches31(candidate: JsonElement): kotlin.Boolean {
-        if (!matches32(candidate)) {
+    private fun matches28(candidate: JsonElement): kotlin.Boolean {
+        if (!matches29(candidate)) {
             return false
         }
-        if (!matches34(candidate)) {
+        if (!matches9(candidate)) {
+            return false
+        }
+        if (!matches31(candidate)) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches29(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (!jsonObject.has("type") || !matches30(jsonObject.get("type"))) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches30(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_d"
+    }
+
+    private fun matches31(candidate: JsonElement): kotlin.Boolean {
+        if (!candidate.isJsonObject) {
+            return false
+        }
+        val jsonObject = candidate.asJsonObject
+        if (!jsonObject.has("input_shape") || !matches12(jsonObject.get("input_shape"))) {
             return false
         }
         return true
     }
 
     private fun matches32(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
+        if (!matches33(candidate)) {
             return false
         }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches33(jsonObject.get("type"))) {
+        if (!matches35(candidate)) {
             return false
         }
         return true
     }
 
     private fun matches33(candidate: JsonElement): kotlin.Boolean {
-        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_d"
-    }
-
-    private fun matches34(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("sharedFields") || !matches10(jsonObject.get("sharedFields"))) {
-            return false
-        }
-        if (!jsonObject.has("variantVariantDAllOf2") || !matches35(jsonObject.get("variantVariantDAllOf2"))) {
+        if (!jsonObject.has("type") || !matches34(jsonObject.get("type"))) {
             return false
         }
         return true
+    }
+
+    private fun matches34(candidate: JsonElement): kotlin.Boolean {
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_e"
     }
 
     private fun matches35(candidate: JsonElement): kotlin.Boolean {
@@ -493,7 +484,7 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("input_shape") || !matches13(jsonObject.get("input_shape"))) {
+        if (!jsonObject.has("inline_label") || !matches0(jsonObject.get("inline_label"))) {
             return false
         }
         return true
@@ -501,6 +492,9 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
 
     private fun matches36(candidate: JsonElement): kotlin.Boolean {
         if (!matches37(candidate)) {
+            return false
+        }
+        if (!matches9(candidate)) {
             return false
         }
         if (!matches39(candidate)) {
@@ -521,7 +515,7 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
     }
 
     private fun matches38(candidate: JsonElement): kotlin.Boolean {
-        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_e"
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_f"
     }
 
     private fun matches39(candidate: JsonElement): kotlin.Boolean {
@@ -529,7 +523,7 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("inline_label") || !matches0(jsonObject.get("inline_label"))) {
+        if (!jsonObject.has("display_name") || !matches0(jsonObject.get("display_name"))) {
             return false
         }
         return true
@@ -537,6 +531,9 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
 
     private fun matches40(candidate: JsonElement): kotlin.Boolean {
         if (!matches41(candidate)) {
+            return false
+        }
+        if (!matches9(candidate)) {
             return false
         }
         if (!matches43(candidate)) {
@@ -557,7 +554,7 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
     }
 
     private fun matches42(candidate: JsonElement): kotlin.Boolean {
-        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_f"
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_g"
     }
 
     private fun matches43(candidate: JsonElement): kotlin.Boolean {
@@ -565,31 +562,27 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("sharedFields") || !matches10(jsonObject.get("sharedFields"))) {
+        if (jsonObject.has("outer_count") && !matches44(jsonObject.get("outer_count"))) {
             return false
         }
-        if (!jsonObject.has("extraFields") || !matches44(jsonObject.get("extraFields"))) {
+        if (jsonObject.has("outer_flag") && !matches11(jsonObject.get("outer_flag"))) {
+            return false
+        }
+        if (!jsonObject.has("outer_label") || !matches0(jsonObject.get("outer_label"))) {
             return false
         }
         return true
     }
 
     private fun matches44(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("display_name") || !matches0(jsonObject.get("display_name"))) {
-            return false
-        }
-        return true
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isNumber && isIntegerNumber(candidate)
     }
 
     private fun matches45(candidate: JsonElement): kotlin.Boolean {
         if (!matches46(candidate)) {
             return false
         }
-        if (!matches48(candidate)) {
+        if (!matches9(candidate)) {
             return false
         }
         return true
@@ -607,18 +600,17 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
     }
 
     private fun matches47(candidate: JsonElement): kotlin.Boolean {
-        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_g"
+        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_h"
     }
 
     private fun matches48(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
+        if (!matches49(candidate)) {
             return false
         }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("sharedFields") || !matches10(jsonObject.get("sharedFields"))) {
+        if (!matches51(candidate)) {
             return false
         }
-        if (!jsonObject.has("variantVariantGAllOf2") || !matches49(jsonObject.get("variantVariantGAllOf2"))) {
+        if (!matches52(candidate)) {
             return false
         }
         return true
@@ -629,87 +621,17 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (jsonObject.has("outer_count") && !matches50(jsonObject.get("outer_count"))) {
-            return false
-        }
-        if (jsonObject.has("outer_flag") && !matches12(jsonObject.get("outer_flag"))) {
-            return false
-        }
-        if (!jsonObject.has("outer_label") || !matches0(jsonObject.get("outer_label"))) {
+        if (!jsonObject.has("type") || !matches50(jsonObject.get("type"))) {
             return false
         }
         return true
     }
 
     private fun matches50(candidate: JsonElement): kotlin.Boolean {
-        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isNumber && isIntegerNumber(candidate)
-    }
-
-    private fun matches51(candidate: JsonElement): kotlin.Boolean {
-        if (!matches52(candidate)) {
-            return false
-        }
-        if (!matches10(candidate)) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches52(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches53(jsonObject.get("type"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches53(candidate: JsonElement): kotlin.Boolean {
-        return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_h"
-    }
-
-    private fun matches54(candidate: JsonElement): kotlin.Boolean {
-        if (!matches55(candidate)) {
-            return false
-        }
-        if (!matches57(candidate)) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches55(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches56(jsonObject.get("type"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches56(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_i"
     }
 
-    private fun matches57(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("optionalLabel") || !matches58(jsonObject.get("optionalLabel"))) {
-            return false
-        }
-        if (!jsonObject.has("variantVariantIAllOf2") || !matches59(jsonObject.get("variantVariantIAllOf2"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches58(candidate: JsonElement): kotlin.Boolean {
+    private fun matches51(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
@@ -720,7 +642,7 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         return true
     }
 
-    private fun matches59(candidate: JsonElement): kotlin.Boolean {
+    private fun matches52(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
@@ -731,143 +653,53 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         return true
     }
 
-    private fun matches60(candidate: JsonElement): kotlin.Boolean {
-        if (!matches61(candidate)) {
-            return false
-        }
-        if (!matches63(candidate)) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches61(candidate: JsonElement): kotlin.Boolean {
+    private fun matches53(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches62(jsonObject.get("type"))) {
+        if (!jsonObject.has("type") || !matches54(jsonObject.get("type"))) {
             return false
         }
         return true
     }
 
-    private fun matches62(candidate: JsonElement): kotlin.Boolean {
+    private fun matches54(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_j"
     }
 
-    private fun matches63(candidate: JsonElement): kotlin.Boolean {
+    private fun matches55(candidate: JsonElement): kotlin.Boolean {
+        if (!matches56(candidate)) {
+            return false
+        }
+        if (!matches9(candidate)) {
+            return false
+        }
+        if (!matches58(candidate)) {
+            return false
+        }
+        if (!matches59(candidate)) {
+            return false
+        }
+        return true
+    }
+
+    private fun matches56(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("firstShape") || !matches64(jsonObject.get("firstShape"))) {
-            return false
-        }
-        if (!jsonObject.has("secondShape") || !matches66(jsonObject.get("secondShape"))) {
+        if (!jsonObject.has("type") || !matches57(jsonObject.get("type"))) {
             return false
         }
         return true
     }
 
-    private fun matches64(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("data") || !matches65(jsonObject.get("data"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches65(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("first_value") || !matches0(jsonObject.get("first_value"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches66(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("data") || !matches67(jsonObject.get("data"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches67(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("second_value") || !matches0(jsonObject.get("second_value"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches68(candidate: JsonElement): kotlin.Boolean {
-        if (!matches69(candidate)) {
-            return false
-        }
-        if (!matches71(candidate)) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches69(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches70(jsonObject.get("type"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches70(candidate: JsonElement): kotlin.Boolean {
+    private fun matches57(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_k"
     }
 
-    private fun matches71(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("sharedFields") || !matches10(jsonObject.get("sharedFields"))) {
-            return false
-        }
-        if (!jsonObject.has("variantVariantKAllOf2") || !matches72(jsonObject.get("variantVariantKAllOf2"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches72(candidate: JsonElement): kotlin.Boolean {
-        if (!candidate.isJsonObject) {
-            return false
-        }
-        val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("variantVariantKAllOf2AllOf1") || !matches73(jsonObject.get("variantVariantKAllOf2AllOf1"))) {
-            return false
-        }
-        if (!jsonObject.has("variantVariantKAllOf2AllOf2") || !matches74(jsonObject.get("variantVariantKAllOf2AllOf2"))) {
-            return false
-        }
-        return true
-    }
-
-    private fun matches73(candidate: JsonElement): kotlin.Boolean {
+    private fun matches58(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
@@ -878,7 +710,7 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         return true
     }
 
-    private fun matches74(candidate: JsonElement): kotlin.Boolean {
+    private fun matches59(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
@@ -889,22 +721,22 @@ private class ContainerInputJsonAdapter : TypeAdapter<ContainerInput>() {
         return true
     }
 
-    private fun matches75(candidate: JsonElement): kotlin.Boolean {
+    private fun matches60(candidate: JsonElement): kotlin.Boolean {
         if (!candidate.isJsonObject) {
             return false
         }
         val jsonObject = candidate.asJsonObject
-        if (!jsonObject.has("type") || !matches76(jsonObject.get("type"))) {
+        if (!jsonObject.has("type") || !matches61(jsonObject.get("type"))) {
             return false
         }
         return true
     }
 
-    private fun matches76(candidate: JsonElement): kotlin.Boolean {
+    private fun matches61(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "variant_l"
     }
 
-    private fun matches77(candidate: JsonElement): kotlin.Boolean {
+    private fun matches62(candidate: JsonElement): kotlin.Boolean {
         return candidate.isJsonPrimitive && candidate.asJsonPrimitive.isString && candidate.asString == "result"
     }
 

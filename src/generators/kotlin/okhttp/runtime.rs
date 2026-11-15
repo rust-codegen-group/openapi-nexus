@@ -4,12 +4,14 @@ const API_CLIENT_KT: &str = include_str!("runtime/api_client.kt.txt");
 const API_EXCEPTION_KT: &str = include_str!("runtime/api_exception.kt.txt");
 const AUTH_KT: &str = include_str!("runtime/auth.kt.txt");
 const UPLOAD_FILE_KT: &str = include_str!("runtime/upload_file.kt.txt");
+const ALL_OF_ADAPTER_FACTORY_KT: &str = include_str!("runtime/all_of_adapter_factory.kt.txt");
 
 pub fn runtime_files(
     header: &str,
     package_name: &str,
     include_upload_file: bool,
     include_additional_properties: bool,
+    include_all_of: bool,
 ) -> Vec<FileInfo> {
     let runtime_package = format!("{package_name}.runtime");
     let mut files = vec![
@@ -40,6 +42,12 @@ pub fn runtime_files(
                 include_str!("runtime/additional_properties_adapter_factory.kt.txt"),
                 &runtime_package,
             ),
+        ));
+    }
+    if include_all_of {
+        files.push(FileInfo::runtime(
+            "AllOfAdapterFactory.kt".to_string(),
+            repackage(header, ALL_OF_ADAPTER_FACTORY_KT, &runtime_package),
         ));
     }
     files

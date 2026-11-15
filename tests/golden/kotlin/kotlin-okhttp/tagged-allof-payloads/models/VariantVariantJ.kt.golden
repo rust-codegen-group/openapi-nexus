@@ -4,5 +4,22 @@
 
 package com.example.sdk.models
 
-data class VariantVariantJ(val firstShape: FirstShape, val secondShape: SecondShape) {
+@com.google.gson.annotations.JsonAdapter(VariantVariantJAllOfAdapterFactory::class, nullSafe = false)
+data class VariantVariantJ(val value: com.google.gson.JsonElement) {
+}
+
+private class VariantVariantJAllOfAdapterFactory : com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.VariantVariantJ> {
+    constructor() : super(com.example.sdk.models.VariantVariantJ::class.java ) {
+
+    }
+
+    override fun decode(gson: com.google.gson.Gson,
+        readers: kotlin.collections.List<com.google.gson.stream.JsonReader>): com.example.sdk.models.VariantVariantJ {
+        return com.example.sdk.models.VariantVariantJ(gson.getAdapter(com.google.gson.JsonElement::class.java).read(readers[0]))
+    }
+
+    override fun encode(gson: com.google.gson.Gson, value: com.example.sdk.models.VariantVariantJ,
+        context: com.google.gson.stream.JsonWriter): kotlin.collections.List<com.google.gson.JsonElement> {
+        return listOf(value.value)
+    }
 }

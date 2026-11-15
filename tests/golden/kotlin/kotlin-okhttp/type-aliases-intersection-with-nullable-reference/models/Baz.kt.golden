@@ -5,5 +5,52 @@
 
 package com.example.sdk.models
 
-data class Baz(val foo: Foo, val bazAllOf2: BazAllOf2) {
+@com.google.gson.annotations.JsonAdapter(BazAllOfAdapterFactory::class, nullSafe = false)
+data class Baz(val foo: com.example.sdk.models.Foo,
+    val bazAllOf2: com.example.sdk.models.BazAllOf2) {
+}
+
+private class BazAllOfAdapterFactory : com.example.sdk.runtime.AllOfAdapterFactory<com.example.sdk.models.Baz> {
+    constructor() : super(com.example.sdk.models.Baz::class.java , member(arrayOf<kotlin.String>("count1", "count2", "createdAt", "id", "status")
+    , com.example.sdk.models.Foo::class.java), member(arrayOf<kotlin.String>("metaData")
+    , com.example.sdk.models.BazAllOf2::class.java)) {
+
+    }
+
+    override fun decode(gson: com.google.gson.Gson,
+        readers: kotlin.collections.List<com.google.gson.stream.JsonReader>): com.example.sdk.models.Baz {
+        return com.example.sdk.models.Baz(readMember0(gson, readers[0]), readMember2(gson, readers[1]))
+    }
+
+    override fun encode(gson: com.google.gson.Gson, value: com.example.sdk.models.Baz,
+        context: com.google.gson.stream.JsonWriter): kotlin.collections.List<com.google.gson.JsonElement> {
+        return listOf(writeMember1(gson, value.foo, context)
+        , writeMember3(gson, value.bazAllOf2, context))
+    }
+
+    private fun readMember0(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.Foo {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.Foo>() {}).read(reader)
+    }
+
+    private fun writeMember1(gson: com.google.gson.Gson, value: com.example.sdk.models.Foo?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.Foo>() {}, context)
+    }
+
+    private fun readMember2(gson: com.google.gson.Gson,
+        reader: com.google.gson.stream.JsonReader): com.example.sdk.models.BazAllOf2 {
+        return gson.getAdapter(object: com.google.gson.reflect.TypeToken<com.example.sdk.models.BazAllOf2>() {}).read(reader)
+    }
+
+    private fun writeMember3(gson: com.google.gson.Gson, value: com.example.sdk.models.BazAllOf2?,
+        context: com.google.gson.stream.JsonWriter): com.google.gson.JsonElement {
+        if (value == null) {
+            return com.google.gson.JsonNull.INSTANCE
+        }
+        return tree(gson, value, object: com.google.gson.reflect.TypeToken<com.example.sdk.models.BazAllOf2>() {}, context)
+    }
 }

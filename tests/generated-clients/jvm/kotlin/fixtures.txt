@@ -11,3 +11,5 @@ additional-properties valid/kotlin-additional-properties.yaml
 additional-properties-strict valid/kotlin-additional-properties.yaml strict
 additional-properties-raw valid/kotlin-additional-properties.yaml raw
 additional-helper-types valid/kotlin-additional-helper-types.yaml
+allof-composition valid/object-composition.yaml
+allof-raw valid/object-composition.yaml all_of_strategy=raw

@@ -144,8 +144,8 @@ abstract class TypedUnionPolicyCases {
         }
     }
 
-    @Test void intersectionMembersKeepTheirWrappedWireRepresentation() {
-        String wire = "{\"leftPart\":{\"left_value\":\"left\"},\"rightPart\":{\"right_value\":2}}";
+    @Test void intersectionMembersKeepTheirFlatWireRepresentation() {
+        String wire = "{\"left_value\":\"left\",\"right_value\":2}";
         assertInstanceOf(WrappedChoice.VariantWrappedPair.class, read(wire, WrappedChoice.class));
         roundTrip(wire, WrappedChoice.class);
     }
