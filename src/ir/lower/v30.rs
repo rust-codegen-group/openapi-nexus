@@ -1208,7 +1208,9 @@ fn type_string_to_type_expr(type_str: &str, obj: &ObjectSchema) -> IrTypeExpr {
                             IrTypeExpr::Named(extract_schema_name(ref_path)),
                         )),
                         ObjectOrReference::Object(inner) => {
-                            let inner_type = nested_type_to_expr(inner);
+                            let inner_type = super::unconstrained_array_item(inner, || {
+                                nested_type_to_expr(inner)
+                            });
                             IrTypeExpr::Array(Box::new(inner_type))
                         }
                     },

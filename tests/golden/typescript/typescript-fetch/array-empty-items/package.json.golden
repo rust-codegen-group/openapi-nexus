@@ -1,0 +1,26 @@
+{
+  "name": "empty-array-item-schemas",
+  "version": "1",
+  "description": "TypeScript client for Empty array item schemas",
+  "keywords": [
+    "api-client",
+    "generated",
+    "openapi",
+    "typescript"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
