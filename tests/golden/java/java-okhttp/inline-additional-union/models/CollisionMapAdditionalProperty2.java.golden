@@ -25,6 +25,7 @@ public sealed interface CollisionMapAdditionalProperty2 {
 
 final class CollisionMapAdditionalProperty2JsonAdapter extends TypeAdapter<CollisionMapAdditionalProperty2> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public CollisionMapAdditionalProperty2 read(JsonReader reader) throws java.io.IOException {
@@ -56,11 +57,11 @@ final class CollisionMapAdditionalProperty2JsonAdapter extends TypeAdapter<Colli
             return;
         }
         if (value instanceof CollisionMapAdditionalProperty2.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((CollisionMapAdditionalProperty2.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((CollisionMapAdditionalProperty2.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof CollisionMapAdditionalProperty2.VariantString) {
-            gson.toJson(gson.toJsonTree(((CollisionMapAdditionalProperty2.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((CollisionMapAdditionalProperty2.VariantString) value).value0()), writer);
             return;
         }
     }

@@ -25,6 +25,7 @@ public sealed interface VariantRaw {
 
 final class VariantRawJsonAdapter extends TypeAdapter<VariantRaw> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public VariantRaw read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class VariantRawJsonAdapter extends TypeAdapter<VariantRaw> {
             return;
         }
         if (value instanceof VariantRaw.VariantAlpha) {
-            gson.toJson(gson.toJsonTree(((VariantRaw.VariantAlpha) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((VariantRaw.VariantAlpha) value).value0()), writer);
             return;
         }
         if (value instanceof VariantRaw.VariantBeta) {
-            gson.toJson(gson.toJsonTree(((VariantRaw.VariantBeta) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((VariantRaw.VariantBeta) value).value0()), writer);
             return;
         }
     }

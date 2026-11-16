@@ -28,6 +28,7 @@ public sealed interface Config {
 
 final class ConfigJsonAdapter extends TypeAdapter<Config> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Config read(JsonReader reader) throws java.io.IOException {
@@ -64,15 +65,15 @@ final class ConfigJsonAdapter extends TypeAdapter<Config> {
             return;
         }
         if (value instanceof Config.VariantString) {
-            gson.toJson(gson.toJsonTree(((Config.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Config.VariantString) value).value0()), writer);
             return;
         }
         if (value instanceof Config.VariantNumber) {
-            gson.toJson(gson.toJsonTree(((Config.VariantNumber) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Config.VariantNumber) value).value0()), writer);
             return;
         }
         if (value instanceof Config.VariantAny) {
-            gson.toJson(gson.toJsonTree(((Config.VariantAny) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Config.VariantAny) value).value0()), writer);
             return;
         }
     }

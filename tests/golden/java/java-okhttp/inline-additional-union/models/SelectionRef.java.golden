@@ -25,6 +25,7 @@ public sealed interface SelectionRef {
 
 final class SelectionRefJsonAdapter extends TypeAdapter<SelectionRef> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public SelectionRef read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class SelectionRefJsonAdapter extends TypeAdapter<SelectionRef> {
             return;
         }
         if (value instanceof SelectionRef.VariantConstrainedRef) {
-            gson.toJson(gson.toJsonTree(((SelectionRef.VariantConstrainedRef) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((SelectionRef.VariantConstrainedRef) value).value0()), writer);
             return;
         }
         if (value instanceof SelectionRef.VariantString) {
-            gson.toJson(gson.toJsonTree(((SelectionRef.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((SelectionRef.VariantString) value).value0()), writer);
             return;
         }
     }

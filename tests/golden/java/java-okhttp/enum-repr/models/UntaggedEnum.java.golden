@@ -32,6 +32,7 @@ public sealed interface UntaggedEnum {
 
 final class UntaggedEnumJsonAdapter extends TypeAdapter<UntaggedEnum> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public UntaggedEnum read(JsonReader reader) throws java.io.IOException {
@@ -62,11 +63,11 @@ final class UntaggedEnumJsonAdapter extends TypeAdapter<UntaggedEnum> {
             return;
         }
         if (value instanceof UntaggedEnum.VariantVariantA) {
-            gson.toJson(gson.toJsonTree(((UntaggedEnum.VariantVariantA) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((UntaggedEnum.VariantVariantA) value).value0()), writer);
             return;
         }
         if (value instanceof UntaggedEnum.VariantVariantB) {
-            gson.toJson(gson.toJsonTree(((UntaggedEnum.VariantVariantB) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((UntaggedEnum.VariantVariantB) value).value0()), writer);
             return;
         }
     }

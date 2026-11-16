@@ -25,6 +25,7 @@ public sealed interface NullableFields {
 
 final class NullableFieldsJsonAdapter extends TypeAdapter<NullableFields> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public NullableFields read(JsonReader reader) throws java.io.IOException {
@@ -61,11 +62,11 @@ final class NullableFieldsJsonAdapter extends TypeAdapter<NullableFields> {
             return;
         }
         if (value instanceof NullableFields.VariantExcludedNull) {
-            gson.toJson(gson.toJsonTree(((NullableFields.VariantExcludedNull) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NullableFields.VariantExcludedNull) value).value0()), writer);
             return;
         }
         if (value instanceof NullableFields.VariantIncludedNull) {
-            gson.toJson(gson.toJsonTree(((NullableFields.VariantIncludedNull) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NullableFields.VariantIncludedNull) value).value0()), writer);
             return;
         }
     }

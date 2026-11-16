@@ -48,6 +48,7 @@ public sealed interface Variant {
 
 final class VariantJsonAdapter extends TypeAdapter<Variant> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Variant read (JsonReader reader) throws java.io.IOException {
@@ -102,73 +103,73 @@ final class VariantJsonAdapter extends TypeAdapter<Variant> {
         if (value instanceof Variant.VariantVariantA) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantA) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_a");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantB) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantB) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_b");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantC) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantC) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_c");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantD) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantD) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_d");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantE) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantE) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_e");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantF) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantF) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_f");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantG) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantG) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_g");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantH) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantH) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_h");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantI) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantI) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_i");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantJ) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantJ) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_j");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantK) {
             JsonObject object = gson.toJsonTree(((Variant.VariantVariantK) value).value0()).getAsJsonObject();
             object.addProperty("type", "variant_k");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Variant.VariantVariantL) {
             JsonObject object = new JsonObject();
             object.addProperty("type", "variant_l");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

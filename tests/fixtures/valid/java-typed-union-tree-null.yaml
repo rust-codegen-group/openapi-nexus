@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info: {title: Typed union tree null entries, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    PayloadA:
+      type: object
+      required: [known_field]
+      properties:
+        known_field: {type: string}
+        optional_field: {type: [string, 'null']}
+      additionalProperties: true
+    PayloadB:
+      type: object
+      required: [count]
+      properties:
+        count: {type: integer}
+      additionalProperties: true
+    Choice:
+      oneOf:
+        - {$ref: '#/components/schemas/PayloadA'}
+        - {type: string}
+    AnyChoice:
+      anyOf:
+        - {$ref: '#/components/schemas/PayloadA'}
+        - {type: string}
+    InternalChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/PayloadA'}
+        - {$ref: '#/components/schemas/PayloadB'}
+      discriminator:
+        propertyName: kind
+        mapping:
+          a: '#/components/schemas/PayloadA'
+          b: '#/components/schemas/PayloadB'
+    AdjacentChoice:
+      oneOf:
+        - type: object
+          required: [kind, data]
+          properties:
+            kind: {type: string, enum: [a]}
+            data: {$ref: '#/components/schemas/PayloadA'}
+        - type: object
+          required: [kind, data]
+          properties:
+            kind: {type: string, enum: [b]}
+            data: {$ref: '#/components/schemas/PayloadB'}
+    ExternalChoice:
+      oneOf:
+        - type: object
+          required: [a]
+          properties:
+            a: {$ref: '#/components/schemas/PayloadA'}
+        - type: object
+          required: [b]
+          properties:
+            b: {$ref: '#/components/schemas/PayloadB'}

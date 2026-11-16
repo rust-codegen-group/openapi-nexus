@@ -28,6 +28,7 @@ public sealed interface NullableChoice {
 
 final class NullableChoiceJsonAdapter extends TypeAdapter<NullableChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public NullableChoice read(JsonReader reader) throws java.io.IOException {
@@ -52,7 +53,7 @@ final class NullableChoiceJsonAdapter extends TypeAdapter<NullableChoice> {
             return;
         }
         if (value instanceof NullableChoice.VariantAlpha) {
-            gson.toJson(gson.toJsonTree(((NullableChoice.VariantAlpha) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NullableChoice.VariantAlpha) value).value0()), writer);
             return;
         }
         if (value instanceof NullableChoice.VariantNull) {

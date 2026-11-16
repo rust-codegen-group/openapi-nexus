@@ -29,6 +29,7 @@ public sealed interface OneOfObjects {
 
 final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public OneOfObjects read(JsonReader reader) throws java.io.IOException {
@@ -59,11 +60,11 @@ final class OneOfObjectsJsonAdapter extends TypeAdapter<OneOfObjects> {
             return;
         }
         if (value instanceof OneOfObjects.VariantBasicObject) {
-            gson.toJson(gson.toJsonTree(((OneOfObjects.VariantBasicObject) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((OneOfObjects.VariantBasicObject) value).value0()), writer);
             return;
         }
         if (value instanceof OneOfObjects.VariantNestedObject) {
-            gson.toJson(gson.toJsonTree(((OneOfObjects.VariantNestedObject) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((OneOfObjects.VariantNestedObject) value).value0()), writer);
             return;
         }
     }

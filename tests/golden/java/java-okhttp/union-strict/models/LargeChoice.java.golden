@@ -25,6 +25,7 @@ public sealed interface LargeChoice {
 
 final class LargeChoiceJsonAdapter extends TypeAdapter<LargeChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public LargeChoice read(JsonReader reader) throws java.io.IOException {
@@ -61,11 +62,11 @@ final class LargeChoiceJsonAdapter extends TypeAdapter<LargeChoice> {
             return;
         }
         if (value instanceof LargeChoice.VariantLargeOne) {
-            gson.toJson(gson.toJsonTree(((LargeChoice.VariantLargeOne) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((LargeChoice.VariantLargeOne) value).value0()), writer);
             return;
         }
         if (value instanceof LargeChoice.VariantLargeTwo) {
-            gson.toJson(gson.toJsonTree(((LargeChoice.VariantLargeTwo) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((LargeChoice.VariantLargeTwo) value).value0()), writer);
             return;
         }
     }

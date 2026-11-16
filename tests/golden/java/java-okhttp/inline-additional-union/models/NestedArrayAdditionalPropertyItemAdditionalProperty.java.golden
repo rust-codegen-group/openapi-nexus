@@ -25,6 +25,7 @@ public sealed interface NestedArrayAdditionalPropertyItemAdditionalProperty {
 
 final class NestedArrayAdditionalPropertyItemAdditionalPropertyJsonAdapter extends TypeAdapter<NestedArrayAdditionalPropertyItemAdditionalProperty> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public NestedArrayAdditionalPropertyItemAdditionalProperty read(JsonReader reader) throws java.io.IOException {
@@ -56,11 +57,11 @@ final class NestedArrayAdditionalPropertyItemAdditionalPropertyJsonAdapter exten
             return;
         }
         if (value instanceof NestedArrayAdditionalPropertyItemAdditionalProperty.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((NestedArrayAdditionalPropertyItemAdditionalProperty.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NestedArrayAdditionalPropertyItemAdditionalProperty.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof NestedArrayAdditionalPropertyItemAdditionalProperty.VariantString) {
-            gson.toJson(gson.toJsonTree(((NestedArrayAdditionalPropertyItemAdditionalProperty.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NestedArrayAdditionalPropertyItemAdditionalProperty.VariantString) value).value0()), writer);
             return;
         }
     }

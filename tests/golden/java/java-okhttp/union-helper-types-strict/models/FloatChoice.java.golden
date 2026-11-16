@@ -25,6 +25,7 @@ public sealed interface FloatChoice {
 
 final class FloatChoiceJsonAdapter extends TypeAdapter<FloatChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public FloatChoice read(JsonReader reader) throws java.io.IOException {
@@ -61,11 +62,11 @@ final class FloatChoiceJsonAdapter extends TypeAdapter<FloatChoice> {
             return;
         }
         if (value instanceof FloatChoice.VariantNumber) {
-            gson.toJson(gson.toJsonTree(((FloatChoice.VariantNumber) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((FloatChoice.VariantNumber) value).value0()), writer);
             return;
         }
         if (value instanceof FloatChoice.VariantString) {
-            gson.toJson(gson.toJsonTree(((FloatChoice.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((FloatChoice.VariantString) value).value0()), writer);
             return;
         }
     }

@@ -40,6 +40,7 @@ public sealed interface AdjacentlyTaggedEnum {
 
 final class AdjacentlyTaggedEnumJsonAdapter extends TypeAdapter<AdjacentlyTaggedEnum> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public AdjacentlyTaggedEnum read (JsonReader reader) throws java.io.IOException {
@@ -65,14 +66,14 @@ final class AdjacentlyTaggedEnumJsonAdapter extends TypeAdapter<AdjacentlyTagged
             JsonObject object = new JsonObject();
             object.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_A");
             object.add("data", gson.toJsonTree(((AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA) value).value0()));
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB) {
             JsonObject object = new JsonObject();
             object.addProperty("ty", "ADJACENTLY_TAGGED_ENUM_VARIANT_B");
             object.add("data", gson.toJsonTree(((AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB) value).value0()));
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

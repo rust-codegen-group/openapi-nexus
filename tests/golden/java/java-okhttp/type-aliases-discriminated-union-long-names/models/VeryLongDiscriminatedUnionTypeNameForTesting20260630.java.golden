@@ -33,6 +33,7 @@ public sealed interface VeryLongDiscriminatedUnionTypeNameForTesting20260630 {
 
 final class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter extends TypeAdapter<VeryLongDiscriminatedUnionTypeNameForTesting20260630> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public VeryLongDiscriminatedUnionTypeNameForTesting20260630 read (JsonReader reader) throws java.io.IOException {
@@ -60,19 +61,19 @@ final class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter exte
         if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha) {
             JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha) value).value0()).getAsJsonObject();
             object.addProperty("kind", "ALPHA");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta) {
             JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantBeta) value).value0()).getAsJsonObject();
             object.addProperty("kind", "BETA");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma) {
             JsonObject object = gson.toJsonTree(((VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantGamma) value).value0()).getAsJsonObject();
             object.addProperty("kind", "GAMMA");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

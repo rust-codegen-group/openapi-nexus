@@ -12,3 +12,4 @@ additional-properties-raw valid/java-additional-properties.yaml raw
 additional-helper-types valid/java-additional-helper-types.yaml
 allof-composition valid/java-allof-composition.yaml
 allof-raw valid/java-allof-composition.yaml all_of_strategy=raw
+typed-union-tree-null valid/java-typed-union-tree-null.yaml

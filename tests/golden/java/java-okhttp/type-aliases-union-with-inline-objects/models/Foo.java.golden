@@ -31,6 +31,7 @@ public sealed interface Foo {
 
 final class FooJsonAdapter extends TypeAdapter<Foo> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Foo read(JsonReader reader) throws java.io.IOException {
@@ -67,15 +68,15 @@ final class FooJsonAdapter extends TypeAdapter<Foo> {
             return;
         }
         if (value instanceof Foo.VariantFooMember1) {
-            gson.toJson(gson.toJsonTree(((Foo.VariantFooMember1) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Foo.VariantFooMember1) value).value0()), writer);
             return;
         }
         if (value instanceof Foo.VariantFooMember2) {
-            gson.toJson(gson.toJsonTree(((Foo.VariantFooMember2) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Foo.VariantFooMember2) value).value0()), writer);
             return;
         }
         if (value instanceof Foo.VariantFooMember3) {
-            gson.toJson(gson.toJsonTree(((Foo.VariantFooMember3) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Foo.VariantFooMember3) value).value0()), writer);
             return;
         }
     }

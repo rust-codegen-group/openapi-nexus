@@ -49,6 +49,7 @@ public sealed interface Event {
 
 final class EventJsonAdapter extends TypeAdapter<Event> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Event read (JsonReader reader) throws java.io.IOException {
@@ -76,19 +77,19 @@ final class EventJsonAdapter extends TypeAdapter<Event> {
         if (value instanceof Event.VariantEventUnspecified) {
             JsonObject object = new JsonObject();
             object.addProperty("kind", "EVENT_UNSPECIFIED");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Event.VariantEventCreated) {
             JsonObject object = gson.toJsonTree(((Event.VariantEventCreated) value).value0()).getAsJsonObject();
             object.addProperty("kind", "EVENT_CREATED");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Event.VariantEventUpdated) {
             JsonObject object = gson.toJsonTree(((Event.VariantEventUpdated) value).value0()).getAsJsonObject();
             object.addProperty("kind", "EVENT_UPDATED");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

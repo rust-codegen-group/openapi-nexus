@@ -30,6 +30,7 @@ public sealed interface ContainerImage {
 
 final class ContainerImageJsonAdapter extends TypeAdapter<ContainerImage> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public ContainerImage read (JsonReader reader) throws java.io.IOException {
@@ -54,13 +55,13 @@ final class ContainerImageJsonAdapter extends TypeAdapter<ContainerImage> {
         if (value instanceof ContainerImage.VariantContainerImageManaged) {
             JsonObject object = gson.toJsonTree(((ContainerImage.VariantContainerImageManaged) value).value0()).getAsJsonObject();
             object.addProperty("kind", "CONTAINER_IMAGE_MANAGED");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof ContainerImage.VariantContainerImageCustom) {
             JsonObject object = gson.toJsonTree(((ContainerImage.VariantContainerImageCustom) value).value0()).getAsJsonObject();
             object.addProperty("kind", "CONTAINER_IMAGE_CUSTOM");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

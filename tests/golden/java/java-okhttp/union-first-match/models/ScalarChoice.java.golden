@@ -27,6 +27,7 @@ public sealed interface ScalarChoice {
 
 final class ScalarChoiceJsonAdapter extends TypeAdapter<ScalarChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public ScalarChoice read(JsonReader reader) throws java.io.IOException {
@@ -63,15 +64,15 @@ final class ScalarChoiceJsonAdapter extends TypeAdapter<ScalarChoice> {
             return;
         }
         if (value instanceof ScalarChoice.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((ScalarChoice.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((ScalarChoice.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof ScalarChoice.VariantNumber) {
-            gson.toJson(gson.toJsonTree(((ScalarChoice.VariantNumber) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((ScalarChoice.VariantNumber) value).value0()), writer);
             return;
         }
         if (value instanceof ScalarChoice.VariantBoolean) {
-            gson.toJson(gson.toJsonTree(((ScalarChoice.VariantBoolean) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((ScalarChoice.VariantBoolean) value).value0()), writer);
             return;
         }
     }

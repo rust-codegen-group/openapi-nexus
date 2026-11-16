@@ -25,6 +25,7 @@ public sealed interface WrappedChoice {
 
 final class WrappedChoiceJsonAdapter extends TypeAdapter<WrappedChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public WrappedChoice read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class WrappedChoiceJsonAdapter extends TypeAdapter<WrappedChoice> {
             return;
         }
         if (value instanceof WrappedChoice.VariantWrappedPair) {
-            gson.toJson(gson.toJsonTree(((WrappedChoice.VariantWrappedPair) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((WrappedChoice.VariantWrappedPair) value).value0()), writer);
             return;
         }
         if (value instanceof WrappedChoice.VariantAlpha) {
-            gson.toJson(gson.toJsonTree(((WrappedChoice.VariantAlpha) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((WrappedChoice.VariantAlpha) value).value0()), writer);
             return;
         }
     }

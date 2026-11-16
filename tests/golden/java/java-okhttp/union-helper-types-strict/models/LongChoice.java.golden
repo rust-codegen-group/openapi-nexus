@@ -25,6 +25,7 @@ public sealed interface LongChoice {
 
 final class LongChoiceJsonAdapter extends TypeAdapter<LongChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public LongChoice read(JsonReader reader) throws java.io.IOException {
@@ -61,11 +62,11 @@ final class LongChoiceJsonAdapter extends TypeAdapter<LongChoice> {
             return;
         }
         if (value instanceof LongChoice.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((LongChoice.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((LongChoice.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof LongChoice.VariantString) {
-            gson.toJson(gson.toJsonTree(((LongChoice.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((LongChoice.VariantString) value).value0()), writer);
             return;
         }
     }

@@ -25,6 +25,7 @@ public sealed interface MixedTypeInlineAdditionalPropertyAdditionalProperty {
 
 final class MixedTypeInlineAdditionalPropertyAdditionalPropertyJsonAdapter extends TypeAdapter<MixedTypeInlineAdditionalPropertyAdditionalProperty> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public MixedTypeInlineAdditionalPropertyAdditionalProperty read(JsonReader reader) throws java.io.IOException {
@@ -56,11 +57,11 @@ final class MixedTypeInlineAdditionalPropertyAdditionalPropertyJsonAdapter exten
             return;
         }
         if (value instanceof MixedTypeInlineAdditionalPropertyAdditionalProperty.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((MixedTypeInlineAdditionalPropertyAdditionalProperty.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedTypeInlineAdditionalPropertyAdditionalProperty.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof MixedTypeInlineAdditionalPropertyAdditionalProperty.VariantString) {
-            gson.toJson(gson.toJsonTree(((MixedTypeInlineAdditionalPropertyAdditionalProperty.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedTypeInlineAdditionalPropertyAdditionalProperty.VariantString) value).value0()), writer);
             return;
         }
     }

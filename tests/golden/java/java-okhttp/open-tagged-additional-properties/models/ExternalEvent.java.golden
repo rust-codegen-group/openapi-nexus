@@ -28,6 +28,7 @@ public sealed interface ExternalEvent {
 
 final class ExternalEventJsonAdapter extends TypeAdapter<ExternalEvent> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public ExternalEvent read (JsonReader reader) throws java.io.IOException {
@@ -51,13 +52,13 @@ final class ExternalEventJsonAdapter extends TypeAdapter<ExternalEvent> {
         if (value instanceof ExternalEvent.VariantStarted) {
             JsonObject object = new JsonObject();
             object.add("started", gson.toJsonTree(((ExternalEvent.VariantStarted) value).value0()));
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof ExternalEvent.VariantFinished) {
             JsonObject object = new JsonObject();
             object.add("finished", gson.toJsonTree(((ExternalEvent.VariantFinished) value).value0()));
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

@@ -11,7 +11,7 @@ use crate::ir::types::{IrSchema, IrSchemaKind, IrSpec};
 
 use super::config::UntaggedUnionStrategy;
 use super::matching::MatchPlan;
-use super::sigil_emit::{java_adapter_read_value, java_adapter_write_case};
+use super::sigil_emit::{java_adapter_read_value, java_adapter_tree_gson, java_adapter_write_case};
 
 pub(super) fn adapter(
     schema: &IrSchema,
@@ -98,6 +98,9 @@ pub(super) fn adapter(
         .add_field(field)
         .add_method(read)
         .add_method(write);
+    if !raw {
+        adapter = adapter.add_field(java_adapter_tree_gson()?);
+    }
     for helper in matching.functions(ir)? {
         adapter = adapter.add_method(helper);
     }

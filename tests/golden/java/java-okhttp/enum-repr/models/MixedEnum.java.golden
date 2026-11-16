@@ -36,6 +36,7 @@ public sealed interface MixedEnum {
 
 final class MixedEnumJsonAdapter extends TypeAdapter<MixedEnum> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public MixedEnum read(JsonReader reader) throws java.io.IOException {
@@ -78,19 +79,19 @@ final class MixedEnumJsonAdapter extends TypeAdapter<MixedEnum> {
             return;
         }
         if (value instanceof MixedEnum.VariantSimpleA) {
-            gson.toJson(gson.toJsonTree(((MixedEnum.VariantSimpleA) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedEnum.VariantSimpleA) value).value0()), writer);
             return;
         }
         if (value instanceof MixedEnum.VariantMixedEnumMember2) {
-            gson.toJson(gson.toJsonTree(((MixedEnum.VariantMixedEnumMember2) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedEnum.VariantMixedEnumMember2) value).value0()), writer);
             return;
         }
         if (value instanceof MixedEnum.VariantSimpleB) {
-            gson.toJson(gson.toJsonTree(((MixedEnum.VariantSimpleB) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedEnum.VariantSimpleB) value).value0()), writer);
             return;
         }
         if (value instanceof MixedEnum.VariantMixedEnumMember4) {
-            gson.toJson(gson.toJsonTree(((MixedEnum.VariantMixedEnumMember4) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedEnum.VariantMixedEnumMember4) value).value0()), writer);
             return;
         }
     }

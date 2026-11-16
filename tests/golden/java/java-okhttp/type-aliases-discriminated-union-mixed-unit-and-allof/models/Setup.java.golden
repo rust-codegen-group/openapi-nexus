@@ -38,6 +38,7 @@ public sealed interface Setup {
 
 final class SetupJsonAdapter extends TypeAdapter<Setup> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Setup read (JsonReader reader) throws java.io.IOException {
@@ -65,19 +66,19 @@ final class SetupJsonAdapter extends TypeAdapter<Setup> {
         if (value instanceof Setup.VariantSetupUnspecified) {
             JsonObject object = new JsonObject();
             object.addProperty("kind", "SETUP_UNSPECIFIED");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Setup.VariantSetupQuick) {
             JsonObject object = gson.toJsonTree(((Setup.VariantSetupQuick) value).value0()).getAsJsonObject();
             object.addProperty("kind", "SETUP_QUICK");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof Setup.VariantSetupCustom) {
             JsonObject object = gson.toJsonTree(((Setup.VariantSetupCustom) value).value0()).getAsJsonObject();
             object.addProperty("kind", "SETUP_CUSTOM");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

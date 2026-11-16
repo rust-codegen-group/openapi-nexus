@@ -25,6 +25,7 @@ public sealed interface FiniteChoice {
 
 final class FiniteChoiceJsonAdapter extends TypeAdapter<FiniteChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public FiniteChoice read(JsonReader reader) throws java.io.IOException {
@@ -61,11 +62,11 @@ final class FiniteChoiceJsonAdapter extends TypeAdapter<FiniteChoice> {
             return;
         }
         if (value instanceof FiniteChoice.VariantFiniteOne) {
-            gson.toJson(gson.toJsonTree(((FiniteChoice.VariantFiniteOne) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((FiniteChoice.VariantFiniteOne) value).value0()), writer);
             return;
         }
         if (value instanceof FiniteChoice.VariantFiniteTwo) {
-            gson.toJson(gson.toJsonTree(((FiniteChoice.VariantFiniteTwo) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((FiniteChoice.VariantFiniteTwo) value).value0()), writer);
             return;
         }
     }
