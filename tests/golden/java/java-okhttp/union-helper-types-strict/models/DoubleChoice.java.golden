@@ -25,6 +25,7 @@ public sealed interface DoubleChoice {
 
 final class DoubleChoiceJsonAdapter extends TypeAdapter<DoubleChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public DoubleChoice read(JsonReader reader) throws java.io.IOException {
@@ -61,11 +62,11 @@ final class DoubleChoiceJsonAdapter extends TypeAdapter<DoubleChoice> {
             return;
         }
         if (value instanceof DoubleChoice.VariantNumber) {
-            gson.toJson(gson.toJsonTree(((DoubleChoice.VariantNumber) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((DoubleChoice.VariantNumber) value).value0()), writer);
             return;
         }
         if (value instanceof DoubleChoice.VariantString) {
-            gson.toJson(gson.toJsonTree(((DoubleChoice.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((DoubleChoice.VariantString) value).value0()), writer);
             return;
         }
     }

@@ -25,6 +25,7 @@ public sealed interface Tree {
 
 final class TreeJsonAdapter extends TypeAdapter<Tree> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Tree read(JsonReader reader) throws java.io.IOException {
@@ -65,11 +66,11 @@ final class TreeJsonAdapter extends TypeAdapter<Tree> {
             return;
         }
         if (value instanceof Tree.VariantBranchOne) {
-            gson.toJson(gson.toJsonTree(((Tree.VariantBranchOne) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Tree.VariantBranchOne) value).value0()), writer);
             return;
         }
         if (value instanceof Tree.VariantBranchTwo) {
-            gson.toJson(gson.toJsonTree(((Tree.VariantBranchTwo) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Tree.VariantBranchTwo) value).value0()), writer);
             return;
         }
     }

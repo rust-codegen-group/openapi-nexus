@@ -25,6 +25,7 @@ public sealed interface DictionaryChoice {
 
 final class DictionaryChoiceJsonAdapter extends TypeAdapter<DictionaryChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public DictionaryChoice read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class DictionaryChoiceJsonAdapter extends TypeAdapter<DictionaryChoice> {
             return;
         }
         if (value instanceof DictionaryChoice.VariantTypedMap) {
-            gson.toJson(gson.toJsonTree(((DictionaryChoice.VariantTypedMap) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((DictionaryChoice.VariantTypedMap) value).value0()), writer);
             return;
         }
         if (value instanceof DictionaryChoice.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((DictionaryChoice.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((DictionaryChoice.VariantInteger) value).value0()), writer);
             return;
         }
     }

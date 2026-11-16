@@ -12,7 +12,11 @@ alongside models named `Integer`, `Long`, `Float`, `Double` and `Boolean`. They
 verify numeric scalar delegates, primitive lists/maps and nested Boolean containers
 retain boxed identities while authored `Integer` members and lists keep their model
 identity. Numeric controls also exercise extreme exponents without weakening native
-delegate errors or finite-value precision.
+delegate errors or finite-value precision. The typed-union tree consumer covers
+oneOf/anyOf and internal, adjacent, and external tags, retaining explicit null
+entries and exact raw numbers without changing ordinary member field omission.
+Native stream and tree writes, plus successful and failing writer state
+restoration, are checked independently.
 Java's additional-property consumers cover pure and mixed objects under all
 three union policies, typed mutable storage, opaque JSON precision/nulls, native
 integer errors, storage/helper collisions, recursion and configured Gson delegates.

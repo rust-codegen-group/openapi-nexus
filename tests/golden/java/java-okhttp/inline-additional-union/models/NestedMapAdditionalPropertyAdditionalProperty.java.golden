@@ -25,6 +25,7 @@ public sealed interface NestedMapAdditionalPropertyAdditionalProperty {
 
 final class NestedMapAdditionalPropertyAdditionalPropertyJsonAdapter extends TypeAdapter<NestedMapAdditionalPropertyAdditionalProperty> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public NestedMapAdditionalPropertyAdditionalProperty read(JsonReader reader) throws java.io.IOException {
@@ -56,11 +57,11 @@ final class NestedMapAdditionalPropertyAdditionalPropertyJsonAdapter extends Typ
             return;
         }
         if (value instanceof NestedMapAdditionalPropertyAdditionalProperty.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((NestedMapAdditionalPropertyAdditionalProperty.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NestedMapAdditionalPropertyAdditionalProperty.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof NestedMapAdditionalPropertyAdditionalProperty.VariantString) {
-            gson.toJson(gson.toJsonTree(((NestedMapAdditionalPropertyAdditionalProperty.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NestedMapAdditionalPropertyAdditionalProperty.VariantString) value).value0()), writer);
             return;
         }
     }

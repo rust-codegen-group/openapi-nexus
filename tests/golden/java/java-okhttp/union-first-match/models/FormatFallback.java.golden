@@ -25,6 +25,7 @@ public sealed interface FormatFallback {
 
 final class FormatFallbackJsonAdapter extends TypeAdapter<FormatFallback> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public FormatFallback read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class FormatFallbackJsonAdapter extends TypeAdapter<FormatFallback> {
             return;
         }
         if (value instanceof FormatFallback.VariantNarrow) {
-            gson.toJson(gson.toJsonTree(((FormatFallback.VariantNarrow) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((FormatFallback.VariantNarrow) value).value0()), writer);
             return;
         }
         if (value instanceof FormatFallback.VariantAny) {
-            gson.toJson(gson.toJsonTree(((FormatFallback.VariantAny) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((FormatFallback.VariantAny) value).value0()), writer);
             return;
         }
     }

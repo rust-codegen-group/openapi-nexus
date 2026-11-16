@@ -25,6 +25,7 @@ public sealed interface SelectionInline {
 
 final class SelectionInlineJsonAdapter extends TypeAdapter<SelectionInline> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public SelectionInline read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class SelectionInlineJsonAdapter extends TypeAdapter<SelectionInline> {
             return;
         }
         if (value instanceof SelectionInline.VariantConstrainedInline) {
-            gson.toJson(gson.toJsonTree(((SelectionInline.VariantConstrainedInline) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((SelectionInline.VariantConstrainedInline) value).value0()), writer);
             return;
         }
         if (value instanceof SelectionInline.VariantString) {
-            gson.toJson(gson.toJsonTree(((SelectionInline.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((SelectionInline.VariantString) value).value0()), writer);
             return;
         }
     }

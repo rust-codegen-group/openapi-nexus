@@ -30,6 +30,7 @@ public sealed interface PrimitiveContainers {
 
 final class PrimitiveContainersJsonAdapter extends TypeAdapter<PrimitiveContainers> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public PrimitiveContainers read(JsonReader reader) throws java.io.IOException {
@@ -76,15 +77,15 @@ final class PrimitiveContainersJsonAdapter extends TypeAdapter<PrimitiveContaine
             return;
         }
         if (value instanceof PrimitiveContainers.VariantArray) {
-            gson.toJson(gson.toJsonTree(((PrimitiveContainers.VariantArray) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((PrimitiveContainers.VariantArray) value).value0()), writer);
             return;
         }
         if (value instanceof PrimitiveContainers.VariantMap) {
-            gson.toJson(gson.toJsonTree(((PrimitiveContainers.VariantMap) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((PrimitiveContainers.VariantMap) value).value0()), writer);
             return;
         }
         if (value instanceof PrimitiveContainers.VariantString) {
-            gson.toJson(gson.toJsonTree(((PrimitiveContainers.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((PrimitiveContainers.VariantString) value).value0()), writer);
             return;
         }
     }

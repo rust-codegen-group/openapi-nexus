@@ -25,6 +25,7 @@ public sealed interface InlineOneOfAdditionalProperty {
 
 final class InlineOneOfAdditionalPropertyJsonAdapter extends TypeAdapter<InlineOneOfAdditionalProperty> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public InlineOneOfAdditionalProperty read(JsonReader reader) throws java.io.IOException {
@@ -56,11 +57,11 @@ final class InlineOneOfAdditionalPropertyJsonAdapter extends TypeAdapter<InlineO
             return;
         }
         if (value instanceof InlineOneOfAdditionalProperty.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((InlineOneOfAdditionalProperty.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((InlineOneOfAdditionalProperty.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof InlineOneOfAdditionalProperty.VariantString) {
-            gson.toJson(gson.toJsonTree(((InlineOneOfAdditionalProperty.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((InlineOneOfAdditionalProperty.VariantString) value).value0()), writer);
             return;
         }
     }

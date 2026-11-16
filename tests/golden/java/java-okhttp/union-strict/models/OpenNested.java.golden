@@ -25,6 +25,7 @@ public sealed interface OpenNested {
 
 final class OpenNestedJsonAdapter extends TypeAdapter<OpenNested> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public OpenNested read(JsonReader reader) throws java.io.IOException {
@@ -58,11 +59,11 @@ final class OpenNestedJsonAdapter extends TypeAdapter<OpenNested> {
             return;
         }
         if (value instanceof OpenNested.VariantAmbiguousAlias) {
-            gson.toJson(gson.toJsonTree(((OpenNested.VariantAmbiguousAlias) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((OpenNested.VariantAmbiguousAlias) value).value0()), writer);
             return;
         }
         if (value instanceof OpenNested.VariantAny) {
-            gson.toJson(gson.toJsonTree(((OpenNested.VariantAny) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((OpenNested.VariantAny) value).value0()), writer);
             return;
         }
     }

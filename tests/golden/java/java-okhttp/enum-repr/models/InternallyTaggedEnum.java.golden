@@ -40,6 +40,7 @@ public sealed interface InternallyTaggedEnum {
 
 final class InternallyTaggedEnumJsonAdapter extends TypeAdapter<InternallyTaggedEnum> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public InternallyTaggedEnum read (JsonReader reader) throws java.io.IOException {
@@ -64,13 +65,13 @@ final class InternallyTaggedEnumJsonAdapter extends TypeAdapter<InternallyTagged
         if (value instanceof InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA) {
             JsonObject object = gson.toJsonTree(((InternallyTaggedEnum.VariantInternallyTaggedEnumVariantA) value).value0()).getAsJsonObject();
             object.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_A");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
         if (value instanceof InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB) {
             JsonObject object = gson.toJsonTree(((InternallyTaggedEnum.VariantInternallyTaggedEnumVariantB) value).value0()).getAsJsonObject();
             object.addProperty("ty", "INTERNALLY_TAGGED_ENUM_VARIANT_B");
-            gson.toJson(object, writer);
+            treeGson.toJson(object, writer);
             return;
         }
     }

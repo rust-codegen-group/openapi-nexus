@@ -51,8 +51,17 @@ models keep their existing APIs and codecs.
 Typed variants retain declared member payloads, not arbitrary unknown fields.
 Explicit additional-property storage is described below. Use raw mode when all
 JSON must be retained, including unknown keys, null-valued object entries, and
-large numeric literals. Raw writing restores the surrounding Gson writer's null
-policy; ordinary sibling model fields keep their normal null omission.
+large numeric literals.
+
+Typed union writers preserve explicit null entries already retained in a member's
+JSON tree, including stored extensions and composed map/raw values. This applies
+to oneOf/anyOf and internal, adjacent, and external tagged unions. Member codecs
+still decide which ordinary fields to omit; null preservation is enabled only for
+the final tree write. Both typed and raw writing restore the surrounding writer's
+null policy on success and failure, so ordinary sibling fields keep their normal
+null omission. Serialize with the declared union type, such as
+`gson.toJson(value, Choice.class)` or `gson.toJsonTree(value, Choice.class)`, rather
+than the runtime variant record's class.
 
 The policy can also be set through the CLI:
 
@@ -158,8 +167,6 @@ The private runtime uses Gson 2.11.0's `JsonTreeReader`, `JsonTreeWriter` and
 numeric output and lexemes. Generated dependencies remain unchanged. Kotlin
 composition, ordinary alias repair and generation formatting remain separate.
 
-An existing typed-union writer limitation can omit explicit null entries when it
-re-emits a selected member's JSON tree, including ordinary open objects without
-any allOf. Flat matcher support does not repair that surrounding writer boundary;
-allOf model, ordinary containing-object and HTTP codec behavior are tested
-independently of it.
+A surrounding typed union preserves explicit null entries retained by the allOf
+member's codec. The union's final tree write does not enable null output for
+ordinary member fields or change the member's public API.

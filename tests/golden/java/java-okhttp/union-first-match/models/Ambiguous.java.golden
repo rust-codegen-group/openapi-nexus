@@ -25,6 +25,7 @@ public sealed interface Ambiguous {
 
 final class AmbiguousJsonAdapter extends TypeAdapter<Ambiguous> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Ambiguous read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class AmbiguousJsonAdapter extends TypeAdapter<Ambiguous> {
             return;
         }
         if (value instanceof Ambiguous.VariantAlpha) {
-            gson.toJson(gson.toJsonTree(((Ambiguous.VariantAlpha) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Ambiguous.VariantAlpha) value).value0()), writer);
             return;
         }
         if (value instanceof Ambiguous.VariantBeta) {
-            gson.toJson(gson.toJsonTree(((Ambiguous.VariantBeta) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Ambiguous.VariantBeta) value).value0()), writer);
             return;
         }
     }

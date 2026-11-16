@@ -605,10 +605,12 @@ fn java_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitc
         .collect::<Result<Vec<_>, _>>()?;
     let adapter_name = format!("{}JsonAdapter", plan.name);
     let root_name = plan.name.as_str();
+    let tree_gson = java_adapter_tree_gson()?.emit(&Java::new(), DeclarationContext::Member)?;
 
     sigil_quote!(Java {
         final class $N(adapter_name) extends TypeAdapter<$N(root_name)> {
             private final Gson gson = new Gson();
+            $C(tree_gson)
 
             @Override
             public $N(root_name) read(JsonReader reader) throws java.io.IOException {
@@ -776,6 +778,23 @@ pub(super) fn java_adapter_read_value(
     })
 }
 
+pub(super) fn java_adapter_tree_gson() -> Result<FieldSpec, SigilStitchError> {
+    // Only the final tree serializer retains explicit nulls. Keep member codecs
+    // unchanged and derive the other writer settings from the same Gson so its
+    // escaping, strictness, failure wrapping and state restoration stay intact.
+    let initializer = sigil_quote!(Java { gson.newBuilder().serializeNulls().create() })
+        .map_err(|error| SigilStitchError::Render {
+            context: "Java union tree serializer initializer".to_string(),
+            message: error.to_string(),
+        })?
+        .__sigil_trim_trailing_newline();
+    FieldSpec::builder("treeGson", TypeName::importable("com.google.gson", "Gson"))
+        .visibility(Visibility::Private)
+        .is_readonly()
+        .initializer(initializer)
+        .build()
+}
+
 pub(super) fn java_adapter_write_case(
     plan: &ClosedSumPlan,
     case: &ClosedSumCasePlan,
@@ -788,7 +807,7 @@ pub(super) fn java_adapter_write_case(
                 sigil_quote!(Java { writer.nullValue(); })?
             } else {
                 sigil_quote!(Java {
-                    gson.toJson(gson.toJsonTree((( $N(root_name).$N(case_name) ) value).value0()), writer);
+                    treeGson.toJson(gson.toJsonTree((( $N(root_name).$N(case_name) ) value).value0()), writer);
                 })?
             }
         }
@@ -800,13 +819,13 @@ pub(super) fn java_adapter_write_case(
                 sigil_quote!(Java {
                     JsonObject object = gson.toJsonTree((( $N(root_name).$N(case_name) ) value).value0()).getAsJsonObject();
                     object.addProperty($S(discriminator_field), $S(wire_name));
-                    gson.toJson(object, writer);
+                    treeGson.toJson(object, writer);
                 })?
             } else {
                 sigil_quote!(Java {
                     JsonObject object = new JsonObject();
                     object.addProperty($S(discriminator_field), $S(wire_name));
-                    gson.toJson(object, writer);
+                    treeGson.toJson(object, writer);
                 })?
             }
         }
@@ -820,13 +839,13 @@ pub(super) fn java_adapter_write_case(
                     JsonObject object = new JsonObject();
                     object.addProperty($S(discriminator_field), $S(wire_name));
                     object.add($S(content_field), gson.toJsonTree((( $N(root_name).$N(case_name) ) value).value0()));
-                    gson.toJson(object, writer);
+                    treeGson.toJson(object, writer);
                 })?
             } else {
                 sigil_quote!(Java {
                     JsonObject object = new JsonObject();
                     object.addProperty($S(discriminator_field), $S(wire_name));
-                    gson.toJson(object, writer);
+                    treeGson.toJson(object, writer);
                 })?
             }
         }
@@ -836,13 +855,13 @@ pub(super) fn java_adapter_write_case(
                 sigil_quote!(Java {
                     JsonObject object = new JsonObject();
                     object.add($S(wire_name), gson.toJsonTree((( $N(root_name).$N(case_name) ) value).value0()));
-                    gson.toJson(object, writer);
+                    treeGson.toJson(object, writer);
                 })?
             } else {
                 sigil_quote!(Java {
                     JsonObject object = new JsonObject();
                     object.add($S(wire_name), JsonNull.INSTANCE);
-                    gson.toJson(object, writer);
+                    treeGson.toJson(object, writer);
                 })?
             }
         }
@@ -1080,6 +1099,7 @@ import com.google.gson.stream.JsonWriter;
 
 final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public Choice read(JsonReader reader) throws java.io.IOException {
@@ -1104,7 +1124,7 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
             return;
         }
         if (value instanceof Choice.VariantString) {
-            gson.toJson(gson.toJsonTree(((Choice.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((Choice.VariantString) value).value0()), writer);
             return;
         }
     }

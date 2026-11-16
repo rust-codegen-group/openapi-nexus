@@ -25,6 +25,7 @@ public sealed interface OpaqueFirst {
 
 final class OpaqueFirstJsonAdapter extends TypeAdapter<OpaqueFirst> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public OpaqueFirst read(JsonReader reader) throws java.io.IOException {
@@ -58,11 +59,11 @@ final class OpaqueFirstJsonAdapter extends TypeAdapter<OpaqueFirst> {
             return;
         }
         if (value instanceof OpaqueFirst.VariantAny) {
-            gson.toJson(gson.toJsonTree(((OpaqueFirst.VariantAny) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((OpaqueFirst.VariantAny) value).value0()), writer);
             return;
         }
         if (value instanceof OpaqueFirst.VariantFiniteTwo) {
-            gson.toJson(gson.toJsonTree(((OpaqueFirst.VariantFiniteTwo) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((OpaqueFirst.VariantFiniteTwo) value).value0()), writer);
             return;
         }
     }

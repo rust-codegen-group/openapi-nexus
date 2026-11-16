@@ -27,6 +27,7 @@ public sealed interface NamedIntegerListChoice {
 
 final class NamedIntegerListChoiceJsonAdapter extends TypeAdapter<NamedIntegerListChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public NamedIntegerListChoice read(JsonReader reader) throws java.io.IOException {
@@ -63,11 +64,11 @@ final class NamedIntegerListChoiceJsonAdapter extends TypeAdapter<NamedIntegerLi
             return;
         }
         if (value instanceof NamedIntegerListChoice.VariantArray) {
-            gson.toJson(gson.toJsonTree(((NamedIntegerListChoice.VariantArray) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NamedIntegerListChoice.VariantArray) value).value0()), writer);
             return;
         }
         if (value instanceof NamedIntegerListChoice.VariantString) {
-            gson.toJson(gson.toJsonTree(((NamedIntegerListChoice.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((NamedIntegerListChoice.VariantString) value).value0()), writer);
             return;
         }
     }

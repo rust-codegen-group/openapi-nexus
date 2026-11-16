@@ -25,6 +25,7 @@ public sealed interface ContainerItem {
 
 final class ContainerItemJsonAdapter extends TypeAdapter<ContainerItem> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public ContainerItem read(JsonReader reader) throws java.io.IOException {
@@ -59,11 +60,11 @@ final class ContainerItemJsonAdapter extends TypeAdapter<ContainerItem> {
             return;
         }
         if (value instanceof ContainerItem.VariantResultItem) {
-            gson.toJson(gson.toJsonTree(((ContainerItem.VariantResultItem) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((ContainerItem.VariantResultItem) value).value0()), writer);
             return;
         }
         if (value instanceof ContainerItem.VariantString) {
-            gson.toJson(gson.toJsonTree(((ContainerItem.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((ContainerItem.VariantString) value).value0()), writer);
             return;
         }
     }

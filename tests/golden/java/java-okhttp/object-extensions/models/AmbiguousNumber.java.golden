@@ -25,6 +25,7 @@ public sealed interface AmbiguousNumber {
 
 final class AmbiguousNumberJsonAdapter extends TypeAdapter<AmbiguousNumber> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public AmbiguousNumber read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class AmbiguousNumberJsonAdapter extends TypeAdapter<AmbiguousNumber> {
             return;
         }
         if (value instanceof AmbiguousNumber.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((AmbiguousNumber.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((AmbiguousNumber.VariantInteger) value).value0()), writer);
             return;
         }
         if (value instanceof AmbiguousNumber.VariantNumber) {
-            gson.toJson(gson.toJsonTree(((AmbiguousNumber.VariantNumber) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((AmbiguousNumber.VariantNumber) value).value0()), writer);
             return;
         }
     }

@@ -25,6 +25,7 @@ public sealed interface MixedChoice {
 
 final class MixedChoiceJsonAdapter extends TypeAdapter<MixedChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public MixedChoice read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class MixedChoiceJsonAdapter extends TypeAdapter<MixedChoice> {
             return;
         }
         if (value instanceof MixedChoice.VariantMixedMap) {
-            gson.toJson(gson.toJsonTree(((MixedChoice.VariantMixedMap) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedChoice.VariantMixedMap) value).value0()), writer);
             return;
         }
         if (value instanceof MixedChoice.VariantString) {
-            gson.toJson(gson.toJsonTree(((MixedChoice.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((MixedChoice.VariantString) value).value0()), writer);
             return;
         }
     }

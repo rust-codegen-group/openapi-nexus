@@ -25,6 +25,7 @@ public sealed interface ValueChoice {
 
 final class ValueChoiceJsonAdapter extends TypeAdapter<ValueChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public ValueChoice read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class ValueChoiceJsonAdapter extends TypeAdapter<ValueChoice> {
             return;
         }
         if (value instanceof ValueChoice.VariantNestedValue) {
-            gson.toJson(gson.toJsonTree(((ValueChoice.VariantNestedValue) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((ValueChoice.VariantNestedValue) value).value0()), writer);
             return;
         }
         if (value instanceof ValueChoice.VariantInteger) {
-            gson.toJson(gson.toJsonTree(((ValueChoice.VariantInteger) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((ValueChoice.VariantInteger) value).value0()), writer);
             return;
         }
     }

@@ -29,6 +29,7 @@ public sealed interface AnyOfTypes {
 
 final class AnyOfTypesJsonAdapter extends TypeAdapter<AnyOfTypes> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public AnyOfTypes read(JsonReader reader) throws java.io.IOException {
@@ -59,11 +60,11 @@ final class AnyOfTypesJsonAdapter extends TypeAdapter<AnyOfTypes> {
             return;
         }
         if (value instanceof AnyOfTypes.VariantString) {
-            gson.toJson(gson.toJsonTree(((AnyOfTypes.VariantString) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((AnyOfTypes.VariantString) value).value0()), writer);
             return;
         }
         if (value instanceof AnyOfTypes.VariantNumber) {
-            gson.toJson(gson.toJsonTree(((AnyOfTypes.VariantNumber) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((AnyOfTypes.VariantNumber) value).value0()), writer);
             return;
         }
     }

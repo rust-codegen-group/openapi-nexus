@@ -25,6 +25,7 @@ public sealed interface AliasChoice {
 
 final class AliasChoiceJsonAdapter extends TypeAdapter<AliasChoice> {
     private final Gson gson = new Gson();
+    private final Gson treeGson = gson.newBuilder().serializeNulls().create();
 
     @Override
     public AliasChoice read(JsonReader reader) throws java.io.IOException {
@@ -55,11 +56,11 @@ final class AliasChoiceJsonAdapter extends TypeAdapter<AliasChoice> {
             return;
         }
         if (value instanceof AliasChoice.VariantNumberAlias) {
-            gson.toJson(gson.toJsonTree(((AliasChoice.VariantNumberAlias) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((AliasChoice.VariantNumberAlias) value).value0()), writer);
             return;
         }
         if (value instanceof AliasChoice.VariantAlpha) {
-            gson.toJson(gson.toJsonTree(((AliasChoice.VariantAlpha) value).value0()), writer);
+            treeGson.toJson(gson.toJsonTree(((AliasChoice.VariantAlpha) value).value0()), writer);
             return;
         }
     }
