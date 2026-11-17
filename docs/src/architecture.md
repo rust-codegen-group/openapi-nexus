@@ -41,7 +41,8 @@ src/
 ├── config/           Configuration loading (CLI > env > TOML > defaults)
 ├── ir/               IrSpec types and lowering passes
 │   ├── dependencies.rs  Direct schema dependency facts, separate from support policy
-│   └── lower/        v30.rs, v31.rs, v32.rs, names.rs, references.rs
+│   ├── schema_edges.rs  Raw schema-edge adapters with lowering/fact projections
+│   └── lower/        v30.rs, v31.rs, v32.rs, names.rs, references.rs, type_set.rs
 ├── spec/             Raw OAS types (v30, v31, v32)
 ├── parser/           YAML/JSON parsing, OAS version auto-detection
 └── generators/       One submodule per generator

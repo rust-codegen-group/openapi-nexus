@@ -20,61 +20,34 @@ pub(crate) trait SchemaDependencies {
     fn schema_dependencies(&self) -> IndexSet<&str>;
 }
 
-macro_rules! adapt_object_schema {
-    ($version:ident) => {
-        impl SchemaDependencies for crate::spec::$version::spec::ObjectSchema {
-            fn schema_dependencies(&self) -> IndexSet<&str> {
-                use crate::spec::$version::spec::{ObjectOrReference, ObjectSchema, Schema};
+use crate::ir::schema_edges::{SchemaEdgeMode, SchemaEdges};
 
-                fn collect_member<'a>(
-                    member: &'a ObjectOrReference<ObjectSchema>,
-                    dependencies: &mut IndexSet<&'a str>,
-                ) {
-                    match member {
-                        ObjectOrReference::Ref { ref_path, .. } => {
-                            if let Some(name) = ref_path.strip_prefix("#/components/schemas/") {
-                                dependencies.insert(name);
-                            }
-                        }
-                        ObjectOrReference::Object(object) => collect_object(object, dependencies),
-                    }
-                }
-
-                fn collect_object<'a>(
-                    object: &'a ObjectSchema,
-                    dependencies: &mut IndexSet<&'a str>,
-                ) {
-                    for member in object
-                        .all_of
-                        .iter()
-                        .chain(&object.any_of)
-                        .chain(&object.one_of)
-                        .chain(object.properties.values())
+impl<S> SchemaDependencies for S
+where
+    S: SchemaEdges,
+{
+    fn schema_dependencies(&self) -> IndexSet<&str> {
+        fn collect<'a, S: SchemaEdges>(schema: &'a S, dependencies: &mut IndexSet<&'a str>) {
+            schema
+                .visit_edges(SchemaEdgeMode::DependencyFacts, |member| {
+                    if let Some(reference) = S::reference(member)
+                        && let Some(name) = reference.strip_prefix("#/components/schemas/")
                     {
-                        collect_member(member, dependencies);
+                        dependencies.insert(name);
                     }
-                    for schema in object
-                        .items
-                        .as_deref()
-                        .into_iter()
-                        .chain(object.additional_properties.as_ref())
-                    {
-                        if let Schema::Object(member) = schema {
-                            collect_member(member, dependencies);
-                        }
+                    if let Some(object) = S::object(member) {
+                        collect(object, dependencies);
                     }
-                }
-
-                let mut dependencies = IndexSet::new();
-                collect_object(self, &mut dependencies);
-                dependencies
-            }
+                    Ok(())
+                })
+                .expect("dependency edge traversal is infallible");
         }
-    };
-}
 
-adapt_object_schema!(oas31);
-adapt_object_schema!(oas32);
+        let mut dependencies = IndexSet::new();
+        collect(self, &mut dependencies);
+        dependencies
+    }
+}
 
 impl SchemaDependencies for IrSpec {
     fn schema_dependencies(&self) -> IndexSet<&str> {
