@@ -8,6 +8,7 @@ mod opaque;
 pub mod runtime;
 pub mod sigil_emit;
 pub mod sigil_emit_api;
+mod symbols;
 mod union;
 pub mod util;
 

@@ -165,6 +165,31 @@ arrays and maps:
 | Array that may itself be null | `Nullable(Array(T))` |
 
 Array aliases and references to promoted inline items preserve these wrappers.
+Inline `additionalProperties` unions also use ordinary schema promotion in every
+supported OpenAPI version. Their owner-scoped named schemas retain the same
+alternatives, inline object members, and nullable-union facts as an equivalent
+component reference. Arrays and maps keep their container shape while carrying
+that naming context to nested union values; recursive `$ref` edges stay named.
+Mixed OpenAPI 3.1/3.2 type sets retain every branch when no composition
+assertion owns the node: promoting dictionary values in `[object, string]` does
+not discard the string alternative, and array branches can carry the same
+context. Object branches with properties or required fields are promoted as
+named object members of that union, rather than replacing the union. When
+`type` is combined with `oneOf`, `anyOf`, or `allOf`, the composition remains the
+owning IR kind instead of being replaced by a terminal type-set alias; the
+type-set planner is not applied across that composition boundary. Container
+promotion keeps finite-enum constraints at the node that declared them,
+including nullable arrays constrained to null only.
+
+Synthetic schema names reserve the shared canonical model-word identity of all
+authored components before allocation, avoiding case/separator collisions without
+renaming authored models. Target-specific escaping and auxiliary artifact names
+remain generator decisions. Kotlin's generator-owned symbol planner applies the
+same reservation rule to Gson adapters and other package-local union declarations.
+HTTP(S) references are rejected only in semantic branches consumed by lowering;
+ignored siblings such as enum-displaced properties are not traversed. Local named
+references remain terminal and are not expanded during that validation.
+
 For object properties, the outer nullable wrapper is recorded in
 `IrProperty.nullable`; nested wrappers remain in `type_expr`. A nullable
 container does not make its contents nullable, and nullability is independent

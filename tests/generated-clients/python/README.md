@@ -16,10 +16,27 @@ just golden-python-clients::test httpx
 just golden-python-clients::test requests
 ```
 
-`prepare` generates both fixtures under all three policies; `build` runs strict pyright against the
+`prepare` generates all three fixtures under all three policies; `build` runs strict pyright against the
 unchanged output; `test` uses `${PYTHON:-python3}` (locally Python 3.15.0).
 The declared SDK minimum remains Python 3.12, which is also the type-check target.
 Both backends run the same contracts. Tests never patch generated source.
+
+The shared [inline additional-property union fixture](../../fixtures/valid/inline-additional-union.yaml)
+uses independent `inline_default`, `inline_strict`, and `inline_raw` packages under
+`generated/<backend>/inline/<policy>/`. Native contracts compare inline anyOf,
+inline oneOf, and referenced integer/string alternatives, including nested maps
+and arrays. Both conversion directions reject unmatched booleans, lists, objects,
+and nulls under `strict`, while `default` and `raw` preserve their complete wire
+values. Public declaration checks retain typed default/strict entries and opaque
+raw entries. Generation, checking, and runner orchestration remain in just.
+
+Public contracts also cover constrained nullable arrays through enclosing
+selections, mixed object/string dictionary type sets, and normalized helper-name
+collisions. Strict selection rejects an integer array when the authored outer
+enum permits only null, while default/raw preserve that wire value; null remains
+a valid round-trip. Mixed maps retain nested integer/string alternatives and
+reject inner booleans under strict, while raw keeps the opaque subtree. Collision
+cases require the promoted helper and authored model to remain distinct.
 
 For complete validation, run `just golden-python::build-httpx` or
 `just golden-python::build-requests`. Each checks every golden and then runs these

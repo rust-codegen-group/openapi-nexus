@@ -1,0 +1,18 @@
+openapi: 3.1.0
+info:
+  title: Kotlin Adapter Symbols
+  version: '1'
+paths: {}
+components:
+  schemas:
+    Values:
+      type: object
+      additionalProperties:
+        anyOf:
+          - type: integer
+          - type: string
+    ValuesAdditionalPropertyJsonAdapter:
+      type: object
+      properties:
+        marker:
+          type: string

@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: Inline Additional Union
+  version: '1'
+paths: {}
+components:
+  schemas:
+    Inline:
+      type: object
+      additionalProperties:
+        anyOf:
+          - type: integer
+          - type: string
+    Referenced:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Choice'
+    Choice:
+      anyOf:
+        - type: integer
+        - type: string
+    InlineOneOf:
+      type: object
+      additionalProperties:
+        oneOf:
+          - type: integer
+          - type: string
+    Mixed:
+      type: object
+      properties:
+        label:
+          type: string
+      additionalProperties:
+        anyOf:
+          - type: integer
+          - type: string
+    NestedMap:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          anyOf:
+            - type: integer
+            - type: string
+    NestedArray:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: integer
+              - type: string
+    ConstrainedInline:
+      type: object
+      additionalProperties:
+        type: [array, 'null']
+        enum: [null]
+        items:
+          anyOf:
+            - type: integer
+            - type: string
+    ConstrainedRef:
+      type: object
+      additionalProperties:
+        type: [array, 'null']
+        enum: [null]
+        items:
+          $ref: '#/components/schemas/Choice'
+    SelectionInline:
+      anyOf:
+        - $ref: '#/components/schemas/ConstrainedInline'
+        - type: string
+    SelectionRef:
+      anyOf:
+        - $ref: '#/components/schemas/ConstrainedRef'
+        - type: string
+    MixedTypeInline:
+      type: object
+      additionalProperties:
+        type: [object, string]
+        additionalProperties:
+          anyOf:
+            - type: integer
+            - type: string
+    MixedTypeRef:
+      type: object
+      additionalProperties:
+        type: [object, string]
+        additionalProperties:
+          $ref: '#/components/schemas/Choice'
+    CollisionMap:
+      type: object
+      additionalProperties:
+        anyOf:
+          - type: integer
+          - type: string
+    collisionMapAdditionalProperty:
+      type: object
+      required: [marker]
+      properties:
+        marker:
+          type: string

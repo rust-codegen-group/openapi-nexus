@@ -6,6 +6,8 @@
 
 mod boolean_components;
 mod composition;
+mod names;
+mod references;
 mod tagged;
 pub mod v30;
 pub mod v31;

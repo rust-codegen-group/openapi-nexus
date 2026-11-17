@@ -21,6 +21,7 @@ const UPDATE_HINT: &str = "UPDATE_GOLDEN=1 cargo test --test golden_tests_rust_u
 #[rustfmt::skip]
 fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
     test_cases_from_slice(&[
+        ("inline-additional-union", "valid/inline-additional-union.yaml"),
         ("tagged-allof-payloads", "valid/tagged-allof-payloads.yaml"),
         ("petstore", "valid/petstore.yaml"),
         ("minimal", "valid/minimal.yaml"),
@@ -113,6 +114,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_inline_additional_union_golden: "inline-additional-union",
     test_tagged_allof_payloads_golden: "tagged-allof-payloads",
     test_nested_nullable_golden: "nested-nullable",
     test_petstore_golden: "petstore",

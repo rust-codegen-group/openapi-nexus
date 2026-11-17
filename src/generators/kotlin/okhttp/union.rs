@@ -17,6 +17,7 @@ pub(super) fn adapter(
     plan: &ClosedSumPlan,
     ir: &IrSpec,
     strategy: UntaggedUnionStrategy,
+    adapter_name: &str,
 ) -> Result<CodeBlock, SigilStitchError> {
     let raw = strategy == UntaggedUnionStrategy::Raw;
     let mut matching = MatchPlan::default();
@@ -88,7 +89,7 @@ pub(super) fn adapter(
         .is_readonly()
         .initializer(sigil_quote!(Kotlin { Gson() })?.__sigil_trim_trailing_newline())
         .build()?;
-    let mut adapter = TypeSpec::builder(&format!("{}JsonAdapter", plan.name), TypeKind::Class)
+    let mut adapter = TypeSpec::builder(adapter_name, TypeKind::Class)
         .visibility(Visibility::Private)
         .extends(type_application(
             TypeName::importable("com.google.gson", "TypeAdapter"),
