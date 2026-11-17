@@ -10,6 +10,7 @@ use crate::spec::oas31::spec::{
 };
 
 use super::LowerError;
+use super::type_set::{TypeSetBranch, TypeSetPlanMode};
 use crate::ir::types::{
     ApiKeyLocation, IrContact, IrEnum, IrEnumValue, IrEnumValueType, IrHeader, IrInfo,
     IrIntersection, IrLicense, IrOAuth2Flow, IrOAuth2Flows, IrObject, IrOperation, IrParameter,
@@ -842,10 +843,6 @@ impl<'a> LowerCtx<'a> {
         }
     }
 
-    /// Lower an explicit multi-type schema without letting object promotion
-    /// discard the other authored branches. Object-shaped branches receive a
-    /// named schema only for their structural payload; the union remains on the
-    /// owning expression so all branches share one semantic plan.
     fn lower_mixed_type_set_with_promotion(
         &mut self,
         candidate_name: &str,
@@ -854,58 +851,56 @@ impl<'a> LowerCtx<'a> {
         let Some(type_set) = &obj.schema_type else {
             return Ok(None);
         };
-        let types = match type_set {
-            SchemaTypeSet::Single(kind) => vec![*kind],
-            SchemaTypeSet::Multiple(types) => types.clone(),
-        };
-        let non_null = types
-            .iter()
-            .copied()
-            .filter(|kind| *kind != SchemaType::Null)
-            .collect::<Vec<_>>();
-        if non_null.len() <= 1 {
-            return Ok(None);
-        }
-
-        let mut members = Vec::with_capacity(non_null.len());
-        for kind in non_null {
-            let member = match kind {
-                SchemaType::Object if should_promote_to_named(obj) => {
-                    let mut branch = obj.clone();
-                    branch.schema_type = Some(SchemaTypeSet::Single(SchemaType::Object));
-                    branch.enum_values.clear();
-                    let name = self.generate_unique_name(candidate_name);
-                    let mut schema = self.lower_object_schema_to_ir_schema(&name, &branch)?;
-                    schema.is_component = self.in_component_phase;
-                    self.schemas.insert(name.clone(), schema);
-                    IrTypeExpr::Named(name)
-                }
-                SchemaType::Object if is_map_with_promotable_values(obj) => {
-                    let values = self
-                        .lower_additional_properties(
-                            candidate_name,
-                            obj.additional_properties.as_ref(),
-                        )?
-                        .expect("promotable map has an additional-property schema");
-                    IrTypeExpr::Map(Box::new(values))
-                }
-                SchemaType::Array if is_array_with_promotable_items(obj) => {
-                    let items = self
-                        .lower_array_items_with_promotion(&format!("{candidate_name}Item"), obj)?;
-                    IrTypeExpr::Array(Box::new(items))
-                }
-                other => single_type_to_expr(other, obj),
-            };
-            members.push(member);
-        }
-        let base = IrTypeExpr::Union(members);
-        Ok(Some(with_schema_nullability(obj, base).with_scalar_enum(
+        let branches = type_set_branches(type_set);
+        super::type_set::plan(
+            &branches,
             &obj.enum_values,
             obj.schema_type.is_some(),
-        )))
+            candidate_name,
+            TypeSetPlanMode::Mixed,
+            |branch, branch_name| self.lower_type_set_branch(branch, branch_name, obj),
+        )
     }
 
-    /// Lower every authored type-set branch without moving node-local constraints.
+    fn lower_type_set_branch(
+        &mut self,
+        branch: TypeSetBranch,
+        candidate_name: &str,
+        obj: &ObjectSchema,
+    ) -> Result<IrTypeExpr, LowerError> {
+        Ok(match branch {
+            TypeSetBranch::Object if should_promote_to_named(obj) => {
+                let mut branch = obj.clone();
+                branch.schema_type = Some(SchemaTypeSet::Single(SchemaType::Object));
+                branch.enum_values.clear();
+                let name = self.generate_unique_name(candidate_name);
+                let mut schema = self.lower_object_schema_to_ir_schema(&name, &branch)?;
+                schema.is_component = self.in_component_phase;
+                self.schemas.insert(name.clone(), schema);
+                IrTypeExpr::Named(name)
+            }
+            TypeSetBranch::Object if is_map_with_promotable_values(obj) => {
+                let values = self
+                    .lower_additional_properties(
+                        candidate_name,
+                        obj.additional_properties.as_ref(),
+                    )?
+                    .expect("promotable map has an additional-property schema");
+                IrTypeExpr::Map(Box::new(values))
+            }
+            TypeSetBranch::Array if is_array_with_promotable_items(obj) => IrTypeExpr::Array(
+                Box::new(self.lower_array_items_with_promotion(candidate_name, obj)?),
+            ),
+            TypeSetBranch::Object => single_type_to_expr(SchemaType::Object, obj),
+            TypeSetBranch::Array => single_type_to_expr(SchemaType::Array, obj),
+            TypeSetBranch::String => single_type_to_expr(SchemaType::String, obj),
+            TypeSetBranch::Integer => single_type_to_expr(SchemaType::Integer, obj),
+            TypeSetBranch::Number => single_type_to_expr(SchemaType::Number, obj),
+            TypeSetBranch::Boolean => single_type_to_expr(SchemaType::Boolean, obj),
+            TypeSetBranch::Null => unreachable!("null is handled by the shared planner"),
+        })
+    }
+
     fn lower_container_with_promotion(
         &mut self,
         candidate_name: &str,
@@ -914,47 +909,22 @@ impl<'a> LowerCtx<'a> {
         if !obj.enum_values.is_empty() && obj.enum_values.iter().all(serde_json::Value::is_string) {
             return Ok(self.lower_type_from_schema(obj));
         }
-        let types = match &obj.schema_type {
-            Some(SchemaTypeSet::Single(kind)) => vec![*kind],
-            Some(SchemaTypeSet::Multiple(types)) => types.clone(),
-            None => vec![SchemaType::Object],
-        };
-        let promote_map = is_map_with_promotable_values(obj);
-        let promote_array = is_array_with_promotable_items(obj);
-        let mut members = types
-            .into_iter()
-            .filter(|kind| *kind != SchemaType::Null)
-            .map(|kind| {
-                Ok(match kind {
-                    SchemaType::Object if promote_map => {
-                        let values = self
-                            .lower_additional_properties(
-                                candidate_name,
-                                obj.additional_properties.as_ref(),
-                            )?
-                            .expect("promotable map has an additional-property schema");
-                        IrTypeExpr::Map(Box::new(values))
-                    }
-                    SchemaType::Array if promote_array => {
-                        let items = self.lower_array_items_with_promotion(
-                            &format!("{candidate_name}Item"),
-                            obj,
-                        )?;
-                        IrTypeExpr::Array(Box::new(items))
-                    }
-                    other => single_type_to_expr(other, obj),
-                })
-            })
-            .collect::<Result<Vec<_>, LowerError>>()?;
-        let base = if members.len() > 1 {
-            IrTypeExpr::Union(members)
-        } else {
-            members
-                .pop()
-                .expect("container promotion retains a non-null branch")
-        };
-        Ok(with_schema_nullability(obj, base)
-            .with_scalar_enum(&obj.enum_values, obj.schema_type.is_some()))
+        let branches = obj
+            .schema_type
+            .as_ref()
+            .map(type_set_branches)
+            .unwrap_or_else(|| vec![TypeSetBranch::Object]);
+        super::type_set::plan(
+            &branches,
+            &obj.enum_values,
+            obj.schema_type.is_some(),
+            candidate_name,
+            TypeSetPlanMode::Container,
+            |branch, branch_name| self.lower_type_set_branch(branch, branch_name, obj),
+        )?
+        .ok_or_else(|| LowerError::Other {
+            message: "container promotion produced no non-null type branch".to_owned(),
+        })
     }
 
     /// Detect nullable wrapper patterns: `oneOf: [null, T]` or `anyOf: [..., null]`
@@ -1368,6 +1338,25 @@ fn extract_schema_name(ref_path: &str) -> String {
 
 fn extract_component_name(ref_path: &str) -> String {
     ref_path.rsplit('/').next().unwrap_or(ref_path).to_string()
+}
+
+fn type_set_branches(type_set: &SchemaTypeSet) -> Vec<TypeSetBranch> {
+    let types = match type_set {
+        SchemaTypeSet::Single(kind) => vec![*kind],
+        SchemaTypeSet::Multiple(types) => types.clone(),
+    };
+    types
+        .into_iter()
+        .map(|kind| match kind {
+            SchemaType::Object => TypeSetBranch::Object,
+            SchemaType::Array => TypeSetBranch::Array,
+            SchemaType::String => TypeSetBranch::String,
+            SchemaType::Integer => TypeSetBranch::Integer,
+            SchemaType::Number => TypeSetBranch::Number,
+            SchemaType::Boolean => TypeSetBranch::Boolean,
+            SchemaType::Null => TypeSetBranch::Null,
+        })
+        .collect()
 }
 
 fn type_set_to_type_expr(type_set: &SchemaTypeSet, obj: &ObjectSchema) -> IrTypeExpr {

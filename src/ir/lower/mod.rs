@@ -9,6 +9,7 @@ mod composition;
 mod names;
 mod references;
 mod tagged;
+mod type_set;
 pub mod v30;
 pub mod v31;
 pub mod v32;
