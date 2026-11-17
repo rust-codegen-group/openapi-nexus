@@ -252,3 +252,137 @@ class AdditionalPropertiesContracts(unittest.TestCase):
                     _ = caught.exception.detail.body
                 self.assertIs(first.exception, second.exception)
                 decode.assert_called_once_with({})
+
+
+class InlineAdditionalUnionContracts(unittest.TestCase):
+    def models(self, policy="default"):
+        return importlib.import_module(f"inline_{policy}.models")
+
+    def union_helper(self, policy, name, direction="from_dict"):
+        module = importlib.import_module(f"inline_{policy}.models.{name}")
+        return getattr(module, f"{name}_{direction}")
+
+    @staticmethod
+    def canonical(value):
+        return value.to_dict() if hasattr(value, "to_dict") else value
+
+    def test_inline_and_referenced_unions_round_trip_declared_values(self):
+        entries = {"integer": 7, "string": "kept", "large": 9007199254740993}
+        cases = (
+            ("Inline", entries),
+            ("InlineOneOf", entries),
+            ("Referenced", entries),
+            ("NestedMap", {"outer": entries}),
+            ("NestedArray", {"outer": [entries]}),
+        )
+        for policy in ("default", "strict", "raw"):
+            models = self.models(policy)
+            for name, wire in cases:
+                model = getattr(models, name)
+                expected = json.dumps(wire, sort_keys=True)
+                with self.subTest(policy=policy, model=name, direction="from_dict"):
+                    value = model.from_dict(wire)
+                    self.assertEqual(json.dumps(value.to_dict(), sort_keys=True), expected)
+                with self.subTest(policy=policy, model=name, direction="to_dict"):
+                    value = model(additional_properties=wire)
+                    self.assertEqual(json.dumps(value.to_dict(), sort_keys=True), expected)
+
+    def test_strict_inline_and_nested_unions_reject_unmatched_values_in_both_directions(self):
+        models = self.models("strict")
+        for unmatched in (True, [1, "kept"], {"nested_key": 7}, None):
+            cases = (
+                ("Inline", {"value": unmatched}),
+                ("InlineOneOf", {"value": unmatched}),
+                ("Referenced", {"value": unmatched}),
+                ("NestedMap", {"outer": {"value": unmatched}}),
+                ("NestedArray", {"outer": [{"value": unmatched}]}),
+            )
+            for name, wire in cases:
+                model = getattr(models, name)
+                with self.subTest(model=name, value=unmatched, direction="from_dict"):
+                    with self.assertRaisesRegex(ValueError, "No matching"):
+                        model.from_dict(wire)
+                with self.subTest(model=name, value=unmatched, direction="to_dict"):
+                    value = model(additional_properties=wire)
+                    with self.assertRaisesRegex(ValueError, "No matching"):
+                        value.to_dict()
+
+    def test_default_and_raw_inline_and_nested_unions_preserve_unmatched_values(self):
+        for policy in ("default", "raw"):
+            models = self.models(policy)
+            for unmatched in (True, [1, "kept"], {"nested_key": 7}, None):
+                cases = (
+                    ("Inline", {"value": unmatched}),
+                    ("InlineOneOf", {"value": unmatched}),
+                    ("Referenced", {"value": unmatched}),
+                    ("NestedMap", {"outer": {"value": unmatched}}),
+                    ("NestedArray", {"outer": [{"value": unmatched}]}),
+                )
+                for name, wire in cases:
+                    model = getattr(models, name)
+                    expected = json.dumps(wire, sort_keys=True)
+                    with self.subTest(policy=policy, model=name, value=unmatched, direction="from_dict"):
+                        value = model.from_dict(wire)
+                        self.assertEqual(json.dumps(value.to_dict(), sort_keys=True), expected)
+                    with self.subTest(policy=policy, model=name, value=unmatched, direction="to_dict"):
+                        value = model(additional_properties=wire)
+                        self.assertEqual(json.dumps(value.to_dict(), sort_keys=True), expected)
+
+    def test_constrained_array_selection_keeps_enum_constraints(self):
+        invalid = {"value": [1]}
+        valid = {"value": None}
+        for policy in ("default", "raw"):
+            for name in ("selection_inline", "selection_ref"):
+                for direction in ("from_dict", "to_dict"):
+                    helper = self.union_helper(policy, name, direction)
+                    with self.subTest(policy=policy, name=name, direction=direction, value="invalid"):
+                        self.assertEqual(self.canonical(helper(invalid)), invalid)
+                    with self.subTest(policy=policy, name=name, direction=direction, value="null"):
+                        self.assertEqual(self.canonical(helper(valid)), valid)
+        models = self.models("strict")
+        for name, model in (("selection_inline", models.ConstrainedInline), ("selection_ref", models.ConstrainedRef)):
+            with self.subTest(policy="strict", name=name, direction="from_dict", value="invalid"):
+                with self.assertRaisesRegex(ValueError, "No matching"):
+                    self.union_helper("strict", name)(invalid)
+            with self.subTest(policy="strict", name=name, direction="to_dict", value="invalid"):
+                with self.assertRaisesRegex(ValueError, "No matching"):
+                    self.union_helper("strict", name, "to_dict")(model(additional_properties=invalid))
+            with self.subTest(policy="strict", name=name, direction="from_dict", value="null"):
+                self.assertEqual(self.canonical(self.union_helper("strict", name)(valid)), valid)
+            with self.subTest(policy="strict", name=name, direction="to_dict", value="null"):
+                self.assertEqual(self.union_helper("strict", name, "to_dict")(model(additional_properties=valid)), valid)
+
+    def test_mixed_type_set_maps_keep_nested_union_values(self):
+        wire = {"nested": {"integer": 7, "string": "kept"}, "text": "plain"}
+        for policy in ("default", "strict", "raw"):
+            models = self.models(policy)
+            for name in ("MixedTypeInline", "MixedTypeRef"):
+                model = getattr(models, name)
+                with self.subTest(policy=policy, model=name, direction="from_dict"):
+                    self.assertEqual(model.from_dict(wire).to_dict(), wire)
+                with self.subTest(policy=policy, model=name, direction="to_dict"):
+                    self.assertEqual(model(additional_properties=wire).to_dict(), wire)
+        invalid = {"nested": {"bad": True}}
+        for name in ("MixedTypeInline", "MixedTypeRef"):
+            model = getattr(self.models("strict"), name)
+            with self.subTest(model=name, direction="from_dict"):
+                with self.assertRaisesRegex(ValueError, "No matching"):
+                    model.from_dict(invalid)
+            with self.subTest(model=name, direction="to_dict"):
+                with self.assertRaisesRegex(ValueError, "No matching"):
+                    model(additional_properties=invalid).to_dict()
+
+    def test_collision_keeps_authored_model_and_promoted_union_helper(self):
+        wire = {"integer": 7, "string": "kept"}
+        for policy in ("default", "strict"):
+            models = self.models(policy)
+            with self.subTest(policy=policy, direction="from_dict"):
+                self.assertEqual(models.CollisionMap.from_dict(wire).to_dict(), wire)
+            with self.subTest(policy=policy, direction="to_dict"):
+                self.assertEqual(models.CollisionMap(additional_properties=wire).to_dict(), wire)
+            authored = models.CollisionMapAdditionalProperty.from_dict({"marker": "kept"})
+            self.assertEqual(authored.to_dict(), {"marker": "kept"})
+            helper = importlib.import_module(
+                f"inline_{policy}.models.collision_map_additional_property2"
+            )
+            self.assertTrue(hasattr(helper, "CollisionMapAdditionalProperty2"))

@@ -19,6 +19,7 @@ use sigil_stitch::spec::where_spec::TypeArgument;
 
 use super::config::{AllOfStrategy, UntaggedUnionStrategy};
 use super::opaque;
+use super::symbols::KotlinSymbols;
 use super::util::{escape_kt_string, kt_decl_name, kt_primitive, kt_ref, kt_type_str};
 
 const RENDER_WIDTH: usize = 100;
@@ -37,6 +38,13 @@ pub(crate) fn generate_model_files(
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     let matching_ir = super::matching::wire_ir(ir, all_of_strategy);
+    let mut symbols = KotlinSymbols::from_ir(
+        ir,
+        request_inputs
+            .models()
+            .iter()
+            .map(|model| model.name.as_str()),
+    );
     for (_name, schema) in &ir.schemas {
         let body = emit_model_body(
             schema,
@@ -45,6 +53,7 @@ pub(crate) fn generate_model_files(
             package_name,
             strategy,
             all_of_strategy,
+            &mut symbols,
         )
         .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
         let class_name = schema.name.to_pascal_case();
@@ -106,16 +115,19 @@ fn emit_model_body(
     package_name: &str,
     strategy: UntaggedUnionStrategy,
     all_of_strategy: AllOfStrategy,
+    symbols: &mut KotlinSymbols,
 ) -> Result<String, SigilStitchError> {
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name, ir),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr, package_name),
-        IrSchemaKind::Union(u) => emit_union(schema, u, matching_ir, package_name, strategy),
+        IrSchemaKind::Union(u) => {
+            emit_union(schema, u, matching_ir, package_name, strategy, symbols)
+        }
         IrSchemaKind::Intersection(i) => {
             super::composition::emit(schema, i, ir, package_name, all_of_strategy)
         }
-        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name),
+        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name, symbols),
     }?;
     file_spec.render(RENDER_WIDTH)
 }
@@ -303,6 +315,7 @@ fn emit_union(
     ir: &IrSpec,
     package_name: &str,
     strategy: UntaggedUnionStrategy,
+    symbols: &KotlinSymbols,
 ) -> Result<FileSpec, SigilStitchError> {
     let mut plan = plan_union(&schema.name, schema.description.as_deref(), union);
     if strategy == UntaggedUnionStrategy::Raw {
@@ -319,8 +332,9 @@ fn emit_union(
             is_null: false,
         }];
     }
-    let adapter = super::union::adapter(schema, &plan, ir, strategy)?;
-    closed_sum_file(&plan, package_name, adapter)
+    let adapter_name = symbols.adapter_name(&schema.name);
+    let adapter = super::union::adapter(schema, &plan, ir, strategy, adapter_name)?;
+    closed_sum_file(&plan, package_name, adapter_name, adapter)
 }
 
 fn emit_tagged_union(
@@ -328,27 +342,35 @@ fn emit_tagged_union(
     tu: &IrTaggedUnion,
     ir: &IrSpec,
     package_name: &str,
+    symbols: &KotlinSymbols,
 ) -> Result<FileSpec, SigilStitchError> {
-    emit_closed_sum(
-        &plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir),
-        package_name,
-    )
+    let plan = plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir);
+    emit_closed_sum(&plan, package_name, symbols.adapter_name(&schema.name))
 }
 
-fn emit_closed_sum(plan: &ClosedSumPlan, package_name: &str) -> Result<FileSpec, SigilStitchError> {
-    closed_sum_file(plan, package_name, kotlin_closed_sum_adapter(plan)?)
+fn emit_closed_sum(
+    plan: &ClosedSumPlan,
+    package_name: &str,
+    adapter_name: &str,
+) -> Result<FileSpec, SigilStitchError> {
+    closed_sum_file(
+        plan,
+        package_name,
+        adapter_name,
+        kotlin_closed_sum_adapter(plan, adapter_name)?,
+    )
 }
 
 fn closed_sum_file(
     plan: &ClosedSumPlan,
     package_name: &str,
+    adapter_name: &str,
     adapter: CodeBlock,
 ) -> Result<FileSpec, SigilStitchError> {
     let mut sum = ClosedSumSpec::builder(&plan.name).visibility(Visibility::Public);
     for doc in &plan.docs {
         sum = sum.doc(doc);
     }
-    let adapter_name = format!("{}JsonAdapter", plan.name);
     sum = sum.annotate(
         AnnotationSpec::importable(TypeName::importable(
             "com.google.gson.annotations",
@@ -442,7 +464,10 @@ fn kotlin_adapter_imports() -> [ImportSpec; 12] {
     ]
 }
 
-fn kotlin_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
+fn kotlin_closed_sum_adapter(
+    plan: &ClosedSumPlan,
+    adapter_name: &str,
+) -> Result<CodeBlock, SigilStitchError> {
     let read_dispatch =
         kotlin_adapter_read_dispatch(plan).map_err(|error| SigilStitchError::Render {
             context: format!("Kotlin {} Gson adapter read dispatch", plan.name),
@@ -458,7 +483,6 @@ fn kotlin_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilSti
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let adapter_name = format!("{}JsonAdapter", plan.name);
     let root_name = plan.name.as_str();
 
     sigil_quote!(Kotlin {
@@ -789,7 +813,7 @@ mod tests {
             }],
             encoding: ClosedSumEncoding::External,
         };
-        let adapter = kotlin_closed_sum_adapter(&plan).unwrap();
+        let adapter = kotlin_closed_sum_adapter(&plan, "ChoiceJsonAdapter").unwrap();
         assert_rendered!(
             Kotlin::new(),
             width = 100,

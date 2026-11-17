@@ -142,7 +142,7 @@ fn strip_server_path_prefix(path: &str, servers: &[crate::spec::oas32::spec::Ser
 struct LowerCtx<'a> {
     spec: &'a oas::OpenApiV32Spec,
     schemas: IndexMap<String, IrSchema>,
-    used_names: std::collections::HashSet<String>,
+    used_names: super::names::SchemaNames,
     false_schema_names: HashSet<String>,
     /// When true, promoted schemas are marked as component schemas.
     in_component_phase: bool,
@@ -150,11 +150,15 @@ struct LowerCtx<'a> {
 
 impl<'a> LowerCtx<'a> {
     fn new(spec: &'a oas::OpenApiV32Spec) -> Self {
-        let mut used_names = std::collections::HashSet::new();
+        let used_names = super::names::SchemaNames::from_authored(
+            spec.components
+                .as_ref()
+                .into_iter()
+                .flat_map(|components| components.schemas.keys().map(String::as_str)),
+        );
         let mut false_schema_names = HashSet::new();
         if let Some(components) = &spec.components {
             for (name, schema) in &components.schemas {
-                used_names.insert(name.clone());
                 if matches!(schema, Schema::Boolean(boolean) if !boolean.0) {
                     false_schema_names.insert(name.clone());
                 }
@@ -170,17 +174,7 @@ impl<'a> LowerCtx<'a> {
     }
 
     fn generate_unique_name(&mut self, base: &str) -> String {
-        if self.used_names.insert(base.to_string()) {
-            return base.to_string();
-        }
-        let mut suffix = 2;
-        loop {
-            let candidate = format!("{base}{suffix}");
-            if self.used_names.insert(candidate.clone()) {
-                return candidate;
-            }
-            suffix += 1;
-        }
+        self.used_names.allocate(base)
     }
 
     // -------------------------------------------------------------------
@@ -195,11 +189,11 @@ impl<'a> LowerCtx<'a> {
         match schema {
             Schema::Boolean(boolean) => Ok(super::boolean_components::lower(name, boolean.0)),
             Schema::Object(object) => match object.as_ref() {
-                ObjectOrReference::Ref { ref_path, .. } => Ok(Some(IrSchema {
+                ObjectOrReference::Ref { .. } => Ok(Some(IrSchema {
                     name: name.to_string(),
                     description: None,
                     deprecated: false,
-                    kind: IrSchemaKind::Alias(IrTypeExpr::Named(extract_schema_name(ref_path))),
+                    kind: IrSchemaKind::Alias(self.lower_schema_ref(object)?),
                     is_component: false,
                 })),
                 ObjectOrReference::Object(obj) => {
@@ -297,6 +291,13 @@ impl<'a> LowerCtx<'a> {
             return Ok(IrSchemaKind::Intersection(IrIntersection { members }));
         }
 
+        // Check for an explicit multi-type schema only after composition. A
+        // terminal type-set alias here would discard a sibling oneOf/anyOf/allOf
+        // assertion; the composition node must remain the owning IR kind.
+        if let Some(type_expr) = self.lower_mixed_type_set_with_promotion(name, obj)? {
+            return Ok(IrSchemaKind::Alias(type_expr));
+        }
+
         // Object with properties
         if !obj.properties.is_empty() || obj.additional_properties.is_some() {
             return Ok(IrSchemaKind::Object(self.lower_object(name, obj)?));
@@ -370,9 +371,10 @@ impl<'a> LowerCtx<'a> {
                     _ => None,
                 };
                 let additional_properties = match member {
-                    ObjectOrReference::Object(obj) => {
-                        self.lower_additional_properties(obj.additional_properties.as_ref())?
-                    }
+                    ObjectOrReference::Object(obj) => self.lower_additional_properties(
+                        &format!("{}{}", parent_name, disc_value.to_pascal_case()),
+                        obj.additional_properties.as_ref(),
+                    )?,
                     _ => None,
                 };
                 variants.push(IrTaggedVariant {
@@ -741,7 +743,7 @@ impl<'a> LowerCtx<'a> {
         }
 
         let additional_properties =
-            self.lower_additional_properties(obj.additional_properties.as_ref())?;
+            self.lower_additional_properties(parent_name, obj.additional_properties.as_ref())?;
 
         Ok(IrObject {
             properties,
@@ -751,6 +753,7 @@ impl<'a> LowerCtx<'a> {
 
     fn lower_additional_properties(
         &mut self,
+        parent_name: &str,
         additional: Option<&Schema>,
     ) -> Result<Option<IrTypeExpr>, LowerError> {
         Ok(match additional {
@@ -761,7 +764,13 @@ impl<'a> LowerCtx<'a> {
                     None
                 }
             }
-            Some(Schema::Object(boxed_ref)) => Some(self.lower_schema_ref(boxed_ref)?),
+            Some(Schema::Object(reference)) => Some(match reference.as_ref() {
+                ObjectOrReference::Object(_) => self.lower_schema_ref_with_promotion(
+                    &format!("{parent_name}AdditionalProperty"),
+                    reference,
+                )?,
+                ObjectOrReference::Ref { .. } => self.lower_schema_ref(reference)?,
+            }),
             None => None,
         })
     }
@@ -776,14 +785,11 @@ impl<'a> LowerCtx<'a> {
     ) -> Result<IrTypeExpr, LowerError> {
         match schema_ref {
             ObjectOrReference::Ref { ref_path, .. } => {
-                if ref_path.starts_with("http://") || ref_path.starts_with("https://") {
-                    return Err(LowerError::ExternalReference {
-                        reference: ref_path.clone(),
-                    });
-                }
+                super::references::validate_reference(ref_path)?;
                 Ok(IrTypeExpr::Named(extract_schema_name(ref_path)))
             }
             ObjectOrReference::Object(obj) => {
+                super::references::validate_inline_references(obj)?;
                 if let Some(inner) = nullable_wrapper_inner(obj) {
                     return Ok(
                         IrTypeExpr::Nullable(Box::new(self.lower_schema_ref(inner)?))
@@ -802,13 +808,20 @@ impl<'a> LowerCtx<'a> {
         schema_ref: &ObjectOrReference<ObjectSchema>,
     ) -> Result<IrTypeExpr, LowerError> {
         match schema_ref {
-            ObjectOrReference::Ref { ref_path, .. } => {
-                Ok(IrTypeExpr::Named(extract_schema_name(ref_path)))
-            }
+            ObjectOrReference::Ref { .. } => self.lower_schema_ref(schema_ref),
             ObjectOrReference::Object(obj) => {
+                super::references::validate_inline_references(obj)?;
                 // Check for nullable wrapper pattern: oneOf/anyOf with [null, real_type]
                 if let Some(inner) = self.try_lower_nullable_wrapper(candidate_name, obj)? {
                     return Ok(inner);
+                }
+                if obj.one_of.is_empty()
+                    && obj.any_of.is_empty()
+                    && obj.all_of.is_empty()
+                    && let Some(type_expr) =
+                        self.lower_mixed_type_set_with_promotion(candidate_name, obj)?
+                {
+                    return Ok(type_expr);
                 }
                 if should_promote_to_named(obj) {
                     let name = self.generate_unique_name(candidate_name);
@@ -816,19 +829,129 @@ impl<'a> LowerCtx<'a> {
                     schema.is_component = self.in_component_phase;
                     self.schemas.insert(name.clone(), schema);
                     Ok(with_schema_nullability(obj, IrTypeExpr::Named(name)))
-                } else if is_array_with_promotable_items(obj) {
-                    // Array with inline object items: promote the items schema
-                    let items_name = format!("{candidate_name}Item");
-                    let inner = self.lower_array_items_with_promotion(&items_name, obj)?;
-                    Ok(with_schema_nullability(
-                        obj,
-                        IrTypeExpr::Array(Box::new(inner)),
-                    ))
+                } else if is_map_with_promotable_values(obj) || is_array_with_promotable_items(obj)
+                {
+                    self.lower_container_with_promotion(candidate_name, obj)
                 } else {
                     Ok(self.lower_type_from_schema(obj))
                 }
             }
         }
+    }
+
+    /// Lower an explicit multi-type schema without letting object promotion
+    /// discard the other authored branches. Object-shaped branches receive a
+    /// named schema only for their structural payload; the union remains on the
+    /// owning expression so all branches share one semantic plan.
+    fn lower_mixed_type_set_with_promotion(
+        &mut self,
+        candidate_name: &str,
+        obj: &ObjectSchema,
+    ) -> Result<Option<IrTypeExpr>, LowerError> {
+        let Some(type_set) = &obj.schema_type else {
+            return Ok(None);
+        };
+        let types = match type_set {
+            SchemaTypeSet::Single(kind) => vec![*kind],
+            SchemaTypeSet::Multiple(types) => types.clone(),
+        };
+        let non_null = types
+            .iter()
+            .copied()
+            .filter(|kind| *kind != SchemaType::Null)
+            .collect::<Vec<_>>();
+        if non_null.len() <= 1 {
+            return Ok(None);
+        }
+
+        let mut members = Vec::with_capacity(non_null.len());
+        for kind in non_null {
+            let member = match kind {
+                SchemaType::Object if should_promote_to_named(obj) => {
+                    let mut branch = obj.clone();
+                    branch.schema_type = Some(SchemaTypeSet::Single(SchemaType::Object));
+                    branch.enum_values.clear();
+                    let name = self.generate_unique_name(candidate_name);
+                    let mut schema = self.lower_object_schema_to_ir_schema(&name, &branch)?;
+                    schema.is_component = self.in_component_phase;
+                    self.schemas.insert(name.clone(), schema);
+                    IrTypeExpr::Named(name)
+                }
+                SchemaType::Object if is_map_with_promotable_values(obj) => {
+                    let values = self
+                        .lower_additional_properties(
+                            candidate_name,
+                            obj.additional_properties.as_ref(),
+                        )?
+                        .expect("promotable map has an additional-property schema");
+                    IrTypeExpr::Map(Box::new(values))
+                }
+                SchemaType::Array if is_array_with_promotable_items(obj) => {
+                    let items = self
+                        .lower_array_items_with_promotion(&format!("{candidate_name}Item"), obj)?;
+                    IrTypeExpr::Array(Box::new(items))
+                }
+                other => single_type_to_expr(other, obj),
+            };
+            members.push(member);
+        }
+        let base = IrTypeExpr::Union(members);
+        Ok(Some(with_schema_nullability(obj, base).with_scalar_enum(
+            &obj.enum_values,
+            obj.schema_type.is_some(),
+        )))
+    }
+
+    /// Lower every authored type-set branch without moving node-local constraints.
+    fn lower_container_with_promotion(
+        &mut self,
+        candidate_name: &str,
+        obj: &ObjectSchema,
+    ) -> Result<IrTypeExpr, LowerError> {
+        if !obj.enum_values.is_empty() && obj.enum_values.iter().all(serde_json::Value::is_string) {
+            return Ok(self.lower_type_from_schema(obj));
+        }
+        let types = match &obj.schema_type {
+            Some(SchemaTypeSet::Single(kind)) => vec![*kind],
+            Some(SchemaTypeSet::Multiple(types)) => types.clone(),
+            None => vec![SchemaType::Object],
+        };
+        let promote_map = is_map_with_promotable_values(obj);
+        let promote_array = is_array_with_promotable_items(obj);
+        let mut members = types
+            .into_iter()
+            .filter(|kind| *kind != SchemaType::Null)
+            .map(|kind| {
+                Ok(match kind {
+                    SchemaType::Object if promote_map => {
+                        let values = self
+                            .lower_additional_properties(
+                                candidate_name,
+                                obj.additional_properties.as_ref(),
+                            )?
+                            .expect("promotable map has an additional-property schema");
+                        IrTypeExpr::Map(Box::new(values))
+                    }
+                    SchemaType::Array if promote_array => {
+                        let items = self.lower_array_items_with_promotion(
+                            &format!("{candidate_name}Item"),
+                            obj,
+                        )?;
+                        IrTypeExpr::Array(Box::new(items))
+                    }
+                    other => single_type_to_expr(other, obj),
+                })
+            })
+            .collect::<Result<Vec<_>, LowerError>>()?;
+        let base = if members.len() > 1 {
+            IrTypeExpr::Union(members)
+        } else {
+            members
+                .pop()
+                .expect("container promotion retains a non-null branch")
+        };
+        Ok(with_schema_nullability(obj, base)
+            .with_scalar_enum(&obj.enum_values, obj.schema_type.is_some()))
     }
 
     /// Detect nullable wrapper patterns: `oneOf: [null, T]` or `anyOf: [..., null]`
@@ -1455,22 +1578,41 @@ fn is_null_schema(schema_ref: &ObjectOrReference<ObjectSchema>) -> bool {
     }
 }
 
-/// Check if a schema is an array whose items are an inline object that should be promoted.
-fn is_array_with_promotable_items(obj: &ObjectSchema) -> bool {
-    let is_array = obj
-        .schema_type
-        .as_ref()
-        .is_some_and(|t| t.is_array_or_nullable_array());
-    if !is_array {
+/// Only walk owned inline containers; references remain named and may be recursive.
+fn inline_value_needs_promotion(schema: &Schema) -> bool {
+    let Schema::Object(reference) = schema else {
+        return false;
+    };
+    let ObjectOrReference::Object(obj) = reference.as_ref() else {
+        return false;
+    };
+    should_promote_to_named(obj)
+        || is_array_with_promotable_items(obj)
+        || is_map_with_promotable_values(obj)
+}
+
+fn is_map_with_promotable_values(obj: &ObjectSchema) -> bool {
+    if !obj.enum_values.is_empty() && obj.enum_values.iter().all(serde_json::Value::is_string) {
         return false;
     }
-    if let Some(items) = &obj.items
-        && let Schema::Object(boxed_ref) = items.as_ref()
-        && let ObjectOrReference::Object(inner) = boxed_ref.as_ref()
-    {
-        return should_promote_to_named(inner);
-    }
-    false
+    obj.schema_type
+        .as_ref()
+        .is_none_or(|types| types.contains(SchemaType::Object))
+        && obj
+            .additional_properties
+            .as_ref()
+            .is_some_and(inline_value_needs_promotion)
+}
+
+/// Keep a naming context through arrays whose descendants need promotion.
+fn is_array_with_promotable_items(obj: &ObjectSchema) -> bool {
+    obj.schema_type
+        .as_ref()
+        .is_some_and(|types| types.contains(SchemaType::Array))
+        && obj
+            .items
+            .as_deref()
+            .is_some_and(inline_value_needs_promotion)
 }
 
 fn classify_tagging_style(

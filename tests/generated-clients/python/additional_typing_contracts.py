@@ -11,6 +11,13 @@ from additional_strict.models import MixedMap as StrictMixedMap
 from additional_default.models import Any as OpaqueNamedAny
 from additional_default.models import Event, OptionalHolder
 from additional_default.models.event import event_from_dict, event_to_dict
+from inline_default import models as inline_default_models
+from inline_raw import models as inline_raw_models
+from inline_strict import models as inline_strict_models
+from inline_default.models.collision_map_additional_property import CollisionMapAdditionalProperty
+from inline_default.models.collision_map_additional_property2 import CollisionMapAdditionalProperty2
+from inline_default.models.selection_inline import SelectionInline, selection_inline_from_dict
+from inline_default.models.selection_ref import SelectionRef, selection_ref_from_dict
 
 
 def typed_extensions(wire: dict[str, object], member: NestedValue, holder: Holder) -> MixedMap:
@@ -44,3 +51,42 @@ def compatible_helpers(wire: dict[str, object], value: Event) -> OptionalHolder:
     assert_type(holder.maybe, MixedMap | None)
     assert_type(holder.nullable, MixedMap | None)
     return holder
+
+
+def inline_union_extension_types(wire: dict[str, object]) -> None:
+    assert_type(inline_default_models.Inline.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_default_models.InlineOneOf.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_default_models.Referenced.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_default_models.Mixed.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_default_models.NestedMap.from_dict(wire).additional_properties, dict[str, dict[str, int | str]])
+    assert_type(inline_default_models.NestedArray.from_dict(wire).additional_properties, dict[str, list[dict[str, int | str]]])
+    assert_type(inline_strict_models.Inline.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_strict_models.InlineOneOf.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_strict_models.Referenced.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_strict_models.Mixed.from_dict(wire).additional_properties, dict[str, int | str])
+    assert_type(inline_strict_models.NestedMap.from_dict(wire).additional_properties, dict[str, dict[str, int | str]])
+    assert_type(inline_strict_models.NestedArray.from_dict(wire).additional_properties, dict[str, list[dict[str, int | str]]])
+    assert_type(inline_raw_models.Inline.from_dict(wire).additional_properties, dict[str, object])
+    assert_type(inline_raw_models.InlineOneOf.from_dict(wire).additional_properties, dict[str, object])
+    assert_type(inline_raw_models.Referenced.from_dict(wire).additional_properties, dict[str, object])
+    assert_type(inline_raw_models.Mixed.from_dict(wire).additional_properties, dict[str, object])
+    assert_type(inline_raw_models.NestedMap.from_dict(wire).additional_properties, dict[str, dict[str, object]])
+    assert_type(inline_raw_models.NestedArray.from_dict(wire).additional_properties, dict[str, list[dict[str, object]]])
+    assert_type(inline_default_models.ConstrainedInline.from_dict(wire).additional_properties, dict[str, list[int | str] | None])
+    assert_type(inline_default_models.ConstrainedRef.from_dict(wire).additional_properties, dict[str, list[int | str] | None])
+    assert_type(inline_default_models.MixedTypeInline.from_dict(wire).additional_properties, dict[str, dict[str, int | str] | str])
+    assert_type(inline_default_models.MixedTypeRef.from_dict(wire).additional_properties, dict[str, dict[str, int | str] | str])
+    assert_type(inline_strict_models.ConstrainedInline.from_dict(wire).additional_properties, dict[str, list[int | str] | None])
+    assert_type(inline_strict_models.ConstrainedRef.from_dict(wire).additional_properties, dict[str, list[int | str] | None])
+    assert_type(inline_strict_models.MixedTypeInline.from_dict(wire).additional_properties, dict[str, dict[str, int | str] | str])
+    assert_type(inline_strict_models.MixedTypeRef.from_dict(wire).additional_properties, dict[str, dict[str, int | str] | str])
+    assert_type(inline_raw_models.MixedTypeInline.from_dict(wire).additional_properties, dict[str, object])
+    assert_type(inline_raw_models.MixedTypeRef.from_dict(wire).additional_properties, dict[str, object])
+    assert_type(selection_inline_from_dict(wire), SelectionInline)
+    assert_type(selection_ref_from_dict(wire), SelectionRef)
+    assert_type(inline_default_models.CollisionMap.from_dict(wire).additional_properties, dict[str, int | str])
+
+
+def collision_helper_type(value: CollisionMapAdditionalProperty2, authored: CollisionMapAdditionalProperty) -> CollisionMapAdditionalProperty2:
+    assert_type(authored.marker, str)
+    return value

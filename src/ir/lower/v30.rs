@@ -132,19 +132,19 @@ fn strip_server_path_prefix(path: &str, servers: &[crate::spec::oas30::spec::Ser
 struct LowerCtx<'a> {
     spec: &'a oas::OpenApiV30Spec,
     schemas: IndexMap<String, IrSchema>,
-    used_names: std::collections::HashSet<String>,
+    used_names: super::names::SchemaNames,
     /// When true, promoted schemas are marked as component schemas.
     in_component_phase: bool,
 }
 
 impl<'a> LowerCtx<'a> {
     fn new(spec: &'a oas::OpenApiV30Spec) -> Self {
-        let mut used_names = std::collections::HashSet::new();
-        if let Some(components) = &spec.components {
-            for name in components.schemas.keys() {
-                used_names.insert(name.clone());
-            }
-        }
+        let used_names = super::names::SchemaNames::from_authored(
+            spec.components
+                .as_ref()
+                .into_iter()
+                .flat_map(|components| components.schemas.keys().map(String::as_str)),
+        );
         LowerCtx {
             spec,
             schemas: IndexMap::new(),
@@ -154,17 +154,7 @@ impl<'a> LowerCtx<'a> {
     }
 
     fn generate_unique_name(&mut self, base: &str) -> String {
-        if self.used_names.insert(base.to_string()) {
-            return base.to_string();
-        }
-        let mut suffix = 2;
-        loop {
-            let candidate = format!("{base}{suffix}");
-            if self.used_names.insert(candidate.clone()) {
-                return candidate;
-            }
-            suffix += 1;
-        }
+        self.used_names.allocate(base)
     }
 
     // -------------------------------------------------------------------
@@ -177,11 +167,11 @@ impl<'a> LowerCtx<'a> {
         schema_ref: &ObjectOrReference<ObjectSchema>,
     ) -> Result<IrSchema, LowerError> {
         match schema_ref {
-            ObjectOrReference::Ref { ref_path, .. } => Ok(IrSchema {
+            ObjectOrReference::Ref { .. } => Ok(IrSchema {
                 name: name.to_string(),
                 description: None,
                 deprecated: false,
-                kind: IrSchemaKind::Alias(IrTypeExpr::Named(extract_schema_name(ref_path))),
+                kind: IrSchemaKind::Alias(self.lower_schema_ref(schema_ref)?),
                 is_component: false,
             }),
             ObjectOrReference::Object(obj) => self.lower_object_schema_to_ir_schema(name, obj),
@@ -339,9 +329,10 @@ impl<'a> LowerCtx<'a> {
                     _ => None,
                 };
                 let additional_properties = match member {
-                    ObjectOrReference::Object(obj) => {
-                        self.lower_additional_properties(obj.additional_properties.as_ref())?
-                    }
+                    ObjectOrReference::Object(obj) => self.lower_additional_properties(
+                        &format!("{}{}", parent_name, disc_value.to_pascal_case()),
+                        obj.additional_properties.as_ref(),
+                    )?,
                     _ => None,
                 };
                 variants.push(IrTaggedVariant {
@@ -690,7 +681,7 @@ impl<'a> LowerCtx<'a> {
         }
 
         let additional_properties =
-            self.lower_additional_properties(obj.additional_properties.as_ref())?;
+            self.lower_additional_properties(parent_name, obj.additional_properties.as_ref())?;
 
         Ok(IrObject {
             properties,
@@ -700,6 +691,7 @@ impl<'a> LowerCtx<'a> {
 
     fn lower_additional_properties(
         &mut self,
+        parent_name: &str,
         additional: Option<&AdditionalProperties>,
     ) -> Result<Option<IrTypeExpr>, LowerError> {
         Ok(match additional {
@@ -710,9 +702,17 @@ impl<'a> LowerCtx<'a> {
                     None
                 }
             }
-            Some(AdditionalProperties::Schema(boxed_schema)) => {
-                Some(self.lower_schema_value(boxed_schema)?)
-            }
+            Some(AdditionalProperties::Schema(boxed_schema)) => Some(match boxed_schema.as_ref() {
+                Schema::Object(reference)
+                    if matches!(reference.as_ref(), ObjectOrReference::Object(_)) =>
+                {
+                    self.lower_schema_ref_with_promotion(
+                        &format!("{parent_name}AdditionalProperty"),
+                        reference,
+                    )?
+                }
+                _ => self.lower_schema_value(boxed_schema)?,
+            }),
             None => None,
         })
     }
@@ -727,14 +727,13 @@ impl<'a> LowerCtx<'a> {
     ) -> Result<IrTypeExpr, LowerError> {
         match schema_ref {
             ObjectOrReference::Ref { ref_path, .. } => {
-                if ref_path.starts_with("http://") || ref_path.starts_with("https://") {
-                    return Err(LowerError::ExternalReference {
-                        reference: ref_path.clone(),
-                    });
-                }
+                super::references::validate_reference(ref_path)?;
                 Ok(IrTypeExpr::Named(extract_schema_name(ref_path)))
             }
-            ObjectOrReference::Object(obj) => Ok(self.lower_type_from_schema(obj)),
+            ObjectOrReference::Object(obj) => {
+                super::references::validate_inline_references(obj)?;
+                Ok(self.lower_type_from_schema(obj))
+            }
         }
     }
 
@@ -744,23 +743,33 @@ impl<'a> LowerCtx<'a> {
         schema_ref: &ObjectOrReference<ObjectSchema>,
     ) -> Result<IrTypeExpr, LowerError> {
         match schema_ref {
-            ObjectOrReference::Ref { ref_path, .. } => {
-                Ok(IrTypeExpr::Named(extract_schema_name(ref_path)))
-            }
+            ObjectOrReference::Ref { .. } => self.lower_schema_ref(schema_ref),
             ObjectOrReference::Object(obj) => {
+                super::references::validate_inline_references(obj)?;
                 if should_promote_to_named(obj) {
                     let name = self.generate_unique_name(candidate_name);
                     let mut schema = self.lower_object_schema_to_ir_schema(&name, obj)?;
                     schema.is_component = self.in_component_phase;
                     self.schemas.insert(name.clone(), schema);
                     Ok(with_schema_nullability(obj, IrTypeExpr::Named(name)))
+                } else if is_map_with_promotable_values(obj) {
+                    let values = self
+                        .lower_additional_properties(
+                            candidate_name,
+                            obj.additional_properties.as_ref(),
+                        )?
+                        .expect("promotable map has an additional-property schema");
+                    Ok(
+                        with_schema_nullability(obj, IrTypeExpr::Map(Box::new(values)))
+                            .with_scalar_enum(&obj.enum_values, obj.schema_type.is_some()),
+                    )
                 } else if is_array_with_promotable_items(obj) {
                     let items_name = format!("{candidate_name}Item");
                     let inner = self.lower_array_items_with_promotion(&items_name, obj)?;
-                    Ok(with_schema_nullability(
-                        obj,
-                        IrTypeExpr::Array(Box::new(inner)),
-                    ))
+                    Ok(
+                        with_schema_nullability(obj, IrTypeExpr::Array(Box::new(inner)))
+                            .with_scalar_enum(&obj.enum_values, obj.schema_type.is_some()),
+                    )
                 } else {
                     Ok(self.lower_type_from_schema(obj))
                 }
@@ -1292,19 +1301,42 @@ fn should_promote_to_named(obj: &ObjectSchema) -> bool {
         || !obj.one_of.is_empty()
 }
 
-/// Check if a schema is an array whose items are an inline object that should be promoted.
-fn is_array_with_promotable_items(obj: &ObjectSchema) -> bool {
-    let is_array = obj.schema_type.as_deref() == Some("array");
-    if !is_array {
+/// Only walk owned inline containers; references remain named and may be recursive.
+fn inline_value_needs_promotion(schema: &Schema) -> bool {
+    let Schema::Object(reference) = schema else {
+        return false;
+    };
+    let ObjectOrReference::Object(obj) = reference.as_ref() else {
+        return false;
+    };
+    should_promote_to_named(obj)
+        || is_array_with_promotable_items(obj)
+        || is_map_with_promotable_values(obj)
+}
+
+fn is_map_with_promotable_values(obj: &ObjectSchema) -> bool {
+    // The simple-type path gives string enums precedence over container inference.
+    if !obj.enum_values.is_empty() && obj.enum_values.iter().all(serde_json::Value::is_string) {
         return false;
     }
-    if let Some(items) = &obj.items
-        && let Schema::Object(boxed_ref) = items.as_ref()
-        && let ObjectOrReference::Object(inner) = boxed_ref.as_ref()
+    if obj
+        .schema_type
+        .as_deref()
+        .is_some_and(|kind| kind != "object")
     {
-        return should_promote_to_named(inner);
+        return false;
     }
-    false
+    matches!(&obj.additional_properties,
+        Some(AdditionalProperties::Schema(schema)) if inline_value_needs_promotion(schema))
+}
+
+/// Keep a naming context through arrays whose descendants need promotion.
+fn is_array_with_promotable_items(obj: &ObjectSchema) -> bool {
+    obj.schema_type.as_deref() == Some("array")
+        && obj
+            .items
+            .as_deref()
+            .is_some_and(inline_value_needs_promotion)
 }
 
 fn classify_tagging_style(
