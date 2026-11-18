@@ -23,7 +23,7 @@ class Branch:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> Branch:
         return cls(
-            children = [item.item_from_dict(cast(dict[str,
-            object], _item)) for _item in cast(list[object], data['children'])],
+            children = [item.item_from_dict(cast(dict[str, object],
+                _item)) for _item in cast(list[object], data['children'])],
             kind=data["kind"],  # type: ignore[assignment]
         )
