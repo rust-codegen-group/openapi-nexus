@@ -14,10 +14,11 @@ from .mixed_type_inline_additional_property_additional_property import MixedType
 @dataclass
 class MixedTypeInline:
     additional_properties: _dict[_str,
-    dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty]
-    | str] = _dataclass_field(default_factory = lambda: _dict[_str,
-    dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty]
-    | str](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": True})
+        (dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty]
+        | str)] = _dataclass_field(default_factory=lambda: _dict[_str,
+        dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty] | str](),
+        kw_only=True,
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -29,7 +30,9 @@ class MixedTypeInline:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> MixedTypeInline:
         return cls(
-            additional_properties = {key: cast(dict[str,
-            MixedTypeInlineAdditionalPropertyAdditionalProperty]
-            | str, _union.value_21_from_dict(item)) for key, item in data.items() },
+            additional_properties = {key: cast((dict[str,
+                MixedTypeInlineAdditionalPropertyAdditionalProperty]
+                | str),
+                _union.value_21_from_dict(item)) for key,
+                item in data.items() },
         )

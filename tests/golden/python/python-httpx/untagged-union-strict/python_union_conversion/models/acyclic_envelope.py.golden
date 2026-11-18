@@ -22,5 +22,5 @@ class AcyclicEnvelope:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> AcyclicEnvelope:
         return cls(
-            value = cast(AcyclicScalar, _union.value_0_from_dict(data['value'])),
+            value=cast(AcyclicScalar, _union.value_0_from_dict(data['value'])),
         )

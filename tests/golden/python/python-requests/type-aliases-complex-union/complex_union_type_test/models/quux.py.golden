@@ -25,6 +25,6 @@ class Quux:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> Quux:
         return cls(
-            foo = cast(Foo, _union.value_0_from_dict(data['foo'])),
+            foo=cast(Foo, _union.value_0_from_dict(data['foo'])),
             name=data["name"],  # type: ignore[assignment]
         )

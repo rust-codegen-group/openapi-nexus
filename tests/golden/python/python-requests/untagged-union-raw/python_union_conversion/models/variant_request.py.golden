@@ -22,5 +22,5 @@ class VariantRequest:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> VariantRequest:
         return cls(
-            choices = cast(list[VariantSet], _union.value_46_from_dict(data['choices'])),
+            choices=cast(list[VariantSet], _union.value_46_from_dict(data['choices'])),
         )

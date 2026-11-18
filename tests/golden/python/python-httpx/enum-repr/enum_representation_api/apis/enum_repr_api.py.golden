@@ -149,7 +149,8 @@ class EnumReprApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def handle_adjacently_tagged_with_http_info(self, *,
+    def handle_adjacently_tagged_with_http_info(self,
+        *,
         body: AdjacentlyTaggedEnum) -> ApiResponse[AdjacentlyTaggedEnum]:
         """Handle adjacently tagged enum, including HTTP response metadata."""
         path = "/adjacently-tagged"
@@ -169,7 +170,8 @@ class EnumReprApi:
         """Handle adjacently tagged enum."""
         return self.handle_adjacently_tagged_with_http_info(body=body).data
 
-    def handle_externally_tagged_with_http_info(self, *,
+    def handle_externally_tagged_with_http_info(self,
+        *,
         body: ExternallyTaggedEnum) -> ApiResponse[ExternallyTaggedEnum]:
         """Handle externally tagged enum, including HTTP response metadata."""
         path = "/externally-tagged"
@@ -189,7 +191,8 @@ class EnumReprApi:
         """Handle externally tagged enum."""
         return self.handle_externally_tagged_with_http_info(body=body).data
 
-    def handle_internally_tagged_with_http_info(self, *,
+    def handle_internally_tagged_with_http_info(self,
+        *,
         body: InternallyTaggedEnum) -> ApiResponse[InternallyTaggedEnum]:
         """Handle internally tagged enum, including HTTP response metadata."""
         path = "/internally-tagged"
@@ -215,7 +218,7 @@ class EnumReprApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_0_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
                 detail = HandleMixedBadRequest(response.status_code, response.headers, response.content)
@@ -236,7 +239,7 @@ class EnumReprApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_5_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
                 detail = HandleUntaggedBadRequest(response.status_code, response.headers, response.content)

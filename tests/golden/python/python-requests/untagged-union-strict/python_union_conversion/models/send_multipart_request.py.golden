@@ -25,6 +25,6 @@ class SendMultipartRequest:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> SendMultipartRequest:
         return cls(
-            choice = cast(Choice, _union.value_11_from_dict(data['choice'])),
+            choice=cast(Choice, _union.value_11_from_dict(data['choice'])),
             attachment=data.get("attachment"),  # type: ignore[assignment]
         )

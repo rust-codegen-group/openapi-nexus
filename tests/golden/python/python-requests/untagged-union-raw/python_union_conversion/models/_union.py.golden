@@ -33,7 +33,7 @@ def value_3_to_dict(value: object) -> object:
     return value
 
 def value_4_from_dict(value: object) -> object:
-    from.import numeric_two
+    from . import numeric_two
     return numeric_two.NumericTwo.from_dict(_union_support.as_dict(value))
 
 def value_4_to_dict(value: object) -> object:
@@ -46,15 +46,15 @@ def value_5_to_dict(value: object) -> object:
     return value
 
 def value_6_from_dict(value: object) -> object:
-    from.import adjacent_member
+    from . import adjacent_member
     return adjacent_member.adjacent_member_from_dict(_union_support.as_dict(value))
 
 def value_6_to_dict(value: object) -> object:
-    from.import adjacent_member
+    from . import adjacent_member
     return adjacent_member.adjacent_member_to_dict(cast(adjacent_member.AdjacentMember, value))
 
 def value_7_from_dict(value: object) -> object:
-    from.import tagged_record
+    from . import tagged_record
     return tagged_record.TaggedRecord.from_dict(_union_support.as_dict(value))
 
 def value_7_to_dict(value: object) -> object:
@@ -73,7 +73,7 @@ def value_9_to_dict(value: object) -> object:
     return value
 
 def value_10_from_dict(value: object) -> object:
-    from.import branch
+    from . import branch
     return branch.Branch.from_dict(_union_support.as_dict(value))
 
 def value_10_to_dict(value: object) -> object:
@@ -86,7 +86,7 @@ def value_11_to_dict(value: object) -> object:
     return value
 
 def value_12_from_dict(value: object) -> object:
-    from.import numeric_one
+    from . import numeric_one
     return numeric_one.NumericOne.from_dict(_union_support.as_dict(value))
 
 def value_12_to_dict(value: object) -> object:
@@ -105,7 +105,7 @@ def value_14_to_dict(value: object) -> object:
     return value
 
 def value_15_from_dict(value: object) -> object:
-    from.import dependent_envelope
+    from . import dependent_envelope
     return dependent_envelope.DependentEnvelope.from_dict(_union_support.as_dict(value))
 
 def value_15_to_dict(value: object) -> object:
@@ -243,9 +243,15 @@ def value_36_from_dict(value: object) -> object:
 
 def value_36_to_dict(value: object) -> object:
     if ((_union_support.is_object(value)
-     and (_union_support.has(value, 'revision', 'revision', True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
+     and (_union_support.has(value,
+        'revision',
+        'revision',
+        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
      and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value, 'second_value', 'second_value', False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
+     and (not _union_support.has(value,
+        'second_value',
+        'second_value',
+        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
         return {'kind': 'choice', 'payload': value_3_to_dict(value)}
 
     if (isinstance(value, str)):
@@ -265,13 +271,25 @@ def value_37_from_dict(value: object) -> object:
 
 def value_37_to_dict(value: object) -> object:
     if (((_union_support.is_object(value)
-     and (not _union_support.has(value, 'first_value', 'first_value', False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
-     and (_union_support.has(value, 'revision', 'revision', True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
+     and (not _union_support.has(value,
+        'first_value',
+        'first_value',
+        False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
+     and (_union_support.has(value,
+        'revision',
+        'revision',
+        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
      and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 1))))
      or (_union_support.is_object(value)
-     and (_union_support.has(value, 'revision', 'revision', True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
+     and (_union_support.has(value,
+        'revision',
+        'revision',
+        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
      and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value, 'second_value', 'second_value', False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))))):
+     and (not _union_support.has(value,
+        'second_value',
+        'second_value',
+        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))))):
         return {'kind': 'choice', 'payload': value_11_to_dict(value)}
 
     if (isinstance(value, str)):
@@ -322,7 +340,7 @@ def value_44_to_dict(value: object) -> object:
     return value
 
 def value_45_from_dict(value: object) -> object:
-    from.import tagged_member_envelope
+    from . import tagged_member_envelope
     return tagged_member_envelope.TaggedMemberEnvelope.from_dict(_union_support.as_dict(value))
 
 def value_45_to_dict(value: object) -> object:
@@ -341,14 +359,14 @@ def value_47_to_dict(value: object) -> object:
     return value
 
 def value_48_from_dict(value: object) -> object:
-    from.import payload_a
+    from . import payload_a
     return payload_a.PayloadA.from_dict(_union_support.as_dict(value))
 
 def value_48_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
 def value_49_from_dict(value: object) -> object:
-    from.import payload_b
+    from . import payload_b
     return payload_b.PayloadB.from_dict(_union_support.as_dict(value))
 
 def value_49_to_dict(value: object) -> object:

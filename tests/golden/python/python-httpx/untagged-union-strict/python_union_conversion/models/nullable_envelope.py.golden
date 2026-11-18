@@ -27,6 +27,6 @@ class NullableEnvelope:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> NullableEnvelope:
         return cls(
-            choice = cast(NullableChoice, _union.value_29_from_dict(data['choice'])),
-            ambiguous = None if 'ambiguous' not in data else _union.value_30_from_dict(data.get('ambiguous')),
+            choice=cast(NullableChoice, _union.value_29_from_dict(data['choice'])),
+            ambiguous=None if 'ambiguous' not in data else _union.value_30_from_dict(data.get('ambiguous')),
         )

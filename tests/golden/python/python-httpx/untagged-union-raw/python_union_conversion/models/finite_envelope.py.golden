@@ -20,5 +20,5 @@ class FiniteEnvelope:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> FiniteEnvelope:
         return cls(
-            value = _union.value_21_from_dict(data['value']),
+            value=_union.value_21_from_dict(data['value']),
         )

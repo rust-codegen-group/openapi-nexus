@@ -118,7 +118,7 @@ mod tests {
             Python::new(),
             width = 300,
             body,
-            "from builtins import dict as _dict, str as _str\nfrom dataclasses import dataclass, field as _dataclass_field\n\n@dataclass\nclass Model:\n    additional_properties_: _dict[_str, str] = _dataclass_field(default_factory = lambda: _dict[_str, str](), kw_only = True, metadata = {\"openapi_additional_properties\": True, \"openapi_dictionary\": False})\n\n",
+            "from builtins import dict as _dict, str as _str\nfrom dataclasses import dataclass, field as _dataclass_field\n\n@dataclass\nclass Model:\n    additional_properties_: _dict[_str, str] = _dataclass_field(default_factory=lambda: _dict[_str, str](), kw_only=True, metadata={\"openapi_additional_properties\": True, \"openapi_dictionary\": False})\n\n",
         );
     }
 }

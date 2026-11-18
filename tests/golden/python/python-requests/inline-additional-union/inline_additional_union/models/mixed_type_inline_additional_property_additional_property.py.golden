@@ -14,7 +14,8 @@ type MixedTypeInlineAdditionalPropertyAdditionalProperty = (
 )
 
 def mixed_type_inline_additional_property_additional_property_from_dict(value: object) -> MixedTypeInlineAdditionalPropertyAdditionalProperty:
-    return cast(MixedTypeInlineAdditionalPropertyAdditionalProperty, _union.value_20_from_dict(value))
+    return cast(MixedTypeInlineAdditionalPropertyAdditionalProperty,
+        _union.value_20_from_dict(value))
 
 def mixed_type_inline_additional_property_additional_property_to_dict(value: MixedTypeInlineAdditionalPropertyAdditionalProperty) -> object:
     return _union.value_20_to_dict(value)

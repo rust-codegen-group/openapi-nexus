@@ -14,9 +14,10 @@ from .choice import Choice
 @dataclass
 class ConstrainedRef:
     additional_properties: _dict[_str,
-    list[Choice] | None] = _dataclass_field(default_factory = lambda: _dict[_str,
-    list[Choice]
-    | None](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": True})
+        list[Choice] | None] = _dataclass_field(default_factory=lambda: _dict[_str,
+        list[Choice] | None](),
+        kw_only=True,
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -28,6 +29,7 @@ class ConstrainedRef:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> ConstrainedRef:
         return cls(
-            additional_properties = {key: cast(list[Choice]
-            | None, _union.value_10_from_dict(item)) for key, item in data.items() },
+            additional_properties = {key: cast(list[Choice] | None,
+                _union.value_10_from_dict(item)) for key,
+                item in data.items() },
         )
