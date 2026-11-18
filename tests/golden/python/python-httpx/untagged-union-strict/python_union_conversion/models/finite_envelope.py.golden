@@ -21,5 +21,5 @@ class FiniteEnvelope:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> FiniteEnvelope:
         return cls(
-            value = cast(int | bool | None, _union.value_21_from_dict(data['value'])),
+            value=cast(int | bool | None, _union.value_21_from_dict(data['value'])),
         )

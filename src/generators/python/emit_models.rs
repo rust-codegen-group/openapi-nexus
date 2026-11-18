@@ -19,7 +19,7 @@ use crate::ir::types::{
 };
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::CodeBlock;
-use sigil_stitch::lang::python::Python;
+use sigil_stitch::lang::python::{Python, keyword_argument};
 use sigil_stitch::prelude::*;
 
 /// Generate every model file from the IR.
@@ -417,8 +417,11 @@ fn build_from_dict_method(
                 $else { None if $C(access) is None else $C(converted) }
             }).expect("Python optional planned field projection builds");
             let converted = values.coerce(&expression, ty, converted);
+            let label = sigil_quote!(Python { $N(field_name) })
+                .expect("Python planned keyword label builds");
+            let argument = keyword_argument(label, converted);
             body.add_code(
-                sigil_quote!(Python { $N(field_name) = $C(converted), })
+                sigil_quote!(Python { $C(argument), })
                     .expect("Python planned field deserialization builds"),
             );
             continue;

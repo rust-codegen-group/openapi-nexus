@@ -14,10 +14,11 @@ from .nested_array_additional_property_item_additional_property import NestedArr
 @dataclass
 class NestedArray:
     additional_properties: _dict[_str,
-    list[dict[str,
-    NestedArrayAdditionalPropertyItemAdditionalProperty]]] = _dataclass_field(default_factory = lambda: _dict[_str,
-    list[dict[str,
-    NestedArrayAdditionalPropertyItemAdditionalProperty]]](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": True})
+        list[dict[str,
+        NestedArrayAdditionalPropertyItemAdditionalProperty]]] = _dataclass_field(default_factory=lambda: _dict[_str,
+        list[dict[str, NestedArrayAdditionalPropertyItemAdditionalProperty]]](),
+        kw_only=True,
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -30,5 +31,7 @@ class NestedArray:
     def from_dict(cls, data: dict[str, object]) -> NestedArray:
         return cls(
             additional_properties = {key: cast(list[dict[str,
-            NestedArrayAdditionalPropertyItemAdditionalProperty]], _union.value_28_from_dict(item)) for key, item in data.items() },
+                NestedArrayAdditionalPropertyItemAdditionalProperty]],
+                _union.value_28_from_dict(item)) for key,
+                item in data.items() },
         )

@@ -14,9 +14,10 @@ from . import _union
 class EventSearching:
     sequence_number: int
     type_: Literal["searching"]
-    additional_properties: _dict[_str,
-    _Any] = _dataclass_field(default_factory = lambda: _dict[_str,
-    _Any](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": False})
+    additional_properties: _dict[_str, _Any] = _dataclass_field(default_factory=lambda: _dict[_str,
+        _Any](),
+        kw_only=True,
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": False})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -35,5 +36,6 @@ class EventSearching:
         return cls(
             sequence_number=data["sequence_number"],  # type: ignore[assignment]
             type_=data["type"],  # type: ignore[assignment]
-            additional_properties = {key: _union.value_7_from_dict(item) for key, item in data.items() if key not in ['sequence_number', 'type']},
+            additional_properties = {key: _union.value_7_from_dict(item) for key,
+                item in data.items() if key not in ['sequence_number', 'type']},
         )

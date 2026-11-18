@@ -14,8 +14,9 @@ from .value_alias import ValueAlias
 @dataclass
 class AliasValues:
     additional_properties: _dict[_str,
-    ValueAlias] = _dataclass_field(default_factory = lambda: _dict[_str,
-    ValueAlias](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": True})
+        ValueAlias] = _dataclass_field(default_factory=lambda: _dict[_str, ValueAlias](),
+        kw_only=True,
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -27,5 +28,6 @@ class AliasValues:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> AliasValues:
         return cls(
-            additional_properties = {key: cast(ValueAlias, _union.value_0_from_dict(item)) for key, item in data.items() },
+            additional_properties = {key: cast(ValueAlias, _union.value_0_from_dict(item)) for key,
+                item in data.items() },
         )

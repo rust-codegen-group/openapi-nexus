@@ -14,8 +14,10 @@ from .inline_one_of_additional_property import InlineOneOfAdditionalProperty
 @dataclass
 class InlineOneOf:
     additional_properties: _dict[_str,
-    InlineOneOfAdditionalProperty] = _dataclass_field(default_factory = lambda: _dict[_str,
-    InlineOneOfAdditionalProperty](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": True})
+        InlineOneOfAdditionalProperty] = _dataclass_field(default_factory=lambda: _dict[_str,
+        InlineOneOfAdditionalProperty](),
+        kw_only=True,
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -27,5 +29,7 @@ class InlineOneOf:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> InlineOneOf:
         return cls(
-            additional_properties = {key: cast(InlineOneOfAdditionalProperty, _union.value_16_from_dict(item)) for key, item in data.items() },
+            additional_properties = {key: cast(InlineOneOfAdditionalProperty,
+                _union.value_16_from_dict(item)) for key,
+                item in data.items() },
         )

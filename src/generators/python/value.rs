@@ -1014,7 +1014,7 @@ mod tests {
         assert_rendered!(
             Python::new(),
             body,
-            "from.import dependent_envelope\nreturn dependent_envelope.DependentEnvelope.from_dict(_union_support.as_dict(value))\n"
+            "from . import dependent_envelope\nreturn dependent_envelope.DependentEnvelope.from_dict(_union_support.as_dict(value))\n"
         );
     }
 

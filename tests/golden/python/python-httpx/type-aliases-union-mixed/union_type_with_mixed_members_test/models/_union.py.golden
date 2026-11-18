@@ -9,8 +9,14 @@ from ..runtime import _union_support
 
 def value_0_from_dict(value: object) -> object:
     if (_union_support.is_object(value)
-     and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
+     and (_union_support.has(value,
+        'id',
+        'id',
+        True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
+     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value,
+        'name',
+        'name'),
+        str))):
         return value_1_from_dict(value)
 
     if isinstance(value, str):
@@ -23,8 +29,14 @@ def value_0_from_dict(value: object) -> object:
 
 def value_0_to_dict(value: object) -> object:
     if (_union_support.is_object(value)
-     and (_union_support.has(value, 'id', 'id', True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value, 'name', 'name'), str))):
+     and (_union_support.has(value,
+        'id',
+        'id',
+        True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
+     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value,
+        'name',
+        'name'),
+        str))):
         return value_1_to_dict(value)
 
     if isinstance(value, str):
@@ -36,7 +48,7 @@ def value_0_to_dict(value: object) -> object:
     return value
 
 def value_1_from_dict(value: object) -> object:
-    from.import bar
+    from . import bar
     return bar.Bar.from_dict(_union_support.as_dict(value))
 
 def value_1_to_dict(value: object) -> object:

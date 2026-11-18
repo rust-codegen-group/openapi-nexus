@@ -87,7 +87,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_14_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             detail = EchoDictionaryUnexpected(response.status_code, response.headers, response.content)
             raise EchoDictionaryError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
@@ -103,7 +103,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_24_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
                 detail = EchoMixedBadRequest(response.status_code, response.headers, response.content)

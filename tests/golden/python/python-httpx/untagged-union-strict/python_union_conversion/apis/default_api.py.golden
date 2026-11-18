@@ -180,7 +180,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_11_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
                 detail = SendChoiceBadRequest(response.status_code, response.headers, response.content)
@@ -199,7 +199,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_17_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             detail = SendChoicesUnexpected(response.status_code, response.headers, response.content)
             raise SendChoicesError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
@@ -246,7 +246,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_29_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             detail = SendNullableUnexpected(response.status_code, response.headers, response.content)
             raise SendNullableError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
@@ -262,7 +262,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_37_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             detail = SendTaggedUnexpected(response.status_code, response.headers, response.content)
             raise SendTaggedError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
@@ -278,7 +278,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_41_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             detail = SendTaggedMemberUnexpected(response.status_code, response.headers, response.content)
             raise SendTaggedMemberError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)

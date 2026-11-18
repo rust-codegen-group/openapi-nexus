@@ -19,7 +19,7 @@ use crate::ir::types::{
 };
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::code_block::CodeBlock;
-use sigil_stitch::lang::python::Python;
+use sigil_stitch::lang::python::{Python, keyword_argument};
 use sigil_stitch::prelude::*;
 use sigil_stitch::spec::fun_spec::FunSpecBuilder;
 
@@ -484,9 +484,12 @@ fn build_method_body(
         } else {
             match body.encoding {
                 BodyEncoding::Json if values.needs_conversion(&body.type_expr) => {
-                    union_json_argument = Some(sigil_quote!(Python {
-                        data = $if(body.required) { json.dumps(_union_body, allow_nan = False) } $else { None if $N(body.var_name.as_str()) is None else json.dumps(_union_body, allow_nan = False) }
-                    }).expect("Python requests union JSON argument builds"));
+                    let value = sigil_quote!(Python {
+                        $if(body.required) { json.dumps(_union_body, allow_nan=False) } $else { None if $N(body.var_name.as_str()) is None else json.dumps(_union_body, allow_nan=False) }
+                    })
+                    .expect("Python requests union JSON value builds");
+                    let label = CodeBlock::of("data", ()).expect("Python data label builds");
+                    union_json_argument = Some(keyword_argument(label, value));
                 }
                 BodyEncoding::Json => request_args.push(format!("json={body_expr}")),
                 BodyEncoding::FormUrlEncoded

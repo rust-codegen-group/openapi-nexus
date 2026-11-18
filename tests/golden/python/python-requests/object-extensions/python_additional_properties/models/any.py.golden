@@ -12,9 +12,10 @@ from . import _union
 
 @dataclass
 class Any:
-    additional_properties: _dict[_str,
-    _Any] = _dataclass_field(default_factory = lambda: _dict[_str,
-    _Any](), kw_only = True, metadata = {"openapi_additional_properties": True, "openapi_dictionary": True})
+    additional_properties: _dict[_str, _Any] = _dataclass_field(default_factory=lambda: _dict[_str,
+        _Any](),
+        kw_only=True,
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -26,5 +27,6 @@ class Any:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> Any:
         return cls(
-            additional_properties = {key: _union.value_7_from_dict(item) for key, item in data.items() },
+            additional_properties = {key: _union.value_7_from_dict(item) for key,
+                item in data.items() },
         )

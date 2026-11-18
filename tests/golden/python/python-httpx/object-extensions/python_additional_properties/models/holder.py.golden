@@ -31,8 +31,8 @@ class Holder:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> Holder:
         return cls(
-            aliases = cast(dict[str, DictionaryAlias], _union.value_22_from_dict(data['aliases'])),
-            dictionaries = cast(list[TypedMap], _union.value_23_from_dict(data['dictionaries'])),
-            mixed = cast(MixedMap, _union.value_24_from_dict(data['mixed'])),
-            opaque = cast(OpaqueMap, _union.value_25_from_dict(data['opaque'])),
+            aliases=cast(dict[str, DictionaryAlias], _union.value_22_from_dict(data['aliases'])),
+            dictionaries=cast(list[TypedMap], _union.value_23_from_dict(data['dictionaries'])),
+            mixed=cast(MixedMap, _union.value_24_from_dict(data['mixed'])),
+            opaque=cast(OpaqueMap, _union.value_25_from_dict(data['opaque'])),
         )

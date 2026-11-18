@@ -14,7 +14,8 @@ type NestedArrayAdditionalPropertyItemAdditionalProperty = (
 )
 
 def nested_array_additional_property_item_additional_property_from_dict(value: object) -> NestedArrayAdditionalPropertyItemAdditionalProperty:
-    return cast(NestedArrayAdditionalPropertyItemAdditionalProperty, _union.value_27_from_dict(value))
+    return cast(NestedArrayAdditionalPropertyItemAdditionalProperty,
+        _union.value_27_from_dict(value))
 
 def nested_array_additional_property_item_additional_property_to_dict(value: NestedArrayAdditionalPropertyItemAdditionalProperty) -> object:
     return _union.value_27_to_dict(value)

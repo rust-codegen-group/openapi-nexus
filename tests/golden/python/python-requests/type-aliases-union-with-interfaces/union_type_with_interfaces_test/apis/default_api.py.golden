@@ -44,7 +44,7 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_0_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, data = json.dumps(_union_body, allow_nan = False))
+        response = self._client.request("POST", path, headers=headers, data=json.dumps(_union_body, allow_nan=False))
         if not (200 <= response.status_code < 300):
             detail = TestUnionUnexpected(response.status_code, response.headers, response.content)
             raise TestUnionError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
