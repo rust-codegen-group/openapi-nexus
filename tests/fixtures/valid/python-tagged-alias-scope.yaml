@@ -1,0 +1,40 @@
+openapi: 3.1.0
+info:
+  title: Recursive Alias Scope
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Item:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Branch'}
+            - type: object
+              required: [kind]
+              properties: {kind: {type: string, enum: [branch]}}
+        - allOf:
+            - {$ref: '#/components/schemas/Leaf'}
+            - type: object
+              required: [kind]
+              properties: {kind: {type: string, enum: [leaf]}}
+    Branch:
+      type: object
+      required: [kind, children]
+      properties:
+        kind: {type: string, enum: [branch]}
+        children:
+          type: array
+          items: {$ref: '#/components/schemas/Item'}
+    Leaf:
+      type: object
+      required: [kind, value]
+      properties:
+        kind: {type: string, enum: [leaf]}
+        value: {type: string}
+    Alias:
+      $ref: '#/components/schemas/Item'
+    Envelope:
+      type: object
+      required: [value]
+      properties:
+        value: {$ref: '#/components/schemas/Alias'}

@@ -382,6 +382,182 @@ impl<'a> ValuePlan<'a> {
         )
     }
 
+    /// Convert a model field when its nested value needs a Python-specific
+    /// module-qualified model or tagged-helper reference. The plan owns the
+    /// IR, direction, alias traversal, null policy, and generated local names
+    /// so field emitters do not maintain a second conversion graph.
+    pub(super) fn model_field_conversion(
+        &self,
+        expr: &IrTypeExpr,
+        value: CodeBlock,
+        current: &str,
+        direction: Direction,
+    ) -> Option<CodeBlock> {
+        self.model_field_conversion_seen(expr, value, current, direction, &mut BTreeSet::new())
+    }
+
+    fn model_field_conversion_seen(
+        &self,
+        expr: &IrTypeExpr,
+        value: CodeBlock,
+        current: &str,
+        direction: Direction,
+        seen_aliases: &mut BTreeSet<String>,
+    ) -> Option<CodeBlock> {
+        match expr {
+            IrTypeExpr::Named(name) => {
+                let schema = self.ir.schemas.get(name)?;
+                match &schema.kind {
+                    IrSchemaKind::Alias(inner) => {
+                        if !seen_aliases.insert(name.clone()) {
+                            return None;
+                        }
+                        let converted = self.model_field_conversion_seen(
+                            inner,
+                            value,
+                            current,
+                            direction,
+                            seen_aliases,
+                        );
+                        seen_aliases.remove(name);
+                        converted
+                    }
+                    IrSchemaKind::TaggedUnion(_) => {
+                        let helper = self.tagged_helper(name, current, direction);
+                        let value = match direction {
+                            Direction::From => {
+                                self.cast_model_value(model_dictionary_type(), value)
+                            }
+                            Direction::To => value,
+                        };
+                        Some(
+                            sigil_quote!(Python { $T(helper)($C(value)) })
+                                .expect("Python tagged model field conversion builds"),
+                        )
+                    }
+                    _ if super::emit_models::is_object_schema(name, self.ir)
+                        && self.recursive_reference(name, current) =>
+                    {
+                        match direction {
+                            Direction::From => {
+                                let model = self.model_type(expr, current);
+                                let value = self.cast_model_value(model_dictionary_type(), value);
+                                Some(
+                                    sigil_quote!(Python { $T(model).from_dict($C(value)) })
+                                        .expect("Python recursive model field conversion builds"),
+                                )
+                            }
+                            Direction::To => Some(
+                                sigil_quote!(Python { $C(value).to_dict() })
+                                    .expect("Python recursive model field serialization builds"),
+                            ),
+                        }
+                    }
+                    _ => None,
+                }
+            }
+            IrTypeExpr::Array(inner) => {
+                let local = self.model_local_name("item");
+                let item = sigil_quote!(Python { $N(local.as_str()) })
+                    .expect("Python recursive list local builds");
+                let item = self.model_field_conversion_seen(
+                    inner,
+                    item,
+                    current,
+                    direction,
+                    seen_aliases,
+                )?;
+                let value = match direction {
+                    Direction::From => self.cast_model_value(
+                        type_application(
+                            TypeName::primitive("list"),
+                            vec![TypeName::primitive("object")],
+                        ),
+                        value,
+                    ),
+                    Direction::To => value,
+                };
+                Some(
+                    sigil_quote!(Python {
+                        [$C(item) for $N(local.as_str()) in $C(value)]
+                    })
+                    .expect("Python recursive list conversion builds"),
+                )
+            }
+            IrTypeExpr::Map(inner) => {
+                let key = self.model_local_name("key");
+                let local = self.model_local_name("value");
+                let item = sigil_quote!(Python { $N(local.as_str()) })
+                    .expect("Python recursive map local builds");
+                let item = self.model_field_conversion_seen(
+                    inner,
+                    item,
+                    current,
+                    direction,
+                    seen_aliases,
+                )?;
+                let value = match direction {
+                    Direction::From => self.cast_model_value(model_dictionary_type(), value),
+                    Direction::To => value,
+                };
+                Some(
+                    sigil_quote!(Python {
+                        {$N(key.as_str()): $C(item) for $N(key.as_str()), $N(local.as_str()) in $C(value).items()}
+                    })
+                    .expect("Python recursive map conversion builds"),
+                )
+            }
+            IrTypeExpr::Nullable(inner) => {
+                let converted = self.model_field_conversion_seen(
+                    inner,
+                    value.clone(),
+                    current,
+                    direction,
+                    seen_aliases,
+                )?;
+                if crate::generators::union_match::accepts_null(inner, self.ir) {
+                    Some(converted)
+                } else {
+                    Some(
+                        sigil_quote!(Python {
+                            $C(converted) if $C(value) is not None else None
+                        })
+                        .expect("Python nullable model field conversion builds"),
+                    )
+                }
+            }
+            _ => None,
+        }
+    }
+
+    fn cast_model_value(&self, ty: TypeName, value: CodeBlock) -> CodeBlock {
+        sigil_quote!(Python {
+            $T(TypeName::importable("typing", "cast"))($T(ty), $C(value))
+        })
+        .expect("Python model field cast builds")
+    }
+
+    fn model_local_name(&self, base: &str) -> String {
+        let modules = self
+            .ir
+            .schemas
+            .keys()
+            .map(|name| name.to_snake_case())
+            .collect::<BTreeSet<_>>();
+        let mut index = 0;
+        loop {
+            let candidate = if index == 0 {
+                format!("_{base}")
+            } else {
+                format!("_{base}_{index}")
+            };
+            if !modules.contains(&candidate) {
+                return candidate;
+            }
+            index += 1;
+        }
+    }
+
     fn matching_ir(&self, direction: Direction) -> &IrSpec {
         match direction {
             Direction::From => self.ir,
@@ -769,6 +945,13 @@ fn schema_expressions(kind: &IrSchemaKind) -> Vec<&IrTypeExpr> {
     }
 }
 
+fn model_dictionary_type() -> TypeName {
+    type_application(
+        TypeName::primitive("dict"),
+        vec![TypeName::primitive("str"), TypeName::primitive("object")],
+    )
+}
+
 fn conversion_representation(expr: &IrTypeExpr) -> IrTypeExpr {
     let IrTypeExpr::ScalarEnum {
         representation,
@@ -1013,6 +1196,45 @@ mod tests {
             Python::new(),
             code,
             "from . import recursive\n\nchildren: list[recursive.Recursive]\n"
+        );
+    }
+
+    #[test]
+    fn model_field_conversion_expands_aliases_and_avoids_module_name_locals() {
+        let parsed = crate::parser::parse_content_yaml(include_str!(
+            "../../../tests/fixtures/valid/python-tagged-alias-scope.yaml"
+        ))
+        .unwrap();
+        let ir = crate::ir::lower::lower(parsed).unwrap();
+        let plan = ValuePlan::new(&ir, UntaggedUnionStrategy::FirstMatch);
+
+        let recursive_list = plan
+            .model_field_conversion(
+                &IrTypeExpr::Array(Box::new(IrTypeExpr::Named("Item".into()))),
+                sigil_quote!(Python { data }).unwrap(),
+                "Branch",
+                Direction::From,
+            )
+            .unwrap();
+        assert_rendered!(
+            Python::new(),
+            width = 150,
+            recursive_list,
+            "from typing import cast\n\nfrom . import item\n\n[item.item_from_dict(cast(dict[str, object], _item)) for _item in cast(list[object], data)]\n"
+        );
+
+        let alias = plan
+            .model_field_conversion(
+                &IrTypeExpr::Named("Alias".into()),
+                sigil_quote!(Python { data }).unwrap(),
+                "Envelope",
+                Direction::From,
+            )
+            .unwrap();
+        assert_rendered!(
+            Python::new(),
+            alias,
+            "from typing import cast\n\nfrom .item import item_from_dict\n\nitem_from_dict(cast(dict[str, object], data))\n"
         );
     }
 

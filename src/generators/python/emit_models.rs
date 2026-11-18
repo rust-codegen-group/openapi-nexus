@@ -5,7 +5,6 @@
 //! Each schema produces one `.py` file via `FileSpec`.
 
 use super::additional_properties::AdditionalProperties;
-use super::model_values::model_conversion;
 use super::value::{Direction, UntaggedUnionStrategy, ValuePlan, optional_type};
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::GeneratorError;
@@ -340,14 +339,9 @@ fn build_to_dict_method(
         }
         let access = sigil_quote!(Python { self.$N(field_name.as_str()) })
             .expect("Python recursive model field access builds");
-        if let Some(converted) = model_conversion(
-            &prop.type_expr,
-            access,
-            ir,
-            values,
-            schema_name,
-            Direction::To,
-        ) {
+        if let Some(converted) =
+            values.model_field_conversion(&prop.type_expr, access, schema_name, Direction::To)
+        {
             body.add_code(
                 sigil_quote!(Python {
                     $if(prop.required && !prop.nullable) {
@@ -446,11 +440,9 @@ fn build_from_dict_method(
             sigil_quote!(Python { data.get($S(json_name.as_str())) })
         }
         .expect("Python recursive model wire field access builds");
-        if let Some(converted) = model_conversion(
+        if let Some(converted) = values.model_field_conversion(
             &prop.type_expr,
             access.clone(),
-            ir,
-            values,
             schema_name,
             Direction::From,
         ) {
