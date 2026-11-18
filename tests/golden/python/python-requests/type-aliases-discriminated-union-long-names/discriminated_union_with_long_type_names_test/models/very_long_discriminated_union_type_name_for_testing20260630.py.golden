@@ -34,7 +34,7 @@ def very_long_discriminated_union_type_name_for_testing20260630_from_dict(data: 
     raise ValueError('Unknown discriminator value for VeryLongDiscriminatedUnionTypeNameForTesting20260630: ' + str(data))
 
 def very_long_discriminated_union_type_name_for_testing20260630_to_dict(obj: VeryLongDiscriminatedUnionTypeNameForTesting20260630) -> dict[str,
-object]:
+    object]:
     if isinstance(obj, VeryLongDiscriminatedUnionTypeNameAlpha20260630):
         result = obj.to_dict()
         result['kind'] = 'ALPHA'
