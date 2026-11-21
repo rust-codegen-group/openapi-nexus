@@ -53,4 +53,8 @@ environment and one checker. These same entrypoints are used by `golden-build-al
 `just ci`, and the CI matrix; no extra Python test step is appended in CI.
 The temporary environment uses the active interpreter (CI `3.x`); pyright retains
 its explicit 3.12 static target. Standalone consumer recipes also accept `PYRIGHT`
-to select the checker and require their dependencies in the selected environment.
+
+Run `just golden-python::ruff-check` to check both sets of Python goldens with
+Ruff 0.17.5 at 100 columns. The recipe requires `uvx` and does not rewrite any
+files; the golden tests still verify that the checked files match generator
+output.

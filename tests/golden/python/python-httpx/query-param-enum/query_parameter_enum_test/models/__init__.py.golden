@@ -5,4 +5,6 @@
 
 from .foo_status import FooStatus as FooStatus
 from .get_items_response200 import GetItemsResponse200 as GetItemsResponse200
-from .get_items_response200_items_item import GetItemsResponse200ItemsItem as GetItemsResponse200ItemsItem
+from .get_items_response200_items_item import (
+    GetItemsResponse200ItemsItem as GetItemsResponse200ItemsItem,
+)

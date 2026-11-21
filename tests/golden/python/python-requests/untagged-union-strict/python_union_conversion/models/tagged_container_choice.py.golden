@@ -9,13 +9,13 @@ from typing import cast
 from . import _union
 from .adjacent_member import AdjacentMember
 
-type TaggedContainerChoice = (
-    list[AdjacentMember]
-    | str
-)
+
+type TaggedContainerChoice = list[AdjacentMember] | str
+
 
 def tagged_container_choice_from_dict(value: object) -> TaggedContainerChoice:
     return cast(TaggedContainerChoice, _union.value_38_from_dict(value))
+
 
 def tagged_container_choice_to_dict(value: TaggedContainerChoice) -> object:
     return _union.value_38_to_dict(value)

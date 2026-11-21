@@ -3,9 +3,11 @@
 # Array with Reference Property Test — 1.0.0
 # Test case for array of inline objects that contain a reference property
 
-from .runtime import ApiKeyAuth as ApiKeyAuth
-from .runtime import Authenticator as Authenticator
-from .runtime import BearerAuth as BearerAuth
-from .runtime import ApiResponse as ApiResponse
-from .runtime import Client as Client
-from .runtime import ApiError as ApiError
+from .runtime import (
+    ApiError as ApiError,
+    ApiKeyAuth as ApiKeyAuth,
+    ApiResponse as ApiResponse,
+    Authenticator as Authenticator,
+    BearerAuth as BearerAuth,
+    Client as Client,
+)

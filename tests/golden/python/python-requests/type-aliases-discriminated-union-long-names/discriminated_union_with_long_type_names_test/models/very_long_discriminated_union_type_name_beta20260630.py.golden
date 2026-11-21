@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class VeryLongDiscriminatedUnionTypeNameBeta20260630:
     beta_field: str

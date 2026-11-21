@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class Category:
     """Category model."""
+
     id: int | None = None
     name: str | None = None
 

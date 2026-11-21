@@ -11,39 +11,59 @@ from ..models.baz import Baz
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class CreateTestUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type CreateTestErrorDetail = (
-    CreateTestUnexpected
-)
+
+type CreateTestErrorDetail = CreateTestUnexpected
+
 
 class CreateTestError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateTestErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateTestErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateTestErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class GetTestUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetTestErrorDetail = (
-    GetTestUnexpected
-)
+
+type GetTestErrorDetail = GetTestUnexpected
+
 
 class GetTestError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetTestErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetTestErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetTestErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -60,9 +80,18 @@ class DefaultApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             detail = CreateTestUnexpected(response.status_code, response.headers, response.content)
-            raise CreateTestError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise CreateTestError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = Baz.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def create_test(self, *, body: Baz) -> Baz:
         """Create test with intersection type."""
@@ -74,9 +103,18 @@ class DefaultApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             detail = GetTestUnexpected(response.status_code, response.headers, response.content)
-            raise GetTestError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise GetTestError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = Baz.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_test(self, id: str) -> Baz:
         """Get test."""

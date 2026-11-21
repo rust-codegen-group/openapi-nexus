@@ -7,8 +7,10 @@ from __future__ import annotations
 
 from enum import Enum
 
+
 class FooType(str, Enum):
     """Foo type enum."""
+
     FOO = "foo"
     BAR = "bar"
     BAZ = "baz"

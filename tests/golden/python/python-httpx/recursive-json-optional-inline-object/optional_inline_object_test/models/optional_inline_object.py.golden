@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .optional_inline_object_optional_config import OptionalInlineObjectOptionalConfig
+
 
 @dataclass
 class OptionalInlineObject:
     """Object with optional inline object property."""
+
     optional_config: OptionalInlineObjectOptionalConfig | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -23,5 +26,11 @@ class OptionalInlineObject:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> OptionalInlineObject:
         return cls(
-            optional_config=OptionalInlineObjectOptionalConfig.from_dict(data.get("optional_config")) if data.get("optional_config") is not None else None,  # type: ignore[arg-type]
+            optional_config=(
+                OptionalInlineObjectOptionalConfig.from_dict(
+                    cast(dict[str, object], data.get("optional_config"))
+                )
+                if data.get("optional_config") is not None
+                else None
+            ),
         )

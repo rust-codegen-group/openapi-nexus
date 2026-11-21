@@ -10,57 +10,87 @@ from collections.abc import Mapping
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class HealthCheckUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type HealthCheckErrorDetail = (
-    HealthCheckUnexpected
-)
+
+type HealthCheckErrorDetail = HealthCheckUnexpected
+
 
 class HealthCheckError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: HealthCheckErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: HealthCheckErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: HealthCheckErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class ListUsersUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type ListUsersErrorDetail = (
-    ListUsersUnexpected
-)
+
+type ListUsersErrorDetail = ListUsersUnexpected
+
 
 class ListUsersError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: ListUsersErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: ListUsersErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: ListUsersErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class GetUserUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetUserErrorDetail = (
-    GetUserUnexpected
-)
+
+type GetUserErrorDetail = GetUserUnexpected
+
 
 class GetUserError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetUserErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetUserErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetUserErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -75,9 +105,18 @@ class DefaultApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             detail = HealthCheckUnexpected(response.status_code, response.headers, response.content)
-            raise HealthCheckError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            raise HealthCheckError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def health_check(self) -> None:
         """Health check."""
@@ -89,9 +128,18 @@ class DefaultApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             detail = ListUsersUnexpected(response.status_code, response.headers, response.content)
-            raise ListUsersError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            raise ListUsersError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def list_users(self) -> None:
         """List users."""
@@ -103,9 +151,18 @@ class DefaultApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             detail = GetUserUnexpected(response.status_code, response.headers, response.content)
-            raise GetUserError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            raise GetUserError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_user(self, user_id: str) -> None:
         """Get user."""

@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .complex_array_structure_items_item import ComplexArrayStructureItemsItem
+
 
 @dataclass
 class ComplexArrayStructure:
     """Array of inline objects with nested inline objects and arrays."""
+
     items: list[ComplexArrayStructureItemsItem]
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,8 @@ class ComplexArrayStructure:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> ComplexArrayStructure:
         return cls(
-            items=[ComplexArrayStructureItemsItem.from_dict(item) for item in data["items"]],  # type: ignore[union-attr]
+            items=[
+                ComplexArrayStructureItemsItem.from_dict(cast(dict[str, object], item))
+                for item in cast(list[object], data["items"])
+            ],
         )

@@ -3,12 +3,12 @@
 # Discriminated Union with Inline Discriminator Only Test — 1.0.0
 # Test fixture for discriminated union where variants are inline objects
 # with ONLY a discriminator property (no additional fields).
-# 
+#
 # This specifically tests the fix for the bug where inline objects with
 # only a discriminator property (like { kind: "UNSPECIFIED" }) were
 # generating generic "Kind.ts" files that conflicted across different
 # discriminated unions.
-# 
+#
 # After the fix, these should generate properly prefixed names like
 # "EventKindUnspecified" instead of generic "Kind".
 
@@ -18,41 +18,35 @@ from .event_event_created import EventEventCreated
 from .event_event_unspecified import EventEventUnspecified
 from .event_event_updated import EventEventUpdated
 
+
 # Discriminator: kind (internal).
 
-type Event = (
-    EventEventUnspecified
-    | EventEventCreated
-    | EventEventUpdated
-)
+
+type Event = EventEventUnspecified | EventEventCreated | EventEventUpdated
+
 
 def event_from_dict(data: dict[str, object]) -> Event:
-    _tag = data['kind']
-    if _tag == 'EVENT_UNSPECIFIED':
+    _tag = data["kind"]
+    if _tag == "EVENT_UNSPECIFIED":
         return EventEventUnspecified.from_dict(data)
-
-    if _tag == 'EVENT_CREATED':
+    if _tag == "EVENT_CREATED":
         return EventEventCreated.from_dict(data)
-
-    if _tag == 'EVENT_UPDATED':
+    if _tag == "EVENT_UPDATED":
         return EventEventUpdated.from_dict(data)
+    raise ValueError("Unknown discriminator value for Event: " + str(data))
 
-    raise ValueError('Unknown discriminator value for Event: ' + str(data))
 
 def event_to_dict(obj: Event) -> dict[str, object]:
     if isinstance(obj, EventEventUnspecified):
         result = obj.to_dict()
-        result['kind'] = 'EVENT_UNSPECIFIED'
+        result["kind"] = "EVENT_UNSPECIFIED"
         return result
-
     if isinstance(obj, EventEventCreated):
         result = obj.to_dict()
-        result['kind'] = 'EVENT_CREATED'
+        result["kind"] = "EVENT_CREATED"
         return result
-
     if isinstance(obj, EventEventUpdated):
         result = obj.to_dict()
-        result['kind'] = 'EVENT_UPDATED'
+        result["kind"] = "EVENT_UPDATED"
         return result
-
-    raise ValueError('Unknown variant for Event: ' + str(type (obj)))
+    raise ValueError("Unknown variant for Event: " + str(type(obj)))

@@ -6,4 +6,5 @@ from __future__ import annotations
 
 from .choice import Choice
 
-type ChoiceAlias = (Choice)
+
+type ChoiceAlias = Choice

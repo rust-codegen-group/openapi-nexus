@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class VariantB:
     """Variant B with boolean and float fields."""
+
     field3: bool
     field4: float
 

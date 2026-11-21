@@ -7,4 +7,5 @@ from __future__ import annotations
 
 # A simple string type alias
 
-type Foo = (str)
+
+type Foo = str

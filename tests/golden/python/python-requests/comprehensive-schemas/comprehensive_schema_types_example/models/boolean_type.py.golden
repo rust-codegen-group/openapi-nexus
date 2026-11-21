@@ -7,4 +7,5 @@ from __future__ import annotations
 
 # Boolean type
 
-type BooleanType = (bool)
+
+type BooleanType = bool

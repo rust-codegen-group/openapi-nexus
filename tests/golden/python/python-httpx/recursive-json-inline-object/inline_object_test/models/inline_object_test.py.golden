@@ -6,13 +6,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .inline_object_test_config import InlineObjectTestConfig
 from .inline_object_test_metadata import InlineObjectTestMetadata
 
+
 @dataclass
 class InlineObjectTest:
     """Object with inline object properties."""
+
     metadata: InlineObjectTestMetadata
     config: InlineObjectTestConfig | None = None
 
@@ -26,6 +29,10 @@ class InlineObjectTest:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> InlineObjectTest:
         return cls(
-            metadata=InlineObjectTestMetadata.from_dict(data["metadata"]),  # type: ignore[arg-type]
-            config=InlineObjectTestConfig.from_dict(data.get("config")) if data.get("config") is not None else None,  # type: ignore[arg-type]
+            metadata=InlineObjectTestMetadata.from_dict(cast(dict[str, object], data["metadata"])),
+            config=(
+                InlineObjectTestConfig.from_dict(cast(dict[str, object], data.get("config")))
+                if data.get("config") is not None
+                else None
+            ),
         )

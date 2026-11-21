@@ -9,13 +9,13 @@ from typing import cast
 from . import _union
 from .nested_value import NestedValue
 
-type ValueChoice = (
-    NestedValue
-    | int
-)
+
+type ValueChoice = NestedValue | int
+
 
 def value_choice_from_dict(value: object) -> ValueChoice:
     return cast(ValueChoice, _union.value_9_from_dict(value))
+
 
 def value_choice_to_dict(value: ValueChoice) -> object:
     return _union.value_9_to_dict(value)

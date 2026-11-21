@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class PrimitiveArray:
     """Arrays with primitive items should remain unchanged."""
+
     number_items: list[int]
     string_items: list[str]
 

@@ -4,4 +4,6 @@
 # Test case for optional inline objects
 
 from .optional_inline_object import OptionalInlineObject as OptionalInlineObject
-from .optional_inline_object_optional_config import OptionalInlineObjectOptionalConfig as OptionalInlineObjectOptionalConfig
+from .optional_inline_object_optional_config import (
+    OptionalInlineObjectOptionalConfig as OptionalInlineObjectOptionalConfig,
+)

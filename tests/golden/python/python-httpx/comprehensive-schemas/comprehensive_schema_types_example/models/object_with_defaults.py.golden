@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class ObjectWithDefaults:
     """Object with default values."""
+
     active: bool | None = None
     age: int | None = None
     name: str | None = None

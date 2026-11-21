@@ -42,7 +42,7 @@ fn internally_tagged_has_from_dict_helper() {
         "should have from_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("_tag = data['ty']"),
+        content.contains("_tag = data[\"ty\"]"),
         "from_dict should read the discriminator field, got:\n{content}"
     );
     assert!(
@@ -63,7 +63,7 @@ fn internally_tagged_has_to_dict_helper() {
         "should have to_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("result['ty'] = 'INTERNALLY_TAGGED_ENUM_VARIANT_A'"),
+        content.contains("result[\"ty\"] = \"INTERNALLY_TAGGED_ENUM_VARIANT_A\""),
         "to_dict should inject discriminator value, got:\n{content}"
     );
     assert!(
@@ -88,11 +88,11 @@ fn adjacently_tagged_from_dict_reads_content_field() {
         "should have from_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("_tag = data['ty']"),
+        content.contains("_tag = data[\"ty\"]"),
         "from_dict should read the tag field, got:\n{content}"
     );
     assert!(
-        content.contains("_content = data['data']"),
+        content.contains("_content = data[\"data\"]"),
         "from_dict should read the content field, got:\n{content}"
     );
     assert!(
@@ -113,7 +113,7 @@ fn adjacently_tagged_to_dict_produces_envelope() {
         "should have to_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("{'ty': 'ADJACENTLY_TAGGED_ENUM_VARIANT_A', 'data': obj.to_dict()}"),
+        content.contains("{\"ty\": \"ADJACENTLY_TAGGED_ENUM_VARIANT_A\", \"data\": obj.to_dict()}"),
         "to_dict should produce tag+content envelope, got:\n{content}"
     );
 }
@@ -134,12 +134,12 @@ fn externally_tagged_from_dict_checks_key() {
         "should have from_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("'EXTERNALLY_TAGGED_ENUM_VARIANT_A' in data"),
+        content.contains("\"EXTERNALLY_TAGGED_ENUM_VARIANT_A\" in data"),
         "from_dict should check key presence, got:\n{content}"
     );
     assert!(
         content.contains(
-            "VariantA.from_dict(cast(dict[str, object], data['EXTERNALLY_TAGGED_ENUM_VARIANT_A']))"
+            "VariantA.from_dict(cast(dict[str, object], data[\"EXTERNALLY_TAGGED_ENUM_VARIANT_A\"]))"
         ),
         "from_dict should pass inner value to variant's from_dict, got:\n{content}"
     );
@@ -157,7 +157,7 @@ fn externally_tagged_to_dict_wraps_in_key() {
         "should have to_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("{'EXTERNALLY_TAGGED_ENUM_VARIANT_A': obj.to_dict()}"),
+        content.contains("{\"EXTERNALLY_TAGGED_ENUM_VARIANT_A\": obj.to_dict()}"),
         "to_dict should wrap in variant key, got:\n{content}"
     );
 }
@@ -178,11 +178,11 @@ fn discriminated_union_resource_has_helpers() {
         "should have from_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("_tag = data['kind']"),
+        content.contains("_tag = data[\"kind\"]"),
         "from_dict should read 'kind' discriminator, got:\n{content}"
     );
     assert!(
-        content.contains("_tag == 'RESOURCE_QUICK'"),
+        content.contains("_tag == \"RESOURCE_QUICK\""),
         "from_dict should check RESOURCE_QUICK, got:\n{content}"
     );
     assert!(
@@ -190,7 +190,7 @@ fn discriminated_union_resource_has_helpers() {
         "should have to_dict helper, got:\n{content}"
     );
     assert!(
-        content.contains("result['kind'] = 'RESOURCE_QUICK'"),
+        content.contains("result[\"kind\"] = \"RESOURCE_QUICK\""),
         "to_dict should inject kind=RESOURCE_QUICK, got:\n{content}"
     );
 }
@@ -237,7 +237,7 @@ fn to_dict_raises_on_unknown_variant() {
         .expect("resource.py should exist");
 
     assert!(
-        content.contains("raise ValueError('Unknown variant for Resource: ' + str(type (obj)))"),
+        content.contains("raise ValueError(\"Unknown variant for Resource: \" + str(type(obj)))"),
         "to_dict should raise ValueError on unknown variant type, got:\n{content}"
     );
 }

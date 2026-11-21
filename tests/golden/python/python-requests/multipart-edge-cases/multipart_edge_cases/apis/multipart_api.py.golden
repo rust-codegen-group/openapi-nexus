@@ -9,44 +9,66 @@ import json
 
 from collections.abc import Mapping
 
-from ..models.send_optional_parts_multipart_request_body import SendOptionalPartsMultipartRequestBody
+from ..models.send_optional_parts_multipart_request_body import (
+    SendOptionalPartsMultipartRequestBody,
+)
 from ..models.send_text_fields_multipart_request_body import SendTextFieldsMultipartRequestBody
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
+
 
 class SendOptionalPartsUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type SendOptionalPartsErrorDetail = (
-    SendOptionalPartsUnexpected
-)
+
+type SendOptionalPartsErrorDetail = SendOptionalPartsUnexpected
+
 
 class SendOptionalPartsError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: SendOptionalPartsErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: SendOptionalPartsErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: SendOptionalPartsErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class SendTextFieldsUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type SendTextFieldsErrorDetail = (
-    SendTextFieldsUnexpected
-)
+
+type SendTextFieldsErrorDetail = SendTextFieldsUnexpected
+
 
 class SendTextFieldsError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: SendTextFieldsErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: SendTextFieldsErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: SendTextFieldsErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -55,39 +77,57 @@ class MultipartApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def send_optional_parts_with_http_info(self,
-        *,
-        body: SendOptionalPartsMultipartRequestBody | None = None) -> ApiResponse[None]:
+    def send_optional_parts_with_http_info(
+        self, *, body: SendOptionalPartsMultipartRequestBody | None = None
+    ) -> ApiResponse[None]:
         path = "/multipart/optional"
         files: dict[str, object] = {}
         if body is not None:
             if body.attributes is not None:
-                files["attributes"] = (None, json.dumps(body.attributes.to_dict()), "application/json")
-                
+                files["attributes"] = (
+                    None,
+                    json.dumps(body.attributes.to_dict()),
+                    "application/json",
+                )
             if body.enabled is not None:
                 files["enabled"] = (None, str(body.enabled), "text/plain")
-                
             if body.file is not None:
-                files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")
-                
+                files["file"] = (
+                    body.file.filename_or_default("file"),
+                    body.file.data,
+                    "application/octet-stream",
+                )
             if body.retry_count is not None:
                 files["retry_count"] = (None, str(body.retry_count), "text/plain")
-                
             if body.title is not None:
                 files["title"] = (None, str(body.title), "text/plain")
-                
-            
+
         response = self._client.request("POST", path, files=files if files else None)
         if not (200 <= response.status_code < 300):
-            detail = SendOptionalPartsUnexpected(response.status_code, response.headers, response.content)
-            raise SendOptionalPartsError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = SendOptionalPartsUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise SendOptionalPartsError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
-    def send_optional_parts(self, *, body: SendOptionalPartsMultipartRequestBody | None = None) -> None:
+    def send_optional_parts(
+        self, *, body: SendOptionalPartsMultipartRequestBody | None = None
+    ) -> None:
         return self.send_optional_parts_with_http_info(body=body).data
 
-    def send_text_fields_with_http_info(self, *, body: SendTextFieldsMultipartRequestBody) -> ApiResponse[None]:
+    def send_text_fields_with_http_info(
+        self, *, body: SendTextFieldsMultipartRequestBody
+    ) -> ApiResponse[None]:
         path = "/multipart/text-only"
         files: dict[str, object] = {}
         files["enabled"] = (None, str(body.enabled), "text/plain")
@@ -95,10 +135,21 @@ class MultipartApi:
         files["retry_count"] = (None, str(body.retry_count), "text/plain")
         response = self._client.request("POST", path, files=files if files else None)
         if not (200 <= response.status_code < 300):
-            detail = SendTextFieldsUnexpected(response.status_code, response.headers, response.content)
-            raise SendTextFieldsError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = SendTextFieldsUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise SendTextFieldsError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def send_text_fields(self, *, body: SendTextFieldsMultipartRequestBody) -> None:
         return self.send_text_fields_with_http_info(body=body).data

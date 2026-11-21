@@ -7,4 +7,5 @@ from __future__ import annotations
 
 # Number divisible by multipleOf
 
-type NumberWithMultipleOf = (float)
+
+type NumberWithMultipleOf = float

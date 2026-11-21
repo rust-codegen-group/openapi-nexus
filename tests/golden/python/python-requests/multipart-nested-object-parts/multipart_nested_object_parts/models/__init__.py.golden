@@ -5,4 +5,6 @@
 
 from .item_config import ItemConfig as ItemConfig
 from .nested_upload import NestedUpload as NestedUpload
-from .send_nested_object_part_multipart_request_body import SendNestedObjectPartMultipartRequestBody as SendNestedObjectPartMultipartRequestBody
+from .send_nested_object_part_multipart_request_body import (
+    SendNestedObjectPartMultipartRequestBody as SendNestedObjectPartMultipartRequestBody,
+)

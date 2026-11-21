@@ -6,4 +6,5 @@ from __future__ import annotations
 
 from .item import Item
 
-type Alias = (Item)
+
+type Alias = Item

@@ -11,75 +11,115 @@ from ..models.payload import Payload
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class SendOptionalBinaryUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type SendOptionalBinaryErrorDetail = (
-    SendOptionalBinaryUnexpected
-)
+
+type SendOptionalBinaryErrorDetail = SendOptionalBinaryUnexpected
+
 
 class SendOptionalBinaryError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: SendOptionalBinaryErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: SendOptionalBinaryErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: SendOptionalBinaryErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class SendOptionalJsonUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type SendOptionalJsonErrorDetail = (
-    SendOptionalJsonUnexpected
-)
+
+type SendOptionalJsonErrorDetail = SendOptionalJsonUnexpected
+
 
 class SendOptionalJsonError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: SendOptionalJsonErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: SendOptionalJsonErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: SendOptionalJsonErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class SendOptionalTextUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type SendOptionalTextErrorDetail = (
-    SendOptionalTextUnexpected
-)
+
+type SendOptionalTextErrorDetail = SendOptionalTextUnexpected
+
 
 class SendOptionalTextError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: SendOptionalTextErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: SendOptionalTextErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: SendOptionalTextErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class SendRequiredJsonUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type SendRequiredJsonErrorDetail = (
-    SendRequiredJsonUnexpected
-)
+
+type SendRequiredJsonErrorDetail = SendRequiredJsonUnexpected
+
 
 class SendRequiredJsonError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: SendRequiredJsonErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: SendRequiredJsonErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: SendRequiredJsonErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -88,30 +128,58 @@ class DefaultApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def send_optional_binary_with_http_info(self, *, body: bytes | None = None) -> ApiResponse[None]:
+    def send_optional_binary_with_http_info(
+        self, *, body: bytes | None = None
+    ) -> ApiResponse[None]:
         path = "/optional-binary"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/octet-stream"
         response = self._client.request("POST", path, data=body, headers=headers)
         if not (200 <= response.status_code < 300):
-            detail = SendOptionalBinaryUnexpected(response.status_code, response.headers, response.content)
-            raise SendOptionalBinaryError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = SendOptionalBinaryUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise SendOptionalBinaryError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def send_optional_binary(self, *, body: bytes | None = None) -> None:
         return self.send_optional_binary_with_http_info(body=body).data
 
-    def send_optional_json_with_http_info(self, *, body: Payload | None = None) -> ApiResponse[None]:
+    def send_optional_json_with_http_info(
+        self, *, body: Payload | None = None
+    ) -> ApiResponse[None]:
         path = "/optional-json"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
-        response = self._client.request("POST", path, json=body.to_dict() if body is not None else None, headers=headers)
+        response = self._client.request(
+            "POST", path, json=body.to_dict() if body is not None else None, headers=headers
+        )
         if not (200 <= response.status_code < 300):
-            detail = SendOptionalJsonUnexpected(response.status_code, response.headers, response.content)
-            raise SendOptionalJsonError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = SendOptionalJsonUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise SendOptionalJsonError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def send_optional_json(self, *, body: Payload | None = None) -> None:
         return self.send_optional_json_with_http_info(body=body).data
@@ -122,10 +190,21 @@ class DefaultApi:
         headers["Content-Type"] = "text/plain"
         response = self._client.request("POST", path, data=body, headers=headers)
         if not (200 <= response.status_code < 300):
-            detail = SendOptionalTextUnexpected(response.status_code, response.headers, response.content)
-            raise SendOptionalTextError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = SendOptionalTextUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise SendOptionalTextError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def send_optional_text(self, *, body: str | None = None) -> None:
         return self.send_optional_text_with_http_info(body=body).data
@@ -136,10 +215,21 @@ class DefaultApi:
         headers["Content-Type"] = "application/json"
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
-            detail = SendRequiredJsonUnexpected(response.status_code, response.headers, response.content)
-            raise SendRequiredJsonError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = SendRequiredJsonUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise SendRequiredJsonError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def send_required_json(self, *, body: Payload) -> None:
         return self.send_required_json_with_http_info(body=body).data

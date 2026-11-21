@@ -7,4 +7,5 @@ from __future__ import annotations
 
 # Basic number type
 
-type NumberType = (float)
+
+type NumberType = float

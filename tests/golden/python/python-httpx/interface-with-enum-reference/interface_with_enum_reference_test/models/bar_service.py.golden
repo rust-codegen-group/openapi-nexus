@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from .bar_status import BarStatus
 
+
 @dataclass
 class BarService:
     status: BarStatus

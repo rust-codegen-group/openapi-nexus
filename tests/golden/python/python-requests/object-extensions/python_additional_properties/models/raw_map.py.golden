@@ -10,23 +10,25 @@ from typing import Any as _Any
 
 from . import _union
 
+
 @dataclass
 class RawMap:
-    additional_properties: _dict[_str, _Any] = _dataclass_field(default_factory=lambda: _dict[_str,
-        _Any](),
+    additional_properties: _dict[_str, _Any] = _dataclass_field(
+        default_factory=lambda: _dict[_str, _Any](),
         kw_only=True,
-        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True},
+    )
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
         for key, item in self.additional_properties.items():
             result[key] = _union.value_7_to_dict(item)
-
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> RawMap:
         return cls(
-            additional_properties = {key: _union.value_7_from_dict(item) for key,
-                item in data.items() },
+            additional_properties={
+                key: _union.value_7_from_dict(item) for key, item in data.items()
+            },
         )

@@ -25,14 +25,18 @@ def as_list(value: object) -> list[object]:
 
 
 def is_dict(value: object) -> TypeGuard[dict[str, object]]:
-    return isinstance(value, dict) and all(isinstance(key, str) for key in cast(dict[object, object], value))
+    return isinstance(value, dict) and all(
+        isinstance(key, str) for key in cast(dict[object, object], value)
+    )
 
 
 def is_list(value: object) -> TypeGuard[list[object]]:
     return isinstance(value, list)
 
 
-def _additional_properties(value: object, dictionary_only: bool = False) -> dict[str, object] | None:
+def _additional_properties(
+    value: object, dictionary_only: bool = False
+) -> dict[str, object] | None:
     if not isinstance(value, type) and is_dataclass(value):
         for field in fields(value):
             if field.metadata.get("openapi_additional_properties") is True:
@@ -105,5 +109,7 @@ def equal(value: object, expected: object) -> bool:
         if not is_dict(value):
             return False
         left, right = as_dict(value), as_dict(expected)
-        return left.keys() == right.keys() and all(equal(left[key], item) for key, item in right.items())
+        return left.keys() == right.keys() and all(
+            equal(left[key], item) for key, item in right.items()
+        )
     return type(value) is type(expected) and value == expected

@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class User:
     """User model."""
+
     email: str | None = None
     first_name: str | None = None
     id: int | None = None

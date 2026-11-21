@@ -80,10 +80,19 @@ impl<'a> AdditionalProperties<'a> {
             Direction::From,
         );
         let value = plan.coerce(self.values, plan.model_type(self.values, schema), value);
-        sigil_quote!(Python {
-            $N(self.name.as_str()) = {key: $C(value) for key, item in data.items() $if(!self.known.is_empty()) { if key not in [$for(key in &self.known; separator = ", ") { $S(*key) }] }},
-        })
-        .expect("Python typed extension deserialization builds")
+        let entries = if self.known.is_empty() {
+            sigil_quote!(Python { {key: $C(value) for key, item in data.items()} })
+        } else {
+            sigil_quote!(Python {
+                {key: $C(value) for key, item in data.items() if key not in [$for(key in &self.known; separator = ", ") { $S(*key) }]}
+            })
+        }
+        .expect("Python extension entries build");
+        let label = sigil_quote!(Python { $N(self.name.as_str()) })
+            .expect("Python extension keyword name builds");
+        let argument = sigil_stitch::lang::python::keyword_argument(label, entries);
+        sigil_quote!(Python { $C(argument), })
+            .expect("Python typed extension deserialization builds")
     }
 }
 
@@ -118,7 +127,7 @@ mod tests {
             Python::new(),
             width = 300,
             body,
-            "from builtins import dict as _dict, str as _str\nfrom dataclasses import dataclass, field as _dataclass_field\n\n@dataclass\nclass Model:\n    additional_properties_: _dict[_str, str] = _dataclass_field(default_factory=lambda: _dict[_str, str](), kw_only=True, metadata={\"openapi_additional_properties\": True, \"openapi_dictionary\": False})\n\n",
+            "from builtins import dict as _dict, str as _str\nfrom dataclasses import dataclass, field as _dataclass_field\n\n\n@dataclass\nclass Model:\n    additional_properties_: _dict[_str, str] = _dataclass_field(default_factory=lambda: _dict[_str, str](), kw_only=True, metadata={\"openapi_additional_properties\": True, \"openapi_dictionary\": False})\n",
         );
     }
 }

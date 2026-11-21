@@ -6,4 +6,5 @@ from __future__ import annotations
 
 from .typed_map import TypedMap
 
-type DictionaryAlias = (TypedMap)
+
+type DictionaryAlias = TypedMap

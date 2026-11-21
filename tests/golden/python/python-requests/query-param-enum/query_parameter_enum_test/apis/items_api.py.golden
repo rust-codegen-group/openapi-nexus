@@ -12,28 +12,38 @@ from ..models.get_items_response200 import GetItemsResponse200
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class GetItemsBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class GetItemsUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetItemsErrorDetail = (
-    GetItemsBadRequest
-    | GetItemsUnexpected
-)
+
+type GetItemsErrorDetail = GetItemsBadRequest | GetItemsUnexpected
+
 
 class GetItemsError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetItemsErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetItemsErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetItemsErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -42,7 +52,9 @@ class ItemsApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def get_items_with_http_info(self, *, status: FooStatus | None = None) -> ApiResponse[GetItemsResponse200]:
+    def get_items_with_http_info(
+        self, *, status: FooStatus | None = None
+    ) -> ApiResponse[GetItemsResponse200]:
         """Get items with enum query parameter, including HTTP response metadata."""
         path = "/items"
         params: dict[str, str] = {}
@@ -51,12 +63,26 @@ class ItemsApi:
         response = self._client.request("GET", path, params=params)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = GetItemsBadRequest(response.status_code, response.headers, response.content)
+                detail = GetItemsBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = GetItemsUnexpected(response.status_code, response.headers, response.content)
-            raise GetItemsError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+                detail = GetItemsUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise GetItemsError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = GetItemsResponse200.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_items(self, *, status: FooStatus | None = None) -> GetItemsResponse200:
         """Get items with enum query parameter."""

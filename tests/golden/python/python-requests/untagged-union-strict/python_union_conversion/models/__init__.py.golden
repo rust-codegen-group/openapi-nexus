@@ -25,7 +25,9 @@ from .payload_a import PayloadA as PayloadA
 from .payload_b import PayloadB as PayloadB
 from .recursive import Recursive as Recursive
 from .scalar_choice import ScalarChoice as ScalarChoice
-from .send_multipart_multipart_request_body import SendMultipartMultipartRequestBody as SendMultipartMultipartRequestBody
+from .send_multipart_multipart_request_body import (
+    SendMultipartMultipartRequestBody as SendMultipartMultipartRequestBody,
+)
 from .send_multipart_request import SendMultipartRequest as SendMultipartRequest
 from .tagged_ambiguous import TaggedAmbiguous as TaggedAmbiguous
 from .tagged_choice import TaggedChoice as TaggedChoice

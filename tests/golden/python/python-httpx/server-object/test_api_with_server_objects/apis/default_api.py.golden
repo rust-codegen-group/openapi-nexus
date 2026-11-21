@@ -15,23 +15,34 @@ from ..models.get_user_by_id_response404 import GetUserByIdResponse404
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class GetAllUsersUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetAllUsersErrorDetail = (
-    GetAllUsersUnexpected
-)
+
+type GetAllUsersErrorDetail = GetAllUsersUnexpected
+
 
 class GetAllUsersError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetAllUsersErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetAllUsersErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetAllUsersErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class GetUserByIdNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -41,11 +52,14 @@ class GetUserByIdNotFound:
         self._body_loaded: bool = False
         self._body_value: GetUserByIdResponse404 | None = None
         self._body_error: Exception | None = None
+
     @property
     def body(self) -> GetUserByIdResponse404:
         if not self._body_loaded:
             try:
-                self._body_value = GetUserByIdResponse404.from_dict(json.loads(self.raw_body.decode("utf-8")))
+                self._body_value = GetUserByIdResponse404.from_dict(
+                    json.loads(self.raw_body.decode("utf-8"))
+                )
             except Exception as exc:
                 self._body_error = exc
             self._body_loaded = True
@@ -55,22 +69,31 @@ class GetUserByIdNotFound:
             raise RuntimeError("error body was not decoded")
         return self._body_value
 
+
 class GetUserByIdUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetUserByIdErrorDetail = (
-    GetUserByIdNotFound
-    | GetUserByIdUnexpected
-)
+
+type GetUserByIdErrorDetail = GetUserByIdNotFound | GetUserByIdUnexpected
+
 
 class GetUserByIdError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetUserByIdErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetUserByIdErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetUserByIdErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -85,9 +108,18 @@ class DefaultApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             detail = GetAllUsersUnexpected(response.status_code, response.headers, response.content)
-            raise GetAllUsersError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise GetAllUsersError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = [GetAllUsersResponse200Item.from_dict(item) for item in response.json()]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_all_users(self) -> list[GetAllUsersResponse200Item]:
         """Get all users."""
@@ -99,12 +131,26 @@ class DefaultApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 404:
-                detail = GetUserByIdNotFound(response.status_code, response.headers, response.content)
+                detail = GetUserByIdNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = GetUserByIdUnexpected(response.status_code, response.headers, response.content)
-            raise GetUserByIdError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = GetUserByIdUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise GetUserByIdError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = GetUserByIdResponse200.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_user_by_id(self, id: int) -> GetUserByIdResponse200:
         """Get user by ID."""

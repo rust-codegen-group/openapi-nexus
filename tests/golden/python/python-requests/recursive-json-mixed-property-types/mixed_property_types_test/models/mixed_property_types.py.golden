@@ -6,14 +6,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .mixed_property_types_array_of_inline_item import MixedPropertyTypesArrayOfInlineItem
 from .mixed_property_types_inline_object import MixedPropertyTypesInlineObject
 from .user import User
 
+
 @dataclass
 class MixedPropertyTypes:
     """Object with mixed property types."""
+
     array_of_inline: list[MixedPropertyTypesArrayOfInlineItem]
     simple_string: str
     inline_object: MixedPropertyTypesInlineObject | None = None
@@ -35,9 +38,22 @@ class MixedPropertyTypes:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> MixedPropertyTypes:
         return cls(
-            array_of_inline=[MixedPropertyTypesArrayOfInlineItem.from_dict(item) for item in data["array_of_inline"]],  # type: ignore[union-attr]
+            array_of_inline=[
+                MixedPropertyTypesArrayOfInlineItem.from_dict(cast(dict[str, object], item))
+                for item in cast(list[object], data["array_of_inline"])
+            ],
             simple_string=data["simple_string"],  # type: ignore[assignment]
-            inline_object=MixedPropertyTypesInlineObject.from_dict(data.get("inline_object")) if data.get("inline_object") is not None else None,  # type: ignore[arg-type]
-            nested_reference=User.from_dict(data.get("nested_reference")) if data.get("nested_reference") is not None else None,  # type: ignore[arg-type]
+            inline_object=(
+                MixedPropertyTypesInlineObject.from_dict(
+                    cast(dict[str, object], data.get("inline_object"))
+                )
+                if data.get("inline_object") is not None
+                else None
+            ),
+            nested_reference=(
+                User.from_dict(cast(dict[str, object], data.get("nested_reference")))
+                if data.get("nested_reference") is not None
+                else None
+            ),
             simple_number=data.get("simple_number"),  # type: ignore[assignment]
         )

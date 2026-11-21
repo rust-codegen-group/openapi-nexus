@@ -10,9 +10,11 @@ from datetime import datetime
 
 from .order_status import OrderStatus
 
+
 @dataclass
 class Order:
     """Order model."""
+
     complete: bool | None = None
     id: int | None = None
     pet_id: int | None = None

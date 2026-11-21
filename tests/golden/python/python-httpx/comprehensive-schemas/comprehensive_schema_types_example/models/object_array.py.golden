@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from .object_array_items import ObjectArrayItems
 
+
 # Array of objects
 
-type ObjectArray = (list[ObjectArrayItems])
+
+type ObjectArray = list[ObjectArrayItems]

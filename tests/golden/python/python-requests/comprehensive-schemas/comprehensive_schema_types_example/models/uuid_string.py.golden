@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
+
 # String with UUID format
 
-type UuidString = (UUID)
+
+type UuidString = UUID

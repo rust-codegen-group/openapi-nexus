@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class UploadResponse:
     """Upload response model."""
+
     code: int | None = None
     message: str | None = None
     type_: str | None = None

@@ -11,39 +11,59 @@ from ..models.naming_convention_test import NamingConventionTest
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class GetWithQueryParamsUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetWithQueryParamsErrorDetail = (
-    GetWithQueryParamsUnexpected
-)
+
+type GetWithQueryParamsErrorDetail = GetWithQueryParamsUnexpected
+
 
 class GetWithQueryParamsError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetWithQueryParamsErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetWithQueryParamsErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetWithQueryParamsErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class TestNamingConventionsUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type TestNamingConventionsErrorDetail = (
-    TestNamingConventionsUnexpected
-)
+
+type TestNamingConventionsErrorDetail = TestNamingConventionsUnexpected
+
 
 class TestNamingConventionsError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: TestNamingConventionsErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: TestNamingConventionsErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: TestNamingConventionsErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -52,7 +72,8 @@ class DefaultApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def get_with_query_params_with_http_info(self,
+    def get_with_query_params_with_http_info(
+        self,
         *,
         snake_case_param: str,
         snake_case_number: int | None = None,
@@ -65,7 +86,8 @@ class DefaultApi:
         camel_case_param: str | None = None,
         camel_case_number: int | None = None,
         singleword: str | None = None,
-        id: int | None = None) -> ApiResponse[None]:
+        id: int | None = None,
+    ) -> ApiResponse[None]:
         """Get with query parameters, including HTTP response metadata."""
         path = "/test"
         params: dict[str, str] = {}
@@ -94,12 +116,24 @@ class DefaultApi:
             params["id"] = str(id)
         response = self._client.request("GET", path, params=params)
         if not (200 <= response.status_code < 300):
-            detail = GetWithQueryParamsUnexpected(response.status_code, response.headers, response.content)
-            raise GetWithQueryParamsError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = GetWithQueryParamsUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise GetWithQueryParamsError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
-    def get_with_query_params(self,
+    def get_with_query_params(
+        self,
         *,
         snake_case_param: str,
         snake_case_number: int | None = None,
@@ -112,23 +146,48 @@ class DefaultApi:
         camel_case_param: str | None = None,
         camel_case_number: int | None = None,
         singleword: str | None = None,
-        id: int | None = None) -> None:
+        id: int | None = None,
+    ) -> None:
         """Get with query parameters."""
-        return self.get_with_query_params_with_http_info(snake_case_param=snake_case_param, snake_case_number=snake_case_number, kebab_case_param=kebab_case_param, kebab_case_array=kebab_case_array, pascal_case_param=pascal_case_param, pascal_case_number=pascal_case_number, screaming_snake_case=screaming_snake_case, screaming_number=screaming_number, camel_case_param=camel_case_param, camel_case_number=camel_case_number, singleword=singleword, id=id).data
+        return self.get_with_query_params_with_http_info(
+            snake_case_param=snake_case_param,
+            snake_case_number=snake_case_number,
+            kebab_case_param=kebab_case_param,
+            kebab_case_array=kebab_case_array,
+            pascal_case_param=pascal_case_param,
+            pascal_case_number=pascal_case_number,
+            screaming_snake_case=screaming_snake_case,
+            screaming_number=screaming_number,
+            camel_case_param=camel_case_param,
+            camel_case_number=camel_case_number,
+            singleword=singleword,
+            id=id,
+        ).data
 
-    def test_naming_conventions_with_http_info(self,
-        *,
-        body: NamingConventionTest) -> ApiResponse[NamingConventionTest]:
+    def test_naming_conventions_with_http_info(
+        self, *, body: NamingConventionTest
+    ) -> ApiResponse[NamingConventionTest]:
         """Test endpoint with various parameter naming conventions, including HTTP response metadata."""
         path = "/test"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
-            detail = TestNamingConventionsUnexpected(response.status_code, response.headers, response.content)
-            raise TestNamingConventionsError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = TestNamingConventionsUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise TestNamingConventionsError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = NamingConventionTest.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def test_naming_conventions(self, *, body: NamingConventionTest) -> NamingConventionTest:
         """Test endpoint with various parameter naming conventions."""

@@ -12,21 +12,31 @@ from ..models.container_image import ContainerImage
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class CreateContainerUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type CreateContainerErrorDetail = (
-    CreateContainerUnexpected
-)
+
+type CreateContainerErrorDetail = CreateContainerUnexpected
+
 
 class CreateContainerError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateContainerErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateContainerErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateContainerErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -35,17 +45,30 @@ class DefaultApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def create_container_with_http_info(self, *, body: ContainerImage) -> ApiResponse[ContainerImage]:
+    def create_container_with_http_info(
+        self, *, body: ContainerImage
+    ) -> ApiResponse[ContainerImage]:
         """Create container with discriminated union, including HTTP response metadata."""
         path = "/container"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         response = self._client.request("POST", path, json=body, headers=headers)
         if not (200 <= response.status_code < 300):
-            detail = CreateContainerUnexpected(response.status_code, response.headers, response.content)
-            raise CreateContainerError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = CreateContainerUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise CreateContainerError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.json()  # type: ignore[return-value]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def create_container(self, *, body: ContainerImage) -> ContainerImage:
         """Create container with discriminated union."""

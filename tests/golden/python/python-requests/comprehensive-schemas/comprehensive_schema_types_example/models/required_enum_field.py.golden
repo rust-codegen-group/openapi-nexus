@@ -8,9 +8,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+
 @dataclass
 class RequiredEnumField:
     """Required enum field in object."""
+
     status: Literal["active", "inactive"]
 
     def to_dict(self) -> dict[str, object]:

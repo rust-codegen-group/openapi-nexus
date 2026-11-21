@@ -4,21 +4,20 @@
 //! sigil_quote!) for structured code generation with automatic import tracking.
 //! Each schema produces one `.py` file via `FileSpec`.
 
+use super::PYTHON_LINE_LENGTH;
 use super::additional_properties::AdditionalProperties;
 use super::value::{Direction, UntaggedUnionStrategy, ValuePlan, optional_type};
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::GeneratorError;
 pub use crate::generators::python::type_names::python_type_name;
-use crate::generators::request_inputs::{
-    RequestInputField, RequestInputFieldKind, RequestInputModel, RequestInputPlan,
-};
+use crate::generators::request_inputs::{RequestInputModel, RequestInputPlan};
 use crate::generators::type_application;
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion, TaggingStyle,
 };
 use heck::{ToPascalCase, ToSnakeCase};
-use sigil_stitch::code_block::CodeBlock;
+use sigil_stitch::code_block::{CodeBlock, StringLitArg};
 use sigil_stitch::lang::python::{Python, keyword_argument};
 use sigil_stitch::prelude::*;
 
@@ -71,111 +70,51 @@ fn request_input_model_file(
     header: &str,
     values: &ValuePlan<'_>,
 ) -> FileInfo {
-    if model
+    let mut declaration =
+        TypeSpec::builder(&model.name.to_pascal_case(), TypeKind::Class).annotate(
+            AnnotationSpec::importable(TypeName::importable("dataclasses", "dataclass")),
+        );
+    for field in model
         .fields
         .iter()
-        .any(|field| values.needs_conversion(&field.type_expr))
+        .filter(|field| field.required)
+        .chain(model.fields.iter().filter(|field| !field.required))
     {
-        let mut declaration =
-            TypeSpec::builder(&model.name.to_pascal_case(), TypeKind::Class).annotate(
-                AnnotationSpec::importable(TypeName::importable("dataclasses", "dataclass")),
-            );
-        for field in model
-            .fields
-            .iter()
-            .filter(|field| field.required)
-            .chain(model.fields.iter().filter(|field| !field.required))
-        {
-            let ty = if field.is_upload() {
-                TypeName::importable("..runtime", "UploadFile")
-            } else {
-                values.model_type(&field.type_expr, &model.name)
-            };
-            let mut spec = FieldSpec::builder(
-                &python_field_name(&field.wire_name),
-                if field.required {
-                    ty
-                } else {
-                    optional_type(ty)
-                },
-            );
-            if !field.required {
-                spec = spec.initializer(
-                    sigil_quote!(Python { None })
-                        .expect("Python optional union multipart field default builds"),
-                );
-            }
-            declaration =
-                declaration.add_field(spec.build().expect("Python union multipart field builds"));
-        }
-        let filename = format!("{}.py", model.name.to_snake_case());
-        let source = FileSpec::builder_with(&filename, Python::new())
-            .header(future_annotations_header())
-            .add_type(
-                declaration
-                    .build()
-                    .expect("Python union multipart input declaration builds"),
-            )
-            .build()
-            .expect("Python union multipart input file builds")
-            .render(100)
-            .expect("Python union multipart input renders");
-        // Keep the final file boundary at exactly one terminating newline.
-        return FileInfo::model(
-            filename,
-            format!("{header}{}\n", source.trim_end_matches('\n')),
-        );
-    }
-    let class_name = model.name.to_pascal_case();
-    let filename = format!("{}.py", model.name.to_snake_case());
-    let mut imports = std::collections::BTreeSet::new();
-    let mut needs_upload = false;
-    for field in &model.fields {
-        if field.is_upload() {
-            needs_upload = true;
+        let ty = if field.is_upload() {
+            TypeName::importable("..runtime", "UploadFile")
         } else {
-            collect_request_input_imports(&field.type_expr, &mut imports);
-        }
-    }
-
-    let mut content = String::new();
-    content.push_str(header);
-    content.push_str("from __future__ import annotations\n\n");
-    content.push_str("from dataclasses import dataclass\n");
-    if needs_upload {
-        content.push_str("from ..runtime import UploadFile\n");
-    }
-    for import in &imports {
-        content.push_str(import);
-        content.push('\n');
-    }
-    content.push('\n');
-    content.push_str("@dataclass\n");
-    content.push_str(&format!("class {class_name}:\n"));
-    if model.fields.is_empty() {
-        content.push_str("    pass\n");
-    } else {
-        let required = model.fields.iter().filter(|field| field.required);
-        let optional = model.fields.iter().filter(|field| !field.required);
-        for field in required.chain(optional) {
-            let field_name = python_field_name(&field.wire_name);
-            let ty = request_input_python_type(field);
+            values.model_type(&field.type_expr, &model.name)
+        };
+        let mut spec = FieldSpec::builder(
+            &python_field_name(&field.wire_name),
             if field.required {
-                content.push_str(&format!("    {field_name}: {ty}\n"));
+                ty
             } else {
-                content.push_str(&format!("    {field_name}: {ty} | None = None\n"));
-            }
+                optional_type(ty)
+            },
+        );
+        if !field.required {
+            spec = spec.initializer(
+                sigil_quote!(Python { None })
+                    .expect("Python optional request input field default builds"),
+            );
         }
+        declaration =
+            declaration.add_field(spec.build().expect("Python request input field builds"));
     }
-
-    FileInfo::model(filename, content)
-}
-
-fn request_input_python_type(field: &RequestInputField) -> String {
-    match field.kind {
-        RequestInputFieldKind::UploadFile { .. } => "UploadFile".to_string(),
-        RequestInputFieldKind::SchemaValue => python_type_str(&field.type_expr),
-    }
+    let filename = format!("{}.py", model.name.to_snake_case());
+    let source = FileSpec::builder_with(&filename, Python::new())
+        .header(future_annotations_header())
+        .add_type(
+            declaration
+                .build()
+                .expect("Python request input declaration builds"),
+        )
+        .build()
+        .expect("Python request input file builds")
+        .render(PYTHON_LINE_LENGTH)
+        .expect("Python request input renders");
+    FileInfo::model(filename, format!("{header}{source}"))
 }
 
 fn emit_model_body(schema: &IrSchema, ir: &IrSpec, values: &ValuePlan<'_>) -> Option<String> {
@@ -187,11 +126,11 @@ fn emit_model_body(schema: &IrSchema, ir: &IrSpec, values: &ValuePlan<'_>) -> Op
         IrSchemaKind::Intersection(i) => emit_intersection(schema, i, ir, values),
         IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, values),
     }?;
-    file_spec.render(100).ok()
+    file_spec.render(PYTHON_LINE_LENGTH).ok()
 }
 
 pub fn future_annotations_header() -> CodeBlock {
-    CodeBlock::of("from __future__ import annotations", ()).expect("static header")
+    sigil_quote!(Python { from __future__ import annotations }).expect("static header")
 }
 
 // ---------------------------------------------------------------------------
@@ -249,7 +188,7 @@ fn emit_object(
         required.iter().chain(optional.iter()).copied().collect();
 
     if all_fields.is_empty() && additional.is_none() {
-        cls = cls.extra_member(CodeBlock::of("pass", ()).expect("pass"));
+        cls = cls.extra_member(sigil_quote!(Python { pass }).expect("pass"));
     } else {
         for (_json_name, prop) in &required {
             let field_name = python_field_name(&prop.name);
@@ -265,7 +204,7 @@ fn emit_object(
             let type_name = values.model_type(&prop.type_expr, &schema.name);
             cls = cls.add_field(
                 FieldSpec::builder(&field_name, optional_type(type_name))
-                    .initializer(CodeBlock::of("None", ()).expect("None init"))
+                    .initializer(sigil_quote!(Python { None }).expect("None init"))
                     .build()
                     .expect("optional field"),
             );
@@ -278,7 +217,6 @@ fn emit_object(
         cls = cls.add_method(build_to_dict_method(
             &all_fields,
             ir,
-            &obj.properties,
             values,
             &schema.name,
             additional.as_ref(),
@@ -287,7 +225,6 @@ fn emit_object(
             &name,
             &all_fields,
             ir,
-            &obj.properties,
             values,
             &schema.name,
             additional.as_ref(),
@@ -301,7 +238,6 @@ fn emit_object(
 fn build_to_dict_method(
     all_fields: &[(&String, &IrProperty)],
     ir: &IrSpec,
-    properties: &indexmap::IndexMap<String, IrProperty>,
     values: &ValuePlan<'_>,
     schema_name: &str,
     additional: Option<&AdditionalProperties<'_>>,
@@ -313,7 +249,9 @@ fn build_to_dict_method(
     );
 
     let mut body = CodeBlock::builder();
-    body.add_statement("result: dict[str, object] = {}", ());
+    body.add_code(
+        sigil_quote!(Python { result: dict[str, object] = {} }).expect("result initialization"),
+    );
     for (json_name, prop) in all_fields {
         let field_name = python_field_name(&prop.name);
         if values.needs_conversion(&prop.type_expr) {
@@ -356,18 +294,26 @@ fn build_to_dict_method(
             );
             continue;
         }
-        let to_expr = render_to_dict_expr(&format!("self.{field_name}"), json_name, ir, properties);
-        if prop.required && !prop.nullable {
-            body.add_statement(&format!("result[\"{json_name}\"] = {to_expr}"), ());
+        let access = sigil_quote!(Python { self.$N(field_name.as_str()) })
+            .expect("Python ordinary field access builds");
+        let to_expr = render_to_dict_expr(access.clone(), &prop.type_expr, ir);
+        let statement = if prop.required && !prop.nullable {
+            sigil_quote!(Python { result[$S(json_name.as_str())] = $C(to_expr) })
+                .expect("Python required field serialization builds")
         } else {
-            body.add_statement(&format!("if self.{field_name} is not None:%>"), ());
-            body.add_statement(&format!("result[\"{json_name}\"] = {to_expr}%<"), ());
-        }
+            sigil_quote!(Python {
+                if $C(access) is not None {
+                    result[$S(json_name.as_str())] = $C(to_expr)
+                }
+            })
+            .expect("Python optional field serialization builds")
+        };
+        body.add_code(statement);
     }
     if let Some(additional) = additional {
         body.add_code(additional.write_entries(values));
     }
-    body.add_statement("return result", ());
+    body.add_code(sigil_quote!(Python { return result }).expect("return result"));
 
     FunSpec::builder("to_dict")
         .add_param(self_param)
@@ -381,7 +327,6 @@ fn build_from_dict_method(
     class_name: &str,
     all_fields: &[(&String, &IrProperty)],
     ir: &IrSpec,
-    properties: &indexmap::IndexMap<String, IrProperty>,
     values: &ValuePlan<'_>,
     schema_name: &str,
     additional: Option<&AdditionalProperties<'_>>,
@@ -446,25 +391,31 @@ fn build_from_dict_method(
             schema_name,
             Direction::From,
         ) {
+            let value = sigil_quote!(Python {
+                $if(is_required) { $C(converted) }
+                $else { $C(converted) if $C(access) is not None else None }
+            })
+            .expect("Python recursive model field value builds");
+            let label = sigil_quote!(Python { $N(field_name) })
+                .expect("Python recursive model keyword label builds");
+            let argument = keyword_argument(label, value);
             body.add_code(
-                sigil_quote!(Python {
-                    $N(field_name) = $if(is_required) { $C(converted) } $else { $C(converted) if $C(access) is not None else None },
-                })
-                .expect("Python recursive model field deserialization builds"),
+                sigil_quote!(Python { $C(argument), })
+                    .expect("Python recursive model field deserialization builds"),
             );
             continue;
         }
-        let expr = if is_required {
-            render_from_dict_expr(json_name, ir, properties)
+        let (expr, comment) = render_from_dict_expr(json_name, &prop.type_expr, is_required, ir);
+        let label = sigil_quote!(Python { $N(field_name.as_str()) })
+            .expect("Python ordinary keyword label builds");
+        let argument = keyword_argument(label, expr);
+        let argument = if let Some(comment) = comment {
+            sigil_quote!(Python { $C(argument), $comment(comment) })
         } else {
-            render_from_dict_optional_expr(json_name, ir, properties)
-        };
-        if let Some(comment_start) = expr.find("  #") {
-            let (value_part, comment_part) = expr.split_at(comment_start);
-            body.add_statement(&format!("{field_name}={value_part},{comment_part}"), ());
-        } else {
-            body.add_statement(&format!("{field_name}={expr},"), ());
+            sigil_quote!(Python { $C(argument), })
         }
+        .expect("Python ordinary keyword argument builds");
+        body.add_code(argument);
     }
     if let Some(additional) = additional {
         body.add_code(additional.read_entries(schema_name, values));
@@ -473,7 +424,7 @@ fn build_from_dict_method(
     body.add_statement(")", ());
 
     FunSpec::builder("from_dict")
-        .annotation(CodeBlock::of("@classmethod", ()).expect("classmethod"))
+        .annotate(AnnotationSpec::new("classmethod"))
         .add_param(cls_param)
         .add_param(data_param)
         .returns(vec![TypeName::primitive(class_name)])
@@ -545,12 +496,6 @@ fn emit_enum(schema: &IrSchema, en: &IrEnum) -> Option<FileSpec> {
 fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr, values: &ValuePlan<'_>) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let rhs_type = values.model_type(expr, &schema.name);
-
-    let type_alias = sigil_quote!(Python {
-        type $N(name.as_str()) = ($T(rhs_type));
-    })
-    .ok()?;
-
     let mut file =
         FileSpec::builder_with("model.py", Python::new()).header(future_annotations_header());
     if needs_typing_literal(expr) {
@@ -559,55 +504,42 @@ fn emit_alias(schema: &IrSchema, expr: &IrTypeExpr, values: &ValuePlan<'_>) -> O
     if let Some(doc) = &schema.description {
         file = file.add_raw(&format!("# {}\n", escape_docstring(doc)));
     }
-    file = file.add_code(type_alias);
+    file = file.add_type(
+        TypeSpec::builder(&name, TypeKind::TypeAlias)
+            .extends(rhs_type)
+            .build()
+            .ok()?,
+    );
     file.build().ok()
 }
 
 fn emit_type_alias_raw(schema: &IrSchema, rhs: &str) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
-
-    let type_alias = sigil_quote!(Python {
-        type $N(name.as_str()) = $L(rhs);
-    })
-    .ok()?;
-
     let mut file =
         FileSpec::builder_with("model.py", Python::new()).header(future_annotations_header());
     if let Some(doc) = &schema.description {
         file = file.add_raw(&format!("# {}\n", escape_docstring(doc)));
     }
-    file = file.add_code(type_alias);
+    file = file.add_type(
+        TypeSpec::builder(&name, TypeKind::TypeAlias)
+            .extends(TypeName::primitive(rhs))
+            .build()
+            .ok()?,
+    );
     file.build().ok()
 }
 
-// ---------------------------------------------------------------------------
-// Type alias builder with proper multi-line formatting
-// ---------------------------------------------------------------------------
-
-fn format_type_alias(name: &str, members: &[TypeName]) -> CodeBlock {
-    if members.is_empty() {
-        return sigil_quote!(Python {
-            type $N(name) = ($T(TypeName::importable("typing", "Any")));
-        })
-        .unwrap();
-    }
-    if members.len() == 1 {
-        return sigil_quote!(Python {
-            type $N(name) = ($T(members[0].clone()));
-        })
-        .unwrap();
-    }
-    sigil_quote!(Python {
-        type $N(name) = (
-            $L("    ")$for(member in members; separator = "\n    | ") { $T((*member).clone()) }
-        )
-    })
-    .unwrap()
+fn type_alias_spec(name: &str, members: Vec<TypeName>) -> TypeSpec {
+    let target = match members.len() {
+        0 => TypeName::importable("typing", "Any"),
+        1 => members.into_iter().next().expect("one alias member"),
+        _ => TypeName::union(members),
+    };
+    TypeSpec::builder(name, TypeKind::TypeAlias)
+        .extends(target)
+        .build()
+        .expect("Python type alias builds")
 }
-
-// ---------------------------------------------------------------------------
-// Union -> type X = A | B | C
-// ---------------------------------------------------------------------------
 
 fn emit_union(schema: &IrSchema, u: &IrUnion, values: &ValuePlan<'_>) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
@@ -624,7 +556,7 @@ fn emit_union(schema: &IrSchema, u: &IrUnion, values: &ValuePlan<'_>) -> Option<
         members.push(TypeName::primitive("None"));
     }
 
-    let type_alias = format_type_alias(&name, &members);
+    let type_alias = type_alias_spec(&name, members.clone());
 
     let mut file =
         FileSpec::builder_with("model.py", Python::new()).header(future_annotations_header());
@@ -635,7 +567,7 @@ fn emit_union(schema: &IrSchema, u: &IrUnion, values: &ValuePlan<'_>) -> Option<
         file = file.add_raw(&format!("# {}\n", escape_docstring(doc)));
     }
     file = file
-        .add_code(type_alias)
+        .add_type(type_alias)
         .add_import(ImportSpec::named(".", "_union"));
     let expr = IrTypeExpr::Named(schema.name.clone());
     for direction in [Direction::From, Direction::To] {
@@ -715,14 +647,14 @@ fn emit_intersection_as_alias(schema: &IrSchema, inter: &IrIntersection) -> Opti
     let name = schema.name.to_pascal_case();
     let members: Vec<TypeName> = inter.members.iter().map(python_type_name).collect();
 
-    let type_alias = format_type_alias(&name, &members);
+    let type_alias = type_alias_spec(&name, members.clone());
 
     let mut file =
         FileSpec::builder_with("model.py", Python::new()).header(future_annotations_header());
     if needs_typing_literal_in_exprs(&inter.members) {
         file = file.add_import(ImportSpec::named("typing", "Literal"));
     }
-    file = file.add_code(type_alias);
+    file = file.add_type(type_alias);
     file.build().ok()
 }
 
@@ -766,7 +698,7 @@ fn emit_intersection_as_dataclass(
     }
 
     if required.is_empty() && optional.is_empty() {
-        cls = cls.extra_member(CodeBlock::of("pass", ()).expect("pass"));
+        cls = cls.extra_member(sigil_quote!(Python { pass }).expect("pass"));
     } else {
         for (_json_name, prop) in &required {
             let field_name = python_field_name(&prop.name);
@@ -782,7 +714,7 @@ fn emit_intersection_as_dataclass(
             let type_name = values.model_type(&prop.type_expr, &schema.name);
             cls = cls.add_field(
                 FieldSpec::builder(&field_name, optional_type(type_name))
-                    .initializer(CodeBlock::of("None", ()).expect("None init"))
+                    .initializer(sigil_quote!(Python { None }).expect("None init"))
                     .build()
                     .expect("optional field"),
             );
@@ -793,7 +725,6 @@ fn emit_intersection_as_dataclass(
         cls = cls.add_method(build_to_dict_method(
             &all_fields,
             ir,
-            all_props,
             values,
             &schema.name,
             None,
@@ -802,7 +733,6 @@ fn emit_intersection_as_dataclass(
             &name,
             &all_fields,
             ir,
-            all_props,
             values,
             &schema.name,
             None,
@@ -832,7 +762,7 @@ fn emit_tagged_union(
         .map(|v| values.model_type(&v.content_type, &schema.name))
         .collect();
 
-    let type_alias = format_type_alias(&name, &members);
+    let type_alias = type_alias_spec(&name, members.clone());
 
     let hint = match &tu.tagging {
         TaggingStyle::Internal => {
@@ -856,12 +786,13 @@ fn emit_tagged_union(
     if exprs.iter().any(|e| needs_typing_literal(e)) {
         file = file.add_import(ImportSpec::named("typing", "Literal"));
     }
-    let mut doc_block = String::new();
-    for line in doc.lines() {
-        doc_block.push_str(&format!("# {line}\n"));
-    }
-    file = file.add_raw(&doc_block);
-    file = file.add_code(type_alias);
+    let comments = doc
+        .lines()
+        .map(|line| sigil_quote!(Python { $comment(line) }))
+        .collect::<Result<Vec<_>, _>>()
+        .ok()?;
+    file = file.add_code(sigil_quote!(Python { $C_each(comments) }).ok()?);
+    file = file.add_type(type_alias);
 
     let expr = IrTypeExpr::Named(schema.name.clone());
     if values.has_union(&expr) {
@@ -997,6 +928,10 @@ fn build_tagged_union_helpers(
         _ => Vec::new(),
     };
     let unknown_tag = format!("Unknown discriminator value for {name}: ");
+    // Keep `+` on the continuation line when broken; `%L` is only the
+    // static operator token, while the message remains a semantic `%S` arg.
+    let unknown_tag_message = CodeBlock::of("%S%W%Lstr(data)", (StringLitArg(unknown_tag), "+ "))
+        .expect("Python tagged payload unknown-tag message builds");
     let from_body = sigil_quote!(Python {
         $if(!matches!(tu.tagging, TaggingStyle::External)) {
             _tag = data[$S(tag_field.as_str())]
@@ -1005,13 +940,18 @@ fn build_tagged_union_helpers(
             _content = data[$S(*content_field)]
         }
         $C_each(decoders)
-        raise ValueError($S(unknown_tag) + str(data))
+        raise ValueError($C(unknown_tag_message))
     })
     .expect("Python tagged payload decoder body builds");
     let unknown_variant = format!("Unknown variant for {name}: ");
+    let unknown_variant_message = CodeBlock::of(
+        "%S%W%Lstr(type(obj))",
+        (StringLitArg(unknown_variant), "+ "),
+    )
+    .expect("Python tagged payload unknown-variant message builds");
     let to_body = sigil_quote!(Python {
         $C_each(encoders)
-        raise ValueError($S(unknown_variant) + str(type(obj)))
+        raise ValueError($C(unknown_variant_message))
     })
     .expect("Python tagged payload encoder body builds");
     vec![
@@ -1114,43 +1054,6 @@ fn python_primitive(p: &IrPrimitive) -> &'static str {
     }
 }
 
-fn collect_request_input_imports(
-    expr: &IrTypeExpr,
-    imports: &mut std::collections::BTreeSet<String>,
-) {
-    match expr.representation() {
-        IrTypeExpr::Named(name) => {
-            let py_name = name.to_pascal_case();
-            let module = name.to_snake_case();
-            imports.insert(format!("from .{module} import {py_name}"));
-        }
-        IrTypeExpr::Primitive(IrPrimitive::Date | IrPrimitive::DateTime) => {
-            imports.insert("import datetime".to_string());
-        }
-        IrTypeExpr::Primitive(IrPrimitive::Uuid) => {
-            imports.insert("import uuid".to_string());
-        }
-        IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => {
-            imports.insert("from typing import Literal".to_string());
-        }
-        IrTypeExpr::Union(members) => {
-            if members.is_empty() {
-                imports.insert("from typing import Any".to_string());
-            }
-            for member in members {
-                collect_request_input_imports(member, imports);
-            }
-        }
-        IrTypeExpr::Any => {
-            imports.insert("from typing import Any".to_string());
-        }
-        IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
-            collect_request_input_imports(inner, imports);
-        }
-        _ => {}
-    }
-}
-
 fn needs_typing_literal(expr: &IrTypeExpr) -> bool {
     match expr.representation() {
         IrTypeExpr::StringLiteral(_) | IrTypeExpr::StringEnum(_) => true,
@@ -1174,203 +1077,137 @@ fn needs_typing_literal_in_exprs(exprs: &[IrTypeExpr]) -> bool {
 // Serialization helpers
 // ---------------------------------------------------------------------------
 
-fn render_to_dict_expr(
-    value_expr: &str,
-    json_name: &str,
-    ir: &IrSpec,
-    properties: &indexmap::IndexMap<String, IrProperty>,
-) -> String {
-    let prop = properties.get(json_name);
-    let type_expr = prop.map(|p| &p.type_expr);
-    match type_expr {
-        Some(IrTypeExpr::Named(ref_name)) => {
-            if is_object_schema(ref_name, ir) {
-                format!("{value_expr}.to_dict()")
-            } else if is_tagged_union_schema(ref_name, ir) {
-                let snake = ref_name.to_snake_case();
-                format!("{snake}_to_dict({value_expr})")
-            } else {
-                value_expr.to_string()
-            }
-        }
-        Some(IrTypeExpr::Array(inner)) => {
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_object_schema(ref_name, ir)
-            {
-                return format!("[item.to_dict() for item in {value_expr}]");
-            }
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_tagged_union_schema(ref_name, ir)
-            {
-                let snake = ref_name.to_snake_case();
-                return format!("[{snake}_to_dict(item) for item in {value_expr}]");
-            }
-            value_expr.to_string()
-        }
-        Some(IrTypeExpr::Nullable(inner)) => {
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_object_schema(ref_name, ir)
-            {
-                return format!("{value_expr}.to_dict() if {value_expr} is not None else None");
-            }
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_tagged_union_schema(ref_name, ir)
-            {
-                let snake = ref_name.to_snake_case();
-                return format!(
-                    "{snake}_to_dict({value_expr}) if {value_expr} is not None else None"
-                );
-            }
-            value_expr.to_string()
-        }
-        Some(IrTypeExpr::Map(inner)) => {
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_object_schema(ref_name, ir)
-            {
-                return format!("{{k: v.to_dict() for k, v in {value_expr}.items()}}");
-            }
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_tagged_union_schema(ref_name, ir)
-            {
-                let snake = ref_name.to_snake_case();
-                return format!("{{k: {snake}_to_dict(v) for k, v in {value_expr}.items()}}");
-            }
-            value_expr.to_string()
-        }
-        _ => value_expr.to_string(),
+fn render_to_dict_expr(access: CodeBlock, type_expr: &IrTypeExpr, ir: &IrSpec) -> CodeBlock {
+    if let IrTypeExpr::Nullable(inner) = type_expr {
+        return match named_conversion(inner, access.clone(), ir, Direction::To) {
+            Some(converted) => sigil_quote!(Python {
+                $C(converted) if $C(access) is not None else None
+            })
+            .expect("Python nullable serialization builds"),
+            None => access,
+        };
     }
+    convert_ordinary(type_expr, access.clone(), ir, Direction::To).unwrap_or(access)
 }
 
 fn render_from_dict_expr(
     json_name: &str,
+    type_expr: &IrTypeExpr,
+    required: bool,
     ir: &IrSpec,
-    properties: &indexmap::IndexMap<String, IrProperty>,
-) -> String {
-    let prop = properties.get(json_name);
-    let type_expr = prop.map(|p| &p.type_expr);
-    let accessor = format!("data[\"{json_name}\"]");
+) -> (CodeBlock, Option<&'static str>) {
+    let access = if required {
+        sigil_quote!(Python { data[$S(json_name)] })
+    } else {
+        sigil_quote!(Python { data.get($S(json_name)) })
+    }
+    .expect("Python wire accessor builds");
+    let type_expr = match type_expr {
+        IrTypeExpr::Nullable(inner) if !required => inner,
+        _ => type_expr,
+    };
+    let Some(converted) = convert_ordinary(type_expr, access.clone(), ir, Direction::From) else {
+        return (access, Some("type: ignore[assignment]"));
+    };
+    let code = if required {
+        converted
+    } else {
+        sigil_quote!(Python { $C(converted) if $C(access) is not None else None })
+            .expect("Python optional wire conversion builds")
+    };
+    (code, None)
+}
+
+fn convert_ordinary(
+    type_expr: &IrTypeExpr,
+    access: CodeBlock,
+    ir: &IrSpec,
+    direction: Direction,
+) -> Option<CodeBlock> {
     match type_expr {
-        Some(IrTypeExpr::Named(ref_name)) => {
-            if is_object_schema(ref_name, ir) {
-                let py_name = ref_name.to_pascal_case();
-                format!("{py_name}.from_dict({accessor})  # type: ignore[arg-type]")
-            } else if is_tagged_union_schema(ref_name, ir) {
-                let snake = ref_name.to_snake_case();
-                format!("{snake}_from_dict({accessor})  # type: ignore[arg-type]")
+        IrTypeExpr::Array(inner) => {
+            let item = sigil_quote!(Python { item }).expect("Python item reference builds");
+            let child = named_conversion(inner, item, ir, direction)?;
+            let access = if direction == Direction::From {
+                wire_cast(
+                    type_application(
+                        TypeName::primitive("list"),
+                        vec![TypeName::primitive("object")],
+                    ),
+                    access,
+                )
             } else {
-                format!("{accessor}  # type: ignore[assignment]")
-            }
+                access
+            };
+            Some(
+                sigil_quote!(Python { [$C(child) for item in $C(access)] })
+                    .expect("Python array conversion builds"),
+            )
         }
-        Some(IrTypeExpr::Array(inner)) => {
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_object_schema(ref_name, ir)
-            {
-                let py_name = ref_name.to_pascal_case();
-                return format!(
-                    "[{py_name}.from_dict(item) for item in {accessor}]  # type: ignore[union-attr]"
-                );
-            }
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_tagged_union_schema(ref_name, ir)
-            {
-                let snake = ref_name.to_snake_case();
-                return format!(
-                    "[{snake}_from_dict(item) for item in {accessor}]  # type: ignore[union-attr]"
-                );
-            }
-            format!("{accessor}  # type: ignore[assignment]")
+        IrTypeExpr::Map(inner) => {
+            let item = sigil_quote!(Python { v }).expect("Python value reference builds");
+            let child = named_conversion(inner, item, ir, direction)?;
+            let access = if direction == Direction::From {
+                wire_cast(wire_dict_type(), access)
+            } else {
+                access
+            };
+            Some(
+                sigil_quote!(Python { {k: $C(child) for k, v in $C(access).items()} })
+                    .expect("Python map conversion builds"),
+            )
         }
-        Some(IrTypeExpr::Map(inner)) => {
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_object_schema(ref_name, ir)
-            {
-                let py_name = ref_name.to_pascal_case();
-                return format!(
-                    "{{k: {py_name}.from_dict(v) for k, v in {accessor}.items()}}  # type: ignore[union-attr]"
-                );
-            }
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_tagged_union_schema(ref_name, ir)
-            {
-                let snake = ref_name.to_snake_case();
-                return format!(
-                    "{{k: {snake}_from_dict(v) for k, v in {accessor}.items()}}  # type: ignore[union-attr]"
-                );
-            }
-            format!("{accessor}  # type: ignore[assignment]")
-        }
-        _ => format!("{accessor}  # type: ignore[assignment]"),
+        _ => named_conversion(type_expr, access, ir, direction),
     }
 }
 
-fn render_from_dict_optional_expr(
-    json_name: &str,
+fn wire_dict_type() -> TypeName {
+    type_application(
+        TypeName::primitive("dict"),
+        vec![TypeName::primitive("str"), TypeName::primitive("object")],
+    )
+}
+
+fn wire_cast(ty: TypeName, access: CodeBlock) -> CodeBlock {
+    sigil_quote!(Python { $T(TypeName::importable("typing", "cast"))($T(ty), $C(access)) })
+        .expect("Python wire value type projection builds")
+}
+
+fn named_conversion(
+    type_expr: &IrTypeExpr,
+    access: CodeBlock,
     ir: &IrSpec,
-    properties: &indexmap::IndexMap<String, IrProperty>,
-) -> String {
-    let prop = properties.get(json_name);
-    let type_expr = prop.map(|p| &p.type_expr);
-    let raw_type = type_expr.map(|t| match t {
-        IrTypeExpr::Nullable(inner) => inner.as_ref(),
-        _ => t,
-    });
-    let accessor = format!("data.get(\"{json_name}\")");
-    match raw_type {
-        Some(IrTypeExpr::Named(ref_name)) => {
-            if is_object_schema(ref_name, ir) {
-                let py_name = ref_name.to_pascal_case();
-                format!(
-                    "{py_name}.from_dict({accessor}) if {accessor} is not None else None  # type: ignore[arg-type]"
-                )
-            } else if is_tagged_union_schema(ref_name, ir) {
-                let snake = ref_name.to_snake_case();
-                format!(
-                    "{snake}_from_dict({accessor}) if {accessor} is not None else None  # type: ignore[arg-type]"
-                )
-            } else {
-                format!("{accessor}  # type: ignore[assignment]")
+    direction: Direction,
+) -> Option<CodeBlock> {
+    let IrTypeExpr::Named(name) = type_expr else {
+        return None;
+    };
+    let access = if direction == Direction::From {
+        // Keep the decoder's unchecked wire contract without depending on the
+        // physical line where a type-ignore comment would end up after wrapping.
+        wire_cast(wire_dict_type(), access)
+    } else {
+        access
+    };
+    let block = if is_object_schema(name, ir) {
+        match direction {
+            Direction::From => {
+                let class = name.to_pascal_case();
+                sigil_quote!(Python { $N(class).from_dict($C(access)) })
             }
+            Direction::To => sigil_quote!(Python { $C(access).to_dict() }),
         }
-        Some(IrTypeExpr::Array(inner)) => {
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_object_schema(ref_name, ir)
-            {
-                let py_name = ref_name.to_pascal_case();
-                return format!(
-                    "[{py_name}.from_dict(item) for item in {accessor}] if {accessor} is not None else None  # type: ignore[union-attr]"
-                );
-            }
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_tagged_union_schema(ref_name, ir)
-            {
-                let snake = ref_name.to_snake_case();
-                return format!(
-                    "[{snake}_from_dict(item) for item in {accessor}] if {accessor} is not None else None  # type: ignore[union-attr]"
-                );
-            }
-            format!("{accessor}  # type: ignore[assignment]")
-        }
-        Some(IrTypeExpr::Map(inner)) => {
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_object_schema(ref_name, ir)
-            {
-                let py_name = ref_name.to_pascal_case();
-                return format!(
-                    "{{k: {py_name}.from_dict(v) for k, v in {accessor}.items()}} if {accessor} is not None else None  # type: ignore[union-attr]"
-                );
-            }
-            if let IrTypeExpr::Named(ref_name) = inner.as_ref()
-                && is_tagged_union_schema(ref_name, ir)
-            {
-                let snake = ref_name.to_snake_case();
-                return format!(
-                    "{{k: {snake}_from_dict(v) for k, v in {accessor}.items()}} if {accessor} is not None else None  # type: ignore[union-attr]"
-                );
-            }
-            format!("{accessor}  # type: ignore[assignment]")
-        }
-        _ => format!("{accessor}  # type: ignore[assignment]"),
-    }
+    } else if is_tagged_union_schema(name, ir) {
+        let suffix = match direction {
+            Direction::From => "from_dict",
+            Direction::To => "to_dict",
+        };
+        let function = format!("{}_{suffix}", name.to_snake_case());
+        sigil_quote!(Python { $N(function)($C(access)) })
+    } else {
+        return None;
+    };
+    Some(block.expect("Python named conversion builds"))
 }
 
 pub fn is_object_schema(name: &str, ir: &IrSpec) -> bool {

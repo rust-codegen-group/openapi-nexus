@@ -10,34 +10,31 @@ from typing import cast
 from .variant_a import VariantA
 from .variant_b import VariantB
 
+
 # Adjacently tagged enum
-# 
+#
 # The tag and content are separate fields:
 # `{"ty": "VariantA", "data": {"field1": "...", "field2": 123}}`
-# 
+#
 # Discriminator: ty / content: data (adjacent).
 
-type AdjacentlyTaggedEnum = (
-    VariantA
-    | VariantB
-)
+
+type AdjacentlyTaggedEnum = VariantA | VariantB
+
 
 def adjacently_tagged_enum_from_dict(data: dict[str, object]) -> AdjacentlyTaggedEnum:
-    _tag = data['ty']
-    _content = data['data']
-    if _tag == 'ADJACENTLY_TAGGED_ENUM_VARIANT_A':
+    _tag = data["ty"]
+    _content = data["data"]
+    if _tag == "ADJACENTLY_TAGGED_ENUM_VARIANT_A":
         return VariantA.from_dict(cast(dict[str, object], _content))
-
-    if _tag == 'ADJACENTLY_TAGGED_ENUM_VARIANT_B':
+    if _tag == "ADJACENTLY_TAGGED_ENUM_VARIANT_B":
         return VariantB.from_dict(cast(dict[str, object], _content))
+    raise ValueError("Unknown discriminator value for AdjacentlyTaggedEnum: " + str(data))
 
-    raise ValueError('Unknown discriminator value for AdjacentlyTaggedEnum: ' + str(data))
 
 def adjacently_tagged_enum_to_dict(obj: AdjacentlyTaggedEnum) -> dict[str, object]:
     if isinstance(obj, VariantA):
-        return {'ty': 'ADJACENTLY_TAGGED_ENUM_VARIANT_A', 'data': obj.to_dict()}
-
+        return {"ty": "ADJACENTLY_TAGGED_ENUM_VARIANT_A", "data": obj.to_dict()}
     if isinstance(obj, VariantB):
-        return {'ty': 'ADJACENTLY_TAGGED_ENUM_VARIANT_B', 'data': obj.to_dict()}
-
-    raise ValueError('Unknown variant for AdjacentlyTaggedEnum: ' + str(type (obj)))
+        return {"ty": "ADJACENTLY_TAGGED_ENUM_VARIANT_B", "data": obj.to_dict()}
+    raise ValueError("Unknown variant for AdjacentlyTaggedEnum: " + str(type(obj)))

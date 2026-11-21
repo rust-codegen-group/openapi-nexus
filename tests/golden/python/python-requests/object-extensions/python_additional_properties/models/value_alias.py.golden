@@ -6,4 +6,5 @@ from __future__ import annotations
 
 from .nested_value import NestedValue
 
-type ValueAlias = (NestedValue)
+
+type ValueAlias = NestedValue

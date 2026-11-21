@@ -13,6 +13,7 @@ from ..models.nullable_payload import NullablePayload
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class GetValuesBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
@@ -21,6 +22,7 @@ class GetValuesBadRequest:
         self._body_loaded: bool = False
         self._body_value: dict[str, list[str] | None] | None = None
         self._body_error: Exception | None = None
+
     @property
     def body(self) -> dict[str, list[str] | None]:
         if not self._body_loaded:
@@ -35,6 +37,7 @@ class GetValuesBadRequest:
             raise RuntimeError("error body was not decoded")
         return self._body_value
 
+
 class GetValuesUnauthorized:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
@@ -43,6 +46,7 @@ class GetValuesUnauthorized:
         self._body_loaded: bool = False
         self._body_value: list[dict[str, str] | None] | None = None
         self._body_error: Exception | None = None
+
     @property
     def body(self) -> list[dict[str, str] | None]:
         if not self._body_loaded:
@@ -57,6 +61,7 @@ class GetValuesUnauthorized:
             raise RuntimeError("error body was not decoded")
         return self._body_value
 
+
 class GetValuesStatus402:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
@@ -65,6 +70,7 @@ class GetValuesStatus402:
         self._body_loaded: bool = False
         self._body_value: list[str] | None | None = None
         self._body_error: Exception | None = None
+
     @property
     def body(self) -> list[str] | None:
         if not self._body_loaded:
@@ -79,6 +85,7 @@ class GetValuesStatus402:
             raise RuntimeError("error body was not decoded")
         return self._body_value
 
+
 class GetValuesForbidden:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
@@ -87,6 +94,7 @@ class GetValuesForbidden:
         self._body_loaded: bool = False
         self._body_value: dict[str, list[str]] | None = None
         self._body_error: Exception | None = None
+
     @property
     def body(self) -> dict[str, list[str]]:
         if not self._body_loaded:
@@ -101,6 +109,7 @@ class GetValuesForbidden:
             raise RuntimeError("error body was not decoded")
         return self._body_value
 
+
 class GetValuesNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
@@ -109,6 +118,7 @@ class GetValuesNotFound:
         self._body_loaded: bool = False
         self._body_value: DetailAlias | None = None
         self._body_error: Exception | None = None
+
     @property
     def body(self) -> DetailAlias:
         if not self._body_loaded:
@@ -123,6 +133,7 @@ class GetValuesNotFound:
             raise RuntimeError("error body was not decoded")
         return self._body_value
 
+
 class GetValuesStatus410:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
@@ -131,6 +142,7 @@ class GetValuesStatus410:
         self._body_loaded: bool = False
         self._body_value: list[DetailAlias] | None = None
         self._body_error: Exception | None = None
+
     @property
     def body(self) -> list[DetailAlias]:
         if not self._body_loaded:
@@ -145,14 +157,17 @@ class GetValuesStatus410:
             raise RuntimeError("error body was not decoded")
         return self._body_value
 
+
 class GetValuesUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
+
 
 type GetValuesErrorDetail = (
     GetValuesBadRequest
@@ -164,8 +179,17 @@ type GetValuesErrorDetail = (
     | GetValuesUnexpected
 )
 
+
 class GetValuesError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetValuesErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetValuesErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetValuesErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -179,22 +203,44 @@ class ValuesApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = GetValuesBadRequest(response.status_code, response.headers, response.content)
+                detail = GetValuesBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 401:
-                detail = GetValuesUnauthorized(response.status_code, response.headers, response.content)
+                detail = GetValuesUnauthorized(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 402:
-                detail = GetValuesStatus402(response.status_code, response.headers, response.content)
+                detail = GetValuesStatus402(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 403:
-                detail = GetValuesForbidden(response.status_code, response.headers, response.content)
+                detail = GetValuesForbidden(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
                 detail = GetValuesNotFound(response.status_code, response.headers, response.content)
             elif response.status_code == 410:
-                detail = GetValuesStatus410(response.status_code, response.headers, response.content)
+                detail = GetValuesStatus410(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = GetValuesUnexpected(response.status_code, response.headers, response.content)
-            raise GetValuesError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = GetValuesUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise GetValuesError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = NullablePayload.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_values(self) -> NullablePayload:
         return self.get_values_with_http_info().data

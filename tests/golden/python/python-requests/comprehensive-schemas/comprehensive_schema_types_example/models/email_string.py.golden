@@ -7,4 +7,5 @@ from __future__ import annotations
 
 # String with email format
 
-type EmailString = (str)
+
+type EmailString = str

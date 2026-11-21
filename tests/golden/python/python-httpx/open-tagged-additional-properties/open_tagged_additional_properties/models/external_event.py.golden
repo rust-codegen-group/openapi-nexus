@@ -8,27 +8,24 @@ from typing import cast
 
 from .payload import Payload
 
+
 # Discriminator: variant key (external).
 
-type ExternalEvent = (
-    Payload
-    | Payload
-)
+
+type ExternalEvent = Payload | Payload
+
 
 def external_event_from_dict(data: dict[str, object]) -> ExternalEvent:
-    if 'started' in data:
-        return Payload.from_dict(cast(dict[str, object], data['started']))
+    if "started" in data:
+        return Payload.from_dict(cast(dict[str, object], data["started"]))
+    if "finished" in data:
+        return Payload.from_dict(cast(dict[str, object], data["finished"]))
+    raise ValueError("Unknown discriminator value for ExternalEvent: " + str(data))
 
-    if 'finished' in data:
-        return Payload.from_dict(cast(dict[str, object], data['finished']))
-
-    raise ValueError('Unknown discriminator value for ExternalEvent: ' + str(data))
 
 def external_event_to_dict(obj: ExternalEvent) -> dict[str, object]:
     if isinstance(obj, Payload):
-        return {'started': obj.to_dict()}
-
+        return {"started": obj.to_dict()}
     if isinstance(obj, Payload):
-        return {'finished': obj.to_dict()}
-
-    raise ValueError('Unknown variant for ExternalEvent: ' + str(type (obj)))
+        return {"finished": obj.to_dict()}
+    raise ValueError("Unknown variant for ExternalEvent: " + str(type(obj)))

@@ -7,4 +7,5 @@ from __future__ import annotations
 
 # Basic string type
 
-type StringType = (str)
+
+type StringType = str

@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class NestedObjectUser:
     """User information object."""
+
     id: int
     name: str | None = None
 

@@ -9,13 +9,13 @@ from typing import cast
 from . import _union
 from .dependent_envelope import DependentEnvelope
 
-type DependentChoice = (
-    DependentEnvelope
-    | bool
-)
+
+type DependentChoice = DependentEnvelope | bool
+
 
 def dependent_choice_from_dict(value: object) -> DependentChoice:
     return cast(DependentChoice, _union.value_14_from_dict(value))
+
 
 def dependent_choice_to_dict(value: DependentChoice) -> object:
     return _union.value_14_to_dict(value)

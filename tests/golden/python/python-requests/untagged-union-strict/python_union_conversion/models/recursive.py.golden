@@ -8,13 +8,13 @@ from typing import cast
 
 from . import _union, branch
 
-type Recursive = (
-    branch.Branch
-    | str
-)
+
+type Recursive = branch.Branch | str
+
 
 def recursive_from_dict(value: object) -> Recursive:
     return cast(Recursive, _union.value_9_from_dict(value))
+
 
 def recursive_to_dict(value: Recursive) -> object:
     return _union.value_9_to_dict(value)

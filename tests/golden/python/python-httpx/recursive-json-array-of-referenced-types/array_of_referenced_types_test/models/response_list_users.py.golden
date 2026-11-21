@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .user import User
+
 
 @dataclass
 class ResponseListUsers:
     """Response containing array of User references."""
+
     users: list[User]
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,8 @@ class ResponseListUsers:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> ResponseListUsers:
         return cls(
-            users=[User.from_dict(item) for item in data["users"]],  # type: ignore[union-attr]
+            users=[
+                User.from_dict(cast(dict[str, object], item))
+                for item in cast(list[object], data["users"])
+            ],
         )

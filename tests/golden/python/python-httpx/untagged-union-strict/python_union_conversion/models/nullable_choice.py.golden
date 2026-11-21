@@ -9,13 +9,13 @@ from typing import cast
 from . import _union
 from .choice import Choice
 
-type NullableChoice = (
-    Choice
-    | None
-)
+
+type NullableChoice = Choice | None
+
 
 def nullable_choice_from_dict(value: object) -> NullableChoice:
     return cast(NullableChoice, _union.value_29_from_dict(value))
+
 
 def nullable_choice_to_dict(value: NullableChoice) -> object:
     return _union.value_29_to_dict(value)

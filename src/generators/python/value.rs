@@ -46,7 +46,30 @@ pub(super) enum Direction {
     To,
 }
 
-type ShapeReferences = BTreeSet<(String, Direction)>;
+#[derive(Default)]
+struct ShapeReferences {
+    named: BTreeSet<(String, Direction)>,
+    predicates: Vec<(JsonShape, Direction)>,
+}
+
+impl ShapeReferences {
+    fn predicate(&mut self, shape: &JsonShape, direction: Direction) -> String {
+        let index = self
+            .predicates
+            .iter()
+            .position(|(candidate, side)| candidate == shape && *side == direction)
+            .unwrap_or_else(|| {
+                let index = self.predicates.len();
+                self.predicates.push((shape.clone(), direction));
+                index
+            });
+        predicate_name(index)
+    }
+}
+
+fn predicate_name(index: usize) -> String {
+    format!("_matches_shape_{index}")
+}
 
 impl Direction {
     fn suffix(self) -> &'static str {
@@ -605,7 +628,7 @@ impl<'a> ValuePlan<'a> {
             let mut file = FileSpec::builder_with("_union.py", Python::new())
                 .header(super::emit_models::future_annotations_header())
                 .add_import(ImportSpec::named("..runtime", "_union_support"));
-            let mut references = BTreeSet::new();
+            let mut references = ShapeReferences::default();
             for expr in &self.expressions {
                 for direction in [Direction::From, Direction::To] {
                     file = file.add_function(
@@ -618,33 +641,41 @@ impl<'a> ValuePlan<'a> {
                 }
             }
             let mut done = BTreeSet::new();
-            while let Some((name, direction)) = references.pop_first() {
-                if !done.insert((name.clone(), direction)) {
-                    continue;
-                }
-                let shape = union_match::plan_named_shape(&name, self.matching_ir(direction));
-                let (concrete, fallback) = union_match::selection_shapes(shape.clone());
-                for (scope, shape) in [
-                    (MatchScope::Any, shape),
-                    (MatchScope::Concrete, concrete),
-                    (MatchScope::Fallback, fallback),
-                ] {
-                    let condition = condition(
+            let mut next_predicate = 0;
+            loop {
+                if let Some((name, direction)) = references.named.pop_first() {
+                    if !done.insert((name.clone(), direction)) {
+                        continue;
+                    }
+                    let shape = union_match::plan_named_shape(&name, self.matching_ir(direction));
+                    let (concrete, fallback) = union_match::selection_shapes(shape.clone());
+                    for (scope, shape) in [
+                        (MatchScope::Any, shape),
+                        (MatchScope::Concrete, concrete),
+                        (MatchScope::Fallback, fallback),
+                    ] {
+                        file = file.add_function(emit_predicate(
+                            &shape_function(&name, scope, direction),
+                            &shape,
+                            direction,
+                            &mut references,
+                        )?);
+                    }
+                } else if let Some((shape, direction)) =
+                    references.predicates.get(next_predicate).cloned()
+                {
+                    file = file.add_function(emit_predicate(
+                        &predicate_name(next_predicate),
                         &shape,
-                        sigil_quote!(Python { value })?,
                         direction,
                         &mut references,
-                    )?;
-                    file = file.add_function(
-                        FunSpec::builder(&shape_function(&name, scope, direction))
-                            .add_param(ParameterSpec::of("value", TypeName::primitive("object")))
-                            .returns(vec![TypeName::primitive("bool")])
-                            .body(sigil_quote!(Python { return $C(condition) })?)
-                            .build()?,
-                    );
+                    )?);
+                    next_predicate += 1;
+                } else {
+                    break;
                 }
             }
-            file.build()?.render(100)
+            file.build()?.render(super::PYTHON_LINE_LENGTH)
         };
         let body = render().map_err(|error| {
             GeneratorError::emission(ArtifactKind::Model, "Python union conversion", error)
@@ -885,18 +916,14 @@ impl<'a> ValuePlan<'a> {
                         std::slice::from_ref(&variant.content_type),
                         self.matching_ir(direction),
                     );
-                    let checks = shapes
-                        .iter()
-                        .map(|member| {
-                            condition(
-                                &member.shape,
-                                sigil_quote!(Python { value })?,
-                                direction,
-                                references,
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
-                    join_conditions(&checks, true)?
+                    let shape =
+                        JsonShape::AnyOf(shapes.into_iter().map(|member| member.shape).collect());
+                    condition(
+                        &shape,
+                        sigil_quote!(Python { value })?,
+                        direction,
+                        references,
+                    )?
                 }
             };
             let result = match (&union.tagging, direction) {
@@ -1003,66 +1030,128 @@ fn condition(
             let literal = python_literal(literal)?;
             sigil_quote!(Python { _union_support.equal($C(value), $C(literal)) })
         }
-        JsonShape::Nullable(inner) => {
-            let inner = condition(inner, value.clone(), direction, references)?;
-            sigil_quote!(Python { ($C(value) is None or $C(inner)) })
+        JsonShape::Reference { schema, scope, .. } => {
+            references.named.insert((schema.clone(), direction));
+            let function = shape_function(schema, *scope, direction);
+            sigil_quote!(Python { $N(function)($C(value)) })
         }
-        JsonShape::Array(inner) => {
+        JsonShape::AnyOf(shapes) | JsonShape::AllOf(shapes) if shapes.len() == 1 => {
+            condition(&shapes[0], value, direction, references)
+        }
+        JsonShape::Nullable(_)
+        | JsonShape::Array(_)
+        | JsonShape::Map(_)
+        | JsonShape::MapWithConcreteValue { .. }
+        | JsonShape::Object(_)
+        | JsonShape::ObjectWithAdditional { .. }
+        | JsonShape::AnyOf(_)
+        | JsonShape::AllOf(_) => {
+            let predicate = references.predicate(shape, direction);
+            sigil_quote!(Python { $N(predicate)($C(value)) })
+        }
+    }
+}
+
+fn emit_predicate(
+    name: &str,
+    shape: &JsonShape,
+    direction: Direction,
+    references: &mut ShapeReferences,
+) -> Result<FunSpec, SigilStitchError> {
+    // Lower composite predicates as short-circuiting checks. The same private
+    // predicate can be called by any union arm or container comprehension,
+    // rather than expanding the complete shape repeatedly in the caller.
+    let body = match shape {
+        JsonShape::Nullable(inner) => {
             let inner = condition(
                 inner,
-                sigil_quote!(Python { _item })?,
+                sigil_quote!(Python { value })?,
                 direction,
                 references,
             )?;
-            sigil_quote!(Python { (_union_support.is_list($C(value.clone())) and all($C(inner) for _item in _union_support.as_list($C(value)))) })
+            sigil_quote!(Python {
+                if value is None { return True }
+                return $C(inner)
+            })?
         }
-        JsonShape::Map(inner) => {
-            let inner = condition(
+        JsonShape::Array(inner) => {
+            let item = condition(
                 inner,
                 sigil_quote!(Python { _item })?,
                 direction,
                 references,
             )?;
             sigil_quote!(Python {
-                $if(direction == Direction::To) {
-                    (_union_support.is_mapping($C(value.clone())) and all($C(inner) for _item in _union_support.mapping($C(value)).values()))
-                } $else {
-                    (_union_support.is_dict($C(value.clone())) and all($C(inner) for _item in _union_support.as_dict($C(value)).values()))
-                }
-            })
+                if not _union_support.is_list(value) { return False }
+                return all($C(item) for _item in _union_support.as_list(value))
+            })?
         }
-        JsonShape::MapWithConcreteValue { values, concrete } => {
-            let all = condition(
-                &JsonShape::Map(values.clone()),
-                value.clone(),
+        JsonShape::Map(inner) => {
+            let item = condition(
+                inner,
+                sigil_quote!(Python { _item })?,
                 direction,
                 references,
             )?;
-            let one = condition(
+            match direction {
+                Direction::From => sigil_quote!(Python {
+                    if not _union_support.is_dict(value) { return False }
+                    return all($C(item) for _item in _union_support.as_dict(value).values())
+                }),
+                Direction::To => sigil_quote!(Python {
+                    if not _union_support.is_mapping(value) { return False }
+                    return all($C(item) for _item in _union_support.mapping(value).values())
+                }),
+            }?
+        }
+        JsonShape::MapWithConcreteValue { values, concrete } => {
+            let matches_map = condition(
+                &JsonShape::Map(values.clone()),
+                sigil_quote!(Python { value })?,
+                direction,
+                references,
+            )?;
+            let item = condition(
                 concrete,
                 sigil_quote!(Python { _item })?,
                 direction,
                 references,
             )?;
-            sigil_quote!(Python { ($C(all) and any($C(one) for _item in $if(direction == Direction::To) { _union_support.mapping($C(value)) } $else { _union_support.as_dict($C(value)) }.values())) })
+            let lookup = match direction {
+                Direction::From => sigil_quote!(Python { _union_support.as_dict(value).values() }),
+                Direction::To => sigil_quote!(Python { _union_support.mapping(value).values() }),
+            }?;
+            sigil_quote!(Python {
+                if not $C(matches_map) { return False }
+                return any($C(item) for _item in $C(lookup))
+            })?
         }
         JsonShape::Object(properties) | JsonShape::ObjectWithAdditional { properties, .. } => {
-            let mut checks =
-                vec![sigil_quote!(Python { _union_support.is_object($C(value.clone())) })?];
-            for property in properties {
-                let field = python_field_name(&property.wire_name);
-                let wire = &property.wire_name;
-                let present = sigil_quote!(Python { _union_support.has($C(value.clone()), $S(wire.as_str()), $S(field.as_str()), $if(property.required) { True } $else { False }) })?;
-                let access = sigil_quote!(Python { _union_support.get($C(value.clone()), $S(wire.as_str()), $S(field.as_str())) })?;
-                let inner = condition(&property.shape, access, direction, references)?;
-                checks.push(if property.required {
-                    sigil_quote!(Python { ($C(present) and $C(inner)) })?
-                } else {
-                    sigil_quote!(Python { (not $C(present) or $C(inner)) })?
-                });
-            }
-            if let JsonShape::ObjectWithAdditional { values, .. } = shape {
-                let inner = condition(
+            let checks = properties
+                .iter()
+                .map(|property| {
+                    let wire = property.wire_name.as_str();
+                    let field = python_field_name(wire);
+                    let access = sigil_quote!(Python { _union_support.get(value, $S(wire), $S(field.as_str())) })?;
+                    let inner = condition(&property.shape, access, direction, references)?;
+                    if property.required {
+                        sigil_quote!(Python {
+                            if not _union_support.has(value, $S(wire), $S(field), True) {
+                                return False
+                            }
+                            if not $C(inner) { return False }
+                        })
+                    } else {
+                        sigil_quote!(Python {
+                            if _union_support.has(value, $S(wire), $S(field), False) {
+                                if not $C(inner) { return False }
+                            }
+                        })
+                    }
+                })
+                .collect::<Result<Vec<_>, SigilStitchError>>()?;
+            let result = if let JsonShape::ObjectWithAdditional { values, .. } = shape {
+                let item = condition(
                     values,
                     sigil_quote!(Python { _item })?,
                     direction,
@@ -1070,32 +1159,58 @@ fn condition(
                 )?;
                 let keys = properties
                     .iter()
-                    .map(|property| &property.wire_name)
-                    .collect::<Vec<_>>();
-                checks.push(sigil_quote!(Python { all($C(inner) for _item in _union_support.extras($C(value), [$for(key in &keys; separator = ", ") { $S(key.as_str()) }])) })?);
-            }
-            join_conditions(&checks, false)
-        }
-        JsonShape::Reference { schema, scope, .. } => {
-            references.insert((schema.clone(), direction));
-            let function = shape_function(schema, *scope, direction);
-            sigil_quote!(Python { $N(function)($C(value)) })
+                    .map(|property| property.wire_name.as_str());
+                sigil_quote!(Python {
+                    extra_values = _union_support.extras(value, [$for(key in keys; separator = ", ") { $S(key) }])
+                    return all($C(item) for _item in extra_values)
+                })?
+            } else {
+                sigil_quote!(Python { return True })?
+            };
+            sigil_quote!(Python {
+                if not _union_support.is_object(value) { return False }
+                $C_each(checks)
+                $C(result)
+            })?
         }
         JsonShape::AnyOf(shapes) | JsonShape::AllOf(shapes) => {
+            let any = matches!(shape, JsonShape::AnyOf(_));
             let checks = shapes
                 .iter()
-                .map(|shape| condition(shape, value.clone(), direction, references))
-                .collect::<Result<Vec<_>, _>>()?;
-            join_conditions(&checks, matches!(shape, JsonShape::AnyOf(_)))
+                .map(|shape| {
+                    let inner = condition(
+                        shape,
+                        sigil_quote!(Python { value })?,
+                        direction,
+                        references,
+                    )?;
+                    if any {
+                        sigil_quote!(Python { if $C(inner) { return True } })
+                    } else {
+                        sigil_quote!(Python { if not $C(inner) { return False } })
+                    }
+                })
+                .collect::<Result<Vec<_>, SigilStitchError>>()?;
+            sigil_quote!(Python {
+                $C_each(checks)
+                return $if(any) { False } $else { True }
+            })?
         }
-    }
-}
-
-fn join_conditions(checks: &[CodeBlock], any: bool) -> Result<CodeBlock, SigilStitchError> {
-    if checks.is_empty() {
-        return sigil_quote!(Python { $if(any) { False } $else { True } });
-    }
-    sigil_quote!(Python { ($if(any) { $for(check in checks; separator = " or ") { $C(check.clone()) } } $else { $for(check in checks; separator = " and ") { $C(check.clone()) } }) })
+        _ => {
+            let test = condition(
+                shape,
+                sigil_quote!(Python { value })?,
+                direction,
+                references,
+            )?;
+            sigil_quote!(Python { return $C(test) })?
+        }
+    };
+    FunSpec::builder(name)
+        .add_param(ParameterSpec::of("value", TypeName::primitive("object")))
+        .returns(vec![TypeName::primitive("bool")])
+        .body(body)
+        .build()
 }
 
 fn python_literal(value: &serde_json::Value) -> Result<CodeBlock, SigilStitchError> {
@@ -1158,7 +1273,7 @@ mod tests {
         assert_rendered!(
             Python::new(),
             literal,
-            "{'quoted\\'key': [True, None, 2, 'line\\nvalue']}\n"
+            "{\"quoted'key\": [True, None, 2, \"line\\nvalue\"]}\n"
         );
     }
 
@@ -1171,14 +1286,14 @@ mod tests {
             .body(
                 &IrTypeExpr::Named("Choice".into()),
                 Direction::From,
-                &mut BTreeSet::new(),
+                &mut ShapeReferences::default(),
             )
             .unwrap();
         assert_rendered!(
             Python::new(),
             width = 120,
             body,
-            "matches = [isinstance(value, bool), _union_support.number(value, True)]\nif sum(matches) > 1:\n    raise ValueError('Ambiguous Choice untagged union value')\n\nif matches[0]:\n    return value_1_from_dict(value)\n\nif matches[1]:\n    return value_2_from_dict(value)\n\nraise ValueError('No matching Choice untagged union member')\n"
+            "matches = [isinstance(value, bool), _union_support.number(value, True)]\nif sum(matches) > 1:\n    raise ValueError(\"Ambiguous Choice untagged union value\")\n\nif matches[0]:\n    return value_1_from_dict(value)\n\nif matches[1]:\n    return value_2_from_dict(value)\n\nraise ValueError(\"No matching Choice untagged union member\")\n"
         );
     }
 
@@ -1195,7 +1310,7 @@ mod tests {
         assert_rendered!(
             Python::new(),
             code,
-            "from . import recursive\n\nchildren: list[recursive.Recursive]\n"
+            "from . import recursive\n\n\nchildren: list[recursive.Recursive]\n"
         );
     }
 
@@ -1220,7 +1335,7 @@ mod tests {
             Python::new(),
             width = 150,
             recursive_list,
-            "from typing import cast\n\nfrom . import item\n\n[item.item_from_dict(cast(dict[str, object], _item)) for _item in cast(list[object], data)]\n"
+            "from typing import cast\n\nfrom . import item\n\n\n[item.item_from_dict(cast(dict[str, object], _item)) for _item in cast(list[object], data)]\n"
         );
 
         let alias = plan
@@ -1234,7 +1349,7 @@ mod tests {
         assert_rendered!(
             Python::new(),
             alias,
-            "from typing import cast\n\nfrom .item import item_from_dict\n\nitem_from_dict(cast(dict[str, object], data))\n"
+            "from typing import cast\n\nfrom .item import item_from_dict\n\n\nitem_from_dict(cast(dict[str, object], data))\n"
         );
     }
 
@@ -1253,7 +1368,7 @@ mod tests {
         assert_rendered!(
             Python::new(),
             code,
-            "from . import variant\n\nchildren: list[variant.Variant]\n"
+            "from . import variant\n\n\nchildren: list[variant.Variant]\n"
         );
     }
 
@@ -1269,13 +1384,13 @@ mod tests {
             .body(
                 &IrTypeExpr::Named("DependentEnvelope".into()),
                 Direction::From,
-                &mut BTreeSet::new(),
+                &mut ShapeReferences::default(),
             )
             .unwrap();
         assert_rendered!(
             Python::new(),
             body,
-            "from . import dependent_envelope\nreturn dependent_envelope.DependentEnvelope.from_dict(_union_support.as_dict(value))\n"
+            "from . import dependent_envelope\n\nreturn dependent_envelope.DependentEnvelope.from_dict(\n    _union_support.as_dict(value)\n)\n"
         );
     }
 

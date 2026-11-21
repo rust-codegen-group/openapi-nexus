@@ -4,4 +4,4 @@
 
 from __future__ import annotations
 
-type MaybeMatrix = (list[list[str]] | None)
+type MaybeMatrix = list[list[str]] | None

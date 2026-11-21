@@ -10,17 +10,18 @@ from typing import cast
 from . import _union
 from .variant_set import VariantSet
 
+
 @dataclass
 class VariantRequest:
     choices: list[VariantSet]
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result['choices'] = _union.value_46_to_dict(self.choices)
+        result["choices"] = _union.value_46_to_dict(self.choices)
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> VariantRequest:
         return cls(
-            choices=cast(list[VariantSet], _union.value_46_from_dict(data['choices'])),
+            choices=cast(list[VariantSet], _union.value_46_from_dict(data["choices"])),
         )

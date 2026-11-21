@@ -7,127 +7,180 @@ from __future__ import annotations
 
 from ..runtime import _union_support
 
+
 def value_0_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'bar',
-        'bar',
-        True) and (_union_support.is_object(_union_support.get(value, 'bar', 'bar'))
-     and (_union_support.has(_union_support.get(value, 'bar', 'bar'),
-        'baz',
-        'baz',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'bar', 'bar'),
-        'baz',
-        'baz'),
-        str))
-     and (_union_support.has(_union_support.get(value, 'bar', 'bar'),
-        'qux',
-        'qux',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'bar', 'bar'),
-        'qux',
-        'qux'),
-        str))))):
+    if _matches_shape_0(value):
         return value_1_from_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'quux',
-        'quux',
-        True) and (_union_support.is_object(_union_support.get(value, 'quux', 'quux'))
-     and (_union_support.has(_union_support.get(value, 'quux', 'quux'),
-        'corge',
-        'corge',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'quux', 'quux'),
-        'corge',
-        'corge'),
-        str))))):
+    if _matches_shape_1(value):
         return value_2_from_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'grault',
-        'grault',
-        True) and (_union_support.is_object(_union_support.get(value, 'grault', 'grault'))
-     and (_union_support.has(_union_support.get(value, 'grault', 'grault'),
-        'garply',
-        'garply',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'grault', 'grault'),
-        'garply',
-        'garply'),
-        str))))):
+    if _matches_shape_2(value):
         return value_3_from_dict(value)
-
     return value
+
 
 def value_0_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'bar',
-        'bar',
-        True) and (_union_support.is_object(_union_support.get(value, 'bar', 'bar'))
-     and (_union_support.has(_union_support.get(value, 'bar', 'bar'),
-        'baz',
-        'baz',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'bar', 'bar'),
-        'baz',
-        'baz'),
-        str))
-     and (_union_support.has(_union_support.get(value, 'bar', 'bar'),
-        'qux',
-        'qux',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'bar', 'bar'),
-        'qux',
-        'qux'),
-        str))))):
+    if _matches_shape_3(value):
         return value_1_to_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'quux',
-        'quux',
-        True) and (_union_support.is_object(_union_support.get(value, 'quux', 'quux'))
-     and (_union_support.has(_union_support.get(value, 'quux', 'quux'),
-        'corge',
-        'corge',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'quux', 'quux'),
-        'corge',
-        'corge'),
-        str))))):
+    if _matches_shape_4(value):
         return value_2_to_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'grault',
-        'grault',
-        True) and (_union_support.is_object(_union_support.get(value, 'grault', 'grault'))
-     and (_union_support.has(_union_support.get(value, 'grault', 'grault'),
-        'garply',
-        'garply',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'grault', 'grault'),
-        'garply',
-        'garply'),
-        str))))):
+    if _matches_shape_5(value):
         return value_3_to_dict(value)
-
     return value
+
 
 def value_1_from_dict(value: object) -> object:
     from . import foo_member1
+
     return foo_member1.FooMember1.from_dict(_union_support.as_dict(value))
+
 
 def value_1_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_2_from_dict(value: object) -> object:
     from . import foo_member2
+
     return foo_member2.FooMember2.from_dict(_union_support.as_dict(value))
+
 
 def value_2_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_3_from_dict(value: object) -> object:
     from . import foo_member3
+
     return foo_member3.FooMember3.from_dict(_union_support.as_dict(value))
+
 
 def value_3_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
+
+
+def _matches_shape_0(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "bar", "bar", True):
+        return False
+    if not _matches_shape_6(_union_support.get(value, "bar", "bar")):
+        return False
+    return True
+
+
+def _matches_shape_1(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "quux", "quux", True):
+        return False
+    if not _matches_shape_7(_union_support.get(value, "quux", "quux")):
+        return False
+    return True
+
+
+def _matches_shape_2(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "grault", "grault", True):
+        return False
+    if not _matches_shape_8(_union_support.get(value, "grault", "grault")):
+        return False
+    return True
+
+
+def _matches_shape_3(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "bar", "bar", True):
+        return False
+    if not _matches_shape_9(_union_support.get(value, "bar", "bar")):
+        return False
+    return True
+
+
+def _matches_shape_4(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "quux", "quux", True):
+        return False
+    if not _matches_shape_10(_union_support.get(value, "quux", "quux")):
+        return False
+    return True
+
+
+def _matches_shape_5(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "grault", "grault", True):
+        return False
+    if not _matches_shape_11(_union_support.get(value, "grault", "grault")):
+        return False
+    return True
+
+
+def _matches_shape_6(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "baz", "baz", True):
+        return False
+    if not isinstance(_union_support.get(value, "baz", "baz"), str):
+        return False
+    if not _union_support.has(value, "qux", "qux", True):
+        return False
+    if not isinstance(_union_support.get(value, "qux", "qux"), str):
+        return False
+    return True
+
+
+def _matches_shape_7(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "corge", "corge", True):
+        return False
+    if not isinstance(_union_support.get(value, "corge", "corge"), str):
+        return False
+    return True
+
+
+def _matches_shape_8(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "garply", "garply", True):
+        return False
+    if not isinstance(_union_support.get(value, "garply", "garply"), str):
+        return False
+    return True
+
+
+def _matches_shape_9(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "baz", "baz", True):
+        return False
+    if not isinstance(_union_support.get(value, "baz", "baz"), str):
+        return False
+    if not _union_support.has(value, "qux", "qux", True):
+        return False
+    if not isinstance(_union_support.get(value, "qux", "qux"), str):
+        return False
+    return True
+
+
+def _matches_shape_10(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "corge", "corge", True):
+        return False
+    if not isinstance(_union_support.get(value, "corge", "corge"), str):
+        return False
+    return True
+
+
+def _matches_shape_11(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "garply", "garply", True):
+        return False
+    if not isinstance(_union_support.get(value, "garply", "garply"), str):
+        return False
+    return True

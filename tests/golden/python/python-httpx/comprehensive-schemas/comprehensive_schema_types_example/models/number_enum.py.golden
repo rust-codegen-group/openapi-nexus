@@ -7,8 +7,10 @@ from __future__ import annotations
 
 from enum import Enum
 
+
 class NumberEnum(int, Enum):
     """Enum of number values."""
+
     N1 = 1
     N2 = 2
     N3 = 3

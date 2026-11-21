@@ -8,13 +8,13 @@ from typing import cast
 
 from . import _union
 
-type CollisionMapAdditionalProperty2 = (
-    int
-    | str
-)
+
+type CollisionMapAdditionalProperty2 = int | str
+
 
 def collision_map_additional_property2_from_dict(value: object) -> CollisionMapAdditionalProperty2:
     return cast(CollisionMapAdditionalProperty2, _union.value_3_from_dict(value))
+
 
 def collision_map_additional_property2_to_dict(value: CollisionMapAdditionalProperty2) -> object:
     return _union.value_3_to_dict(value)

@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .nested_value import NestedValue
+
 
 @dataclass
 class LegacyOptionalHolder:
@@ -24,6 +26,14 @@ class LegacyOptionalHolder:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> LegacyOptionalHolder:
         return cls(
-            maybe=NestedValue.from_dict(data.get("maybe")) if data.get("maybe") is not None else None,  # type: ignore[arg-type]
-            nullable=NestedValue.from_dict(data.get("nullable")) if data.get("nullable") is not None else None,  # type: ignore[arg-type]
+            maybe=(
+                NestedValue.from_dict(cast(dict[str, object], data.get("maybe")))
+                if data.get("maybe") is not None
+                else None
+            ),
+            nullable=(
+                NestedValue.from_dict(cast(dict[str, object], data.get("nullable")))
+                if data.get("nullable") is not None
+                else None
+            ),
         )

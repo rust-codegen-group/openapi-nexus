@@ -11,147 +11,227 @@ from ..models.payload import Payload
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class PostBinaryUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostBinaryErrorDetail = (
-    PostBinaryUnexpected
-)
+
+type PostBinaryErrorDetail = PostBinaryUnexpected
+
 
 class PostBinaryError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostBinaryErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostBinaryErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostBinaryErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PostFormUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostFormErrorDetail = (
-    PostFormUnexpected
-)
+
+type PostFormErrorDetail = PostFormUnexpected
+
 
 class PostFormError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostFormErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostFormErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostFormErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PostJsonUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostJsonErrorDetail = (
-    PostJsonUnexpected
-)
+
+type PostJsonErrorDetail = PostJsonUnexpected
+
 
 class PostJsonError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostJsonErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostJsonErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostJsonErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PostJsonOrXmlUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostJsonOrXmlErrorDetail = (
-    PostJsonOrXmlUnexpected
-)
+
+type PostJsonOrXmlErrorDetail = PostJsonOrXmlUnexpected
+
 
 class PostJsonOrXmlError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostJsonOrXmlErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostJsonOrXmlErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostJsonOrXmlErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PatchMergeJsonUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PatchMergeJsonErrorDetail = (
-    PatchMergeJsonUnexpected
-)
+
+type PatchMergeJsonErrorDetail = PatchMergeJsonUnexpected
+
 
 class PatchMergeJsonError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PatchMergeJsonErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PatchMergeJsonErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PatchMergeJsonErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PostTextUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostTextErrorDetail = (
-    PostTextUnexpected
-)
+
+type PostTextErrorDetail = PostTextUnexpected
+
 
 class PostTextError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostTextErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostTextErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostTextErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PostXmlUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostXmlErrorDetail = (
-    PostXmlUnexpected
-)
+
+type PostXmlErrorDetail = PostXmlUnexpected
+
 
 class PostXmlError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostXmlErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostXmlErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostXmlErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class GetXmlResponseUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetXmlResponseErrorDetail = (
-    GetXmlResponseUnexpected
-)
+
+type GetXmlResponseErrorDetail = GetXmlResponseUnexpected
+
 
 class GetXmlResponseError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetXmlResponseErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetXmlResponseErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetXmlResponseErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -167,9 +247,18 @@ class DefaultApi:
         response = self._client.request("POST", path, content=body, headers=headers)
         if not (200 <= response.status_code < 300):
             detail = PostBinaryUnexpected(response.status_code, response.headers, response.content)
-            raise PostBinaryError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise PostBinaryError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_binary(self, *, body: bytes) -> None:
         return self.post_binary_with_http_info(body=body).data
@@ -181,9 +270,18 @@ class DefaultApi:
         response = self._client.request("POST", path, data=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             detail = PostFormUnexpected(response.status_code, response.headers, response.content)
-            raise PostFormError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise PostFormError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_form(self, *, body: Payload) -> None:
         return self.post_form_with_http_info(body=body).data
@@ -195,9 +293,18 @@ class DefaultApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             detail = PostJsonUnexpected(response.status_code, response.headers, response.content)
-            raise PostJsonError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise PostJsonError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_json(self, *, body: Payload) -> None:
         return self.post_json_with_http_info(body=body).data
@@ -208,10 +315,21 @@ class DefaultApi:
         headers["Content-Type"] = "application/json"
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
-            detail = PostJsonOrXmlUnexpected(response.status_code, response.headers, response.content)
-            raise PostJsonOrXmlError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = PostJsonOrXmlUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise PostJsonOrXmlError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_json_or_xml(self, *, body: Payload) -> None:
         return self.post_json_or_xml_with_http_info(body=body).data
@@ -222,10 +340,21 @@ class DefaultApi:
         headers["Content-Type"] = "application/merge-patch+json"
         response = self._client.request("PATCH", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
-            detail = PatchMergeJsonUnexpected(response.status_code, response.headers, response.content)
-            raise PatchMergeJsonError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = PatchMergeJsonUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise PatchMergeJsonError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def patch_merge_json(self, *, body: Payload) -> None:
         return self.patch_merge_json_with_http_info(body=body).data
@@ -237,9 +366,18 @@ class DefaultApi:
         response = self._client.request("POST", path, content=body, headers=headers)
         if not (200 <= response.status_code < 300):
             detail = PostTextUnexpected(response.status_code, response.headers, response.content)
-            raise PostTextError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise PostTextError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_text(self, *, body: str) -> None:
         return self.post_text_with_http_info(body=body).data
@@ -252,9 +390,18 @@ class DefaultApi:
         response = self._client.request("POST", path, headers=headers)
         if not (200 <= response.status_code < 300):
             detail = PostXmlUnexpected(response.status_code, response.headers, response.content)
-            raise PostXmlError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise PostXmlError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_xml(self, *, body: Payload) -> None:
         return self.post_xml_with_http_info(body=body).data
@@ -263,10 +410,21 @@ class DefaultApi:
         path = "/xml-response"
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
-            detail = GetXmlResponseUnexpected(response.status_code, response.headers, response.content)
-            raise GetXmlResponseError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = GetXmlResponseUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise GetXmlResponseError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.text
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_xml_response(self) -> str:
         return self.get_xml_response_with_http_info().data

@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from ..runtime import UploadFile
 from .audit_attributes import AuditAttributes
 from .upload_attributes import UploadAttributes
+
 
 @dataclass
 class UploadEncodedAssetMultipartRequestBody:

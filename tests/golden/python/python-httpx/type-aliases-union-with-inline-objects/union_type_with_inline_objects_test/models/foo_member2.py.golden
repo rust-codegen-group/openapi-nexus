@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .foo_member2_quux import FooMember2Quux
+
 
 @dataclass
 class FooMember2:
     """Second inline object type."""
+
     quux: FooMember2Quux
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,5 @@ class FooMember2:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> FooMember2:
         return cls(
-            quux=FooMember2Quux.from_dict(data["quux"]),  # type: ignore[arg-type]
+            quux=FooMember2Quux.from_dict(cast(dict[str, object], data["quux"])),
         )

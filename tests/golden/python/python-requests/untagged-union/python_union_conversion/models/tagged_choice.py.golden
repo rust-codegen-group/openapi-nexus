@@ -9,15 +9,16 @@ from typing import cast
 from . import _union
 from .choice import Choice
 
+
 # Discriminator: kind / content: payload (adjacent).
 
-type TaggedChoice = (
-    Choice
-    | str
-)
+
+type TaggedChoice = Choice | str
+
 
 def tagged_choice_from_dict(value: object) -> TaggedChoice:
     return cast(TaggedChoice, _union.value_37_from_dict(value))
+
 
 def tagged_choice_to_dict(value: object) -> dict[str, object]:
     return cast(dict[str, object], _union.value_37_to_dict(value))

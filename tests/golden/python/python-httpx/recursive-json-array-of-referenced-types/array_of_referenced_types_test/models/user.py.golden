@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class User:
     """User model with snake_case properties."""
+
     user_id: str
     user_name: str
     email_address: str | None = None

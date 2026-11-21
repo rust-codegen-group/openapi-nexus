@@ -10,6 +10,7 @@ from . import _union
 from .nullable_choice import NullableChoice
 from .wrapped_null_choice import WrappedNullChoice
 
+
 @dataclass
 class NullableEnvelope:
     choice: NullableChoice
@@ -17,15 +18,18 @@ class NullableEnvelope:
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result['choice'] = _union.value_29_to_dict(self.choice)
+        result["choice"] = _union.value_29_to_dict(self.choice)
         if self.ambiguous is not None:
-            result['ambiguous'] = _union.value_30_to_dict(self.ambiguous)
-
+            result["ambiguous"] = _union.value_30_to_dict(self.ambiguous)
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> NullableEnvelope:
         return cls(
-            choice=_union.value_29_from_dict(data['choice']),
-            ambiguous=None if 'ambiguous' not in data else _union.value_30_from_dict(data.get('ambiguous')),
+            choice=_union.value_29_from_dict(data["choice"]),
+            ambiguous=(
+                None
+                if "ambiguous" not in data
+                else _union.value_30_from_dict(data.get("ambiguous"))
+            ),
         )

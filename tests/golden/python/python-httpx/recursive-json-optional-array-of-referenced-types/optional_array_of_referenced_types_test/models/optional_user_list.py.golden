@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .user import User
+
 
 @dataclass
 class OptionalUserList:
     """Object with optional array of User references."""
+
     optional_users: list[User] | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -23,5 +26,12 @@ class OptionalUserList:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> OptionalUserList:
         return cls(
-            optional_users=[User.from_dict(item) for item in data.get("optional_users")] if data.get("optional_users") is not None else None,  # type: ignore[union-attr]
+            optional_users=(
+                [
+                    User.from_dict(cast(dict[str, object], item))
+                    for item in cast(list[object], data.get("optional_users"))
+                ]
+                if data.get("optional_users") is not None
+                else None
+            ),
         )

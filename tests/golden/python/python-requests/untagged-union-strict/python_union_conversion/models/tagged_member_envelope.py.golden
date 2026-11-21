@@ -11,6 +11,7 @@ from . import _union
 from .tagged_member_alias import TaggedMemberAlias
 from .tagged_member_choice import TaggedMemberChoice
 
+
 @dataclass
 class TaggedMemberEnvelope:
     mapping: dict[str, TaggedMemberChoice]
@@ -19,15 +20,15 @@ class TaggedMemberEnvelope:
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result['mapping'] = _union.value_42_to_dict(self.mapping)
-        result['value'] = _union.value_41_to_dict(self.value)
-        result['values'] = _union.value_43_to_dict(self.values)
+        result["mapping"] = _union.value_42_to_dict(self.mapping)
+        result["value"] = _union.value_41_to_dict(self.value)
+        result["values"] = _union.value_43_to_dict(self.values)
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> TaggedMemberEnvelope:
         return cls(
-            mapping=cast(dict[str, TaggedMemberChoice], _union.value_42_from_dict(data['mapping'])),
-            value=cast(TaggedMemberChoice, _union.value_41_from_dict(data['value'])),
-            values=cast(list[TaggedMemberAlias], _union.value_43_from_dict(data['values'])),
+            mapping=cast(dict[str, TaggedMemberChoice], _union.value_42_from_dict(data["mapping"])),
+            value=cast(TaggedMemberChoice, _union.value_41_from_dict(data["value"])),
+            values=cast(list[TaggedMemberAlias], _union.value_43_from_dict(data["values"])),
         )
