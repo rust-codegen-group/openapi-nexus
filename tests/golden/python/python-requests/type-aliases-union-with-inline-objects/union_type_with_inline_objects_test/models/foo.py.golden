@@ -12,16 +12,16 @@ from .foo_member1 import FooMember1
 from .foo_member2 import FooMember2
 from .foo_member3 import FooMember3
 
+
 # Union type with inline object schemas
 
-type Foo = (
-    FooMember1
-    | FooMember2
-    | FooMember3
-)
+
+type Foo = FooMember1 | FooMember2 | FooMember3
+
 
 def foo_from_dict(value: object) -> Foo:
     return cast(Foo, _union.value_0_from_dict(value))
+
 
 def foo_to_dict(value: Foo) -> object:
     return _union.value_0_to_dict(value)

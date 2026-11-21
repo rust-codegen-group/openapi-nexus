@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .user_profile import UserProfile
+
 
 @dataclass
 class UserWithOptionalProfile:
     """User with optional nested profile reference."""
+
     user_id: str
     optional_profile: UserProfile | None = None
 
@@ -26,5 +29,9 @@ class UserWithOptionalProfile:
     def from_dict(cls, data: dict[str, object]) -> UserWithOptionalProfile:
         return cls(
             user_id=data["user_id"],  # type: ignore[assignment]
-            optional_profile=UserProfile.from_dict(data.get("optional_profile")) if data.get("optional_profile") is not None else None,  # type: ignore[arg-type]
+            optional_profile=(
+                UserProfile.from_dict(cast(dict[str, object], data.get("optional_profile")))
+                if data.get("optional_profile") is not None
+                else None
+            ),
         )

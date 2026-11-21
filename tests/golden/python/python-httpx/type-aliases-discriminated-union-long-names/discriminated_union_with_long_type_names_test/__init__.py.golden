@@ -5,9 +5,11 @@
 # intentionally long enough to force multi-line type alias output at the
 # 100-char render width. Ensures PEP 695 parenthesization is correct.
 
-from .runtime import ApiKeyAuth as ApiKeyAuth
-from .runtime import Authenticator as Authenticator
-from .runtime import BearerAuth as BearerAuth
-from .runtime import ApiResponse as ApiResponse
-from .runtime import Client as Client
-from .runtime import ApiError as ApiError
+from .runtime import (
+    ApiError as ApiError,
+    ApiKeyAuth as ApiKeyAuth,
+    ApiResponse as ApiResponse,
+    Authenticator as Authenticator,
+    BearerAuth as BearerAuth,
+    Client as Client,
+)

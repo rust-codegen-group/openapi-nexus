@@ -6,13 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any as _Any
+from typing import Any as _Any, cast
 
 from .middle_level import MiddleLevel
+
 
 @dataclass
 class RootLevel:
     """Root level: fixed fields plus maps with object ref and array value kinds.."""
+
     children: dict[str, MiddleLevel]
     id: int
     name: str
@@ -33,7 +35,10 @@ class RootLevel:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> RootLevel:
         return cls(
-            children={k: MiddleLevel.from_dict(v) for k, v in data["children"].items()},  # type: ignore[union-attr]
+            children={
+                k: MiddleLevel.from_dict(cast(dict[str, object], v))
+                for k, v in cast(dict[str, object], data["children"]).items()
+            },
             id=data["id"],  # type: ignore[assignment]
             name=data["name"],  # type: ignore[assignment]
             extras=data.get("extras"),  # type: ignore[assignment]

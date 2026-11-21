@@ -54,7 +54,11 @@ fn python_generators_keep_self_references_local() {
             foo.content
         );
         assert!(
-            foo.content.contains("[Foo.from_dict(item)"),
+            foo.content
+                .contains("Foo.from_dict(cast(dict[str, object], item))")
+                && foo
+                    .content
+                    .contains("for item in cast(list[object], data.get(\"children\"))"),
             "python-{backend} must retain recursive deserialization:\n{}",
             foo.content
         );

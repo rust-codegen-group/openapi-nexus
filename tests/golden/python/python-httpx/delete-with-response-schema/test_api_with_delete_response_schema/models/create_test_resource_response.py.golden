@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class CreateTestResourceResponse:
     """Response after creating a test resource."""
+
     resource_id: str
 
     def to_dict(self) -> dict[str, object]:

@@ -9,29 +9,37 @@ from dataclasses import dataclass, field as _dataclass_field
 from typing import cast
 
 from . import _union
-from .nested_array_additional_property_item_additional_property import NestedArrayAdditionalPropertyItemAdditionalProperty
+from .nested_array_additional_property_item_additional_property import (
+    NestedArrayAdditionalPropertyItemAdditionalProperty,
+)
+
 
 @dataclass
 class NestedArray:
-    additional_properties: _dict[_str,
-        list[dict[str,
-        NestedArrayAdditionalPropertyItemAdditionalProperty]]] = _dataclass_field(default_factory=lambda: _dict[_str,
-        list[dict[str, NestedArrayAdditionalPropertyItemAdditionalProperty]]](),
+    additional_properties: _dict[
+        _str, list[dict[str, NestedArrayAdditionalPropertyItemAdditionalProperty]]
+    ] = _dataclass_field(
+        default_factory=lambda: _dict[
+            _str, list[dict[str, NestedArrayAdditionalPropertyItemAdditionalProperty]]
+        ](),
         kw_only=True,
-        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True},
+    )
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
         for key, item in self.additional_properties.items():
             result[key] = _union.value_28_to_dict(item)
-
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> NestedArray:
         return cls(
-            additional_properties = {key: cast(list[dict[str,
-                NestedArrayAdditionalPropertyItemAdditionalProperty]],
-                _union.value_28_from_dict(item)) for key,
-                item in data.items() },
+            additional_properties={
+                key: cast(
+                    list[dict[str, NestedArrayAdditionalPropertyItemAdditionalProperty]],
+                    _union.value_28_from_dict(item),
+                )
+                for key, item in data.items()
+            },
         )

@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .widget import Widget
+
 
 @dataclass
 class WidgetListPartial:
@@ -23,6 +25,9 @@ class WidgetListPartial:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> WidgetListPartial:
         return cls(
-            items=[Widget.from_dict(item) for item in data["items"]],  # type: ignore[union-attr]
+            items=[
+                Widget.from_dict(cast(dict[str, object], item))
+                for item in cast(list[object], data["items"])
+            ],
             has_more=data.get("hasMore"),  # type: ignore[assignment]
         )

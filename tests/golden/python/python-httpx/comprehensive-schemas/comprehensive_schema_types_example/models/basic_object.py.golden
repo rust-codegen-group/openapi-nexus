@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class BasicObject:
     """Basic object with properties."""
+
     id: int
     name: str
     active: bool | None = None

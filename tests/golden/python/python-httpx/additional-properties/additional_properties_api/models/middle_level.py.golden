@@ -6,13 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any as _Any
+from typing import Any as _Any, cast
 
 from .leaf_value import LeafValue
+
 
 @dataclass
 class MiddleLevel:
     """Middle level: fixed fields plus maps with object ref and boolean value kinds.."""
+
     count: int
     key: str
     nested: dict[str, LeafValue]
@@ -35,7 +37,10 @@ class MiddleLevel:
         return cls(
             count=data["count"],  # type: ignore[assignment]
             key=data["key"],  # type: ignore[assignment]
-            nested={k: LeafValue.from_dict(v) for k, v in data["nested"].items()},  # type: ignore[union-attr]
+            nested={
+                k: LeafValue.from_dict(cast(dict[str, object], v))
+                for k, v in cast(dict[str, object], data["nested"]).items()
+            },
             extras=data.get("extras"),  # type: ignore[assignment]
             flags=data.get("flags"),  # type: ignore[assignment]
         )

@@ -6,14 +6,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .category import Category
 from .pet_status import PetStatus
 from .tag import Tag
 
+
 @dataclass
 class Pet:
     """Pet model."""
+
     name: str
     photo_urls: list[str]
     category: Category | None = None
@@ -40,8 +43,19 @@ class Pet:
         return cls(
             name=data["name"],  # type: ignore[assignment]
             photo_urls=data["photo_urls"],  # type: ignore[assignment]
-            category=Category.from_dict(data.get("category")) if data.get("category") is not None else None,  # type: ignore[arg-type]
+            category=(
+                Category.from_dict(cast(dict[str, object], data.get("category")))
+                if data.get("category") is not None
+                else None
+            ),
             id=data.get("id"),  # type: ignore[assignment]
             status=data.get("status"),  # type: ignore[assignment]
-            tags=[Tag.from_dict(item) for item in data.get("tags")] if data.get("tags") is not None else None,  # type: ignore[union-attr]
+            tags=(
+                [
+                    Tag.from_dict(cast(dict[str, object], item))
+                    for item in cast(list[object], data.get("tags"))
+                ]
+                if data.get("tags") is not None
+                else None
+            ),
         )

@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .empty_array_test_empty_items_item import EmptyArrayTestEmptyItemsItem
+
 
 @dataclass
 class EmptyArrayTest:
     """Object with array that can be empty."""
+
     empty_items: list[EmptyArrayTestEmptyItemsItem]
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,8 @@ class EmptyArrayTest:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> EmptyArrayTest:
         return cls(
-            empty_items=[EmptyArrayTestEmptyItemsItem.from_dict(item) for item in data["empty_items"]],  # type: ignore[union-attr]
+            empty_items=[
+                EmptyArrayTestEmptyItemsItem.from_dict(cast(dict[str, object], item))
+                for item in cast(list[object], data["empty_items"])
+            ],
         )

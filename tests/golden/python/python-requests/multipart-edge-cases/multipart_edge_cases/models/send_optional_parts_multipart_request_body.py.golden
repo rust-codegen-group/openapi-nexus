@@ -6,8 +6,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from ..runtime import UploadFile
 from .attributes import Attributes
+
 
 @dataclass
 class SendOptionalPartsMultipartRequestBody:

@@ -6,8 +6,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .get_items_response200_items_item import GetItemsResponse200ItemsItem
+
 
 @dataclass
 class GetItemsResponse200:
@@ -22,5 +24,12 @@ class GetItemsResponse200:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> GetItemsResponse200:
         return cls(
-            items=[GetItemsResponse200ItemsItem.from_dict(item) for item in data.get("items")] if data.get("items") is not None else None,  # type: ignore[union-attr]
+            items=(
+                [
+                    GetItemsResponse200ItemsItem.from_dict(cast(dict[str, object], item))
+                    for item in cast(list[object], data.get("items"))
+                ]
+                if data.get("items") is not None
+                else None
+            ),
         )

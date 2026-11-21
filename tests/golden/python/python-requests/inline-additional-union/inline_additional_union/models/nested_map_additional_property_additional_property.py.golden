@@ -8,13 +8,17 @@ from typing import cast
 
 from . import _union
 
-type NestedMapAdditionalPropertyAdditionalProperty = (
-    int
-    | str
-)
 
-def nested_map_additional_property_additional_property_from_dict(value: object) -> NestedMapAdditionalPropertyAdditionalProperty:
+type NestedMapAdditionalPropertyAdditionalProperty = int | str
+
+
+def nested_map_additional_property_additional_property_from_dict(
+    value: object,
+) -> NestedMapAdditionalPropertyAdditionalProperty:
     return cast(NestedMapAdditionalPropertyAdditionalProperty, _union.value_31_from_dict(value))
 
-def nested_map_additional_property_additional_property_to_dict(value: NestedMapAdditionalPropertyAdditionalProperty) -> object:
+
+def nested_map_additional_property_additional_property_to_dict(
+    value: NestedMapAdditionalPropertyAdditionalProperty,
+) -> object:
     return _union.value_31_to_dict(value)

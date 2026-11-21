@@ -7,61 +7,76 @@ from __future__ import annotations
 
 from ..runtime import _union_support
 
-def value_0_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'id',
-        'id',
-        True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value,
-        'name',
-        'name'),
-        str))):
-        return value_1_from_dict(value)
 
+def value_0_from_dict(value: object) -> object:
+    if _matches_shape_0(value):
+        return value_1_from_dict(value)
     if isinstance(value, str):
         return value_2_from_dict(value)
-
     if _union_support.number(value, False):
         return value_3_from_dict(value)
-
     return value
+
 
 def value_0_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'id',
-        'id',
-        True) and _union_support.number(_union_support.get(value, 'id', 'id'), True))
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value,
-        'name',
-        'name'),
-        str))):
+    if _matches_shape_1(value):
         return value_1_to_dict(value)
-
     if isinstance(value, str):
         return value_2_to_dict(value)
-
     if _union_support.number(value, False):
         return value_3_to_dict(value)
-
     return value
+
 
 def value_1_from_dict(value: object) -> object:
     from . import bar
+
     return bar.Bar.from_dict(_union_support.as_dict(value))
+
 
 def value_1_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_2_from_dict(value: object) -> object:
     return _union_support.scalar(value)
+
 
 def value_2_to_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_3_from_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_3_to_dict(value: object) -> object:
     return _union_support.scalar(value)
+
+
+def _matches_shape_0(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "id", "id", True):
+        return False
+    if not _union_support.number(_union_support.get(value, "id", "id"), True):
+        return False
+    if not _union_support.has(value, "name", "name", True):
+        return False
+    if not isinstance(_union_support.get(value, "name", "name"), str):
+        return False
+    return True
+
+
+def _matches_shape_1(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "id", "id", True):
+        return False
+    if not _union_support.number(_union_support.get(value, "id", "id"), True):
+        return False
+    if not _union_support.has(value, "name", "name", True):
+        return False
+    if not isinstance(_union_support.get(value, "name", "name"), str):
+        return False
+    return True

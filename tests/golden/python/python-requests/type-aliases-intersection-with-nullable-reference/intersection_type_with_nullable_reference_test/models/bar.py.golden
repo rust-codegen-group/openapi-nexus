@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class Bar:
     """Metadata type."""
+
     field1: str | None = None
     field2: str | None = None
     field3: str | None = None

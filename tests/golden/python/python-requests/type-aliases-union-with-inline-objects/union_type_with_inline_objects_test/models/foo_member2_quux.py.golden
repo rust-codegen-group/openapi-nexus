@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class FooMember2Quux:
     """Nested object in second type."""
+
     corge: str
 
     def to_dict(self) -> dict[str, object]:

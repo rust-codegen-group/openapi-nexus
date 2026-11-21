@@ -8,13 +8,13 @@ from typing import cast
 
 from . import _union
 
-type InlineAdditionalProperty = (
-    int
-    | str
-)
+
+type InlineAdditionalProperty = int | str
+
 
 def inline_additional_property_from_dict(value: object) -> InlineAdditionalProperty:
     return cast(InlineAdditionalProperty, _union.value_14_from_dict(value))
+
 
 def inline_additional_property_to_dict(value: InlineAdditionalProperty) -> object:
     return _union.value_14_to_dict(value)

@@ -7,8 +7,10 @@ from __future__ import annotations
 
 from enum import Enum
 
+
 class PetStatus(str, Enum):
     """Pet status enum."""
+
     AVAILABLE = "available"
     PENDING = "pending"
     SOLD = "sold"

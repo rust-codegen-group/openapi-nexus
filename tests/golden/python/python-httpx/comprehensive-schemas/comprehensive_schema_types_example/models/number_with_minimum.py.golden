@@ -7,4 +7,5 @@ from __future__ import annotations
 
 # Number with minimum value
 
-type NumberWithMinimum = (float)
+
+type NumberWithMinimum = float

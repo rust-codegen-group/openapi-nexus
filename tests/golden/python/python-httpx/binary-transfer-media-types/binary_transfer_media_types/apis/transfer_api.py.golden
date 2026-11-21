@@ -14,30 +14,41 @@ from ..models.upload_metadata import UploadMetadata
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class DownloadAssetNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class DownloadAssetUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type DownloadAssetErrorDetail = (
-    DownloadAssetNotFound
-    | DownloadAssetUnexpected
-)
+
+type DownloadAssetErrorDetail = DownloadAssetNotFound | DownloadAssetUnexpected
+
 
 class DownloadAssetError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: DownloadAssetErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: DownloadAssetErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: DownloadAssetErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class UploadAssetBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -45,22 +56,31 @@ class UploadAssetBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class UploadAssetUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type UploadAssetErrorDetail = (
-    UploadAssetBadRequest
-    | UploadAssetUnexpected
-)
+
+type UploadAssetErrorDetail = UploadAssetBadRequest | UploadAssetUnexpected
+
 
 class UploadAssetError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: UploadAssetErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: UploadAssetErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: UploadAssetErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -74,31 +94,65 @@ class TransferApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 404:
-                detail = DownloadAssetNotFound(response.status_code, response.headers, response.content)
+                detail = DownloadAssetNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = DownloadAssetUnexpected(response.status_code, response.headers, response.content)
-            raise DownloadAssetError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = DownloadAssetUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise DownloadAssetError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.content
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def download_asset(self, asset_id: str) -> bytes:
         return self.download_asset_with_http_info(asset_id).data
 
-    def upload_asset_with_http_info(self, *, body: UploadAssetMultipartRequestBody) -> ApiResponse[UploadMetadata]:
+    def upload_asset_with_http_info(
+        self, *, body: UploadAssetMultipartRequestBody
+    ) -> ApiResponse[UploadMetadata]:
         path = "/uploads"
         files: dict[str, object] = {}
-        files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")
+        files["file"] = (
+            body.file.filename_or_default("file"),
+            body.file.data,
+            "application/octet-stream",
+        )
         files["metadata"] = (None, json.dumps(body.metadata.to_dict()), "application/json")
         files["purpose"] = (None, str(body.purpose), "text/plain")
         response = self._client.request("POST", path, files=files if files else None)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = UploadAssetBadRequest(response.status_code, response.headers, response.content)
+                detail = UploadAssetBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = UploadAssetUnexpected(response.status_code, response.headers, response.content)
-            raise UploadAssetError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = UploadAssetUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise UploadAssetError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = UploadMetadata.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def upload_asset(self, *, body: UploadAssetMultipartRequestBody) -> UploadMetadata:
         return self.upload_asset_with_http_info(body=body).data

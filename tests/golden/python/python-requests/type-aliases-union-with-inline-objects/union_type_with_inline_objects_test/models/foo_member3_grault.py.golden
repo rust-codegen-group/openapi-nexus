@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class FooMember3Grault:
     """Nested object in third type."""
+
     garply: str
 
     def to_dict(self) -> dict[str, object]:

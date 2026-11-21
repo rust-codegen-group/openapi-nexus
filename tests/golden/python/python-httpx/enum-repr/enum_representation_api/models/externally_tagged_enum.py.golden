@@ -10,32 +10,29 @@ from typing import cast
 from .variant_a import VariantA
 from .variant_b import VariantB
 
+
 # Externally tagged enum (default Serde representation)
-# 
+#
 # This is the default representation where the variant name is the key
 # and the content is the value: `{"VariantA": {"field1": "...", "field2": 123}}`
-# 
+#
 # Discriminator: variant key (external).
 
-type ExternallyTaggedEnum = (
-    VariantA
-    | VariantB
-)
+
+type ExternallyTaggedEnum = VariantA | VariantB
+
 
 def externally_tagged_enum_from_dict(data: dict[str, object]) -> ExternallyTaggedEnum:
-    if 'EXTERNALLY_TAGGED_ENUM_VARIANT_A' in data:
-        return VariantA.from_dict(cast(dict[str, object], data['EXTERNALLY_TAGGED_ENUM_VARIANT_A']))
+    if "EXTERNALLY_TAGGED_ENUM_VARIANT_A" in data:
+        return VariantA.from_dict(cast(dict[str, object], data["EXTERNALLY_TAGGED_ENUM_VARIANT_A"]))
+    if "EXTERNALLY_TAGGED_ENUM_VARIANT_B" in data:
+        return VariantB.from_dict(cast(dict[str, object], data["EXTERNALLY_TAGGED_ENUM_VARIANT_B"]))
+    raise ValueError("Unknown discriminator value for ExternallyTaggedEnum: " + str(data))
 
-    if 'EXTERNALLY_TAGGED_ENUM_VARIANT_B' in data:
-        return VariantB.from_dict(cast(dict[str, object], data['EXTERNALLY_TAGGED_ENUM_VARIANT_B']))
-
-    raise ValueError('Unknown discriminator value for ExternallyTaggedEnum: ' + str(data))
 
 def externally_tagged_enum_to_dict(obj: ExternallyTaggedEnum) -> dict[str, object]:
     if isinstance(obj, VariantA):
-        return {'EXTERNALLY_TAGGED_ENUM_VARIANT_A': obj.to_dict()}
-
+        return {"EXTERNALLY_TAGGED_ENUM_VARIANT_A": obj.to_dict()}
     if isinstance(obj, VariantB):
-        return {'EXTERNALLY_TAGGED_ENUM_VARIANT_B': obj.to_dict()}
-
-    raise ValueError('Unknown variant for ExternallyTaggedEnum: ' + str(type (obj)))
+        return {"EXTERNALLY_TAGGED_ENUM_VARIANT_B": obj.to_dict()}
+    raise ValueError("Unknown variant for ExternallyTaggedEnum: " + str(type(obj)))

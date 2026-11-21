@@ -12,11 +12,13 @@ from ..models.upload_response import UploadResponse
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class UpdatePetBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
 
 class UpdatePetNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -24,32 +26,43 @@ class UpdatePetNotFound:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class UpdatePetValidation:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class UpdatePetUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
+
 type UpdatePetErrorDetail = (
-    UpdatePetBadRequest
-    | UpdatePetNotFound
-    | UpdatePetValidation
-    | UpdatePetUnexpected
+    UpdatePetBadRequest | UpdatePetNotFound | UpdatePetValidation | UpdatePetUnexpected
 )
 
+
 class UpdatePetError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: UpdatePetErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: UpdatePetErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: UpdatePetErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class AddPetBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -57,31 +70,41 @@ class AddPetBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class AddPetValidation:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class AddPetUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type AddPetErrorDetail = (
-    AddPetBadRequest
-    | AddPetValidation
-    | AddPetUnexpected
-)
+
+type AddPetErrorDetail = AddPetBadRequest | AddPetValidation | AddPetUnexpected
+
 
 class AddPetError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: AddPetErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: AddPetErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: AddPetErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class FindPetsByStatusBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -89,24 +112,34 @@ class FindPetsByStatusBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class FindPetsByStatusUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type FindPetsByStatusErrorDetail = (
-    FindPetsByStatusBadRequest
-    | FindPetsByStatusUnexpected
-)
+
+type FindPetsByStatusErrorDetail = FindPetsByStatusBadRequest | FindPetsByStatusUnexpected
+
 
 class FindPetsByStatusError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: FindPetsByStatusErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: FindPetsByStatusErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: FindPetsByStatusErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class FindPetsByTagsBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -114,24 +147,34 @@ class FindPetsByTagsBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class FindPetsByTagsUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type FindPetsByTagsErrorDetail = (
-    FindPetsByTagsBadRequest
-    | FindPetsByTagsUnexpected
-)
+
+type FindPetsByTagsErrorDetail = FindPetsByTagsBadRequest | FindPetsByTagsUnexpected
+
 
 class FindPetsByTagsError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: FindPetsByTagsErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: FindPetsByTagsErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: FindPetsByTagsErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class GetPetByIdBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -139,31 +182,41 @@ class GetPetByIdBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class GetPetByIdNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class GetPetByIdUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetPetByIdErrorDetail = (
-    GetPetByIdBadRequest
-    | GetPetByIdNotFound
-    | GetPetByIdUnexpected
-)
+
+type GetPetByIdErrorDetail = GetPetByIdBadRequest | GetPetByIdNotFound | GetPetByIdUnexpected
+
 
 class GetPetByIdError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetPetByIdErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetPetByIdErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetPetByIdErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class UpdatePetWithFormBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -171,24 +224,34 @@ class UpdatePetWithFormBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class UpdatePetWithFormUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type UpdatePetWithFormErrorDetail = (
-    UpdatePetWithFormBadRequest
-    | UpdatePetWithFormUnexpected
-)
+
+type UpdatePetWithFormErrorDetail = UpdatePetWithFormBadRequest | UpdatePetWithFormUnexpected
+
 
 class UpdatePetWithFormError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: UpdatePetWithFormErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: UpdatePetWithFormErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: UpdatePetWithFormErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class DeletePetBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -196,40 +259,59 @@ class DeletePetBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class DeletePetUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type DeletePetErrorDetail = (
-    DeletePetBadRequest
-    | DeletePetUnexpected
-)
+
+type DeletePetErrorDetail = DeletePetBadRequest | DeletePetUnexpected
+
 
 class DeletePetError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: DeletePetErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: DeletePetErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: DeletePetErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class UploadFileUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type UploadFileErrorDetail = (
-    UploadFileUnexpected
-)
+
+type UploadFileErrorDetail = UploadFileUnexpected
+
 
 class UploadFileError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: UploadFileErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: UploadFileErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: UploadFileErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -246,16 +328,32 @@ class PetApi:
         response = self._client.request("PUT", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = UpdatePetBadRequest(response.status_code, response.headers, response.content)
+                detail = UpdatePetBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
                 detail = UpdatePetNotFound(response.status_code, response.headers, response.content)
             elif response.status_code == 422:
-                detail = UpdatePetValidation(response.status_code, response.headers, response.content)
+                detail = UpdatePetValidation(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = UpdatePetUnexpected(response.status_code, response.headers, response.content)
-            raise UpdatePetError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = UpdatePetUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise UpdatePetError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = Pet.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def update_pet(self, *, body: Pet) -> Pet:
         """Update an existing pet."""
@@ -274,9 +372,19 @@ class PetApi:
                 detail = AddPetValidation(response.status_code, response.headers, response.content)
             else:
                 detail = AddPetUnexpected(response.status_code, response.headers, response.content)
-            raise AddPetError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+
+            raise AddPetError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = Pet.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def add_pet(self, *, body: Pet) -> Pet:
         """Add a new pet to the store."""
@@ -290,12 +398,26 @@ class PetApi:
         response = self._client.request("GET", path, params=params)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = FindPetsByStatusBadRequest(response.status_code, response.headers, response.content)
+                detail = FindPetsByStatusBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = FindPetsByStatusUnexpected(response.status_code, response.headers, response.content)
-            raise FindPetsByStatusError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = FindPetsByStatusUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise FindPetsByStatusError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = [Pet.from_dict(item) for item in response.json()]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def find_pets_by_status(self, *, status: str) -> list[Pet]:
         """Find pets by status."""
@@ -309,12 +431,26 @@ class PetApi:
         response = self._client.request("GET", path, params=params)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = FindPetsByTagsBadRequest(response.status_code, response.headers, response.content)
+                detail = FindPetsByTagsBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = FindPetsByTagsUnexpected(response.status_code, response.headers, response.content)
-            raise FindPetsByTagsError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = FindPetsByTagsUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise FindPetsByTagsError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = [Pet.from_dict(item) for item in response.json()]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def find_pets_by_tags(self, *, tags: list[str]) -> list[Pet]:
         """Find pets by tags."""
@@ -326,24 +462,38 @@ class PetApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = GetPetByIdBadRequest(response.status_code, response.headers, response.content)
+                detail = GetPetByIdBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
-                detail = GetPetByIdNotFound(response.status_code, response.headers, response.content)
+                detail = GetPetByIdNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = GetPetByIdUnexpected(response.status_code, response.headers, response.content)
-            raise GetPetByIdError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = GetPetByIdUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise GetPetByIdError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = Pet.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_pet_by_id(self, pet_id: int) -> Pet:
         """Find pet by ID."""
         return self.get_pet_by_id_with_http_info(pet_id).data
 
-    def update_pet_with_form_with_http_info(self,
-        pet_id: int,
-        *,
-        name: str | None = None,
-        status: str | None = None) -> ApiResponse[Pet]:
+    def update_pet_with_form_with_http_info(
+        self, pet_id: int, *, name: str | None = None, status: str | None = None
+    ) -> ApiResponse[Pet]:
         """Update a pet in the store with form data, including HTTP response metadata."""
         path = f"/pet/{pet_id}"
         params: dict[str, str] = {}
@@ -354,14 +504,30 @@ class PetApi:
         response = self._client.request("POST", path, params=params)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = UpdatePetWithFormBadRequest(response.status_code, response.headers, response.content)
+                detail = UpdatePetWithFormBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = UpdatePetWithFormUnexpected(response.status_code, response.headers, response.content)
-            raise UpdatePetWithFormError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
-        data = Pet.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+                detail = UpdatePetWithFormUnexpected(
+                    response.status_code, response.headers, response.content
+                )
 
-    def update_pet_with_form(self, pet_id: int, *, name: str | None = None, status: str | None = None) -> Pet:
+            raise UpdatePetWithFormError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
+        data = Pet.from_dict(response.json())
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
+
+    def update_pet_with_form(
+        self, pet_id: int, *, name: str | None = None, status: str | None = None
+    ) -> Pet:
         """Update a pet in the store with form data."""
         return self.update_pet_with_form_with_http_info(pet_id, name=name, status=status).data
 
@@ -371,21 +537,34 @@ class PetApi:
         response = self._client.request("DELETE", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = DeletePetBadRequest(response.status_code, response.headers, response.content)
+                detail = DeletePetBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = DeletePetUnexpected(response.status_code, response.headers, response.content)
-            raise DeletePetError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = DeletePetUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise DeletePetError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def delete_pet(self, pet_id: int) -> None:
         """Delete a pet."""
         return self.delete_pet_with_http_info(pet_id).data
 
-    def upload_file_with_http_info(self,
-        pet_id: int,
-        *,
-        additional_metadata: str | None = None) -> ApiResponse[UploadResponse]:
+    def upload_file_with_http_info(
+        self, pet_id: int, *, additional_metadata: str | None = None
+    ) -> ApiResponse[UploadResponse]:
         """Upload an image, including HTTP response metadata."""
         path = f"/pet/{pet_id}/uploadImage"
         params: dict[str, str] = {}
@@ -394,9 +573,18 @@ class PetApi:
         response = self._client.request("POST", path, params=params)
         if not (200 <= response.status_code < 300):
             detail = UploadFileUnexpected(response.status_code, response.headers, response.content)
-            raise UploadFileError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise UploadFileError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = UploadResponse.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def upload_file(self, pet_id: int, *, additional_metadata: str | None = None) -> UploadResponse:
         """Upload an image."""

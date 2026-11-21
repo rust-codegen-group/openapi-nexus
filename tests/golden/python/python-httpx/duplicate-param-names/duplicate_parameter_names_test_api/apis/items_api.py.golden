@@ -8,9 +8,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from ..models.create_item_with_body_conflict_request import CreateItemWithBodyConflictRequest
-from ..models.create_item_with_body_conflict_response200 import CreateItemWithBodyConflictResponse200
+from ..models.create_item_with_body_conflict_response200 import (
+    CreateItemWithBodyConflictResponse200,
+)
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
+
 
 class CreateItemWithBodyConflictBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -18,22 +21,33 @@ class CreateItemWithBodyConflictBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class CreateItemWithBodyConflictUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
+
 type CreateItemWithBodyConflictErrorDetail = (
-    CreateItemWithBodyConflictBadRequest
-    | CreateItemWithBodyConflictUnexpected
+    CreateItemWithBodyConflictBadRequest | CreateItemWithBodyConflictUnexpected
 )
 
+
 class CreateItemWithBodyConflictError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateItemWithBodyConflictErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateItemWithBodyConflictErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateItemWithBodyConflictErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -42,11 +56,9 @@ class ItemsApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def create_item_with_body_conflict_with_http_info(self,
-        item_id: str,
-        *,
-        body2: CreateItemWithBodyConflictRequest,
-        body: str | None = None) -> ApiResponse[CreateItemWithBodyConflictResponse200]:
+    def create_item_with_body_conflict_with_http_info(
+        self, item_id: str, *, body2: CreateItemWithBodyConflictRequest, body: str | None = None
+    ) -> ApiResponse[CreateItemWithBodyConflictResponse200]:
         """Create item with body parameter conflict, including HTTP response metadata."""
         path = f"/items/{item_id}"
         params: dict[str, str] = {}
@@ -54,20 +66,36 @@ class ItemsApi:
             params["body"] = str(body)
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
-        response = self._client.request("POST", path, params=params, json=body2.to_dict(), headers=headers)
+        response = self._client.request(
+            "POST", path, params=params, json=body2.to_dict(), headers=headers
+        )
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = CreateItemWithBodyConflictBadRequest(response.status_code, response.headers, response.content)
+                detail = CreateItemWithBodyConflictBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = CreateItemWithBodyConflictUnexpected(response.status_code, response.headers, response.content)
-            raise CreateItemWithBodyConflictError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
-        data = CreateItemWithBodyConflictResponse200.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+                detail = CreateItemWithBodyConflictUnexpected(
+                    response.status_code, response.headers, response.content
+                )
 
-    def create_item_with_body_conflict(self,
-        item_id: str,
-        *,
-        body2: CreateItemWithBodyConflictRequest,
-        body: str | None = None) -> CreateItemWithBodyConflictResponse200:
+            raise CreateItemWithBodyConflictError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
+        data = CreateItemWithBodyConflictResponse200.from_dict(response.json())
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
+
+    def create_item_with_body_conflict(
+        self, item_id: str, *, body2: CreateItemWithBodyConflictRequest, body: str | None = None
+    ) -> CreateItemWithBodyConflictResponse200:
         """Create item with body parameter conflict."""
-        return self.create_item_with_body_conflict_with_http_info(item_id, body2=body2, body=body).data
+        return self.create_item_with_body_conflict_with_http_info(
+            item_id, body2=body2, body=body
+        ).data

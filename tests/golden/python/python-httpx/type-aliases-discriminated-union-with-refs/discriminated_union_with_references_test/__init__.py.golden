@@ -4,9 +4,11 @@
 # Test fixture for discriminated union where variants are references to component schemas.
 # This is similar to the ContainerImage pattern in the infiron API.
 
-from .runtime import ApiKeyAuth as ApiKeyAuth
-from .runtime import Authenticator as Authenticator
-from .runtime import BearerAuth as BearerAuth
-from .runtime import ApiResponse as ApiResponse
-from .runtime import Client as Client
-from .runtime import ApiError as ApiError
+from .runtime import (
+    ApiError as ApiError,
+    ApiKeyAuth as ApiKeyAuth,
+    ApiResponse as ApiResponse,
+    Authenticator as Authenticator,
+    BearerAuth as BearerAuth,
+    Client as Client,
+)

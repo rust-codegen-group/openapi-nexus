@@ -9,13 +9,13 @@ from typing import cast
 from . import _union
 from .constrained_ref import ConstrainedRef
 
-type SelectionRef = (
-    ConstrainedRef
-    | str
-)
+
+type SelectionRef = ConstrainedRef | str
+
 
 def selection_ref_from_dict(value: object) -> SelectionRef:
     return cast(SelectionRef, _union.value_36_from_dict(value))
+
 
 def selection_ref_to_dict(value: SelectionRef) -> object:
     return _union.value_36_to_dict(value)

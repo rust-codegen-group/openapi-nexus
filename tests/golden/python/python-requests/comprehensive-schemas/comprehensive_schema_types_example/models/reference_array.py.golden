@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from .string_type import StringType
 
+
 # Array of references
 
-type ReferenceArray = (list[StringType])
+
+type ReferenceArray = list[StringType]

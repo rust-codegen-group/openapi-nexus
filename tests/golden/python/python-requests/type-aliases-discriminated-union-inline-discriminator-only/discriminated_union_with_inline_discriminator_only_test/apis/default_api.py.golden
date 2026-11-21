@@ -3,12 +3,12 @@
 # Discriminated Union with Inline Discriminator Only Test — 1.0.0
 # Test fixture for discriminated union where variants are inline objects
 # with ONLY a discriminator property (no additional fields).
-# 
+#
 # This specifically tests the fix for the bug where inline objects with
 # only a discriminator property (like { kind: "UNSPECIFIED" }) were
 # generating generic "Kind.ts" files that conflicted across different
 # discriminated unions.
-# 
+#
 # After the fix, these should generate properly prefixed names like
 # "EventKindUnspecified" instead of generic "Kind".
 
@@ -20,21 +20,31 @@ from ..models.event import Event
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class CreateEventUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type CreateEventErrorDetail = (
-    CreateEventUnexpected
-)
+
+type CreateEventErrorDetail = CreateEventUnexpected
+
 
 class CreateEventError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateEventErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateEventErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateEventErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -51,9 +61,18 @@ class DefaultApi:
         response = self._client.request("POST", path, json=body, headers=headers)
         if not (200 <= response.status_code < 300):
             detail = CreateEventUnexpected(response.status_code, response.headers, response.content)
-            raise CreateEventError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            raise CreateEventError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.json()  # type: ignore[return-value]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def create_event(self, *, body: Event) -> Event:
         """Create event with discriminated union."""

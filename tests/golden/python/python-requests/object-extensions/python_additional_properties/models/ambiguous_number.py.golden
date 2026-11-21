@@ -8,13 +8,13 @@ from typing import cast
 
 from . import _union
 
-type AmbiguousNumber = (
-    int
-    | float
-)
+
+type AmbiguousNumber = int | float
+
 
 def ambiguous_number_from_dict(value: object) -> AmbiguousNumber:
     return cast(AmbiguousNumber, _union.value_3_from_dict(value))
+
 
 def ambiguous_number_to_dict(value: AmbiguousNumber) -> object:
     return _union.value_3_to_dict(value)

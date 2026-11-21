@@ -4,24 +4,38 @@
 
 from .choice import Choice as Choice
 from .collision_map import CollisionMap as CollisionMap
-from .collision_map_additional_property import CollisionMapAdditionalProperty as CollisionMapAdditionalProperty
-from .collision_map_additional_property2 import CollisionMapAdditionalProperty2 as CollisionMapAdditionalProperty2
+from .collision_map_additional_property import (
+    CollisionMapAdditionalProperty as CollisionMapAdditionalProperty,
+)
+from .collision_map_additional_property2 import (
+    CollisionMapAdditionalProperty2 as CollisionMapAdditionalProperty2,
+)
 from .constrained_inline import ConstrainedInline as ConstrainedInline
-from .constrained_inline_additional_property_item import ConstrainedInlineAdditionalPropertyItem as ConstrainedInlineAdditionalPropertyItem
+from .constrained_inline_additional_property_item import (
+    ConstrainedInlineAdditionalPropertyItem as ConstrainedInlineAdditionalPropertyItem,
+)
 from .constrained_ref import ConstrainedRef as ConstrainedRef
 from .inline import Inline as Inline
 from .inline_additional_property import InlineAdditionalProperty as InlineAdditionalProperty
 from .inline_one_of import InlineOneOf as InlineOneOf
-from .inline_one_of_additional_property import InlineOneOfAdditionalProperty as InlineOneOfAdditionalProperty
+from .inline_one_of_additional_property import (
+    InlineOneOfAdditionalProperty as InlineOneOfAdditionalProperty,
+)
 from .mixed import Mixed as Mixed
 from .mixed_additional_property import MixedAdditionalProperty as MixedAdditionalProperty
 from .mixed_type_inline import MixedTypeInline as MixedTypeInline
-from .mixed_type_inline_additional_property_additional_property import MixedTypeInlineAdditionalPropertyAdditionalProperty as MixedTypeInlineAdditionalPropertyAdditionalProperty
+from .mixed_type_inline_additional_property_additional_property import (
+    MixedTypeInlineAdditionalPropertyAdditionalProperty as MixedTypeInlineAdditionalPropertyAdditionalProperty,
+)
 from .mixed_type_ref import MixedTypeRef as MixedTypeRef
 from .nested_array import NestedArray as NestedArray
-from .nested_array_additional_property_item_additional_property import NestedArrayAdditionalPropertyItemAdditionalProperty as NestedArrayAdditionalPropertyItemAdditionalProperty
+from .nested_array_additional_property_item_additional_property import (
+    NestedArrayAdditionalPropertyItemAdditionalProperty as NestedArrayAdditionalPropertyItemAdditionalProperty,
+)
 from .nested_map import NestedMap as NestedMap
-from .nested_map_additional_property_additional_property import NestedMapAdditionalPropertyAdditionalProperty as NestedMapAdditionalPropertyAdditionalProperty
+from .nested_map_additional_property_additional_property import (
+    NestedMapAdditionalPropertyAdditionalProperty as NestedMapAdditionalPropertyAdditionalProperty,
+)
 from .referenced import Referenced as Referenced
 from .selection_inline import SelectionInline as SelectionInline
 from .selection_ref import SelectionRef as SelectionRef

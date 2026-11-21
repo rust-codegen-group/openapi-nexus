@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .deeply_nested_inline_level_one import DeeplyNestedInlineLevelOne
+
 
 @dataclass
 class DeeplyNestedInline:
     """Three levels of nested inline objects."""
+
     level_one: DeeplyNestedInlineLevelOne
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,7 @@ class DeeplyNestedInline:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> DeeplyNestedInline:
         return cls(
-            level_one=DeeplyNestedInlineLevelOne.from_dict(data["level_one"]),  # type: ignore[arg-type]
+            level_one=DeeplyNestedInlineLevelOne.from_dict(
+                cast(dict[str, object], data["level_one"])
+            ),
         )

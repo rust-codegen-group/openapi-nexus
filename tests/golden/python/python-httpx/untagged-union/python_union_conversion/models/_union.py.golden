@@ -8,1419 +8,1214 @@ from typing import cast
 
 from ..runtime import _union_support
 
+
 def value_0_from_dict(value: object) -> object:
     if _union_support.number(value, True):
         return value_1_from_dict(value)
-
     if isinstance(value, str):
         return value_2_from_dict(value)
-
     return value
+
 
 def value_0_to_dict(value: object) -> object:
     if _union_support.number(value, True):
         return value_1_to_dict(value)
-
     if isinstance(value, str):
         return value_2_to_dict(value)
-
     return value
+
 
 def value_1_from_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_1_to_dict(value: object) -> object:
     return _union_support.scalar(value)
+
 
 def value_2_from_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_2_to_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_3_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_0(value):
         return value_4_from_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_0(value):
         return value_4_from_dict(value)
-
     return value
+
 
 def value_3_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_1(value):
         return value_4_to_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_1(value):
         return value_4_to_dict(value)
-
     return value
+
 
 def value_4_from_dict(value: object) -> object:
     from . import numeric_two
+
     return numeric_two.NumericTwo.from_dict(_union_support.as_dict(value))
+
 
 def value_4_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_5_from_dict(value: object) -> object:
-    if ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'record'))
-     and (_union_support.has(value,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(value, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'name',
-        'name'),
-        str)))))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'numeric'))
-     and (_union_support.has(value,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(value, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(value,
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'second_value',
-        'second_value'),
-        str)))))):
+    if _matches_shape_2(value):
         return value_6_from_dict(value)
-
-    if ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'record'))
-     and (_union_support.has(value,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(value, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'name',
-        'name'),
-        str)))))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'numeric'))
-     and (_union_support.has(value,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(value, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(value,
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'second_value',
-        'second_value'),
-        str)))))):
+    if _matches_shape_2(value):
         return value_6_from_dict(value)
-
     return value
+
 
 def value_5_to_dict(value: object) -> object:
-    if ((_union_support.is_object(value)
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value,
-        'name',
-        'name'),
-        str)))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
+    if _matches_shape_3(value):
         return value_6_to_dict(value)
-
-    if ((_union_support.is_object(value)
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value,
-        'name',
-        'name'),
-        str)))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
+    if _matches_shape_3(value):
         return value_6_to_dict(value)
-
     return value
+
 
 def value_6_from_dict(value: object) -> object:
     from . import adjacent_member
+
     return adjacent_member.adjacent_member_from_dict(_union_support.as_dict(value))
+
 
 def value_6_to_dict(value: object) -> object:
     from . import adjacent_member
+
     return adjacent_member.adjacent_member_to_dict(cast(adjacent_member.AdjacentMember, value))
+
 
 def value_7_from_dict(value: object) -> object:
     from . import tagged_record
+
     return tagged_record.TaggedRecord.from_dict(_union_support.as_dict(value))
+
 
 def value_7_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_8_from_dict(value: object) -> object:
     return [value_9_from_dict(item) for item in _union_support.as_list(value)]
+
 
 def value_8_to_dict(value: object) -> object:
     return [value_9_to_dict(item) for item in _union_support.as_list(value)]
 
-def value_9_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'children',
-        'children',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'children',
-        'children')) and all(match_recursive_any_from_dict(_item) for _item in _union_support.as_list(_union_support.get(value,
-        'children',
-        'children')))))):
-        return value_10_from_dict(value)
 
+def value_9_from_dict(value: object) -> object:
+    if _matches_shape_4(value):
+        return value_10_from_dict(value)
     if isinstance(value, str):
         return value_2_from_dict(value)
-
     return value
+
 
 def value_9_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'children',
-        'children',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'children',
-        'children')) and all(match_recursive_any_to_dict(_item) for _item in _union_support.as_list(_union_support.get(value,
-        'children',
-        'children')))))):
+    if _matches_shape_5(value):
         return value_10_to_dict(value)
-
     if isinstance(value, str):
         return value_2_to_dict(value)
-
     return value
+
 
 def value_10_from_dict(value: object) -> object:
     from . import branch
+
     return branch.Branch.from_dict(_union_support.as_dict(value))
+
 
 def value_10_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_11_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (not _union_support.has(value,
-        'first_value',
-        'first_value',
-        False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 1)))):
+    if _matches_shape_6(value):
         return value_12_from_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_0(value):
         return value_4_from_dict(value)
-
     return value
+
 
 def value_11_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (not _union_support.has(value,
-        'first_value',
-        'first_value',
-        False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 1)))):
+    if _matches_shape_7(value):
         return value_12_to_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_1(value):
         return value_4_to_dict(value)
-
     return value
+
 
 def value_12_from_dict(value: object) -> object:
     from . import numeric_one
+
     return numeric_one.NumericOne.from_dict(_union_support.as_dict(value))
+
 
 def value_12_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_13_from_dict(value: object) -> object:
     return value_11_from_dict(value)
+
 
 def value_13_to_dict(value: object) -> object:
     return value_11_to_dict(value)
 
-def value_14_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'envelope',
-        'envelope',
-        True) and (_union_support.is_object(_union_support.get(value, 'envelope', 'envelope'))
-     and (_union_support.has(_union_support.get(value, 'envelope', 'envelope'),
-        'value',
-        'value',
-        True) and (_union_support.number(_union_support.get(_union_support.get(value,
-        'envelope',
-        'envelope'),
-        'value',
-        'value'),
-        True)
-     or isinstance(_union_support.get(_union_support.get(value, 'envelope', 'envelope'),
-        'value',
-        'value'),
-        str)))))):
-        return value_15_from_dict(value)
 
+def value_14_from_dict(value: object) -> object:
+    if _matches_shape_8(value):
+        return value_15_from_dict(value)
     if isinstance(value, bool):
         return value_16_from_dict(value)
-
     return value
+
 
 def value_14_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'envelope',
-        'envelope',
-        True) and (_union_support.is_object(_union_support.get(value, 'envelope', 'envelope'))
-     and (_union_support.has(_union_support.get(value, 'envelope', 'envelope'),
-        'value',
-        'value',
-        True) and (_union_support.number(_union_support.get(_union_support.get(value,
-        'envelope',
-        'envelope'),
-        'value',
-        'value'),
-        True)
-     or isinstance(_union_support.get(_union_support.get(value, 'envelope', 'envelope'),
-        'value',
-        'value'),
-        str)))))):
+    if _matches_shape_9(value):
         return value_15_to_dict(value)
-
     if isinstance(value, bool):
         return value_16_to_dict(value)
-
     return value
+
 
 def value_15_from_dict(value: object) -> object:
     from . import dependent_envelope
+
     return dependent_envelope.DependentEnvelope.from_dict(_union_support.as_dict(value))
+
 
 def value_15_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_16_from_dict(value: object) -> object:
     return _union_support.scalar(value)
+
 
 def value_16_to_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_17_from_dict(value: object) -> object:
     return [value_11_from_dict(item) for item in _union_support.as_list(value)]
+
 
 def value_17_to_dict(value: object) -> object:
     return [value_11_to_dict(item) for item in _union_support.as_list(value)]
 
+
 def value_18_from_dict(value: object) -> object:
     return {key: value_11_from_dict(item) for key, item in _union_support.as_dict(value).items()}
+
 
 def value_18_to_dict(value: object) -> object:
     return {key: value_11_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
+
 def value_19_from_dict(value: object) -> object:
     return [value_20_from_dict(item) for item in _union_support.as_list(value)]
+
 
 def value_19_to_dict(value: object) -> object:
     return [value_20_to_dict(item) for item in _union_support.as_list(value)]
 
+
 def value_20_from_dict(value: object) -> object:
     return {key: value_17_from_dict(item) for key, item in _union_support.as_dict(value).items()}
+
 
 def value_20_to_dict(value: object) -> object:
     return {key: value_17_to_dict(item) for key, item in _union_support.mapping(value).items()}
 
+
 def value_21_from_dict(value: object) -> object:
     return value_22_from_dict(value)
+
 
 def value_21_to_dict(value: object) -> object:
     return value_22_to_dict(value)
 
+
 def value_22_from_dict(value: object) -> object:
     return None if value is None else value_23_from_dict(value)
+
 
 def value_22_to_dict(value: object) -> object:
     return None if value is None else value_23_to_dict(value)
 
+
 def value_23_from_dict(value: object) -> object:
     if _union_support.number(value, True):
         return value_1_from_dict(value)
-
     if isinstance(value, bool):
         return value_16_from_dict(value)
-
     return value
+
 
 def value_23_to_dict(value: object) -> object:
     if _union_support.number(value, True):
         return value_1_to_dict(value)
-
     if isinstance(value, bool):
         return value_16_to_dict(value)
-
     return value
+
 
 def value_24_from_dict(value: object) -> object:
     if _union_support.equal(value, None):
         return value_25_from_dict(value)
-
-    if ((value is None or isinstance(value, str))
-     and (_union_support.equal(value, 'x')
-     or _union_support.equal(value, None))
-     and (value is None
-     or isinstance(value, str)
-     or _union_support.equal(value, 'x')
-     or _union_support.equal(value, None))):
+    if _matches_shape_10(value):
         return value_26_from_dict(value)
-
     return value
+
 
 def value_24_to_dict(value: object) -> object:
     if _union_support.equal(value, None):
         return value_25_to_dict(value)
-
-    if ((value is None or isinstance(value, str))
-     and (_union_support.equal(value, 'x')
-     or _union_support.equal(value, None))
-     and (value is None
-     or isinstance(value, str)
-     or _union_support.equal(value, 'x')
-     or _union_support.equal(value, None))):
+    if _matches_shape_11(value):
         return value_26_to_dict(value)
-
     return value
+
 
 def value_25_from_dict(value: object) -> object:
     return value_2_from_dict(value)
 
+
 def value_25_to_dict(value: object) -> object:
     return value_2_to_dict(value)
+
 
 def value_26_from_dict(value: object) -> object:
     return value_27_from_dict(value)
 
+
 def value_26_to_dict(value: object) -> object:
     return value_27_to_dict(value)
+
 
 def value_27_from_dict(value: object) -> object:
     return None if value is None else value_2_from_dict(value)
 
+
 def value_27_to_dict(value: object) -> object:
     return None if value is None else value_2_to_dict(value)
 
-def value_28_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
-        return value_3_from_dict(value)
 
+def value_28_from_dict(value: object) -> object:
+    if _matches_shape_0(value):
+        return value_3_from_dict(value)
     if isinstance(value, str):
         return value_2_from_dict(value)
-
     return value
+
 
 def value_28_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_1(value):
         return value_3_to_dict(value)
-
     if isinstance(value, str):
         return value_2_to_dict(value)
-
     return value
+
 
 def value_29_from_dict(value: object) -> object:
-    if ((_union_support.is_object(value)
-     and (not _union_support.has(value,
-        'first_value',
-        'first_value',
-        False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 1))))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
+    if _matches_shape_12(value):
         return value_11_from_dict(value)
-
     if value is None:
         return None
-
     return value
+
 
 def value_29_to_dict(value: object) -> object:
-    if ((_union_support.is_object(value)
-     and (not _union_support.has(value,
-        'first_value',
-        'first_value',
-        False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 1))))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
+    if _matches_shape_13(value):
         return value_11_to_dict(value)
-
     if value is None:
         return None
-
     return value
+
 
 def value_30_from_dict(value: object) -> object:
-    if (_union_support.equal(value, None)
-     or ((value is None or isinstance(value, str))
-     and (_union_support.equal(value, 'x')
-     or _union_support.equal(value, None))
-     and (value is None
-     or isinstance(value, str)
-     or _union_support.equal(value, 'x')
-     or _union_support.equal(value, None)))):
+    if _matches_shape_14(value):
         return value_24_from_dict(value)
-
     if _union_support.number(value, True):
         return value_1_from_dict(value)
-
     return value
+
 
 def value_30_to_dict(value: object) -> object:
-    if (_union_support.equal(value, None)
-     or ((value is None or isinstance(value, str))
-     and (_union_support.equal(value, 'x')
-     or _union_support.equal(value, None))
-     and (value is None
-     or isinstance(value, str)
-     or _union_support.equal(value, 'x')
-     or _union_support.equal(value, None)))):
+    if _matches_shape_15(value):
         return value_24_to_dict(value)
-
     if _union_support.number(value, True):
         return value_1_to_dict(value)
-
     return value
+
 
 def value_31_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_0(value):
         return value_4_from_dict(value)
-
     if True:
         return value_32_from_dict(value)
-
     return value
+
 
 def value_31_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))):
+    if _matches_shape_1(value):
         return value_4_to_dict(value)
-
     if True:
         return value_32_to_dict(value)
-
     return value
+
 
 def value_32_from_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_32_to_dict(value: object) -> object:
     return _union_support.scalar(value)
 
+
 def value_33_from_dict(value: object) -> object:
-    if (_union_support.number(value, True)
-     and (_union_support.equal(value, 1)
-     or _union_support.equal(value, 2))
-     and (_union_support.number(value, True)
-     or _union_support.equal(value, 1)
-     or _union_support.equal(value, 2))):
+    if _matches_shape_16(value):
         return value_34_from_dict(value)
-
-    if (isinstance(value, bool)
-     and _union_support.equal(value, True)
-     and (isinstance(value, bool)
-     or _union_support.equal(value, True))):
+    if _matches_shape_17(value):
         return value_35_from_dict(value)
-
     return value
+
 
 def value_33_to_dict(value: object) -> object:
-    if (_union_support.number(value, True)
-     and (_union_support.equal(value, 1)
-     or _union_support.equal(value, 2))
-     and (_union_support.number(value, True)
-     or _union_support.equal(value, 1)
-     or _union_support.equal(value, 2))):
+    if _matches_shape_18(value):
         return value_34_to_dict(value)
-
-    if (isinstance(value, bool)
-     and _union_support.equal(value, True)
-     and (isinstance(value, bool)
-     or _union_support.equal(value, True))):
+    if _matches_shape_19(value):
         return value_35_to_dict(value)
-
     return value
+
 
 def value_34_from_dict(value: object) -> object:
     return value_1_from_dict(value)
 
+
 def value_34_to_dict(value: object) -> object:
     return value_1_to_dict(value)
+
 
 def value_35_from_dict(value: object) -> object:
     return value_16_from_dict(value)
 
+
 def value_35_to_dict(value: object) -> object:
     return value_16_to_dict(value)
 
+
 def value_36_from_dict(value: object) -> object:
     data = _union_support.as_dict(value)
-    if data.get('kind') == 'choice':
-        return value_3_from_dict(data['payload'])
-
-    if data.get('kind') == 'text':
-        return value_2_from_dict(data['payload'])
-
+    if data.get("kind") == "choice":
+        return value_3_from_dict(data["payload"])
+    if data.get("kind") == "text":
+        return value_2_from_dict(data["payload"])
     raise ValueError("No matching tagged union variant")
+
 
 def value_36_to_dict(value: object) -> object:
-    if ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
-        return {'kind': 'choice', 'payload': value_3_to_dict(value)}
-
-    if (isinstance(value, str)):
-        return {'kind': 'text', 'payload': value_2_to_dict(value)}
-
+    if _matches_shape_1(value):
+        return {"kind": "choice", "payload": value_3_to_dict(value)}
+    if isinstance(value, str):
+        return {"kind": "text", "payload": value_2_to_dict(value)}
     raise ValueError("No matching tagged union variant")
+
 
 def value_37_from_dict(value: object) -> object:
     data = _union_support.as_dict(value)
-    if data.get('kind') == 'choice':
-        return value_11_from_dict(data['payload'])
-
-    if data.get('kind') == 'text':
-        return value_2_from_dict(data['payload'])
-
+    if data.get("kind") == "choice":
+        return value_11_from_dict(data["payload"])
+    if data.get("kind") == "text":
+        return value_2_from_dict(data["payload"])
     raise ValueError("No matching tagged union variant")
+
 
 def value_37_to_dict(value: object) -> object:
-    if (((_union_support.is_object(value)
-     and (not _union_support.has(value,
-        'first_value',
-        'first_value',
-        False) or isinstance(_union_support.get(value, 'first_value', 'first_value'), str))
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 1))))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str))))):
-        return {'kind': 'choice', 'payload': value_11_to_dict(value)}
-
-    if (isinstance(value, str)):
-        return {'kind': 'text', 'payload': value_2_to_dict(value)}
-
+    if _matches_shape_13(value):
+        return {"kind": "choice", "payload": value_11_to_dict(value)}
+    if isinstance(value, str):
+        return {"kind": "text", "payload": value_2_to_dict(value)}
     raise ValueError("No matching tagged union variant")
 
-def value_38_from_dict(value: object) -> object:
-    if (_union_support.is_list(value) and all(((_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_item, 'kind', 'kind'), 'record'))
-     and (_union_support.has(_item,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_item, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'name',
-        'name'),
-        str)))))
-     or (_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_item, 'kind', 'kind'), 'numeric'))
-     and (_union_support.has(_item,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_item, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(_item,
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'second_value',
-        'second_value'),
-        str)))))) for _item in _union_support.as_list(value))):
-        return value_39_from_dict(value)
 
+def value_38_from_dict(value: object) -> object:
+    if _matches_shape_20(value):
+        return value_39_from_dict(value)
     if isinstance(value, str):
         return value_2_from_dict(value)
-
     return value
+
 
 def value_38_to_dict(value: object) -> object:
-    if (_union_support.is_list(value) and all(((_union_support.is_object(_item)
-     and (_union_support.has(_item, 'name', 'name', True) and isinstance(_union_support.get(_item,
-        'name',
-        'name'),
-        str)))
-     or (_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_item, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(_item, 'revision', 'revision'), 2)))
-     and (not _union_support.has(_item,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_item, 'second_value', 'second_value'),
-        str)))) for _item in _union_support.as_list(value))):
+    if _matches_shape_21(value):
         return value_39_to_dict(value)
-
     if isinstance(value, str):
         return value_2_to_dict(value)
-
     return value
+
 
 def value_39_from_dict(value: object) -> object:
     return [value_6_from_dict(item) for item in _union_support.as_list(value)]
 
+
 def value_39_to_dict(value: object) -> object:
     return [value_6_to_dict(item) for item in _union_support.as_list(value)]
+
 
 def value_40_from_dict(value: object) -> object:
     return value_41_from_dict(value)
 
+
 def value_40_to_dict(value: object) -> object:
     return value_41_to_dict(value)
 
-def value_41_from_dict(value: object) -> object:
-    if ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'record'))
-     and (_union_support.has(value,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(value, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'name',
-        'name'),
-        str)))))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'numeric'))
-     and (_union_support.has(value,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(value, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(value,
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(value, 'payload', 'payload'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(value, 'payload', 'payload'),
-        'second_value',
-        'second_value'),
-        str)))))):
-        return value_6_from_dict(value)
 
+def value_41_from_dict(value: object) -> object:
+    if _matches_shape_2(value):
+        return value_6_from_dict(value)
     if _union_support.number(value, True):
         return value_1_from_dict(value)
-
     return value
+
 
 def value_41_to_dict(value: object) -> object:
-    if ((_union_support.is_object(value)
-     and (_union_support.has(value, 'name', 'name', True) and isinstance(_union_support.get(value,
-        'name',
-        'name'),
-        str)))
-     or (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(value, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(value, 'revision', 'revision'), 2)))
-     and (not _union_support.has(value,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(value, 'second_value', 'second_value'), str)))):
+    if _matches_shape_3(value):
         return value_6_to_dict(value)
-
     if _union_support.number(value, True):
         return value_1_to_dict(value)
-
     return value
+
 
 def value_42_from_dict(value: object) -> object:
     return {key: value_41_from_dict(item) for key, item in _union_support.as_dict(value).items()}
 
+
 def value_42_to_dict(value: object) -> object:
     return {key: value_41_to_dict(item) for key, item in _union_support.mapping(value).items()}
+
 
 def value_43_from_dict(value: object) -> object:
     return [value_40_from_dict(item) for item in _union_support.as_list(value)]
 
+
 def value_43_to_dict(value: object) -> object:
     return [value_40_to_dict(item) for item in _union_support.as_list(value)]
 
-def value_44_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'mapping',
-        'mapping',
-        True) and (_union_support.is_dict(_union_support.get(value,
-        'mapping',
-        'mapping')) and all(((_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_item, 'kind', 'kind'), 'record'))
-     and (_union_support.has(_item,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_item, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'name',
-        'name'),
-        str)))))
-     or (_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_item, 'kind', 'kind'), 'numeric'))
-     and (_union_support.has(_item,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_item, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(_item,
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'second_value',
-        'second_value'),
-        str)))))
-     or _union_support.number(_item,
-        True)) for _item in _union_support.as_dict(_union_support.get(value,
-        'mapping',
-        'mapping')).values())))
-     and (_union_support.has(value,
-        'value',
-        'value',
-        True) and ((_union_support.is_object(_union_support.get(value, 'value', 'value'))
-     and (_union_support.has(_union_support.get(value, 'value', 'value'),
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'kind',
-        'kind'),
-        'record'))
-     and (_union_support.has(_union_support.get(value, 'value', 'value'),
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'payload',
-        'payload'))
-     and (_union_support.has(_union_support.get(_union_support.get(value, 'value', 'value'),
-        'payload',
-        'payload'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'payload',
-        'payload'),
-        'name',
-        'name'),
-        str)))))
-     or (_union_support.is_object(_union_support.get(value, 'value', 'value'))
-     and (_union_support.has(_union_support.get(value, 'value', 'value'),
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'kind',
-        'kind'),
-        'numeric'))
-     and (_union_support.has(_union_support.get(value, 'value', 'value'),
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'payload',
-        'payload'))
-     and (_union_support.has(_union_support.get(_union_support.get(value, 'value', 'value'),
-        'payload',
-        'payload'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(_union_support.get(value, 'value', 'value'),
-        'payload',
-        'payload'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'payload',
-        'payload'),
-        'second_value',
-        'second_value'),
-        str)))))
-     or _union_support.number(_union_support.get(value, 'value', 'value'), True)))
-     and (_union_support.has(value,
-        'values',
-        'values',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'values',
-        'values')) and all(((_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_item, 'kind', 'kind'), 'record'))
-     and (_union_support.has(_item,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_item, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'name',
-        'name'),
-        str)))))
-     or (_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(_item, 'kind', 'kind'), 'numeric'))
-     and (_union_support.has(_item,
-        'payload',
-        'payload',
-        True) and (_union_support.is_object(_union_support.get(_item, 'payload', 'payload'))
-     and (_union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(_item,
-        'payload',
-        'payload'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(_item, 'payload', 'payload'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(_item, 'payload', 'payload'),
-        'second_value',
-        'second_value'),
-        str)))))
-     or _union_support.number(_item,
-        True)) for _item in _union_support.as_list(_union_support.get(value,
-        'values',
-        'values')))))):
-        return value_45_from_dict(value)
 
+def value_44_from_dict(value: object) -> object:
+    if _matches_shape_22(value):
+        return value_45_from_dict(value)
     if _union_support.number(value, True):
         return value_1_from_dict(value)
-
     return value
+
 
 def value_44_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'mapping',
-        'mapping',
-        True) and (_union_support.is_mapping(_union_support.get(value,
-        'mapping',
-        'mapping')) and all(((_union_support.is_object(_item)
-     and (_union_support.has(_item, 'name', 'name', True) and isinstance(_union_support.get(_item,
-        'name',
-        'name'),
-        str)))
-     or (_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_item, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(_item, 'revision', 'revision'), 2)))
-     and (not _union_support.has(_item,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_item, 'second_value', 'second_value'), str)))
-     or _union_support.number(_item,
-        True)) for _item in _union_support.mapping(_union_support.get(value,
-        'mapping',
-        'mapping')).values())))
-     and (_union_support.has(value,
-        'value',
-        'value',
-        True) and ((_union_support.is_object(_union_support.get(value, 'value', 'value'))
-     and (_union_support.has(_union_support.get(value, 'value', 'value'),
-        'name',
-        'name',
-        True) and isinstance(_union_support.get(_union_support.get(value, 'value', 'value'),
-        'name',
-        'name'),
-        str)))
-     or (_union_support.is_object(_union_support.get(value, 'value', 'value'))
-     and (_union_support.has(_union_support.get(value, 'value', 'value'),
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_union_support.get(value,
-        'value',
-        'value'),
-        'revision',
-        'revision'),
-        True)
-     and _union_support.equal(_union_support.get(_union_support.get(value, 'value', 'value'),
-        'revision',
-        'revision'),
-        2)))
-     and (not _union_support.has(_union_support.get(value, 'value', 'value'),
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_union_support.get(value, 'value', 'value'),
-        'second_value',
-        'second_value'),
-        str)))
-     or _union_support.number(_union_support.get(value, 'value', 'value'), True)))
-     and (_union_support.has(value,
-        'values',
-        'values',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'values',
-        'values')) and all(((_union_support.is_object(_item)
-     and (_union_support.has(_item, 'name', 'name', True) and isinstance(_union_support.get(_item,
-        'name',
-        'name'),
-        str)))
-     or (_union_support.is_object(_item)
-     and (_union_support.has(_item,
-        'revision',
-        'revision',
-        True) and (_union_support.number(_union_support.get(_item, 'revision', 'revision'), True)
-     and _union_support.equal(_union_support.get(_item, 'revision', 'revision'), 2)))
-     and (not _union_support.has(_item,
-        'second_value',
-        'second_value',
-        False) or isinstance(_union_support.get(_item, 'second_value', 'second_value'), str)))
-     or _union_support.number(_item,
-        True)) for _item in _union_support.as_list(_union_support.get(value,
-        'values',
-        'values')))))):
+    if _matches_shape_23(value):
         return value_45_to_dict(value)
-
     if _union_support.number(value, True):
         return value_1_to_dict(value)
-
     return value
+
 
 def value_45_from_dict(value: object) -> object:
     from . import tagged_member_envelope
+
     return tagged_member_envelope.TaggedMemberEnvelope.from_dict(_union_support.as_dict(value))
+
 
 def value_45_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_46_from_dict(value: object) -> object:
     return [value_47_from_dict(item) for item in _union_support.as_list(value)]
+
 
 def value_46_to_dict(value: object) -> object:
     return [value_47_to_dict(item) for item in _union_support.as_list(value)]
 
+
 def value_47_from_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value, 'label', 'label', True) and isinstance(_union_support.get(value,
-        'label',
-        'label'),
-        str))
-     and (_union_support.has(value,
-        'payload_schema',
-        'payload_schema',
-        True) and (_union_support.is_dict(_union_support.get(value,
-        'payload_schema',
-        'payload_schema')) and all(True for _item in _union_support.as_dict(_union_support.get(value,
-        'payload_schema',
-        'payload_schema')).values())))):
+    if _matches_shape_24(value):
         return value_48_from_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'variant_b'))
-     and (_union_support.has(value,
-        'label',
-        'label',
-        True) and _union_support.equal(_union_support.get(value, 'label', 'label'), 'payload_b'))
-     and (not _union_support.has(value,
-        'limit',
-        'limit',
-        False) or _union_support.number(_union_support.get(value, 'limit', 'limit'), True))):
+    if _matches_shape_25(value):
         return value_49_from_dict(value)
-
     return value
+
 
 def value_47_to_dict(value: object) -> object:
-    if (_union_support.is_object(value)
-     and (_union_support.has(value, 'label', 'label', True) and isinstance(_union_support.get(value,
-        'label',
-        'label'),
-        str))
-     and (_union_support.has(value,
-        'payload_schema',
-        'payload_schema',
-        True) and (_union_support.is_mapping(_union_support.get(value,
-        'payload_schema',
-        'payload_schema')) and all(True for _item in _union_support.mapping(_union_support.get(value,
-        'payload_schema',
-        'payload_schema')).values())))):
+    if _matches_shape_26(value):
         return value_48_to_dict(value)
-
-    if (_union_support.is_object(value)
-     and (_union_support.has(value,
-        'kind',
-        'kind',
-        True) and _union_support.equal(_union_support.get(value, 'kind', 'kind'), 'variant_b'))
-     and (_union_support.has(value,
-        'label',
-        'label',
-        True) and _union_support.equal(_union_support.get(value, 'label', 'label'), 'payload_b'))
-     and (not _union_support.has(value,
-        'limit',
-        'limit',
-        False) or _union_support.number(_union_support.get(value, 'limit', 'limit'), True))):
+    if _matches_shape_27(value):
         return value_49_to_dict(value)
-
     return value
+
 
 def value_48_from_dict(value: object) -> object:
     from . import payload_a
+
     return payload_a.PayloadA.from_dict(_union_support.as_dict(value))
+
 
 def value_48_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
 def value_49_from_dict(value: object) -> object:
     from . import payload_b
+
     return payload_b.PayloadB.from_dict(_union_support.as_dict(value))
+
 
 def value_49_to_dict(value: object) -> object:
     return _union_support.model_to_dict(value)
 
+
+def _matches_shape_0(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "revision", "revision", True):
+        return False
+    if not _matches_shape_28(_union_support.get(value, "revision", "revision")):
+        return False
+    if _union_support.has(value, "second_value", "second_value", False):
+        if not isinstance(_union_support.get(value, "second_value", "second_value"), str):
+            return False
+    return True
+
+
+def _matches_shape_1(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "revision", "revision", True):
+        return False
+    if not _matches_shape_29(_union_support.get(value, "revision", "revision")):
+        return False
+    if _union_support.has(value, "second_value", "second_value", False):
+        if not isinstance(_union_support.get(value, "second_value", "second_value"), str):
+            return False
+    return True
+
+
+def _matches_shape_2(value: object) -> bool:
+    if _matches_shape_30(value):
+        return True
+    if _matches_shape_31(value):
+        return True
+    return False
+
+
+def _matches_shape_3(value: object) -> bool:
+    if _matches_shape_32(value):
+        return True
+    if _matches_shape_1(value):
+        return True
+    return False
+
+
+def _matches_shape_4(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "children", "children", True):
+        return False
+    if not _matches_shape_33(_union_support.get(value, "children", "children")):
+        return False
+    return True
+
+
+def _matches_shape_5(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "children", "children", True):
+        return False
+    if not _matches_shape_34(_union_support.get(value, "children", "children")):
+        return False
+    return True
+
+
+def _matches_shape_6(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if _union_support.has(value, "first_value", "first_value", False):
+        if not isinstance(_union_support.get(value, "first_value", "first_value"), str):
+            return False
+    if not _union_support.has(value, "revision", "revision", True):
+        return False
+    if not _matches_shape_35(_union_support.get(value, "revision", "revision")):
+        return False
+    return True
+
+
+def _matches_shape_7(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if _union_support.has(value, "first_value", "first_value", False):
+        if not isinstance(_union_support.get(value, "first_value", "first_value"), str):
+            return False
+    if not _union_support.has(value, "revision", "revision", True):
+        return False
+    if not _matches_shape_36(_union_support.get(value, "revision", "revision")):
+        return False
+    return True
+
+
+def _matches_shape_8(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "envelope", "envelope", True):
+        return False
+    if not _matches_shape_37(_union_support.get(value, "envelope", "envelope")):
+        return False
+    return True
+
+
+def _matches_shape_9(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "envelope", "envelope", True):
+        return False
+    if not _matches_shape_38(_union_support.get(value, "envelope", "envelope")):
+        return False
+    return True
+
+
+def _matches_shape_10(value: object) -> bool:
+    if not _matches_shape_39(value):
+        return False
+    if not _matches_shape_40(value):
+        return False
+    if not _matches_shape_41(value):
+        return False
+    return True
+
+
+def _matches_shape_11(value: object) -> bool:
+    if not _matches_shape_42(value):
+        return False
+    if not _matches_shape_43(value):
+        return False
+    if not _matches_shape_44(value):
+        return False
+    return True
+
+
+def _matches_shape_12(value: object) -> bool:
+    if _matches_shape_6(value):
+        return True
+    if _matches_shape_0(value):
+        return True
+    return False
+
+
+def _matches_shape_13(value: object) -> bool:
+    if _matches_shape_7(value):
+        return True
+    if _matches_shape_1(value):
+        return True
+    return False
+
+
+def _matches_shape_14(value: object) -> bool:
+    if _union_support.equal(value, None):
+        return True
+    if _matches_shape_10(value):
+        return True
+    return False
+
+
+def _matches_shape_15(value: object) -> bool:
+    if _union_support.equal(value, None):
+        return True
+    if _matches_shape_11(value):
+        return True
+    return False
+
+
+def _matches_shape_16(value: object) -> bool:
+    if not _union_support.number(value, True):
+        return False
+    if not _matches_shape_45(value):
+        return False
+    if not _matches_shape_46(value):
+        return False
+    return True
+
+
+def _matches_shape_17(value: object) -> bool:
+    if not isinstance(value, bool):
+        return False
+    if not _union_support.equal(value, True):
+        return False
+    if not _matches_shape_47(value):
+        return False
+    return True
+
+
+def _matches_shape_18(value: object) -> bool:
+    if not _union_support.number(value, True):
+        return False
+    if not _matches_shape_48(value):
+        return False
+    if not _matches_shape_49(value):
+        return False
+    return True
+
+
+def _matches_shape_19(value: object) -> bool:
+    if not isinstance(value, bool):
+        return False
+    if not _union_support.equal(value, True):
+        return False
+    if not _matches_shape_50(value):
+        return False
+    return True
+
+
+def _matches_shape_20(value: object) -> bool:
+    if not _union_support.is_list(value):
+        return False
+    return all(_matches_shape_2(_item) for _item in _union_support.as_list(value))
+
+
+def _matches_shape_21(value: object) -> bool:
+    if not _union_support.is_list(value):
+        return False
+    return all(_matches_shape_3(_item) for _item in _union_support.as_list(value))
+
+
+def _matches_shape_22(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "mapping", "mapping", True):
+        return False
+    if not _matches_shape_51(_union_support.get(value, "mapping", "mapping")):
+        return False
+    if not _union_support.has(value, "value", "value", True):
+        return False
+    if not _matches_shape_52(_union_support.get(value, "value", "value")):
+        return False
+    if not _union_support.has(value, "values", "values", True):
+        return False
+    if not _matches_shape_53(_union_support.get(value, "values", "values")):
+        return False
+    return True
+
+
+def _matches_shape_23(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "mapping", "mapping", True):
+        return False
+    if not _matches_shape_54(_union_support.get(value, "mapping", "mapping")):
+        return False
+    if not _union_support.has(value, "value", "value", True):
+        return False
+    if not _matches_shape_55(_union_support.get(value, "value", "value")):
+        return False
+    if not _union_support.has(value, "values", "values", True):
+        return False
+    if not _matches_shape_56(_union_support.get(value, "values", "values")):
+        return False
+    return True
+
+
+def _matches_shape_24(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "label", "label", True):
+        return False
+    if not isinstance(_union_support.get(value, "label", "label"), str):
+        return False
+    if not _union_support.has(value, "payload_schema", "payload_schema", True):
+        return False
+    if not _matches_shape_57(_union_support.get(value, "payload_schema", "payload_schema")):
+        return False
+    return True
+
+
+def _matches_shape_25(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "kind", "kind", True):
+        return False
+    if not _union_support.equal(_union_support.get(value, "kind", "kind"), "variant_b"):
+        return False
+    if not _union_support.has(value, "label", "label", True):
+        return False
+    if not _union_support.equal(_union_support.get(value, "label", "label"), "payload_b"):
+        return False
+    if _union_support.has(value, "limit", "limit", False):
+        if not _union_support.number(_union_support.get(value, "limit", "limit"), True):
+            return False
+    return True
+
+
+def _matches_shape_26(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "label", "label", True):
+        return False
+    if not isinstance(_union_support.get(value, "label", "label"), str):
+        return False
+    if not _union_support.has(value, "payload_schema", "payload_schema", True):
+        return False
+    if not _matches_shape_58(_union_support.get(value, "payload_schema", "payload_schema")):
+        return False
+    return True
+
+
+def _matches_shape_27(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "kind", "kind", True):
+        return False
+    if not _union_support.equal(_union_support.get(value, "kind", "kind"), "variant_b"):
+        return False
+    if not _union_support.has(value, "label", "label", True):
+        return False
+    if not _union_support.equal(_union_support.get(value, "label", "label"), "payload_b"):
+        return False
+    if _union_support.has(value, "limit", "limit", False):
+        if not _union_support.number(_union_support.get(value, "limit", "limit"), True):
+            return False
+    return True
+
+
+def _matches_shape_28(value: object) -> bool:
+    if not _union_support.number(value, True):
+        return False
+    if not _union_support.equal(value, 2):
+        return False
+    return True
+
+
+def _matches_shape_29(value: object) -> bool:
+    if not _union_support.number(value, True):
+        return False
+    if not _union_support.equal(value, 2):
+        return False
+    return True
+
+
+def _matches_shape_30(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "kind", "kind", True):
+        return False
+    if not _union_support.equal(_union_support.get(value, "kind", "kind"), "record"):
+        return False
+    if not _union_support.has(value, "payload", "payload", True):
+        return False
+    if not _matches_shape_59(_union_support.get(value, "payload", "payload")):
+        return False
+    return True
+
+
+def _matches_shape_31(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "kind", "kind", True):
+        return False
+    if not _union_support.equal(_union_support.get(value, "kind", "kind"), "numeric"):
+        return False
+    if not _union_support.has(value, "payload", "payload", True):
+        return False
+    if not _matches_shape_0(_union_support.get(value, "payload", "payload")):
+        return False
+    return True
+
+
+def _matches_shape_32(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "name", "name", True):
+        return False
+    if not isinstance(_union_support.get(value, "name", "name"), str):
+        return False
+    return True
+
+
+def _matches_shape_33(value: object) -> bool:
+    if not _union_support.is_list(value):
+        return False
+    return all(match_recursive_any_from_dict(_item) for _item in _union_support.as_list(value))
+
+
 def match_recursive_any_from_dict(value: object) -> bool:
-    return ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'children',
-        'children',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'children',
-        'children')) and all(match_recursive_any_from_dict(_item) for _item in _union_support.as_list(_union_support.get(value,
-        'children',
-        'children'))))))
-     or isinstance(value, str))
+    if _matches_shape_4(value):
+        return True
+    if isinstance(value, str):
+        return True
+    return False
+
 
 def match_recursive_concrete_from_dict(value: object) -> bool:
-    return ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'children',
-        'children',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'children',
-        'children')) and all(match_recursive_any_from_dict(_item) for _item in _union_support.as_list(_union_support.get(value,
-        'children',
-        'children'))))))
-     or isinstance(value, str))
+    if _matches_shape_4(value):
+        return True
+    if isinstance(value, str):
+        return True
+    return False
+
 
 def match_recursive_fallback_from_dict(value: object) -> bool:
     return False
 
+
+def _matches_shape_34(value: object) -> bool:
+    if not _union_support.is_list(value):
+        return False
+    return all(match_recursive_any_to_dict(_item) for _item in _union_support.as_list(value))
+
+
 def match_recursive_any_to_dict(value: object) -> bool:
-    return ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'children',
-        'children',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'children',
-        'children')) and all(match_recursive_any_to_dict(_item) for _item in _union_support.as_list(_union_support.get(value,
-        'children',
-        'children'))))))
-     or isinstance(value, str))
+    if _matches_shape_5(value):
+        return True
+    if isinstance(value, str):
+        return True
+    return False
+
 
 def match_recursive_concrete_to_dict(value: object) -> bool:
-    return ((_union_support.is_object(value)
-     and (_union_support.has(value,
-        'children',
-        'children',
-        True) and (_union_support.is_list(_union_support.get(value,
-        'children',
-        'children')) and all(match_recursive_any_to_dict(_item) for _item in _union_support.as_list(_union_support.get(value,
-        'children',
-        'children'))))))
-     or isinstance(value, str))
+    if _matches_shape_5(value):
+        return True
+    if isinstance(value, str):
+        return True
+    return False
+
 
 def match_recursive_fallback_to_dict(value: object) -> bool:
+    return False
+
+
+def _matches_shape_35(value: object) -> bool:
+    if not _union_support.number(value, True):
+        return False
+    if not _union_support.equal(value, 1):
+        return False
+    return True
+
+
+def _matches_shape_36(value: object) -> bool:
+    if not _union_support.number(value, True):
+        return False
+    if not _union_support.equal(value, 1):
+        return False
+    return True
+
+
+def _matches_shape_37(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "value", "value", True):
+        return False
+    if not _matches_shape_60(_union_support.get(value, "value", "value")):
+        return False
+    return True
+
+
+def _matches_shape_38(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "value", "value", True):
+        return False
+    if not _matches_shape_61(_union_support.get(value, "value", "value")):
+        return False
+    return True
+
+
+def _matches_shape_39(value: object) -> bool:
+    if value is None:
+        return True
+    return isinstance(value, str)
+
+
+def _matches_shape_40(value: object) -> bool:
+    if _union_support.equal(value, "x"):
+        return True
+    if _union_support.equal(value, None):
+        return True
+    return False
+
+
+def _matches_shape_41(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return True
+    if _union_support.equal(value, "x"):
+        return True
+    if _union_support.equal(value, None):
+        return True
+    return False
+
+
+def _matches_shape_42(value: object) -> bool:
+    if value is None:
+        return True
+    return isinstance(value, str)
+
+
+def _matches_shape_43(value: object) -> bool:
+    if _union_support.equal(value, "x"):
+        return True
+    if _union_support.equal(value, None):
+        return True
+    return False
+
+
+def _matches_shape_44(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return True
+    if _union_support.equal(value, "x"):
+        return True
+    if _union_support.equal(value, None):
+        return True
+    return False
+
+
+def _matches_shape_45(value: object) -> bool:
+    if _union_support.equal(value, 1):
+        return True
+    if _union_support.equal(value, 2):
+        return True
+    return False
+
+
+def _matches_shape_46(value: object) -> bool:
+    if _union_support.number(value, True):
+        return True
+    if _union_support.equal(value, 1):
+        return True
+    if _union_support.equal(value, 2):
+        return True
+    return False
+
+
+def _matches_shape_47(value: object) -> bool:
+    if isinstance(value, bool):
+        return True
+    if _union_support.equal(value, True):
+        return True
+    return False
+
+
+def _matches_shape_48(value: object) -> bool:
+    if _union_support.equal(value, 1):
+        return True
+    if _union_support.equal(value, 2):
+        return True
+    return False
+
+
+def _matches_shape_49(value: object) -> bool:
+    if _union_support.number(value, True):
+        return True
+    if _union_support.equal(value, 1):
+        return True
+    if _union_support.equal(value, 2):
+        return True
+    return False
+
+
+def _matches_shape_50(value: object) -> bool:
+    if isinstance(value, bool):
+        return True
+    if _union_support.equal(value, True):
+        return True
+    return False
+
+
+def _matches_shape_51(value: object) -> bool:
+    if not _union_support.is_dict(value):
+        return False
+    return all(_matches_shape_52(_item) for _item in _union_support.as_dict(value).values())
+
+
+def _matches_shape_52(value: object) -> bool:
+    if _matches_shape_30(value):
+        return True
+    if _matches_shape_31(value):
+        return True
+    if _union_support.number(value, True):
+        return True
+    return False
+
+
+def _matches_shape_53(value: object) -> bool:
+    if not _union_support.is_list(value):
+        return False
+    return all(_matches_shape_52(_item) for _item in _union_support.as_list(value))
+
+
+def _matches_shape_54(value: object) -> bool:
+    if not _union_support.is_mapping(value):
+        return False
+    return all(_matches_shape_55(_item) for _item in _union_support.mapping(value).values())
+
+
+def _matches_shape_55(value: object) -> bool:
+    if _matches_shape_32(value):
+        return True
+    if _matches_shape_1(value):
+        return True
+    if _union_support.number(value, True):
+        return True
+    return False
+
+
+def _matches_shape_56(value: object) -> bool:
+    if not _union_support.is_list(value):
+        return False
+    return all(_matches_shape_55(_item) for _item in _union_support.as_list(value))
+
+
+def _matches_shape_57(value: object) -> bool:
+    if not _union_support.is_dict(value):
+        return False
+    return all(True for _item in _union_support.as_dict(value).values())
+
+
+def _matches_shape_58(value: object) -> bool:
+    if not _union_support.is_mapping(value):
+        return False
+    return all(True for _item in _union_support.mapping(value).values())
+
+
+def _matches_shape_59(value: object) -> bool:
+    if not _union_support.is_object(value):
+        return False
+    if not _union_support.has(value, "name", "name", True):
+        return False
+    if not isinstance(_union_support.get(value, "name", "name"), str):
+        return False
+    return True
+
+
+def _matches_shape_60(value: object) -> bool:
+    if _union_support.number(value, True):
+        return True
+    if isinstance(value, str):
+        return True
+    return False
+
+
+def _matches_shape_61(value: object) -> bool:
+    if _union_support.number(value, True):
+        return True
+    if isinstance(value, str):
+        return True
     return False

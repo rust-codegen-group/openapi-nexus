@@ -13,30 +13,41 @@ from ..models.root_level import RootLevel
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class PostLeafBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class PostLeafUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostLeafErrorDetail = (
-    PostLeafBadRequest
-    | PostLeafUnexpected
-)
+
+type PostLeafErrorDetail = PostLeafBadRequest | PostLeafUnexpected
+
 
 class PostLeafError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostLeafErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostLeafErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostLeafErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PostMiddleBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -44,24 +55,34 @@ class PostMiddleBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class PostMiddleUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostMiddleErrorDetail = (
-    PostMiddleBadRequest
-    | PostMiddleUnexpected
-)
+
+type PostMiddleErrorDetail = PostMiddleBadRequest | PostMiddleUnexpected
+
 
 class PostMiddleError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostMiddleErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostMiddleErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostMiddleErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PostRootBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -69,22 +90,31 @@ class PostRootBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class PostRootUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PostRootErrorDetail = (
-    PostRootBadRequest
-    | PostRootUnexpected
-)
+
+type PostRootErrorDetail = PostRootBadRequest | PostRootUnexpected
+
 
 class PostRootError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PostRootErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PostRootErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PostRootErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -101,12 +131,26 @@ class AdditionalPropertiesApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = PostLeafBadRequest(response.status_code, response.headers, response.content)
+                detail = PostLeafBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = PostLeafUnexpected(response.status_code, response.headers, response.content)
-            raise PostLeafError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+                detail = PostLeafUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise PostLeafError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = LeafValue.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_leaf(self, *, body: LeafValue) -> LeafValue:
         """Echo leaf payload (attributes map).."""
@@ -120,12 +164,26 @@ class AdditionalPropertiesApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = PostMiddleBadRequest(response.status_code, response.headers, response.content)
+                detail = PostMiddleBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = PostMiddleUnexpected(response.status_code, response.headers, response.content)
-            raise PostMiddleError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+                detail = PostMiddleUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise PostMiddleError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = MiddleLevel.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_middle(self, *, body: MiddleLevel) -> MiddleLevel:
         """Echo middle-level payload (nested + extra maps).."""
@@ -139,12 +197,26 @@ class AdditionalPropertiesApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = PostRootBadRequest(response.status_code, response.headers, response.content)
+                detail = PostRootBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = PostRootUnexpected(response.status_code, response.headers, response.content)
-            raise PostRootError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+                detail = PostRootUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise PostRootError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = RootLevel.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def post_root(self, *, body: RootLevel) -> RootLevel:
         """Echo root payload (all three levels with additional-properties-style maps).."""

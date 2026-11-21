@@ -9,25 +9,37 @@ import json
 
 from collections.abc import Mapping
 
-from ..models.send_nested_object_part_multipart_request_body import SendNestedObjectPartMultipartRequestBody
+from ..models.send_nested_object_part_multipart_request_body import (
+    SendNestedObjectPartMultipartRequestBody,
+)
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
+
 
 class SendNestedObjectPartUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type SendNestedObjectPartErrorDetail = (
-    SendNestedObjectPartUnexpected
-)
+
+type SendNestedObjectPartErrorDetail = SendNestedObjectPartUnexpected
+
 
 class SendNestedObjectPartError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: SendNestedObjectPartErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: SendNestedObjectPartErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: SendNestedObjectPartErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -36,19 +48,34 @@ class MultipartApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def send_nested_object_part_with_http_info(self,
-        *,
-        body: SendNestedObjectPartMultipartRequestBody) -> ApiResponse[None]:
+    def send_nested_object_part_with_http_info(
+        self, *, body: SendNestedObjectPartMultipartRequestBody
+    ) -> ApiResponse[None]:
         path = "/multipart/nested-object"
         files: dict[str, object] = {}
-        files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/octet-stream")
+        files["file"] = (
+            body.file.filename_or_default("file"),
+            body.file.data,
+            "application/octet-stream",
+        )
         files["item_config"] = (None, json.dumps(body.item_config.to_dict()), "application/json")
         response = self._client.request("POST", path, files=files if files else None)
         if not (200 <= response.status_code < 300):
-            detail = SendNestedObjectPartUnexpected(response.status_code, response.headers, response.content)
-            raise SendNestedObjectPartError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = SendNestedObjectPartUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise SendNestedObjectPartError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def send_nested_object_part(self, *, body: SendNestedObjectPartMultipartRequestBody) -> None:
         return self.send_nested_object_part_with_http_info(body=body).data

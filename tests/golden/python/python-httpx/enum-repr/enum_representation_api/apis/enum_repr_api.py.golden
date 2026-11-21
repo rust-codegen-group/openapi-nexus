@@ -19,30 +19,43 @@ from ..models.untagged_enum import UntaggedEnum
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class HandleAdjacentlyTaggedBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class HandleAdjacentlyTaggedUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
+
 type HandleAdjacentlyTaggedErrorDetail = (
-    HandleAdjacentlyTaggedBadRequest
-    | HandleAdjacentlyTaggedUnexpected
+    HandleAdjacentlyTaggedBadRequest | HandleAdjacentlyTaggedUnexpected
 )
 
+
 class HandleAdjacentlyTaggedError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: HandleAdjacentlyTaggedErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: HandleAdjacentlyTaggedErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: HandleAdjacentlyTaggedErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class HandleExternallyTaggedBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -50,24 +63,36 @@ class HandleExternallyTaggedBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class HandleExternallyTaggedUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
+
 type HandleExternallyTaggedErrorDetail = (
-    HandleExternallyTaggedBadRequest
-    | HandleExternallyTaggedUnexpected
+    HandleExternallyTaggedBadRequest | HandleExternallyTaggedUnexpected
 )
 
+
 class HandleExternallyTaggedError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: HandleExternallyTaggedErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: HandleExternallyTaggedErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: HandleExternallyTaggedErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class HandleInternallyTaggedBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -75,24 +100,36 @@ class HandleInternallyTaggedBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class HandleInternallyTaggedUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
+
 type HandleInternallyTaggedErrorDetail = (
-    HandleInternallyTaggedBadRequest
-    | HandleInternallyTaggedUnexpected
+    HandleInternallyTaggedBadRequest | HandleInternallyTaggedUnexpected
 )
 
+
 class HandleInternallyTaggedError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: HandleInternallyTaggedErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: HandleInternallyTaggedErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: HandleInternallyTaggedErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class HandleMixedBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -100,24 +137,34 @@ class HandleMixedBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class HandleMixedUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type HandleMixedErrorDetail = (
-    HandleMixedBadRequest
-    | HandleMixedUnexpected
-)
+
+type HandleMixedErrorDetail = HandleMixedBadRequest | HandleMixedUnexpected
+
 
 class HandleMixedError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: HandleMixedErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: HandleMixedErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: HandleMixedErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class HandleUntaggedBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -125,22 +172,31 @@ class HandleUntaggedBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class HandleUntaggedUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type HandleUntaggedErrorDetail = (
-    HandleUntaggedBadRequest
-    | HandleUntaggedUnexpected
-)
+
+type HandleUntaggedErrorDetail = HandleUntaggedBadRequest | HandleUntaggedUnexpected
+
 
 class HandleUntaggedError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: HandleUntaggedErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: HandleUntaggedErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: HandleUntaggedErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -149,9 +205,9 @@ class EnumReprApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def handle_adjacently_tagged_with_http_info(self,
-        *,
-        body: AdjacentlyTaggedEnum) -> ApiResponse[AdjacentlyTaggedEnum]:
+    def handle_adjacently_tagged_with_http_info(
+        self, *, body: AdjacentlyTaggedEnum
+    ) -> ApiResponse[AdjacentlyTaggedEnum]:
         """Handle adjacently tagged enum, including HTTP response metadata."""
         path = "/adjacently-tagged"
         headers: dict[str, str] = {}
@@ -159,20 +215,34 @@ class EnumReprApi:
         response = self._client.request("POST", path, json=body, headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = HandleAdjacentlyTaggedBadRequest(response.status_code, response.headers, response.content)
+                detail = HandleAdjacentlyTaggedBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = HandleAdjacentlyTaggedUnexpected(response.status_code, response.headers, response.content)
-            raise HandleAdjacentlyTaggedError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = HandleAdjacentlyTaggedUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise HandleAdjacentlyTaggedError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.json()  # type: ignore[return-value]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def handle_adjacently_tagged(self, *, body: AdjacentlyTaggedEnum) -> AdjacentlyTaggedEnum:
         """Handle adjacently tagged enum."""
         return self.handle_adjacently_tagged_with_http_info(body=body).data
 
-    def handle_externally_tagged_with_http_info(self,
-        *,
-        body: ExternallyTaggedEnum) -> ApiResponse[ExternallyTaggedEnum]:
+    def handle_externally_tagged_with_http_info(
+        self, *, body: ExternallyTaggedEnum
+    ) -> ApiResponse[ExternallyTaggedEnum]:
         """Handle externally tagged enum, including HTTP response metadata."""
         path = "/externally-tagged"
         headers: dict[str, str] = {}
@@ -180,20 +250,34 @@ class EnumReprApi:
         response = self._client.request("POST", path, json=body, headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = HandleExternallyTaggedBadRequest(response.status_code, response.headers, response.content)
+                detail = HandleExternallyTaggedBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = HandleExternallyTaggedUnexpected(response.status_code, response.headers, response.content)
-            raise HandleExternallyTaggedError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = HandleExternallyTaggedUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise HandleExternallyTaggedError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.json()  # type: ignore[return-value]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def handle_externally_tagged(self, *, body: ExternallyTaggedEnum) -> ExternallyTaggedEnum:
         """Handle externally tagged enum."""
         return self.handle_externally_tagged_with_http_info(body=body).data
 
-    def handle_internally_tagged_with_http_info(self,
-        *,
-        body: InternallyTaggedEnum) -> ApiResponse[InternallyTaggedEnum]:
+    def handle_internally_tagged_with_http_info(
+        self, *, body: InternallyTaggedEnum
+    ) -> ApiResponse[InternallyTaggedEnum]:
         """Handle internally tagged enum, including HTTP response metadata."""
         path = "/internally-tagged"
         headers: dict[str, str] = {}
@@ -201,12 +285,26 @@ class EnumReprApi:
         response = self._client.request("POST", path, json=body, headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = HandleInternallyTaggedBadRequest(response.status_code, response.headers, response.content)
+                detail = HandleInternallyTaggedBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = HandleInternallyTaggedUnexpected(response.status_code, response.headers, response.content)
-            raise HandleInternallyTaggedError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = HandleInternallyTaggedUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise HandleInternallyTaggedError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.json()  # type: ignore[return-value]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def handle_internally_tagged(self, *, body: InternallyTaggedEnum) -> InternallyTaggedEnum:
         """Handle internally tagged enum."""
@@ -218,16 +316,32 @@ class EnumReprApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_0_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
+        response = self._client.request(
+            "POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False)
+        )
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = HandleMixedBadRequest(response.status_code, response.headers, response.content)
+                detail = HandleMixedBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = HandleMixedUnexpected(response.status_code, response.headers, response.content)
-            raise HandleMixedError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = HandleMixedUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise HandleMixedError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         _union_data = cast(MixedEnum, _union.value_0_from_dict(response.json()))
         data = _union_data
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def handle_mixed(self, *, body: MixedEnum) -> MixedEnum:
         """Handle mixed enum (unit variants SimpleA, SimpleB and tuple variants VariantA(VariantA), VariantB(VariantB))."""
@@ -239,16 +353,32 @@ class EnumReprApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_5_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
+        response = self._client.request(
+            "POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False)
+        )
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = HandleUntaggedBadRequest(response.status_code, response.headers, response.content)
+                detail = HandleUntaggedBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = HandleUntaggedUnexpected(response.status_code, response.headers, response.content)
-            raise HandleUntaggedError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = HandleUntaggedUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise HandleUntaggedError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         _union_data = cast(UntaggedEnum, _union.value_5_from_dict(response.json()))
         data = _union_data
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def handle_untagged(self, *, body: UntaggedEnum) -> UntaggedEnum:
         """Handle untagged enum."""

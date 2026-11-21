@@ -11,23 +11,34 @@ from ..models.order import Order
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class GetInventoryUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type GetInventoryErrorDetail = (
-    GetInventoryUnexpected
-)
+
+type GetInventoryErrorDetail = GetInventoryUnexpected
+
 
 class GetInventoryError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetInventoryErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetInventoryErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetInventoryErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class PlaceOrderBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -35,24 +46,34 @@ class PlaceOrderBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class PlaceOrderUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type PlaceOrderErrorDetail = (
-    PlaceOrderBadRequest
-    | PlaceOrderUnexpected
-)
+
+type PlaceOrderErrorDetail = PlaceOrderBadRequest | PlaceOrderUnexpected
+
 
 class PlaceOrderError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: PlaceOrderErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: PlaceOrderErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: PlaceOrderErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class GetOrderByIdBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -60,31 +81,43 @@ class GetOrderByIdBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class GetOrderByIdNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class GetOrderByIdUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
+
 type GetOrderByIdErrorDetail = (
-    GetOrderByIdBadRequest
-    | GetOrderByIdNotFound
-    | GetOrderByIdUnexpected
+    GetOrderByIdBadRequest | GetOrderByIdNotFound | GetOrderByIdUnexpected
 )
 
+
 class GetOrderByIdError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetOrderByIdErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetOrderByIdErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetOrderByIdErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class DeleteOrderBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -92,29 +125,38 @@ class DeleteOrderBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class DeleteOrderNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class DeleteOrderUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type DeleteOrderErrorDetail = (
-    DeleteOrderBadRequest
-    | DeleteOrderNotFound
-    | DeleteOrderUnexpected
-)
+
+type DeleteOrderErrorDetail = DeleteOrderBadRequest | DeleteOrderNotFound | DeleteOrderUnexpected
+
 
 class DeleteOrderError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: DeleteOrderErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: DeleteOrderErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: DeleteOrderErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -128,10 +170,21 @@ class StoreApi:
         path = "/store/inventory"
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
-            detail = GetInventoryUnexpected(response.status_code, response.headers, response.content)
-            raise GetInventoryError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = GetInventoryUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise GetInventoryError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = response.json()  # type: ignore[return-value]
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_inventory(self) -> dict[str, int]:
         """Returns pet inventories by status."""
@@ -145,12 +198,26 @@ class StoreApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = PlaceOrderBadRequest(response.status_code, response.headers, response.content)
+                detail = PlaceOrderBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = PlaceOrderUnexpected(response.status_code, response.headers, response.content)
-            raise PlaceOrderError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = PlaceOrderUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise PlaceOrderError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = Order.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def place_order(self, *, body: Order) -> Order:
         """Place an order for a pet."""
@@ -162,14 +229,30 @@ class StoreApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = GetOrderByIdBadRequest(response.status_code, response.headers, response.content)
+                detail = GetOrderByIdBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
-                detail = GetOrderByIdNotFound(response.status_code, response.headers, response.content)
+                detail = GetOrderByIdNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = GetOrderByIdUnexpected(response.status_code, response.headers, response.content)
-            raise GetOrderByIdError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = GetOrderByIdUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise GetOrderByIdError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = Order.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_order_by_id(self, order_id: int) -> Order:
         """Find purchase order by ID."""
@@ -181,14 +264,30 @@ class StoreApi:
         response = self._client.request("DELETE", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = DeleteOrderBadRequest(response.status_code, response.headers, response.content)
+                detail = DeleteOrderBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
-                detail = DeleteOrderNotFound(response.status_code, response.headers, response.content)
+                detail = DeleteOrderNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = DeleteOrderUnexpected(response.status_code, response.headers, response.content)
-            raise DeleteOrderError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = DeleteOrderUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise DeleteOrderError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def delete_order(self, order_id: int) -> None:
         """Delete purchase order by ID."""

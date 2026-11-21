@@ -14,39 +14,59 @@ from ..models.resource_type_b import ResourceTypeB
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class CreateTypeAUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type CreateTypeAErrorDetail = (
-    CreateTypeAUnexpected
-)
+
+type CreateTypeAErrorDetail = CreateTypeAUnexpected
+
 
 class CreateTypeAError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateTypeAErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateTypeAErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateTypeAErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class CreateTypeBUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type CreateTypeBErrorDetail = (
-    CreateTypeBUnexpected
-)
+
+type CreateTypeBErrorDetail = CreateTypeBUnexpected
+
 
 class CreateTypeBError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateTypeBErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateTypeBErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateTypeBErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -55,7 +75,9 @@ class TestApiApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def create_type_a_with_http_info(self, *, body: CreateRequestTypeA) -> ApiResponse[ResourceTypeA]:
+    def create_type_a_with_http_info(
+        self, *, body: CreateRequestTypeA
+    ) -> ApiResponse[ResourceTypeA]:
         """Create TypeA resource, including HTTP response metadata."""
         path = "/api/v1/type-a/resources"
         headers: dict[str, str] = {}
@@ -63,15 +85,26 @@ class TestApiApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             detail = CreateTypeAUnexpected(response.status_code, response.headers, response.content)
-            raise CreateTypeAError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            raise CreateTypeAError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = ResourceTypeA.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def create_type_a(self, *, body: CreateRequestTypeA) -> ResourceTypeA:
         """Create TypeA resource."""
         return self.create_type_a_with_http_info(body=body).data
 
-    def create_type_b_with_http_info(self, *, body: CreateRequestTypeB) -> ApiResponse[ResourceTypeB]:
+    def create_type_b_with_http_info(
+        self, *, body: CreateRequestTypeB
+    ) -> ApiResponse[ResourceTypeB]:
         """Create TypeB resource, including HTTP response metadata."""
         path = "/api/v1/type-b/resources"
         headers: dict[str, str] = {}
@@ -79,9 +112,18 @@ class TestApiApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             detail = CreateTypeBUnexpected(response.status_code, response.headers, response.content)
-            raise CreateTypeBError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            raise CreateTypeBError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = ResourceTypeB.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def create_type_b(self, *, body: CreateRequestTypeB) -> ResourceTypeB:
         """Create TypeB resource."""

@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .user_profile import UserProfile
+
 
 @dataclass
 class UserWithProfile:
     """User with required nested profile reference."""
+
     profile: UserProfile
     user_id: str
 
@@ -24,6 +27,6 @@ class UserWithProfile:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> UserWithProfile:
         return cls(
-            profile=UserProfile.from_dict(data["profile"]),  # type: ignore[arg-type]
+            profile=UserProfile.from_dict(cast(dict[str, object], data["profile"])),
             user_id=data["user_id"],  # type: ignore[assignment]
         )

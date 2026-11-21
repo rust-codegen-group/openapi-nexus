@@ -5,5 +5,9 @@
 
 from .deeply_nested_inline import DeeplyNestedInline as DeeplyNestedInline
 from .deeply_nested_inline_level_one import DeeplyNestedInlineLevelOne as DeeplyNestedInlineLevelOne
-from .deeply_nested_inline_level_one_level_two import DeeplyNestedInlineLevelOneLevelTwo as DeeplyNestedInlineLevelOneLevelTwo
-from .deeply_nested_inline_level_one_level_two_level_three import DeeplyNestedInlineLevelOneLevelTwoLevelThree as DeeplyNestedInlineLevelOneLevelTwoLevelThree
+from .deeply_nested_inline_level_one_level_two import (
+    DeeplyNestedInlineLevelOneLevelTwo as DeeplyNestedInlineLevelOneLevelTwo,
+)
+from .deeply_nested_inline_level_one_level_two_level_three import (
+    DeeplyNestedInlineLevelOneLevelTwoLevelThree as DeeplyNestedInlineLevelOneLevelTwoLevelThree,
+)

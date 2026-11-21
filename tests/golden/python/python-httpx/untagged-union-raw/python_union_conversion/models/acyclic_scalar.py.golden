@@ -6,10 +6,13 @@ from __future__ import annotations
 
 from . import _union
 
-type AcyclicScalar = (object)
+
+type AcyclicScalar = object
+
 
 def acyclic_scalar_from_dict(value: object) -> AcyclicScalar:
     return _union.value_0_from_dict(value)
+
 
 def acyclic_scalar_to_dict(value: AcyclicScalar) -> object:
     return _union.value_0_to_dict(value)

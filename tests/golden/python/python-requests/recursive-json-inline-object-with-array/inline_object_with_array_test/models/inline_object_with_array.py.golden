@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .inline_object_with_array_container_data import InlineObjectWithArrayContainerData
+
 
 @dataclass
 class InlineObjectWithArray:
     """Inline object containing array of inline objects."""
+
     container_data: InlineObjectWithArrayContainerData
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,7 @@ class InlineObjectWithArray:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> InlineObjectWithArray:
         return cls(
-            container_data=InlineObjectWithArrayContainerData.from_dict(data["container_data"]),  # type: ignore[arg-type]
+            container_data=InlineObjectWithArrayContainerData.from_dict(
+                cast(dict[str, object], data["container_data"])
+            ),
         )

@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .resource_type_b import ResourceTypeB
+
 
 @dataclass
 class CreateRequestTypeB:
     """Request to create TypeB resource."""
+
     resource: ResourceTypeB
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,5 @@ class CreateRequestTypeB:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> CreateRequestTypeB:
         return cls(
-            resource=ResourceTypeB.from_dict(data["resource"]),  # type: ignore[arg-type]
+            resource=ResourceTypeB.from_dict(cast(dict[str, object], data["resource"])),
         )

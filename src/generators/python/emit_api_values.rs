@@ -1,6 +1,5 @@
 //! Transport-independent Python multipart and lazy union-error conversion.
 
-use sigil_stitch::lang::python::Python;
 use sigil_stitch::prelude::*;
 
 use super::emit_models::is_object_schema;
@@ -25,102 +24,86 @@ pub(super) fn multipart_data(
     ir: &IrSpec,
     values: &ValuePlan<'_>,
 ) -> CodeBlock {
-    if parts
+    let assignments = parts
         .iter()
-        .any(|part| values.needs_conversion(&part.type_expr))
-    {
-        let assignments = parts.iter().map(|part| {
-            let source = sigil_quote!(Python { $N(body_name).$N(part.field_name.as_str()) }).expect("Python multipart input access builds");
-            let assignment = if part.value_encoding == MultipartValueEncoding::Json && values.needs_conversion(&part.type_expr) {
+        .map(|part| {
+            let source = sigil_quote!(Python { $N(body_name).$N(part.field_name.as_str()) })
+                .expect("Python multipart input access builds");
+            let assignment = if part.value_encoding == MultipartValueEncoding::Json
+                && values.needs_conversion(&part.type_expr)
+            {
                 let converted = values.call(&part.type_expr, source.clone(), Direction::To);
                 sigil_quote!(Python {
                     files[$S(part.wire_name.as_str())] = (None, json.dumps($C(converted)), $S(part.content_type.as_str()))
-                }).expect("Python union multipart assignment builds")
+                })
+                .expect("Python union multipart assignment builds")
             } else {
-                multipart_part_assignment(part, &format!("{body_name}.{}", part.field_name), ir)
+                multipart_part_assignment(part, source.clone(), ir)
             };
-            sigil_quote!(Python {
-                $if(part.required) { $C(assignment) } $else {
-                    if $C(source) is not None { $C(assignment) }
-                }
-            }).expect("Python optional multipart field builds")
-        }).collect::<Vec<_>>();
-        return sigil_quote!(Python {
-            files: dict[str, object] = {}
-            $if(required) { $C_each(assignments) } $else {
-                if $N(body_name) is not None { $C_each(assignments) }
+            if part.required {
+                Ok(assignment)
+            } else {
+                sigil_quote!(Python {
+                    if $C(source) is not None {
+                        $C(assignment)
+                    }
+                })
             }
         })
-        .expect("Python multipart body with union parts builds");
-    }
-
-    // Keep the existing non-union rendering byte-identical while both transports
-    // share it; union-aware source above uses structured fragments throughout.
-    let mut cb = CodeBlock::builder();
-    cb.add_statement("files: dict[str, object] = {}", ());
-    if !required {
-        cb.add_statement(&format!("if {body_name} is not None:%>"), ());
-    }
-    for part in parts {
-        let access = format!("{body_name}.{}", part.field_name);
-        if part.required {
-            cb.add_code(multipart_part_assignment(part, &access, ir));
-        } else {
-            cb.add_statement(&format!("if {access} is not None:%>"), ());
-            cb.add_code(multipart_part_assignment(part, &access, ir));
-            cb.add_statement("%<", ());
-        }
-    }
-    if !required {
-        cb.add_statement("%<", ());
-    }
-    cb.build().expect("Python multipart body builds")
-}
-
-fn multipart_part_assignment(part: &MultipartPart, access: &str, ir: &IrSpec) -> CodeBlock {
-    let binary_stmt = format!(
-        "files[\"{}\"] = ({}.filename_or_default(\"{}\"), {}.data, \"{}\")",
-        part.wire_name, access, part.wire_name, access, part.content_type
-    );
-    let json_value = render_multipart_json_value(access, &part.type_expr, ir);
-    let json_stmt = format!(
-        "files[\"{}\"] = (None, json.dumps({json_value}), \"{}\")",
-        part.wire_name, part.content_type
-    );
-    let unsupported_stmt = "raise ValueError(\"unsupported multipart part content type\")";
-    let scalar_stmt = format!(
-        "files[\"{}\"] = (None, str({access}), \"{}\")",
-        part.wire_name, part.content_type
-    );
-
+        .collect::<Result<Vec<_>, SigilStitchError>>()
+        .expect("Python multipart assignments build");
     sigil_quote!(Python {
-        $if(part.is_binary) {
-            $L(binary_stmt.as_str())
-        } $else_if(part.value_encoding == MultipartValueEncoding::Json) {
-            $L(json_stmt.as_str())
-        } $else_if(part.value_encoding == MultipartValueEncoding::Unsupported) {
-            $L(unsupported_stmt)
-        } $else {
-            $L(scalar_stmt.as_str())
+        files: dict[str, object] = {}
+        $if(required) { $C_each(assignments) } $else {
+            if $N(body_name) is not None {
+                $C_each(assignments)
+            }
         }
     })
-    .expect("multipart part assignment builds")
+    .expect("Python multipart body builds")
 }
 
-fn render_multipart_json_value(access: &str, expr: &IrTypeExpr, ir: &IrSpec) -> String {
+fn multipart_part_assignment(part: &MultipartPart, access: CodeBlock, ir: &IrSpec) -> CodeBlock {
+    let json_value = render_multipart_json_value(access.clone(), &part.type_expr, ir);
+    if part.is_binary {
+        sigil_quote!(Python {
+            files[$S(part.wire_name.as_str())] = ($C(access.clone()).filename_or_default($S(part.wire_name.as_str())), $C(access.clone()).data, $S(part.content_type.as_str()))
+        })
+        .expect("Python binary multipart assignment builds")
+    } else if part.value_encoding == MultipartValueEncoding::Json {
+        sigil_quote!(Python {
+            files[$S(part.wire_name.as_str())] = (None, json.dumps($C(json_value)), $S(part.content_type.as_str()))
+        })
+        .expect("Python JSON multipart assignment builds")
+    } else if part.value_encoding == MultipartValueEncoding::Unsupported {
+        sigil_quote!(Python { raise ValueError("unsupported multipart part content type") })
+            .expect("Python unsupported multipart assignment builds")
+    } else {
+        sigil_quote!(Python {
+            files[$S(part.wire_name.as_str())] = (None, str($C(access)), $S(part.content_type.as_str()))
+        })
+        .expect("Python scalar multipart assignment builds")
+    }
+}
+
+fn render_multipart_json_value(access: CodeBlock, expr: &IrTypeExpr, ir: &IrSpec) -> CodeBlock {
     match expr {
-        IrTypeExpr::Named(name) if is_object_schema(name, ir) => format!("{access}.to_dict()"),
+        IrTypeExpr::Named(name) if is_object_schema(name, ir) => {
+            sigil_quote!(Python { $C(access).to_dict() })
+                .expect("Python multipart object value builds")
+        }
         IrTypeExpr::Nullable(inner) => render_multipart_json_value(access, inner, ir),
         IrTypeExpr::Array(inner) => {
             if let IrTypeExpr::Named(name) = inner.as_ref()
                 && is_object_schema(name, ir)
             {
-                format!("[item.to_dict() for item in {access}]")
+                sigil_quote!(Python { [item.to_dict() for item in $C(access)] })
+                    .expect("Python multipart object array value builds")
             } else {
-                access.to_string()
+                access
             }
         }
-        _ => access.to_string(),
+        _ => access,
     }
 }
 
@@ -128,7 +111,7 @@ pub(super) fn union_error_body_property(
     type_expr: &IrTypeExpr,
     ir: &IrSpec,
     values: &ValuePlan<'_>,
-) -> CodeBlock {
+) -> FunSpec {
     let converted = values.call(
         type_expr,
         sigil_quote!(Python { json.loads(self.raw_body.decode("utf-8")) })
@@ -168,6 +151,4 @@ pub(super) fn union_error_body_property(
         .body(body)
         .build()
         .expect("Python union error body property builds")
-        .emit(&Python::new(), DeclarationContext::Member)
-        .expect("Python union error body property emits")
 }

@@ -6,12 +6,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
-from .response_list_infr_svcs_inference_services_item import ResponseListInfrSvcsInferenceServicesItem
+from .response_list_infr_svcs_inference_services_item import (
+    ResponseListInfrSvcsInferenceServicesItem,
+)
+
 
 @dataclass
 class ResponseListInfrSvcs:
     """Response containing a list of items for recursive JSON parsing.."""
+
     inference_services: list[ResponseListInfrSvcsInferenceServicesItem]
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +27,8 @@ class ResponseListInfrSvcs:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> ResponseListInfrSvcs:
         return cls(
-            inference_services=[ResponseListInfrSvcsInferenceServicesItem.from_dict(item) for item in data["inference_services"]],  # type: ignore[union-attr]
+            inference_services=[
+                ResponseListInfrSvcsInferenceServicesItem.from_dict(cast(dict[str, object], item))
+                for item in cast(list[object], data["inference_services"])
+            ],
         )

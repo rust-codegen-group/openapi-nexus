@@ -8,37 +8,34 @@ from __future__ import annotations
 from .variant_a import VariantA
 from .variant_b import VariantB
 
+
 # Internally tagged enum
-# 
+#
 # The tag is a field inside the object alongside other fields:
 # `{"ty": "VariantA", "field1": "...", "field2": 123}`
-# 
+#
 # Discriminator: ty (internal).
 
-type InternallyTaggedEnum = (
-    VariantA
-    | VariantB
-)
+
+type InternallyTaggedEnum = VariantA | VariantB
+
 
 def internally_tagged_enum_from_dict(data: dict[str, object]) -> InternallyTaggedEnum:
-    _tag = data['ty']
-    if _tag == 'INTERNALLY_TAGGED_ENUM_VARIANT_A':
+    _tag = data["ty"]
+    if _tag == "INTERNALLY_TAGGED_ENUM_VARIANT_A":
         return VariantA.from_dict(data)
-
-    if _tag == 'INTERNALLY_TAGGED_ENUM_VARIANT_B':
+    if _tag == "INTERNALLY_TAGGED_ENUM_VARIANT_B":
         return VariantB.from_dict(data)
+    raise ValueError("Unknown discriminator value for InternallyTaggedEnum: " + str(data))
 
-    raise ValueError('Unknown discriminator value for InternallyTaggedEnum: ' + str(data))
 
 def internally_tagged_enum_to_dict(obj: InternallyTaggedEnum) -> dict[str, object]:
     if isinstance(obj, VariantA):
         result = obj.to_dict()
-        result['ty'] = 'INTERNALLY_TAGGED_ENUM_VARIANT_A'
+        result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_A"
         return result
-
     if isinstance(obj, VariantB):
         result = obj.to_dict()
-        result['ty'] = 'INTERNALLY_TAGGED_ENUM_VARIANT_B'
+        result["ty"] = "INTERNALLY_TAGGED_ENUM_VARIANT_B"
         return result
-
-    raise ValueError('Unknown variant for InternallyTaggedEnum: ' + str(type (obj)))
+    raise ValueError("Unknown variant for InternallyTaggedEnum: " + str(type(obj)))

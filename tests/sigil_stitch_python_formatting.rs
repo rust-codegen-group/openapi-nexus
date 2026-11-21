@@ -1,4 +1,4 @@
-//! Regression coverage for the Python layout behavior provided by sigil-stitch 0.7.6.
+//! Regression coverage for the Python layout behavior required from sigil-stitch.
 //!
 //! These assertions intentionally exercise the semantic sigil-stitch API rather
 //! than a post-render formatter. A dependency downgrade must not silently bring
@@ -40,9 +40,8 @@ fn narrow_python_generic_has_continuation_indentation() {
         file.render(100).unwrap(),
         "class Model:\n    value: dict[str, int]\n",
     );
-    let narrow = file.render(20).unwrap();
-    assert!(
-        narrow.contains("\n        int"),
-        "a wrapped Python generic should have continuation indentation: {narrow:?}",
+    assert_eq!(
+        file.render(20).unwrap(),
+        "class Model:\n    value: dict[\n        str, int\n    ]\n",
     );
 }

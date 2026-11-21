@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class ObjectWithAdditionalPropertiesFalse:
     """Object not allowing additional properties."""
+
     name: str
 
     def to_dict(self) -> dict[str, object]:

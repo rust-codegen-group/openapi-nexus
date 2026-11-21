@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .foo_member3_grault import FooMember3Grault
+
 
 @dataclass
 class FooMember3:
     """Third inline object type."""
+
     grault: FooMember3Grault
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,5 @@ class FooMember3:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> FooMember3:
         return cls(
-            grault=FooMember3Grault.from_dict(data["grault"]),  # type: ignore[arg-type]
+            grault=FooMember3Grault.from_dict(cast(dict[str, object], data["grault"])),
         )

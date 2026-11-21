@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class FooMember1Bar:
     """Nested object in first type."""
+
     baz: str
     qux: str
 

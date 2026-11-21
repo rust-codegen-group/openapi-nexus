@@ -6,4 +6,5 @@ from __future__ import annotations
 
 from .detail import Detail
 
-type DetailAlias = (Detail)
+
+type DetailAlias = Detail

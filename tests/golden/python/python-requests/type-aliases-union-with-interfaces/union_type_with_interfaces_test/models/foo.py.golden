@@ -12,14 +12,13 @@ from .bar import Bar
 from .baz import Baz
 from .qux import Qux
 
-type Foo = (
-    Bar
-    | Baz
-    | Qux
-)
+
+type Foo = Bar | Baz | Qux
+
 
 def foo_from_dict(value: object) -> Foo:
     return cast(Foo, _union.value_0_from_dict(value))
+
 
 def foo_to_dict(value: Foo) -> object:
     return _union.value_0_to_dict(value)

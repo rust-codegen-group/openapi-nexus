@@ -11,17 +11,16 @@ from . import _union
 from .mixed_enum_member2 import MixedEnumMember2
 from .mixed_enum_member4 import MixedEnumMember4
 
+
 # Mixed enum with unit variants (SimpleA, SimpleB) and tuple variants (VariantA(VariantA), VariantB(VariantB))
 
-type MixedEnum = (
-    Literal["SimpleA"]
-    | MixedEnumMember2
-    | Literal["SimpleB"]
-    | MixedEnumMember4
-)
+
+type MixedEnum = Literal["SimpleA"] | MixedEnumMember2 | Literal["SimpleB"] | MixedEnumMember4
+
 
 def mixed_enum_from_dict(value: object) -> MixedEnum:
     return cast(MixedEnum, _union.value_0_from_dict(value))
+
 
 def mixed_enum_to_dict(value: MixedEnum) -> object:
     return _union.value_0_to_dict(value)

@@ -6,14 +6,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .all_optional_properties_optional_array_item import AllOptionalPropertiesOptionalArrayItem
 from .all_optional_properties_optional_inline import AllOptionalPropertiesOptionalInline
 from .user import User
 
+
 @dataclass
 class AllOptionalProperties:
     """Object with all optional properties."""
+
     optional_array: list[AllOptionalPropertiesOptionalArrayItem] | None = None
     optional_inline: AllOptionalPropertiesOptionalInline | None = None
     optional_reference: User | None = None
@@ -34,8 +37,25 @@ class AllOptionalProperties:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> AllOptionalProperties:
         return cls(
-            optional_array=[AllOptionalPropertiesOptionalArrayItem.from_dict(item) for item in data.get("optional_array")] if data.get("optional_array") is not None else None,  # type: ignore[union-attr]
-            optional_inline=AllOptionalPropertiesOptionalInline.from_dict(data.get("optional_inline")) if data.get("optional_inline") is not None else None,  # type: ignore[arg-type]
-            optional_reference=User.from_dict(data.get("optional_reference")) if data.get("optional_reference") is not None else None,  # type: ignore[arg-type]
+            optional_array=(
+                [
+                    AllOptionalPropertiesOptionalArrayItem.from_dict(cast(dict[str, object], item))
+                    for item in cast(list[object], data.get("optional_array"))
+                ]
+                if data.get("optional_array") is not None
+                else None
+            ),
+            optional_inline=(
+                AllOptionalPropertiesOptionalInline.from_dict(
+                    cast(dict[str, object], data.get("optional_inline"))
+                )
+                if data.get("optional_inline") is not None
+                else None
+            ),
+            optional_reference=(
+                User.from_dict(cast(dict[str, object], data.get("optional_reference")))
+                if data.get("optional_reference") is not None
+                else None
+            ),
             optional_string=data.get("optional_string"),  # type: ignore[assignment]
         )

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class ComplexNestedObjectUserProfileContactAddressesItem:
     city: str | None = None
@@ -24,8 +25,9 @@ class ComplexNestedObjectUserProfileContactAddressesItem:
         return result
 
     @classmethod
-    def from_dict(cls,
-        data: dict[str, object]) -> ComplexNestedObjectUserProfileContactAddressesItem:
+    def from_dict(
+        cls, data: dict[str, object]
+    ) -> ComplexNestedObjectUserProfileContactAddressesItem:
         return cls(
             city=data.get("city"),  # type: ignore[assignment]
             street=data.get("street"),  # type: ignore[assignment]

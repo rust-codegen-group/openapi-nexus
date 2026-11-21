@@ -9,13 +9,13 @@ from typing import cast
 from . import _union
 from .constrained_inline import ConstrainedInline
 
-type SelectionInline = (
-    ConstrainedInline
-    | str
-)
+
+type SelectionInline = ConstrainedInline | str
+
 
 def selection_inline_from_dict(value: object) -> SelectionInline:
     return cast(SelectionInline, _union.value_35_from_dict(value))
+
 
 def selection_inline_to_dict(value: SelectionInline) -> object:
     return _union.value_35_to_dict(value)

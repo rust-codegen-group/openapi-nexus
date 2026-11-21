@@ -15,21 +15,31 @@ from ..models.foo import Foo
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class TestUnionWithInlineObjectsUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type TestUnionWithInlineObjectsErrorDetail = (
-    TestUnionWithInlineObjectsUnexpected
-)
+
+type TestUnionWithInlineObjectsErrorDetail = TestUnionWithInlineObjectsUnexpected
+
 
 class TestUnionWithInlineObjectsError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: TestUnionWithInlineObjectsErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: TestUnionWithInlineObjectsErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: TestUnionWithInlineObjectsErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -44,13 +54,26 @@ class DefaultApi:
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
         _union_body = _union.value_0_to_dict(body)
-        response = self._client.request("POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False))
+        response = self._client.request(
+            "POST", path, headers=headers, content=json.dumps(_union_body, allow_nan=False)
+        )
         if not (200 <= response.status_code < 300):
-            detail = TestUnionWithInlineObjectsUnexpected(response.status_code, response.headers, response.content)
-            raise TestUnionWithInlineObjectsError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = TestUnionWithInlineObjectsUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise TestUnionWithInlineObjectsError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         _union_data = cast(Foo, _union.value_0_from_dict(response.json()))
         data = _union_data
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def test_union_with_inline_objects(self, *, body: Foo) -> Foo:
         """Test endpoint with union type including inline objects."""

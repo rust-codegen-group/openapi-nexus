@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @dataclass
 class ResourceTypeA:
     """TypeA resource."""
+
     id: str | None = None
     name: str | None = None
 

@@ -9,6 +9,7 @@ from typing import Literal, cast
 
 from . import item
 
+
 @dataclass
 class Branch:
     children: list[item.Item]
@@ -16,14 +17,16 @@ class Branch:
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result['children'] = [item.item_to_dict(_item) for _item in self.children]
+        result["children"] = [item.item_to_dict(_item) for _item in self.children]
         result["kind"] = self.kind
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> Branch:
         return cls(
-            children = [item.item_from_dict(cast(dict[str, object],
-                _item)) for _item in cast(list[object], data['children'])],
+            children=[
+                item.item_from_dict(cast(dict[str, object], _item))
+                for _item in cast(list[object], data["children"])
+            ],
             kind=data["kind"],  # type: ignore[assignment]
         )

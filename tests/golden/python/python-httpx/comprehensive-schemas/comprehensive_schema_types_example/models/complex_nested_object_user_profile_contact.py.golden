@@ -6,8 +6,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
-from .complex_nested_object_user_profile_contact_addresses_item import ComplexNestedObjectUserProfileContactAddressesItem
+from .complex_nested_object_user_profile_contact_addresses_item import (
+    ComplexNestedObjectUserProfileContactAddressesItem,
+)
+
 
 @dataclass
 class ComplexNestedObjectUserProfileContact:
@@ -28,7 +32,16 @@ class ComplexNestedObjectUserProfileContact:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> ComplexNestedObjectUserProfileContact:
         return cls(
-            addresses=[ComplexNestedObjectUserProfileContactAddressesItem.from_dict(item) for item in data.get("addresses")] if data.get("addresses") is not None else None,  # type: ignore[union-attr]
+            addresses=(
+                [
+                    ComplexNestedObjectUserProfileContactAddressesItem.from_dict(
+                        cast(dict[str, object], item)
+                    )
+                    for item in cast(list[object], data.get("addresses"))
+                ]
+                if data.get("addresses") is not None
+                else None
+            ),
             email=data.get("email"),  # type: ignore[assignment]
             phone=data.get("phone"),  # type: ignore[assignment]
         )

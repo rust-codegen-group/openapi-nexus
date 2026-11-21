@@ -10,17 +10,18 @@ from typing import cast
 from .alias import Alias
 from .item import item_from_dict, item_to_dict
 
+
 @dataclass
 class Envelope:
     value: Alias
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result['value'] = item_to_dict(self.value)
+        result["value"] = item_to_dict(self.value)
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> Envelope:
         return cls(
-            value = item_from_dict(cast(dict[str, object], data['value'])),
+            value=item_from_dict(cast(dict[str, object], data["value"])),
         )

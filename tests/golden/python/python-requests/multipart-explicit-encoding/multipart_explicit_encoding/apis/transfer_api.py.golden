@@ -9,25 +9,37 @@ import json
 
 from collections.abc import Mapping
 
-from ..models.upload_encoded_asset_multipart_request_body import UploadEncodedAssetMultipartRequestBody
+from ..models.upload_encoded_asset_multipart_request_body import (
+    UploadEncodedAssetMultipartRequestBody,
+)
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
+
 
 class UploadEncodedAssetUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type UploadEncodedAssetErrorDetail = (
-    UploadEncodedAssetUnexpected
-)
+
+type UploadEncodedAssetErrorDetail = UploadEncodedAssetUnexpected
+
 
 class UploadEncodedAssetError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: UploadEncodedAssetErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: UploadEncodedAssetErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: UploadEncodedAssetErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -36,19 +48,36 @@ class TransferApi:
     def __init__(self, client: Client) -> None:
         self._client = client
 
-    def upload_encoded_asset_with_http_info(self, *, body: UploadEncodedAssetMultipartRequestBody) -> ApiResponse[None]:
+    def upload_encoded_asset_with_http_info(
+        self, *, body: UploadEncodedAssetMultipartRequestBody
+    ) -> ApiResponse[None]:
         path = "/uploads/encoded"
         files: dict[str, object] = {}
         files["audit"] = (None, json.dumps(body.audit.to_dict()), "application/json")
         files["file"] = (body.file.filename_or_default("file"), body.file.data, "application/pdf")
-        files["metadata"] = (None, json.dumps(body.metadata.to_dict()), "application/vnd.openapi-nexus.metadata+json")
+        files["metadata"] = (
+            None,
+            json.dumps(body.metadata.to_dict()),
+            "application/vnd.openapi-nexus.metadata+json",
+        )
         files["purpose"] = (None, str(body.purpose), "text/plain")
         response = self._client.request("POST", path, files=files if files else None)
         if not (200 <= response.status_code < 300):
-            detail = UploadEncodedAssetUnexpected(response.status_code, response.headers, response.content)
-            raise UploadEncodedAssetError(response.status_code, response.reason, response.content, detail, headers=response.headers, response=response)
+            detail = UploadEncodedAssetUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise UploadEncodedAssetError(
+                response.status_code,
+                response.reason,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def upload_encoded_asset(self, *, body: UploadEncodedAssetMultipartRequestBody) -> None:
         return self.upload_encoded_asset_with_http_info(body=body).data

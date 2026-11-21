@@ -8,13 +8,17 @@ from typing import cast
 
 from . import _union
 
-type ConstrainedInlineAdditionalPropertyItem = (
-    int
-    | str
-)
 
-def constrained_inline_additional_property_item_from_dict(value: object) -> ConstrainedInlineAdditionalPropertyItem:
+type ConstrainedInlineAdditionalPropertyItem = int | str
+
+
+def constrained_inline_additional_property_item_from_dict(
+    value: object,
+) -> ConstrainedInlineAdditionalPropertyItem:
     return cast(ConstrainedInlineAdditionalPropertyItem, _union.value_5_from_dict(value))
 
-def constrained_inline_additional_property_item_to_dict(value: ConstrainedInlineAdditionalPropertyItem) -> object:
+
+def constrained_inline_additional_property_item_to_dict(
+    value: ConstrainedInlineAdditionalPropertyItem,
+) -> object:
     return _union.value_5_to_dict(value)

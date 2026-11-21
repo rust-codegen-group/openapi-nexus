@@ -6,12 +6,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
-from .optional_array_of_inline_objects_optional_items_item import OptionalArrayOfInlineObjectsOptionalItemsItem
+from .optional_array_of_inline_objects_optional_items_item import (
+    OptionalArrayOfInlineObjectsOptionalItemsItem,
+)
+
 
 @dataclass
 class OptionalArrayOfInlineObjects:
     """Object with optional array of inline objects."""
+
     optional_items: list[OptionalArrayOfInlineObjectsOptionalItemsItem] | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -23,5 +28,14 @@ class OptionalArrayOfInlineObjects:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> OptionalArrayOfInlineObjects:
         return cls(
-            optional_items=[OptionalArrayOfInlineObjectsOptionalItemsItem.from_dict(item) for item in data.get("optional_items")] if data.get("optional_items") is not None else None,  # type: ignore[union-attr]
+            optional_items=(
+                [
+                    OptionalArrayOfInlineObjectsOptionalItemsItem.from_dict(
+                        cast(dict[str, object], item)
+                    )
+                    for item in cast(list[object], data.get("optional_items"))
+                ]
+                if data.get("optional_items") is not None
+                else None
+            ),
         )

@@ -15,9 +15,15 @@ from .boolean_type import BooleanType as BooleanType
 from .byte_string import ByteString as ByteString
 from .complex_nested_object import ComplexNestedObject as ComplexNestedObject
 from .complex_nested_object_user import ComplexNestedObjectUser as ComplexNestedObjectUser
-from .complex_nested_object_user_profile import ComplexNestedObjectUserProfile as ComplexNestedObjectUserProfile
-from .complex_nested_object_user_profile_contact import ComplexNestedObjectUserProfileContact as ComplexNestedObjectUserProfileContact
-from .complex_nested_object_user_profile_contact_addresses_item import ComplexNestedObjectUserProfileContactAddressesItem as ComplexNestedObjectUserProfileContactAddressesItem
+from .complex_nested_object_user_profile import (
+    ComplexNestedObjectUserProfile as ComplexNestedObjectUserProfile,
+)
+from .complex_nested_object_user_profile_contact import (
+    ComplexNestedObjectUserProfileContact as ComplexNestedObjectUserProfileContact,
+)
+from .complex_nested_object_user_profile_contact_addresses_item import (
+    ComplexNestedObjectUserProfileContactAddressesItem as ComplexNestedObjectUserProfileContactAddressesItem,
+)
 from .date_time_string import DateTimeString as DateTimeString
 from .double_type import DoubleType as DoubleType
 from .email_string import EmailString as EmailString
@@ -39,10 +45,16 @@ from .number_with_minimum import NumberWithMinimum as NumberWithMinimum
 from .number_with_multiple_of import NumberWithMultipleOf as NumberWithMultipleOf
 from .object_array import ObjectArray as ObjectArray
 from .object_array_items import ObjectArrayItems as ObjectArrayItems
-from .object_with_additional_properties_false import ObjectWithAdditionalPropertiesFalse as ObjectWithAdditionalPropertiesFalse
-from .object_with_additional_properties_true import ObjectWithAdditionalPropertiesTrue as ObjectWithAdditionalPropertiesTrue
+from .object_with_additional_properties_false import (
+    ObjectWithAdditionalPropertiesFalse as ObjectWithAdditionalPropertiesFalse,
+)
+from .object_with_additional_properties_true import (
+    ObjectWithAdditionalPropertiesTrue as ObjectWithAdditionalPropertiesTrue,
+)
 from .object_with_defaults import ObjectWithDefaults as ObjectWithDefaults
-from .object_with_typed_additional_properties import ObjectWithTypedAdditionalProperties as ObjectWithTypedAdditionalProperties
+from .object_with_typed_additional_properties import (
+    ObjectWithTypedAdditionalProperties as ObjectWithTypedAdditionalProperties,
+)
 from .one_of_objects import OneOfObjects as OneOfObjects
 from .one_of_types import OneOfTypes as OneOfTypes
 from .one_of_with_null import OneOfWithNull as OneOfWithNull

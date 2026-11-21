@@ -8,13 +8,13 @@ from typing import cast
 
 from . import _union
 
-type AcyclicScalar = (
-    int
-    | str
-)
+
+type AcyclicScalar = int | str
+
 
 def acyclic_scalar_from_dict(value: object) -> AcyclicScalar:
     return cast(AcyclicScalar, _union.value_0_from_dict(value))
+
 
 def acyclic_scalar_to_dict(value: AcyclicScalar) -> object:
     return _union.value_0_to_dict(value)

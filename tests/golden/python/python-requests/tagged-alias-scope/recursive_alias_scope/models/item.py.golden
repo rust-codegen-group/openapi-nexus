@@ -7,32 +7,29 @@ from __future__ import annotations
 from . import branch
 from .leaf import Leaf
 
+
 # Discriminator: kind (internal).
 
-type Item = (
-    branch.Branch
-    | Leaf
-)
+
+type Item = branch.Branch | Leaf
+
 
 def item_from_dict(data: dict[str, object]) -> Item:
-    _tag = data['kind']
-    if _tag == 'branch':
+    _tag = data["kind"]
+    if _tag == "branch":
         return branch.Branch.from_dict(data)
-
-    if _tag == 'leaf':
+    if _tag == "leaf":
         return Leaf.from_dict(data)
+    raise ValueError("Unknown discriminator value for Item: " + str(data))
 
-    raise ValueError('Unknown discriminator value for Item: ' + str(data))
 
 def item_to_dict(obj: Item) -> dict[str, object]:
     if isinstance(obj, branch.Branch):
         result = obj.to_dict()
-        result['kind'] = 'branch'
+        result["kind"] = "branch"
         return result
-
     if isinstance(obj, Leaf):
         result = obj.to_dict()
-        result['kind'] = 'leaf'
+        result["kind"] = "leaf"
         return result
-
-    raise ValueError('Unknown variant for Item: ' + str(type (obj)))
+    raise ValueError("Unknown variant for Item: " + str(type(obj)))

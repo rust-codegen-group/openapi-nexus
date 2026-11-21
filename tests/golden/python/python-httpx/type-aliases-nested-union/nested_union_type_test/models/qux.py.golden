@@ -11,13 +11,13 @@ from . import _union
 from .bar import Bar
 from .baz import Baz
 
-type Qux = (
-    Bar
-    | Baz
-)
+
+type Qux = Bar | Baz
+
 
 def qux_from_dict(value: object) -> Qux:
     return cast(Qux, _union.value_1_from_dict(value))
+
 
 def qux_to_dict(value: Qux) -> object:
     return _union.value_1_to_dict(value)

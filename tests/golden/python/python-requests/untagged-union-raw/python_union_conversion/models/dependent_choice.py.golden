@@ -6,10 +6,13 @@ from __future__ import annotations
 
 from . import _union
 
-type DependentChoice = (object)
+
+type DependentChoice = object
+
 
 def dependent_choice_from_dict(value: object) -> DependentChoice:
     return _union.value_14_from_dict(value)
+
 
 def dependent_choice_to_dict(value: DependentChoice) -> object:
     return _union.value_14_to_dict(value)

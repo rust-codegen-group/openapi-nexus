@@ -27,16 +27,14 @@ fn python_type_name_with_current(expr: &IrTypeExpr, current_schema: Option<&str>
             }
         }
         IrTypeExpr::Primitive(p) => python_primitive_type_name(p),
-        IrTypeExpr::StringLiteral(s) => {
-            TypeName::raw(&format!("Literal[\"{}\"]", escape_python_string(s)))
-        }
-        IrTypeExpr::StringEnum(values) => {
-            let members = values
+        IrTypeExpr::StringLiteral(value) => TypeName::string_literal(value.clone()),
+        IrTypeExpr::StringEnum(values) => TypeName::union(
+            values
                 .iter()
-                .map(|value| format!("\"{}\"", escape_python_string(value)))
-                .collect::<Vec<_>>();
-            TypeName::raw(&format!("Literal[{}]", members.join(", ")))
-        }
+                .cloned()
+                .map(TypeName::string_literal)
+                .collect(),
+        ),
         IrTypeExpr::Array(inner) => type_application(
             TypeName::primitive("list"),
             vec![python_type_name_with_current(inner, current_schema)],
@@ -65,10 +63,6 @@ fn python_type_name_with_current(expr: &IrTypeExpr, current_schema: Option<&str>
         }
         IrTypeExpr::Any => TypeName::importable("typing", "Any"),
     }
-}
-
-fn escape_python_string(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 fn python_primitive_type_name(p: &IrPrimitive) -> TypeName {

@@ -6,8 +6,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
-from .inline_object_with_array_container_data_items_item import InlineObjectWithArrayContainerDataItemsItem
+from .inline_object_with_array_container_data_items_item import (
+    InlineObjectWithArrayContainerDataItemsItem,
+)
+
 
 @dataclass
 class InlineObjectWithArrayContainerData:
@@ -25,5 +29,14 @@ class InlineObjectWithArrayContainerData:
     def from_dict(cls, data: dict[str, object]) -> InlineObjectWithArrayContainerData:
         return cls(
             container_id=data["container_id"],  # type: ignore[assignment]
-            items=[InlineObjectWithArrayContainerDataItemsItem.from_dict(item) for item in data.get("items")] if data.get("items") is not None else None,  # type: ignore[union-attr]
+            items=(
+                [
+                    InlineObjectWithArrayContainerDataItemsItem.from_dict(
+                        cast(dict[str, object], item)
+                    )
+                    for item in cast(list[object], data.get("items"))
+                ]
+                if data.get("items") is not None
+                else None
+            ),
         )

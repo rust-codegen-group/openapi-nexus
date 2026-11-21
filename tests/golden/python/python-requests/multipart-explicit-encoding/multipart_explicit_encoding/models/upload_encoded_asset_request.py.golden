@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .audit_attributes import AuditAttributes
 from .upload_attributes import UploadAttributes
+
 
 @dataclass
 class UploadEncodedAssetRequest:
@@ -28,8 +30,8 @@ class UploadEncodedAssetRequest:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> UploadEncodedAssetRequest:
         return cls(
-            audit=AuditAttributes.from_dict(data["audit"]),  # type: ignore[arg-type]
+            audit=AuditAttributes.from_dict(cast(dict[str, object], data["audit"])),
             file=data["file"],  # type: ignore[assignment]
-            metadata=UploadAttributes.from_dict(data["metadata"]),  # type: ignore[arg-type]
+            metadata=UploadAttributes.from_dict(cast(dict[str, object], data["metadata"])),
             purpose=data["purpose"],  # type: ignore[assignment]
         )

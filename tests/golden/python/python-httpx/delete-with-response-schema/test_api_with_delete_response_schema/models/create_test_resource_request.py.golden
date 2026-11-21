@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import Any as _Any
 
+
 # Request to create a new test resource (type alias - no properties)
 
-type CreateTestResourceRequest = (_Any)
+
+type CreateTestResourceRequest = _Any

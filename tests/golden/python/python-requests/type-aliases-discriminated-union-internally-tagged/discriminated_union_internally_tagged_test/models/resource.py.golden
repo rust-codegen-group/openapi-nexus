@@ -10,41 +10,35 @@ from .resource_custom import ResourceCustom
 from .resource_quick import ResourceQuick
 from .resource_unspecified import ResourceUnspecified
 
+
 # Discriminator: kind (internal).
 
-type Resource = (
-    ResourceUnspecified
-    | ResourceQuick
-    | ResourceCustom
-)
+
+type Resource = ResourceUnspecified | ResourceQuick | ResourceCustom
+
 
 def resource_from_dict(data: dict[str, object]) -> Resource:
-    _tag = data['kind']
-    if _tag == 'RESOURCE_UNSPECIFIED':
+    _tag = data["kind"]
+    if _tag == "RESOURCE_UNSPECIFIED":
         return ResourceUnspecified.from_dict(data)
-
-    if _tag == 'RESOURCE_QUICK':
+    if _tag == "RESOURCE_QUICK":
         return ResourceQuick.from_dict(data)
-
-    if _tag == 'RESOURCE_CUSTOM':
+    if _tag == "RESOURCE_CUSTOM":
         return ResourceCustom.from_dict(data)
+    raise ValueError("Unknown discriminator value for Resource: " + str(data))
 
-    raise ValueError('Unknown discriminator value for Resource: ' + str(data))
 
 def resource_to_dict(obj: Resource) -> dict[str, object]:
     if isinstance(obj, ResourceUnspecified):
         result = obj.to_dict()
-        result['kind'] = 'RESOURCE_UNSPECIFIED'
+        result["kind"] = "RESOURCE_UNSPECIFIED"
         return result
-
     if isinstance(obj, ResourceQuick):
         result = obj.to_dict()
-        result['kind'] = 'RESOURCE_QUICK'
+        result["kind"] = "RESOURCE_QUICK"
         return result
-
     if isinstance(obj, ResourceCustom):
         result = obj.to_dict()
-        result['kind'] = 'RESOURCE_CUSTOM'
+        result["kind"] = "RESOURCE_CUSTOM"
         return result
-
-    raise ValueError('Unknown variant for Resource: ' + str(type (obj)))
+    raise ValueError("Unknown variant for Resource: " + str(type(obj)))

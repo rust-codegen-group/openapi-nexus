@@ -89,10 +89,14 @@ fn multipart_wire_construction_is_pinned_across_clients() {
     );
     assert!(httpx_api.contains("files: dict[str, object] = {}"));
     assert!(httpx_api.contains("files[\"note\"] = (None, str(body.note), \"text/plain\")"));
-    assert!(
-        httpx_api
-            .contains("files[\"file\"] = (body.file.filename_or_default(\"file\"), body.file.data")
+    let file_tuple = concat!(
+        "files[\"file\"] = (\n",
+        "                    body.file.filename_or_default(\"file\"),\n",
+        "                    body.file.data,\n",
+        "                    \"application/octet-stream\",\n",
+        "                )",
     );
+    assert!(httpx_api.contains(file_tuple));
     assert!(httpx_api.contains("files=files if files else None"));
     assert!(httpx_input.contains("file: UploadFile | None = None"));
     assert!(!httpx_api.contains("path, data=data"));
@@ -107,10 +111,7 @@ fn multipart_wire_construction_is_pinned_across_clients() {
     );
     assert!(requests_api.contains("files: dict[str, object] = {}"));
     assert!(requests_api.contains("files[\"note\"] = (None, str(body.note), \"text/plain\")"));
-    assert!(
-        requests_api
-            .contains("files[\"file\"] = (body.file.filename_or_default(\"file\"), body.file.data")
-    );
+    assert!(requests_api.contains(file_tuple));
     assert!(requests_api.contains("files=files if files else None"));
     assert!(requests_input.contains("file: UploadFile | None = None"));
     assert!(!requests_api.contains("path, data=data"));

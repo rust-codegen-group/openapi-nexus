@@ -11,41 +11,62 @@ from ..models.user import User
 from ..runtime.client import ApiResponse, Client
 from ..runtime.errors import ApiError
 
+
 class CreateUserUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type CreateUserErrorDetail = (
-    CreateUserUnexpected
-)
+
+type CreateUserErrorDetail = CreateUserUnexpected
+
 
 class CreateUserError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateUserErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateUserErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateUserErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class CreateUsersWithListInputUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type CreateUsersWithListInputErrorDetail = (
-    CreateUsersWithListInputUnexpected
-)
+
+type CreateUsersWithListInputErrorDetail = CreateUsersWithListInputUnexpected
+
 
 class CreateUsersWithListInputError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: CreateUsersWithListInputErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: CreateUsersWithListInputErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: CreateUsersWithListInputErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class LoginUserBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -53,42 +74,62 @@ class LoginUserBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class LoginUserUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type LoginUserErrorDetail = (
-    LoginUserBadRequest
-    | LoginUserUnexpected
-)
+
+type LoginUserErrorDetail = LoginUserBadRequest | LoginUserUnexpected
+
 
 class LoginUserError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: LoginUserErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: LoginUserErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: LoginUserErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class LogoutUserUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type LogoutUserErrorDetail = (
-    LogoutUserUnexpected
-)
+
+type LogoutUserErrorDetail = LogoutUserUnexpected
+
 
 class LogoutUserError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: LogoutUserErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: LogoutUserErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: LogoutUserErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class GetUserByNameBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -96,31 +137,43 @@ class GetUserByNameBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class GetUserByNameNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class GetUserByNameUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
+
 type GetUserByNameErrorDetail = (
-    GetUserByNameBadRequest
-    | GetUserByNameNotFound
-    | GetUserByNameUnexpected
+    GetUserByNameBadRequest | GetUserByNameNotFound | GetUserByNameUnexpected
 )
 
+
 class GetUserByNameError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: GetUserByNameErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: GetUserByNameErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: GetUserByNameErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class UpdateUserBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -128,31 +181,41 @@ class UpdateUserBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class UpdateUserNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class UpdateUserUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type UpdateUserErrorDetail = (
-    UpdateUserBadRequest
-    | UpdateUserNotFound
-    | UpdateUserUnexpected
-)
+
+type UpdateUserErrorDetail = UpdateUserBadRequest | UpdateUserNotFound | UpdateUserUnexpected
+
 
 class UpdateUserError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: UpdateUserErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: UpdateUserErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: UpdateUserErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
+
 
 class DeleteUserBadRequest:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
@@ -160,29 +223,38 @@ class DeleteUserBadRequest:
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class DeleteUserNotFound:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
 
+
 class DeleteUserUnexpected:
     def __init__(self, status_code: int, headers: Mapping[str, str], raw_body: bytes) -> None:
         self.status_code: int = status_code
         self.headers: Mapping[str, str] = headers
         self.raw_body: bytes = raw_body
+
     @property
     def body(self) -> bytes:
         return self.raw_body
 
-type DeleteUserErrorDetail = (
-    DeleteUserBadRequest
-    | DeleteUserNotFound
-    | DeleteUserUnexpected
-)
+
+type DeleteUserErrorDetail = DeleteUserBadRequest | DeleteUserNotFound | DeleteUserUnexpected
+
 
 class DeleteUserError(ApiError):
-    def __init__(self, status_code: int, status: str, body: bytes, detail: DeleteUserErrorDetail, headers: Mapping[str, str] | None = None, response: object | None = None) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        status: str,
+        body: bytes,
+        detail: DeleteUserErrorDetail,
+        headers: Mapping[str, str] | None = None,
+        response: object | None = None,
+    ) -> None:
         self.detail: DeleteUserErrorDetail = detail
         super().__init__(status_code, status, body, headers=headers, response=response)
 
@@ -199,9 +271,18 @@ class UserApi:
         response = self._client.request("POST", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             detail = CreateUserUnexpected(response.status_code, response.headers, response.content)
-            raise CreateUserError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise CreateUserError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = User.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def create_user(self, *, body: User) -> User:
         """Create user."""
@@ -212,21 +293,33 @@ class UserApi:
         path = "/user/createWithList"
         headers: dict[str, str] = {}
         headers["Content-Type"] = "application/json"
-        response = self._client.request("POST", path, json=[item.to_dict() for item in body], headers=headers)
+        response = self._client.request(
+            "POST", path, json=[item.to_dict() for item in body], headers=headers
+        )
         if not (200 <= response.status_code < 300):
-            detail = CreateUsersWithListInputUnexpected(response.status_code, response.headers, response.content)
-            raise CreateUsersWithListInputError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            detail = CreateUsersWithListInputUnexpected(
+                response.status_code, response.headers, response.content
+            )
+            raise CreateUsersWithListInputError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = User.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def create_users_with_list_input(self, *, body: list[User]) -> User:
         """Creates list of users with given input array."""
         return self.create_users_with_list_input_with_http_info(body=body).data
 
-    def login_user_with_http_info(self,
-        *,
-        username: str | None = None,
-        password: str | None = None) -> ApiResponse[None]:
+    def login_user_with_http_info(
+        self, *, username: str | None = None, password: str | None = None
+    ) -> ApiResponse[None]:
         """Logs user into the system, including HTTP response metadata."""
         path = "/user/login"
         params: dict[str, str] = {}
@@ -237,12 +330,26 @@ class UserApi:
         response = self._client.request("GET", path, params=params)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = LoginUserBadRequest(response.status_code, response.headers, response.content)
+                detail = LoginUserBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = LoginUserUnexpected(response.status_code, response.headers, response.content)
-            raise LoginUserError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = LoginUserUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise LoginUserError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def login_user(self, *, username: str | None = None, password: str | None = None) -> None:
         """Logs user into the system."""
@@ -254,9 +361,18 @@ class UserApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             detail = LogoutUserUnexpected(response.status_code, response.headers, response.content)
-            raise LogoutUserError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+            raise LogoutUserError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def logout_user(self) -> None:
         """Logs out current logged in user session."""
@@ -268,14 +384,30 @@ class UserApi:
         response = self._client.request("GET", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = GetUserByNameBadRequest(response.status_code, response.headers, response.content)
+                detail = GetUserByNameBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
-                detail = GetUserByNameNotFound(response.status_code, response.headers, response.content)
+                detail = GetUserByNameNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = GetUserByNameUnexpected(response.status_code, response.headers, response.content)
-            raise GetUserByNameError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = GetUserByNameUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise GetUserByNameError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = User.from_dict(response.json())
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def get_user_by_name(self, username: str) -> User:
         """Get user by user name."""
@@ -289,14 +421,30 @@ class UserApi:
         response = self._client.request("PUT", path, json=body.to_dict(), headers=headers)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = UpdateUserBadRequest(response.status_code, response.headers, response.content)
+                detail = UpdateUserBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
-                detail = UpdateUserNotFound(response.status_code, response.headers, response.content)
+                detail = UpdateUserNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = UpdateUserUnexpected(response.status_code, response.headers, response.content)
-            raise UpdateUserError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = UpdateUserUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise UpdateUserError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def update_user(self, username: str, *, body: User) -> None:
         """Update user."""
@@ -308,14 +456,30 @@ class UserApi:
         response = self._client.request("DELETE", path)
         if not (200 <= response.status_code < 300):
             if response.status_code == 400:
-                detail = DeleteUserBadRequest(response.status_code, response.headers, response.content)
+                detail = DeleteUserBadRequest(
+                    response.status_code, response.headers, response.content
+                )
             elif response.status_code == 404:
-                detail = DeleteUserNotFound(response.status_code, response.headers, response.content)
+                detail = DeleteUserNotFound(
+                    response.status_code, response.headers, response.content
+                )
             else:
-                detail = DeleteUserUnexpected(response.status_code, response.headers, response.content)
-            raise DeleteUserError(response.status_code, response.reason_phrase, response.content, detail, headers=response.headers, response=response)
+                detail = DeleteUserUnexpected(
+                    response.status_code, response.headers, response.content
+                )
+
+            raise DeleteUserError(
+                response.status_code,
+                response.reason_phrase,
+                response.content,
+                detail,
+                headers=response.headers,
+                response=response,
+            )
         data = None
-        return ApiResponse(data=data, status_code=response.status_code, headers=response.headers, raw=response)
+        return ApiResponse(
+            data=data, status_code=response.status_code, headers=response.headers, raw=response
+        )
 
     def delete_user(self, username: str) -> None:
         """Delete user."""

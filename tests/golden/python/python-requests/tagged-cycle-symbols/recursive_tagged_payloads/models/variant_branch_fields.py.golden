@@ -9,6 +9,7 @@ from typing import cast
 
 from . import variant
 
+
 @dataclass
 class VariantBranchFields:
     children: list[variant.Variant]
@@ -17,25 +18,34 @@ class VariantBranchFields:
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
-        result['children'] = [variant.variant_to_dict(_item) for _item in self.children]
+        result["children"] = [variant.variant_to_dict(_item) for _item in self.children]
         if self.mapped_children is not None:
-            result['mapped_children'] = {_key: variant.variant_to_dict(_value) for _key,
-                _value in self.mapped_children.items()}
-
+            result["mapped_children"] = {
+                _key: variant.variant_to_dict(_value)
+                for _key, _value in self.mapped_children.items()
+            }
         if self.optional_child is not None:
-            result['optional_child'] = variant.variant_to_dict(self.optional_child)
-
+            result["optional_child"] = variant.variant_to_dict(self.optional_child)
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> VariantBranchFields:
         return cls(
-            children = [variant.variant_from_dict(cast(dict[str, object],
-                _item)) for _item in cast(list[object], data['children'])],
-            mapped_children = {_key: variant.variant_from_dict(cast(dict[str, object],
-                _value)) for _key,
-                _value in cast(dict[str, object],
-                data.get('mapped_children')).items()} if data.get('mapped_children') is not None else None,
-            optional_child = variant.variant_from_dict(cast(dict[str, object],
-                data.get('optional_child'))) if data.get('optional_child') is not None else None,
+            children=[
+                variant.variant_from_dict(cast(dict[str, object], _item))
+                for _item in cast(list[object], data["children"])
+            ],
+            mapped_children=(
+                {
+                    _key: variant.variant_from_dict(cast(dict[str, object], _value))
+                    for _key, _value in cast(dict[str, object], data.get("mapped_children")).items()
+                }
+                if data.get("mapped_children") is not None
+                else None
+            ),
+            optional_child=(
+                variant.variant_from_dict(cast(dict[str, object], data.get("optional_child")))
+                if data.get("optional_child") is not None
+                else None
+            ),
         )

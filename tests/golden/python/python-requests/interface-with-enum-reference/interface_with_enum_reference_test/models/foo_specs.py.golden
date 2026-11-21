@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from .foo_type import FooType
 
+
 @dataclass
 class FooSpecs:
     foo_type: FooType

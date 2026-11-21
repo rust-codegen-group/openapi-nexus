@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .foo_member1_bar import FooMember1Bar
+
 
 @dataclass
 class FooMember1:
     """First inline object type."""
+
     bar: FooMember1Bar
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,5 @@ class FooMember1:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> FooMember1:
         return cls(
-            bar=FooMember1Bar.from_dict(data["bar"]),  # type: ignore[arg-type]
+            bar=FooMember1Bar.from_dict(cast(dict[str, object], data["bar"])),
         )

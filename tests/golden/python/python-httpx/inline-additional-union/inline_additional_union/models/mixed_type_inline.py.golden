@@ -9,30 +9,37 @@ from dataclasses import dataclass, field as _dataclass_field
 from typing import cast
 
 from . import _union
-from .mixed_type_inline_additional_property_additional_property import MixedTypeInlineAdditionalPropertyAdditionalProperty
+from .mixed_type_inline_additional_property_additional_property import (
+    MixedTypeInlineAdditionalPropertyAdditionalProperty,
+)
+
 
 @dataclass
 class MixedTypeInline:
-    additional_properties: _dict[_str,
-        (dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty]
-        | str)] = _dataclass_field(default_factory=lambda: _dict[_str,
-        dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty] | str](),
+    additional_properties: _dict[
+        _str, dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty] | str
+    ] = _dataclass_field(
+        default_factory=lambda: _dict[
+            _str, dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty] | str
+        ](),
         kw_only=True,
-        metadata={"openapi_additional_properties": True, "openapi_dictionary": True})
+        metadata={"openapi_additional_properties": True, "openapi_dictionary": True},
+    )
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {}
         for key, item in self.additional_properties.items():
             result[key] = _union.value_21_to_dict(item)
-
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> MixedTypeInline:
         return cls(
-            additional_properties = {key: cast((dict[str,
-                MixedTypeInlineAdditionalPropertyAdditionalProperty]
-                | str),
-                _union.value_21_from_dict(item)) for key,
-                item in data.items() },
+            additional_properties={
+                key: cast(
+                    dict[str, MixedTypeInlineAdditionalPropertyAdditionalProperty] | str,
+                    _union.value_21_from_dict(item),
+                )
+                for key, item in data.items()
+            },
         )

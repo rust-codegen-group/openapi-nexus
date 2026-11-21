@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from .variant_a import VariantA
+
 
 @dataclass
 class MixedEnumMember2:
     """Tuple variant with VariantA payload."""
+
     variant_a: VariantA
 
     def to_dict(self) -> dict[str, object]:
@@ -22,5 +25,5 @@ class MixedEnumMember2:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> MixedEnumMember2:
         return cls(
-            variant_a=VariantA.from_dict(data["VariantA"]),  # type: ignore[arg-type]
+            variant_a=VariantA.from_dict(cast(dict[str, object], data["VariantA"])),
         )

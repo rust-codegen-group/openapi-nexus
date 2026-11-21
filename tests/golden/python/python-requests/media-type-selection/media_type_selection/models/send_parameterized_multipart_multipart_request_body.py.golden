@@ -6,7 +6,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from ..runtime import UploadFile
+
 
 @dataclass
 class SendParameterizedMultipartMultipartRequestBody:

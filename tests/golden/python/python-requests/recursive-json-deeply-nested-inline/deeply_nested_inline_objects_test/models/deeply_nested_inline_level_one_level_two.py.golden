@@ -6,8 +6,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
-from .deeply_nested_inline_level_one_level_two_level_three import DeeplyNestedInlineLevelOneLevelTwoLevelThree
+from .deeply_nested_inline_level_one_level_two_level_three import (
+    DeeplyNestedInlineLevelOneLevelTwoLevelThree,
+)
+
 
 @dataclass
 class DeeplyNestedInlineLevelOneLevelTwo:
@@ -25,6 +29,12 @@ class DeeplyNestedInlineLevelOneLevelTwo:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> DeeplyNestedInlineLevelOneLevelTwo:
         return cls(
-            level_three=DeeplyNestedInlineLevelOneLevelTwoLevelThree.from_dict(data.get("level_three")) if data.get("level_three") is not None else None,  # type: ignore[arg-type]
+            level_three=(
+                DeeplyNestedInlineLevelOneLevelTwoLevelThree.from_dict(
+                    cast(dict[str, object], data.get("level_three"))
+                )
+                if data.get("level_three") is not None
+                else None
+            ),
             level_two_field=data.get("level_two_field"),  # type: ignore[assignment]
         )
