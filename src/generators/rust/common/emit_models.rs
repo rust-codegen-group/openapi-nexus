@@ -33,6 +33,7 @@ use sigil_stitch::spec::where_spec::TypeArgument;
 use sigil_stitch::type_name::TypeName;
 
 use super::config::{ExtraDeriveConfig, RustGeneratorConfig};
+use super::tagged_wire::RustWirePlans;
 
 /// Generate every model file from the IR.
 pub fn generate_model_files(
@@ -45,6 +46,7 @@ pub fn generate_model_files(
     let mut mod_entries = Vec::new();
 
     let utoipa_enabled = config.utoipa.as_ref().is_some_and(|u| u.enabled);
+    let wire_plans = RustWirePlans::build(ir, config.tagged_union_strategy.into());
 
     // Schemas inlined into Internal/Adjacent tagged unions can be skipped as standalone files,
     // BUT only if no other schema references them by name (e.g. External/Untagged tuple variants).
@@ -60,7 +62,7 @@ pub fn generate_model_files(
                     if matches!(
                         tu.tagging,
                         TaggingStyle::Internal | TaggingStyle::Adjacent { .. }
-                    ) =>
+                    ) && wire_plans.get(&s.name).is_none() =>
                 {
                     Some(tu.variants.iter().filter_map(|v| {
                         if let IrTypeExpr::Named(name) = &v.content_type
@@ -82,7 +84,7 @@ pub fn generate_model_files(
         let referenced_by_name: HashSet<&str> = ir
             .schemas
             .values()
-            .flat_map(|s| collect_named_type_refs(s))
+            .flat_map(|s| collect_named_type_refs(s, &wire_plans))
             .collect();
 
         inlined_candidates
@@ -95,9 +97,10 @@ pub fn generate_model_files(
         if inlined_schemas.contains(schema.name.as_str()) {
             continue;
         }
-        let Some(file_spec) = emit_model_file(schema, config, ir).map_err(|source| {
-            GeneratorError::emission(ArtifactKind::Model, &schema.name, source)
-        })?
+        let Some(file_spec) =
+            emit_model_file(schema, config, ir, &wire_plans).map_err(|source| {
+                GeneratorError::emission(ArtifactKind::Model, &schema.name, source)
+            })?
         else {
             continue;
         };
@@ -167,6 +170,7 @@ fn emit_model_file(
     schema: &IrSchema,
     config: &RustGeneratorConfig,
     ir: &IrSpec,
+    wire_plans: &RustWirePlans<'_>,
 ) -> Result<Option<FileSpec>, SigilStitchError> {
     let extra = config.extra_derives.as_ref();
     let utoipa_enabled = config.utoipa.as_ref().is_some_and(|u| u.enabled);
@@ -202,6 +206,7 @@ fn emit_model_file(
                 per_type_cfg.or_else(|| extra.and_then(|e| e.unions.as_ref())),
                 config,
                 ir,
+                wire_plans,
             )
             .map(Some);
         }
@@ -213,10 +218,20 @@ fn emit_model_file(
             emit_intersection(schema, i, derives.as_ref())
         }
         IrSchemaKind::TaggedUnion(tu) => {
-            let derives = per_type_cfg
-                .or_else(|| extra.and_then(|e| e.unions.as_ref()))
-                .cloned();
-            return emit_tagged_union(schema, tu, derives.as_ref(), ir, utoipa_enabled);
+            let derives = per_type_cfg.or_else(|| extra.and_then(|e| e.unions.as_ref()));
+            if let Some(plan) = wire_plans.get(&schema.name) {
+                return super::tagged_wire::emit(
+                    schema,
+                    tu,
+                    plan,
+                    wire_plans.strategy,
+                    derives,
+                    ir,
+                    utoipa_enabled,
+                )
+                .map(Some);
+            }
+            return emit_tagged_union(schema, tu, derives, ir, utoipa_enabled);
         }
     })
 }
@@ -840,7 +855,7 @@ fn doc_comment_block(doc: &str) -> String {
 // Schema resolution helper
 // ---------------------------------------------------------------------------
 
-fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
+pub(super) fn resolve_object<'a>(expr: &IrTypeExpr, ir: &'a IrSpec) -> Option<&'a IrObject> {
     if let IrTypeExpr::Named(name) = expr
         && let Some(schema) = ir.schemas.get(name)
         && let IrSchemaKind::Object(obj) = &schema.kind
@@ -975,7 +990,10 @@ fn escape_rust_keyword(name: &str) -> String {
 
 /// Collect schema names referenced by `IrTypeExpr::Named` in positions that require
 /// a standalone struct to exist (object fields, tuple variants, union members, etc.).
-fn collect_named_type_refs(schema: &IrSchema) -> Vec<&str> {
+fn collect_named_type_refs<'a>(
+    schema: &'a IrSchema,
+    wire_plans: &RustWirePlans<'_>,
+) -> Vec<&'a str> {
     let mut refs = Vec::new();
     match &schema.kind {
         IrSchemaKind::Object(obj) => {
@@ -987,8 +1005,9 @@ fn collect_named_type_refs(schema: &IrSchema) -> Vec<&str> {
             }
         }
         IrSchemaKind::TaggedUnion(tu) => {
-            let uses_tuple_variants = matches!(tu.tagging, TaggingStyle::External);
-            if uses_tuple_variants {
+            let requires_payload_models = matches!(tu.tagging, TaggingStyle::External)
+                || wire_plans.get(&schema.name).is_some();
+            if requires_payload_models {
                 for v in &tu.variants {
                     collect_named_from_expr(&v.content_type, &mut refs);
                 }

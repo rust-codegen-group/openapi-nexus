@@ -4,4 +4,6 @@ pub mod emit_models;
 mod matching;
 pub mod project_files;
 pub(crate) mod runtime;
+mod tagged_wire;
 mod union;
+mod wire_matching;

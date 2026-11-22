@@ -15,6 +15,9 @@ union-selection-contract = { path = "generated/union-selection" }
 rust-union-first-match = { path = "generated/union-first-match" }
 rust-union-strict = { path = "generated/union-strict" }
 rust-union-raw = { path = "generated/union-raw" }
+rust-tagged-first-match = { path = "generated/tagged-first-match" }
+rust-tagged-strict = { path = "generated/tagged-strict" }
+rust-tagged-raw = { path = "generated/tagged-raw" }
 utoipa = "5"
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

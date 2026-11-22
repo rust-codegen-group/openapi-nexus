@@ -756,6 +756,9 @@ version = "0.0.0"
 dependencies = [
  "nested-nullable-api",
  "rust-error-payload-shapes-api",
+ "rust-tagged-first-match",
+ "rust-tagged-raw",
+ "rust-tagged-strict",
  "rust-union-first-match",
  "rust-union-raw",
  "rust-union-strict",
@@ -791,6 +794,42 @@ dependencies = [
  "serde-xml-rs",
  "serde_json",
  "serde_repr",
+]
+
+[[package]]
+name = "rust-tagged-first-match"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "serde_repr",
+ "utoipa",
+]
+
+[[package]]
+name = "rust-tagged-raw"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "serde_repr",
+ "utoipa",
+]
+
+[[package]]
+name = "rust-tagged-strict"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "serde_repr",
+ "utoipa",
 ]
 
 [[package]]
