@@ -7,96 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1]
+
+### Breaking Changes
+
+- The OpenAPI 3.1 and 3.2 Rust `Components.schemas` maps now contain `Schema`
+  values rather than `ObjectOrReference<ObjectSchema>`. Update code that builds
+  or reads these maps to handle both object and boolean schemas. Exhaustive
+  matches on the corresponding `ErrorRef` enums must also handle `BooleanSchema`.
+- Exhaustive matches on the public `IrTypeExpr` must handle `ScalarEnum`.
+  It retains inline scalar enum constraints for union matching, including
+  whether the representation admits null and whether its type was authored.
+- Code constructing `IrTaggedVariant` must initialize `discriminator_values`
+  and `discriminator_optional` for multi-valued and optional discriminator facts.
+- Code constructing generator configuration structs or TypeScript `EmitFlags`
+  with explicit field lists must initialize the new policy fields. Low-level
+  Java and Kotlin `runtime_files` functions and TypeScript `render_readme_file`
+  also take new arguments. Some low-level TypeScript model-emission helpers are
+  no longer public; use `TypeScriptFetchCodeGenerator` for full generation.
+- Regenerate and update consumers that used typed Go, Java, or Kotlin `allOf`
+  models for unsupported intersections; these now expose raw JSON instead.
+- Recompile consumers of regenerated Kotlin models with named and additional
+  properties. Their data-class binary signatures changed to retain extension
+  values; existing named constructor arguments remain available.
+
+### Added
+
+- Add `untagged_union_strategy` with `firstMatch`, `strict`, and `raw` policies
+  for Rust (all three transports), Java OkHttp, Kotlin OkHttp, Python (both
+  transports), and TypeScript camelCase conversion. Prefer concrete members
+  over opaque fallbacks and propagate selected-member conversion errors.
+- Add `all_of_strategy` to Go, Java, and Kotlin generators. Compatible object
+  and dictionary members compose into flat JSON by default; unsupported
+  intersections fall back to raw JSON. Use `raw` to opt out of typed composition.
+
 ### Changed
 
-- Generate TypeScript source, runtime templates, Markdown examples, and JSON
-  configuration with formatting compatible with Vite+ checks. Lay out long
-  signatures, imports, unions, and converter expressions directly in Rust.
-  Enable full `vp check` and validate freshly generated clients before and after
-  packing, without a formatter preparation step. Exclude `dist/` from formatting
-  and provide a `fmt` script for manual edits.
-- Upgrade generated TypeScript clients to Vite+ `^1.5.0`, resolving Vite `8.3.7`,
-  Vitest `5.1.0`, Rolldown `1.2.18`, Oxfmt `0.78.0`, Oxlint `1.93.0`,
-  oxlint-tsgolint `7.0.2006`, and tsdown `0.23.4`. Pin CI validation and
-  documented setup to Vite+ `1.6.0` and TypeScript `7.0.2`, and report the resolved
-  tool versions during client builds. Vite+ projects require Node.js
-  `^22.18.0 || ^24.11.0 || >=26.0.0`.
-
-- Upgrade `sigil-stitch` to 0.7.5 for structured TypeScript namespace-qualified
-  types with import-aware nested arguments.
-- Retain inline scalar enum values in `IrTypeExpr::ScalarEnum` for union selection.
-  Rust callers exhaustively matching the public IR enum must handle this variant;
-  its `representation_nullable` fact retains an extracted null permission at the
-  original enum boundary, while `representation_is_constraint` distinguishes
-  authored types from synthetic untyped-enum fallbacks. Other generators retain
-  their existing representation and enum policies.
+- Emit TypeScript source, runtime templates, Markdown examples, and JSON
+  configuration compatible with full `vp check` without formatter rewrites.
+  Generated Vite+ projects use `vite-plus` `^1.5.0` and TypeScript `^7.0.2`;
+  Vite+ 1.5.0 requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`.
+- Emit Ruff-compatible Python formatting for both HTTPX and requests clients
+  without post-processing generated files. Upgrade `sigil-stitch` to 0.7.7
+  for structured TypeScript and Python emission.
+- Use the supported `macos-15` ARM64 runner for GitHub release builds. If you
+  are upgrading from the last prebuilt release, also read the
+  [0.3.0 migration guide](https://github.com/rust-codegen-group/openapi-nexus/blob/main/docs/src/migration_0_3_0.md):
+  the 0.3.0 crate shipped on crates.io, but its GitHub binary release did not
+  complete.
 
 ### Fixed
 
-- Accept boolean component schemas in OpenAPI 3.1 and 3.2 YAML/JSON documents,
-  retaining `true`/`false` through parsing, serialization, and schema references.
-  Their public raw `Components.schemas` maps now contain `Schema` values rather
-  than only `ObjectOrReference<ObjectSchema>` values. Lower `true` components to
-  unconstrained aliases. Omit unused `false` components from generated models
-  without blocking usable clients; report an explicit lowering error only when
-  retained models or operations reference them. The current IR has no
-  uninhabited type, so `false` is never silently widened to `Any`.
-- Preserve optional and multi-valued inferred TypeScript discriminators. Omitted
-  variant tags remain valid, referenced discriminator enums retain every legal
-  wire value, and both JSON conversion directions keep the original spelling.
-  Emit strict declarations and type guards for the complete discriminator facts.
-- Preserve inline fields and every referenced payload in inferred tagged `allOf`
-  variants across OpenAPI 3.0, 3.1 and 3.2 lowering. TypeScript declarations and
-  bidirectional JSON conversion retain function, namespace, shell and nested
-  search-result tool definitions without changing ordinary reference/tag pairs.
-  Keep nested `allOf` sibling fields and outer requiredness without mutating
-  referenced components. Compatible overlapping TypeScript object payloads use
-  one nested conversion view rather than overwriting earlier converted fields.
-- Select Java OkHttp untagged-union members using retained scalar enum and
-  structural facts instead of unconstrained Gson dispatch. Preserve typed member
-  payloads in models, containers, recursive values, and HTTP response/error bodies.
-  Add `firstMatch`, `strict`, and explicit `VariantRaw(JsonElement)` policies,
-  retaining existing typed APIs, Gson codecs, null handling, and wrapper boundaries.
-  Match scientific notation without Gson's decimal scale limit and keep recursive
-  helpers independent of model names such as `Integer` and `Boolean`.
-- Select Rust untagged-union members using retained scalar enum and structural
-  facts instead of Serde's unconstrained first-success dispatch. Preserve typed
-  variants and payloads across reqwest, ureq, and aioduct, including nested
-  containers and recursive members. Add `firstMatch`, `strict`, and explicit
-  `Raw(serde_json::Value)` policies; propagate selected-member decoding errors
-  without hiding them behind another member or an opaque fallback.
-- Convert Python httpx/requests untagged-union members in models, nested containers,
-  aliases, JSON/multipart requests, responses, and lazy error bodies. Share enum-
-  aware selection across both transports with `firstMatch`, `strict`, and dynamic
-  `raw` policies, preserving nested strict errors and productive recursion. Keep
-  shared helpers import-safe and restore tagged wire wrappers from typed payload
-  members. Encode required nullable union request bodies as JSON `null` instead
-  of omitting them.
-- Convert camelCase TypeScript untagged-union members in both JSON directions,
-  including mixed client/search tools and containing requests. Add configurable
-  `firstMatch`, `strict`, and wire-preserving `raw` selection policies instead
-  of treating every multi-member union converter as an identity cast. Retain
-  nested converter/strict-policy delegation, concrete-before-fallback priority
-  through nullable and `allOf` aliases, binary model values, and adjacent-tagged
-  unit variants. Convert inline container members and concrete values in open
-   nested dictionaries, and preserve array/null shapes through single-member
-   `allOf` aliases. Use the same value plan for models, nested HTTP bodies,
-   multipart JSON parts, response/error payloads, and tagged payloads/type guards.
-   Retain scalar enum and typed additional-value checks, productive recursive
-   matching, honest raw alias types, and readonly dictionary contracts. Required
-   nullable JSON bodies distinguish a supplied `null` from an omitted body.
-   Optional bodies also delegate supplied null, without an unformatted inline
-   conditional. Intersect nested enum constraints at their original nullability
-   boundary and retain authored concrete null matches beside opaque fallbacks.
-   Untyped numeric enums no longer inherit a synthetic string constraint;
-   extracted enum null permission restores a typed nullable conversion boundary.
-   Nullable `oneOf`/`anyOf` wrappers retain outer enum constraints; explicit null
-   alternatives do not bypass strict candidate counts or nested strict errors.
-   Emit compound conversions and predicates as static internal helpers with
-   direct Vite+-compatible layout, preserving readonly inputs and public exports.
-- Preserve tagged TypeScript models named `Record` or `Readonly` by qualifying
-  built-in utility references without renaming the generated public model.
-
+- Parse OpenAPI 3.1 and 3.2 boolean component schemas. Lower `true` components to
+  unconstrained aliases and omit unused `false` components; report a lowering
+  error if a retained model or operation references a `false` component instead
+  of widening it to `Any`.
+- Preserve unconstrained empty array item schemas and inline mixed-type
+  `additionalProperties` unions across the supported OpenAPI versions. Respect
+  explicit composition and retain the nested payloads and finite constraints
+  needed for union matching.
+- Preserve all inline and referenced payloads, nested `allOf` sibling fields,
+  and outer requiredness when inferring tagged variants across OpenAPI versions.
+  TypeScript converts compatible overlapping payloads without dropping fields.
+- Preserve optional and multi-valued inferred TypeScript discriminators. Match
+  omitted or shared tags by payload structure, reject ambiguity, and retain the
+  original wire spelling in both conversion directions. Multiline JSON converters
+  also preserve reserved property names such as `function`.
+- Convert selected TypeScript camelCase union members in both JSON directions,
+  including nested properties, containers, multipart bodies, and responses.
+  Preserve nullable and `allOf` aliases, readonly dictionaries, and models named
+  `Record` or `Readonly`. Distinguish supplied JSON `null` from an omitted body.
+- Convert selected Python union members into typed values in both transports,
+  including nested and recursive fields, multipart and JSON request bodies,
+  responses, and lazy errors. Resolve recursive model and converter imports and
+  send required nullable union bodies as JSON `null` rather than omitting them.
+- Preserve typed `additionalProperties` in generated Python, Java, and Kotlin
+  objects. Keep extension keys verbatim and flatten them into the original JSON
+  object. Generate usable Kotlin pure-dictionary models without a synthetic
+  wrapper and preserve explicit null entries and precision in opaque values.
+- Keep explicit null entries when Java typed unions write a selected payload
+  through Gson. Qualify boxed primitive helpers so authored model names cannot
+  shadow them. Preserve JSON values in Kotlin opaque aliases and containers,
+  including large numbers and null entries.
 
 ## [0.3.0]
 
