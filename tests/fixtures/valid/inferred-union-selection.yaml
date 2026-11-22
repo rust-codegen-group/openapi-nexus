@@ -71,3 +71,28 @@ components:
               properties:
                 kind: {type: string, enum: [b]}
                 count: {type: integer}
+    OpaquePayload:
+      type: object
+      additionalProperties: true
+    GatedChoice:
+      type: object
+      required: [scope]
+      oneOf:
+        - {$ref: '#/components/schemas/OpaquePayload'}
+        - allOf:
+            - type: object
+              required: [scope, payload_value]
+              properties:
+                kind: {type: string, enum: [typed]}
+                scope: {type: string}
+                payload_value: {type: string}
+    OtherPayload:
+      type: object
+      required: [scope, other_value]
+      properties:
+        scope: {type: string}
+        other_value: {type: string}
+    GatedContainer:
+      anyOf:
+        - {$ref: '#/components/schemas/GatedChoice'}
+        - {$ref: '#/components/schemas/OtherPayload'}

@@ -17,6 +17,7 @@ emit_enum_constants = true
 emit_type_guards = true
 property_naming = "camelCase"
 untagged_union_strategy = "firstMatch"
+tagged_union_strategy = "firstMatch"
 indent = "    "
 ```
 
@@ -326,6 +327,41 @@ throw `RequiredError` before sending a request.
 Optional JSON bodies skip conversion only when omitted (`undefined`). A supplied
 null uses the same planned conversion and strict ambiguity checks as a required
 body or direct model conversion.
+
+### `tagged_union_strategy`
+
+Controls conversion of inferred discriminated unions that do not have a distinct
+fixed required label for every member. Explicit OpenAPI mappings and ordinary
+fixed tags retain their existing representation. Declarations and optional type
+guards include the authored finite labels and distinguish an omitted property
+from a present `null`.
+
+| Value | camelCase conversion |
+| --- | --- |
+| `"firstMatch"` (default) | Prefer concrete matches to opaque fallbacks, preserving schema order within a tier. Reject a value that matches no member. |
+| `"strict"` | Also reject ambiguity when multiple concrete members match. |
+| `"raw"` | Do not select or convert a member. Both the public and `$Wire` types use original wire keys, and the converters return the same value. |
+
+Matching checks the complete wire shape before passing the payload to one
+converter. In particular, an `allOf` conjunct applies its own extra-property
+constraints, and a property declared by that conjunct is not an additional
+property of it. Type guards check membership, not the chosen member when two
+members overlap. For nested tagged unions, the enclosing matcher uses the same
+authored predicates, and the selected nested converter handles ambiguity.
+
+Preserve mode remains converter-free. When `emit_type_guards = true`, the guards
+inspect original wire keys. `"strict"` requires `property_naming = "camelCase"`
+when the specification contains a union that uses this policy; generation reports
+an error instead of silently bypassing runtime checks.
+
+```toml
+[generators.typescript-fetch]
+property_naming = "camelCase"
+tagged_union_strategy = "strict"
+```
+
+The CLI equivalent is `--generator-config typescript-fetch.tagged_union_strategy=strict`.
+See [Union Wire Contract](union_wire_contract.md) for the shared semantics.
 
 ### Additional properties
 

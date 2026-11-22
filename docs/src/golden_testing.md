@@ -239,9 +239,9 @@ not a claim that the native tests execute on the minimum runtime. See the
 - Development and ordinary CI validation select current Rust `stable` (locally
   validated with Rust 1.100.0). MSRV checks explicitly select Rust 1.90.0; they do
   not substitute for stable validation.
-- Local TypeScript validation uses TypeScript 7.0.2 and Vite+ 1.6.0 on Node
-  26.13.1, resolving Vite 8.3.7, Rolldown 1.2.18 and Oxfmt 0.78.0. The native
-  validators use the active `tsc` and `vp` on `PATH`. To select
+- Local TypeScript validation uses TypeScript 7.0.2 and project-local Vite+
+  1.7.0 on Node 26.13.1, resolving Vite 8.3.8, Rolldown 1.2.19 and Oxfmt 0.79.0.
+  The native validators use the active `tsc` and `vp` on `PATH`. To select
   that compiler explicitly, `npm exec --package=typescript@7.0.2 -- just
   golden-typescript::build-tsc` supplies it without changing generated packages.
 - Current local JVM validation uses Homebrew JDK 27.0.1 with Gradle 9.8.2, respecting
