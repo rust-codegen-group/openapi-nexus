@@ -8,6 +8,7 @@ mod operation;
 mod schema;
 mod spec;
 mod type_expr;
+mod wire;
 
 pub use operation::{
     IrHeader, IrOperation, IrParameter, IrRequestBody, IrRequestBodyEncoding, IrResponse,
@@ -22,3 +23,4 @@ pub use spec::{
     IrServer, IrSpec,
 };
 pub use type_expr::{IrPrimitive, IrTypeExpr, IrValidation};
+pub use wire::{IrInferredUnionWire, IrJsonKind, IrWireObject, IrWireShape};

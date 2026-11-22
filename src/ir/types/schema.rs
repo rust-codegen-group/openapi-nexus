@@ -92,6 +92,10 @@ pub struct IrTaggedUnion {
     pub discriminator_field: String,
     pub tagging: TaggingStyle,
     pub variants: Vec<IrTaggedVariant>,
+    /// Authored shapes for inferred branches; explicit mapping is separate.
+    /// The branch index is the corresponding entry in `variants`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inferred_wire: Option<super::wire::IrInferredUnionWire>,
 }
 
 #[derive(Debug, Clone, Serialize)]

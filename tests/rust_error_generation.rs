@@ -209,6 +209,7 @@ fn invalid_tagged_schema_returns_a_contextual_emission_error_instead_of_omitting
             kind: IrSchemaKind::TaggedUnion(IrTaggedUnion {
                 discriminator_field: "kind".into(),
                 tagging: TaggingStyle::External,
+                inferred_wire: None,
                 variants: vec![IrTaggedVariant {
                     discriminator_value: "payload".into(),
                     discriminator_values: Vec::new(),

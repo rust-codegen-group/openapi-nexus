@@ -110,7 +110,12 @@ pub struct ObjectSchema {
     #[serde(rename = "enum", default, skip_serializing_if = "Vec::is_empty")]
     pub enum_values: Vec<serde_json::Value>,
 
-    #[serde(rename = "const", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "const",
+        default,
+        deserialize_with = "distinguish_missing_and_null",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub const_value: Option<serde_json::Value>,
 
     #[serde(rename = "multipleOf", skip_serializing_if = "Option::is_none")]

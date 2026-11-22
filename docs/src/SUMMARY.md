@@ -15,5 +15,6 @@
 - [Architecture](architecture.md)
 - [Adding a Generator](adding_a_generator.md)
 - [IR Reference](ir_reference.md)
+- [Union Wire Contract](union_wire_contract.md)
 - [Golden Testing](golden_testing.md)
 - [Target Output Spec](target_output_spec.md)

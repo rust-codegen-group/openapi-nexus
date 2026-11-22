@@ -72,12 +72,39 @@ pub(crate) struct UnionMemberMatch {
     pub fallback: bool,
 }
 
+type NamedShapeOverride<'a> = &'a dyn Fn(&str) -> Option<JsonShape>;
+
+/// Transitional policy for existing representation-dependent predicates.
+/// An adapter can bind a named wire predicate without flattening its schema.
+#[derive(Clone, Copy)]
+pub(crate) struct ShapePolicy<'a> {
+    pub(crate) tag_projection: TagProjection,
+    pub(crate) override_named: Option<NamedShapeOverride<'a>>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TagProjection {
+    FixedRequired,
+    AuthoredValues,
+}
+
+impl ShapePolicy<'_> {
+    const FIXED_REQUIRED: Self = Self {
+        tag_projection: TagProjection::FixedRequired,
+        override_named: None,
+    };
+    const AUTHORED_VALUES: Self = Self {
+        tag_projection: TagProjection::AuthoredValues,
+        override_named: None,
+    };
+}
+
 pub(crate) fn plan_union_members(
     name: &str,
     union: &IrUnion,
     ir: &IrSpec,
 ) -> Vec<UnionMemberMatch> {
-    plan_members(&union.members, ir, Some(name), false)
+    plan_members(&union.members, ir, Some(name), ShapePolicy::FIXED_REQUIRED)
 }
 
 pub(crate) fn plan_typescript_union_members(
@@ -85,7 +112,7 @@ pub(crate) fn plan_typescript_union_members(
     union: &IrUnion,
     ir: &IrSpec,
 ) -> Vec<UnionMemberMatch> {
-    plan_members(&union.members, ir, Some(name), true)
+    plan_members(&union.members, ir, Some(name), ShapePolicy::AUTHORED_VALUES)
 }
 
 /// Inline unions inside containers select a new value, not the enclosing schema.
@@ -93,21 +120,21 @@ pub(crate) fn plan_inline_union_members(
     members: &[IrTypeExpr],
     ir: &IrSpec,
 ) -> Vec<UnionMemberMatch> {
-    plan_members(members, ir, None, false)
+    plan_members(members, ir, None, ShapePolicy::FIXED_REQUIRED)
 }
 
 pub(crate) fn plan_inline_typescript_union_members(
     members: &[IrTypeExpr],
     ir: &IrSpec,
 ) -> Vec<UnionMemberMatch> {
-    plan_members(members, ir, None, true)
+    plan_members(members, ir, None, ShapePolicy::AUTHORED_VALUES)
 }
 
-fn plan_members(
+pub(crate) fn plan_members(
     types: &[IrTypeExpr],
     ir: &IrSpec,
     current_schema: Option<&str>,
-    typescript_tag_facts: bool,
+    policy: ShapePolicy<'_>,
 ) -> Vec<UnionMemberMatch> {
     let mut members: Vec<_> = types
         .iter()
@@ -116,8 +143,7 @@ fn plan_members(
             let mut visiting = current_schema
                 .map(|name| HashMap::from([(name.to_string(), 0)]))
                 .unwrap_or_default();
-            let shape =
-                plan_shape_with_policy(type_expr, ir, &mut visiting, 0, typescript_tag_facts);
+            let shape = plan_shape_with_policy(type_expr, ir, &mut visiting, 0, policy);
             let (concrete, fallback) = selection_shapes(shape);
             [(concrete, false), (fallback, true)]
                 .into_iter()
@@ -304,9 +330,10 @@ fn plan_tagged_variant_shape_at(
     ir: &IrSpec,
     visiting: &mut HashMap<String, usize>,
     depth: usize,
-    typescript_tag_facts: bool,
+    policy: ShapePolicy<'_>,
 ) -> JsonShape {
-    let tag_values = if typescript_tag_facts && !variant.discriminator_values.is_empty() {
+    let authored_values = policy.tag_projection == TagProjection::AuthoredValues;
+    let tag_values = if authored_values && !variant.discriminator_values.is_empty() {
         variant.discriminator_values.clone()
     } else {
         vec![variant.discriminator_value.clone()]
@@ -314,7 +341,7 @@ fn plan_tagged_variant_shape_at(
     let tag = PropertyMatch {
         wire_name: union.discriminator_field.clone(),
         rename: true,
-        required: !typescript_tag_facts || !variant.discriminator_optional,
+        required: !authored_values || !variant.discriminator_optional,
         shape: any_of(
             tag_values
                 .into_iter()
@@ -329,13 +356,7 @@ fn plan_tagged_variant_shape_at(
         }
         TaggingStyle::Internal => all_of(vec![
             JsonShape::Object(vec![tag]),
-            plan_shape_with_policy(
-                &variant.content_type,
-                ir,
-                visiting,
-                depth,
-                typescript_tag_facts,
-            ),
+            plan_shape_with_policy(&variant.content_type, ir, visiting, depth, policy),
         ]),
         TaggingStyle::Adjacent { content_field } => JsonShape::Object(vec![
             tag,
@@ -348,7 +369,7 @@ fn plan_tagged_variant_shape_at(
                     ir,
                     visiting,
                     depth + 1,
-                    typescript_tag_facts,
+                    policy,
                 ),
             },
         ]),
@@ -362,7 +383,7 @@ fn plan_tagged_variant_shape_at(
                     ir,
                     visiting,
                     depth + 1,
-                    typescript_tag_facts,
+                    policy,
                 ),
             }];
             match &variant.additional_properties {
@@ -373,7 +394,7 @@ fn plan_tagged_variant_shape_at(
                         ir,
                         visiting,
                         depth + 1,
-                        typescript_tag_facts,
+                        policy,
                     )),
                 },
                 None => JsonShape::Object(properties),
@@ -387,7 +408,7 @@ fn plan_shape_with_policy(
     ir: &IrSpec,
     visiting: &mut HashMap<String, usize>,
     depth: usize,
-    typescript_tag_facts: bool,
+    policy: ShapePolicy<'_>,
 ) -> JsonShape {
     match expr {
         IrTypeExpr::ScalarEnum {
@@ -397,7 +418,7 @@ fn plan_shape_with_policy(
             values,
         } => {
             let shape = if *representation_is_constraint {
-                plan_shape_with_policy(representation, ir, visiting, depth, typescript_tag_facts)
+                plan_shape_with_policy(representation, ir, visiting, depth, policy)
             } else {
                 JsonShape::Any
             };
@@ -436,31 +457,28 @@ fn plan_shape_with_policy(
             ir,
             visiting,
             depth + 1,
-            typescript_tag_facts,
+            policy,
         ))),
         IrTypeExpr::Map(inner) => JsonShape::Map(Box::new(plan_shape_with_policy(
             inner,
             ir,
             visiting,
             depth + 1,
-            typescript_tag_facts,
+            policy,
         ))),
-        IrTypeExpr::Nullable(inner) => nullable(plan_shape_with_policy(
-            inner,
-            ir,
-            visiting,
-            depth,
-            typescript_tag_facts,
-        )),
+        IrTypeExpr::Nullable(inner) => {
+            nullable(plan_shape_with_policy(inner, ir, visiting, depth, policy))
+        }
         IrTypeExpr::Union(members) => any_of(
             members
                 .iter()
-                .map(|member| {
-                    plan_shape_with_policy(member, ir, visiting, depth, typescript_tag_facts)
-                })
+                .map(|member| plan_shape_with_policy(member, ir, visiting, depth, policy))
                 .collect(),
         ),
         IrTypeExpr::Named(name) => {
+            if let Some(shape) = policy.override_named.and_then(|resolve| resolve(name)) {
+                return shape;
+            }
             // Recursive payloads are still converted recursively by the member
             // converter. Stop expanding the selection guard at a cycle.
             if let Some(previous_depth) = visiting.get(name) {
@@ -490,7 +508,7 @@ fn plan_shape_with_policy(
                                     ir,
                                     visiting,
                                     depth + 1,
-                                    typescript_tag_facts,
+                                    policy,
                                 )))
                             },
                         )
@@ -504,7 +522,7 @@ fn plan_shape_with_policy(
                                     ir,
                                     visiting,
                                     depth + 1,
-                                    typescript_tag_facts,
+                                    policy,
                                 );
                                 PropertyMatch {
                                     wire_name: wire_name.clone(),
@@ -536,7 +554,7 @@ fn plan_shape_with_policy(
                                     ir,
                                     visiting,
                                     depth + 1,
-                                    typescript_tag_facts,
+                                    policy,
                                 )),
                             },
                             None => JsonShape::Object(properties),
@@ -551,7 +569,7 @@ fn plan_shape_with_policy(
                         .collect(),
                 ),
                 Some(IrSchemaKind::Alias(inner)) => {
-                    plan_shape_with_policy(inner, ir, visiting, depth, typescript_tag_facts)
+                    plan_shape_with_policy(inner, ir, visiting, depth, policy)
                 }
                 Some(IrSchemaKind::Union(union)) => {
                     let shape = any_of(
@@ -559,13 +577,7 @@ fn plan_shape_with_policy(
                             .members
                             .iter()
                             .map(|member| {
-                                plan_shape_with_policy(
-                                    member,
-                                    ir,
-                                    visiting,
-                                    depth,
-                                    typescript_tag_facts,
-                                )
+                                plan_shape_with_policy(member, ir, visiting, depth, policy)
                             })
                             .collect(),
                     );
@@ -579,15 +591,7 @@ fn plan_shape_with_policy(
                     intersection
                         .members
                         .iter()
-                        .map(|member| {
-                            plan_shape_with_policy(
-                                member,
-                                ir,
-                                visiting,
-                                depth,
-                                typescript_tag_facts,
-                            )
-                        })
+                        .map(|member| plan_shape_with_policy(member, ir, visiting, depth, policy))
                         .collect(),
                 ),
                 Some(IrSchemaKind::TaggedUnion(union)) => any_of(
@@ -596,12 +600,7 @@ fn plan_shape_with_policy(
                         .iter()
                         .map(|variant| {
                             plan_tagged_variant_shape_at(
-                                union,
-                                variant,
-                                ir,
-                                visiting,
-                                depth,
-                                typescript_tag_facts,
+                                union, variant, ir, visiting, depth, policy,
                             )
                         })
                         .collect(),
@@ -614,13 +613,14 @@ fn plan_shape_with_policy(
     }
 }
 
+#[cfg(test)]
 fn plan_shape(
     expr: &IrTypeExpr,
     ir: &IrSpec,
     visiting: &mut HashMap<String, usize>,
     depth: usize,
 ) -> JsonShape {
-    plan_shape_with_policy(expr, ir, visiting, depth, false)
+    plan_shape_with_policy(expr, ir, visiting, depth, ShapePolicy::FIXED_REQUIRED)
 }
 
 pub(crate) fn plan_tagged_variant_shape(
@@ -628,17 +628,33 @@ pub(crate) fn plan_tagged_variant_shape(
     variant: &IrTaggedVariant,
     ir: &IrSpec,
 ) -> JsonShape {
-    plan_tagged_variant_shape_at(union, variant, ir, &mut HashMap::new(), 0, true)
+    plan_tagged_variant_shape_at(
+        union,
+        variant,
+        ir,
+        &mut HashMap::new(),
+        0,
+        ShapePolicy::AUTHORED_VALUES,
+    )
 }
 
 /// Shapes are shared semantic data; target renderers decide property spelling
 /// and runtime representations, including binary values.
 pub(crate) fn plan_named_shape(name: &str, ir: &IrSpec) -> JsonShape {
-    plan_shape(
+    plan_named_shape_with_policy(name, ir, ShapePolicy::FIXED_REQUIRED)
+}
+
+pub(crate) fn plan_named_shape_with_policy(
+    name: &str,
+    ir: &IrSpec,
+    policy: ShapePolicy<'_>,
+) -> JsonShape {
+    plan_shape_with_policy(
         &IrTypeExpr::Named(name.to_string()),
         ir,
         &mut HashMap::new(),
         0,
+        policy,
     )
 }
 
@@ -1057,12 +1073,43 @@ mod tests {
     }
 
     #[test]
+    fn delegate_shapes_keep_identity_inside_named_containers() {
+        let ir = fixture();
+        let override_named = |name: &str| {
+            (name == "PayloadA").then(|| JsonShape::Reference {
+                schema: name.to_owned(),
+                scope: MatchScope::Any,
+                unrestricted: false,
+                accepts_null: false,
+            })
+        };
+        let members = [IrTypeExpr::Array(Box::new(IrTypeExpr::Named(
+            "PayloadA".into(),
+        )))];
+        let matches = plan_members(
+            &members,
+            &ir,
+            None,
+            ShapePolicy {
+                tag_projection: TagProjection::FixedRequired,
+                override_named: Some(&override_named),
+            },
+        );
+        assert_eq!(matches.len(), 1);
+        assert_eq!(
+            matches[0].shape,
+            JsonShape::Array(Box::new(override_named("PayloadA").unwrap()))
+        );
+    }
+
+    #[test]
     fn external_variant_keys_are_not_ergonomic_property_names() {
         use crate::ir::types::{IrTaggedUnion, IrTaggedVariant};
         let mut ir = fixture();
         ir.schemas.get_mut("PayloadA").unwrap().kind = IrSchemaKind::TaggedUnion(IrTaggedUnion {
             discriminator_field: String::new(),
             tagging: TaggingStyle::External,
+            inferred_wire: None,
             variants: vec![IrTaggedVariant {
                 discriminator_value: "snake_tag".into(),
                 discriminator_values: Vec::new(),
