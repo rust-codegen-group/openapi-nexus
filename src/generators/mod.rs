@@ -12,6 +12,7 @@ pub mod response_names;
 pub mod rust;
 pub mod typescript;
 pub(crate) mod union_match;
+pub mod union_wire;
 
 pub use error::{ArtifactKind, GeneratorError};
 

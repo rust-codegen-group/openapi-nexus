@@ -1562,6 +1562,7 @@ impl std::error::Error for GetWidgetError {
             },
             servers: Vec::new(),
             schemas: indexmap::IndexMap::new(),
+            wire_schemas: Default::default(),
             operations: Vec::new(),
             security_schemes: indexmap::IndexMap::new(),
             security: Vec::new(),

@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info: {title: Inferred union selection, version: '1'}
+paths: {}
+components:
+  schemas:
+    Choice:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [a]}
+                label: {type: string, enum: [alpha, shared]}
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [b, b_alt]}
+                label: {type: string, enum: [beta, shared]}
+        - allOf:
+            - type: object
+              required: [kind, label]
+              properties:
+                kind: {type: [string, 'null'], enum: [c, null]}
+                label: {type: string, enum: [gamma]}
+    Tree:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [children]
+              properties:
+                kind: {type: string, enum: [node]}
+                children:
+                  type: object
+                  additionalProperties: {$ref: '#/components/schemas/Tree'}
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [leaf]}
+                label: {type: string}
+              additionalProperties: {type: integer}
+    Envelope:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [tree]
+              properties:
+                kind: {type: string, enum: [tree]}
+                tree: {$ref: '#/components/schemas/Tree'}
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [label]}
+                label: {type: string}
+    Composed:
+      oneOf:
+        - allOf:
+            - type: object
+              properties:
+                kind: {type: string, enum: [a]}
+            - type: object
+              required: [label]
+              properties:
+                label: {type: string}
+              additionalProperties: {type: integer}
+        - allOf:
+            - type: object
+              required: [count]
+              properties:
+                kind: {type: string, enum: [b]}
+                count: {type: integer}

@@ -96,6 +96,7 @@ fn empty_spec() -> IrSpec {
         },
         servers: Vec::new(),
         schemas: IndexMap::new(),
+        wire_schemas: Default::default(),
         operations: Vec::new(),
         security_schemes: IndexMap::new(),
         security: Vec::new(),
@@ -165,6 +166,7 @@ fn ir_dependencies_cover_all_model_kinds_and_type_wrappers() {
                 tagging: TaggingStyle::Adjacent {
                     content_field: "payload".into(),
                 },
+                inferred_wire: None,
                 variants: vec![IrTaggedVariant {
                     discriminator_value: "VariantA".into(),
                     discriminator_values: vec!["#/components/schemas/TagData".into()],

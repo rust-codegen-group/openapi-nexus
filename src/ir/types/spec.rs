@@ -1,5 +1,7 @@
 //! Top-level IR spec types.
 
+use std::collections::BTreeMap;
+
 use indexmap::IndexMap;
 use serde::Serialize;
 
@@ -13,6 +15,10 @@ pub struct IrSpec {
     pub info: IrInfo,
     pub servers: Vec<IrServer>,
     pub schemas: IndexMap<String, IrSchema>,
+    /// Authored component shapes. Kept separate from the model graph so type
+    /// promotion and payload projection cannot alter structural matching.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub wire_schemas: BTreeMap<String, super::wire::IrWireShape>,
     pub operations: Vec<IrOperation>,
     pub security_schemes: IndexMap<String, IrSecurityScheme>,
     pub security: Vec<IrSecurityRequirement>,

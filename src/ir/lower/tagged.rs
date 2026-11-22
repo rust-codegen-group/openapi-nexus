@@ -13,7 +13,6 @@ pub(super) struct Facts {
     pub values: Vec<String>,
     pub optional: bool,
     pub constrained: bool,
-    pub impossible: bool,
 }
 
 /// Resolve the legal string values and requiredness of an inferred tag.
@@ -47,7 +46,6 @@ pub(super) fn facts<S: CompositionSchema>(
         .unwrap_or_else(|| vec![fallback.to_string()]);
 
     Facts {
-        impossible: constrained && values.is_empty(),
         values,
         optional: !required,
         constrained,

@@ -90,6 +90,35 @@ fn inferred_discriminators_retain_optional_and_referenced_enum_facts() {
 }
 
 #[test]
+fn inferred_union_retains_authored_reference_and_tag_property_before_projection() {
+    use openapi_nexus::ir::types::IrWireShape;
+
+    for version in ["3.0.3", "3.1.0", "3.2.0"] {
+        let ir = lower_version(version);
+        let IrSchemaKind::TaggedUnion(union) = &ir.schemas["Union"].kind else {
+            panic!("{version}: expected inferred union");
+        };
+        let authored = union
+            .inferred_wire
+            .as_ref()
+            .expect("authored inferred branches");
+        let IrWireShape::AllOf(parts) = &authored.branches[0] else {
+            panic!("{version}: allOf should retain its distinct scopes");
+        };
+        assert!(matches!(&parts[0], IrWireShape::Reference(name) if name == "PayloadA"));
+        let IrWireShape::Object(tag) = &parts[1] else {
+            panic!("{version}: expected tag declaration");
+        };
+        assert!(tag.properties.contains_key("kind"));
+        assert!(!tag.required.contains("kind"));
+        assert!(
+            matches!(&authored.branches[1], IrWireShape::Reference(name) if name == "PayloadB")
+        );
+        assert!(ir.wire_schemas.contains_key("PayloadB"));
+    }
+}
+
+#[test]
 fn referenced_singleton_and_allof_intersection_discriminators_remain_sound() {
     for version in ["3.0.3", "3.1.0", "3.2.0"] {
         let singleton =

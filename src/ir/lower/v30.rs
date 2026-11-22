@@ -78,6 +78,12 @@ pub fn lower_v30(spec: &oas::OpenApiV30Spec) -> Result<IrSpec, LowerError> {
             })
             .collect(),
         schemas: ctx.schemas,
+        wire_schemas: spec
+            .components
+            .iter()
+            .flat_map(|components| &components.schemas)
+            .map(|(name, schema)| (name.clone(), super::wire::member::<ObjectSchema>(schema)))
+            .collect(),
         operations,
         security_schemes,
         security,
@@ -348,6 +354,7 @@ impl<'a> LowerCtx<'a> {
                 discriminator_field: String::new(),
                 tagging: TaggingStyle::External,
                 variants,
+                inferred_wire: Some(super::wire::inferred(obj)),
             }));
         }
 
@@ -399,13 +406,6 @@ impl<'a> LowerCtx<'a> {
                     let name = reference.strip_prefix("#/components/schemas/")?;
                     self.spec.components.as_ref()?.schemas.get(name).cloned()
                 });
-            if facts.impossible {
-                return Err(LowerError::Other {
-                    message: format!(
-                        "inferred discriminator `{first_tag}` has no legal values for variant `{disc_value}`"
-                    ),
-                });
-            }
             let discriminator_values = super::tagged::discriminator_values(&facts, &disc_value);
             let description = match member {
                 ObjectOrReference::Object(obj) => obj.description.clone(),
@@ -425,6 +425,7 @@ impl<'a> LowerCtx<'a> {
             discriminator_field: first_tag.to_string(),
             tagging,
             variants,
+            inferred_wire: Some(super::wire::inferred(obj)),
         }))
     }
 
@@ -486,6 +487,7 @@ impl<'a> LowerCtx<'a> {
             discriminator_field: disc.property_name.clone(),
             tagging: TaggingStyle::Internal,
             variants,
+            inferred_wire: None,
         }))
     }
 

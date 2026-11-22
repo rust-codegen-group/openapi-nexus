@@ -13,6 +13,7 @@ mod type_set;
 pub mod v30;
 pub mod v31;
 pub mod v32;
+mod wire;
 
 use crate::ir::types::{IrSpec, IrTypeExpr};
 use crate::parser::ParsedSpec;
