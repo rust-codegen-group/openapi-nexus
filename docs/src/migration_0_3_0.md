@@ -90,8 +90,9 @@ conversion policy; this release does not introduce universal runtime validation.
 
 ## Installation and security scope
 
-Use the versioned `0.3.0` release installers after the release exists, or install
-the `0.3.0` crate after crates.io publication. The nightly workflow has been removed.
+The `0.3.0` crate is available on crates.io, but its GitHub binary release did
+not complete. For prebuilt binaries, use the installers from a later GitHub
+release. The nightly workflow has been removed.
 
 The ZIP security fix removes an unused fixture-generator build dependency. It is
 not a claim that generated SDKs have received new archive-validation features or
