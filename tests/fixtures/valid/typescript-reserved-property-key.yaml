@@ -1,0 +1,17 @@
+openapi: 3.1.0
+info: {title: Reserved property key, version: 1.0.0}
+paths: {}
+components:
+  schemas:
+    NestedPayload:
+      type: object
+      required: [wire_value]
+      properties:
+        wire_value: {type: string}
+    Container:
+      type: object
+      properties:
+        function:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/NestedPayload'

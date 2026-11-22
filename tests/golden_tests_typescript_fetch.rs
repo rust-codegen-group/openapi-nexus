@@ -917,6 +917,11 @@ generate_vp_golden_tests! {
         "valid/recursive-json/self-referential-object.yaml",
         "property_naming = \"camelCase\""
     ),
+    test_toolchain_vp_reserved_property_key_golden: (
+        "ts-toolchain-vp-reserved-property-key",
+        "valid/typescript-reserved-property-key.yaml",
+        "property_naming = \"camelCase\""
+    ),
     test_toolchain_vp_camel_case_tagged_nullable_unions_golden: (
         "ts-toolchain-vp-camel-case-tagged-nullable-unions",
         "valid/type-aliases/typescript-fetch-vp-camel-case-tagged-nullable-unions.yaml",
