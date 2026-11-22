@@ -515,15 +515,8 @@ fn build_json_converter(
         let break_value =
             4 + key.chars().count() + 2 + super::layout::fragment_width(&value)? + 1 > 100;
         if break_value && guard_null && !prop.required && obj.additional_properties.is_none() {
-            let key = if target_key == "__proto__" {
-                sigil_quote!(TypeScript { [$S(target_key)] })?
-            } else if is_valid_ts_identifier(&target_key) {
-                sigil_quote!(TypeScript { $N(target_key) })?
-            } else {
-                sigil_quote!(TypeScript { $S(target_key) })?
-            };
             fields.push(super::layout::optional_nullable_property(
-                key,
+                json_object_literal_key(&target_key)?,
                 json_property_access(source, &source_key)?,
                 converted,
             )?);
@@ -714,6 +707,18 @@ fn build_open_object_conversion(
     }
     cb.add("return result;\n", ());
     cb.build()
+}
+
+fn json_object_literal_key(key: &str) -> Result<CodeBlock, SigilStitchError> {
+    if key != "__proto__" && is_unescaped_ts_property(key) {
+        sigil_quote!(TypeScript { $N(key) })
+    } else if is_valid_ts_identifier(key) {
+        // A computed key preserves a reserved word without $N escaping it or
+        // the formatter stripping quotes. For __proto__ it creates a data property.
+        sigil_quote!(TypeScript { [$S(key)] })
+    } else {
+        sigil_quote!(TypeScript { $S(key) })
+    }
 }
 
 fn json_property_access(object: &str, key: &str) -> Result<CodeBlock, SigilStitchError> {
@@ -2450,6 +2455,20 @@ components:
             .unwrap();
             let block = sigil_quote!(TypeScript { export type Values = $T(ty); }).unwrap();
             assert_rendered!(TypeScript::new(), width = 100, block, expected);
+        }
+    }
+
+    #[test]
+    fn json_object_literal_keys_preserve_wire_spelling() {
+        for (key, expected) in [
+            ("known_field", "known_field:\n"),
+            ("function", "['function']:\n"),
+            ("__proto__", "['__proto__']:\n"),
+            ("quoted'field", "'quoted\\'field':\n"),
+        ] {
+            let key = json_object_literal_key(key).unwrap();
+            let block = sigil_quote!(TypeScript { $C(key): }).unwrap();
+            assert_rendered!(TypeScript::new(), block, expected);
         }
     }
 

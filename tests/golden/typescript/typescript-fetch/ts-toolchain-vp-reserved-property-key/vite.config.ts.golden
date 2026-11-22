@@ -1,0 +1,20 @@
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({
+  fmt: {
+    singleQuote: true,
+    ignorePatterns: ['dist/**'],
+  },
+  lint: {
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
+    ignorePatterns: ['node_modules', 'dist'],
+  },
+  pack: {
+    entry: ['index.ts'],
+    dts: true,
+    format: ['esm'],
+  },
+});
