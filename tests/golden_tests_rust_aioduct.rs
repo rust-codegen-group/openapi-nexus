@@ -266,6 +266,50 @@ fn test_union_selection_golden() {
 }
 
 #[test]
+fn test_inferred_internal_tagged_wire_golden() {
+    run_golden_test(
+        &RustAioductCodeGenerator::new(Default::default()),
+        golden_dir(),
+        "inferred-internal-tagged-wire",
+        "valid/optional-discriminator-union.yaml",
+        UPDATE_HINT,
+    );
+}
+
+#[test]
+fn test_inferred_tagged_policies_generate_distinct_model_contracts() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+
+    let parsed = openapi_nexus::parser::parse_content_yaml(include_str!(
+        "fixtures/valid/rust-inferred-tagged-wire.yaml"
+    ))
+    .unwrap();
+    let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
+    let configs: toml::value::Table =
+        toml::from_str(include_str!("generated-clients/rust/union-policies.toml")).unwrap();
+    for strategy in ["firstMatch", "strict", "raw"] {
+        let mut config = configs["rust-aioduct"].as_table().unwrap().clone();
+        config.insert("tagged_union_strategy".into(), strategy.into());
+        let files = RustAioductCodeGenerator::new(config).generate(&ir).unwrap();
+        let model = &files
+            .iter()
+            .find(|file| file.filename == "ambiguous_tagged.rs")
+            .unwrap()
+            .content;
+        if strategy == "raw" {
+            assert!(model.contains("Raw(serde_json::Value)"));
+            assert!(!model.contains("impl<'de> serde::Deserialize<'de>"));
+        } else {
+            assert!(model.contains("impl<'de> serde::Deserialize<'de>"));
+            assert_eq!(
+                model.contains("multiple concrete members match"),
+                strategy == "strict"
+            );
+        }
+    }
+}
+
+#[test]
 fn test_untagged_union_policies_golden() {
     let configs: toml::value::Table =
         toml::from_str(include_str!("generated-clients/rust/union-policies.toml")).unwrap();

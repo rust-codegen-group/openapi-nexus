@@ -14,7 +14,7 @@ just golden-rust::test          # all three backends
 just golden-rust::test-reqwest  # one backend
 ```
 
-The recipe uses the public CLI to generate three fixtures into the backend's
+The recipe uses the public CLI to generate fixture crates into the backend's
 ignored `generated/` directory, then runs `cargo test --locked` once for that
 consumer project. It inherits the active toolchain, `RUSTFLAGS`, Cargo settings,
 and test concurrency settings. Generated client files are never edited. Each
@@ -29,7 +29,7 @@ cargo test --locked --manifest-path tests/generated-clients/rust/reqwest/Cargo.t
 ```
 
 Regenerate after changing the generator or a fixture. Preparation removes the
-three managed fixture output directories before regenerating them, preventing
+managed fixture output directories before regenerating them, preventing
 stale declarations from masking missing output. The manifests and lockfiles are
 checked in; do not edit the ignored generated clients to make a test pass.
 
@@ -40,6 +40,8 @@ checked in; do not edit the ignored generated clients to make a test pass.
 | `typed-error-responses` | HTTP errors, metadata, uniform errors, success dispatch, body handling, and layout; existing backend-specific cases are retained |
 | `nested-nullable` | Seven shared HTTP decoding cases per backend, including strict controls and invalid-body preservation |
 | `rust-error-payload-shapes` | Compiles as a dev-dependency of every consumer project, retaining the previous composite-payload compile checks |
+| `rust-union-policies` | Structural member selection, recursive and opaque branches, and raw untagged unions |
+| `rust-inferred-tagged-wire` | Wire-preserving discriminator state, composed tag ownership, nested unions, and independent first-match, strict, and raw tagged policies |
 
 The reqwest project also retains compile-time propagation checks for uniform
 errors, thiserror, and Snafu; ureq retains its synchronous propagation check.

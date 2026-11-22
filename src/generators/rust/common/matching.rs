@@ -10,16 +10,59 @@ use sigil_stitch::prelude::{CodeBlock, TypeName, sigil_quote};
 use sigil_stitch::spec::{fun_spec::FunSpec, parameter_spec::ParameterSpec};
 
 use crate::generators::union_match::{
-    JsonShape, MatchScope, accepts_any, plan_named_shape, selection_shapes,
+    JsonShape, MatchScope, ShapePolicy, TagProjection, accepts_any, plan_named_shape_with_policy,
+    selection_shapes,
 };
+use crate::generators::union_wire::{Strategy, UnionWirePlan};
 use crate::ir::types::IrSpec;
 
+use super::tagged_wire::RustWirePlans;
+use super::wire_matching::WireMatching;
+
 #[derive(Default)]
-pub(super) struct MatchPlan {
+pub(super) struct MatchPlan<'plans> {
     shapes: Vec<JsonShape>,
+    wire: WireMatching,
+    wire_plans: Option<&'plans RustWirePlans<'plans>>,
 }
 
-impl MatchPlan {
+impl<'plans> MatchPlan<'plans> {
+    pub(super) fn with_wire(wire_plans: &'plans RustWirePlans<'plans>) -> Self {
+        Self {
+            wire_plans: Some(wire_plans),
+            ..Self::default()
+        }
+    }
+
+    pub(super) fn named_override(&self, name: &str) -> Option<JsonShape> {
+        let plans = self.wire_plans?;
+        plans.get(name)?;
+        Some(if plans.strategy == Strategy::Raw {
+            JsonShape::Any
+        } else {
+            JsonShape::Reference {
+                schema: name.to_string(),
+                scope: MatchScope::Any,
+                unrestricted: false,
+                accepts_null: false,
+            }
+        })
+    }
+
+    pub(super) fn policy<'a>(callback: &'a dyn Fn(&str) -> Option<JsonShape>) -> ShapePolicy<'a> {
+        ShapePolicy {
+            tag_projection: TagProjection::FixedRequired,
+            override_named: Some(callback),
+        }
+    }
+
+    fn bound(&self, name: &str) -> Option<&'plans UnionWirePlan<'plans>> {
+        self.wire_plans?.get(name)
+    }
+
+    fn plan_named(&self, name: &str, ir: &IrSpec) -> JsonShape {
+        plan_named_shape_with_policy(name, ir, Self::policy(&|name| self.named_override(name)))
+    }
     fn constant(shape: &JsonShape) -> Option<bool> {
         match shape {
             JsonShape::Any => Some(true),
@@ -66,7 +109,13 @@ impl MatchPlan {
                 }
             }
             JsonShape::Reference { schema, scope, .. } => {
-                let shape = plan_named_shape(schema, ir);
+                if let Some(plan) = self.bound(schema) {
+                    for shape in plan.branches().iter().chain(plan.common_shape()) {
+                        self.wire.register(shape, ir);
+                    }
+                    return;
+                }
+                let shape = self.plan_named(schema, ir);
                 if *scope == MatchScope::Any {
                     self.register(&shape, ir);
                 } else {
@@ -145,7 +194,8 @@ impl MatchPlan {
     }
 
     pub(super) fn functions(&self, ir: &IrSpec) -> Result<Vec<FunSpec>, SigilStitchError> {
-        self.shapes
+        let mut functions = self
+            .shapes
             .iter()
             .map(|shape| {
                 let mut function =
@@ -172,7 +222,9 @@ impl MatchPlan {
                     .body(self.function_body(shape, ir)?)
                     .build()
             })
-            .collect()
+            .collect::<Result<Vec<_>, _>>()?;
+        functions.extend(self.wire.functions(ir)?);
+        Ok(functions)
     }
 
     fn function_body(&self, shape: &JsonShape, ir: &IrSpec) -> Result<CodeBlock, SigilStitchError> {
@@ -351,7 +403,41 @@ impl MatchPlan {
                 })
             }
             JsonShape::Reference { schema, scope, .. } => {
-                let shape = plan_named_shape(schema, ir);
+                if let Some(plan) = self.bound(schema) {
+                    let all_shapes = || plan.branches().iter().chain(plan.common_shape());
+                    let needs_memo = all_shapes().any(WireMatching::needs_memo);
+                    let argument = sigil_quote!(RustLang { candidate })?;
+                    let common = plan
+                        .common_shape()
+                        .map(|shape| self.wire.evidence(shape, argument.clone()))
+                        .transpose()?;
+                    let checks = plan.branches().iter().map(|shape| {
+                        let evidence = self.wire.evidence(shape, argument.clone())?;
+                        let (test, result) = match scope {
+                            MatchScope::Any => (sigil_quote!(RustLang { $C(evidence) != 0 })?, true),
+                            MatchScope::Concrete => (sigil_quote!(RustLang { $C(evidence) == 2 })?, true),
+                            MatchScope::Fallback => {
+                                return sigil_quote!(RustLang {
+                                    match $C(evidence) {
+                                        2 => return false,
+                                        1 => found_opaque = true,
+                                        _ => {}
+                                    }
+                                });
+                            }
+                        };
+                        sigil_quote!(RustLang { if $C(test) { return $L(result.to_string()); } })
+                    }).collect::<Result<Vec<_>, _>>()?;
+                    let fallback = *scope == MatchScope::Fallback;
+                    return sigil_quote!(RustLang {
+                        $if(needs_memo) { let memo = &mut std::collections::HashMap::new(); }
+                        $if(common.is_some()) { if $C(common.unwrap()) == 0 { return false; } }
+                        $if(fallback) { let mut found_opaque = false; }
+                        $C_each(checks)
+                        $if(fallback) { found_opaque } $else { false }
+                    });
+                }
+                let shape = self.plan_named(schema, ir);
                 if *scope == MatchScope::Any {
                     return self.condition(&shape, sigil_quote!(RustLang { candidate })?);
                 }
@@ -370,7 +456,7 @@ impl MatchPlan {
     }
 }
 
-fn literal_body(value: &serde_json::Value) -> Result<CodeBlock, SigilStitchError> {
+pub(super) fn literal_body(value: &serde_json::Value) -> Result<CodeBlock, SigilStitchError> {
     match value {
         serde_json::Value::Null => sigil_quote!(RustLang { candidate.is_null() }),
         serde_json::Value::Bool(value) => {

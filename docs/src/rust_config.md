@@ -131,6 +131,38 @@ Typed decoding retains the selected member's declared payload, not arbitrary
 unknown fields. Dictionary/additional-property representation and multi-member
 `allOf` behavior are unchanged. Choose `raw` when the full JSON must be retained.
 
+## Inferred Internally Tagged Unions
+
+For inferred internal tags that can be absent, have multiple spellings, or
+otherwise cannot be represented by a fixed Serde tag, the Rust generators
+select a member using the shared [Union Wire Contract](union_wire_contract.md).
+They check the full JSON object before decoding the selected member once. On
+write, the selected member keeps its explicit label; an omitted label remains
+omitted, and a schema-permitted `null` remains a supplied value.
+
+`tagged_union_strategy` controls these generalized inferred unions, separately
+from `untagged_union_strategy`:
+
+| Value | Behavior |
+| --- | --- |
+| `firstMatch` (default) | Use the first structurally matching concrete member in schema order. An opaque fallback is considered only if no concrete member matches. |
+| `strict` | Error if more than one concrete member matches. |
+| `raw` | Generate `Raw(serde_json::Value)` and bypass member selection and conversion. |
+
+For example, pass `--generator-config rust-aioduct.tagged_union_strategy=strict`
+to `generate`, or set `tagged_union_strategy = "strict"` under `[rust-aioduct]`.
+The same setting works with `rust-reqwest` and `rust-ureq`. Fixed required tags,
+explicit discriminator mappings, and adjacent and external tags keep their
+existing codecs; this option does not extend to those forms.
+
+Generalized unions may expose the discriminator on the enum variant and the
+remaining object as a separate payload. If the native payload already owns the
+tag and retains its full state, it remains the owner. A composed payload that
+cannot carry the tag faithfully without duplication or loss keeps its
+projected object as `serde_json::Value`. Additional-property restrictions are
+checked independently in each authored object, before projection. These checks
+are structural selection rules, not full JSON Schema validation.
+
 ## Full Example
 
 ```toml

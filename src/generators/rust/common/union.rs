@@ -17,12 +17,15 @@ use sigil_stitch::spec::{
 };
 
 use crate::generators::type_application;
+use crate::generators::union_match::plan_members;
+#[cfg(test)]
 use crate::generators::union_match::plan_union_members;
 use crate::ir::types::{IrSchema, IrSpec, IrUnion};
 
 use super::config::{ExtraDeriveConfig, RustGeneratorConfig, UntaggedUnionStrategy};
 use super::emit_models::{build_utoipa_one_of_impl, rust_model_type, union_variant_name};
 use super::matching::MatchPlan;
+use super::tagged_wire::RustWirePlans;
 
 pub(super) fn emit_union(
     schema: &IrSchema,
@@ -30,6 +33,7 @@ pub(super) fn emit_union(
     extra: Option<&ExtraDeriveConfig>,
     config: &RustGeneratorConfig,
     ir: &IrSpec,
+    wire_plans: &RustWirePlans<'_>,
 ) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
     let raw = config.untagged_union_strategy == UntaggedUnionStrategy::Raw;
@@ -72,8 +76,14 @@ pub(super) fn emit_union(
     }
 
     if !raw {
-        let members = plan_union_members(&schema.name, union, ir);
-        let mut matching = MatchPlan::default();
+        let mut matching = MatchPlan::with_wire(wire_plans);
+        let callback = |name: &str| matching.named_override(name);
+        let members = plan_members(
+            &union.members,
+            ir,
+            Some(&schema.name),
+            MatchPlan::policy(&callback),
+        );
         for member in &members {
             matching.register(&member.shape, ir);
         }

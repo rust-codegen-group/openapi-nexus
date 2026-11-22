@@ -35,4 +35,15 @@ for strategy in firstMatch strict raw; do
     --generators "rust-$backend" \
     --generator-config "rust-$backend.crate_name=rust-union-$suffix" \
     --generator-config "rust-$backend.untagged_union_strategy=$strategy"
+
+  output="$project/generated/tagged-$suffix"
+  # The tagged fixture is independent of the untagged-policy crate.
+  rm -rf "$output"
+  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
+    --config "$root/tests/generated-clients/rust/union-policies.toml" \
+    --input "$root/tests/fixtures/valid/rust-inferred-tagged-wire.yaml" \
+    --output "$output" \
+    --generators "rust-$backend" \
+    --generator-config "rust-$backend.crate_name=rust-tagged-$suffix" \
+    --generator-config "rust-$backend.tagged_union_strategy=$strategy"
 done

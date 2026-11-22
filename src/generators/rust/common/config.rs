@@ -135,6 +135,16 @@ pub enum UntaggedUnionStrategy {
     Raw,
 }
 
+impl From<UntaggedUnionStrategy> for crate::generators::union_wire::Strategy {
+    fn from(strategy: UntaggedUnionStrategy) -> Self {
+        match strategy {
+            UntaggedUnionStrategy::FirstMatch => Self::FirstMatch,
+            UntaggedUnionStrategy::Strict => Self::Strict,
+            UntaggedUnionStrategy::Raw => Self::Raw,
+        }
+    }
+}
+
 /// Base configuration for Rust generators.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RustGeneratorConfig {
@@ -150,6 +160,8 @@ pub struct RustGeneratorConfig {
     pub utoipa: Option<UtoipaConfig>,
     #[serde(default)]
     pub untagged_union_strategy: UntaggedUnionStrategy,
+    #[serde(default)]
+    pub tagged_union_strategy: UntaggedUnionStrategy,
     #[serde(default)]
     pub aioduct: Option<crate::generators::rust::aioduct::config::AioductFeatureConfig>,
 }
@@ -202,6 +214,32 @@ mod tests {
         }
         assert!(
             toml::from_str::<RustGeneratorConfig>("untagged_union_strategy = 'unknown'").is_err()
+        );
+    }
+
+    #[test]
+    fn inferred_tagged_strategy_is_separately_configured() {
+        assert_eq!(
+            RustGeneratorConfig::default().tagged_union_strategy,
+            UntaggedUnionStrategy::FirstMatch
+        );
+        for (value, expected) in [
+            ("firstMatch", UntaggedUnionStrategy::FirstMatch),
+            ("strict", UntaggedUnionStrategy::Strict),
+            ("raw", UntaggedUnionStrategy::Raw),
+        ] {
+            let config: RustGeneratorConfig = toml::from_str(&format!(
+                "tagged_union_strategy = '{value}'\nuntagged_union_strategy = 'strict'"
+            ))
+            .unwrap();
+            assert_eq!(config.tagged_union_strategy, expected);
+            assert_eq!(
+                config.untagged_union_strategy,
+                UntaggedUnionStrategy::Strict
+            );
+        }
+        assert!(
+            toml::from_str::<RustGeneratorConfig>("tagged_union_strategy = 'unknown'").is_err()
         );
     }
 

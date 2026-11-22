@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info: {title: Inferred tagged union wire contract, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    PayloadA:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    DiscriminatorType:
+      type: string
+      enum: [variant_b_v1, variant_b_v2]
+    PayloadB:
+      type: object
+      required: [type, label]
+      properties:
+        type: {$ref: '#/components/schemas/DiscriminatorType'}
+        label: {type: string}
+    TaggedChoice:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/PayloadA'}
+            - type: object
+              properties:
+                type: {type: string, enum: [variant_a]}
+        - {$ref: '#/components/schemas/PayloadB'}
+    AmbiguousTagged:
+      oneOf:
+        - allOf:
+            - properties:
+                kind: {type: string, enum: [alpha]}
+                label: {type: string, enum: [a, both]}
+              required: [label]
+        - allOf:
+            - properties:
+                kind: {type: string, enum: [beta, beta_alt]}
+                label: {type: string, enum: [b, both]}
+              required: [label]
+    TaggedBase:
+      type: object
+      required: [kind, label]
+      properties:
+        kind: {type: string, enum: [alpha, alpha_alt, alpha_other]}
+        label: {type: string}
+    TaggedExtra:
+      type: object
+      required: [count]
+      properties:
+        count: {type: integer}
+    TaggedExtraOwner:
+      type: object
+      required: [kind, count]
+      properties:
+        kind: {type: string, enum: [alpha_alt]}
+        count: {type: integer}
+    ComposedTagged:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/TaggedBase'}
+            - {$ref: '#/components/schemas/TaggedExtra'}
+            - properties:
+                kind: {type: string, enum: [alpha]}
+        - allOf:
+            - {$ref: '#/components/schemas/TaggedBase'}
+            - {$ref: '#/components/schemas/TaggedExtraOwner'}
+            - properties:
+                kind: {type: string, enum: [alpha_alt]}
+        - allOf:
+            - properties:
+                kind: {type: [string, 'null'], enum: [beta, null]}
+                label: {type: string}
+              required: [label, kind]
+              additionalProperties: {type: integer}
+    NestedTagged:
+      oneOf:
+        - {$ref: '#/components/schemas/ComposedTagged'}
+        - {type: string}
+    InlineTagged:
+      oneOf:
+        - required: [scope]
+          oneOf:
+            - allOf:
+                - properties:
+                    kind: {type: string, enum: [a]}
+                    label: {type: string, enum: [alpha]}
+                  required: [label]
+            - allOf:
+                - properties:
+                    kind: {type: string, enum: [b]}
+                    label: {type: string, enum: [beta]}
+                  required: [label]
+        - {type: string}
