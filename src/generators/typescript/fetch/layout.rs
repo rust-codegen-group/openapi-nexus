@@ -928,6 +928,18 @@ pub(super) fn type_guard(
     Ok(header)
 }
 
+/// Render a compact object expression or destructuring pattern. The upper
+/// builder supplies the semantic computed keys and spread/rest members.
+pub(super) fn inline_object(fields: &[CodeBlock]) -> Result<CodeBlock, SigilStitchError> {
+    Ok(delimited(
+        sigil_quote!(TypeScript {})?,
+        "{ ",
+        " }",
+        fields,
+        false,
+    ))
+}
+
 pub(super) fn return_object(
     fields: &[CodeBlock],
     cast: Option<TypeName>,

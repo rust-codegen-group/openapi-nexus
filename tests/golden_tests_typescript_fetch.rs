@@ -878,6 +878,66 @@ fn test_invalid_error_payload_retains_api_emission_context() {
     }
 }
 
+#[test]
+fn test_tagged_strict_rejects_converter_free_preserve_mode() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+    let parsed = openapi_nexus::parser::parse_content_yaml(include_str!(
+        "fixtures/valid/optional-discriminator-union.yaml"
+    ))
+    .unwrap();
+    let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
+    let config: toml::value::Table = toml::from_str("tagged_union_strategy = 'strict'").unwrap();
+    let error = TypeScriptFetchCodeGenerator::new(config)
+        .generate(&ir)
+        .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("requires property_naming = 'camelCase'")
+    );
+}
+
+#[test]
+fn test_authored_tag_policies_generate_distinct_runtime_contracts() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+
+    let parsed = openapi_nexus::parser::parse_content_yaml(include_str!(
+        "fixtures/valid/inferred-union-selection.yaml"
+    ))
+    .unwrap();
+    let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
+    for (naming, strategy) in [
+        ("camelCase", "strict"),
+        ("camelCase", "raw"),
+        ("preserve", "firstMatch"),
+    ] {
+        let config = toml::from_str(&format!(
+            "property_naming = '{naming}'\ntagged_union_strategy = '{strategy}'\nemit_type_guards = true"
+        ))
+        .unwrap();
+        let files = TypeScriptFetchCodeGenerator::new(config)
+            .generate(&ir)
+            .unwrap();
+        let choice = &files
+            .iter()
+            .find(|file| file.filename == "GatedChoice.ts")
+            .unwrap()
+            .content;
+        match (naming, strategy) {
+            ("camelCase", "strict") => {
+                assert!(choice.contains("Ambiguous GatedChoice tagged union value"));
+                assert!(choice.contains("gatedChoiceTypedFromJSON("));
+            }
+            ("camelCase", "raw") => {
+                assert!(choice.contains("return json;"));
+                assert!(!choice.contains("gatedChoiceTypedFromJSON("));
+            }
+            ("preserve", _) => assert!(!choice.contains("function gatedChoiceFromJSON(")),
+            _ => unreachable!(),
+        }
+    }
+}
+
 // ===========================================================================
 // Toolchain = "vp" golden tests
 // Same fixtures re-generated with vp toolchain to verify both paths compile.
@@ -921,6 +981,11 @@ generate_vp_golden_tests! {
         "ts-toolchain-vp-reserved-property-key",
         "valid/typescript-reserved-property-key.yaml",
         "property_naming = \"camelCase\""
+    ),
+    test_toolchain_vp_camel_case_authored_discriminators_golden: (
+        "ts-toolchain-vp-authored-discriminators",
+        "valid/optional-discriminator-union.yaml",
+        "emit_type_guards = true\nproperty_naming = \"camelCase\""
     ),
     test_toolchain_vp_camel_case_tagged_nullable_unions_golden: (
         "ts-toolchain-vp-camel-case-tagged-nullable-unions",

@@ -59,6 +59,7 @@ impl TypeScriptFetchCodeGenerator {
         request_inputs: &RequestInputPlan,
     ) -> Result<Vec<FileInfo>, GeneratorError> {
         let plan = TypeScriptPlan::new(ir, self.emit_flags());
+        self.validate_selection_config(&plan)?;
         self.generate_models_with_plan(plan.ir(), request_inputs, &plan)
     }
 
@@ -69,7 +70,24 @@ impl TypeScriptFetchCodeGenerator {
             property_naming_camel_case: self.config.property_naming
                 == super::config::PropertyNaming::CamelCase,
             untagged_union_strategy: self.config.untagged_union_strategy,
+            tagged_union_strategy: self.config.tagged_union_strategy,
         }
+    }
+
+    fn validate_selection_config(&self, plan: &TypeScriptPlan<'_>) -> Result<(), GeneratorError> {
+        use super::config::typescript_fetch_config::TaggedUnionStrategy;
+        if self.config.tagged_union_strategy == TaggedUnionStrategy::Strict
+            && self.config.property_naming == super::config::PropertyNaming::Preserve
+            && plan.has_generalized_tags()
+        {
+            return Err(GeneratorError::Invalid {
+                artifact: ArtifactKind::Project,
+                name: "typescript-fetch".into(),
+                reason: "tagged_union_strategy = 'strict' requires property_naming = 'camelCase'"
+                    .into(),
+            });
+        }
+        Ok(())
     }
 
     fn generate_models_with_plan(
@@ -225,6 +243,7 @@ impl TypeScriptFetchCodeGenerator {
     fn generate_ir(&self, ir: &IrSpec) -> Result<Vec<FileInfo>, GeneratorError> {
         let mut files = Vec::new();
         let plan = TypeScriptPlan::new(ir, self.emit_flags());
+        self.validate_selection_config(&plan)?;
         let ir = plan.ir();
         let request_inputs = plan_multipart_request_inputs(ir);
 

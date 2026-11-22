@@ -44,6 +44,26 @@ pub enum UntaggedUnionStrategy {
     Raw,
 }
 
+/// Runtime selection policy for inferred unions without a fixed required tag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TaggedUnionStrategy {
+    #[default]
+    FirstMatch,
+    Strict,
+    Raw,
+}
+
+impl From<TaggedUnionStrategy> for crate::generators::union_wire::Strategy {
+    fn from(value: TaggedUnionStrategy) -> Self {
+        match value {
+            TaggedUnionStrategy::FirstMatch => Self::FirstMatch,
+            TaggedUnionStrategy::Strict => Self::Strict,
+            TaggedUnionStrategy::Raw => Self::Raw,
+        }
+    }
+}
+
 /// TypeScript Fetch generator-specific configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeScriptFetchConfig {
@@ -105,6 +125,10 @@ pub struct TypeScriptFetchConfig {
     /// Selection behavior for untagged unions in camelCase mode.
     #[serde(default)]
     pub untagged_union_strategy: UntaggedUnionStrategy,
+
+    /// Selection of inferred discriminated unions that cannot use a fixed required tag.
+    #[serde(default)]
+    pub tagged_union_strategy: TaggedUnionStrategy,
 
     /// Toolchain for type checking and building.
     ///
@@ -196,6 +220,7 @@ impl Default for TypeScriptFetchConfig {
             emit_type_guards: false,
             property_naming: PropertyNaming::default(),
             untagged_union_strategy: UntaggedUnionStrategy::default(),
+            tagged_union_strategy: TaggedUnionStrategy::default(),
             toolchain: Toolchain::default(),
             indent: default_indent(),
         }

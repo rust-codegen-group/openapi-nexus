@@ -16,10 +16,12 @@ use sigil_stitch::spec::{
 
 use crate::generators::type_application;
 use crate::generators::union_match::{
-    JsonShape, UnionMemberMatch, plan_inline_typescript_union_members, plan_named_shape,
-    plan_tagged_variant_shape, plan_typescript_union_members, referenced_shapes, selection_shapes,
+    JsonShape, ShapePolicy, TagProjection, UnionMemberMatch, plan_inline_typescript_union_members,
+    plan_members, plan_named_shape_with_policy, plan_tagged_variant_shape,
+    plan_typescript_union_members, referenced_shapes, selection_shapes,
 };
-use crate::ir::types::{IrPrimitive, IrSchemaKind, IrSpec, IrTypeExpr, IrUnion};
+use crate::generators::union_wire::{UnionWirePlan, UnionWirePlans};
+use crate::ir::types::{IrPrimitive, IrSchemaKind, IrSpec, IrTypeExpr, IrUnion, TaggingStyle};
 
 use super::config::UntaggedUnionStrategy;
 use super::layout;
@@ -116,6 +118,29 @@ struct ValueHelper {
     nested_arrays: bool,
 }
 
+#[derive(Clone, Copy)]
+pub(super) enum TaggedMatch {
+    Member,
+    Concrete,
+    Fallback,
+}
+
+struct TaggedMatchers {
+    member: JsonShape,
+    concrete: JsonShape,
+    fallback: JsonShape,
+}
+
+impl TaggedMatchers {
+    fn shape(&self, tier: TaggedMatch) -> &JsonShape {
+        match tier {
+            TaggedMatch::Member => &self.member,
+            TaggedMatch::Concrete => &self.concrete,
+            TaggedMatch::Fallback => &self.fallback,
+        }
+    }
+}
+
 pub(super) struct TypeScriptPlan<'a> {
     ir: Cow<'a, IrSpec>,
     flags: EmitFlags,
@@ -123,10 +148,13 @@ pub(super) struct TypeScriptPlan<'a> {
     wire_symbols: HashSet<String>,
     unknown: HashSet<String>,
     unions: BTreeMap<String, Vec<UnionMemberMatch>>,
-    recursive_shapes: BTreeMap<String, JsonShape>,
+    recursive_shapes: BTreeMap<String, (JsonShape, JsonShape)>,
     local_type_names: HashSet<String>,
     conversions: Vec<ValueHelper>,
     matching: MatchPlan,
+    wire_plans: UnionWirePlans<'a>,
+    generalized_tags: HashSet<String>,
+    authored_tag_matchers: BTreeMap<String, Vec<TaggedMatchers>>,
 }
 
 pub(super) struct ValuePlan<'a, 'ir> {
@@ -203,6 +231,19 @@ pub(super) fn union_type(members: Vec<TypeName>) -> TypeName {
 
 impl<'a> TypeScriptPlan<'a> {
     pub(super) fn new(ir: &'a IrSpec, flags: EmitFlags) -> Self {
+        let wire_plans = UnionWirePlans::build(ir, flags.tagged_union_strategy.into());
+        let generalized_tags = ir.schemas.iter().filter_map(|(name, schema)| {
+            let IrSchemaKind::TaggedUnion(union) = &schema.kind else { return None };
+            if matches!(union.tagging, TaggingStyle::External) { return None; }
+            let wire = wire_plans.get(name)?;
+            let mut seen = HashSet::new();
+            union.variants.iter().enumerate().any(|(index, variant)| {
+                let Some(domain) = wire.tag_domain(index) else { return false; };
+                let Some(values) = domain.values else { return true; };
+                !matches!(values.as_slice(), [serde_json::Value::String(tag)]
+                    if !domain.allows_absent && tag == &variant.discriminator_value && seen.insert(tag.clone()))
+            }).then(|| name.clone())
+        }).collect();
         let projected = super::composition::project(ir);
         // A separate scan borrow permits registering owned planning facts while
         // the plan owns a projected graph. Borrowed, unchanged IR stays zero-copy.
@@ -223,17 +264,66 @@ impl<'a> TypeScriptPlan<'a> {
                 .collect(),
             conversions: Vec::new(),
             matching: MatchPlan::default(),
+            wire_plans,
+            generalized_tags,
+            authored_tag_matchers: BTreeMap::new(),
         };
-        if flags.property_naming_camel_case {
-            for schema in ir.schemas.values() {
-                if let IrSchemaKind::TaggedUnion(union) = &schema.kind {
-                    for variant in &union.variants {
-                        if variant.discriminator_optional || variant.discriminator_values.len() > 1
-                        {
-                            result
-                                .matching
-                                .register(&plan_tagged_variant_shape(union, variant, ir));
+        for (name, schema) in &ir.schemas {
+            let IrSchemaKind::TaggedUnion(union) = &schema.kind else {
+                continue;
+            };
+            if result.authored_tag_plan(name).is_some() {
+                if (!flags.property_naming_camel_case || result.is_raw_tagged(name))
+                    && !flags.emit_type_guards
+                {
+                    continue;
+                }
+                let wire = result
+                    .authored_tag_plan(name)
+                    .expect("inferred tagged plan");
+                let mut projection = super::wire_matching::Projection::new(
+                    &ir.wire_schemas,
+                    !flags.property_naming_camel_case || result.is_raw_tagged(name),
+                );
+                let common = wire.common_shape().map(|shape| projection.shape(shape));
+                let branches: Vec<_> = wire
+                    .branches()
+                    .iter()
+                    .map(|branch| {
+                        let branch = projection.shape(branch);
+                        let (concrete, fallback) = selection_shapes(branch.clone());
+                        // Union-level constraints gate eligibility; they are not evidence
+                        // that an individual opaque branch is concrete.
+                        let gate = |shape| match &common {
+                            Some(common) => super::wire_matching::and(vec![common.clone(), shape]),
+                            None => shape,
+                        };
+                        let member = gate(branch);
+                        let concrete = gate(concrete);
+                        let fallback = gate(fallback);
+                        TaggedMatchers {
+                            member,
+                            concrete,
+                            fallback,
                         }
+                    })
+                    .collect();
+                for branch in &branches {
+                    if flags.emit_type_guards {
+                        result.matching.register(&branch.member);
+                    }
+                    if flags.property_naming_camel_case && !result.is_raw_tagged(name) {
+                        result.matching.register(&branch.concrete);
+                        result.matching.register(&branch.fallback);
+                    }
+                }
+                result.authored_tag_matchers.insert(name.clone(), branches);
+            } else if flags.property_naming_camel_case {
+                for variant in &union.variants {
+                    if variant.discriminator_optional || variant.discriminator_values.len() > 1 {
+                        result
+                            .matching
+                            .register(&plan_tagged_variant_shape(union, variant, ir));
                     }
                 }
             }
@@ -293,7 +383,20 @@ impl<'a> TypeScriptPlan<'a> {
             let shapes: BTreeMap<_, _> = ir
                 .schemas
                 .keys()
-                .map(|name| (name.clone(), plan_named_shape(name, ir)))
+                .map(|name| {
+                    let override_named = |name: &str| result.authored_tag_reference(name);
+                    (
+                        name.clone(),
+                        plan_named_shape_with_policy(
+                            name,
+                            ir,
+                            ShapePolicy {
+                                tag_projection: TagProjection::FixedRequired,
+                                override_named: Some(&override_named),
+                            },
+                        ),
+                    )
+                })
                 .collect();
             let mut referenced = BTreeSet::new();
             for shape in shapes.values() {
@@ -302,12 +405,16 @@ impl<'a> TypeScriptPlan<'a> {
             result.recursive_shapes = shapes
                 .into_iter()
                 .filter(|(name, _)| referenced.contains(name))
+                .map(|(name, shape)| (name, selection_shapes(shape)))
                 .collect();
             for (name, schema) in &ir.schemas {
                 if let IrSchemaKind::Union(union) = &schema.kind {
-                    result
-                        .unions
-                        .insert(name.clone(), plan_typescript_union_members(name, union, ir));
+                    let members = if !result.has_generalized_tags() {
+                        plan_typescript_union_members(name, union, ir)
+                    } else {
+                        result.plan_members(&union.members, Some(name))
+                    };
+                    result.unions.insert(name.clone(), members);
                 }
             }
         }
@@ -409,15 +516,39 @@ impl<'a> TypeScriptPlan<'a> {
         let mut required_matchers = result.matching.references();
         let mut pending_matchers = required_matchers.clone();
         while let Some(name) = pending_matchers.pop_first() {
-            let shape = result
+            if let Some((target, wire_keys)) = super::wire_matching::reference_target(&name) {
+                let tiers = if let Some(variants) = result.authored_tag_matchers.get(target) {
+                    (
+                        super::wire_matching::or(
+                            variants
+                                .iter()
+                                .map(|branch| branch.concrete.clone())
+                                .collect(),
+                        ),
+                        super::wire_matching::or(
+                            variants
+                                .iter()
+                                .map(|branch| branch.fallback.clone())
+                                .collect(),
+                        ),
+                    )
+                } else {
+                    selection_shapes(
+                        super::wire_matching::Projection::new(&ir.wire_schemas, wire_keys)
+                            .named(target),
+                    )
+                };
+                result.recursive_shapes.insert(name.clone(), tiers);
+            }
+            let (concrete, fallback) = result
                 .recursive_shapes
                 .get(&name)
                 .expect("productive reference has a named shape plan");
-            let (concrete, fallback) = selection_shapes(shape.clone());
-            result.matching.register(&concrete);
-            result.matching.register(&fallback);
+            result.matching.register(concrete);
+            result.matching.register(fallback);
             let mut dependencies = BTreeSet::new();
-            referenced_shapes(shape, &mut dependencies);
+            referenced_shapes(concrete, &mut dependencies);
+            referenced_shapes(fallback, &mut dependencies);
             for dependency in dependencies {
                 if required_matchers.insert(dependency.clone()) {
                     pending_matchers.insert(dependency);
@@ -460,6 +591,58 @@ impl<'a> TypeScriptPlan<'a> {
     ) -> Result<Option<FileSpec>, SigilStitchError> {
         self.matching
             .file(&self.recursive_shapes, &self.utility_type("Record"), ts)
+    }
+
+    fn authored_tag_reference(&self, name: &str) -> Option<JsonShape> {
+        self.authored_tag_plan(name)?;
+        Some(if self.is_raw_tagged(name) {
+            JsonShape::Any
+        } else {
+            super::wire_matching::reference(name, false)
+        })
+    }
+
+    fn plan_members(&self, members: &[IrTypeExpr], name: Option<&str>) -> Vec<UnionMemberMatch> {
+        if name.is_none() && !self.has_generalized_tags() {
+            return plan_inline_typescript_union_members(members, self.ir.as_ref());
+        }
+        let override_named = |name: &str| self.authored_tag_reference(name);
+        plan_members(
+            members,
+            self.ir.as_ref(),
+            name,
+            ShapePolicy {
+                tag_projection: TagProjection::AuthoredValues,
+                override_named: Some(&override_named),
+            },
+        )
+    }
+
+    pub(super) fn authored_tag_plan(&self, name: &str) -> Option<&UnionWirePlan<'a>> {
+        if self.generalized_tags.contains(name) {
+            self.wire_plans.get(name)
+        } else {
+            None
+        }
+    }
+
+    pub(super) fn has_generalized_tags(&self) -> bool {
+        !self.generalized_tags.is_empty()
+    }
+
+    pub(super) fn is_raw_tagged(&self, name: &str) -> bool {
+        use super::config::typescript_fetch_config::TaggedUnionStrategy;
+        self.flags.tagged_union_strategy == TaggedUnionStrategy::Raw
+            && self.authored_tag_plan(name).is_some()
+    }
+
+    pub(super) fn authored_tag_shape(
+        &self,
+        name: &str,
+        index: usize,
+        tier: TaggedMatch,
+    ) -> &JsonShape {
+        self.authored_tag_matchers[name][index].shape(tier)
     }
 
     pub(super) fn matching_condition(
@@ -533,7 +716,7 @@ impl<'a> TypeScriptPlan<'a> {
                 self.register_conversion_at(inner, readonly, child_nested);
             }
             IrTypeExpr::Union(members) => {
-                for member in plan_inline_typescript_union_members(members, self.ir.as_ref()) {
+                for member in self.plan_members(members, None) {
                     self.matching.register(&member.shape);
                 }
                 for member in members {
@@ -903,7 +1086,7 @@ impl<'a> TypeScriptPlan<'a> {
                 .cloned()
                 .unwrap_or_default()
         } else {
-            plan_inline_typescript_union_members(&union.members, self.ir.as_ref())
+            self.plan_members(&union.members, None)
         };
         let strict = self.flags.untagged_union_strategy == UntaggedUnionStrategy::Strict;
         let mut checks = Vec::new();

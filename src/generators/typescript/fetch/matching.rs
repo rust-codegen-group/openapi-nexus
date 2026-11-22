@@ -3,7 +3,7 @@
 //! Small functions keep selection code readable and directly formatter-stable;
 //! no schema objects or interpreter are shipped to the generated client.
 
-use heck::{ToLowerCamelCase, ToPascalCase};
+use heck::ToLowerCamelCase;
 use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::lang::typescript::TypeScript;
 use sigil_stitch::prelude::{CodeBlock, TypeName, sigil_quote};
@@ -12,7 +12,7 @@ use sigil_stitch::spec::{
 };
 
 use crate::generators::type_application;
-use crate::generators::union_match::{JsonShape, MatchScope, accepts_any, selection_shapes};
+use crate::generators::union_match::{JsonShape, MatchScope, accepts_any};
 
 use super::layout;
 use super::plan::Direction;
@@ -197,11 +197,8 @@ impl MatchPlan {
                 _ => sigil_quote!(TypeScript { return false; }),
             },
             JsonShape::Reference { schema, scope, .. } => {
-                let function = TypeName::primitive(&format!(
-                    "match{}{}",
-                    schema.to_pascal_case(),
-                    direction.suffix()
-                ));
+                let function =
+                    TypeName::primitive(&super::wire_matching::matcher_name(schema, direction));
                 match scope {
                     MatchScope::Concrete => {
                         sigil_quote!(TypeScript { return $T(function)(candidate) === $L(MatchOutcome::Concrete.literal()); })
@@ -370,7 +367,7 @@ impl MatchPlan {
 
     pub(super) fn file(
         &self,
-        recursive: &std::collections::BTreeMap<String, JsonShape>,
+        recursive: &std::collections::BTreeMap<String, (JsonShape, JsonShape)>,
         record: &TypeName,
         ts: &TypeScript,
     ) -> Result<Option<FileSpec>, SigilStitchError> {
@@ -404,35 +401,30 @@ impl MatchPlan {
                 file = file.add_function(function);
             }
         }
-        for (name, shape) in recursive {
-            let (concrete, fallback) = selection_shapes(shape.clone());
+        for (name, (concrete, fallback)) in recursive {
             for direction in [Direction::FromWire, Direction::ToWire] {
                 let candidate = sigil_quote!(TypeScript { candidate })?;
                 let concrete_condition =
-                    self.condition(&concrete, candidate.clone(), direction, true)?;
-                let fallback_condition = self.condition(&fallback, candidate, direction, true)?;
+                    self.condition(concrete, candidate.clone(), direction, true)?;
+                let fallback_condition = self.condition(fallback, candidate, direction, true)?;
                 let body = sigil_quote!(TypeScript {
-                    $if(concrete != JsonShape::Never) { if ($C(concrete_condition)) { return $L(MatchOutcome::Concrete.literal()); } }
-                    $if(accepts_any(&fallback)) { return $L(MatchOutcome::Fallback.literal()); }
+                    $if(*concrete != JsonShape::Never) { if ($C(concrete_condition)) { return $L(MatchOutcome::Concrete.literal()); } }
+                    $if(accepts_any(fallback)) { return $L(MatchOutcome::Fallback.literal()); }
                     $else {
-                        $if(fallback != JsonShape::Never) { if ($C(fallback_condition)) { return $L(MatchOutcome::Fallback.literal()); } }
+                        $if(*fallback != JsonShape::Never) { if ($C(fallback_condition)) { return $L(MatchOutcome::Fallback.literal()); } }
                         return $L(MatchOutcome::Unmatched.literal());
                     }
                 })?;
                 file = file.add_function(
-                    FunSpec::builder(&format!(
-                        "match{}{}",
-                        name.to_pascal_case(),
-                        direction.suffix()
-                    ))
-                    .visibility(Visibility::Public)
-                    .add_param(ParameterSpec::of(
-                        "candidate",
-                        TypeName::primitive("unknown"),
-                    ))
-                    .returns(vec![TypeName::primitive("number")])
-                    .body(body)
-                    .build()?,
+                    FunSpec::builder(&super::wire_matching::matcher_name(name, direction))
+                        .visibility(Visibility::Public)
+                        .add_param(ParameterSpec::of(
+                            "candidate",
+                            TypeName::primitive("unknown"),
+                        ))
+                        .returns(vec![TypeName::primitive("number")])
+                        .body(body)
+                        .build()?,
                 );
             }
         }

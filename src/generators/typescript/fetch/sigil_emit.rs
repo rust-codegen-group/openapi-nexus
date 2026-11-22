@@ -49,6 +49,7 @@ pub struct EmitFlags {
     pub emit_type_guards: bool,
     pub property_naming_camel_case: bool,
     pub untagged_union_strategy: UntaggedUnionStrategy,
+    pub tagged_union_strategy: super::config::typescript_fetch_config::TaggedUnionStrategy,
 }
 
 /// Convert a PascalCase name to its lowerCamelCase function base name.
@@ -335,6 +336,17 @@ fn additional_properties_super_type(
     plan: &TypeScriptPlan<'_>,
     unknown_aliases: &HashSet<String>,
 ) -> Option<TypeName> {
+    additional_properties_type(obj, current_schema, wire, plan, unknown_aliases, Vec::new())
+}
+
+pub(super) fn additional_properties_type(
+    obj: &IrObject,
+    current_schema: &str,
+    wire: bool,
+    plan: &TypeScriptPlan<'_>,
+    unknown_aliases: &HashSet<String>,
+    extra_known_types: Vec<TypeName>,
+) -> Option<TypeName> {
     let additional = obj.additional_properties.as_ref()?;
     let value_type = |expr: &IrTypeExpr| {
         if type_expr_collapses_to_unknown(expr, unknown_aliases) {
@@ -355,6 +367,20 @@ fn additional_properties_super_type(
         if !prop.required {
             members.push(TypeName::primitive("undefined"));
         }
+    }
+    for ty in extra_known_types.into_iter().flat_map(|ty| match ty {
+        TypeName::Union(parts) => parts,
+        ty => vec![ty],
+    }) {
+        if ty == TypeName::primitive("never")
+            || matches!(ty, TypeName::StringLiteral(_))
+                && members.contains(&TypeName::primitive("string"))
+            || matches!(ty, TypeName::IntegerLiteral(_))
+                && members.contains(&TypeName::primitive("number"))
+        {
+            continue;
+        }
+        members.push(ty);
     }
     let record = type_application(
         TypeName::primitive("Record"),
