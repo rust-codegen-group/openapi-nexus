@@ -1,6 +1,6 @@
 //! Native Serde codecs for inferred internally tagged union wire plans.
 
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 
 use heck::{ToPascalCase, ToSnakeCase};
 use sigil_stitch::error::SigilStitchError;
@@ -20,7 +20,7 @@ use sigil_stitch::spec::{
 
 use crate::generators::type_application;
 use crate::generators::union_wire::{
-    Strategy, TagOwner, UnionWirePlan, UnionWirePlans, WireBinding,
+    Strategy, TagOwner, TagRead, UnionWirePlan, UnionWirePlans, WireBinding,
 };
 use crate::ir::types::{
     IrJsonKind, IrSchema, IrSchemaKind, IrSpec, IrTaggedUnion, IrTypeExpr, IrWireShape,
@@ -47,11 +47,13 @@ fn adopts(union: &IrTaggedUnion, plan: &UnionWirePlan<'_>, ir: &IrSpec) -> bool 
     if needs_common_projection(plan) {
         return true;
     }
-    // Keep the existing Serde representation for unique fixed required tags
-    // only when the authored value agrees with its existing wire spelling.
-    let mut labels = HashSet::new();
+    // Keep the compatible legacy representation for fixed labels. The shared
+    // fact proves tag identity; a native case must also avoid duplicate owners.
+    if !plan.has_distinct_fixed_tags() {
+        return true;
+    }
     !union.variants.iter().enumerate().all(|(index, case)| {
-        let native_owns_one_tag = match plan.binding(index) {
+        match plan.binding(index) {
             Some(WireBinding::Internal {
                 owner: TagOwner::Case,
                 ..
@@ -65,14 +67,7 @@ fn adopts(union: &IrTaggedUnion, plan: &UnionWirePlan<'_>, ir: &IrSpec) -> bool 
                 resolve_object(&case.content_type, ir).is_some()
             }
             _ => false,
-        };
-        native_owns_one_tag
-            && plan.tag_domain(index).is_some_and(|domain| {
-                !domain.allows_absent
-                    && domain.values.as_deref()
-                        == Some(&[serde_json::Value::String(case.discriminator_value.clone())])
-                    && labels.insert(&case.discriminator_value)
-            })
+        }
     })
 }
 
@@ -115,6 +110,7 @@ struct Variant<'a> {
     name: String,
     payload: TypeName,
     tag: Option<CaseTag<'a>>,
+    required_nullable_keys: BTreeSet<&'a str>,
 }
 
 struct CaseTag<'a> {
@@ -137,11 +133,12 @@ pub(super) fn emit(
     schema: &IrSchema,
     union: &IrTaggedUnion,
     plan: &UnionWirePlan<'_>,
-    strategy: Strategy,
+    wire_plans: &RustWirePlans<'_>,
     extra: Option<&ExtraDeriveConfig>,
     ir: &IrSpec,
     utoipa: bool,
 ) -> Result<FileSpec, SigilStitchError> {
+    let strategy = wire_plans.strategy;
     let name = schema.name.to_pascal_case();
     let mut file = FileSpec::builder(&format!("{}.rs", schema.name.to_snake_case()));
     let raw = strategy == Strategy::Raw;
@@ -179,28 +176,45 @@ pub(super) fn emit(
             base
         };
         let case_name = unique_name(base, &mut used);
-        let Some(WireBinding::Internal { field, owner }) = plan.binding(index) else {
+        let Some(WireBinding::Internal { field, owner, read }) = plan.binding(index) else {
             unreachable!("inferred internal wire binding");
         };
         let domain = plan
             .tag_domain(index)
             .expect("internal inferred discriminator domain");
+        let finite_nonnull = domain
+            .values
+            .as_ref()
+            .is_some_and(|values| values.iter().all(|value| !value.is_null()));
         let payload_can_hold_tag = !needs_common_projection
             && owner == TagOwner::Payload
-            && domain
-                .values
-                .as_ref()
-                .is_some_and(|values| values.iter().all(|value| !value.is_null()))
-            && payload_avoids_flattened_additional(&variant.content_type, ir, &mut HashSet::new());
-        let payload = if needs_common_projection
+            && read == TagRead::Keep
+            && payload_preserves_tag(
+                &variant.content_type,
+                field,
+                finite_nonnull,
+                ir,
+                wire_plans,
+                &mut HashSet::new(),
+            );
+        let raw_payload = needs_common_projection
             || owner == TagOwner::CaseWithPayloadProjection
             || owner == TagOwner::Payload && !payload_can_hold_tag
-            || crate::generators::closed_sum::is_tagged_unit_variant(ir, union, variant)
-        {
-            // Multiple flattened owners, or a native Option that erases explicit
-            // null, cannot own the tag. Preserve the tag-free payload verbatim.
+            || crate::generators::closed_sum::is_tagged_unit_variant(ir, union, variant);
+        let mut required_nullable_keys = BTreeSet::new();
+        let payload = if raw_payload {
+            // A projected JSON object can drop the discriminator even when the
+            // original typed codec would have needed to read it. The case owns
+            // the tag when native flattening or null elision would lose it.
             value_type()
         } else {
+            collect_required_nullable_keys(
+                &variant.content_type,
+                ir,
+                &mut HashSet::new(),
+                &mut required_nullable_keys,
+            );
+            required_nullable_keys.remove(field);
             rust_model_type(&variant.content_type)
         };
         let tag = if payload_can_hold_tag {
@@ -220,6 +234,7 @@ pub(super) fn emit(
             name: case_name,
             payload,
             tag,
+            required_nullable_keys,
         });
     }
     for variant in &variants {
@@ -339,7 +354,16 @@ pub(super) fn emit(
         let invalid = format!("serialized value does not match inferred tagged union branch {name}");
         let use_memo = std::iter::once(&plan.branches()[index]).chain(plan.common_shape())
             .any(WireMatching::needs_memo);
+        let nullable_keys = &variant.required_nullable_keys;
         let check = sigil_quote!(RustLang {
+            $if(!nullable_keys.is_empty()) {
+                let mut value = value;
+                if let Some(object) = value.as_object_mut() {
+                    $for(key in nullable_keys) {
+                        object.entry($S(*key)).or_insert(serde_json::Value::Null);
+                    }
+                }
+            }
             $if(use_memo) { let memo = &mut std::collections::HashMap::new(); }
             $if(common_check.is_some()) {
                 if $C(common_check.unwrap()) == 0 { return Err(serde::ser::Error::custom($S(&invalid))); }
@@ -406,31 +430,95 @@ pub(super) fn emit(
     file.build()
 }
 
-/// A native object may flatten a map into its tag key, even if its declared
-/// property has the right type. Reuse payload ownership only when no same-object
-/// model can supply that key through flattened additional properties.
-fn payload_avoids_flattened_additional<'ir>(
+// The reusable codec writes `Option::None` as omission. At this use site,
+// selection rejects a missing required key, so `None` can only mean JSON null.
+// Inspect only the same-object model fields, including flattened intersections.
+fn collect_required_nullable_keys<'ir>(
     expr: &'ir IrTypeExpr,
     ir: &'ir IrSpec,
+    visiting: &mut HashSet<&'ir str>,
+    keys: &mut BTreeSet<&'ir str>,
+) {
+    match expr.representation() {
+        IrTypeExpr::Named(name) if visiting.insert(name) => {
+            match ir.schemas.get(name).map(|schema| &schema.kind) {
+                Some(IrSchemaKind::Object(object)) => keys.extend(
+                    object
+                        .properties
+                        .iter()
+                        .filter(|(_, property)| property.required && property.nullable)
+                        .map(|(name, _)| name.as_str()),
+                ),
+                Some(IrSchemaKind::Intersection(intersection)) => {
+                    for member in &intersection.members {
+                        collect_required_nullable_keys(member, ir, visiting, keys);
+                    }
+                }
+                Some(IrSchemaKind::Alias(inner)) => {
+                    collect_required_nullable_keys(inner, ir, visiting, keys);
+                }
+                _ => {}
+            }
+            visiting.remove(name.as_str());
+        }
+        IrTypeExpr::Nullable(inner) => collect_required_nullable_keys(inner, ir, visiting, keys),
+        _ => {}
+    }
+}
+
+/// A direct object can omit a null tag or flatten a competing map entry.
+/// A nested authored codec with the same discriminator already preserves the
+/// wire state and checks its own output; it can be the sole writer unchanged.
+fn payload_preserves_tag<'ir>(
+    expr: &'ir IrTypeExpr,
+    field: &str,
+    finite_nonnull: bool,
+    ir: &'ir IrSpec,
+    wire_plans: &RustWirePlans<'_>,
     visiting: &mut HashSet<&'ir str>,
 ) -> bool {
     match expr.representation() {
         IrTypeExpr::Named(name) if visiting.insert(name) => {
             let safe = match ir.schemas.get(name).map(|schema| &schema.kind) {
-                Some(IrSchemaKind::Object(object)) => object.additional_properties.is_none(),
-                Some(IrSchemaKind::Intersection(intersection)) => intersection
-                    .members
-                    .iter()
-                    .all(|inner| payload_avoids_flattened_additional(inner, ir, visiting)),
+                Some(IrSchemaKind::Object(object)) => {
+                    object.additional_properties.is_none()
+                        && (finite_nonnull || !object.properties.contains_key(field))
+                }
+                Some(IrSchemaKind::Intersection(intersection)) => {
+                    intersection.members.iter().all(|member| {
+                        payload_preserves_tag(
+                            member,
+                            field,
+                            finite_nonnull,
+                            ir,
+                            wire_plans,
+                            visiting,
+                        )
+                    })
+                }
                 Some(IrSchemaKind::Alias(inner)) => {
-                    payload_avoids_flattened_additional(inner, ir, visiting)
+                    payload_preserves_tag(inner, field, finite_nonnull, ir, wire_plans, visiting)
+                }
+                Some(IrSchemaKind::TaggedUnion(union))
+                    if matches!(union.tagging, TaggingStyle::Internal)
+                        && union.discriminator_field == field =>
+                {
+                    wire_plans.get(name).is_some()
+                        || finite_nonnull
+                            && union.inferred_wire.is_some()
+                            && union.variants.iter().all(|variant| {
+                                resolve_object(&variant.content_type, ir)
+                                    .is_some_and(|object| object.additional_properties.is_none())
+                            })
                 }
                 _ => false,
             };
             visiting.remove(name.as_str());
             safe
         }
-        IrTypeExpr::Nullable(inner) => payload_avoids_flattened_additional(inner, ir, visiting),
+        IrTypeExpr::Nullable(inner) => {
+            payload_preserves_tag(inner, field, finite_nonnull, ir, wire_plans, visiting)
+        }
         _ => false,
     }
 }

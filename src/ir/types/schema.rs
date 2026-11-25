@@ -95,7 +95,7 @@ pub struct IrTaggedUnion {
     /// Authored shapes for inferred branches; explicit mapping is separate.
     /// The branch index is the corresponding entry in `variants`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub inferred_wire: Option<super::wire::IrInferredUnionWire>,
+    pub inferred_wire: Option<super::wire::IrUnionWire>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -140,6 +140,9 @@ pub struct IrUnion {
     pub members: Vec<IrTypeExpr>,
     /// Whether the union also includes null (e.g., `anyOf: [string, number, null]`).
     pub nullable: bool,
+    /// Authored alternatives before model promotion or removal of null members.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub authored_wire: Option<super::wire::IrUnionWire>,
 }
 
 // ---------------------------------------------------------------------------

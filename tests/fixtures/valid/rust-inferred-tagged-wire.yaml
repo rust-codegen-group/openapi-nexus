@@ -91,3 +91,50 @@ components:
                     label: {type: string, enum: [beta]}
                   required: [label]
         - {type: string}
+    NullablePayload:
+      type: object
+      required: [label, nullable_count]
+      properties:
+        label: {type: string}
+        nullable_count: {type: [integer, 'null']}
+    NullableTagged:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/NullablePayload'}
+            - type: object
+              required: [kind]
+              properties:
+                kind: {type: string, enum: [alpha, alpha_alt]}
+        - allOf:
+            - type: object
+              required: [kind, label]
+              properties:
+                kind: {type: string, enum: [beta]}
+                label: {type: string}
+    NestedInner:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [kind, label]
+              properties:
+                kind: {type: string, enum: [alpha, alpha_alt]}
+                label: {type: string}
+        - allOf:
+            - type: object
+              required: [kind, count]
+              properties:
+                kind: {type: string, enum: [beta]}
+                count: {type: integer}
+    NestedOuter:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/NestedInner'}
+            - type: object
+              properties:
+                kind: {type: string, enum: [alpha, alpha_alt, beta]}
+        - allOf:
+            - type: object
+              required: [kind, text]
+              properties:
+                kind: {type: string, enum: [gamma]}
+                text: {type: string}

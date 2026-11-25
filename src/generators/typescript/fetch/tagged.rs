@@ -1,5 +1,7 @@
 //! Structured tagged declarations and payload delegation through the value plan.
 
+use std::collections::HashSet;
+
 use heck::{ToLowerCamelCase, ToPascalCase};
 use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::lang::typescript::TypeScript;
@@ -9,7 +11,7 @@ use sigil_stitch::spec::{file_spec::FileSpec, fun_spec::FunSpec, parameter_spec:
 
 use super::config::typescript_fetch_config::TaggedUnionStrategy;
 use crate::generators::union_match::{JsonShape, plan_tagged_variant_shape};
-use crate::generators::union_wire::{TagOwner, WireBinding};
+use crate::generators::union_wire::{TagOwner, TagRead, WireBinding};
 use crate::generators::{closed_sum::is_tagged_unit_variant, type_application};
 use crate::ir::types::{IrSchema, IrSpec, IrTaggedUnion, IrTaggedVariant, TaggingStyle};
 use serde_json::Value;
@@ -19,12 +21,37 @@ use super::plan::{Direction, Scope, TaggedMatch, TypeScriptPlan, union_type};
 use super::sigil_emit::{
     build_type_alias, fn_base_name, is_unspecified_variant, variant_guard_name,
 };
+use super::tagged_fields::TaggedFields;
 
 fn record(plan: &TypeScriptPlan<'_>, key: &str, value: TypeName) -> TypeName {
     type_application(
         plan.utility_type("Record"),
         vec![TypeName::string_literal(key.to_string()), value],
     )
+}
+
+fn envelope_types(
+    fields: Option<&TaggedFields>,
+    rename: bool,
+    plan: &TypeScriptPlan<'_>,
+) -> Vec<TypeName> {
+    fields
+        .into_iter()
+        .flat_map(|fields| &fields.envelope)
+        .map(|(wire, field)| {
+            let key = if rename {
+                field.model_key(wire)
+            } else {
+                wire.clone()
+            };
+            let property = record(plan, &key, field.ty.clone());
+            if field.required {
+                property
+            } else {
+                type_application(plan.utility_type("Partial"), vec![property])
+            }
+        })
+        .collect()
 }
 
 fn discriminator_values(variant: &IrTaggedVariant) -> Vec<String> {
@@ -390,9 +417,14 @@ fn variant_type(
         };
     }
     match &union.tagging {
-        TaggingStyle::Internal if is_tagged_unit_variant(ir, union, variant) => tag,
         TaggingStyle::Internal => {
+            let envelope =
+                envelope_types(plan.authored_tag_fields(&schema.name, index), rename, plan);
+            if is_tagged_unit_variant(ir, union, variant) && envelope.is_empty() {
+                return tag;
+            }
             let mut members = vec![tag];
+            members.extend(envelope);
             if let TypeName::Intersection(payload) = payload {
                 members.extend(payload);
             } else {
@@ -430,13 +462,13 @@ fn variant_type(
     }
 }
 
-pub(super) fn guards(
+pub(super) fn guard_names(
     schema: &IrSchema,
     ir: &IrSpec,
     union: &IrTaggedUnion,
     plan: &TypeScriptPlan<'_>,
-) -> Result<Vec<CodeBlock>, SigilStitchError> {
-    union
+) -> Vec<(usize, String)> {
+    let mut guards: Vec<_> = union
         .variants
         .iter()
         .enumerate()
@@ -448,8 +480,36 @@ pub(super) fn guards(
                     &variant.content_type,
                 )
         })
-        .map(|(index, variant)| {
-            let guard = variant_guard_name(variant);
+        .map(|(index, variant)| (index, variant_guard_name(variant)))
+        .collect();
+    if plan.authored_tag_plan(&schema.name).is_some() {
+        // Reserve every existing stem first; allocating duplicate suffixes
+        // must never rename a previously noncolliding authored guard.
+        let reserved: HashSet<_> = guards.iter().map(|(_, name)| name.clone()).collect();
+        let mut used = HashSet::new();
+        for (_, name) in &mut guards {
+            if used.insert(name.clone()) {
+                continue;
+            }
+            *name = (2..)
+                .map(|suffix| format!("{name}{suffix}"))
+                .find(|candidate| !reserved.contains(candidate) && used.insert(candidate.clone()))
+                .expect("fresh guard name");
+        }
+    }
+    guards
+}
+
+pub(super) fn guards(
+    schema: &IrSchema,
+    ir: &IrSpec,
+    union: &IrTaggedUnion,
+    plan: &TypeScriptPlan<'_>,
+) -> Result<Vec<CodeBlock>, SigilStitchError> {
+    guard_names(schema, ir, union, plan)
+        .into_iter()
+        .map(|(index, guard)| {
+            let variant = &union.variants[index];
             let parent = TypeName::primitive(&schema.name.to_pascal_case());
             let narrowed = variant_type(
                 schema,
@@ -486,8 +546,79 @@ pub(super) fn guards(
         .collect()
 }
 
+fn extension_helpers(plan: &TypeScriptPlan<'_>) -> Result<[FunSpec; 2], SigilStitchError> {
+    let ty = erased_record(plan);
+    let retained = union_type(vec![ty.clone(), TypeName::primitive("undefined")]);
+    let metadata = super::sigil_emit::RETAINED_EXTRAS;
+    let copy_value = layout::inline_object(&[sigil_quote!(TypeScript { ...value })?])?;
+    let copy_previous = layout::inline_object(&[sigil_quote!(TypeScript { ...previous })?])?;
+    let value_descriptor = layout::inline_object(&[
+        sigil_quote!(TypeScript {
+            value: visible[key]
+        })?,
+        sigil_quote!(TypeScript { enumerable: true })?,
+    ])?;
+    let restored_descriptor = layout::inline_object(&[
+        sigil_quote!(TypeScript {
+            value: shadowed[key]
+        })?,
+        sigil_quote!(TypeScript { enumerable: true })?,
+    ])?;
+    let metadata_descriptor = layout::inline_object(&[
+        sigil_quote!(TypeScript { value: shadowed })?,
+        sigil_quote!(TypeScript { enumerable: true })?,
+    ])?;
+    let keep = sigil_quote!(TypeScript {
+            const visible = $C(copy_value.clone());
+            const symbol = Symbol.for($S(metadata));
+            const descriptor = Object.getOwnPropertyDescriptor(value, symbol);
+            const previous = descriptor?.value as $T(retained.clone());
+            const shadowed = $C(copy_previous.clone());
+            for (const key of keys) {
+                if (Object.prototype.hasOwnProperty.call(visible, key)) {
+                    Object.defineProperty(shadowed, key, $C(value_descriptor));
+                    delete visible[key];
+                }
+            }
+            if (Object.keys(shadowed).length > 0) {
+                Object.defineProperty(visible, symbol, $C(metadata_descriptor.clone()));
+            }
+            return visible;
+    })?;
+    let take = sigil_quote!(TypeScript {
+            const symbol = Symbol.for($S(metadata));
+            const descriptor = Object.getOwnPropertyDescriptor(value, symbol);
+            const previous = descriptor?.value as $T(retained);
+            if (previous === undefined) { return value; }
+            const shadowed = $C(copy_previous.clone());
+            const visible = $C(copy_value.clone());
+            for (const key of keys) {
+                if (Object.prototype.hasOwnProperty.call(shadowed, key)) {
+                    Object.defineProperty(visible, key, $C(restored_descriptor));
+                    delete shadowed[key];
+                }
+            }
+            Object.defineProperty(visible, symbol, $C(metadata_descriptor.clone()));
+        return visible;
+    })?;
+    let helper = |name, body| {
+        FunSpec::builder(name)
+            .add_param(ParameterSpec::of("value", ty.clone()))
+            .add_param(ParameterSpec::of(
+                "keys",
+                TypeName::array(TypeName::primitive("string")),
+            ))
+            .returns(vec![ty.clone()])
+            .body(body)
+            .build()
+    };
+    Ok([helper("keepExtras", keep)?, helper("takeExtras", take)?])
+}
+
 struct InternalCodec<'a, 'ir> {
     owner: TagOwner,
+    read: TagRead,
+    fields: Option<&'a TaggedFields>,
     unit: bool,
     source_field: &'a str,
     target_field: &'a str,
@@ -499,47 +630,179 @@ struct InternalCodec<'a, 'ir> {
 }
 
 impl InternalCodec<'_, '_> {
-    fn body(self) -> Result<CodeBlock, SigilStitchError> {
+    fn body(self, needs_extension_helpers: &mut bool) -> Result<CodeBlock, SigilStitchError> {
         let source = self.direction.source();
-        let source_field = self.source_field;
         let payload_type = self.payload_type;
         let output_type = self.output_type;
         let record = erased_record(self.plan);
-        let tag = captured_tag_output(self.target_field)?;
-        if self.unit {
+        let source_record =
+            sigil_quote!(TypeScript { $N(source) as unknown as $T(record.clone()) })?;
+        let mut fields: Vec<_> = self
+            .fields
+            .into_iter()
+            .flat_map(|fields| &fields.envelope)
+            .enumerate()
+            .map(|(i, (wire, field))| {
+                let model = field.model_key(wire);
+                let (source, target) = match self.direction {
+                    Direction::FromWire => (wire.clone(), model),
+                    Direction::ToWire => (model, wire.clone()),
+                };
+                (source, target, format!("field{i}"), field.required)
+            })
+            .collect();
+        if fields.is_empty() && self.unit {
+            let tag = captured_tag_output(self.target_field)?;
             let result = layout::return_object(&[tag], Some(output_type), 4)?;
-            return capture_tag(source, source_field, self.plan, result);
+            return capture_tag(source, self.source_field, self.plan, result);
         }
-        if self.owner == TagOwner::Payload {
-            let content = self.value.convert(
-                sigil_quote!(TypeScript { $N(source) as unknown as $T(payload_type) })?,
-                self.direction,
-            )?;
-            return sigil_quote!(TypeScript { return $C(content) as $T(output_type); });
+        let project_tag = self.read == TagRead::Strip;
+        let capture_payload_tag = self.owner == TagOwner::CaseWithPayloadProjection;
+        if project_tag {
+            fields.insert(
+                0,
+                (
+                    self.source_field.to_owned(),
+                    self.target_field.to_owned(),
+                    "tag".into(),
+                    false,
+                ),
+            );
         }
-        let projecting = self.owner == TagOwner::Case;
-        let pattern = layout::inline_object(&[
-            sigil_quote!(TypeScript { [$S(source_field)]: tag })?,
-            sigil_quote!(TypeScript { ...payload })?,
-        ])?;
-        let access = if projecting { "payload" } else { source };
-        let content = self.value.convert(
-            sigil_quote!(TypeScript { $N(access) as unknown as $T(payload_type) })?,
-            self.direction,
-        )?;
-        let result = layout::return_object(
-            &[sigil_quote!(TypeScript { ...$C(content) })?, tag],
-            Some(output_type),
-            4,
-        )?;
-        sigil_quote!(TypeScript {
-            $if(projecting) {
-                const $C(pattern) = $N(source) as unknown as $T(record);
-            } $else {
-                const tag = ($N(source) as unknown as $T(record))[$S(source_field)];
+        let destructure = if fields.is_empty() {
+            None
+        } else {
+            let mut pattern = fields
+                .iter()
+                .map(|(source, _, local, _)| sigil_quote!(TypeScript { [$S(source)]: $N(local) }))
+                .collect::<Result<Vec<_>, _>>()?;
+            // Unit cases need the declarations, not a rest value to convert.
+            if !self.unit {
+                pattern.push(sigil_quote!(TypeScript { ...payload })?);
             }
-            $C(result)
-        })
+            Some(layout::object_binding(
+                &pattern,
+                source_record,
+                4,
+                !self.unit,
+            )?)
+        };
+        let shadow_keys = fields
+            .iter()
+            .filter(|(source, target, _, _)| source != target)
+            .map(|(source, target, _, _)| match self.direction {
+                Direction::FromWire => target,
+                Direction::ToWire => source,
+            })
+            .map(|key| sigil_quote!(TypeScript { $S(key) }))
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut prepare_payload = CodeBlock::builder();
+        let mut output = Vec::new();
+        if !self.unit {
+            let access = if destructure.is_some() {
+                "payload"
+            } else {
+                source
+            };
+            let access = if !shadow_keys.is_empty() && self.direction == Direction::ToWire {
+                *needs_extension_helpers = true;
+                prepare_payload.add_code(layout::const_value(
+                    "protectedKeys",
+                    layout::array(&shadow_keys, 26)?,
+                    4,
+                )?);
+                let restored = layout::call(
+                    sigil_quote!(TypeScript { takeExtras })?,
+                    &[
+                        sigil_quote!(TypeScript { $N(access) })?,
+                        sigil_quote!(TypeScript { protectedKeys })?,
+                    ],
+                    24,
+                )?;
+                prepare_payload.add_code(layout::const_value("payloadWithExtras", restored, 4)?);
+                "payloadWithExtras"
+            } else {
+                access
+            };
+            let payload = sigil_quote!(TypeScript { $N(access) as unknown as $T(payload_type) })?;
+            if fields.is_empty() && !capture_payload_tag {
+                let cast = sigil_quote!(TypeScript { as $T(output_type.clone()); })?;
+                let column = 4 + "return ".len() + 1 + layout::fragment_width(&cast)?;
+                let content = self.value.convert_at(payload, self.direction, column)?;
+                return sigil_quote!(TypeScript { return $C(content) $C(cast) });
+            }
+            let mut content = self.value.convert(payload, self.direction)?;
+            if !shadow_keys.is_empty() && self.direction == Direction::FromWire {
+                *needs_extension_helpers = true;
+                prepare_payload.add_code(layout::const_value(
+                    "protectedKeys",
+                    layout::array(&shadow_keys, 26)?,
+                    4,
+                )?);
+                // Copy before removing visible collisions: a trivial dictionary converter
+                // can return its input, which belongs to the caller.
+                prepare_payload.add_code(layout::const_value("converted", content, 4)?);
+                content = layout::call(
+                    sigil_quote!(TypeScript { keepExtras })?,
+                    &[
+                        sigil_quote!(TypeScript { converted as unknown as $T(record.clone()) })?,
+                        sigil_quote!(TypeScript { protectedKeys })?,
+                    ],
+                    6,
+                )?;
+            }
+            if capture_payload_tag {
+                prepare_payload.add_code(layout::const_value("composed", content, 4)?);
+                let target_field = self.target_field;
+                let retained_tag = layout::indexed_assertion(
+                    sigil_quote!(TypeScript { composed as unknown })?,
+                    record.clone(),
+                    target_field,
+                    "    const payloadTag = ".len(),
+                )?;
+                prepare_payload.add_code(layout::const_value("payloadTag", retained_tag, 4)?);
+                prepare_payload.add_code(sigil_quote!(TypeScript {
+                    if (payloadTag !== undefined && payloadTag !== tag) {
+                        throw new TypeError($S("Conflicting inferred discriminator in payload"));
+                    }
+                })?);
+                content = sigil_quote!(TypeScript { composed })?;
+            }
+            output.push(sigil_quote!(TypeScript { ...$C(content) })?);
+        }
+        for (_, target, local, required) in fields {
+            if required {
+                output.push(sigil_quote!(TypeScript { [$S(target)]: $N(local) })?);
+            } else if local == "tag" {
+                output.push(captured_tag_output(&target)?);
+            } else {
+                let field = layout::inline_object(&[
+                    sigil_quote!(TypeScript { [$S(target)]: $N(local) })?,
+                ])?;
+                output.push(
+                    sigil_quote!(TypeScript { ...($N(local) === undefined ? {} : $C(field)) })?,
+                );
+            }
+        }
+        if capture_payload_tag {
+            output.push(captured_tag_output(self.target_field)?);
+        }
+        let result = layout::return_object(&output, Some(output_type), 4)?;
+        prepare_payload.add_code(result);
+        let result = prepare_payload.build()?;
+        let result = if let Some(destructure) = destructure {
+            sigil_quote!(TypeScript {
+                $C(destructure)
+                $C(result)
+            })?
+        } else {
+            result
+        };
+        if capture_payload_tag {
+            capture_tag(source, self.source_field, self.plan, result)
+        } else {
+            Ok(result)
+        }
     }
 }
 
@@ -554,6 +817,7 @@ pub(super) fn emit(
     let wire_name = format!("{name}$Wire");
     let mut file = FileSpec::builder_with(&format!("{name}.ts"), ts.clone());
     let camel = plan.flags().property_naming_camel_case;
+    let mut needs_extension_helpers = false;
     for wire in [true, false].into_iter().filter(|wire| !*wire || camel) {
         let variants = union
             .variants
@@ -642,9 +906,11 @@ pub(super) fn emit(
                 }
             };
 
-            let body = if let Some(WireBinding::Internal { owner, .. }) = binding {
+            let body = if let Some(WireBinding::Internal { owner, read, .. }) = binding {
                 InternalCodec {
                     owner,
+                    read,
+                    fields: plan.authored_tag_fields(&schema.name, index),
                     unit: is_tagged_unit_variant(ir, union, variant),
                     source_field: &disc,
                     target_field: &target_disc,
@@ -654,7 +920,7 @@ pub(super) fn emit(
                     direction,
                     plan,
                 }
-                .body()?
+                .body(&mut needs_extension_helpers)?
             } else if is_tagged_unit_variant(ir, union, variant)
                 && !matches!(union.tagging, TaggingStyle::External)
             {
@@ -778,6 +1044,11 @@ pub(super) fn emit(
                 .body(body)
                 .build()?,
         );
+    }
+    if needs_extension_helpers {
+        for helper in extension_helpers(plan)? {
+            file = file.add_function(helper);
+        }
     }
     if plan.flags().emit_type_guards {
         for guard in guards(schema, ir, union, plan)? {

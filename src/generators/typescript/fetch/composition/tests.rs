@@ -58,6 +58,7 @@ fn opaque_rendering_does_not_erase_a_nested_unions_selection_policy() {
     opaque.kind = IrSchemaKind::Union(IrUnion {
         members: vec![IrTypeExpr::Any, IrTypeExpr::Named("LeftNode".into())],
         nullable: false,
+        authored_wire: None,
     });
     ir.schemas.insert(opaque.name.clone(), opaque);
     let IrSchemaKind::Object(left) = &mut ir.schemas["Left"].kind else {

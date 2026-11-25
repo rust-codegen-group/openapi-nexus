@@ -6,6 +6,8 @@ use std::collections::{BTreeMap, HashMap};
 use crate::generators::union_match::{JsonShape, MatchScope, PropertyMatch};
 use crate::ir::types::{IrJsonKind, IrWireShape};
 
+use super::tagged_fields::TaggedFields;
+
 /// Distinguish these functions from older model-derived recursive predicates.
 const WIRE_PREFIX: &str = "$Wire";
 
@@ -42,8 +44,12 @@ impl<'a> Projection<'a> {
         }
     }
 
-    pub(super) fn shape(&mut self, shape: &'a IrWireShape) -> JsonShape {
-        self.at(shape, 0)
+    fn shape(&mut self, shape: &'a IrWireShape) -> JsonShape {
+        self.at(shape, 0, self.wire_keys, None)
+    }
+
+    pub(super) fn root(&mut self, shape: &'a IrWireShape, fields: &TaggedFields) -> JsonShape {
+        self.at(shape, 0, self.wire_keys, Some(fields))
     }
 
     pub(super) fn named(&mut self, name: &str) -> JsonShape {
@@ -56,7 +62,13 @@ impl<'a> Projection<'a> {
         shape
     }
 
-    fn at(&mut self, shape: &'a IrWireShape, depth: usize) -> JsonShape {
+    fn at(
+        &mut self,
+        shape: &'a IrWireShape,
+        depth: usize,
+        wire_keys: bool,
+        root: Option<&TaggedFields>,
+    ) -> JsonShape {
         match shape {
             IrWireShape::Any => JsonShape::Any,
             IrWireShape::Never => JsonShape::Never,
@@ -84,7 +96,9 @@ impl<'a> Projection<'a> {
                     )
                     .map(|name| PropertyMatch {
                         required: object.required.contains(name),
-                        rename: !self.wire_keys && object.properties.contains_key(name),
+                        rename: !wire_keys
+                            && (object.properties.contains_key(name)
+                                || root.is_some_and(|fields| fields.renames(name))),
                         wire_name: name.clone(),
                         // A required-but-undeclared key remains an extension in
                         // this conjunct, so it must satisfy the local value shape.
@@ -94,31 +108,39 @@ impl<'a> Projection<'a> {
                                 .get(name)
                                 .unwrap_or(&object.additional_properties),
                             depth + 1,
+                            wire_keys
+                                || root.is_some_and(|fields| fields.envelope.contains_key(name)),
+                            None,
                         ),
                     })
                     .collect();
                 if matches!(*object.additional_properties, IrWireShape::Any) {
                     JsonShape::Object(properties)
                 } else {
-                    let values = Box::new(self.at(&object.additional_properties, depth + 1));
-                    if object.properties.is_empty() && object.required.is_empty() {
-                        JsonShape::Map(values)
-                    } else {
-                        JsonShape::ObjectWithAdditional { properties, values }
-                    }
+                    let values = Box::new(self.at(
+                        &object.additional_properties,
+                        depth + 1,
+                        wire_keys,
+                        None,
+                    ));
+                    JsonShape::ObjectWithAdditional { properties, values }
                 }
             }
-            IrWireShape::Array(item) => JsonShape::Array(Box::new(self.at(item, depth + 1))),
-            IrWireShape::AllOf(parts) => {
-                and(parts.iter().map(|part| self.at(part, depth)).collect())
+            IrWireShape::Array(item) => {
+                JsonShape::Array(Box::new(self.at(item, depth + 1, wire_keys, None)))
             }
-            IrWireShape::OneOf(parts) | IrWireShape::AnyOf(parts) => {
-                or(parts.iter().map(|part| self.at(part, depth)).collect())
-            }
+            IrWireShape::AllOf(parts) => and(parts
+                .iter()
+                .map(|part| self.at(part, depth, wire_keys, root))
+                .collect()),
+            IrWireShape::OneOf(parts) | IrWireShape::AnyOf(parts) => or(parts
+                .iter()
+                .map(|part| self.at(part, depth, wire_keys, root))
+                .collect()),
             IrWireShape::Reference(name) => {
                 if let Some(ancestor) = self.visiting.get(name.as_str()) {
                     return if depth > *ancestor {
-                        reference(name, self.wire_keys)
+                        reference(name, wire_keys)
                     } else {
                         JsonShape::Never
                     };
@@ -127,7 +149,7 @@ impl<'a> Projection<'a> {
                     return JsonShape::Never;
                 };
                 self.visiting.insert(name, depth);
-                let shape = self.at(target, depth);
+                let shape = self.at(target, depth, wire_keys, root);
                 self.visiting.remove(name.as_str());
                 shape
             }

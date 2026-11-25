@@ -151,17 +151,21 @@ from `untagged_union_strategy`:
 
 For example, pass `--generator-config rust-aioduct.tagged_union_strategy=strict`
 to `generate`, or set `tagged_union_strategy = "strict"` under `[rust-aioduct]`.
-The same setting works with `rust-reqwest` and `rust-ureq`. Fixed required tags,
-explicit discriminator mappings, and adjacent and external tags keep their
-existing codecs; this option does not extend to those forms.
+The same setting works with `rust-reqwest` and `rust-ureq`. The existing
+compatibility path still handles fixed required tags where the native codec can
+own the discriminator, without claiming full authored-shape checks. Explicit
+discriminator mappings and adjacent and external tags keep their existing codecs.
 
 Generalized unions may expose the discriminator on the enum variant and the
 remaining object as a separate payload. If the native payload already owns the
 tag and retains its full state, it remains the owner. A composed payload that
 cannot carry the tag faithfully without duplication or loss keeps its
-projected object as `serde_json::Value`. Additional-property restrictions are
-checked independently in each authored object, before projection. These checks
-are structural selection rules, not full JSON Schema validation.
+projected object as `serde_json::Value`. The codec restores explicit `null` for
+required nullable fields on the selected payload object before checking the
+assembled output. This does not change the reusable payload model or its
+standalone JSON behavior. Additional-property restrictions are checked
+independently in each authored object, before projection. These checks are
+structural selection rules, not full JSON Schema validation.
 
 ## Full Example
 

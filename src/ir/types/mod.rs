@@ -23,4 +23,4 @@ pub use spec::{
     IrServer, IrSpec,
 };
 pub use type_expr::{IrPrimitive, IrTypeExpr, IrValidation};
-pub use wire::{IrInferredUnionWire, IrJsonKind, IrWireObject, IrWireShape};
+pub use wire::{IrJsonKind, IrUnionWire, IrWireObject, IrWireShape};

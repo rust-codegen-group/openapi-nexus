@@ -28,15 +28,19 @@ A non-finite domain is not a fixed label. The domain does not alone determine
 eligibility; direct and nested selection must also use the full authored shape.
 Target adapters own names, public model representations, payload codecs, and
 structured sigil-stitch emission. A native fast path is appropriate only when it
-gives the same selection and wire behavior for the applicable policy; a required,
-unique, fixed label is a candidate, not proof of equivalence.
+gives the same selection and wire behavior for the applicable policy. Required,
+unique, fixed labels prove tag identity only, not codec equivalence. An adapter
+may keep a legacy fixed-label path outside its adopted policy for compatibility;
+that does not make the old path conform to this contract.
 
 ## Tag presence and ownership
 
 Match the full wire value before projecting the selected payload for its codec.
 At a given wire path the discriminator has one owner: the payload model if it
 represents the tag faithfully, otherwise the union. A projection applies only at
-that use site. It must not rewrite a reusable referenced model or discard a tag
+that use site. Read requirements are separate from write ownership: even when
+an enclosing case owns the output tag, a nested codec that consumes it needs
+it in its input. Do not rewrite a reusable referenced model or discard a tag
 that its codec needs. Serialization emits the tag at its original path at most
 once; competing payload or extension values must not overwrite it silently.
 

@@ -8,5 +8,5 @@
     "noEmit": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["typecheck.ts", "typecheck.tagged-allof.ts", "typecheck.optional-discriminator-union.ts", "typecheck.inferred-union-selection.ts"]
+  "include": ["typecheck.ts", "typecheck.tagged-allof.ts", "typecheck.optional-discriminator-union.ts", "typecheck.inferred-union-selection.ts", "typecheck.authored-tagged-projections.ts"]
 }

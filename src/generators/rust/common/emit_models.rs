@@ -224,7 +224,7 @@ fn emit_model_file(
                     schema,
                     tu,
                     plan,
-                    wire_plans.strategy,
+                    wire_plans,
                     derives,
                     ir,
                     utoipa_enabled,

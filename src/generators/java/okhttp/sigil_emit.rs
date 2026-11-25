@@ -1069,6 +1069,7 @@ mod tests {
         let union = IrUnion {
             members: vec![IrTypeExpr::Primitive(IrPrimitive::String)],
             nullable: false,
+            authored_wire: None,
         };
         let ir = crate::ir::lower::lower(
             crate::parser::parse_content_yaml(include_str!(

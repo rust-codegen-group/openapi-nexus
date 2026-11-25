@@ -67,6 +67,47 @@ macro_rules! typed_cases {
             }
 
             #[test]
+            fn required_nullable_payload_property_survives_selected_codec() {
+                for wire in [
+                    json!({"kind": "alpha_alt", "label": "a", "nullable_count": null}),
+                    json!({"kind": "alpha", "label": "a", "nullable_count": 3}),
+                ] {
+                    let model: NullableTagged = serde_json::from_value(wire.clone()).unwrap();
+                    let NullableTagged::Alpha { payload, .. } = &model else {
+                        panic!("expected the typed Alpha branch");
+                    };
+                    assert_eq!(payload.nullable_count, wire["nullable_count"].as_i64());
+                    assert_eq!(serde_json::to_value(model).unwrap(), wire);
+                }
+                assert!(serde_json::from_value::<NullableTagged>(json!({
+                    "kind": "alpha", "label": "a"
+                })).is_err());
+            }
+
+            #[test]
+            fn nested_same_tag_reaches_selected_payload_codec_once() {
+                for wire in [
+                    json!({"kind": "alpha_alt", "label": "a"}),
+                    json!({"kind": "beta", "count": 2}),
+                    json!({"kind": "gamma", "text": "g"}),
+                ] {
+                    let model: NestedOuter = serde_json::from_value(wire.clone()).unwrap();
+                    if wire["kind"] != "gamma" {
+                        let NestedOuter::Alpha(inner) = &model else {
+                            panic!("expected the typed nested union branch");
+                        };
+                        assert!(match &wire["kind"] {
+                            Value::String(tag) if tag == "beta" => matches!(inner, NestedInner::Beta { .. }),
+                            _ => matches!(inner, NestedInner::Alpha { .. }),
+                        });
+                    }
+                    let encoded = serde_json::to_string(&model).unwrap();
+                    assert_eq!(encoded.matches("\"kind\"").count(), 1);
+                    assert_eq!(serde_json::from_str::<Value>(&encoded).unwrap(), wire);
+                }
+            }
+
+            #[test]
             fn absent_tag_selects_using_finite_payload_constraints() {
                 let wire = json!({"label": "b"});
                 let value: AmbiguousTagged = serde_json::from_value(wire.clone()).unwrap();

@@ -938,6 +938,104 @@ fn test_authored_tag_policies_generate_distinct_runtime_contracts() {
     }
 }
 
+#[test]
+fn authored_projection_fixture_exports_distinct_guards_and_naming_contracts() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+
+    let source = include_str!("fixtures/valid/typescript-authored-tagged-projections.yaml");
+    let ir =
+        openapi_nexus::ir::lower::lower(openapi_nexus::parser::parse_content_yaml(source).unwrap())
+            .unwrap();
+    for (naming, strategy) in [
+        ("camelCase", "firstMatch"),
+        ("camelCase", "strict"),
+        ("camelCase", "raw"),
+        ("preserve", "firstMatch"),
+    ] {
+        let config = toml::from_str(&format!(
+            "property_naming = '{naming}'\ntagged_union_strategy = '{strategy}'\nemit_type_guards = true"
+        ))
+        .unwrap();
+        let files = TypeScriptFetchCodeGenerator::new(config)
+            .generate(&ir)
+            .unwrap();
+        let model = |name: &str| {
+            &files
+                .iter()
+                .find(|file| file.filename == name)
+                .unwrap()
+                .content
+        };
+        let barrel = model("models/index.ts");
+        let exports = barrel
+            .split(';')
+            .find(|statement| {
+                statement.contains("from './GuardChoice'") && statement.contains("isTwin")
+            })
+            .expect("guards re-exported from the model barrel");
+        let guards = model("GuardChoice.ts");
+        for guard in ["isTwin", "isTwin2", "isTwin3"] {
+            assert!(
+                exports
+                    .split(|ch: char| !ch.is_ascii_alphanumeric())
+                    .any(|token| token == guard)
+            );
+            assert_eq!(
+                guards.matches(&format!("export function {guard}(")).count(),
+                1
+            );
+        }
+        let fork = model("Fork.ts");
+        assert!(fork.contains("Record<'scope_left', unknown>"));
+        assert_eq!(
+            fork.contains("Record<'scopeLeft', unknown>"),
+            naming == "camelCase" && strategy != "raw",
+        );
+        assert_eq!(
+            fork.contains("export function forkFromJSON("),
+            naming == "camelCase"
+        );
+    }
+}
+
+#[test]
+fn composed_wire_codec_checks_competing_tags_after_conversion() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+
+    let source = include_str!("fixtures/valid/rust-inferred-tagged-wire.yaml");
+    let parsed = openapi_nexus::parser::parse_content_yaml(source).unwrap();
+    let ir = openapi_nexus::ir::lower::lower(parsed).unwrap();
+    let config = toml::from_str(
+        "property_naming = 'camelCase'\ntagged_union_strategy = 'strict'\ntoolchain = 'vp'",
+    )
+    .unwrap();
+    let files = TypeScriptFetchCodeGenerator::new(config)
+        .generate(&ir)
+        .unwrap();
+    let model = &files
+        .iter()
+        .find(|file| file.filename == "ComposedTagged.ts")
+        .unwrap()
+        .content;
+    for (direction, argument, ty) in [
+        ("FromJSON", "json", "ComposedTaggedAlpha$Wire"),
+        ("ToJSON", "value", "ComposedTaggedAlpha"),
+    ] {
+        assert!(model.contains(&format!(
+            "return composedTaggedAlpha{direction}(\n      {argument} as unknown as {ty},\n    ) as ComposedTagged"
+        )));
+        assert!(model.contains(&format!(
+            "const composed = composedTaggedAlphaAlt{direction}("
+        )));
+    }
+    assert_eq!(
+        model
+            .matches("Conflicting inferred discriminator in payload")
+            .count(),
+        2
+    );
+}
+
 // ===========================================================================
 // Toolchain = "vp" golden tests
 // Same fixtures re-generated with vp toolchain to verify both paths compile.

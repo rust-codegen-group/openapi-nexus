@@ -14,7 +14,6 @@
 //!   tagging styles, each variant narrows on the discriminator literal.
 
 use crate::codegen::traits::file_writer::FileInfo;
-use crate::generators::closed_sum::is_tag_only_variant;
 use crate::generators::type_application;
 use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
@@ -84,21 +83,9 @@ pub(super) fn value_exports_for_schema(
             let mut exports = vec![format!("{base}FromJSON"), format!("{base}ToJSON")];
             if flags.emit_type_guards {
                 exports.extend(
-                    tu.variants
-                        .iter()
-                        .filter(|v| {
-                            !is_tag_only_variant(
-                                ir,
-                                &tu.discriminator_field,
-                                &v.discriminator_value,
-                                &v.content_type,
-                            ) && !is_unspecified_variant(
-                                &v.discriminator_value,
-                                &tu.discriminator_field,
-                                &v.content_type,
-                            )
-                        })
-                        .map(variant_guard_name),
+                    super::tagged::guard_names(schema, ir, tu, plan)
+                        .into_iter()
+                        .map(|(_, name)| name),
                 );
             }
             exports
@@ -118,23 +105,12 @@ pub(super) fn value_exports_for_schema(
         IrSchemaKind::Enum(_) if flags.emit_enum_constants => {
             vec![schema.name.to_pascal_case()]
         }
-        IrSchemaKind::TaggedUnion(tu) if flags.emit_type_guards => tu
-            .variants
-            .iter()
-            .filter(|v| {
-                !is_tag_only_variant(
-                    ir,
-                    &tu.discriminator_field,
-                    &v.discriminator_value,
-                    &v.content_type,
-                ) && !is_unspecified_variant(
-                    &v.discriminator_value,
-                    &tu.discriminator_field,
-                    &v.content_type,
-                )
-            })
-            .map(variant_guard_name)
-            .collect(),
+        IrSchemaKind::TaggedUnion(tu) if flags.emit_type_guards => {
+            super::tagged::guard_names(schema, ir, tu, plan)
+                .into_iter()
+                .map(|(_, name)| name)
+                .collect()
+        }
         _ => vec![],
     }
 }
@@ -624,6 +600,8 @@ fn build_json_converter(
         .build()
 }
 
+pub(super) const RETAINED_EXTRAS: &str = "openapi-nexus.additionalProperties";
+
 fn build_open_object_conversion(
     obj: &IrObject,
     additional: &IrTypeExpr,
@@ -650,7 +628,7 @@ fn build_open_object_conversion(
         .any(|prop| prop.name != prop.name.to_lower_camel_case());
     let restore = direction == JsonDirection::ToWire && renamed;
     let retain = direction == JsonDirection::FromWire && renamed;
-    let metadata_key = "openapi-nexus.additionalProperties";
+    let metadata_key = RETAINED_EXTRAS;
     let additional_type = match direction {
         JsonDirection::FromWire => type_expr_to_typename_wire(additional, current_schema, plan),
         JsonDirection::ToWire => plan

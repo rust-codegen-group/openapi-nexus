@@ -1,0 +1,125 @@
+openapi: 3.1.0
+info: {title: Authored tagged projections, version: '1'}
+paths: {}
+components:
+  schemas:
+    ScopedChoice:
+      type: object
+      required: [scope_key, root_key]
+      properties:
+        root_key: {type: string}
+      oneOf:
+        - allOf:
+            - type: object
+              required: [scope_key, a_value]
+              properties:
+                tag_kind: {type: string, enum: [scoped_a]}
+                scope_key: {type: string}
+                a_value: {type: string}
+        - allOf:
+            - type: object
+              required: [scope_key, b_value]
+              properties:
+                tag_kind: {type: string, enum: [scoped_b]}
+                scope_key: {type: string}
+                b_value: {type: string}
+    OpenChoice:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [value_key]
+              properties:
+                tag_kind: {type: string, enum: [open]}
+                value_key: {type: string}
+              additionalProperties: {type: string}
+        - allOf:
+            - type: object
+              required: [closed_key]
+              properties:
+                tag_kind: {type: string, enum: [closed]}
+                closed_key: {type: string}
+    IntegerDictionary:
+      type: object
+      additionalProperties: {type: integer}
+    MapChoice:
+      oneOf:
+        - {$ref: '#/components/schemas/IntegerDictionary'}
+        - allOf:
+            - type: object
+              properties:
+                kind: {type: string, enum: [map_variant]}
+                payload_value: {type: string}
+    Inner:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [kind, a_value]
+              properties:
+                kind: {type: string, enum: [inner_a, inner_alt]}
+                a_value: {type: string}
+        - allOf:
+            - type: object
+              required: [kind, b_value]
+              properties:
+                kind: {type: string, enum: [inner_b]}
+                b_value: {type: string}
+    Outer:
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/Inner'
+            - type: object
+              properties:
+                kind: {type: string, enum: [inner_a, inner_alt, inner_b]}
+        - allOf:
+            - type: object
+              required: [outer_value]
+              properties:
+                kind: {type: string, enum: [outer]}
+                outer_value: {type: string}
+    GuardChoice:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [first_value]
+              properties:
+                kind: {type: string, enum: [twin]}
+                first_value: {type: string}
+        - allOf:
+            - type: object
+              required: [second_value]
+              properties:
+                kind: {type: string, enum: [twin]}
+                second_value: {type: string}
+        - allOf:
+            - type: object
+              required: [third_value]
+              properties:
+                kind: {type: string, enum: [twin_2]}
+                third_value: {type: string}
+    Fork:
+      type: object
+      anyOf:
+        - type: object
+          required: [scope_left]
+          properties:
+            scope_left:
+              type: object
+              properties:
+                nested_key: {type: integer}
+        - type: object
+          required: [scope_right]
+          properties:
+            scope_right: {type: string}
+      oneOf:
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [fork_a]}
+                label: {type: string}
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [fork_b]}
+                label: {type: string}
