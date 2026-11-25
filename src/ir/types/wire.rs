@@ -43,9 +43,9 @@ pub struct IrWireObject {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct IrInferredUnionWire {
-    /// Constraints on the containing schema, outside its selected `oneOf`.
+pub struct IrUnionWire {
+    /// Constraints on the containing schema, outside its selected `oneOf` or `anyOf`.
     pub common: IrWireShape,
-    /// Full, unprojected `oneOf` branches, in authored order.
+    /// Full, unprojected alternatives, in authored order.
     pub branches: Vec<IrWireShape>,
 }

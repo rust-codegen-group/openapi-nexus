@@ -288,20 +288,14 @@ pub(crate) fn selection_shapes(shape: JsonShape) -> (JsonShape, JsonShape) {
                 (any_of(vec![JsonShape::Null, concrete]), fallback)
             }
         }
-        JsonShape::Map(inner) if accepts_any(&inner) => {
-            let (concrete, fallback) = selection_shapes((*inner).clone());
-            let concrete = if concrete == JsonShape::Never {
-                JsonShape::Never
-            } else {
-                // Mixed dictionaries can contain both concrete and opaque values.
-                // Selecting only all-concrete dictionaries would lose conversion
-                // (and nested strict errors) for their concrete entries.
-                JsonShape::MapWithConcreteValue {
-                    values: inner,
-                    concrete: Box::new(concrete),
-                }
-            };
-            (concrete, JsonShape::Map(Box::new(fallback)))
+        JsonShape::Map(inner) if accepts_any(&inner) => dictionary_selection(inner),
+        // Authored objects use the wire contract: an open fieldless object
+        // has evidence only from matching entries. A closed empty object, by
+        // contrast, has an explicit structural restriction even with no entries.
+        JsonShape::ObjectWithAdditional { properties, values }
+            if properties.is_empty() && *values != JsonShape::Never =>
+        {
+            dictionary_selection(values)
         }
         JsonShape::Object(ref properties) if properties.is_empty() => (JsonShape::Never, shape),
         JsonShape::AnyOf(shapes) => {
@@ -322,6 +316,21 @@ pub(crate) fn selection_shapes(shape: JsonShape) -> (JsonShape, JsonShape) {
         }
         shape => (shape, JsonShape::Never),
     }
+}
+
+fn dictionary_selection(values: Box<JsonShape>) -> (JsonShape, JsonShape) {
+    let (concrete, fallback) = selection_shapes((*values).clone());
+    let concrete = if concrete == JsonShape::Never {
+        JsonShape::Never
+    } else {
+        // All entries must match the value shape; at least one must supply
+        // concrete evidence. The empty dictionary stays in the fallback tier.
+        JsonShape::MapWithConcreteValue {
+            values,
+            concrete: Box::new(concrete),
+        }
+    };
+    (concrete, JsonShape::Map(Box::new(fallback)))
 }
 
 fn plan_tagged_variant_shape_at(
@@ -871,6 +880,7 @@ mod tests {
         let union = IrUnion {
             members: vec![IrTypeExpr::Any, IrTypeExpr::Named("PayloadA".into())],
             nullable: false,
+            authored_wire: None,
         };
         let members = plan_union_members("FallbackUnion", &union, &ir);
         assert!(!members[0].fallback);
@@ -948,6 +958,29 @@ mod tests {
         assert!(members[1].fallback);
         assert_eq!(members[2].shape, JsonShape::Map(Box::new(JsonShape::Any)));
         assert!(members[2].fallback);
+    }
+
+    #[test]
+    fn authored_dictionary_requires_an_entry_for_concrete_evidence() {
+        let value = Box::new(JsonShape::String);
+        let (concrete, fallback) = selection_shapes(JsonShape::ObjectWithAdditional {
+            properties: vec![],
+            values: value.clone(),
+        });
+        assert_eq!(
+            concrete,
+            JsonShape::MapWithConcreteValue {
+                values: value.clone(),
+                concrete: value,
+            },
+        );
+        assert_eq!(fallback, JsonShape::Map(Box::new(JsonShape::Never)));
+
+        let closed = JsonShape::ObjectWithAdditional {
+            properties: vec![],
+            values: Box::new(JsonShape::Never),
+        };
+        assert_eq!(selection_shapes(closed.clone()), (closed, JsonShape::Never));
     }
 
     #[test]
@@ -1050,6 +1083,7 @@ mod tests {
                 IrTypeExpr::Named("Detail".into()),
             ],
             nullable: false,
+            authored_wire: None,
         };
         let members = plan_union_members("Outer", &union, &ir);
         assert_eq!(members.len(), 1);
@@ -1065,6 +1099,7 @@ mod tests {
                 IrTypeExpr::Named("PayloadB".into()),
             ])],
             nullable: false,
+            authored_wire: None,
         };
         let members = plan_union_members("InlineUnion", &union, &ir);
         assert_eq!(members.len(), 1);

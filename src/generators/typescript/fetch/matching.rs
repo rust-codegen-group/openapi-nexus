@@ -295,6 +295,11 @@ impl MatchPlan {
                 })
             }
             JsonShape::ObjectWithAdditional { properties, values } => {
+                if properties.is_empty() {
+                    // The authored object remains distinct while planning the
+                    // evidence tier; membership itself is a dictionary check.
+                    return self.body(&JsonShape::Map(values.clone()), direction, &record_type);
+                }
                 let object = self.condition(
                     &JsonShape::Object(properties.clone()),
                     candidate()?,
@@ -332,7 +337,7 @@ impl MatchPlan {
                         if (!declared.includes(key) && !$C(item_check)) { return false; }
                     }
                     $if(retained) {
-                        const metadata = Symbol.for($S("openapi-nexus.additionalProperties"));
+                        const metadata = Symbol.for($S(super::sigil_emit::RETAINED_EXTRAS));
                         const descriptor = Object.getOwnPropertyDescriptor(candidate, metadata);
                         const retained = descriptor?.value as $T(retained_type);
                         if (retained !== undefined) { return Object.values(retained).every($C(item)); }

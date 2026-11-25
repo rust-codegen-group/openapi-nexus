@@ -121,6 +121,195 @@ components:
 }
 
 #[test]
+fn composed_payload_readers_keep_the_tag_but_cannot_overwrite_it() {
+    let source = include_str!("fixtures/valid/rust-inferred-tagged-wire.yaml");
+    let ir = lower(parse_content_yaml(source).unwrap()).unwrap();
+    let plans = UnionWirePlans::build(&ir, Strategy::Strict);
+    let plan = plans.get("ComposedTagged").unwrap();
+    let wire = json!({"kind": "alpha_alt", "label": "a", "count": 3});
+    assert_eq!(plan.select(&wire), Ok(Selection::Branch(1)));
+    let binding = plan.binding(1).unwrap();
+    assert_eq!(*binding.payload(&wire).unwrap(), wire);
+
+    let mut output = wire.as_object().unwrap().clone();
+    binding.write_tag(&mut output, binding.tag(&wire)).unwrap();
+    output.insert("kind".into(), json!("alpha"));
+    assert!(binding.write_tag(&mut output, binding.tag(&wire)).is_err());
+    assert_eq!(output["kind"], "alpha");
+}
+
+#[test]
+fn a_payload_union_can_have_tag_readers_and_tagless_alternatives() {
+    let source = r##"
+openapi: 3.1.0
+info: {title: Conditional tag ownership, version: '1'}
+paths: {}
+components:
+  schemas:
+    WithTag:
+      type: object
+      required: [kind, label]
+      properties:
+        kind: {type: string, enum: [a]}
+        label: {type: string}
+    WithoutTag:
+      type: object
+      required: [count]
+      properties:
+        count: {type: integer}
+    Payload:
+      anyOf:
+        - {$ref: '#/components/schemas/WithTag'}
+        - {$ref: '#/components/schemas/WithoutTag'}
+    Choice:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Payload'}
+            - properties:
+                kind: {type: string, enum: [a, b]}
+        - allOf:
+            - properties:
+                kind: {type: string, enum: [c]}
+                text: {type: string}
+              required: [kind, text]
+"##;
+    let ir = lower(parse_content_yaml(source).unwrap()).unwrap();
+    let plans = UnionWirePlans::build(&ir, Strategy::Strict);
+    let choice = plans.get("Choice").unwrap();
+    let payload_plan = plans.get("Payload").unwrap();
+    let binding = choice.binding(0).unwrap();
+    for (wire, index, encoded_payload) in [
+        (
+            json!({"kind": "a", "label": "x"}),
+            0,
+            json!({"kind": "a", "label": "x"}),
+        ),
+        (json!({"kind": "b", "count": 2}), 1, json!({"count": 2})),
+    ] {
+        assert_eq!(choice.select(&wire), Ok(Selection::Branch(0)));
+        let payload = binding.payload(&wire).unwrap();
+        assert_eq!(payload_plan.select(&payload), Ok(Selection::Branch(index)));
+        let mut output = encoded_payload.as_object().unwrap().clone();
+        binding.write_tag(&mut output, binding.tag(&wire)).unwrap();
+        assert_eq!(serde_json::Value::Object(output), wire);
+    }
+}
+
+#[test]
+fn fixed_tag_compatibility_requires_distinct_required_authored_labels() {
+    let source = r##"
+openapi: 3.1.0
+info: {title: Fixed label identities, version: '1'}
+paths: {}
+components:
+  schemas:
+    Choice:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [kind, left]
+              properties:
+                kind: {type: string, enum: [left]}
+                left: {type: string}
+        - allOf:
+            - type: object
+              required: [kind, right]
+              properties:
+                kind: {type: string, enum: [right]}
+                right: {type: string}
+"##;
+    let ir = lower(parse_content_yaml(source).unwrap()).unwrap();
+    let plans = UnionWirePlans::build(&ir, Strategy::FirstMatch);
+    let fixed = plans.get("Choice").unwrap();
+    assert!(fixed.has_distinct_fixed_tags());
+    assert_eq!(
+        fixed.select(&json!({"kind": "left"})),
+        Err(SelectionError::NoMatch)
+    );
+
+    let repeated = source.replace("enum: [right]", "enum: [left]");
+    let ir = lower(parse_content_yaml(&repeated).unwrap()).unwrap();
+    let plans = UnionWirePlans::build(&ir, Strategy::FirstMatch);
+    assert!(!plans.get("Choice").unwrap().has_distinct_fixed_tags());
+}
+
+#[test]
+fn named_untagged_union_keeps_its_own_alternatives_and_sibling_gate() {
+    let source = r##"
+openapi: 3.1.0
+info: {title: Untagged choices, version: '1'}
+paths: {}
+components:
+  schemas:
+    Choice:
+      type: string
+      allOf:
+        - oneOf:
+            - enum: [left, right]
+            - type: integer
+      anyOf:
+        - type: integer
+        - enum: [left]
+        - enum: [right]
+"##;
+    let ir = lower(parse_content_yaml(source).unwrap()).unwrap();
+    let plans = UnionWirePlans::build(&ir, Strategy::Strict);
+    let choice = plans.get("Choice").expect("plan for the root anyOf");
+    assert_eq!(choice.select(&json!("left")), Ok(Selection::Branch(1)));
+    assert_eq!(choice.select(&json!("right")), Ok(Selection::Branch(2)));
+    assert_eq!(choice.select(&json!(6)), Err(SelectionError::NoMatch));
+}
+
+#[test]
+fn a_referenced_tagged_decoder_still_receives_its_discriminator() {
+    let source = r##"
+openapi: 3.1.0
+info: {title: Nested tagged payload, version: '1'}
+paths: {}
+components:
+  schemas:
+    Inner:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [kind, left]
+              properties:
+                kind: {type: string, enum: [a, alternate]}
+                left: {type: string}
+        - allOf:
+            - type: object
+              required: [kind, right]
+              properties:
+                kind: {type: string, enum: [b]}
+                right: {type: string}
+    Outer:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Inner'}
+            - properties:
+                kind: {type: string, enum: [a, alternate, b]}
+        - allOf:
+            - type: object
+              required: [kind, value]
+              properties:
+                kind: {type: string, enum: [c]}
+                value: {type: string}
+"##;
+    let ir = lower(parse_content_yaml(source).unwrap()).unwrap();
+    let plans = UnionWirePlans::build(&ir, Strategy::Strict);
+    let inner = plans.get("Inner").unwrap();
+    let outer = plans.get("Outer").unwrap();
+    let wire = json!({"kind": "b", "right": "value"});
+    assert_eq!(outer.select(&wire), Ok(Selection::Branch(0)));
+    let binding = outer.binding(0).unwrap();
+    let payload = binding.payload(&wire).unwrap();
+    assert_eq!(inner.select(&payload), Ok(Selection::Branch(1)));
+    let mut output = payload.as_object().unwrap().clone();
+    binding.write_tag(&mut output, binding.tag(&wire)).unwrap();
+    assert_eq!(serde_json::Value::Object(output), wire);
+}
+
+#[test]
 fn matching_and_projection_keep_external_and_adjacent_envelopes_distinct() {
     let source = r##"
 openapi: 3.1.0

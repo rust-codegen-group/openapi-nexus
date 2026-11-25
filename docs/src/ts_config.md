@@ -332,9 +332,10 @@ body or direct model conversion.
 
 Controls conversion of inferred discriminated unions that do not have a distinct
 fixed required label for every member. Explicit OpenAPI mappings and ordinary
-fixed tags retain their existing representation. Declarations and optional type
-guards include the authored finite labels and distinguish an omitted property
-from a present `null`.
+fixed tags retain their existing representation. The legacy fixed-label route is
+outside `tagged_union_strategy`; its labels do not establish full equivalence with
+authored-shape matching. Declarations and optional type guards include the
+authored finite labels and distinguish an omitted property from a present `null`.
 
 | Value | camelCase conversion |
 | --- | --- |
@@ -348,6 +349,10 @@ constraints, and a property declared by that conjunct is not an additional
 property of it. Type guards check membership, not the chosen member when two
 members overlap. For nested tagged unions, the enclosing matcher uses the same
 authored predicates, and the selected nested converter handles ambiguity.
+Union-level fields that are not declared by a member's payload model are
+carried by that union at the use site. Their declared keys use the configured
+naming convention, but complex values without a lowered payload model keep
+their wire shape.
 
 Preserve mode remains converter-free. When `emit_type_guards = true`, the guards
 inspect original wire keys. `"strict"` requires `property_naming = "camelCase"`

@@ -27,6 +27,7 @@ use super::config::UntaggedUnionStrategy;
 use super::layout;
 use super::matching::MatchPlan;
 use super::sigil_emit::{EmitFlags, build_type_alias, fn_base_name};
+use super::tagged_fields::TaggedFields;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Direction {
@@ -155,6 +156,7 @@ pub(super) struct TypeScriptPlan<'a> {
     wire_plans: UnionWirePlans<'a>,
     generalized_tags: HashSet<String>,
     authored_tag_matchers: BTreeMap<String, Vec<TaggedMatchers>>,
+    authored_tag_fields: BTreeMap<String, Vec<TaggedFields>>,
 }
 
 pub(super) struct ValuePlan<'a, 'ir> {
@@ -232,18 +234,19 @@ pub(super) fn union_type(members: Vec<TypeName>) -> TypeName {
 impl<'a> TypeScriptPlan<'a> {
     pub(super) fn new(ir: &'a IrSpec, flags: EmitFlags) -> Self {
         let wire_plans = UnionWirePlans::build(ir, flags.tagged_union_strategy.into());
-        let generalized_tags = ir.schemas.iter().filter_map(|(name, schema)| {
-            let IrSchemaKind::TaggedUnion(union) = &schema.kind else { return None };
-            if matches!(union.tagging, TaggingStyle::External) { return None; }
-            let wire = wire_plans.get(name)?;
-            let mut seen = HashSet::new();
-            union.variants.iter().enumerate().any(|(index, variant)| {
-                let Some(domain) = wire.tag_domain(index) else { return false; };
-                let Some(values) = domain.values else { return true; };
-                !matches!(values.as_slice(), [serde_json::Value::String(tag)]
-                    if !domain.allows_absent && tag == &variant.discriminator_value && seen.insert(tag.clone()))
-            }).then(|| name.clone())
-        }).collect();
+        let generalized_tags = ir
+            .schemas
+            .iter()
+            .filter_map(|(name, schema)| {
+                let IrSchemaKind::TaggedUnion(union) = &schema.kind else {
+                    return None;
+                };
+                if matches!(union.tagging, TaggingStyle::External) {
+                    return None;
+                }
+                (!wire_plans.get(name)?.has_distinct_fixed_tags()).then(|| name.clone())
+            })
+            .collect();
         let projected = super::composition::project(ir);
         // A separate scan borrow permits registering owned planning facts while
         // the plan owns a projected graph. Borrowed, unchanged IR stays zero-copy.
@@ -267,30 +270,51 @@ impl<'a> TypeScriptPlan<'a> {
             wire_plans,
             generalized_tags,
             authored_tag_matchers: BTreeMap::new(),
+            authored_tag_fields: BTreeMap::new(),
         };
         for (name, schema) in &ir.schemas {
             let IrSchemaKind::TaggedUnion(union) = &schema.kind else {
                 continue;
             };
             if result.authored_tag_plan(name).is_some() {
-                if (!flags.property_naming_camel_case || result.is_raw_tagged(name))
-                    && !flags.emit_type_guards
-                {
-                    continue;
-                }
                 let wire = result
                     .authored_tag_plan(name)
                     .expect("inferred tagged plan");
+                let fields: Vec<_> = union
+                    .variants
+                    .iter()
+                    .map(|variant| {
+                        TaggedFields::new(
+                            if matches!(union.tagging, TaggingStyle::Internal) {
+                                wire.common_shape()
+                            } else {
+                                None
+                            },
+                            &variant.content_type,
+                            &union.discriminator_field,
+                            ir,
+                        )
+                    })
+                    .collect();
+                if (!flags.property_naming_camel_case || result.is_raw_tagged(name))
+                    && !flags.emit_type_guards
+                {
+                    result.authored_tag_fields.insert(name.clone(), fields);
+                    continue;
+                }
                 let mut projection = super::wire_matching::Projection::new(
                     &ir.wire_schemas,
                     !flags.property_naming_camel_case || result.is_raw_tagged(name),
                 );
-                let common = wire.common_shape().map(|shape| projection.shape(shape));
                 let branches: Vec<_> = wire
                     .branches()
                     .iter()
-                    .map(|branch| {
-                        let branch = projection.shape(branch);
+                    .zip(&fields)
+                    .map(|(branch, fields)| {
+                        let common = wire
+                            .common_shape()
+                            .map(|shape| projection.root(shape, fields));
+                        let branch = projection.root(branch, fields);
                         let (concrete, fallback) = selection_shapes(branch.clone());
                         // Union-level constraints gate eligibility; they are not evidence
                         // that an individual opaque branch is concrete.
@@ -318,6 +342,7 @@ impl<'a> TypeScriptPlan<'a> {
                     }
                 }
                 result.authored_tag_matchers.insert(name.clone(), branches);
+                result.authored_tag_fields.insert(name.clone(), fields);
             } else if flags.property_naming_camel_case {
                 for variant in &union.variants {
                     if variant.discriminator_optional || variant.discriminator_values.len() > 1 {
@@ -626,6 +651,10 @@ impl<'a> TypeScriptPlan<'a> {
         }
     }
 
+    pub(super) fn authored_tag_fields(&self, name: &str, index: usize) -> Option<&TaggedFields> {
+        self.authored_tag_fields.get(name)?.get(index)
+    }
+
     pub(super) fn has_generalized_tags(&self) -> bool {
         !self.generalized_tags.is_empty()
     }
@@ -877,6 +906,7 @@ impl<'a> TypeScriptPlan<'a> {
                         &IrUnion {
                             members: members.clone(),
                             nullable: false,
+                            authored_wire: None,
                         },
                         scope,
                         output.clone(),

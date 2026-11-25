@@ -260,6 +260,7 @@ impl<'a> LowerCtx<'a> {
             return Ok(IrSchemaKind::Union(IrUnion {
                 members,
                 nullable: has_null,
+                authored_wire: Some(super::wire::union(obj)),
             }));
         }
 
@@ -278,6 +279,7 @@ impl<'a> LowerCtx<'a> {
             return Ok(IrSchemaKind::Union(IrUnion {
                 members,
                 nullable: has_null,
+                authored_wire: Some(super::wire::union(obj)),
             }));
         }
 
@@ -402,7 +404,7 @@ impl<'a> LowerCtx<'a> {
                 discriminator_field: String::new(), // No common tag field for external
                 tagging: TaggingStyle::External,
                 variants,
-                inferred_wire: Some(super::wire::inferred(obj)),
+                inferred_wire: Some(super::wire::union(obj)),
             }));
         }
 
@@ -478,7 +480,7 @@ impl<'a> LowerCtx<'a> {
             discriminator_field: first_tag.to_string(),
             tagging,
             variants,
-            inferred_wire: Some(super::wire::inferred(obj)),
+            inferred_wire: Some(super::wire::union(obj)),
         }))
     }
 

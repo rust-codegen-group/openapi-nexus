@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 
-use crate::ir::types::{IrInferredUnionWire, IrJsonKind, IrWireObject, IrWireShape};
+use crate::ir::types::{IrJsonKind, IrUnionWire, IrWireObject, IrWireShape};
 
 use super::composition::CompositionSchema;
 
@@ -21,10 +21,21 @@ pub(super) trait WireSchema: CompositionSchema {
     fn schema(value: &Self::Schema) -> IrWireShape;
 }
 
-pub(super) fn inferred<S: WireSchema>(node: &S) -> IrInferredUnionWire {
-    IrInferredUnionWire {
-        common: shape_with_one_of(node, false),
-        branches: node.one_of().iter().map(member::<S>).collect(),
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Alternatives {
+    OneOf,
+    AnyOf,
+}
+
+pub(super) fn union<S: WireSchema>(node: &S) -> IrUnionWire {
+    let (kind, alternatives) = if node.one_of().is_empty() {
+        (Alternatives::AnyOf, node.any_of())
+    } else {
+        (Alternatives::OneOf, node.one_of())
+    };
+    IrUnionWire {
+        common: shape_excluding(node, Some(kind)),
+        branches: alternatives.iter().map(member::<S>).collect(),
     }
 }
 
@@ -41,10 +52,10 @@ pub(super) fn member<S: WireSchema>(node: &S::Member) -> IrWireShape {
 }
 
 fn shape<S: WireSchema>(node: &S) -> IrWireShape {
-    shape_with_one_of(node, true)
+    shape_excluding(node, None)
 }
 
-fn shape_with_one_of<S: WireSchema>(node: &S, include_one_of: bool) -> IrWireShape {
+fn shape_excluding<S: WireSchema>(node: &S, alternatives: Option<Alternatives>) -> IrWireShape {
     let mut constraints = Vec::new();
     if !node.enum_values().is_empty() {
         constraints.push(IrWireShape::Finite(node.enum_values().to_vec()));
@@ -89,12 +100,12 @@ fn shape_with_one_of<S: WireSchema>(node: &S, include_one_of: bool) -> IrWireSha
     }
 
     constraints.extend(node.all_of().iter().map(member::<S>));
-    if include_one_of && !node.one_of().is_empty() {
+    if alternatives != Some(Alternatives::OneOf) && !node.one_of().is_empty() {
         constraints.push(IrWireShape::OneOf(
             node.one_of().iter().map(member::<S>).collect(),
         ));
     }
-    if !node.any_of().is_empty() {
+    if alternatives != Some(Alternatives::AnyOf) && !node.any_of().is_empty() {
         constraints.push(IrWireShape::AnyOf(
             node.any_of().iter().map(member::<S>).collect(),
         ));

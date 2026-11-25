@@ -43,23 +43,18 @@ impl<'ir> UnionWirePlans<'ir> {
             .schemas
             .iter()
             .filter_map(|(name, schema)| {
-                let (branches, common, tagged) = match &schema.kind {
+                let (wire, tagged) = match &schema.kind {
                     IrSchemaKind::TaggedUnion(union) => {
                         let wire = union.inferred_wire.as_ref()?;
                         if wire.branches.len() != union.variants.len() {
                             return None;
                         }
-                        (&wire.branches, Some(&wire.common), Some(union))
+                        (wire, Some(union))
                     }
-                    IrSchemaKind::Union(_) => match ir.wire_schemas.get(name)? {
-                        IrWireShape::OneOf(branches) | IrWireShape::AnyOf(branches) => {
-                            (branches, None, None)
-                        }
-                        _ => return None,
-                    },
+                    IrSchemaKind::Union(union) => (union.authored_wire.as_ref()?, None),
                     _ => return None,
                 };
-                let bindings = (0..branches.len())
+                let bindings = (0..wire.branches.len())
                     .map(|index| {
                         tagged.map_or(WireBinding::Whole, |union| tagged_binding(union, index, ir))
                     })
@@ -68,8 +63,9 @@ impl<'ir> UnionWirePlans<'ir> {
                     name.as_str(),
                     UnionWirePlan {
                         ir,
-                        branches,
-                        common,
+                        tagged,
+                        branches: &wire.branches,
+                        common: Some(&wire.common),
                         bindings,
                         strategy,
                     },
@@ -86,6 +82,7 @@ impl<'ir> UnionWirePlans<'ir> {
 
 pub struct UnionWirePlan<'ir> {
     ir: &'ir IrSpec,
+    tagged: Option<&'ir IrTaggedUnion>,
     branches: &'ir [IrWireShape],
     common: Option<&'ir IrWireShape>,
     bindings: Vec<WireBinding<'ir>>,
@@ -93,6 +90,24 @@ pub struct UnionWirePlan<'ir> {
 }
 
 impl<'ir> UnionWirePlan<'ir> {
+    /// True when the legacy branch labels agree with distinct authored singletons
+    /// and each label is required. This proves tag identity only. It does not
+    /// prove that a target codec respects the shapes or preserves the payload.
+    pub fn has_distinct_fixed_tags(&self) -> bool {
+        let Some(union) = self.tagged else {
+            return false;
+        };
+        let mut seen = HashSet::new();
+        !union.variants.is_empty()
+            && union.variants.iter().enumerate().all(|(index, variant)| {
+                self.tag_domain(index).is_some_and(|domain| {
+                    matches!(domain.values.as_deref(), Some([Value::String(label)])
+                        if !domain.allows_absent && label == &variant.discriminator_value
+                            && seen.insert(variant.discriminator_value.as_str()))
+                })
+            })
+    }
+
     pub fn binding(&self, branch: usize) -> Option<WireBinding<'ir>> {
         self.bindings.get(branch).copied()
     }
@@ -169,19 +184,36 @@ impl<'ir> UnionWirePlan<'ir> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WireBinding<'ir> {
     Whole,
-    Internal { field: &'ir str, owner: TagOwner },
-    Adjacent { field: &'ir str, content: &'ir str },
-    External { key: &'ir str },
+    Internal {
+        field: &'ir str,
+        owner: TagOwner,
+        read: TagRead,
+    },
+    Adjacent {
+        field: &'ir str,
+        content: &'ir str,
+    },
+    External {
+        key: &'ir str,
+    },
+}
+
+/// Whether the original payload codec can be called with the tag removed.
+/// A codec specifically projected for the union case can use a different input.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TagRead {
+    Keep,
+    Strip,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TagOwner {
-    /// Exactly one payload member already owns the property.
+    /// One payload codec owns the property, including a nested tagged union.
     Payload,
-    /// The lowered payload lacks the property. The case carries its state.
+    /// No payload codec owns the property. The case carries its state.
     Case,
-    /// Multiple payload models retain the property. Bind a projected payload
-    /// at this use site rather than flattening their original model codecs.
+    /// Several payload codecs, or only some alternatives, can carry the tag.
+    /// The case must ensure a single authoritative value on output.
     CaseWithPayloadProjection,
 }
 
@@ -197,13 +229,13 @@ impl WireBinding<'_> {
         }
     }
 
-    /// A borrowed value when the original model can consume it, or a
-    /// use-site projection when the case owns the root discriminator.
+    /// The input to the original selected payload codec. This is separate from
+    /// output ownership: several composed members may still need to read a tag.
     pub fn payload<'wire>(self, wire: &'wire Value) -> Option<Cow<'wire, Value>> {
         match self {
             Self::Whole
             | Self::Internal {
-                owner: TagOwner::Payload,
+                read: TagRead::Keep,
                 ..
             } => Some(Cow::Borrowed(wire)),
             Self::Internal { field, .. } => {
@@ -233,6 +265,7 @@ impl WireBinding<'_> {
             Self::Internal {
                 field,
                 owner: TagOwner::Payload,
+                ..
             } => {
                 if tag.is_some() && output.get(field) != tag {
                     return Err(ConflictingTag);
@@ -259,17 +292,13 @@ fn tagged_binding<'ir>(union: &'ir IrTaggedUnion, index: usize, ir: &IrSpec) -> 
     let field = &union.discriminator_field;
     match &union.tagging {
         TaggingStyle::Internal => {
-            let owner = match root_tag_declarations(
-                &variant.content_type,
-                field,
-                ir,
-                &mut HashSet::new(),
-            ) {
-                0 => TagOwner::Case,
-                1 => TagOwner::Payload,
-                _ => TagOwner::CaseWithPayloadProjection,
+            let access = root_tag_access(&variant.content_type, field, ir, &mut HashSet::new());
+            let (owner, read) = match access {
+                RootTagAccess::None => (TagOwner::Case, TagRead::Strip),
+                RootTagAccess::One => (TagOwner::Payload, TagRead::Keep),
+                RootTagAccess::Projected => (TagOwner::CaseWithPayloadProjection, TagRead::Keep),
             };
-            WireBinding::Internal { field, owner }
+            WireBinding::Internal { field, owner, read }
         }
         TaggingStyle::Adjacent { content_field } => WireBinding::Adjacent {
             field,
@@ -281,33 +310,89 @@ fn tagged_binding<'ir>(union: &'ir IrTaggedUnion, index: usize, ir: &IrSpec) -> 
     }
 }
 
-fn root_tag_declarations<'ir>(
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RootTagAccess {
+    None,
+    One,
+    Projected,
+}
+
+impl RootTagAccess {
+    fn alternatives(mut members: impl Iterator<Item = Self>) -> Self {
+        let first = members.next().unwrap_or(Self::None);
+        if members.all(|member| member == first) {
+            first
+        } else {
+            Self::Projected
+        }
+    }
+
+    fn compose(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::None, access) | (access, Self::None) => access,
+            _ => Self::Projected,
+        }
+    }
+}
+
+fn root_tag_access<'ir>(
     expr: &'ir IrTypeExpr,
     field: &str,
     ir: &'ir IrSpec,
     visiting: &mut HashSet<&'ir str>,
-) -> u8 {
+) -> RootTagAccess {
+    use RootTagAccess::{None as NoAccess, One};
     match expr.representation() {
-        IrTypeExpr::Nullable(inner) => root_tag_declarations(inner, field, ir, visiting),
+        IrTypeExpr::Nullable(inner) => root_tag_access(inner, field, ir, visiting),
+        IrTypeExpr::Union(members) => RootTagAccess::alternatives(
+            members
+                .iter()
+                .map(|member| root_tag_access(member, field, ir, visiting)),
+        ),
         IrTypeExpr::Named(name) if visiting.insert(name.as_str()) => {
-            let count = match ir.schemas.get(name).map(|schema| &schema.kind) {
-                Some(IrSchemaKind::Object(object)) => {
-                    u8::from(object.properties.contains_key(field))
-                }
-                Some(IrSchemaKind::Alias(inner)) => {
-                    root_tag_declarations(inner, field, ir, visiting)
-                }
+            let access = match ir.schemas.get(name).map(|schema| &schema.kind) {
+                Some(IrSchemaKind::Object(object)) if object.properties.contains_key(field) => One,
+                Some(IrSchemaKind::Alias(inner)) => root_tag_access(inner, field, ir, visiting),
                 Some(IrSchemaKind::Intersection(all)) => {
-                    all.members.iter().fold(0_u8, |count, member| {
-                        count.saturating_add(root_tag_declarations(member, field, ir, visiting))
+                    all.members.iter().fold(NoAccess, |access, member| {
+                        access.compose(root_tag_access(member, field, ir, visiting))
                     })
                 }
-                _ => 0,
+                Some(IrSchemaKind::Union(union)) => RootTagAccess::alternatives(
+                    union
+                        .members
+                        .iter()
+                        .map(|member| root_tag_access(member, field, ir, visiting)),
+                ),
+                Some(IrSchemaKind::TaggedUnion(union)) => match &union.tagging {
+                    TaggingStyle::Internal if union.discriminator_field == field => One,
+                    TaggingStyle::Internal => {
+                        RootTagAccess::alternatives(union.variants.iter().map(|variant| {
+                            root_tag_access(&variant.content_type, field, ir, visiting)
+                        }))
+                    }
+                    TaggingStyle::Adjacent { content_field }
+                        if union.discriminator_field == field || content_field == field =>
+                    {
+                        One
+                    }
+                    TaggingStyle::External => {
+                        RootTagAccess::alternatives(union.variants.iter().map(|variant| {
+                            if variant.discriminator_value == field {
+                                One
+                            } else {
+                                NoAccess
+                            }
+                        }))
+                    }
+                    TaggingStyle::Adjacent { .. } => NoAccess,
+                },
+                _ => NoAccess,
             };
             visiting.remove(name.as_str());
-            count
+            access
         }
-        _ => 0,
+        _ => NoAccess,
     }
 }
 

@@ -671,7 +671,9 @@ impl TypeScript {
             }
             if let TypeName::Intersection(parts) = member {
                 cb.add("| (", ());
-                let multiline = 5 + self.width(&CodeBlock::of("%T", member.clone())?)? > WIDTH;
+                // Include the closing parenthesis and the alias terminator so
+                // a nearly full-width branch isn't emitted two columns too long.
+                let multiline = 7 + self.width(&CodeBlock::of("%T", member.clone())?)? > WIDTH;
                 for (i, part) in parts.iter().enumerate() {
                     if i > 0 {
                         cb.add(if multiline { " &\n%>%>" } else { " & " }, ());
@@ -745,11 +747,22 @@ fn fits(block: &CodeBlock, column: usize) -> Result<bool, SigilStitchError> {
 }
 
 fn delimited(
+    prefix: CodeBlock,
+    open: &'static str,
+    close: &'static str,
+    items: &[CodeBlock],
+    multiline: bool,
+) -> CodeBlock {
+    delimited_list(prefix, open, close, items, multiline, true)
+}
+
+fn delimited_list(
     mut prefix: CodeBlock,
     open: &'static str,
     close: &'static str,
     items: &[CodeBlock],
     multiline: bool,
+    trailing_comma: bool,
 ) -> CodeBlock {
     use sigil_stitch::code_node::CodeNode;
     // sigil-stitch has no expression-list layout API; quoted object braces and
@@ -766,7 +779,10 @@ fn delimited(
         }
         nodes.push(CodeNode::Nested(inline(item.clone())));
         if multiline {
-            nodes.extend([CodeNode::Literal(",".into()), CodeNode::Newline]);
+            if trailing_comma || index + 1 < items.len() {
+                nodes.push(CodeNode::Literal(",".into()));
+            }
+            nodes.push(CodeNode::Newline);
         }
     }
     if multiline {
@@ -911,7 +927,7 @@ pub(super) fn type_guard(
     );
     let multiline = lang.width(&header)? + lang.width(&suffix)? + 2 > WIDTH;
     let mut header = delimited(prefix, "(", ")", &[parameter], multiline);
-    let column = if multiline { 1 } else { lang.width(&header)? } + ": value is".len() + 1;
+    let column = (if multiline { 1 } else { lang.width(&header)? }) + ": value is".len() + 3;
     // FunSpec has no semantic type-predicate return slot. The small `value is`
     // delimiter is the only raw syntax; both types and the body stay structured.
     header.nodes_mut().extend([
@@ -938,6 +954,32 @@ pub(super) fn inline_object(fields: &[CodeBlock]) -> Result<CodeBlock, SigilStit
         fields,
         false,
     ))
+}
+
+/// The quote builder treats a leading computed key as statement syntax in a
+/// binding pattern. Build just the object delimiters, with semantic key and
+/// rest nodes as children so formatting and escaping remain exact.
+pub(super) fn object_binding(
+    fields: &[CodeBlock],
+    source: CodeBlock,
+    column: usize,
+    has_rest: bool,
+) -> Result<CodeBlock, SigilStitchError> {
+    let pattern = inline_object(fields)?;
+    let flat = sigil_quote!(TypeScript { const $C(pattern) = $C(source.clone()); })?;
+    if fits(&flat, column)? {
+        Ok(flat)
+    } else {
+        let pattern = delimited_list(
+            sigil_quote!(TypeScript {})?,
+            "{",
+            "}",
+            fields,
+            true,
+            !has_rest,
+        );
+        sigil_quote!(TypeScript { const $C(pattern) = $C(source); })
+    }
 }
 
 pub(super) fn return_object(
@@ -1028,6 +1070,30 @@ mod tests {
             width = 100,
             body,
             "import { nodeFromJSON } from './Node';\n\nreturn {\n  nextNode:\n    json.next_node !== undefined\n      ? json.next_node === null\n        ? null\n        : nodeFromJSON(json.next_node)\n      : undefined,\n};\n"
+        );
+    }
+
+    #[test]
+    fn computed_object_binding_keeps_rest_punctuation_in_both_layouts() {
+        let fields = [
+            sigil_quote!(TypeScript { [$S("tag_kind")]: tag }).unwrap(),
+            sigil_quote!(TypeScript { ...payload }).unwrap(),
+        ];
+        let source = sigil_quote!(TypeScript { json }).unwrap();
+        let lang = TypeScript::from(sigil_stitch::lang::typescript::TypeScript::new());
+        let compact = object_binding(&fields, source.clone(), 4, true).unwrap();
+        assert_rendered!(
+            lang.clone(),
+            width = 100,
+            compact,
+            "const { ['tag_kind']: tag, ...payload } = json;\n"
+        );
+        let multiline = object_binding(&fields, source, 70, true).unwrap();
+        assert_rendered!(
+            lang,
+            width = 100,
+            multiline,
+            "const {\n  ['tag_kind']: tag,\n  ...payload\n} = json;\n"
         );
     }
 

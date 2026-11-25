@@ -186,6 +186,7 @@ fn ir_dependencies_cover_all_model_kinds_and_type_wrappers() {
                     named("Alpha"),
                 ],
                 nullable: false,
+                authored_wire: None,
             }),
         ),
         schema(
