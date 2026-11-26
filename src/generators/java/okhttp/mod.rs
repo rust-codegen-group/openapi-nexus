@@ -6,6 +6,7 @@ mod matching;
 pub mod runtime;
 pub mod sigil_emit;
 pub mod sigil_emit_api;
+mod tagged;
 mod union;
 pub mod util;
 

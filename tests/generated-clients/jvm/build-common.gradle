@@ -3,6 +3,10 @@ apply plugin: "java"
 subprojects {
     if (path.startsWith(":cases:")) {
         apply plugin: "java"
+        if (projectDir.parentFile == new File(rootProject.projectDir, "../shared-cases").canonicalFile) {
+            // The same native test source is compiled against each backend.
+            layout.buildDirectory.set(rootProject.layout.buildDirectory.dir("shared-cases/${name}"))
+        }
         if (fileTree("src/test/java").matching { include "**/*Test.java" }.isEmpty()) {
             throw new GradleException("No consumer tests found in ${projectDir}")
         }

@@ -12,7 +12,9 @@ manifests.each { manifest ->
             def name = line.tokenize()[0]
             include(":clients:${name}", ":cases:${name}")
             project(":clients:${name}").projectDir = new File(settingsDir, "generated/${name}")
-            project(":cases:${name}").projectDir = new File(settingsDir, "cases/${name}")
+            def sharedCase = new File(settingsDir, "../shared-cases/${name}")
+            project(":cases:${name}").projectDir = sharedCase.isDirectory()
+                ? sharedCase : new File(settingsDir, "cases/${name}")
         }
     }
 }

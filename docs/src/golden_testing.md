@@ -246,9 +246,9 @@ not a claim that the native tests execute on the minimum runtime. See the
   The native validators use the active `tsc` and `vp` on `PATH`. To select
   that compiler explicitly, `npm exec --package=typescript@7.0.2 -- just
   golden-typescript::build-tsc` supplies it without changing generated packages.
-- Current local JVM validation uses Homebrew JDK 27.0.1 with Gradle 9.8.2, respecting
-  `JAVA_HOME` or the active JVM. CI validates on JDK 27. Generated libraries may
-  still declare a Java 17 compile target, independently of the consumer test JVM.
+- Current local JVM validation uses Homebrew JDK 27.0.1.1 with Gradle 9.9.1,
+  respecting `JAVA_HOME` or the active JVM. CI validates on JDK 27. Generated
+  libraries may declare a Java 17 compile target independently of the consumer JVM.
 
 Fixture discovery is tested in-process through the same build-support module
 used by `build.rs`. Cargo compiles and executes the registered parser tests

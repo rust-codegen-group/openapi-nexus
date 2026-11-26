@@ -24,6 +24,8 @@ for manifest in "${manifests[@]}"; do
       case "$strategy" in
         firstMatch|strict|raw)
           options+=(--generator-config "$backend-okhttp.untagged_union_strategy=$strategy") ;;
+        tagged_union_strategy=firstMatch|tagged_union_strategy=strict|tagged_union_strategy=raw)
+          options+=(--generator-config "$backend-okhttp.$strategy") ;;
         all_of_strategy=composed|all_of_strategy=raw)
           if [ "$backend" != java ] && [ "$backend" != kotlin ]; then echo "allOf policy is JVM-only" >&2; exit 1; fi
           options+=(--generator-config "$backend-okhttp.$strategy") ;;

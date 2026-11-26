@@ -23,6 +23,7 @@ const UPDATE_HINT: &str = "UPDATE_GOLDEN=1 cargo test --test golden_tests_kotlin
 #[rustfmt::skip]
 fn get_golden_test_cases() -> HashMap<&'static str, &'static str> {
     test_cases_from_slice(&[
+        ("authored-tagged-union", "valid/jvm-authored-tagged-union.yaml"),
         ("inline-additional-union", "valid/inline-additional-union.yaml"),
         (
             "kotlin-adapter-symbol-collision",
@@ -128,6 +129,7 @@ macro_rules! generate_golden_tests {
 }
 
 generate_golden_tests! {
+    test_authored_tagged_union_golden: "authored-tagged-union",
     test_inline_additional_union_golden: "inline-additional-union",
     test_kotlin_adapter_symbol_collision_golden: "kotlin-adapter-symbol-collision",
     test_tagged_allof_payloads_golden: "tagged-allof-payloads",

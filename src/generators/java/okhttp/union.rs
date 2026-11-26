@@ -5,8 +5,9 @@ use sigil_stitch::lang::java::Java;
 use sigil_stitch::prelude::*;
 
 use crate::generators::closed_sum::ClosedSumPlan;
+use crate::generators::jvm::TaggedWirePlans;
 use crate::generators::type_application;
-use crate::generators::union_match::plan_union_members;
+use crate::generators::union_match::{plan_members, plan_union_members};
 use crate::ir::types::{IrSchema, IrSchemaKind, IrSpec};
 
 use super::config::UntaggedUnionStrategy;
@@ -18,6 +19,7 @@ pub(super) fn adapter(
     plan: &ClosedSumPlan,
     ir: &IrSpec,
     untagged_union_strategy: UntaggedUnionStrategy,
+    tagged: Option<&TaggedWirePlans<'_>>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let raw = untagged_union_strategy == UntaggedUnionStrategy::Raw;
     let raw_case = &plan.cases[0].name;
@@ -31,7 +33,14 @@ pub(super) fn adapter(
     let read_body = if raw {
         sigil_quote!(Java { return new $N(&plan.name).$N(raw_case)(element); })?
     } else {
-        typed_read(schema, plan, ir, untagged_union_strategy, &mut matching)?
+        typed_read(
+            schema,
+            plan,
+            ir,
+            untagged_union_strategy,
+            &mut matching,
+            tagged,
+        )?
     };
     let read = FunSpec::builder("read")
         .visibility(Visibility::Public)
@@ -52,7 +61,20 @@ pub(super) fn adapter(
     } else {
         plan.cases
             .iter()
-            .map(|case| java_adapter_write_case(plan, case))
+            .map(|case| {
+                let Some(payload) = &case.payload else { return java_adapter_write_case(plan, case); };
+                if !tagged.is_some_and(|plans| plans.uses_authored_codec(payload)) {
+                    return java_adapter_write_case(plan, case);
+                }
+                let payload = super::sigil_emit::java_type_name(payload, true);
+                let case_type = TypeName::associated_type(root.clone(), None, &case.name);
+                sigil_quote!(Java {
+                    if (value instanceof $T(case_type) selected) {
+                        treeGson.toJson(gson.toJsonTree(selected.value0(), new TypeToken<$T(payload)>() {}.getType()), writer);
+                        return;
+                    }
+                })
+            })
             .collect::<Result<Vec<_>, _>>()?
     };
     let write = FunSpec::builder("write")
@@ -104,8 +126,11 @@ pub(super) fn adapter(
     for helper in matching.functions(ir)? {
         adapter = adapter.add_method(helper);
     }
+    final_adapter(adapter.build()?)
+}
+
+pub(super) fn final_adapter(adapter: TypeSpec) -> Result<CodeBlock, SigilStitchError> {
     let declaration = adapter
-        .build()?
         .emit(&Java::new())?
         .into_iter()
         .next()
@@ -121,11 +146,22 @@ fn typed_read(
     ir: &IrSpec,
     untagged_union_strategy: UntaggedUnionStrategy,
     matching: &mut MatchPlan,
+    tagged: Option<&TaggedWirePlans<'_>>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let IrSchemaKind::Union(union) = &schema.kind else {
         unreachable!("untagged selection owns a union schema")
     };
-    let members = plan_union_members(&schema.name, union, ir);
+    let members = if let Some(tagged) = tagged {
+        let override_named = |name: &str| tagged.named_override(name);
+        plan_members(
+            &union.members,
+            ir,
+            Some(&schema.name),
+            tagged.legacy_policy(&override_named),
+        )
+    } else {
+        plan_union_members(&schema.name, union, ir)
+    };
     for member in &members {
         matching.register(&member.shape, ir);
     }

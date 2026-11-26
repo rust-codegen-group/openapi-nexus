@@ -6,9 +6,7 @@ use sigil_stitch::error::SigilStitchError;
 use sigil_stitch::prelude::{CodeBlock, FunSpec, ParameterSpec, TypeName, Visibility, sigil_quote};
 
 use crate::generators::type_application;
-use crate::generators::union_match::{
-    JsonShape, MatchScope, accepts_any, plan_named_shape, selection_shapes,
-};
+use crate::generators::union_match::{JsonShape, MatchScope, accepts_any, plan_named_shape};
 use crate::ir::types::{IrObject, IrProperty, IrSchemaKind, IrSpec};
 
 /// Ordinary aliases retain wrapper facts; composed allOf uses flat member facts,
@@ -82,9 +80,6 @@ impl MatchPlan {
             {
                 Some(true)
             }
-            JsonShape::Literal(serde_json::Value::Array(_) | serde_json::Value::Object(_)) => {
-                Some(false)
-            }
             _ => None,
         }
     }
@@ -116,16 +111,24 @@ impl MatchPlan {
                     self.register(child, ir);
                 }
             }
+            JsonShape::Literal(serde_json::Value::Array(values)) => {
+                for value in values {
+                    self.register(&JsonShape::Literal(value.clone()), ir);
+                }
+            }
+            JsonShape::Literal(serde_json::Value::Object(values)) => {
+                for value in values.values() {
+                    self.register(&JsonShape::Literal(value.clone()), ir);
+                }
+            }
             JsonShape::Reference { schema, scope, .. } => {
-                let shape = plan_named_shape(schema, ir);
-                if *scope == MatchScope::Any {
-                    self.register(&shape, ir);
-                } else {
-                    let (concrete, fallback) = selection_shapes(shape);
-                    self.register(&concrete, ir);
-                    if *scope == MatchScope::Fallback {
-                        self.register(&fallback, ir);
-                    }
+                let (shape, fallback, _) =
+                    crate::generators::jvm::named_predicates(schema, ir, *scope, || {
+                        plan_named_shape(schema, ir)
+                    });
+                self.register(&shape, ir);
+                if let Some(fallback) = fallback {
+                    self.register(&fallback, ir);
                 }
             }
             _ => {}
@@ -355,7 +358,39 @@ impl MatchPlan {
                     return candidate.isJsonPrimitive() && candidate.getAsJsonPrimitive().isNumber() $+
                         && matchesNumber(candidate, $S(value.to_string()));
                 }),
-                _ => sigil_quote!(Java { return false; }),
+                serde_json::Value::Array(values) => {
+                    let checks = values
+                        .iter()
+                        .enumerate()
+                        .map(|(index, value)| {
+                            let item = sigil_quote!(Java { array.get($L(index.to_string())) })?;
+                            let check = self.condition(&JsonShape::Literal(value.clone()), item)?;
+                            sigil_quote!(Java { if (!$C(check)) { return false; } })
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
+                    let array = TypeName::qualified("com.google.gson", "JsonArray");
+                    sigil_quote!(Java {
+                        if (!candidate.isJsonArray()) { return false; }
+                        $T(array) array = candidate.getAsJsonArray();
+                        if (array.size() != $L(values.len().to_string())) { return false; }
+                        $C_each(checks)
+                        return true;
+                    })
+                }
+                serde_json::Value::Object(values) => {
+                    let checks = values.iter().map(|(name, value)| {
+                        let item = sigil_quote!(Java { object.get($S(name)) })?;
+                        let check = self.condition(&JsonShape::Literal(value.clone()), item)?;
+                        sigil_quote!(Java { if (!object.has($S(name)) || !$C(check)) { return false; } })
+                    }).collect::<Result<Vec<_>, _>>()?;
+                    sigil_quote!(Java {
+                        if (!candidate.isJsonObject()) { return false; }
+                        JsonObject object = candidate.getAsJsonObject();
+                        if (object.size() != $L(values.len().to_string())) { return false; }
+                        $C_each(checks)
+                        return true;
+                    })
+                }
             },
             JsonShape::Nullable(inner) => {
                 let check = self.condition(inner, sigil_quote!(Java { candidate })?)?;
@@ -460,19 +495,16 @@ impl MatchPlan {
             }
             JsonShape::Reference { schema, scope, .. } => {
                 let index = self.index(shape).to_string();
-                let named = plan_named_shape(schema, ir);
-                let expression = if *scope == MatchScope::Any {
-                    self.condition(&named, sigil_quote!(Java { candidate })?)?
+                let (named, fallback, guard_cycle) =
+                    crate::generators::jvm::named_predicates(schema, ir, *scope, || {
+                        plan_named_shape(schema, ir)
+                    });
+                let matching = self.condition(&named, sigil_quote!(Java { candidate })?)?;
+                let expression = if let Some(fallback) = fallback {
+                    let fallback = self.condition(&fallback, sigil_quote!(Java { candidate })?)?;
+                    sigil_quote!(Java { (!$C(matching) && $C(fallback)) })?
                 } else {
-                    let (concrete, fallback) = selection_shapes(named);
-                    let concrete = self.condition(&concrete, sigil_quote!(Java { candidate })?)?;
-                    if *scope == MatchScope::Concrete {
-                        concrete
-                    } else {
-                        let fallback =
-                            self.condition(&fallback, sigil_quote!(Java { candidate })?)?;
-                        sigil_quote!(Java { (!$C(concrete) && $C(fallback)) })?
-                    }
+                    matching
                 };
                 // Gson trees are immutable during selection. Identity keys avoid
                 // JsonElement's recursive structural hashing; predicate indices
@@ -487,6 +519,7 @@ impl MatchPlan {
                     }
                     $T(boolean) cached = results.get($L(index.clone()));
                     if (cached != null) { return cached; }
+                    $if(guard_cycle) { results.put($L(index.clone()), false); }
                     boolean matched = $C(expression);
                     results.put($L(index), matched);
                     return matched;
