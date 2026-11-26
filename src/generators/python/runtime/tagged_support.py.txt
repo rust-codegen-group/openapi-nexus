@@ -1,0 +1,95 @@
+"""Runtime helpers for authored tagged-union codecs."""
+
+from collections.abc import Callable, Sequence
+from enum import Enum
+
+from ._union_support import equal, is_dict
+
+
+type EvidenceMemo = dict[tuple[int, int], int]
+type Matcher = Callable[[object, EvidenceMemo], int]
+
+
+class AbsentDiscriminator(Enum):
+    """A missing discriminator property, distinct from a present JSON null."""
+
+    ABSENT = 0
+
+
+def evidence(value: object, common: Matcher, branches: Sequence[Matcher]) -> int:
+    memo: EvidenceMemo = {}
+    if not common(value, memo):
+        return 0
+    matched = 0
+    for branch in branches:
+        matched = max(matched, branch(value, memo))
+        if matched == 2:
+            break
+    return matched
+
+
+def select(
+    value: object, common: Matcher, branches: Sequence[Matcher], strict: bool, name: str
+) -> int:
+    memo: EvidenceMemo = {}
+    unmatched = f"No matching inferred tagged union member for {name}"
+    if not common(value, memo):
+        raise ValueError(unmatched)
+    selected = None
+    fallback = None
+    for index, branch in enumerate(branches):
+        evidence = branch(value, memo)
+        if evidence == 2:
+            if not strict:
+                return index
+            if selected is not None:
+                raise ValueError(
+                    f"Ambiguous inferred tagged union {name}: multiple concrete members match"
+                )
+            selected = index
+        elif evidence == 1 and fallback is None:
+            fallback = index
+    if selected is not None:
+        return selected
+    if fallback is not None:
+        return fallback
+    raise ValueError(unmatched)
+
+
+def project(data: dict[str, object], field: str) -> dict[str, object]:
+    return {key: value for key, value in data.items() if key != field}
+
+
+def write_tag(result: dict[str, object], field: str, tag: object) -> None:
+    if field in result:
+        if not equal(result[field], tag):
+            raise ValueError(f"Conflicting inferred discriminator in payload: {field}")
+    elif tag is not AbsentDiscriminator.ABSENT:
+        result[field] = tag
+
+
+def project_whole(value: object, field: str) -> object:
+    return project(value, field) if is_dict(value) else value
+
+
+def read_whole_tag(value: object, field: str) -> object:
+    if is_dict(value):
+        return value.get(field, AbsentDiscriminator.ABSENT)
+    return AbsentDiscriminator.ABSENT
+
+
+def write_whole_tag(value: object, field: str, tag: object) -> object:
+    if not is_dict(value):
+        if tag is not AbsentDiscriminator.ABSENT:
+            raise ValueError("A non-object payload cannot carry a discriminator")
+        return value
+    result = dict(value)
+    write_tag(result, field, tag)
+    return result
+
+
+def finish(value: object, common: Matcher, branch: Matcher, name: str) -> object:
+    memo: EvidenceMemo = {}
+    if not common(value, memo) or not branch(value, memo):
+        raise ValueError(f"Serialized value does not match inferred tagged union branch {name}")
+    return value

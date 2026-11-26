@@ -13,7 +13,9 @@ use sigil_stitch::lang::python::Python;
 use sigil_stitch::prelude::*;
 
 use super::emit_models::{is_object_schema, python_field_name};
+use super::tagged_wire::{TaggedPlans, TaggedUnionStrategy};
 use super::type_names::python_type_name_for_schema;
+use super::wire_matching::WireMatching;
 use crate::codegen::traits::file_writer::FileInfo;
 use crate::generators::union_match::{self, JsonShape, MatchScope, UnionMemberMatch};
 use crate::generators::{ArtifactKind, GeneratorError, type_application};
@@ -50,6 +52,7 @@ pub(super) enum Direction {
 struct ShapeReferences {
     named: BTreeSet<(String, Direction)>,
     predicates: Vec<(JsonShape, Direction)>,
+    wire: WireMatching,
 }
 
 impl ShapeReferences {
@@ -72,7 +75,7 @@ fn predicate_name(index: usize) -> String {
 }
 
 impl Direction {
-    fn suffix(self) -> &'static str {
+    pub(super) fn suffix(self) -> &'static str {
         match self {
             Self::From => "from_dict",
             Self::To => "to_dict",
@@ -86,15 +89,24 @@ pub(super) struct ValuePlan<'a> {
     ir: &'a IrSpec,
     public_shapes: Cow<'a, IrSpec>,
     pub strategy: UntaggedUnionStrategy,
+    pub(super) tagged: TaggedPlans<'a>,
     expressions: Vec<IrTypeExpr>,
 }
 
 impl<'a> ValuePlan<'a> {
     pub fn new(ir: &'a IrSpec, strategy: UntaggedUnionStrategy) -> Self {
-        // Python exposes tagged payloads directly, not their wire wrappers.
-        // Reuse the shared shape planner against this selection-only view so
-        // aliases, nested properties, containers and productive references all
-        // match that public representation. The source IR and codecs stay intact.
+        Self::with_strategies(ir, strategy, TaggedUnionStrategy::FirstMatch)
+    }
+
+    pub(super) fn with_strategies(
+        ir: &'a IrSpec,
+        strategy: UntaggedUnionStrategy,
+        tagged: TaggedUnionStrategy,
+    ) -> Self {
+        let tagged = TaggedPlans::build(ir, tagged);
+        // Legacy tags expose payloads directly; adopted tags use the named
+        // matcher override and case wrappers. For legacy outbound matching,
+        // use a selection-only view that does not require a wire wrapper.
         let mut public_shapes = Cow::Borrowed(ir);
         if ir
             .schemas
@@ -116,6 +128,7 @@ impl<'a> ValuePlan<'a> {
         let mut plan = Self {
             ir,
             public_shapes,
+            tagged,
             strategy,
             expressions: Vec::new(),
         };
@@ -171,29 +184,31 @@ impl<'a> ValuePlan<'a> {
         fn visit(
             expr: &IrTypeExpr,
             ir: &IrSpec,
+            tagged: &TaggedPlans<'_>,
             seen: &mut BTreeSet<String>,
             include_extensions: bool,
         ) -> bool {
             match expr {
                 IrTypeExpr::Union(_) => true,
                 IrTypeExpr::ScalarEnum { representation, .. } => {
-                    visit(representation, ir, seen, include_extensions)
+                    visit(representation, ir, tagged, seen, include_extensions)
                 }
                 IrTypeExpr::Array(inner) | IrTypeExpr::Map(inner) | IrTypeExpr::Nullable(inner) => {
-                    visit(inner, ir, seen, include_extensions)
+                    visit(inner, ir, tagged, seen, include_extensions)
                 }
                 IrTypeExpr::Named(name) if seen.insert(name.clone()) => {
                     match ir.schemas.get(name).map(|schema| &schema.kind) {
                         Some(IrSchemaKind::Union(_)) => true,
+                        Some(IrSchemaKind::TaggedUnion(_)) if tagged.contains(name) => true,
                         Some(IrSchemaKind::Object(object)) => {
                             include_extensions && object.additional_properties.is_some()
                         }
                         Some(IrSchemaKind::Alias(inner)) => {
-                            visit(inner, ir, seen, include_extensions)
+                            visit(inner, ir, tagged, seen, include_extensions)
                         }
                         Some(IrSchemaKind::TaggedUnion(union)) => {
                             union.variants.iter().any(|variant| {
-                                visit(&variant.content_type, ir, seen, include_extensions)
+                                visit(&variant.content_type, ir, tagged, seen, include_extensions)
                             })
                         }
                         _ => false,
@@ -202,7 +217,34 @@ impl<'a> ValuePlan<'a> {
                 _ => false,
             }
         }
-        visit(expr, self.ir, &mut BTreeSet::new(), include_extensions)
+        visit(
+            expr,
+            self.ir,
+            &self.tagged,
+            &mut BTreeSet::new(),
+            include_extensions,
+        )
+    }
+
+    pub(super) fn optional_raw_tagged_field(&self, prop: &crate::ir::types::IrProperty) -> bool {
+        if prop.required || self.tagged.strategy != TaggedUnionStrategy::Raw {
+            return false;
+        }
+        let mut seen = BTreeSet::new();
+        let mut expr = &prop.type_expr;
+        loop {
+            match expr.representation() {
+                IrTypeExpr::Nullable(inner) => expr = inner,
+                IrTypeExpr::Named(name) if self.tagged.contains(name) => return true,
+                IrTypeExpr::Named(name) if seen.insert(name.as_str()) => {
+                    match self.ir.schemas.get(name).map(|schema| &schema.kind) {
+                        Some(IrSchemaKind::Alias(inner)) => expr = inner,
+                        _ => return false,
+                    }
+                }
+                _ => return false,
+            }
+        }
     }
 
     pub fn property_expr(&self, property: &crate::ir::types::IrProperty) -> IrTypeExpr {
@@ -294,6 +336,9 @@ impl<'a> ValuePlan<'a> {
                         Some(IrSchemaKind::Alias(inner)) => visit(plan, inner, seen),
                         Some(IrSchemaKind::Enum(enumeration)) => {
                             enumeration.value_type == crate::ir::types::IrEnumValueType::Mixed
+                        }
+                        Some(IrSchemaKind::TaggedUnion(_)) if plan.tagged.contains(name) => {
+                            plan.tagged.strategy == TaggedUnionStrategy::Raw
                         }
                         Some(IrSchemaKind::TaggedUnion(union)) => union
                             .variants
@@ -581,6 +626,47 @@ impl<'a> ValuePlan<'a> {
         }
     }
 
+    fn shape_override(&self, name: &str) -> Option<JsonShape> {
+        self.tagged.contains(name).then(|| {
+            if self.tagged.strategy == TaggedUnionStrategy::Raw {
+                JsonShape::Any
+            } else {
+                JsonShape::Reference {
+                    schema: name.to_owned(),
+                    scope: MatchScope::Any,
+                    unrestricted: false,
+                    accepts_null: false,
+                }
+            }
+        })
+    }
+
+    fn matching_policy<'s>(
+        override_named: &'s dyn Fn(&str) -> Option<JsonShape>,
+    ) -> union_match::ShapePolicy<'s> {
+        union_match::ShapePolicy {
+            tag_projection: union_match::TagProjection::FixedRequired,
+            override_named: Some(override_named),
+        }
+    }
+
+    fn planned_members(
+        &self,
+        members: &[IrTypeExpr],
+        owner: Option<&str>,
+        direction: Direction,
+    ) -> Vec<UnionMemberMatch> {
+        if owner.is_none() && self.tagged.is_empty() {
+            return union_match::plan_inline_union_members(members, self.matching_ir(direction));
+        }
+        union_match::plan_members(
+            members,
+            self.matching_ir(direction),
+            owner,
+            Self::matching_policy(&|name| self.shape_override(name)),
+        )
+    }
+
     fn matching_ir(&self, direction: Direction) -> &IrSpec {
         match direction {
             Direction::From => self.ir,
@@ -628,6 +714,18 @@ impl<'a> ValuePlan<'a> {
             let mut file = FileSpec::builder_with("_union.py", Python::new())
                 .header(super::emit_models::future_annotations_header())
                 .add_import(ImportSpec::named("..runtime", "_union_support"));
+            if self.tagged.strategy == TaggedUnionStrategy::Raw && !self.tagged.is_empty() {
+                file = file.add_type(
+                    TypeSpec::builder("AbsentRawValue", TypeKind::Enum)
+                        .extends(TypeName::importable("enum", "Enum"))
+                        .add_variant(
+                            EnumVariantSpec::builder("ABSENT")
+                                .discriminant(sigil_quote!(Python { 0 })?)
+                                .build()?,
+                        )
+                        .build()?,
+                );
+            }
             let mut references = ShapeReferences::default();
             for expr in &self.expressions {
                 for direction in [Direction::From, Direction::To] {
@@ -640,6 +738,9 @@ impl<'a> ValuePlan<'a> {
                     );
                 }
             }
+            if self.tagged.uses_literal() {
+                file = file.add_import(ImportSpec::named("typing", "Literal"));
+            }
             let mut done = BTreeSet::new();
             let mut next_predicate = 0;
             loop {
@@ -647,7 +748,32 @@ impl<'a> ValuePlan<'a> {
                     if !done.insert((name.clone(), direction)) {
                         continue;
                     }
-                    let shape = union_match::plan_named_shape(&name, self.matching_ir(direction));
+                    if self.tagged.contains(&name) {
+                        for scope in [MatchScope::Any, MatchScope::Concrete, MatchScope::Fallback] {
+                            file = file.add_function(
+                                FunSpec::builder(&shape_function(&name, scope, direction))
+                                    .add_param(ParameterSpec::of(
+                                        "value",
+                                        TypeName::primitive("object"),
+                                    ))
+                                    .returns(vec![TypeName::primitive("bool")])
+                                    .body(self.tagged.match_body(
+                                        &name,
+                                        direction,
+                                        scope == MatchScope::Concrete,
+                                        scope == MatchScope::Fallback,
+                                        &mut references.wire,
+                                    )?)
+                                    .build()?,
+                            );
+                        }
+                        continue;
+                    }
+                    let shape = union_match::plan_named_shape_with_policy(
+                        &name,
+                        self.matching_ir(direction),
+                        Self::matching_policy(&|name| self.shape_override(name)),
+                    );
                     let (concrete, fallback) = union_match::selection_shapes(shape.clone());
                     for (scope, shape) in [
                         (MatchScope::Any, shape),
@@ -675,21 +801,34 @@ impl<'a> ValuePlan<'a> {
                     break;
                 }
             }
+            if references.wire.has_predicates() {
+                file = file.add_import(ImportSpec::named("..runtime", "_tagged_support"));
+                for function in references.wire.functions(self.ir)? {
+                    file = file.add_function(function);
+                }
+            }
             file.build()?.render(super::PYTHON_LINE_LENGTH)
         };
         let body = render().map_err(|error| {
             GeneratorError::emission(ArtifactKind::Model, "Python union conversion", error)
         })?;
-        Ok(vec![
+        let mut files = vec![
             FileInfo::model("_union.py".to_string(), format!("{header}{body}")),
             FileInfo::runtime(
                 "_union_support.py".to_string(),
                 format!("{header}{}", include_str!("runtime/union_support.py.txt")),
             ),
-        ])
+        ];
+        if !self.tagged.is_empty() && self.tagged.strategy != TaggedUnionStrategy::Raw {
+            files.push(FileInfo::runtime(
+                "_tagged_support.py".to_string(),
+                format!("{header}{}", include_str!("runtime/tagged_support.py.txt")),
+            ));
+        }
+        Ok(files)
     }
 
-    fn invoke(
+    pub(super) fn invoke(
         &self,
         expr: &IrTypeExpr,
         value: CodeBlock,
@@ -722,6 +861,9 @@ impl<'a> ValuePlan<'a> {
                     let conversion = self.invoke(inner, value, direction)?;
                     sigil_quote!(Python { return $C(conversion) })
                 }
+                Some(IrSchemaKind::TaggedUnion(_)) if self.tagged.contains(name) => self
+                    .tagged
+                    .convert(name, self, direction, &mut references.wire),
                 Some(IrSchemaKind::TaggedUnion(union)) if self.needs_conversion(expr) => {
                     self.tagged_body(union, direction, references)
                 }
@@ -821,14 +963,7 @@ impl<'a> ValuePlan<'a> {
             return sigil_quote!(Python { return value });
         }
         let label = schema.unwrap_or("inline");
-        let candidates = if let Some(name) = schema {
-            let IrSchemaKind::Union(union) = &self.ir.schemas[name].kind else {
-                unreachable!("named union helper owns a union schema")
-            };
-            union_match::plan_union_members(name, union, self.matching_ir(direction))
-        } else {
-            union_match::plan_inline_union_members(members, self.matching_ir(direction))
-        };
+        let candidates = self.planned_members(members, schema, direction);
         let strict = self.strategy == UntaggedUnionStrategy::Strict;
         let mut checks = Vec::new();
         let mut concrete = Vec::new();
@@ -912,9 +1047,10 @@ impl<'a> ValuePlan<'a> {
                     _ => sigil_quote!(Python { data.get($S(tag.as_str())) == $S(label.as_str()) })?,
                 },
                 Direction::To => {
-                    let shapes = union_match::plan_inline_union_members(
+                    let shapes = self.planned_members(
                         std::slice::from_ref(&variant.content_type),
-                        self.matching_ir(direction),
+                        None,
+                        direction,
                     );
                     let shape =
                         JsonShape::AnyOf(shapes.into_iter().map(|member| member.shape).collect());
@@ -952,7 +1088,7 @@ impl<'a> ValuePlan<'a> {
     }
 }
 
-fn schema_expressions(kind: &IrSchemaKind) -> Vec<&IrTypeExpr> {
+pub(super) fn schema_expressions(kind: &IrSchemaKind) -> Vec<&IrTypeExpr> {
     match kind {
         IrSchemaKind::Object(object) => object
             .properties
@@ -972,7 +1108,7 @@ fn schema_expressions(kind: &IrSchemaKind) -> Vec<&IrTypeExpr> {
     }
 }
 
-fn model_dictionary_type() -> TypeName {
+pub(super) fn model_dictionary_type() -> TypeName {
     type_application(
         TypeName::primitive("dict"),
         vec![TypeName::primitive("str"), TypeName::primitive("object")],
@@ -1213,7 +1349,7 @@ fn emit_predicate(
         .build()
 }
 
-fn python_literal(value: &serde_json::Value) -> Result<CodeBlock, SigilStitchError> {
+pub(super) fn python_literal(value: &serde_json::Value) -> Result<CodeBlock, SigilStitchError> {
     match value {
         serde_json::Value::Null => sigil_quote!(Python { None }),
         serde_json::Value::Bool(value) => {

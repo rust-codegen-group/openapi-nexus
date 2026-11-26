@@ -43,6 +43,7 @@ pub(super) fn generate_project_files(
     request_inputs: &[RequestInputModel],
     include_upload_file: bool,
     dependency: &str,
+    authored_cases: impl IntoIterator<Item = (String, String)>,
 ) -> Vec<FileInfo> {
     let filename = format!("{package_name}/__init__.py");
     let runtime_exports = [
@@ -86,7 +87,7 @@ pub(super) fn generate_project_files(
         ),
         FileInfo::model(
             "__init__.py".to_string(),
-            render_barrel("__init__.py", header, model_exports),
+            render_barrel("__init__.py", header, model_exports.chain(authored_cases)),
         ),
         FileInfo::api(
             "__init__.py".to_string(),

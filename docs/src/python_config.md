@@ -7,6 +7,7 @@ clients require Python 3.12 or newer.
 [generators.python-httpx]
 package_name = "my_client"
 untagged_union_strategy = "firstMatch"
+tagged_union_strategy = "firstMatch"
 
 [generators.python-requests]
 package_name = "my_client"
@@ -51,10 +52,49 @@ finite enum/literal constraints. Booleans are not numbers despite Python's
 the same conversion boundaries. Formats and numeric/string bounds do not serve
 as member-selection validators.
 
-For tagged members inside an untagged union, outbound matching follows the
-existing public payload representation. The selected tagged converter restores
-its wire wrapper only after selection; strict ambiguity counting never calls a
+For legacy tagged members inside an untagged union, outbound matching follows
+its existing public payload representation. For authored inferred tagged
+members, it uses the named case type. Strict ambiguity counting never calls a
 converter to probe whether a member matches.
+
+## `tagged_union_strategy`
+
+Controls inferred internal discriminators that cannot use distinct required
+single labels. Both Python transports use the [Union Wire Contract](union_wire_contract.md):
+match the complete authored JSON shape before converting only the selected
+payload. Missing discriminators, permitted `null`, and alternate labels survive
+a round trip without substitution. Fixed-label, explicit, adjacent, and external
+representations stay unchanged.
+
+| Value | Behavior |
+| --- | --- |
+| `firstMatch` (default) | Select the first concrete member in authored order, using an opaque fallback only when no concrete member matches. Reject unmatched values. |
+| `strict` | Also reject multiple matching concrete members. |
+| `raw` | Use a dynamic `object` and return the original JSON value without matching or conversion. Optional raw model fields distinguish a missing key from explicit `None`. |
+
+For example, set `tagged_union_strategy = "strict"` or pass
+`--generator-config python-requests.tagged_union_strategy=strict`.
+
+In the typed modes, the public type alias is a union of named dataclasses such
+as `MessageTextCase`. A case owns its `payload`, and exposes `discriminator`
+only if the payload cannot own that wire property faithfully. If the case-owned
+property is optional, omitting the argument uses `AbsentDiscriminator.ABSENT`;
+`None` means an explicit JSON null when the schema permits it. If the
+payload codec is lossless at that use site, the case carries the ordinary typed
+payload. Otherwise its `payload` keeps the wire value; a projected object stores
+its discriminator on the case instead of in the payload dictionary. A scalar or
+array alternative has no discriminator to write. Projection preserves wire-only
+fields (including nested required nulls) without changing reusable models or
+suppressing errors from a selected nested decoder.
+
+```python
+from my_client.models import MessageText, MessageTextCase
+from my_client.models.message import message_to_dict
+
+payload = MessageText(label="note")
+message_to_dict(MessageTextCase(payload))  # {"label": "note"}
+message_to_dict(MessageTextCase(payload, "text_alt"))  # {"label": "note", "kind": "text_alt"}
+```
 
 ## Conversion entrypoints
 

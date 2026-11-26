@@ -1,0 +1,109 @@
+openapi: 3.1.0
+info: {title: Tagged echo, version: '1'}
+paths:
+  /echo:
+    post:
+      operationId: echo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Message'}
+      responses:
+        '200':
+          description: Echoed message
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Message'}
+        '422':
+          description: Rejected message
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Message'}
+components:
+  schemas:
+    Message:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {enum: [text, text_alt]}
+                label: {type: string}
+        - allOf:
+            - type: object
+              required: [count, nullable_count]
+              properties:
+                kind: {enum: [count]}
+                count: {type: integer}
+                nullable_count: {type: [integer, 'null']}
+    NestedMessage:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Message'}
+            - type: object
+              properties:
+                kind: {enum: [text, text_alt, count]}
+        - allOf:
+            - type: object
+              required: [kind, note]
+              properties:
+                kind: {enum: [note]}
+                note: {type: string}
+    Metadata:
+      type: object
+      required: [value]
+      properties:
+        value: {type: [integer, 'null']}
+    MetadataPayload:
+      type: object
+      required: [detail]
+      properties:
+        detail: {$ref: '#/components/schemas/Metadata'}
+    MetadataMessage:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/MetadataPayload'}
+            - type: object
+              properties:
+                kind: {enum: [meta]}
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {enum: [label]}
+                label: {type: string}
+    LegacyMessage:
+      type: string
+    MixedMessage:
+      oneOf:
+        - {$ref: '#/components/schemas/LegacyMessage'}
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {enum: [label]}
+                label: {type: string}
+    GatedMessage:
+      type: object
+      required: [scope]
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Message'}
+            - type: object
+              properties:
+                kind: {enum: [text, text_alt, count]}
+        - allOf:
+            - type: object
+              required: [kind, other]
+              properties:
+                kind: {enum: [other]}
+                other: {type: string}
+    MessageAlias:
+      $ref: '#/components/schemas/Message'
+    OptionalMessage:
+      type: object
+      properties:
+        direct_choice: {$ref: '#/components/schemas/Message'}
+        alias_choice: {$ref: '#/components/schemas/MessageAlias'}
+        ordinary: {type: [string, 'null']}

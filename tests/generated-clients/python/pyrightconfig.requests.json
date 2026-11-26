@@ -1,4 +1,23 @@
 {
   "extends": "./pyrightconfig.json",
-  "extraPaths": ["generated/requests/default", "generated/requests/strict", "generated/requests/raw", "generated/requests/additional/default", "generated/requests/additional/strict", "generated/requests/additional/raw", "generated/requests/inline/default", "generated/requests/inline/strict", "generated/requests/inline/raw", "generated/requests/recursive-tagged", "generated/requests/recursive-alias-scope"]
+  "extraPaths": [
+    "generated/requests/default",
+    "generated/requests/strict",
+    "generated/requests/raw",
+    "generated/requests/additional/default",
+    "generated/requests/additional/strict",
+    "generated/requests/additional/raw",
+    "generated/requests/inline/default",
+    "generated/requests/inline/strict",
+    "generated/requests/inline/raw",
+    "generated/requests/recursive-tagged",
+    "generated/requests/recursive-alias-scope",
+    "generated/requests/authored/default",
+    "generated/requests/authored/echo/default",
+    "generated/requests/authored/strict",
+    "generated/requests/authored/echo/strict",
+    "generated/requests/authored/raw",
+    "generated/requests/authored/echo/raw",
+    "generated/requests/authored/four"
+  ]
 }

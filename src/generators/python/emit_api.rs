@@ -66,12 +66,22 @@ pub(super) fn generate_api_files_with_strategy(
     transport: Transport,
 ) -> Vec<FileInfo> {
     let values = ValuePlan::new(ir, strategy);
+    generate_api_files_with_plan(ir, header, request_inputs, &values, transport)
+}
+
+pub(super) fn generate_api_files_with_plan(
+    ir: &IrSpec,
+    header: &str,
+    request_inputs: &RequestInputPlan,
+    values: &ValuePlan<'_>,
+    transport: Transport,
+) -> Vec<FileInfo> {
     let by_tag = group_by_tag(&ir.operations);
     let mut files = Vec::with_capacity(by_tag.len());
     for (tag, ops) in &by_tag {
         let stem = tag.to_snake_case();
         let filename = format!("{stem}_api.py");
-        let body = emit_api_file(tag, ops, ir, header, request_inputs, &values, transport);
+        let body = emit_api_file(tag, ops, ir, header, request_inputs, values, transport);
         files.push(FileInfo::api(filename, body));
     }
     files
