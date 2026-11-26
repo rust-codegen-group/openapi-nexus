@@ -33,7 +33,7 @@ use sigil_stitch::spec::where_spec::TypeArgument;
 use sigil_stitch::type_name::TypeName;
 
 use super::config::{ExtraDeriveConfig, RustGeneratorConfig};
-use super::tagged_wire::RustWirePlans;
+use super::tagged_wire::TaggedWirePlans;
 
 /// Generate every model file from the IR.
 pub fn generate_model_files(
@@ -46,7 +46,7 @@ pub fn generate_model_files(
     let mut mod_entries = Vec::new();
 
     let utoipa_enabled = config.utoipa.as_ref().is_some_and(|u| u.enabled);
-    let wire_plans = RustWirePlans::build(ir, config.tagged_union_strategy.into());
+    let wire_plans = TaggedWirePlans::build(ir, config.tagged_union_strategy.into());
 
     // Schemas inlined into Internal/Adjacent tagged unions can be skipped as standalone files,
     // BUT only if no other schema references them by name (e.g. External/Untagged tuple variants).
@@ -170,7 +170,7 @@ fn emit_model_file(
     schema: &IrSchema,
     config: &RustGeneratorConfig,
     ir: &IrSpec,
-    wire_plans: &RustWirePlans<'_>,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Result<Option<FileSpec>, SigilStitchError> {
     let extra = config.extra_derives.as_ref();
     let utoipa_enabled = config.utoipa.as_ref().is_some_and(|u| u.enabled);
@@ -992,7 +992,7 @@ fn escape_rust_keyword(name: &str) -> String {
 /// a standalone struct to exist (object fields, tuple variants, union members, etc.).
 fn collect_named_type_refs<'a>(
     schema: &'a IrSchema,
-    wire_plans: &RustWirePlans<'_>,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Vec<&'a str> {
     let mut refs = Vec::new();
     match &schema.kind {

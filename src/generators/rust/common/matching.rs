@@ -16,18 +16,18 @@ use crate::generators::union_match::{
 use crate::generators::union_wire::{Strategy, UnionWirePlan};
 use crate::ir::types::IrSpec;
 
-use super::tagged_wire::RustWirePlans;
+use super::tagged_wire::TaggedWirePlans;
 use super::wire_matching::WireMatching;
 
 #[derive(Default)]
 pub(super) struct MatchPlan<'plans> {
     shapes: Vec<JsonShape>,
     wire: WireMatching,
-    wire_plans: Option<&'plans RustWirePlans<'plans>>,
+    wire_plans: Option<&'plans TaggedWirePlans<'plans>>,
 }
 
 impl<'plans> MatchPlan<'plans> {
-    pub(super) fn with_wire(wire_plans: &'plans RustWirePlans<'plans>) -> Self {
+    pub(super) fn with_wire(wire_plans: &'plans TaggedWirePlans<'plans>) -> Self {
         Self {
             wire_plans: Some(wire_plans),
             ..Self::default()
