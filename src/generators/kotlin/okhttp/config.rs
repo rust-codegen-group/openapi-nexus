@@ -1,11 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+pub use crate::generators::jvm::TaggedUnionStrategy;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct KotlinOkhttpConfig {
     #[serde(default)]
     pub package_name: Option<String>,
     #[serde(default)]
     pub untagged_union_strategy: UntaggedUnionStrategy,
+    #[serde(default)]
+    pub tagged_union_strategy: TaggedUnionStrategy,
     #[serde(default)]
     pub all_of_strategy: AllOfStrategy,
 }

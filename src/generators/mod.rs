@@ -2,6 +2,7 @@ pub(crate) mod closed_sum;
 pub mod error;
 pub mod go;
 pub mod java;
+pub(crate) mod jvm;
 pub mod kotlin;
 pub mod multipart;
 pub mod python;

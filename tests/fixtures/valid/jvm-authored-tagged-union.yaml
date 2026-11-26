@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info: {title: JVM Authored Tagged Union, version: '1'}
+paths: {}
+components:
+  schemas:
+    Detail:
+      type: object
+      required: [value]
+      properties:
+        value: {type: [integer, 'null']}
+    Text: {type: string}
+    Choice:
+      oneOf:
+        - {$ref: '#/components/schemas/Text'}
+        - allOf:
+            - type: object
+              required: [scope, details]
+              properties:
+                kind: {type: string, enum: [alpha, alpha_alt]}
+                scope:
+                  const: {parts: [null, 9007199254740993]}
+                details:
+                  type: array
+                  items: {$ref: '#/components/schemas/Detail'}
+        - allOf:
+            - type: object
+              required: [kind, count]
+              properties:
+                kind: {type: [string, 'null'], enum: [beta, null]}
+                count: {type: integer}
+    ChoiceList:
+      anyOf:
+        - type: array
+          items: {$ref: '#/components/schemas/Choice'}
+        - {type: boolean}
+    Inner:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [text, text_alt]}
+                label: {type: string}
+        - allOf:
+            - type: object
+              required: [count]
+              properties:
+                kind: {type: string, enum: [size]}
+                count: {type: integer}
+    Holder:
+      type: object
+      required: [kind, child]
+      properties:
+        kind: {type: string, enum: [held]}
+        child: {$ref: '#/components/schemas/Inner'}
+    Outer:
+      type: object
+      required: [scope]
+      oneOf:
+        - {$ref: '#/components/schemas/Holder'}
+        - allOf:
+            - {$ref: '#/components/schemas/Inner'}
+            - type: object
+              properties:
+                kind: {type: string, enum: [text, text_alt, size]}
+        - allOf:
+            - type: object
+              required: [kind, other]
+              properties:
+                kind: {type: string, enum: [other]}
+                other: {type: string}

@@ -23,6 +23,10 @@ use super::util::{
     java_primitive, java_primitive_boxed, java_type_str, type_uses_list, type_uses_map,
 };
 
+use crate::generators::jvm::{
+    TaggedCase, TaggedUnionStrategy, TaggedWire, TaggedWirePlans, discriminator_type,
+};
+
 const RENDER_WIDTH: usize = 100;
 
 pub(crate) fn generate_model_files(
@@ -31,10 +35,12 @@ pub(crate) fn generate_model_files(
     header: &str,
     request_inputs: &RequestInputPlan,
     untagged_union_strategy: UntaggedUnionStrategy,
+    tagged_union_strategy: TaggedUnionStrategy,
     all_of_strategy: super::config::AllOfStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     let matching_ir = super::matching::wire_ir(ir, all_of_strategy);
+    let wire_plans = TaggedWirePlans::build(ir, tagged_union_strategy);
     for (_name, schema) in &ir.schemas {
         let body = emit_model_body(
             schema,
@@ -43,6 +49,7 @@ pub(crate) fn generate_model_files(
             package_name,
             untagged_union_strategy,
             all_of_strategy,
+            &wire_plans,
         )
         .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
         let class_name = schema.name.to_pascal_case();
@@ -146,6 +153,7 @@ fn emit_model_body(
     package_name: &str,
     untagged_union_strategy: UntaggedUnionStrategy,
     all_of_strategy: super::config::AllOfStrategy,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Result<String, SigilStitchError> {
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name),
@@ -157,11 +165,14 @@ fn emit_model_body(
             matching_ir,
             package_name,
             untagged_union_strategy,
+            wire_plans,
         ),
         IrSchemaKind::Intersection(i) => {
             super::composition::emit(schema, i, ir, package_name, all_of_strategy)
         }
-        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name),
+        IrSchemaKind::TaggedUnion(tu) => {
+            emit_tagged_union(schema, tu, ir, package_name, all_of_strategy, wire_plans)
+        }
     }?;
     file_spec.render(RENDER_WIDTH)
 }
@@ -427,6 +438,7 @@ fn emit_union(
     ir: &IrSpec,
     package_name: &str,
     untagged_union_strategy: UntaggedUnionStrategy,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Result<FileSpec, SigilStitchError> {
     if union.members.is_empty()
         && !union.nullable
@@ -449,8 +461,9 @@ fn emit_union(
             is_null: false,
         }];
     }
-    let adapter = super::union::adapter(schema, &plan, ir, untagged_union_strategy)?;
-    emit_closed_sum(&plan, package_name, adapter)
+    let adapter =
+        super::union::adapter(schema, &plan, ir, untagged_union_strategy, Some(wire_plans))?;
+    emit_closed_sum(&plan, package_name, adapter, None)
 }
 
 // ---------------------------------------------------------------------------
@@ -462,13 +475,31 @@ fn emit_tagged_union(
     tu: &IrTaggedUnion,
     ir: &IrSpec,
     package_name: &str,
+    all_of_strategy: super::config::AllOfStrategy,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Result<FileSpec, SigilStitchError> {
     if tu.variants.is_empty() {
         return emit_empty_model(schema, package_name);
     }
-    let plan = plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir);
-    let adapter = java_closed_sum_adapter(&plan)?;
-    emit_closed_sum(&plan, package_name, adapter)
+    let mut plan = plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir);
+    let authored = wire_plans.tagged(
+        &schema.name,
+        &mut plan,
+        |intersection| super::composition::is_composed(intersection, ir, all_of_strategy),
+        false,
+    );
+    let (adapter, cases) = match &authored {
+        Some(TaggedWire::Typed(wire)) => (
+            super::tagged::adapter(&plan, wire, ir)?,
+            Some(wire.cases.as_slice()),
+        ),
+        Some(TaggedWire::Raw) => (
+            super::union::adapter(schema, &plan, ir, UntaggedUnionStrategy::Raw, None)?,
+            None,
+        ),
+        None => (java_closed_sum_adapter(&plan)?, None),
+    };
+    emit_closed_sum(&plan, package_name, adapter, cases)
 }
 
 fn emit_empty_model(schema: &IrSchema, package_name: &str) -> Result<FileSpec, SigilStitchError> {
@@ -494,6 +525,7 @@ fn emit_closed_sum(
     plan: &ClosedSumPlan,
     package_name: &str,
     adapter: CodeBlock,
+    cases: Option<&[TaggedCase]>,
 ) -> Result<FileSpec, SigilStitchError> {
     let mut sum = ClosedSumSpec::builder(&plan.name).visibility(Visibility::Public);
     for doc in &plan.docs {
@@ -510,8 +542,11 @@ fn emit_closed_sum(
             "nullSafe = false".to_string(),
         ]),
     );
-    for case in &plan.cases {
-        sum = sum.add_case(java_closed_sum_case(case)?);
+    for (index, case) in plan.cases.iter().enumerate() {
+        sum = sum.add_case(java_closed_sum_case(
+            case,
+            cases.map(|cases| &cases[index]),
+        )?);
     }
 
     let mut file =
@@ -522,18 +557,30 @@ fn emit_closed_sum(
     file.add_closed_sum(sum.build()?).add_code(adapter).build()
 }
 
-fn java_closed_sum_case(case: &ClosedSumCasePlan) -> Result<ClosedSumCaseSpec, SigilStitchError> {
+fn java_closed_sum_case(
+    case: &ClosedSumCasePlan,
+    authored: Option<&TaggedCase>,
+) -> Result<ClosedSumCaseSpec, SigilStitchError> {
     let mut builder = ClosedSumCaseSpec::builder(&case.name);
     if let Some(doc) = &case.doc {
         builder = builder.doc(doc);
     }
     if let Some(payload) = &case.payload {
-        builder = builder.positional_payload(java_type_name(payload, false));
+        let payload = authored
+            .and_then(TaggedCase::projected_type)
+            .unwrap_or_else(|| java_type_name(payload, false));
+        if authored.is_some_and(|case| case.case_owns_tag) {
+            builder = builder
+                .record_field(FieldSpec::of("value0", payload))
+                .record_field(FieldSpec::of("discriminator", discriminator_type()));
+        } else {
+            builder = builder.positional_payload(payload);
+        }
     }
     builder.build()
 }
 
-fn java_type_name(expr: &IrTypeExpr, boxed: bool) -> TypeName {
+pub(super) fn java_type_name(expr: &IrTypeExpr, boxed: bool) -> TypeName {
     match expr {
         IrTypeExpr::ScalarEnum { representation, .. } => java_type_name(representation, boxed),
         IrTypeExpr::Named(name) => TypeName::primitive(&name.to_pascal_case()),
@@ -1085,9 +1132,14 @@ mod tests {
             is_component: true,
             kind: IrSchemaKind::Union(union),
         };
-        let adapter =
-            super::super::union::adapter(&schema, &plan, &ir, UntaggedUnionStrategy::FirstMatch)
-                .unwrap();
+        let adapter = super::super::union::adapter(
+            &schema,
+            &plan,
+            &ir,
+            UntaggedUnionStrategy::FirstMatch,
+            None,
+        )
+        .unwrap();
         assert_rendered!(
             Java::new(),
             width = 100,

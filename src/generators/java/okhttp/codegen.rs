@@ -44,6 +44,7 @@ impl JavaOkhttpCodeGenerator {
             &header,
             &request_inputs,
             self.config.untagged_union_strategy,
+            self.config.tagged_union_strategy,
             self.config.all_of_strategy,
         )?);
 

@@ -45,8 +45,8 @@ disambiguated (for example, `VariantRaw.VariantRawVariant`).
 
 Java aliases remain objects with a `value` field. Compatible `allOf` models now
 have flat object codecs, described below; union matchers follow that flat wire
-shape rather than the source-facing member names. Tagged unions and ordinary
-models keep their existing APIs and codecs.
+shape rather than the source-facing member names. Ordinary models keep their
+existing APIs and codecs; inferred tagged union policy is configured separately.
 
 Typed variants retain declared member payloads, not arbitrary unknown fields.
 Explicit additional-property storage is described below. Use raw mode when all
@@ -69,6 +69,36 @@ The policy can also be set through the CLI:
 openapi-nexus generate --input api.yaml --output sdk --generators java-okhttp \
   --generator-config java-okhttp.untagged_union_strategy=strict
 ```
+
+## Inferred internally tagged unions
+
+`tagged_union_strategy` controls inferred internal discriminators without a
+separate required fixed label for every member. This is independent of
+`untagged_union_strategy`. Explicit mappings, distinct fixed tags, and adjacent
+and external representations keep their existing codecs.
+
+| Policy | Behavior |
+| --- | --- |
+| `firstMatch` (default) | Select the first structurally matching concrete authored member, or the first opaque match if no concrete member matches. |
+| `strict` | Use the same eligibility rules and reject more than one matching concrete member. |
+| `raw` | Emit only `VariantRaw(JsonElement)` and return the original JSON subtree without typed selection or conversion. |
+
+The adapter checks the full authored object before invoking one payload decoder.
+If the native payload can own its discriminator, its existing case shape is
+unchanged. Otherwise the case has a separate `discriminator` field:
+`JsonElement`. A language `null` is an absent field; `JsonNull.INSTANCE` is
+an explicit JSON null when allowed. The serializer preserves the supplied wire
+label, rejects a conflicting discriminator in the payload, and validates the
+assembled value against the selected member and its common constraints.
+When a native payload cannot retain the full wire shape, `value0` holds the
+projected `JsonObject` (or `JsonElement` for non-object alternatives). Existing
+compatible native decoders still enforce their own payload rules in that case.
+This does not alter standalone payload models.
+
+For example, set `tagged_union_strategy = "strict"` under `[java-okhttp]`
+or pass `--generator-config java-okhttp.tagged_union_strategy=strict`.
+See [Union Wire Contract](union_wire_contract.md) for structural selection and
+wire ownership details.
 
 ## Additional properties
 

@@ -22,6 +22,10 @@ use super::opaque;
 use super::symbols::KotlinSymbols;
 use super::util::{escape_kt_string, kt_decl_name, kt_primitive, kt_ref, kt_type_str};
 
+use crate::generators::jvm::{
+    TaggedCase, TaggedUnionStrategy, TaggedWire, TaggedWirePlans, discriminator_type,
+};
+
 const RENDER_WIDTH: usize = 100;
 
 pub(super) fn opaque_runtime_needed(ir: &IrSpec) -> bool {
@@ -34,10 +38,12 @@ pub(crate) fn generate_model_files(
     header: &str,
     request_inputs: &RequestInputPlan,
     strategy: UntaggedUnionStrategy,
+    tagged_union_strategy: TaggedUnionStrategy,
     all_of_strategy: AllOfStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     let matching_ir = super::matching::wire_ir(ir, all_of_strategy);
+    let wire_plans = TaggedWirePlans::build(ir, tagged_union_strategy);
     let mut symbols = KotlinSymbols::from_ir(
         ir,
         request_inputs
@@ -51,8 +57,8 @@ pub(crate) fn generate_model_files(
             ir,
             &matching_ir,
             package_name,
-            strategy,
-            all_of_strategy,
+            (strategy, all_of_strategy),
+            &wire_plans,
             &mut symbols,
         )
         .map_err(|error| GeneratorError::emission(ArtifactKind::Model, &schema.name, error))?;
@@ -113,21 +119,36 @@ fn emit_model_body(
     ir: &IrSpec,
     matching_ir: &IrSpec,
     package_name: &str,
-    strategy: UntaggedUnionStrategy,
-    all_of_strategy: AllOfStrategy,
+    strategies: (UntaggedUnionStrategy, AllOfStrategy),
+    wire_plans: &TaggedWirePlans<'_>,
     symbols: &mut KotlinSymbols,
 ) -> Result<String, SigilStitchError> {
+    let (strategy, all_of_strategy) = strategies;
     let file_spec = match &schema.kind {
         IrSchemaKind::Object(obj) => emit_object(schema, obj, package_name, ir),
         IrSchemaKind::Enum(en) => emit_enum(schema, en, package_name),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr, package_name),
-        IrSchemaKind::Union(u) => {
-            emit_union(schema, u, matching_ir, package_name, strategy, symbols)
-        }
+        IrSchemaKind::Union(u) => emit_union(
+            schema,
+            u,
+            matching_ir,
+            package_name,
+            strategy,
+            symbols,
+            wire_plans,
+        ),
         IrSchemaKind::Intersection(i) => {
             super::composition::emit(schema, i, ir, package_name, all_of_strategy)
         }
-        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu, ir, package_name, symbols),
+        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(
+            schema,
+            tu,
+            ir,
+            package_name,
+            symbols,
+            all_of_strategy,
+            wire_plans,
+        ),
     }?;
     file_spec.render(RENDER_WIDTH)
 }
@@ -316,6 +337,7 @@ fn emit_union(
     package_name: &str,
     strategy: UntaggedUnionStrategy,
     symbols: &KotlinSymbols,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Result<FileSpec, SigilStitchError> {
     let mut plan = plan_union(&schema.name, schema.description.as_deref(), union);
     if strategy == UntaggedUnionStrategy::Raw {
@@ -333,8 +355,9 @@ fn emit_union(
         }];
     }
     let adapter_name = symbols.adapter_name(&schema.name);
-    let adapter = super::union::adapter(schema, &plan, ir, strategy, adapter_name)?;
-    closed_sum_file(&plan, package_name, adapter_name, adapter)
+    let adapter =
+        super::union::adapter(schema, &plan, ir, strategy, Some(wire_plans), adapter_name)?;
+    closed_sum_file(&plan, package_name, adapter_name, adapter, None)
 }
 
 fn emit_tagged_union(
@@ -343,22 +366,36 @@ fn emit_tagged_union(
     ir: &IrSpec,
     package_name: &str,
     symbols: &KotlinSymbols,
+    all_of_strategy: AllOfStrategy,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Result<FileSpec, SigilStitchError> {
-    let plan = plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir);
-    emit_closed_sum(&plan, package_name, symbols.adapter_name(&schema.name))
-}
-
-fn emit_closed_sum(
-    plan: &ClosedSumPlan,
-    package_name: &str,
-    adapter_name: &str,
-) -> Result<FileSpec, SigilStitchError> {
-    closed_sum_file(
-        plan,
-        package_name,
-        adapter_name,
-        kotlin_closed_sum_adapter(plan, adapter_name)?,
-    )
+    let mut plan = plan_tagged_union(&schema.name, schema.description.as_deref(), tu, ir);
+    let adapter_name = symbols.adapter_name(&schema.name);
+    let authored = wire_plans.tagged(
+        &schema.name,
+        &mut plan,
+        |intersection| super::composition::is_composed(intersection, ir, all_of_strategy),
+        true,
+    );
+    let (adapter, cases) = match &authored {
+        Some(TaggedWire::Typed(wire)) => (
+            super::tagged::adapter(&plan, wire, ir, adapter_name)?,
+            Some(wire.cases.as_slice()),
+        ),
+        Some(TaggedWire::Raw) => (
+            super::union::adapter(
+                schema,
+                &plan,
+                ir,
+                UntaggedUnionStrategy::Raw,
+                None,
+                adapter_name,
+            )?,
+            None,
+        ),
+        None => (kotlin_closed_sum_adapter(&plan, adapter_name)?, None),
+    };
+    closed_sum_file(&plan, package_name, adapter_name, adapter, cases)
 }
 
 fn closed_sum_file(
@@ -366,6 +403,7 @@ fn closed_sum_file(
     package_name: &str,
     adapter_name: &str,
     adapter: CodeBlock,
+    cases: Option<&[TaggedCase]>,
 ) -> Result<FileSpec, SigilStitchError> {
     let mut sum = ClosedSumSpec::builder(&plan.name).visibility(Visibility::Public);
     for doc in &plan.docs {
@@ -381,8 +419,11 @@ fn closed_sum_file(
             "nullSafe = false".to_string(),
         ]),
     );
-    for case in &plan.cases {
-        sum = sum.add_case(kotlin_closed_sum_case(case)?);
+    for (index, case) in plan.cases.iter().enumerate() {
+        sum = sum.add_case(kotlin_closed_sum_case(
+            case,
+            cases.map(|cases| &cases[index]),
+        )?);
     }
 
     let mut file =
@@ -393,13 +434,28 @@ fn closed_sum_file(
     file.add_closed_sum(sum.build()?).add_code(adapter).build()
 }
 
-fn kotlin_closed_sum_case(case: &ClosedSumCasePlan) -> Result<ClosedSumCaseSpec, SigilStitchError> {
+fn kotlin_closed_sum_case(
+    case: &ClosedSumCasePlan,
+    authored: Option<&TaggedCase>,
+) -> Result<ClosedSumCaseSpec, SigilStitchError> {
     let mut builder = ClosedSumCaseSpec::builder(&case.name);
     if let Some(doc) = &case.doc {
         builder = builder.doc(doc);
     }
     if let Some(payload) = &case.payload {
-        builder = builder.positional_payload(kotlin_type_name(payload));
+        let payload = authored
+            .and_then(TaggedCase::projected_type)
+            .unwrap_or_else(|| kotlin_type_name(payload));
+        if authored.is_some_and(|case| case.case_owns_tag) {
+            builder = builder
+                .record_field(FieldSpec::of("value0", payload))
+                .record_field(FieldSpec::of(
+                    "discriminator",
+                    TypeName::optional(discriminator_type()),
+                ));
+        } else {
+            builder = builder.positional_payload(payload);
+        }
     }
     builder.build()
 }

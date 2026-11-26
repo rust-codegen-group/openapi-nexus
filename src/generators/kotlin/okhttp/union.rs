@@ -4,8 +4,9 @@ use sigil_stitch::lang::kotlin::Kotlin;
 use sigil_stitch::prelude::*;
 
 use crate::generators::closed_sum::ClosedSumPlan;
+use crate::generators::jvm::TaggedWirePlans;
 use crate::generators::type_application;
-use crate::generators::union_match::plan_union_members;
+use crate::generators::union_match::{plan_members, plan_union_members};
 use crate::ir::types::{IrSchema, IrSchemaKind, IrSpec};
 
 use super::config::UntaggedUnionStrategy;
@@ -17,6 +18,7 @@ pub(super) fn adapter(
     plan: &ClosedSumPlan,
     ir: &IrSpec,
     strategy: UntaggedUnionStrategy,
+    tagged: Option<&TaggedWirePlans<'_>>,
     adapter_name: &str,
 ) -> Result<CodeBlock, SigilStitchError> {
     let raw = strategy == UntaggedUnionStrategy::Raw;
@@ -26,7 +28,7 @@ pub(super) fn adapter(
         let case = &plan.cases[0].name;
         sigil_quote!(Kotlin { return $N(&plan.name).$N(case)(element) })?
     } else {
-        typed_read(schema, plan, ir, strategy, &mut matching)?
+        typed_read(schema, plan, ir, strategy, &mut matching, tagged)?
     };
     let read = FunSpec::builder("read")
         .is_override()
@@ -111,11 +113,22 @@ fn typed_read(
     ir: &IrSpec,
     strategy: UntaggedUnionStrategy,
     matching: &mut MatchPlan,
+    tagged: Option<&TaggedWirePlans<'_>>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let IrSchemaKind::Union(union) = &schema.kind else {
         unreachable!("untagged union schema")
     };
-    let members = plan_union_members(&schema.name, union, ir);
+    let members = if let Some(tagged) = tagged {
+        let override_named = |name: &str| tagged.named_override(name);
+        plan_members(
+            &union.members,
+            ir,
+            Some(&schema.name),
+            tagged.legacy_policy(&override_named),
+        )
+    } else {
+        plan_union_members(&schema.name, union, ir)
+    };
     for member in &members {
         matching.register(&member.shape, ir);
     }

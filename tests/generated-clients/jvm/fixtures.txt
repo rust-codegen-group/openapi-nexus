@@ -5,3 +5,8 @@ object-union valid/comprehensive-schemas.yaml
 any-union valid/type-aliases/union-with-any.yaml
 tagged-union valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml
 tagged-shapes valid/enum-repr/enum-repr.yaml
+authored-tagged-default valid/optional-discriminator-union.yaml
+authored-tagged-composed valid/rust-inferred-tagged-wire.yaml
+authored-tagged-strict valid/inferred-union-selection.yaml tagged_union_strategy=strict
+authored-tagged-raw valid/inferred-union-selection.yaml tagged_union_strategy=raw
+authored-tagged-finite valid/jvm-authored-tagged-union.yaml tagged_union_strategy=strict
