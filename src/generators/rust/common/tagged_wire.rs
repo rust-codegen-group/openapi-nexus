@@ -71,13 +71,13 @@ fn adopts(union: &IrTaggedUnion, plan: &UnionWirePlan<'_>, ir: &IrSpec) -> bool 
     })
 }
 
-pub(super) struct RustWirePlans<'ir> {
+pub(super) struct TaggedWirePlans<'ir> {
     shared: UnionWirePlans<'ir>,
     adopted: HashSet<&'ir str>,
     pub(super) strategy: Strategy,
 }
 
-impl<'ir> RustWirePlans<'ir> {
+impl<'ir> TaggedWirePlans<'ir> {
     pub(super) fn build(ir: &'ir IrSpec, strategy: Strategy) -> Self {
         let shared = UnionWirePlans::build(ir, strategy);
         let adopted = ir
@@ -133,7 +133,7 @@ pub(super) fn emit(
     schema: &IrSchema,
     union: &IrTaggedUnion,
     plan: &UnionWirePlan<'_>,
-    wire_plans: &RustWirePlans<'_>,
+    wire_plans: &TaggedWirePlans<'_>,
     extra: Option<&ExtraDeriveConfig>,
     ir: &IrSpec,
     utoipa: bool,
@@ -474,7 +474,7 @@ fn payload_preserves_tag<'ir>(
     field: &str,
     finite_nonnull: bool,
     ir: &'ir IrSpec,
-    wire_plans: &RustWirePlans<'_>,
+    wire_plans: &TaggedWirePlans<'_>,
     visiting: &mut HashSet<&'ir str>,
 ) -> bool {
     match expr.representation() {

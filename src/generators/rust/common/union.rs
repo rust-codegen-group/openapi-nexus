@@ -25,7 +25,7 @@ use crate::ir::types::{IrSchema, IrSpec, IrUnion};
 use super::config::{ExtraDeriveConfig, RustGeneratorConfig, UntaggedUnionStrategy};
 use super::emit_models::{build_utoipa_one_of_impl, rust_model_type, union_variant_name};
 use super::matching::MatchPlan;
-use super::tagged_wire::RustWirePlans;
+use super::tagged_wire::TaggedWirePlans;
 
 pub(super) fn emit_union(
     schema: &IrSchema,
@@ -33,7 +33,7 @@ pub(super) fn emit_union(
     extra: Option<&ExtraDeriveConfig>,
     config: &RustGeneratorConfig,
     ir: &IrSpec,
-    wire_plans: &RustWirePlans<'_>,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Result<FileSpec, SigilStitchError> {
     let name = schema.name.to_pascal_case();
     let raw = config.untagged_union_strategy == UntaggedUnionStrategy::Raw;
