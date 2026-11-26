@@ -1,3 +1,7 @@
 composition valid/go-allof-composition.yaml
 raw valid/go-allof-composition.yaml raw
 nullable valid/go-allof-nullable.yaml
+tagged valid/go-inferred-tagged-wire.yaml
+tagged-strict valid/go-inferred-tagged-wire.yaml tagged_union_strategy=strict
+tagged-raw valid/go-inferred-tagged-wire.yaml tagged_union_strategy=raw
+tagged-dynamic valid/go-inferred-tagged-wire.yaml tagged_union_strategy=dynamic

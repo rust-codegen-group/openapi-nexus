@@ -4,6 +4,7 @@
 [go-http]
 module_path = "example.com/sdk"
 all_of_strategy = "composed"
+tagged_union_strategy = "firstMatch"
 ```
 
 ## Object and map composition
@@ -62,3 +63,42 @@ Raw values intentionally do not enforce intersection constraints. Use them when
 wire preservation is more useful than inferred typed composition. This policy
 does not change untagged unions, ordinary objects, other generators or generated
 dependencies.
+
+## Inferred internally tagged unions
+
+Generalized inferred internal tags (such as optional tags and members with
+multiple legal tag values) now generate typed unions by default. This changes
+those Go types from `any` to a struct with one pointer field per authored member.
+Fixed required tags, explicit mappings, adjacent and external tags, and untagged
+unions keep their existing representation. `all_of_strategy` remains independent.
+
+| `tagged_union_strategy` | Behavior |
+| --- | --- |
+| `firstMatch` (default) | Select the first concrete member that matches the full wire shape, using authored declaration order. Consider opaque matches only if no concrete member matches. |
+| `strict` | Also reject multiple matching concrete members. |
+| `raw` | Use a `json.RawMessage` alias and bypass dispatch. JSON numbers, keys and the distinction between missing and explicit null are preserved; `encoding/json` may still compact whitespace and escape characters on output. |
+| `dynamic` | Restore the previous `any` aliases. Uses ordinary `encoding/json` dynamic conversion, which does not preserve large integer precision. |
+
+Set exactly one member field when constructing a typed union. When that member
+owns the discriminator, set it on the member. If the union owns the property,
+its `Tag json.RawMessage` field uses `nil` for absence, `json.RawMessage("null")`
+for an explicit null, and JSON string bytes for a supplied label. For example:
+
+```go
+choice := models.Choice{
+    Custom: &models.Note{Label: "example"},
+    Tag:    json.RawMessage(`"custom"`),
+}
+```
+
+The selected member's native JSON codec is called once. Where the existing Go
+model would lose a tag, union-level fields, or a nested required `null`, the
+member field instead holds projected JSON as `*json.RawMessage` while the union
+still retains the selected branch identity. Selection is structural, not full JSON
+Schema validation, and typed payload fields retain their native Go types and
+codec errors. See the [Union Wire Contract](union_wire_contract.md).
+
+```bash
+openapi-nexus generate --input api.yaml --output sdk --generators go-http \
+  --generator-config go-http.tagged_union_strategy=dynamic
+```

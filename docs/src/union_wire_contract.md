@@ -79,9 +79,13 @@ that those backends already implement the contract.
 
 TypeScript's [`preserve` mode](ts_config.md) can retain converter-free declarations
 by default; a future explicit runtime selection option must not be silently
-ignored. Go retains its dynamic `any` default for compatibility. That default
-is neither typed dispatch nor lossless raw JSON, particularly for large numbers.
-Lossless raw and typed selection are separate future opt-ins for Go.
+ignored.
+
+Go uses typed `FirstMatch` for generalized inferred internal tags by default.
+The `dynamic` compatibility option keeps the former `any` representation;
+it is neither typed dispatch nor lossless raw JSON, particularly for large
+numbers. Lossless `Raw` preserves the JSON subtree without decoding it into
+Go model values.
 
 ## Validation
 
