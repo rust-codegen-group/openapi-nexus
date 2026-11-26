@@ -56,6 +56,7 @@ impl GoHttpCodeGenerator {
             &header,
             &request_inputs,
             self.config.all_of_strategy,
+            self.config.tagged_union_strategy,
         )?);
 
         // APIs

@@ -35,6 +35,9 @@ use sigil_stitch::spec::modifiers::TypeKind;
 use sigil_stitch::spec::type_spec::TypeSpec;
 use sigil_stitch::type_name::TypeName;
 
+use super::tagged_wire::TaggedWirePlans;
+use super::wire_matching::{self, WireMatching};
+
 const MODELS_PACKAGE: &str = "models";
 const RENDER_WIDTH: usize = 100;
 
@@ -46,13 +49,38 @@ pub fn generate_model_files(
     header: &str,
     request_inputs: &RequestInputPlan,
     all_of_strategy: super::config::AllOfStrategy,
+    tagged_union_strategy: super::config::TaggedUnionStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
-    for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema, ir, all_of_strategy).map_err(|source| {
-            GeneratorError::emission(ArtifactKind::Model, &schema.name, source)
-        })?;
+    let tagged = TaggedWirePlans::new(ir, tagged_union_strategy);
+    let mut matching = WireMatching::default();
+    for schema in ir.schemas.values() {
+        let body = emit_model_body(schema, ir, all_of_strategy, &tagged, &mut matching).map_err(
+            |source| GeneratorError::emission(ArtifactKind::Model, &schema.name, source),
+        )?;
         files.push(model_file(&schema.name, header, &body));
+    }
+    if !matching.is_empty() {
+        let evidence = matching.render(ir).map_err(|source| {
+            GeneratorError::emission(ArtifactKind::Model, "Go tagged union evidence", source)
+        })?;
+        let support_file = |purpose: &str, body: &str| {
+            let stem = format!("nexus_tagged_{purpose}");
+            let mut candidate = stem.clone();
+            for suffix in 2.. {
+                if !ir
+                    .schemas
+                    .keys()
+                    .any(|name| name.to_snake_case() == candidate)
+                {
+                    break;
+                }
+                candidate = format!("{stem}_{suffix}");
+            }
+            model_file(&candidate, header, body)
+        };
+        files.push(support_file("evidence", &evidence));
+        files.push(support_file("codec", wire_matching::SUPPORT));
     }
     for model in request_inputs.models() {
         files.push(request_input_model_file(model, module_path, header));
@@ -120,18 +148,23 @@ fn request_input_go_type(field: &RequestInputField) -> String {
 
 /// Dispatch on schema kind. Returns the rendered file body (package + imports
 /// + declarations) but not the pre-package header comment.
-fn emit_model_body(
-    schema: &IrSchema,
-    ir: &IrSpec,
+fn emit_model_body<'ir>(
+    schema: &'ir IrSchema,
+    ir: &'ir IrSpec,
     all_of_strategy: super::config::AllOfStrategy,
+    tagged: &'ir TaggedWirePlans<'ir>,
+    matching: &mut WireMatching<'ir>,
 ) -> Result<String, sigil_stitch::error::SigilStitchError> {
     let file_spec = match &schema.kind {
-        IrSchemaKind::Object(obj) => emit_object(schema, obj),
+        IrSchemaKind::Object(obj) => emit_object(schema, obj, tagged),
         IrSchemaKind::Enum(en) => emit_enum(schema, en),
         IrSchemaKind::Alias(expr) => emit_alias(schema, expr),
         IrSchemaKind::Union(u) => emit_union(schema, u),
         IrSchemaKind::Intersection(i) => super::composition::emit(schema, i, ir, all_of_strategy),
-        IrSchemaKind::TaggedUnion(tu) => emit_tagged_union(schema, tu),
+        IrSchemaKind::TaggedUnion(tu) => match tagged.get(&schema.name) {
+            Some(plan) => super::tagged_wire::emit(schema, tu, plan, tagged, matching),
+            None => emit_tagged_union(schema, tu),
+        },
     }?;
     Ok(file_spec)
 }
@@ -140,9 +173,10 @@ fn emit_model_body(
 // Object -> struct with json: tags
 // ---------------------------------------------------------------------------
 
-fn emit_object(
+fn emit_object<'ir>(
     schema: &IrSchema,
-    obj: &IrObject,
+    obj: &'ir IrObject,
+    tagged: &'ir TaggedWirePlans<'ir>,
 ) -> Result<String, sigil_stitch::error::SigilStitchError> {
     let name = schema.name.to_pascal_case();
     let mut tb = TypeSpec::builder(&name, TypeKind::Struct);
@@ -150,7 +184,11 @@ fn emit_object(
         tb = tb.doc(doc);
     }
     for (json_name, prop) in &obj.properties {
-        tb = tb.add_field(build_struct_field(json_name, prop)?);
+        tb = tb.add_field(build_struct_field(
+            json_name,
+            prop,
+            tagged.is_raw_field(&prop.type_expr),
+        )?);
     }
 
     if let Some(ap_type) = &obj.additional_properties {
@@ -184,9 +222,10 @@ fn emit_object(
 fn build_struct_field(
     json_name: &str,
     prop: &IrProperty,
+    raw_field: bool,
 ) -> Result<FieldSpec, sigil_stitch::error::SigilStitchError> {
     let field_name = go_field_name(&prop.name);
-    let ty = if !prop.required || prop.nullable {
+    let ty = if !raw_field && (!prop.required || prop.nullable) {
         // Go's field profile models absent/nullable values with a pointer type;
         // the Go adapter does not expose an OptionalPresence capability.
         TypeName::pointer(go_type_name(&prop.type_expr))

@@ -13,10 +13,11 @@ while read -r name fixture strategy; do
     --input "$root/tests/fixtures/$fixture" --output "$output" --generators go-http)
   if [ -n "$strategy" ]; then
     case "$strategy" in
-      composed|raw) ;;
-      *) echo "invalid allOf strategy: $strategy" >&2; exit 1 ;;
+      composed|raw) options+=(--generator-config "go-http.all_of_strategy=$strategy") ;;
+      tagged_union_strategy=dynamic|tagged_union_strategy=firstMatch|tagged_union_strategy=strict|tagged_union_strategy=raw)
+        options+=(--generator-config "go-http.$strategy") ;;
+      *) echo "invalid Go strategy: $strategy" >&2; exit 1 ;;
     esac
-    options+=(--generator-config "go-http.all_of_strategy=$strategy")
   fi
   # Only these fixed, ignored fixture output directories are disposable.
   rm -rf "$output"

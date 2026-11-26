@@ -1,0 +1,105 @@
+openapi: 3.1.0
+info: {title: Go authored tagged unions, version: '1.0.0'}
+paths: {}
+components:
+  schemas:
+    Note:
+      type: object
+      required: [label, count]
+      properties:
+        label: {type: string}
+        count: {type: [integer, 'null'], format: int64}
+    Mode:
+      type: string
+      enum: [search_v1, search_v2]
+    Search:
+      type: object
+      required: [kind, limit]
+      properties:
+        kind: {$ref: '#/components/schemas/Mode'}
+        limit: {type: integer, format: int64}
+    Choice:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Note'}
+            - properties:
+                kind: {type: [string, 'null'], enum: [custom, null]}
+        - {$ref: '#/components/schemas/Search'}
+    ChoiceAlias:
+      $ref: '#/components/schemas/Choice'
+    Envelope:
+      type: object
+      properties:
+        value: {$ref: '#/components/schemas/ChoiceAlias'}
+        history:
+          type: array
+          items: {$ref: '#/components/schemas/Choice'}
+    Ambiguous:
+      oneOf:
+        - allOf:
+            - required: [label]
+              properties:
+                label: {enum: [left, both]}
+                kind: {type: string, enum: [alpha]}
+        - allOf:
+            - required: [label]
+              properties:
+                label: {enum: [right, both]}
+                kind: {type: string, enum: [beta, beta_alt]}
+    Scoped:
+      type: object
+      required: [scope]
+      properties:
+        scope: {type: string}
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Ambiguous'}
+            - properties:
+                kind: {type: string, enum: [alpha, beta, beta_alt]}
+        - allOf:
+            - required: [kind, other]
+              properties:
+                kind: {type: string, enum: [other]}
+                other: {type: string}
+    Counter: {type: integer, format: int64}
+    Nested:
+      oneOf:
+        - allOf:
+            - {$ref: '#/components/schemas/Choice'}
+            - properties:
+                kind: {type: [string, 'null'], enum: [custom, null, search_v1, search_v2]}
+        - allOf:
+            - required: [kind, amount]
+              properties:
+                kind: {type: string, enum: [number]}
+                amount: {type: integer, const: 9007199254740993}
+        - allOf:
+            - required: [kind, detail]
+              properties:
+                kind: {type: string, enum: [annotated]}
+                detail: {$ref: '#/components/schemas/Note'}
+                child: {$ref: '#/components/schemas/Ambiguous'}
+        - {$ref: '#/components/schemas/Counter'}
+    Projected:
+      type: object
+      required: [scope]
+      properties:
+        scope: {type: string}
+      oneOf:
+        - allOf:
+            - required: [kind, scope, items]
+              properties:
+                kind: {type: string, enum: [list, list_alt]}
+                scope: {type: string}
+                items:
+                  type: array
+                  items:
+                    anyOf:
+                      - {type: boolean}
+                      - {type: number}
+              additionalProperties: false
+        - allOf:
+            - required: [kind, settings]
+              properties:
+                kind: {type: string, enum: [map]}
+                settings: {type: object, additionalProperties: {type: integer}}
