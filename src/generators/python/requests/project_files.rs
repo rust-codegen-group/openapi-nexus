@@ -24,5 +24,6 @@ pub fn generate_project_files(
         request_inputs,
         include_upload_file,
         "requests>=2.32",
+        std::iter::empty(),
     )
 }

@@ -7,7 +7,9 @@ mod operation_names;
 mod project_files;
 pub mod requests;
 mod response_headers;
+mod tagged_wire;
 mod type_names;
 mod value;
+mod wire_matching;
 
 const PYTHON_LINE_LENGTH: usize = 100;

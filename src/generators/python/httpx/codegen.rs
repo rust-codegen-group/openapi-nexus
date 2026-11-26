@@ -6,12 +6,13 @@ use heck::ToKebabCase as _;
 
 use super::config::PythonHttpxConfig;
 use super::runtime::runtime_files;
-use super::{emit_api, emit_models, project_files};
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::{FileInfo, FileWriter};
 use crate::codegen::{GeneratorType, Language};
 use crate::generators::GeneratorError;
-use crate::generators::python::project_files::render_file_header;
+use crate::generators::python::emit_api::{self, Transport};
+use crate::generators::python::project_files::{self, render_file_header};
+use crate::generators::python::{emit_models, value::ValuePlan};
 use crate::generators::request_inputs::plan_multipart_request_inputs;
 use crate::ir::types::{IrInfo, IrSpec};
 
@@ -52,20 +53,26 @@ impl PythonHttpxCodeGenerator {
         let header = render_file_header(&ir.info);
         let request_inputs = plan_multipart_request_inputs(ir);
 
+        let values = ValuePlan::with_strategies(
+            ir,
+            self.config.untagged_union_strategy,
+            self.config.tagged_union_strategy,
+        );
         let mut files = Vec::new();
 
-        files.extend(emit_models::generate_model_files_with_strategy(
+        files.extend(emit_models::generate_model_files_with_plan(
             ir,
             &header,
             &request_inputs,
-            self.config.untagged_union_strategy,
+            &values,
         )?);
 
-        files.extend(emit_api::generate_api_files_with_strategy(
+        files.extend(emit_api::generate_api_files_with_plan(
             ir,
             &header,
             &request_inputs,
-            self.config.untagged_union_strategy,
+            &values,
+            Transport::Httpx,
         ));
 
         files.extend(runtime_files(&header, request_inputs.has_uploads()));
@@ -78,6 +85,8 @@ impl PythonHttpxCodeGenerator {
             &ir.operations,
             request_inputs.models(),
             request_inputs.has_uploads(),
+            "httpx>=0.27",
+            values.tagged.exports(),
         ));
 
         Ok(files)

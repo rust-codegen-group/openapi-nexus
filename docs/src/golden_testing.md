@@ -207,16 +207,18 @@ suite. The independent JVM Client Tests CI matrix and `just ci` run these checks
 `firstMatch`, `strict`, and `raw`, run strict pyright on the unchanged files, then
 run ordinary `unittest` consumers. The same contracts cover dataclasses, nested
 containers, aliases, finite values, recursion, JSON/multipart transport encoding,
-tagged payloads, nulls, and lazy error decoding. In-process HTTP transports avoid
-network IO without bypassing each library's request encoder. Native tests do not
-launch generation, type checkers, or other runners.
+legacy tagged payloads, and authored tagged cases (missing/null/alternate labels,
+ambiguity, projected properties, and raw JSON). In-process HTTP transports also
+exercise lazy error decoding without bypassing each library's request encoder.
+Native tests do not launch generation, type checkers, or other runners.
 
 The same `just golden-python::build-httpx` / `build-requests` entrypoints run all
 golden checks, fresh public-declaration checks and native consumers, both locally
 and in CI. `golden-build-all` and `just ci` inherit this complete validation; CI
 does not append a Python-specific test step. Dependencies are installed once in
-a temporary environment created with the active Python (locally 3.15.0, CI `3.x`),
-and the same checker and interpreter are used throughout the backend's checks.
+a temporary environment created with the active Python (locally 3.15.2, CI `3.x`),
+and the same checker (locally Pyright 1.1.414) and interpreter are used
+throughout the backend's checks.
 The generated SDK's minimum and explicit pyright target remain 3.12, a static contract,
 not a claim that the native tests execute on the minimum runtime. See the
 [Python configuration](python_config.md) for selection-policy semantics.

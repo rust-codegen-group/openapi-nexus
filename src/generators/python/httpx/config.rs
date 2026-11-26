@@ -1,5 +1,6 @@
 //! Python httpx generator-specific configuration.
 
+pub use crate::generators::python::tagged_wire::TaggedUnionStrategy;
 pub use crate::generators::python::value::UntaggedUnionStrategy;
 use serde::{Deserialize, Serialize};
 use tracing::error;
@@ -11,6 +12,9 @@ pub struct PythonHttpxConfig {
     /// Select and convert structural members, reject ambiguity, or keep raw values.
     #[serde(default)]
     pub untagged_union_strategy: UntaggedUnionStrategy,
+    /// Policy for generalized inferred internally tagged unions.
+    #[serde(default)]
+    pub tagged_union_strategy: TaggedUnionStrategy,
 }
 
 impl From<toml::value::Table> for PythonHttpxConfig {

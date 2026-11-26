@@ -8,10 +8,10 @@ use super::PYTHON_LINE_LENGTH;
 use super::additional_properties::AdditionalProperties;
 use super::value::{Direction, UntaggedUnionStrategy, ValuePlan, optional_type};
 use crate::codegen::traits::file_writer::FileInfo;
-use crate::generators::GeneratorError;
 pub use crate::generators::python::type_names::python_type_name;
 use crate::generators::request_inputs::{RequestInputModel, RequestInputPlan};
 use crate::generators::type_application;
+use crate::generators::{ArtifactKind, GeneratorError};
 use crate::ir::types::{
     IrEnum, IrEnumValueType, IrIntersection, IrObject, IrPrimitive, IrProperty, IrSchema,
     IrSchemaKind, IrSpec, IrTaggedUnion, IrTaggedVariant, IrTypeExpr, IrUnion, TaggingStyle,
@@ -43,14 +43,31 @@ pub fn generate_model_files_with_strategy(
     strategy: UntaggedUnionStrategy,
 ) -> Result<Vec<FileInfo>, GeneratorError> {
     let values = ValuePlan::new(ir, strategy);
+    generate_model_files_with_plan(ir, header, request_inputs, &values)
+}
+
+pub(super) fn generate_model_files_with_plan(
+    ir: &IrSpec,
+    header: &str,
+    request_inputs: &RequestInputPlan,
+    values: &ValuePlan<'_>,
+) -> Result<Vec<FileInfo>, GeneratorError> {
     let mut files = Vec::new();
     for (_name, schema) in &ir.schemas {
-        let body = emit_model_body(schema, ir, &values).ok_or_else(|| {
-            GeneratorError::UnsupportedSchema {
-                schema: schema.name.clone(),
-                kind: format!("{:?}", schema.kind),
-            }
-        })?;
+        let body = if values.tagged.contains(&schema.name) {
+            super::tagged_wire::emit(schema, values)
+                .and_then(|file| file.render(PYTHON_LINE_LENGTH))
+                .map_err(|error| {
+                    GeneratorError::emission(ArtifactKind::Model, &schema.name, error)
+                })?
+        } else {
+            emit_model_body(schema, ir, values).ok_or_else(|| {
+                GeneratorError::UnsupportedSchema {
+                    schema: schema.name.clone(),
+                    kind: format!("{:?}", schema.kind),
+                }
+            })?
+        };
         let stem = schema.name.to_snake_case();
         let filename = format!("{stem}.py");
         let mut content = String::with_capacity(header.len() + body.len());
@@ -59,7 +76,7 @@ pub fn generate_model_files_with_strategy(
         files.push(FileInfo::model(filename, content));
     }
     for model in request_inputs.models() {
-        files.push(request_input_model_file(model, header, &values));
+        files.push(request_input_model_file(model, header, values));
     }
     files.extend(values.files(header)?);
     Ok(files)
@@ -204,7 +221,7 @@ fn emit_object(
             let type_name = values.model_type(&prop.type_expr, &schema.name);
             cls = cls.add_field(
                 FieldSpec::builder(&field_name, optional_type(type_name))
-                    .initializer(sigil_quote!(Python { None }).expect("None init"))
+                    .initializer(optional_property_default(prop, values))
                     .build()
                     .expect("optional field"),
             );
@@ -235,6 +252,15 @@ fn emit_object(
     file.build().ok()
 }
 
+fn optional_property_default(prop: &IrProperty, values: &ValuePlan<'_>) -> CodeBlock {
+    if values.optional_raw_tagged_field(prop) {
+        sigil_quote!(Python { _union.AbsentRawValue.ABSENT })
+    } else {
+        sigil_quote!(Python { None })
+    }
+    .expect("Python optional property default builds")
+}
+
 fn build_to_dict_method(
     all_fields: &[(&String, &IrProperty)],
     ir: &IrSpec,
@@ -258,6 +284,7 @@ fn build_to_dict_method(
             let access = sigil_quote!(Python { self.$N(field_name.as_str()) })
                 .expect("Python planned field access builds");
             let converted = values.call(&values.property_expr(prop), access, Direction::To);
+            let raw_optional = values.optional_raw_tagged_field(prop);
             // Newly planned object paths retain ordinary nullable-field omission.
             let is_required =
                 prop.required && (values.has_union(&prop.type_expr) || !prop.nullable);
@@ -265,6 +292,10 @@ fn build_to_dict_method(
                 sigil_quote!(Python {
                     $if(is_required) {
                         result[$S(json_name.as_str())] = $C(converted)
+                    } $else_if(raw_optional) {
+                        if self.$N(field_name) is not _union.AbsentRawValue.ABSENT {
+                            result[$S(json_name.as_str())] = $C(converted)
+                        }
                     } $else {
                         if self.$N(field_name) is not None {
                             result[$S(json_name.as_str())] = $C(converted)
@@ -347,6 +378,7 @@ fn build_from_dict_method(
         let is_required = prop.required && !prop.nullable;
         if values.needs_conversion(&prop.type_expr) {
             let has_union = values.has_union(&prop.type_expr);
+            let raw_optional = values.optional_raw_tagged_field(prop);
             let requires_key = if has_union {
                 prop.required
             } else {
@@ -366,6 +398,7 @@ fn build_from_dict_method(
             // optional/nullable objects never pass None into their converter.
             let converted = sigil_quote!(Python {
                 $if(requires_key) { $C(converted) }
+                $else_if(raw_optional) { _union.AbsentRawValue.ABSENT if $S(json_name.as_str()) not in data else $C(converted) }
                 $else_if(has_union) { None if $S(json_name.as_str()) not in data else $C(converted) }
                 $else { None if $C(access) is None else $C(converted) }
             }).expect("Python optional planned field projection builds");
@@ -529,7 +562,7 @@ fn emit_type_alias_raw(schema: &IrSchema, rhs: &str) -> Option<FileSpec> {
     file.build().ok()
 }
 
-fn type_alias_spec(name: &str, members: Vec<TypeName>) -> TypeSpec {
+pub(super) fn type_alias_spec(name: &str, members: Vec<TypeName>) -> TypeSpec {
     let target = match members.len() {
         0 => TypeName::importable("typing", "Any"),
         1 => members.into_iter().next().expect("one alias member"),
@@ -714,7 +747,7 @@ fn emit_intersection_as_dataclass(
             let type_name = values.model_type(&prop.type_expr, &schema.name);
             cls = cls.add_field(
                 FieldSpec::builder(&field_name, optional_type(type_name))
-                    .initializer(sigil_quote!(Python { None }).expect("None init"))
+                    .initializer(optional_property_default(prop, values))
                     .build()
                     .expect("optional field"),
             );
