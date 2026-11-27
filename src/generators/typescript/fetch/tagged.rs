@@ -341,6 +341,26 @@ pub(super) fn open_external_variant_type(
     }
 }
 
+fn authored_internal_roots(
+    plan: &TypeScriptPlan<'_>,
+    name: &str,
+    index: usize,
+) -> Option<crate::generators::union_wire::RootKinds> {
+    let authored = plan.authored_tag_plan(name)?;
+    matches!(authored.binding(index), Some(WireBinding::Internal { .. }))
+        .then(|| authored.possible_root_kinds(index))
+}
+
+fn non_object_type() -> TypeName {
+    union_type(vec![
+        TypeName::primitive("string"),
+        TypeName::primitive("number"),
+        TypeName::primitive("boolean"),
+        TypeName::primitive("null"),
+        TypeName::readonly_array(TypeName::primitive("unknown")),
+    ])
+}
+
 fn variant_type(
     schema: &IrSchema,
     ir: &IrSpec,
@@ -361,6 +381,26 @@ fn variant_type(
         value.wire_type()
     } else {
         value.public_type()
+    };
+    let whole = match authored_internal_roots(plan, &schema.name, index) {
+        Some(roots) if roots.non_object && !roots.object => return payload,
+        Some(roots) if roots.non_object => {
+            let non_object = non_object_type();
+            let whole = if super::plan::representation_is_unknown(
+                &variant.content_type,
+                plan.unknown_aliases(),
+            ) {
+                non_object.clone()
+            } else {
+                type_application(
+                    plan.utility_type("Extract"),
+                    vec![payload.clone(), non_object.clone()],
+                )
+            };
+            payload = type_application(plan.utility_type("Exclude"), vec![payload, non_object]);
+            Some(whole)
+        }
+        _ => None,
     };
     let (tag, tag_value, optional) = tag_projection(plan, &schema.name, index, &disc, variant);
     if let Some(WireBinding::Internal {
@@ -420,17 +460,22 @@ fn variant_type(
         TaggingStyle::Internal => {
             let envelope =
                 envelope_types(plan.authored_tag_fields(&schema.name, index), rename, plan);
-            if is_tagged_unit_variant(ir, union, variant) && envelope.is_empty() {
-                return tag;
-            }
-            let mut members = vec![tag];
-            members.extend(envelope);
-            if let TypeName::Intersection(payload) = payload {
-                members.extend(payload);
+            let object = if is_tagged_unit_variant(ir, union, variant) && envelope.is_empty() {
+                tag
             } else {
-                members.push(payload);
+                let mut members = vec![tag];
+                members.extend(envelope);
+                if let TypeName::Intersection(payload) = payload {
+                    members.extend(payload);
+                } else {
+                    members.push(payload);
+                }
+                TypeName::intersection(members)
+            };
+            match whole {
+                Some(whole) => union_type(vec![object, whole]),
+                None => object,
             }
-            TypeName::intersection(members)
         }
         TaggingStyle::Adjacent { .. } if is_tagged_unit_variant(ir, union, variant) => tag,
         TaggingStyle::Adjacent { content_field } => {
@@ -529,7 +574,7 @@ pub(super) fn guards(
                     Direction::FromWire
                 };
                 plan.matching_condition(
-                    plan.authored_tag_shape(&schema.name, index, TaggedMatch::Member),
+                    plan.authored_tag_shape(&schema.name, index, TaggedMatch::Member, direction),
                     sigil_quote!(TypeScript { value })?,
                     direction,
                 )?
@@ -630,10 +675,28 @@ struct InternalCodec<'a, 'ir> {
 }
 
 impl InternalCodec<'_, '_> {
-    fn body(self, needs_extension_helpers: &mut bool) -> Result<CodeBlock, SigilStitchError> {
+    fn delegate_whole(&self) -> Result<CodeBlock, SigilStitchError> {
         let source = self.direction.source();
-        let payload_type = self.payload_type;
-        let output_type = self.output_type;
+        let payload = &self.payload_type;
+        let input = sigil_quote!(TypeScript { $N(source) as unknown as $T(payload.clone()) })?;
+        self.return_converted(input)
+    }
+
+    fn return_converted(&self, input: CodeBlock) -> Result<CodeBlock, SigilStitchError> {
+        let cast = sigil_quote!(TypeScript { as $T(self.output_type.clone()); })?;
+        let column = 4 + "return ".len() + 1 + layout::fragment_width(&cast)?;
+        let content = self.value.convert_at(input, self.direction, column)?;
+        sigil_quote!(TypeScript { return $C(content) $C(cast) })
+    }
+
+    fn body(
+        self,
+        needs_extension_helpers: &mut bool,
+        mixed_root: bool,
+    ) -> Result<CodeBlock, SigilStitchError> {
+        let source = self.direction.source();
+        let payload_type = self.payload_type.clone();
+        let output_type = self.output_type.clone();
         let record = erased_record(self.plan);
         let source_record =
             sigil_quote!(TypeScript { $N(source) as unknown as $T(record.clone()) })?;
@@ -726,10 +789,7 @@ impl InternalCodec<'_, '_> {
             };
             let payload = sigil_quote!(TypeScript { $N(access) as unknown as $T(payload_type) })?;
             if fields.is_empty() && !capture_payload_tag {
-                let cast = sigil_quote!(TypeScript { as $T(output_type.clone()); })?;
-                let column = 4 + "return ".len() + 1 + layout::fragment_width(&cast)?;
-                let content = self.value.convert_at(payload, self.direction, column)?;
-                return sigil_quote!(TypeScript { return $C(content) $C(cast) });
+                return self.return_converted(payload);
             }
             let mut content = self.value.convert(payload, self.direction)?;
             if !shadow_keys.is_empty() && self.direction == Direction::FromWire {
@@ -768,7 +828,13 @@ impl InternalCodec<'_, '_> {
                 })?);
                 content = sigil_quote!(TypeScript { composed })?;
             }
-            output.push(sigil_quote!(TypeScript { ...$C(content) })?);
+            output.push(if mixed_root {
+                // The selected object side shares its native converter with whole
+                // values, so the converter's declared return is still a union.
+                sigil_quote!(TypeScript { ...($C(content) as object) })?
+            } else {
+                sigil_quote!(TypeScript { ...$C(content) })?
+            });
         }
         for (_, target, local, required) in fields {
             if required {
@@ -872,7 +938,12 @@ pub(super) fn emit(
                 .enumerate()
                 .map(|(index, _)| {
                     plan.matching_condition(
-                        plan.authored_tag_shape(&schema.name, index, TaggedMatch::Concrete),
+                        plan.authored_tag_shape(
+                            &schema.name,
+                            index,
+                            TaggedMatch::Concrete,
+                            direction,
+                        ),
                         sigil_quote!(TypeScript { $N(source) })?,
                         direction,
                     )
@@ -907,7 +978,7 @@ pub(super) fn emit(
             };
 
             let body = if let Some(WireBinding::Internal { owner, read, .. }) = binding {
-                InternalCodec {
+                let codec = InternalCodec {
                     owner,
                     read,
                     fields: plan.authored_tag_fields(&schema.name, index),
@@ -919,8 +990,21 @@ pub(super) fn emit(
                     value: &value,
                     direction,
                     plan,
+                };
+                match authored_internal_roots(plan, &schema.name, index) {
+                    Some(roots) if roots.non_object && !roots.object => codec.delegate_whole()?,
+                    Some(roots) if roots.non_object => {
+                        let whole = codec.delegate_whole()?;
+                        let object = codec.body(&mut needs_extension_helpers, true)?;
+                        sigil_quote!(TypeScript {
+                            if ($N(source) === null || typeof $N(source) !== $S("object") || Array.isArray($N(source))) {
+                                $C(whole)
+                            }
+                            $C(object)
+                        })?
+                    }
+                    _ => codec.body(&mut needs_extension_helpers, false)?,
                 }
-                .body(&mut needs_extension_helpers)?
             } else if is_tagged_unit_variant(ir, union, variant)
                 && !matches!(union.tagging, TaggingStyle::External)
             {
@@ -996,8 +1080,10 @@ pub(super) fn emit(
                 body
             };
             if authored.is_some() {
-                let primary = plan.authored_tag_shape(&schema.name, index, TaggedMatch::Concrete);
-                let opaque = plan.authored_tag_shape(&schema.name, index, TaggedMatch::Fallback);
+                let primary =
+                    plan.authored_tag_shape(&schema.name, index, TaggedMatch::Concrete, direction);
+                let opaque =
+                    plan.authored_tag_shape(&schema.name, index, TaggedMatch::Fallback, direction);
                 if *primary != JsonShape::Never {
                     let condition = if strict {
                         // sigil-stitch numeric expressions take the exact literal token.

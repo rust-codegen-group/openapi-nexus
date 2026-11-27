@@ -137,16 +137,7 @@ impl WireMatching {
                 let checks = values
                     .iter()
                     .map(|value| {
-                        let condition = match value {
-                            serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
-                                let wire = value.to_string();
-                                sigil_quote!(RustLang {
-                                    serde_json::from_str::<serde_json::Value>($S(wire))
-                                        .is_ok_and(|value| &value == candidate)
-                                })?
-                            }
-                            _ => super::matching::literal_body(value)?,
-                        };
+                        let condition = finite_literal(value)?;
                         // Number literals can use an early return inside the helper.
                         sigil_quote!(RustLang { if (|| { $C(condition) })() { return 2; } })
                     })
@@ -235,6 +226,49 @@ impl WireMatching {
                 })
             }
         }
+    }
+}
+
+fn finite_literal(value: &serde_json::Value) -> Result<CodeBlock, SigilStitchError> {
+    use serde_json::Value;
+    match value {
+        Value::Array(values) => {
+            let count = values.len().to_string();
+            let checks = values.iter().enumerate().map(|(index, value)| {
+                let condition = finite_literal(value)?;
+                sigil_quote!(RustLang {
+                    if !items.get($L(index.to_string())).is_some_and(|candidate| { $C(condition) }) { return false; }
+                })
+            }).collect::<Result<Vec<_>, _>>()?;
+            sigil_quote!(RustLang {
+                let items = match candidate.as_array() {
+                    Some(items) => items,
+                    None => return false,
+                };
+                if items.len() != $L(count) { return false; }
+                $C_each(checks)
+                true
+            })
+        }
+        Value::Object(values) => {
+            let count = values.len().to_string();
+            let checks = values.iter().map(|(key, value)| {
+                let condition = finite_literal(value)?;
+                sigil_quote!(RustLang {
+                    if !fields.get($S(key)).is_some_and(|candidate| { $C(condition) }) { return false; }
+                })
+            }).collect::<Result<Vec<_>, _>>()?;
+            sigil_quote!(RustLang {
+                let fields = match candidate.as_object() {
+                    Some(fields) => fields,
+                    None => return false,
+                };
+                if fields.len() != $L(count) { return false; }
+                $C_each(checks)
+                true
+            })
+        }
+        _ => super::matching::literal_body(value),
     }
 }
 

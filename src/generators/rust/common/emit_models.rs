@@ -183,7 +183,7 @@ fn emit_model_file(
                 per_type_cfg.or_else(|| extra.and_then(|e| e.structs.as_ref())),
                 utoipa_enabled,
             );
-            emit_object(schema, obj, derives.as_ref())
+            emit_object(schema, obj, derives.as_ref(), ir, wire_plans)
         }
         IrSchemaKind::Enum(en) => {
             let derives = merge_utoipa(
@@ -282,6 +282,8 @@ fn emit_object(
     schema: &IrSchema,
     obj: &IrObject,
     extra: Option<&ExtraDeriveConfig>,
+    ir: &IrSpec,
+    wire_plans: &TaggedWirePlans<'_>,
 ) -> Option<FileSpec> {
     let name = schema.name.to_pascal_case();
     let stem = schema.name.to_snake_case();
@@ -289,6 +291,14 @@ fn emit_object(
     let mut fsb = FileSpec::builder(&format!("{stem}.rs"));
     fsb = fsb.add_import(ImportSpec::named("serde", "Deserialize"));
     fsb = fsb.add_import(ImportSpec::named("serde", "Serialize"));
+    let raw_fields: HashSet<_> = obj
+        .properties
+        .iter()
+        .filter_map(|(name, prop)| {
+            ((!prop.required || prop.nullable) && wire_plans.uses_raw_value(&prop.type_expr, ir))
+                .then_some(name)
+        })
+        .collect();
 
     let body = sigil_quote!(RustLang {
         $if(schema.description.is_some()) {
@@ -304,7 +314,15 @@ fn emit_object(
                     #[serde(rename = $S(json_name))]
                 }
                 $if(!prop.required || prop.nullable) {
-                    #[serde(skip_serializing_if = "Option::is_none", default)]
+                    $if(raw_fields.contains(json_name)) {
+                        $if(prop.required) {
+                            #[serde(deserialize_with = "__nexus_deserialize_present_raw")]
+                        } $else {
+                            #[serde(skip_serializing_if = "Option::is_none", default, deserialize_with = "__nexus_deserialize_present_raw")]
+                        }
+                    } $else {
+                        #[serde(skip_serializing_if = "Option::is_none", default)]
+                    }
                     pub $L("@{escape_rust_keyword(&json_name.to_snake_case())}: Option<@{rust_type_str_model(&prop.type_expr)}>,")
                 } $else {
                     pub $L("@{escape_rust_keyword(&json_name.to_snake_case())}: @{rust_type_str_model(&prop.type_expr)},")
@@ -319,6 +337,14 @@ fn emit_object(
     .ok()?;
 
     fsb = fsb.add_code(body);
+    if !raw_fields.is_empty() {
+        fsb = fsb.add_code(sigil_quote!(RustLang {
+            fn __nexus_deserialize_present_raw<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+            where D: serde::Deserializer<'de>, T: serde::Deserialize<'de> {
+                T::deserialize(deserializer).map(Some)
+            }
+        }).ok()?);
+    }
     fsb.build().ok()
 }
 

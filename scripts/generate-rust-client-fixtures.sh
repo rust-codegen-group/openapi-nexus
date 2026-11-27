@@ -46,4 +46,16 @@ for strategy in firstMatch strict raw; do
     --generators "rust-$backend" \
     --generator-config "rust-$backend.crate_name=rust-tagged-$suffix" \
     --generator-config "rust-$backend.tagged_union_strategy=$strategy"
+
+  if [ "$backend" = reqwest ] && [ "$strategy" != firstMatch ]; then
+    output="$project/generated/tagged-wire-boundaries-$strategy"
+    rm -rf "$output"
+    cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
+      --config "$root/tests/generated-clients/rust/union-policies.toml" \
+      --input "$root/tests/fixtures/valid/rust-tagged-wire-boundaries.yaml" \
+      --output "$output" \
+      --generators "rust-$backend" \
+      --generator-config "rust-$backend.crate_name=rust-tagged-wire-boundaries-$strategy" \
+      --generator-config "rust-$backend.tagged_union_strategy=$strategy"
+  fi
 done

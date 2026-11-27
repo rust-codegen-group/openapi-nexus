@@ -210,6 +210,19 @@ fn write_case(
     let memo = MatchPlan::memo_type();
     let invalid = format!("serialized value does not match inferred tagged union branch {name}");
     let required_nullable = &case.required_nullable;
+    let projected_check = case.projected_reader.as_ref().map(|expr| {
+        let strip = case.read == TagRead::Strip;
+        let source = if strip { "projected" } else { "candidate" };
+        let payload = kotlin_type_name(expr);
+        sigil_quote!(Kotlin {
+            $if(strip) {
+                val projected = if (candidate.isJsonObject && candidate.asJsonObject.has($S(field))) {
+                    candidate.asJsonObject.deepCopy().apply { remove($S(field)) }
+                } else { candidate }
+            }
+            gson.fromJson<$T(payload.clone())>($N(source), object : TypeToken<$T(payload)>() {}.type)
+        })
+    }).transpose()?;
     sigil_quote!(Kotlin {
         $if(case.case_owns_tag) {
             if (!candidate.isJsonObject && value.discriminator != null) { throw JsonParseException("inferred discriminator requires an object") }
@@ -235,5 +248,6 @@ fn write_case(
             if (!$C(common.unwrap())) { throw JsonParseException($S(&invalid)) }
         }
         if (!$C(condition)) { throw JsonParseException($S(&invalid)) }
+        $if(projected_check.is_some()) { $C(projected_check.unwrap()) }
     })
 }

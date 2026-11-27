@@ -209,6 +209,28 @@ fn write_case(
     let memo = MatchPlan::memo_type();
     let invalid = format!("serialized value does not match inferred tagged union branch {name}");
     let required_nullable = &case.required_nullable;
+    let projected_check = case
+        .projected_reader
+        .as_ref()
+        .map(|expr| {
+            let strip = case.read == TagRead::Strip;
+            let source = if strip { "projected" } else { "candidate" };
+            let token = type_application(
+                TypeName::importable("com.google.gson.reflect", "TypeToken"),
+                vec![java_type_name(expr, true)],
+            );
+            sigil_quote!(Java {
+                $if(strip) {
+                    JsonElement projected = candidate;
+                    if (candidate.isJsonObject() && candidate.getAsJsonObject().has($S(field))) {
+                        projected = candidate.deepCopy();
+                        projected.getAsJsonObject().remove($S(field));
+                    }
+                }
+                gson.fromJson($N(source), new $T(token)() {}.getType());
+            })
+        })
+        .transpose()?;
     sigil_quote!(Java {
         $if(case.case_owns_tag) {
             if (!candidate.isJsonObject() && selected.discriminator() != null) { throw new JsonParseException("inferred discriminator requires an object"); }
@@ -234,5 +256,6 @@ fn write_case(
             if (!$C(common.unwrap())) { throw new JsonParseException($S(&invalid)); }
         }
         if (!$C(condition)) { throw new JsonParseException($S(&invalid)); }
+        $if(projected_check.is_some()) { $C(projected_check.unwrap()) }
     })
 }

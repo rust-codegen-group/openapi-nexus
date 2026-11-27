@@ -999,6 +999,87 @@ fn authored_projection_fixture_exports_distinct_guards_and_naming_contracts() {
 }
 
 #[test]
+fn authored_whole_alternatives_keep_their_native_type_and_converters() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+
+    let source = include_str!("fixtures/valid/typescript-authored-whole-and-finite.yaml");
+    let ir =
+        openapi_nexus::ir::lower::lower(openapi_nexus::parser::parse_content_yaml(source).unwrap())
+            .unwrap();
+    let config = toml::from_str(
+        "property_naming = 'camelCase'\ntagged_union_strategy = 'strict'\nemit_type_guards = true\ntoolchain = 'vp'",
+    ).unwrap();
+    let files = TypeScriptFetchCodeGenerator::new(config)
+        .generate(&ir)
+        .unwrap();
+    let model = files
+        .iter()
+        .find(|file| file.filename == "Choice.ts")
+        .unwrap();
+    assert_eq!(
+        model.content,
+        include_str!("golden/typescript/authored-whole-choice.ts.golden")
+    );
+}
+
+#[test]
+fn authored_constants_follow_the_selected_named_payload_policy() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+
+    let source = include_str!("fixtures/valid/typescript-named-literal-policies.yaml");
+    let ir =
+        openapi_nexus::ir::lower::lower(openapi_nexus::parser::parse_content_yaml(source).unwrap())
+            .unwrap();
+    for policy in ["firstMatch", "strict", "raw"] {
+        let config = toml::from_str(&format!(
+            "property_naming = 'camelCase'\ntagged_union_strategy = 'strict'\nuntagged_union_strategy = '{policy}'\nemit_type_guards = true"
+        ))
+        .unwrap();
+        let files = TypeScriptFetchCodeGenerator::new(config)
+            .generate(&ir)
+            .unwrap();
+        let output = &files
+            .iter()
+            .find(|file| file.filename.ends_with("unionMatch.ts"))
+            .expect("authored constraints have a generated matcher")
+            .content;
+        let checks_key = |direction: &str, key: &str| {
+            output.split("export function ").any(|declaration| {
+                declaration
+                    .lines()
+                    .next()
+                    .is_some_and(|signature| signature.contains(direction))
+                    && declaration.contains(&format!("hasOwnProperty.call(literal, '{key}')"))
+            })
+        };
+        // Wire constants keep their authored spelling in every policy.
+        assert!(checks_key("FromJSON", "nullable_value"), "{policy}");
+        // The selected structured payload converts its declared fields, but map
+        // entries, extensions and opaque fallback keys are still data.
+        assert_eq!(
+            checks_key("ToJSON", "nullableValue"),
+            policy != "raw",
+            "{policy}"
+        );
+        for key in [
+            "literal_key",
+            "extension_key",
+            "opaque_key",
+            "dictionary_key",
+        ] {
+            assert!(checks_key("ToJSON", key), "{policy}: {key}");
+        }
+        // The common literal for AmbiguousPayload matches both structured
+        // alternatives. Strict must not project it through a guessed member.
+        assert_eq!(
+            checks_key("ToJSON", "namedOnly"),
+            policy == "firstMatch",
+            "{policy}"
+        );
+    }
+}
+
+#[test]
 fn composed_wire_codec_checks_competing_tags_after_conversion() {
     use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
 

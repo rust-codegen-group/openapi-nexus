@@ -89,6 +89,46 @@ pub struct UnionWirePlan<'ir> {
     strategy: Strategy,
 }
 
+/// A conservative description of the root values a representation must handle.
+/// Shape matching, not these flags, decides whether a particular value is eligible.
+#[derive(Clone, Copy)]
+pub(crate) struct RootKinds {
+    pub(crate) object: bool,
+    pub(crate) non_object: bool,
+}
+
+impl RootKinds {
+    const NONE: Self = Self {
+        object: false,
+        non_object: false,
+    };
+    const BOTH: Self = Self {
+        object: true,
+        non_object: true,
+    };
+
+    fn only(object: bool) -> Self {
+        Self {
+            object,
+            non_object: !object,
+        }
+    }
+
+    fn intersect(self, other: Self) -> Self {
+        Self {
+            object: self.object && other.object,
+            non_object: self.non_object && other.non_object,
+        }
+    }
+
+    fn union(self, other: Self) -> Self {
+        Self {
+            object: self.object || other.object,
+            non_object: self.non_object || other.non_object,
+        }
+    }
+}
+
 impl<'ir> UnionWirePlan<'ir> {
     /// True when the legacy branch labels agree with distinct authored singletons
     /// and each label is required. This proves tag identity only. It does not
@@ -119,6 +159,26 @@ impl<'ir> UnionWirePlan<'ir> {
 
     pub fn branches(&self) -> &[IrWireShape] {
         self.branches
+    }
+
+    /// Whether this authored alternative can require an object or whole-value
+    /// binding. The common gate can rule out a representation but supplies no
+    /// branch-selection evidence.
+    pub(crate) fn possible_root_kinds(&self, branch: usize) -> RootKinds {
+        let Some(branch) = self.branches.get(branch) else {
+            return RootKinds::NONE;
+        };
+        let mut visiting = HashSet::new();
+        self.common
+            .into_iter()
+            .chain([branch])
+            .fold(RootKinds::BOTH, |kinds, shape| {
+                kinds.intersect(possible_root_kinds(
+                    shape,
+                    &self.ir.wire_schemas,
+                    &mut visiting,
+                ))
+            })
     }
 
     /// Project the discriminator's declaration domain, without discarding the
@@ -559,6 +619,39 @@ impl Evidence {
     }
 }
 
+fn possible_root_kinds<'ir>(
+    shape: &'ir IrWireShape,
+    schemas: &'ir BTreeMap<String, IrWireShape>,
+    visiting: &mut HashSet<&'ir str>,
+) -> RootKinds {
+    match shape {
+        IrWireShape::Any => RootKinds::BOTH,
+        IrWireShape::Never => RootKinds::NONE,
+        IrWireShape::Kind(kind) => RootKinds::only(*kind == IrJsonKind::Object),
+        IrWireShape::Object(_) => RootKinds::only(true),
+        IrWireShape::Array(_) => RootKinds::only(false),
+        IrWireShape::Finite(values) => values.iter().fold(RootKinds::NONE, |kinds, value| {
+            kinds.union(RootKinds::only(value.is_object()))
+        }),
+        IrWireShape::AllOf(parts) => parts.iter().fold(RootKinds::BOTH, |kinds, part| {
+            kinds.intersect(possible_root_kinds(part, schemas, visiting))
+        }),
+        IrWireShape::AnyOf(parts) | IrWireShape::OneOf(parts) => {
+            parts.iter().fold(RootKinds::NONE, |kinds, part| {
+                kinds.union(possible_root_kinds(part, schemas, visiting))
+            })
+        }
+        IrWireShape::Reference(name) if visiting.insert(name.as_str()) => {
+            let result = schemas.get(name).map_or(RootKinds::NONE, |shape| {
+                possible_root_kinds(shape, schemas, visiting)
+            });
+            visiting.remove(name.as_str());
+            result
+        }
+        IrWireShape::Reference(_) => RootKinds::NONE,
+    }
+}
+
 type Memo<'ir> = HashMap<(&'ir str, *const Value), Evidence>;
 
 fn matching<'ir>(
@@ -670,6 +763,23 @@ fn is_integer(number: &Number) -> bool {
 fn literals_equal(left: &Value, right: &Value) -> bool {
     match (left, right) {
         (Value::Number(left), Value::Number(right)) => numbers_equal(left, right),
+        // JSON numeric equality applies at every depth of a literal, not just
+        // when the entire literal is a scalar number.
+        (Value::Array(left), Value::Array(right)) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right)
+                    .all(|(left, right)| literals_equal(left, right))
+        }
+        (Value::Object(left), Value::Object(right)) => {
+            left.len() == right.len()
+                && left.iter().all(|(key, value)| {
+                    right
+                        .get(key)
+                        .is_some_and(|other| literals_equal(value, other))
+                })
+        }
         _ => left == right,
     }
 }

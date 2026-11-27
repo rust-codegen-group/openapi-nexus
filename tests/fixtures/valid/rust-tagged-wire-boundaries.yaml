@@ -1,0 +1,174 @@
+openapi: 3.1.0
+info: {title: Rust authored wire boundaries, version: '1'}
+paths: {}
+components:
+  schemas:
+    Legacy: {type: string}
+    Sequence: {type: array, items: {type: integer}}
+    Detail:
+      type: object
+      required: [value]
+      properties:
+        value: {type: [integer, 'null']}
+        note: {type: [string, 'null']}
+    Choice:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [detail]
+              properties:
+                kind: {type: string, enum: [structured]}
+                detail: {$ref: '#/components/schemas/Detail'}
+                history:
+                  type: array
+                  items: {$ref: '#/components/schemas/Detail'}
+                indexed:
+                  type: object
+                  additionalProperties: {$ref: '#/components/schemas/Detail'}
+        - $ref: '#/components/schemas/Legacy'
+        - $ref: '#/components/schemas/Sequence'
+    DetailMap:
+      type: object
+      additionalProperties: {$ref: '#/components/schemas/Detail'}
+    DetailMapAlias:
+      $ref: '#/components/schemas/DetailMap'
+    AnnotatedIndex:
+      type: object
+      required: [title]
+      properties:
+        title: {type: string}
+        pieces:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/Detail'
+              - {type: 'null'}
+      additionalProperties: {$ref: '#/components/schemas/Detail'}
+    IndexPart:
+      type: object
+      required: [entries, annotated]
+      properties:
+        entries:
+          oneOf:
+            - $ref: '#/components/schemas/DetailMapAlias'
+            - {type: 'null'}
+        annotated: {$ref: '#/components/schemas/AnnotatedIndex'}
+    NamePart:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    Combined:
+      allOf:
+        - $ref: '#/components/schemas/IndexPart'
+        - $ref: '#/components/schemas/NamePart'
+    ComposedChoice:
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/Combined'
+            - properties:
+                kind: {type: string, enum: [combined, combined_alt]}
+        - $ref: '#/components/schemas/Legacy'
+    UntaggedValues:
+      anyOf:
+        - type: array
+          items: {$ref: '#/components/schemas/Detail'}
+        - {type: boolean}
+    ProjectedChoice:
+      oneOf:
+        - allOf:
+            - required: [label]
+              properties:
+                kind: {type: string, enum: [record, record_alt]}
+                label: {type: string}
+        - $ref: '#/components/schemas/UntaggedValues'
+    ChoiceAlias:
+      $ref: '#/components/schemas/Choice'
+    Envelope:
+      type: object
+      properties:
+        choice: {$ref: '#/components/schemas/Choice'}
+        alias: {$ref: '#/components/schemas/ChoiceAlias'}
+    RequiredEnvelope:
+      type: object
+      required: [choice]
+      properties:
+        choice:
+          oneOf:
+            - $ref: '#/components/schemas/Choice'
+            - {type: 'null'}
+    Inner:
+      oneOf:
+        - allOf:
+            - type: object
+              required: [label]
+              properties:
+                kind: {type: string, enum: [text, text_alt]}
+                label: {type: string}
+        - allOf:
+            - type: object
+              required: [count]
+              properties:
+                kind: {type: string, enum: [count]}
+                count: {type: integer}
+    Outer:
+      type: object
+      required: [scope]
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/Inner'
+            - properties:
+                kind: {type: string, enum: [text, text_alt, count]}
+        - allOf:
+            - type: object
+              required: [kind, other]
+              properties:
+                kind: {type: string, enum: [other]}
+                other: {type: string}
+    Holder:
+      type: object
+      required: [inner]
+      properties:
+        inner: {$ref: '#/components/schemas/Inner'}
+    WithHolder:
+      type: object
+      required: [scope]
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/Holder'
+            - properties:
+                kind: {type: string, enum: [wrapped]}
+        - allOf:
+            - type: object
+              required: [kind, other]
+              properties:
+                kind: {type: string, enum: [other, other_alt]}
+                other: {type: string}
+    LiteralChoice:
+      oneOf:
+        - allOf:
+            - required: [marker]
+              properties:
+                kind: {type: string, enum: [record, record_alt]}
+                marker:
+                  const: {items: [1, 9007199254740993, true]}
+        - allOf:
+            - required: [count]
+              properties:
+                kind: {type: string, enum: [other]}
+                count: {type: integer}
+    SampleDiscriminator1: {type: string}
+    Sample:
+      oneOf:
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_1]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_2]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_3]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_4]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_5]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_6]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_7]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_8]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_9]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_10]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_11]}, label: {type: string}}}]
+        - allOf: [{required: [label], properties: {kind: {type: string, enum: [tag_12]}, label: {type: string}}}]

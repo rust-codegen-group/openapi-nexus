@@ -126,6 +126,31 @@ pub(super) enum TaggedMatch {
     Fallback,
 }
 
+pub(super) struct ByDirection<T> {
+    wire: T,
+    model: T,
+}
+
+impl<T> ByDirection<T> {
+    fn new(mut project: impl FnMut(Direction) -> T) -> Self {
+        Self {
+            wire: project(Direction::FromWire),
+            model: project(Direction::ToWire),
+        }
+    }
+
+    pub(super) fn get(&self, direction: Direction) -> &T {
+        match direction {
+            Direction::FromWire => &self.wire,
+            Direction::ToWire => &self.model,
+        }
+    }
+
+    fn both(&self) -> [&T; 2] {
+        [&self.wire, &self.model]
+    }
+}
+
 struct TaggedMatchers {
     member: JsonShape,
     concrete: JsonShape,
@@ -149,13 +174,13 @@ pub(super) struct TypeScriptPlan<'a> {
     wire_symbols: HashSet<String>,
     unknown: HashSet<String>,
     unions: BTreeMap<String, Vec<UnionMemberMatch>>,
-    recursive_shapes: BTreeMap<String, (JsonShape, JsonShape)>,
+    recursive_shapes: BTreeMap<String, ByDirection<(JsonShape, JsonShape)>>,
     local_type_names: HashSet<String>,
     conversions: Vec<ValueHelper>,
     matching: MatchPlan,
     wire_plans: UnionWirePlans<'a>,
     generalized_tags: HashSet<String>,
-    authored_tag_matchers: BTreeMap<String, Vec<TaggedMatchers>>,
+    authored_tag_matchers: BTreeMap<String, Vec<ByDirection<TaggedMatchers>>>,
     authored_tag_fields: BTreeMap<String, Vec<TaggedFields>>,
 }
 
@@ -302,43 +327,48 @@ impl<'a> TypeScriptPlan<'a> {
                     result.authored_tag_fields.insert(name.clone(), fields);
                     continue;
                 }
-                let mut projection = super::wire_matching::Projection::new(
-                    &ir.wire_schemas,
-                    !flags.property_naming_camel_case || result.is_raw_tagged(name),
-                );
+                let wire_keys = !flags.property_naming_camel_case || result.is_raw_tagged(name);
                 let branches: Vec<_> = wire
                     .branches()
                     .iter()
-                    .zip(&fields)
-                    .map(|(branch, fields)| {
-                        let common = wire
-                            .common_shape()
-                            .map(|shape| projection.root(shape, fields));
-                        let branch = projection.root(branch, fields);
-                        let (concrete, fallback) = selection_shapes(branch.clone());
-                        // Union-level constraints gate eligibility; they are not evidence
-                        // that an individual opaque branch is concrete.
-                        let gate = |shape| match &common {
-                            Some(common) => super::wire_matching::and(vec![common.clone(), shape]),
-                            None => shape,
+                    .zip(fields.iter().zip(&union.variants))
+                    .map(|(branch, (fields, variant))| {
+                        let select = |name: &str, union: &IrUnion, value: &serde_json::Value| {
+                            result.literal_union_member(name, union, value)
                         };
-                        let member = gate(branch);
-                        let concrete = gate(concrete);
-                        let fallback = gate(fallback);
-                        TaggedMatchers {
-                            member,
-                            concrete,
-                            fallback,
-                        }
+                        ByDirection::new(|direction| {
+                            let mut projection = super::wire_matching::Projection::new(
+                                ir, wire_keys, direction, &select,
+                            );
+                            let common = wire
+                                .common_shape()
+                                .map(|shape| projection.root(shape, fields, &variant.content_type));
+                            let branch = projection.root(branch, fields, &variant.content_type);
+                            let (concrete, fallback) = selection_shapes(branch.clone());
+                            // A common shape gates eligibility without adding branch evidence.
+                            let gate = |shape| match &common {
+                                Some(common) => {
+                                    super::wire_matching::and(vec![common.clone(), shape])
+                                }
+                                None => shape,
+                            };
+                            TaggedMatchers {
+                                member: gate(branch),
+                                concrete: gate(concrete),
+                                fallback: gate(fallback),
+                            }
+                        })
                     })
                     .collect();
                 for branch in &branches {
-                    if flags.emit_type_guards {
-                        result.matching.register(&branch.member);
-                    }
-                    if flags.property_naming_camel_case && !result.is_raw_tagged(name) {
-                        result.matching.register(&branch.concrete);
-                        result.matching.register(&branch.fallback);
+                    for branch in branch.both() {
+                        if flags.emit_type_guards {
+                            result.matching.register(&branch.member);
+                        }
+                        if flags.property_naming_camel_case && !result.is_raw_tagged(name) {
+                            result.matching.register(&branch.concrete);
+                            result.matching.register(&branch.fallback);
+                        }
                     }
                 }
                 result.authored_tag_matchers.insert(name.clone(), branches);
@@ -430,16 +460,16 @@ impl<'a> TypeScriptPlan<'a> {
             result.recursive_shapes = shapes
                 .into_iter()
                 .filter(|(name, _)| referenced.contains(name))
-                .map(|(name, shape)| (name, selection_shapes(shape)))
+                .map(|(name, shape)| {
+                    let tiers = selection_shapes(shape);
+                    (name, ByDirection::new(|_| tiers.clone()))
+                })
                 .collect();
             for (name, schema) in &ir.schemas {
                 if let IrSchemaKind::Union(union) = &schema.kind {
-                    let members = if !result.has_generalized_tags() {
-                        plan_typescript_union_members(name, union, ir)
-                    } else {
-                        result.plan_members(&union.members, Some(name))
-                    };
-                    result.unions.insert(name.clone(), members);
+                    result
+                        .unions
+                        .insert(name.clone(), result.named_union_members(name, union));
                 }
             }
         }
@@ -542,38 +572,51 @@ impl<'a> TypeScriptPlan<'a> {
         let mut pending_matchers = required_matchers.clone();
         while let Some(name) = pending_matchers.pop_first() {
             if let Some((target, wire_keys)) = super::wire_matching::reference_target(&name) {
-                let tiers = if let Some(variants) = result.authored_tag_matchers.get(target) {
-                    (
-                        super::wire_matching::or(
-                            variants
-                                .iter()
-                                .map(|branch| branch.concrete.clone())
-                                .collect(),
-                        ),
-                        super::wire_matching::or(
-                            variants
-                                .iter()
-                                .map(|branch| branch.fallback.clone())
-                                .collect(),
-                        ),
-                    )
-                } else {
-                    selection_shapes(
-                        super::wire_matching::Projection::new(&ir.wire_schemas, wire_keys)
+                let tiers = ByDirection::new(|direction| {
+                    if let Some(variants) = result.authored_tag_matchers.get(target) {
+                        let shape = |tier| {
+                            super::wire_matching::or(
+                                variants
+                                    .iter()
+                                    .map(|branch| {
+                                        branch
+                                            .get(if wire_keys {
+                                                Direction::FromWire
+                                            } else {
+                                                direction
+                                            })
+                                            .shape(tier)
+                                            .clone()
+                                    })
+                                    .collect(),
+                            )
+                        };
+                        (shape(TaggedMatch::Concrete), shape(TaggedMatch::Fallback))
+                    } else {
+                        let select = |name: &str, union: &IrUnion, value: &serde_json::Value| {
+                            result.literal_union_member(name, union, value)
+                        };
+                        selection_shapes(
+                            super::wire_matching::Projection::new(
+                                ir, wire_keys, direction, &select,
+                            )
                             .named(target),
-                    )
-                };
+                        )
+                    }
+                });
                 result.recursive_shapes.insert(name.clone(), tiers);
             }
-            let (concrete, fallback) = result
+            let tiers = result
                 .recursive_shapes
                 .get(&name)
                 .expect("productive reference has a named shape plan");
-            result.matching.register(concrete);
-            result.matching.register(fallback);
             let mut dependencies = BTreeSet::new();
-            referenced_shapes(concrete, &mut dependencies);
-            referenced_shapes(fallback, &mut dependencies);
+            for (concrete, fallback) in tiers.both() {
+                result.matching.register(concrete);
+                result.matching.register(fallback);
+                referenced_shapes(concrete, &mut dependencies);
+                referenced_shapes(fallback, &mut dependencies);
+            }
             for dependency in dependencies {
                 if required_matchers.insert(dependency.clone()) {
                     pending_matchers.insert(dependency);
@@ -643,6 +686,53 @@ impl<'a> TypeScriptPlan<'a> {
         )
     }
 
+    fn named_union_members(&self, name: &str, union: &IrUnion) -> Vec<UnionMemberMatch> {
+        if self.has_generalized_tags() {
+            self.plan_members(&union.members, Some(name))
+        } else {
+            plan_typescript_union_members(name, union, self.ir.as_ref())
+        }
+    }
+
+    fn literal_union_member(
+        &self,
+        name: &str,
+        union: &IrUnion,
+        value: &serde_json::Value,
+    ) -> Option<usize> {
+        use super::matching::match_wire_literal;
+
+        if self.flags.untagged_union_strategy == UntaggedUnionStrategy::Raw {
+            return None;
+        }
+        let strict = self.flags.untagged_union_strategy == UntaggedUnionStrategy::Strict;
+        let members = self.named_union_members(name, union);
+        let (concrete, fallback) =
+            members.split_at(members.partition_point(|member| !member.fallback));
+        let mut selected = None;
+        for member in concrete {
+            if match_wire_literal(&member.shape, value)? {
+                if !strict {
+                    return Some(member.source_index);
+                }
+                if selected.replace(member.source_index).is_some() {
+                    return None;
+                }
+            }
+        }
+        // Native named-union conversion checks separately allowed null after
+        // concrete ambiguity and before probing opaque branches.
+        if selected.is_some() || union.nullable && value.is_null() {
+            return selected;
+        }
+        for member in fallback {
+            if match_wire_literal(&member.shape, value)? {
+                return Some(member.source_index);
+            }
+        }
+        None
+    }
+
     pub(super) fn authored_tag_plan(&self, name: &str) -> Option<&UnionWirePlan<'a>> {
         if self.generalized_tags.contains(name) {
             self.wire_plans.get(name)
@@ -670,8 +760,11 @@ impl<'a> TypeScriptPlan<'a> {
         name: &str,
         index: usize,
         tier: TaggedMatch,
+        direction: Direction,
     ) -> &JsonShape {
-        self.authored_tag_matchers[name][index].shape(tier)
+        self.authored_tag_matchers[name][index]
+            .get(direction)
+            .shape(tier)
     }
 
     pub(super) fn matching_condition(

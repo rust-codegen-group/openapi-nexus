@@ -436,6 +436,19 @@ fn marshal_body(
         let member = &case.field;
         let matches = &case.authored;
         let add_nulls = !case.required_nullable.is_empty();
+        let native_check = case.check_native_codec.as_ref().map(|(payload, read)| {
+            let strip = *read == TagRead::Strip;
+            let source = if strip { "projected" } else { "data" };
+            sigil_quote!(Go {
+                $comment("Check the selected native codec with the assembled wire value, as on read.")
+                $if(strip) {
+                    projected, _, err := nexusTaggedProject(data, $S(field), true)
+                    if err != nil { return nil, err }
+                }
+                var checked $T(payload.clone())
+                if err := json.Unmarshal($N(source), &checked); err != nil { return nil, err }
+            })
+        }).transpose()?;
         sigil_quote!(Go {
             case $L(index.to_string()):
                 $if(has_tag && !case.case_owns_tag) {
@@ -461,6 +474,7 @@ fn marshal_body(
                 if $N(matches)(value, path, 0) == nexusTaggedNoMatch {
                     return nil, fmt.Errorf($S(&invalid_value))
                 }
+                $if(native_check.is_some()) { $C(native_check.unwrap()) }
                 return data, nil
         })
     }).collect::<Result<Vec<_>, _>>()?;

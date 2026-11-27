@@ -344,6 +344,25 @@ impl<'ir> TaggedPlans<'ir> {
                     let check = format!("{name}.{class}");
                     let required_nullable = &case.required_nullable;
                     let whole = case.whole;
+                    let finish = sigil_quote!(Python { _tagged_support.finish(result, $N(common.as_str()), $N(branch.as_str()), $S(check)) })?;
+                    let write = if let Some((expr, read)) = case.validate {
+                        // Check the assembled output using the same selected codec as on read.
+                        let input = match read {
+                            TagRead::Keep => sigil_quote!(Python { result })?,
+                            TagRead::Strip => {
+                                let field = tag.expect("projected case owns its discriminator");
+                                sigil_quote!(Python { _tagged_support.project_whole(result, $S(field)) })?
+                            }
+                        };
+                        let validation = values.invoke(expr, input, Direction::From)?;
+                        sigil_quote!(Python {
+                            $C(finish)
+                            $C(validation)
+                            return result
+                        })?
+                    } else {
+                        sigil_quote!(Python { return $C(finish) })?
+                    };
                     sigil_quote!(Python {
                         if isinstance(value, $T(class_ref)) {
                             payload = $C(output)
@@ -357,7 +376,7 @@ impl<'ir> TaggedPlans<'ir> {
                                 $if(tag.is_some()) { _tagged_support.write_tag(result, $S(tag.unwrap()), value.discriminator) }
                                 $for(key in required_nullable) { result.setdefault($S(*key), None) }
                             }
-                            return _tagged_support.finish(result, $N(common.as_str()), $N(branch.as_str()), $S(check))
+                            $C(write)
                         }
                     })
                 }

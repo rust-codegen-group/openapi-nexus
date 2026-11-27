@@ -447,6 +447,52 @@ components:
 }
 
 #[test]
+fn composite_literals_apply_numeric_equality_to_each_json_leaf() {
+    let source = r#"
+openapi: 3.1.0
+info: {title: Composite literal selection, version: '1'}
+paths: {}
+components:
+  schemas:
+    Choice:
+      anyOf:
+        - const: {values: [1, {limit: 9007199254740993, offset: -2.0}], enabled: true}
+        - const: [18446744073709551615, {count: 2.0}]
+"#;
+    for version in ["3.1.0", "3.2.0"] {
+        let ir = lower(parse_content_yaml(&source.replacen("3.1.0", version, 1)).unwrap()).unwrap();
+        let plans = UnionWirePlans::build(&ir, Strategy::Strict);
+        let plan = plans.get("Choice").unwrap();
+        for (wire, index) in [
+            (
+                json!({"enabled": true, "values": [1.0, {"offset": -2, "limit": 9007199254740993_u64}]}),
+                0,
+            ),
+            (json!([u64::MAX, {"count": 2}]), 1),
+        ] {
+            assert_eq!(
+                plan.select(&wire),
+                Ok(Selection::Branch(index)),
+                "{version}: {wire}"
+            );
+        }
+        for wire in [
+            json!({"enabled": true, "values": [1, {"offset": -2, "limit": 9007199254740992.0}]}),
+            json!({"enabled": 1, "values": [1, {"offset": -2, "limit": 9007199254740993_u64}]}),
+            json!([18446744073709551616.0, {"count": 2}]),
+            json!([u64::MAX, {"count": 2, "extra": null}]),
+            json!([u64::MAX, {"count": 2}, null]),
+        ] {
+            assert_eq!(
+                plan.select(&wire),
+                Err(SelectionError::NoMatch),
+                "{version}: {wire}"
+            );
+        }
+    }
+}
+
+#[test]
 fn union_level_constraints_apply_before_branch_selection() {
     let source = include_str!("fixtures/valid/optional-discriminator-union.yaml").replace(
         "    Union:\n      oneOf:",

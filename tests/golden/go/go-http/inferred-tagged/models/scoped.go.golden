@@ -80,6 +80,11 @@ func (u Scoped) MarshalJSON() ([]byte, error) {
 		if nexusTaggedShape108(value, path, 0) == nexusTaggedNoMatch {
 			return nil, fmt.Errorf("serialized value does not match its member of inferred tagged union Scoped")
 		}
+		// Check the selected native codec with the assembled wire value, as on read.
+		var checked Ambiguous
+		if err := json.Unmarshal(data, &checked); err != nil {
+			return nil, err
+		}
 		return data, nil
 		case 1:
 		data, err := json.Marshal(u.Other)
@@ -100,6 +105,15 @@ func (u Scoped) MarshalJSON() ([]byte, error) {
 		}
 		if nexusTaggedShape115(value, path, 0) == nexusTaggedNoMatch {
 			return nil, fmt.Errorf("serialized value does not match its member of inferred tagged union Scoped")
+		}
+		// Check the selected native codec with the assembled wire value, as on read.
+		projected, _, err := nexusTaggedProject(data, "kind", true)
+		if err != nil {
+			return nil, err
+		}
+		var checked ScopedOther
+		if err := json.Unmarshal(projected, &checked); err != nil {
+			return nil, err
 		}
 		return data, nil
 	}

@@ -16,6 +16,7 @@ use super::plan::union_type;
 #[derive(Default)]
 pub(super) struct TaggedFields {
     model_keys: BTreeSet<String>,
+    discriminator: String,
     pub(super) envelope: BTreeMap<String, EnvelopeField>,
 }
 
@@ -61,8 +62,13 @@ impl TaggedFields {
         );
         Self {
             model_keys,
+            discriminator: discriminator.to_owned(),
             envelope: common_fields,
         }
+    }
+
+    pub(super) fn renames_envelope(&self, key: &str) -> bool {
+        self.discriminator == key || self.envelope.get(key).is_some_and(|field| field.rename)
     }
 
     pub(super) fn renames(&self, key: &str) -> bool {
