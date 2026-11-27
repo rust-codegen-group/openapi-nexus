@@ -79,6 +79,11 @@ instead of retrying a different member or falling back to raw.
 ## Backend compatibility
 
 Rust's reqwest, ureq, and aioduct adapters can share a native codec implementation.
+Ordinary Rust unions recover a proven required string literal separately for
+each aligned authored branch when the model predicate retains only `String`.
+This supplements legacy selection without changing the model, raw passthrough,
+or the matching policy for other constraints.
+
 Python's httpx and requests adapters should use the same selection for direct
 model helpers and nested values. Java and Kotlin can retain their native model
 and Gson adapter representations. These are adoption requirements, not claims

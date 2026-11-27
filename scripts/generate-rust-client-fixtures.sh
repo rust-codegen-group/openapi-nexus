@@ -59,6 +59,16 @@ for strategy in firstMatch strict raw; do
     --generator-config "rust-$backend.crate_name=rust-tagged-$suffix" \
     --generator-config "rust-$backend.tagged_union_strategy=$strategy"
 
+  if [ "$backend" = reqwest ] && [ "$strategy" = firstMatch ]; then
+    output="$project/generated/union-string-const"
+    rm -rf "$output"
+    cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
+      --input "$root/tests/fixtures/valid/rust-union-string-const.yaml" \
+      --output "$output" \
+      --generators "rust-$backend" \
+      --generator-config "rust-$backend.crate_name=rust-union-string-const"
+  fi
+
   if [ "$backend" = reqwest ] && [ "$strategy" != firstMatch ]; then
     output="$project/generated/tagged-wire-boundaries-$strategy"
     rm -rf "$output"

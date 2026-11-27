@@ -108,6 +108,12 @@ impl<'ir> TaggedWirePlans<'ir> {
             .flatten()
     }
 
+    /// Authored shapes are also available for ordinary unions without adopting
+    /// the tagged codec or opting nested matchers into its selection policy.
+    pub(super) fn authored(&self, name: &str) -> Option<&UnionWirePlan<'ir>> {
+        self.shared.get(name)
+    }
+
     /// Only raw adopted unions are allowed to consume an explicit null before
     /// the enclosing model's optional field turns it into absence.
     pub(super) fn uses_raw_value(&self, mut expr: &'ir IrTypeExpr, ir: &'ir IrSpec) -> bool {
