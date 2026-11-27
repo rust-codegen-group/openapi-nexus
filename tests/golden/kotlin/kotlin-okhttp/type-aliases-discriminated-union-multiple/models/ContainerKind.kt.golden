@@ -37,7 +37,9 @@ private class ContainerKindJsonAdapter: TypeAdapter<ContainerKind>() {
     override fun read (reader: JsonReader): ContainerKind? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["kind"]?.asString) {
+        val tag = jsonObject["kind"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "CONTAINER_KIND_MANAGED" -> ContainerKind.VariantContainerKindManaged(gson.fromJson(jsonObject, object: TypeToken<ContainerKindManaged>() {}.type))
             "CONTAINER_KIND_CUSTOM" -> ContainerKind.VariantContainerKindCustom(gson.fromJson(jsonObject, object: TypeToken<ContainerKindCustom>() {}.type))
             else -> throw JsonParseException("unknown ContainerKind discriminator")

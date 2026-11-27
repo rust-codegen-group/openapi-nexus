@@ -37,7 +37,9 @@ private class VolumeKindJsonAdapter: TypeAdapter<VolumeKind>() {
     override fun read (reader: JsonReader): VolumeKind? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["kind"]?.asString) {
+        val tag = jsonObject["kind"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "VOLUME_KIND_LOCAL" -> VolumeKind.VariantVolumeKindLocal(gson.fromJson(jsonObject, object: TypeToken<VolumeKindLocal>() {}.type))
             "VOLUME_KIND_REMOTE" -> VolumeKind.VariantVolumeKindRemote(gson.fromJson(jsonObject, object: TypeToken<VolumeKindRemote>() {}.type))
             else -> throw JsonParseException("unknown VolumeKind discriminator")

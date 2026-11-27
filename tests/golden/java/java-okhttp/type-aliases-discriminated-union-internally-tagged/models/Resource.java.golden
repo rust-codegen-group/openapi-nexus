@@ -38,7 +38,8 @@ final class ResourceJsonAdapter extends TypeAdapter<Resource> {
     public Resource read (JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
-        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        JsonElement tag = object.get("kind");
+        String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
         if ("RESOURCE_UNSPECIFIED".equals(discriminator)) {
             return new Resource.VariantResourceUnspecified(gson.fromJson(object, new TypeToken<ResourceUnspecified>() {}.getType()));
         }

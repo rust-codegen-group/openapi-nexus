@@ -34,7 +34,8 @@ final class AdjacentChoiceJsonAdapter extends TypeAdapter<AdjacentChoice> {
     public AdjacentChoice read (JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
-        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        JsonElement tag = object.get("kind");
+        String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
         if ("a".equals(discriminator)) {
             return new AdjacentChoice.VariantA(gson.fromJson(object.get("data"), new TypeToken<PayloadA>() {}.getType()));
         }

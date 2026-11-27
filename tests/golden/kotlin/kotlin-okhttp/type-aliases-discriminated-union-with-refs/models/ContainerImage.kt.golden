@@ -35,7 +35,9 @@ private class ContainerImageJsonAdapter: TypeAdapter<ContainerImage>() {
     override fun read (reader: JsonReader): ContainerImage? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["kind"]?.asString) {
+        val tag = jsonObject["kind"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "CONTAINER_IMAGE_MANAGED" -> ContainerImage.VariantContainerImageManaged(gson.fromJson(jsonObject, object: TypeToken<ContainerImageManaged>() {}.type))
             "CONTAINER_IMAGE_CUSTOM" -> ContainerImage.VariantContainerImageCustom(gson.fromJson(jsonObject, object: TypeToken<ContainerImageCustom>() {}.type))
             else -> throw JsonParseException("unknown ContainerImage discriminator")

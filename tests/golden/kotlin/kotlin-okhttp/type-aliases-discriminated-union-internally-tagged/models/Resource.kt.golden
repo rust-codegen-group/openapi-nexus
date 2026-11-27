@@ -37,7 +37,9 @@ private class ResourceJsonAdapter: TypeAdapter<Resource>() {
     override fun read (reader: JsonReader): Resource? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["kind"]?.asString) {
+        val tag = jsonObject["kind"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "RESOURCE_UNSPECIFIED" -> Resource.VariantResourceUnspecified(gson.fromJson(jsonObject, object: TypeToken<ResourceUnspecified>() {}.type))
             "RESOURCE_QUICK" -> Resource.VariantResourceQuick(gson.fromJson(jsonObject, object: TypeToken<ResourceQuick>() {}.type))
             "RESOURCE_CUSTOM" -> Resource.VariantResourceCustom(gson.fromJson(jsonObject, object: TypeToken<ResourceCustom>() {}.type))

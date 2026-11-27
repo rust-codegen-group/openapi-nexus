@@ -1,7 +1,7 @@
 # JVM generated-client tests
 
 Java and Kotlin each have an independent Gradle consumer build. The public CLI
-generates the six inputs in `fixtures.txt` into ignored `generated/` directories.
+generates the inputs in `fixtures.txt` into ignored `generated/` directories.
 Each backend can add independent cases through its own `java/fixtures.txt` or
 `kotlin/fixtures.txt`; the same manifests drive generation and Gradle discovery.
 An optional third column selects `firstMatch`, `strict`, or `raw`. Java's union
@@ -56,9 +56,11 @@ The cases retain charset/header decoding, union dispatch, explicit nulls, and
 tagged/untagged shapes. They additionally verify that string/number alternatives
 win before `Any`, that fallback payloads are preserved, and that discriminator,
 adjacent, and external round-trips retain complete JSON and decoded payloads.
+Shared Java/Kotlin consumers also check exact external string literal payloads and
+reject non-string discriminators for fixed inferred internal and adjacent cases.
 
 The runner respects `JAVA_HOME` or Gradle's active JVM. Current local validation
-uses Homebrew JDK 27.0.1 and Gradle 9.8.2; CI also runs the JVM validation on JDK 27.
+uses Homebrew JDK 27.0.1.1 and Gradle 9.9.1; CI also runs the JVM validation on JDK 27.
 Generated libraries keep their declared Java 17 compilation target. The Foojay
 resolver supplies that compiler where needed, without forcing the consumer tests
 to run on an older JVM. No patch-versioned JDK installation path is baked into

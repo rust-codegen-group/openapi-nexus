@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info:
+  title: Tagged literal codecs
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Packet:
+      type: object
+      required: [count]
+      properties:
+        count: {type: integer}
+    ExternalChoice:
+      oneOf:
+        - type: object
+          required: [plain]
+          properties:
+            plain: {type: string, enum: [format_v1]}
+        - type: object
+          required: [compact]
+          properties:
+            compact: {type: string, enum: ['7']}
+        - type: object
+          required: [details]
+          properties:
+            details: {$ref: '#/components/schemas/Packet'}
+    InternalChoice:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [plain]}
+        - allOf:
+            - type: object
+              required: [kind, count]
+              properties:
+                kind: {type: string, enum: ['true']}
+                count: {type: integer}
+    AdjacentChoice:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: ['7']}
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [details]}
+            payload: {$ref: '#/components/schemas/Packet'}
+    MappedChoice:
+      oneOf:
+        - $ref: '#/components/schemas/Packet'
+      discriminator:
+        propertyName: kind
+        mapping:
+          '7': '#/components/schemas/Packet'
+          'true': '#/components/schemas/Packet'

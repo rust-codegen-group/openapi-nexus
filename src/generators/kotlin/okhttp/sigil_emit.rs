@@ -23,7 +23,8 @@ use super::symbols::KotlinSymbols;
 use super::util::{escape_kt_string, kt_decl_name, kt_primitive, kt_ref, kt_type_str};
 
 use crate::generators::jvm::{
-    TaggedCase, TaggedUnionStrategy, TaggedWire, TaggedWirePlans, discriminator_type,
+    NativeTagLookup, NativeTagged, TaggedCase, TaggedUnionStrategy, TaggedWire, TaggedWirePlans,
+    discriminator_type,
 };
 
 const RENDER_WIDTH: usize = 100;
@@ -378,11 +379,11 @@ fn emit_tagged_union(
         true,
     );
     let (adapter, cases) = match &authored {
-        Some(TaggedWire::Typed(wire)) => (
+        TaggedWire::Typed(wire) => (
             super::tagged::adapter(&plan, wire, ir, adapter_name)?,
             Some(wire.cases.as_slice()),
         ),
-        Some(TaggedWire::Raw) => (
+        TaggedWire::Raw => (
             super::union::adapter(
                 schema,
                 &plan,
@@ -393,7 +394,10 @@ fn emit_tagged_union(
             )?,
             None,
         ),
-        None => (kotlin_closed_sum_adapter(&plan, adapter_name)?, None),
+        TaggedWire::Native(native) => (
+            kotlin_closed_sum_adapter(&plan, adapter_name, native)?,
+            None,
+        ),
     };
     closed_sum_file(&plan, package_name, adapter_name, adapter, cases)
 }
@@ -523,9 +527,10 @@ fn kotlin_adapter_imports() -> [ImportSpec; 12] {
 fn kotlin_closed_sum_adapter(
     plan: &ClosedSumPlan,
     adapter_name: &str,
+    native: &NativeTagged,
 ) -> Result<CodeBlock, SigilStitchError> {
     let read_dispatch =
-        kotlin_adapter_read_dispatch(plan).map_err(|error| SigilStitchError::Render {
+        kotlin_adapter_read_dispatch(plan, native).map_err(|error| SigilStitchError::Render {
             context: format!("Kotlin {} Gson adapter read dispatch", plan.name),
             message: error.to_string(),
         })?;
@@ -567,45 +572,37 @@ fn kotlin_closed_sum_adapter(
     })
 }
 
-fn kotlin_adapter_read_dispatch(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
-    match &plan.encoding {
-        ClosedSumEncoding::Untagged => unreachable!("untagged unions use structural selection"),
-        ClosedSumEncoding::Internal {
-            discriminator_field,
-        } => {
+fn kotlin_adapter_read_dispatch(
+    plan: &ClosedSumPlan,
+    native: &NativeTagged,
+) -> Result<CodeBlock, SigilStitchError> {
+    match native {
+        NativeTagged::Field { tag, content_field } => {
+            let read_tag = match tag {
+                NativeTagLookup::JsonString(field) => sigil_quote!(Kotlin {
+                    val tag = jsonObject[$S(field)]
+                    val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+                })?,
+                NativeTagLookup::ScalarMappingKey(field) => sigil_quote!(Kotlin {
+                    val tag = jsonObject[$S(field)]
+                    val discriminator = if (tag != null && tag.isJsonPrimitive) tag.asString else null
+                })?,
+            };
             let branches = plan
                 .cases
                 .iter()
-                .map(|case| kotlin_tagged_read_case(plan, case, discriminator_field, None))
+                .map(|case| kotlin_tagged_read_case(plan, case, content_field.as_deref()))
                 .collect::<Result<Vec<_>, _>>()?;
             sigil_quote!(Kotlin {
                 val jsonObject = element.asJsonObject
-                return when (jsonObject[$S(discriminator_field)]?.asString) {
+                $C(read_tag)
+                return when (discriminator) {
                     $C_each(branches)
                     else -> throw JsonParseException($S(format!("unknown {} discriminator", plan.name)))
                 }
             })
         }
-        ClosedSumEncoding::Adjacent {
-            discriminator_field,
-            content_field,
-        } => {
-            let branches = plan
-                .cases
-                .iter()
-                .map(|case| {
-                    kotlin_tagged_read_case(plan, case, discriminator_field, Some(content_field))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            sigil_quote!(Kotlin {
-                val jsonObject = element.asJsonObject
-                return when (jsonObject[$S(discriminator_field)]?.asString) {
-                    $C_each(branches)
-                    else -> throw JsonParseException($S(format!("unknown {} discriminator", plan.name)))
-                }
-            })
-        }
-        ClosedSumEncoding::External => {
+        NativeTagged::ExternalKey => {
             let branches = plan
                 .cases
                 .iter()
@@ -625,12 +622,11 @@ fn kotlin_adapter_read_dispatch(plan: &ClosedSumPlan) -> Result<CodeBlock, Sigil
 fn kotlin_tagged_read_case(
     plan: &ClosedSumPlan,
     case: &ClosedSumCasePlan,
-    _discriminator_field: &str,
-    content_field: Option<&String>,
+    content_field: Option<&str>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let wire_name = case.wire_name.as_deref().unwrap_or_default();
     let source = match content_field {
-        Some(content_field) => sigil_quote!(Kotlin { jsonObject[$S(content_field.as_str())] })?,
+        Some(content_field) => sigil_quote!(Kotlin { jsonObject[$S(content_field)] })?,
         None => sigil_quote!(Kotlin { jsonObject })?,
     };
     let result = match &case.payload {
@@ -651,6 +647,10 @@ fn kotlin_external_read_case(
     let wire_name = case.wire_name.as_deref().unwrap_or_default();
     let source = sigil_quote!(Kotlin { jsonObject[$S(wire_name)] })?;
     let result = match &case.payload {
+        Some(IrTypeExpr::StringLiteral(literal)) => sigil_quote!(Kotlin {
+            if (JsonPrimitive($S(literal)) == $C(source)) $N(plan.name.as_str()).$N(case.name.as_str())($S(literal))
+            else throw JsonParseException($S(format!("invalid {} payload for {}", plan.name, wire_name)))
+        })?,
         Some(payload) => kotlin_adapter_read_value(plan, case, payload, source)?,
         None => sigil_quote!(Kotlin {
             $N(plan.name.as_str()).$N(case.name.as_str())
@@ -780,7 +780,16 @@ fn kotlin_adapter_write_case(
         ClosedSumEncoding::External => {
             let wire_name = case.wire_name.as_deref().unwrap_or_default();
             if case.payload.is_some() {
+                let check_literal = match &case.payload {
+                    Some(IrTypeExpr::StringLiteral(literal)) => vec![sigil_quote!(Kotlin {
+                        if (value.value0 != $S(literal)) {
+                            throw JsonParseException($S(format!("invalid {} payload for {}", plan.name, wire_name)))
+                        }
+                    })?],
+                    _ => Vec::new(),
+                };
                 sigil_quote!(Kotlin {
+                    $C_each(check_literal)
                     val jsonObject = JsonObject()
                     jsonObject.add($S(wire_name), gson.toJsonTree(value.value0))
                     gson.toJson(jsonObject, writer)
@@ -869,7 +878,9 @@ mod tests {
             }],
             encoding: ClosedSumEncoding::External,
         };
-        let adapter = kotlin_closed_sum_adapter(&plan, "ChoiceJsonAdapter").unwrap();
+        let adapter =
+            kotlin_closed_sum_adapter(&plan, "ChoiceJsonAdapter", &NativeTagged::ExternalKey)
+                .unwrap();
         assert_rendered!(
             Kotlin::new(),
             width = 100,

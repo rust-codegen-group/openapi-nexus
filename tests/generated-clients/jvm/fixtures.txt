@@ -10,3 +10,4 @@ authored-tagged-composed valid/rust-inferred-tagged-wire.yaml
 authored-tagged-strict valid/inferred-union-selection.yaml tagged_union_strategy=strict
 authored-tagged-raw valid/inferred-union-selection.yaml tagged_union_strategy=raw
 authored-tagged-finite valid/jvm-authored-tagged-union.yaml tagged_union_strategy=strict
+tagged-literal-codecs valid/jvm-tagged-literal-codecs.yaml
