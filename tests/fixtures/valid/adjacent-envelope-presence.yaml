@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info: {title: Adjacent envelope shapes, version: '1'}
+paths: {}
+components:
+  schemas:
+    OptionalContent:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [text]}
+            payload: {type: string}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [number]}
+            payload: {type: integer}
+    Packet:
+      type: object
+      required: [size]
+      properties:
+        size: {type: integer}
+    MixedEnvelopes:
+      oneOf:
+        - type: object
+          required: [legacy]
+          properties:
+            legacy: {$ref: '#/components/schemas/Packet'}
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [new]}
+            payload: {$ref: '#/components/schemas/Packet'}
+    MixedEnvelopesSameKey:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {$ref: '#/components/schemas/Packet'}
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [new]}
+            payload: {$ref: '#/components/schemas/Packet'}
+    AdjacentWithUnit:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [empty]}
+        - type: object
+          required: [kind, payload]
+          properties:
+            kind: {type: string, enum: [new]}
+            payload: {$ref: '#/components/schemas/Packet'}

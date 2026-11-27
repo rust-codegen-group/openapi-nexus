@@ -432,7 +432,11 @@ impl<'a> LowerCtx<'a> {
             return Ok(None);
         }
 
-        let tagging = classify_tagging_style(&patterns);
+        let Some(tagging) =
+            super::tagged::envelope_style::<ObjectSchema>(&obj.one_of, &patterns, first_tag)
+        else {
+            return Ok(None);
+        };
 
         // Build variants
         // For variants detected as ExternallyTagged in a mixed union that has a
@@ -1609,43 +1613,6 @@ fn is_array_with_promotable_items(obj: &ObjectSchema) -> bool {
             .items
             .as_deref()
             .is_some_and(inline_value_needs_promotion)
-}
-
-fn classify_tagging_style(
-    patterns: &[Option<crate::ir::tagged_enum_pattern::TaggedEnumPattern>],
-) -> TaggingStyle {
-    use crate::ir::tagged_enum_pattern::TaggedEnumPattern;
-    let mut saw_internal = false;
-    let mut saw_adjacent: Option<String> = None;
-    let mut adjacent_consistent = true;
-    for p in patterns.iter().flatten() {
-        match p {
-            TaggedEnumPattern::AdjacentlyTagged { content_field, .. } => {
-                if let Some(existing) = &saw_adjacent {
-                    adjacent_consistent &= existing == content_field;
-                } else {
-                    saw_adjacent = Some(content_field.clone());
-                }
-            }
-            TaggedEnumPattern::InternallyTagged { .. } => {
-                saw_internal = true;
-            }
-            TaggedEnumPattern::ExternallyTagged { .. } | TaggedEnumPattern::Untagged { .. } => {}
-        }
-    }
-    if let Some(content_field) = saw_adjacent
-        && adjacent_consistent
-        && !saw_internal
-    {
-        return TaggingStyle::Adjacent { content_field };
-    }
-    if saw_internal {
-        return TaggingStyle::Internal;
-    }
-    // All patterns are ExternallyTagged (unit variants with just the tag field).
-    // Since we only reach this function when not all_external was already handled,
-    // default to Internal.
-    TaggingStyle::Internal
 }
 
 fn unwrap_nullable(expr: IrTypeExpr) -> (IrTypeExpr, bool) {
