@@ -135,6 +135,12 @@ final class ChoiceJsonAdapter extends TypeAdapter<Choice> {
             if (!matches2(candidate, memo)) {
                 throw new JsonParseException("serialized value does not match inferred tagged union branch VariantAlpha");
             }
+            JsonElement projected = candidate;
+            if (candidate.isJsonObject() && candidate.getAsJsonObject().has("kind")) {
+                projected = candidate.deepCopy();
+                projected.getAsJsonObject().remove("kind");
+            }
+            gson.fromJson(projected, new TypeToken<ChoiceAlpha>() {}.getType());
             treeGson.toJson(candidate, writer);
             return;
         }

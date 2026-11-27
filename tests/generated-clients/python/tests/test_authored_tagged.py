@@ -168,6 +168,43 @@ class AuthoredTaggedContracts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Ambiguous inferred tagged union Message:"):
             codec.gated_message_from_dict(bad)
 
+    def test_projected_write_checks_the_assembled_value_with_the_selected_codec(self):
+        codec = importlib.import_module("authored_echo_strict.models.gated_message")
+        value = codec.gated_message_from_dict({"scope": "s", "label": "l"})
+        value.payload.update(count=5, nullable_count=None)
+        with self.assertRaisesRegex(ValueError, "Ambiguous inferred tagged union Message:"):
+            codec.gated_message_to_dict(value)
+
+        value.discriminator = "text_alt"
+        self.assertEqual(
+            codec.gated_message_to_dict(value),
+            {
+                "scope": "s",
+                "label": "l",
+                "count": 5,
+                "nullable_count": None,
+                "kind": "text_alt",
+            },
+        )
+        self.assertNotIn("kind", value.payload)
+        for policy in ("default", "strict"):
+            with self.subTest(policy=policy):
+                codec = importlib.import_module(f"authored_echo_{policy}.models.gated_message")
+                wire = {"scope": "s", "label": "l"}
+                self.assertEqual(
+                    codec.gated_message_to_dict(codec.gated_message_from_dict(wire)),
+                    wire,
+                )
+
+    def test_projected_object_write_still_checks_its_nested_child(self):
+        codec = importlib.import_module("authored_echo_strict.models.metadata_message")
+        wire = {"kind": "meta", "detail": {"value": None}, "child": {"label": "l"}}
+        value = codec.metadata_message_from_dict(wire)
+        self.assertEqual(codec.metadata_message_to_dict(value), wire)
+        value.payload["child"].update(count=5, nullable_count=None)
+        with self.assertRaisesRegex(ValueError, "Ambiguous inferred tagged union Message:"):
+            codec.metadata_message_to_dict(value)
+
     def test_optional_raw_fields_keep_absent_and_present_null_separate(self):
         models = importlib.import_module("authored_echo_raw.models")
         for wire in ({}, {"direct_choice": None}, {"alias_choice": None}, {"alias_choice": "raw"}):

@@ -1,0 +1,64 @@
+openapi: 3.1.0
+info: {title: Named union projection policies, version: '1'}
+paths: {}
+components:
+  schemas:
+    NamedPayload:
+      type: object
+      required: [integer_value, nullable_value, item_values, meta_values, fixed_code]
+      properties:
+        integer_value: {type: integer}
+        nullable_value: {type: [string, 'null']}
+        item_values:
+          type: array
+          items: {type: [integer, string]}
+        meta_values: {type: object, additionalProperties: {type: boolean}}
+        fixed_code: {type: integer, enum: [7]}
+        named_only: {type: string}
+      additionalProperties: {type: integer}
+    Overlap:
+      type: object
+      required: [integer_value]
+      properties:
+        integer_value: {type: number}
+    FallbackEntries:
+      type: object
+      additionalProperties:
+        anyOf:
+          - {type: string}
+          - {}
+    Payload:
+      anyOf:
+        - $ref: '#/components/schemas/NamedPayload'
+        - $ref: '#/components/schemas/FallbackEntries'
+    AmbiguousPayload:
+      anyOf:
+        - $ref: '#/components/schemas/NamedPayload'
+        - $ref: '#/components/schemas/Overlap'
+    Choice:
+      type: object
+      required: [payload, ambiguous]
+      properties:
+        payload:
+          enum:
+            - {integer_value: 3, nullable_value: null, item_values: [1, text], meta_values: {literal_key: true}, fixed_code: 7, extension_key: 9}
+            - {integer_value: 4, nullable_value: text, item_values: [2], meta_values: {another_key: false}, fixed_code: 7}
+            - {opaque_key: true}
+            - {dictionary_key: text}
+        ambiguous:
+          const: {integer_value: 3, nullable_value: null, item_values: [1], meta_values: {}, fixed_code: 7, named_only: first}
+      oneOf:
+        - allOf:
+            - type: object
+              required: [payload, ambiguous, label]
+              properties:
+                kind: {type: string, enum: [known, known_alt]}
+                payload: {$ref: '#/components/schemas/Payload'}
+                ambiguous: {$ref: '#/components/schemas/AmbiguousPayload'}
+                label: {type: string}
+        - allOf:
+            - type: object
+              required: [kind, count]
+              properties:
+                kind: {type: string, enum: [other]}
+                count: {type: integer}

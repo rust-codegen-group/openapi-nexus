@@ -18,7 +18,10 @@ rust-union-raw = { path = "generated/union-raw" }
 rust-tagged-first-match = { path = "generated/tagged-first-match" }
 rust-tagged-strict = { path = "generated/tagged-strict" }
 rust-tagged-raw = { path = "generated/tagged-raw" }
+rust-tagged-wire-boundaries-strict = { path = "generated/tagged-wire-boundaries-strict" }
+rust-tagged-wire-boundaries-raw = { path = "generated/tagged-wire-boundaries-raw" }
 utoipa = "5"
+serde = "1"
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 thiserror = "2"

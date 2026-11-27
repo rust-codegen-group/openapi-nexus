@@ -286,3 +286,50 @@ fn test_untagged_union_policies_golden() {
         );
     }
 }
+
+#[test]
+fn inferred_tagged_wire_projects_only_the_fields_that_need_it() {
+    use openapi_nexus::codegen::traits::code_generator::CodeGenerator;
+    use std::collections::HashSet;
+
+    let document = openapi_nexus::parser::parse_content_yaml(include_str!(
+        "fixtures/valid/rust-tagged-wire-boundaries.yaml"
+    ))
+    .unwrap();
+    let ir = openapi_nexus::ir::lower::lower(document).unwrap();
+    for strategy in ["firstMatch", "strict", "raw"] {
+        let files = RustReqwestCodeGenerator::new(toml::toml! { tagged_union_strategy = strategy })
+            .generate(&ir)
+            .unwrap();
+        let model = |filename| {
+            files
+                .iter()
+                .find(|file| file.filename == filename)
+                .unwrap()
+                .content
+                .as_str()
+        };
+        if strategy == "raw" {
+            let envelope = model("envelope.rs");
+            assert!(envelope.contains("pub alias: Option<super::ChoiceAlias>"));
+            assert!(envelope.contains("pub choice: Option<super::Choice>"));
+            assert!(envelope.contains("deserialize_with = \"__nexus_deserialize_present_raw\""));
+            assert!(!model("choice.rs").contains("__nexus_wire_match"));
+        } else {
+            let choice = model("choice.rs");
+            assert!(choice.contains("payload: super::ChoiceStructured"));
+            assert!(choice.contains("Legacy(super::Legacy)"));
+            assert!(choice.contains("Sequence(super::Sequence)"));
+            assert!(model("composed_choice.rs").contains("payload: super::Combined"));
+            assert!(model("combined.rs").contains("pub index_part: super::IndexPart"));
+            assert!(model("index_part.rs").contains("pub entries: Option<super::DetailMapAlias>"));
+            assert!(model("projected_choice.rs").contains("UntaggedValues(serde_json::Value)"));
+            let names: Vec<_> = model("sample.rs")
+                .lines()
+                .filter_map(|line| line.strip_prefix("pub enum SampleDiscriminator"))
+                .collect();
+            assert_eq!(names.len(), 12);
+            assert_eq!(names.into_iter().collect::<HashSet<_>>().len(), 12);
+        }
+    }
+}

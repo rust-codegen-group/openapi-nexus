@@ -60,6 +60,7 @@ components:
       required: [detail]
       properties:
         detail: {$ref: '#/components/schemas/Metadata'}
+        child: {$ref: '#/components/schemas/Message'}
     MetadataMessage:
       oneOf:
         - allOf:

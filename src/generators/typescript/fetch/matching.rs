@@ -15,7 +15,7 @@ use crate::generators::type_application;
 use crate::generators::union_match::{JsonShape, MatchScope, accepts_any};
 
 use super::layout;
-use super::plan::Direction;
+use super::plan::{ByDirection, Direction};
 
 #[derive(Default)]
 pub(super) struct MatchPlan {
@@ -57,9 +57,6 @@ impl MatchPlan {
             {
                 Some(true)
             }
-            JsonShape::Literal(serde_json::Value::Array(_) | serde_json::Value::Object(_)) => {
-                Some(false)
-            }
             _ => None,
         }
     }
@@ -96,6 +93,16 @@ impl MatchPlan {
             JsonShape::ObjectWithAdditional { properties, values } => {
                 self.register(&JsonShape::Object(properties.clone()));
                 self.register(values);
+            }
+            JsonShape::Literal(serde_json::Value::Array(items)) => {
+                for value in items {
+                    self.register(&JsonShape::Literal(value.clone()));
+                }
+            }
+            JsonShape::Literal(serde_json::Value::Object(fields)) => {
+                for value in fields.values() {
+                    self.register(&JsonShape::Literal(value.clone()));
+                }
             }
             JsonShape::AnyOf(children) | JsonShape::AllOf(children) => {
                 for child in children {
@@ -180,6 +187,54 @@ impl MatchPlan {
                 return typeof File !== $S("undefined") && candidate instanceof File;
             }),
             JsonShape::Literal(value) => match value {
+                serde_json::Value::Array(items) => {
+                    let count = items.len().to_string();
+                    let shape = TypeName::readonly_array(TypeName::primitive("unknown"));
+                    let checks = items
+                        .iter()
+                        .enumerate()
+                        .map(|(index, item)| {
+                            self.literal_slot(
+                                item,
+                                sigil_quote!(TypeScript { $L(index.to_string()) })?,
+                                direction,
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
+                    sigil_quote!(TypeScript {
+                        if (!Array.isArray(candidate) || candidate.length !== $L(count)) { return false; }
+                        $if(!checks.is_empty()) { const literal: $T(shape) = candidate; }
+                        $C_each(checks)
+                        return true;
+                    })
+                }
+                serde_json::Value::Object(fields) => {
+                    let count = fields.len().to_string();
+                    // Native model converters can materialize omitted optional fields
+                    // as undefined, which never become JSON object keys on write.
+                    let keys = if direction == Direction::ToWire {
+                        sigil_quote!(TypeScript { Object.values(candidate).filter((item) => item !== undefined) })?
+                    } else {
+                        sigil_quote!(TypeScript { Object.keys(candidate) })?
+                    };
+                    let checks = fields
+                        .iter()
+                        .map(|(key, item)| {
+                            self.literal_slot(
+                                item,
+                                sigil_quote!(TypeScript { $S(key) })?,
+                                direction,
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
+                    sigil_quote!(TypeScript {
+                        $C(object_guard)
+                        if ($C(keys).length !== $L(count)) { return false; }
+                        $if(!checks.is_empty()) { const literal = candidate as $T(record_type); }
+                        $C_each(checks)
+                        return true;
+                    })
+                }
                 serde_json::Value::Null => sigil_quote!(TypeScript { return candidate === null; }),
                 serde_json::Value::Bool(true) => {
                     sigil_quote!(TypeScript { return candidate === true; })
@@ -194,7 +249,6 @@ impl MatchPlan {
                     // Exact JSON numeric tokens are not identifiers or strings.
                     sigil_quote!(TypeScript { return candidate === $L(value.to_string()); })
                 }
-                _ => sigil_quote!(TypeScript { return false; }),
             },
             JsonShape::Reference { schema, scope, .. } => {
                 let function =
@@ -370,9 +424,32 @@ impl MatchPlan {
         }
     }
 
+    fn literal_slot(
+        &self,
+        expected: &serde_json::Value,
+        key: CodeBlock,
+        direction: Direction,
+    ) -> Result<CodeBlock, SigilStitchError> {
+        let owns = layout::call(
+            sigil_quote!(TypeScript { Object.prototype.hasOwnProperty.call })?,
+            &[sigil_quote!(TypeScript { literal })?, key.clone()],
+            6,
+        )?;
+        let condition = self.condition(
+            &JsonShape::Literal(expected.clone()),
+            sigil_quote!(TypeScript { literal[$C(key)] })?,
+            direction,
+            true,
+        )?;
+        sigil_quote!(TypeScript {
+            if (!$C(owns)) { return false; }
+            if (!$C(condition)) { return false; }
+        })
+    }
+
     pub(super) fn file(
         &self,
-        recursive: &std::collections::BTreeMap<String, (JsonShape, JsonShape)>,
+        recursive: &std::collections::BTreeMap<String, ByDirection<(JsonShape, JsonShape)>>,
         record: &TypeName,
         ts: &TypeScript,
     ) -> Result<Option<FileSpec>, SigilStitchError> {
@@ -406,8 +483,9 @@ impl MatchPlan {
                 file = file.add_function(function);
             }
         }
-        for (name, (concrete, fallback)) in recursive {
+        for (name, tiers) in recursive {
             for direction in [Direction::FromWire, Direction::ToWire] {
+                let (concrete, fallback) = tiers.get(direction);
                 let candidate = sigil_quote!(TypeScript { candidate })?;
                 let concrete_condition =
                     self.condition(concrete, candidate.clone(), direction, true)?;
@@ -434,6 +512,119 @@ impl MatchPlan {
             }
         }
         file.build().map(Some)
+    }
+}
+
+// Use the same planned wire predicates as a native untagged converter when
+// deciding how one static authored constant would be represented by its model.
+// A productive runtime reference is not a form of proof here.
+pub(super) fn match_wire_literal(shape: &JsonShape, value: &serde_json::Value) -> Option<bool> {
+    if let Some(constant) = MatchPlan::constant(shape) {
+        return Some(constant);
+    }
+    let properties = |properties: &[crate::generators::union_match::PropertyMatch]| {
+        let Some(object) = value.as_object() else {
+            return Some(false);
+        };
+        all_literal_checks(properties.iter().map(|property| {
+            object
+                .get(&property.wire_name)
+                .map_or(Some(!property.required), |item| {
+                    match_wire_literal(&property.shape, item)
+                })
+        }))
+    };
+    match shape {
+        JsonShape::Any | JsonShape::Never => unreachable!("constant predicate already handled"),
+        JsonShape::Null => Some(value.is_null()),
+        JsonShape::Nullable(_) if value.is_null() => Some(true),
+        JsonShape::Nullable(inner) => match_wire_literal(inner, value),
+        JsonShape::Boolean => Some(value.is_boolean()),
+        JsonShape::String => Some(value.is_string()),
+        JsonShape::Number { integer } => Some(
+            value
+                .as_f64()
+                .is_some_and(|number| number.is_finite() && (!integer || number.fract() == 0.0)),
+        ),
+        JsonShape::Binary => Some(false),
+        JsonShape::Literal(expected) => Some(literal_eq(value, expected)),
+        JsonShape::Array(inner) => value.as_array().map_or(Some(false), |items| {
+            all_literal_checks(items.iter().map(|item| match_wire_literal(inner, item)))
+        }),
+        JsonShape::Map(inner) => value.as_object().map_or(Some(false), |items| {
+            all_literal_checks(items.values().map(|item| match_wire_literal(inner, item)))
+        }),
+        JsonShape::MapWithConcreteValue { values, concrete } => {
+            value.as_object().map_or(Some(false), |items| {
+                all_literal_checks([
+                    all_literal_checks(items.values().map(|item| match_wire_literal(values, item))),
+                    any_literal_check(
+                        items
+                            .values()
+                            .map(|item| match_wire_literal(concrete, item)),
+                    ),
+                ])
+            })
+        }
+        JsonShape::Object(fields) => properties(fields),
+        JsonShape::ObjectWithAdditional {
+            properties: fields,
+            values,
+        } => {
+            let Some(object) = value.as_object() else {
+                return Some(false);
+            };
+            let extra = object
+                .iter()
+                .filter(|(key, _)| !fields.iter().any(|prop| &prop.wire_name == *key))
+                .map(|(_, value)| match_wire_literal(values, value));
+            all_literal_checks(std::iter::once(properties(fields)).chain(extra))
+        }
+        JsonShape::AnyOf(parts) => {
+            any_literal_check(parts.iter().map(|part| match_wire_literal(part, value)))
+        }
+        JsonShape::AllOf(parts) => {
+            all_literal_checks(parts.iter().map(|part| match_wire_literal(part, value)))
+        }
+        JsonShape::Reference { .. } => None,
+    }
+}
+
+fn all_literal_checks(checks: impl IntoIterator<Item = Option<bool>>) -> Option<bool> {
+    let mut unresolved = false;
+    for check in checks {
+        match check {
+            Some(false) => return Some(false),
+            Some(true) => (),
+            None => unresolved = true,
+        }
+    }
+    (!unresolved).then_some(true)
+}
+
+fn any_literal_check(checks: impl IntoIterator<Item = Option<bool>>) -> Option<bool> {
+    all_literal_checks(checks.into_iter().map(|check| check.map(|result| !result)))
+        .map(|result| !result)
+}
+
+fn literal_eq(left: &serde_json::Value, right: &serde_json::Value) -> bool {
+    use serde_json::Value;
+    match (left, right) {
+        (Value::Number(left), Value::Number(right)) => left.as_f64() == right.as_f64(),
+        (Value::Array(left), Value::Array(right)) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right)
+                    .all(|(left, right)| literal_eq(left, right))
+        }
+        (Value::Object(left), Value::Object(right)) => {
+            left.len() == right.len()
+                && left.iter().all(|(key, value)| {
+                    right.get(key).is_some_and(|other| literal_eq(value, other))
+                })
+        }
+        _ => left == right,
     }
 }
 
@@ -465,6 +656,21 @@ mod tests {
             )
             .unwrap();
         assert_rendered!(TypeScript::new(), boolean, "return candidate === false;\n");
+    }
+
+    #[test]
+    fn exact_composite_guard_checks_length_own_keys_and_child_literals() {
+        let shape = JsonShape::Literal(serde_json::json!({"__proto__": [1, true]}));
+        let mut plan = MatchPlan::default();
+        plan.register(&shape);
+        let body = plan
+            .body(&shape, Direction::FromWire, &TypeName::primitive("Record"))
+            .unwrap();
+        assert_rendered!(
+            TypeScript::new(),
+            body,
+            "if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {\n  return false;\n}\nif (Object.keys(candidate).length !== 1) {\n  return false;\n}\nconst literal = candidate as Record<string, unknown>;\nif (!Object.prototype.hasOwnProperty.call(literal, '__proto__')) {\n  return false;\n}\nif (!matches$1FromJSON(literal['__proto__'])) {\n  return false;\n}\nreturn true;\n"
+        );
     }
 
     #[test]

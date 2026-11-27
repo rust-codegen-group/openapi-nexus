@@ -50,6 +50,32 @@ public final class AuthoredWireShapeTest {
         }
     }
 
+    @Test
+    void projectedWritePreservesNestedStrictErrorsAndAssemblesTheTagFirst() {
+        var direct = JsonParser.parseString("{\"scope\":true,\"label\":\"x\"}").getAsJsonObject();
+        var selected = new Outer.VariantText(direct, null);
+        assertEquals(direct, JsonParser.parseString(gson.toJson(selected, Outer.class)));
+        direct.addProperty("count", 3);
+        assertNestedWriteError(selected);
+
+        var tagged = new Outer.VariantText(direct, new JsonPrimitive("text_alt"));
+        var taggedWire = JsonParser.parseString(gson.toJson(tagged, Outer.class)).getAsJsonObject();
+        assertEquals("text_alt", taggedWire.get("kind").getAsString());
+        assertFalse(direct.has("kind"), "writing must not modify the public projection");
+        roundTrip(Outer.class, taggedWire.toString());
+
+        var holder = JsonParser.parseString("{\"scope\":true,\"child\":{\"label\":\"x\"}}").getAsJsonObject();
+        var held = new Outer.VariantHolder(holder, new JsonPrimitive("held"));
+        roundTrip(Outer.class, gson.toJson(held, Outer.class));
+        holder.getAsJsonObject("child").addProperty("count", 3);
+        assertNestedWriteError(held);
+    }
+
+    private void assertNestedWriteError(Outer selected) {
+        var ambiguous = assertThrows(JsonParseException.class, () -> gson.toJson(selected, Outer.class));
+        assertTrue(ambiguous.getMessage().contains("ambiguous inferred tagged union Inner"), ambiguous.getMessage());
+    }
+
     private <T> T roundTrip(Class<T> type, String json) {
         var parsed = gson.fromJson(json, type);
         assertEquals(JsonParser.parseString(json), JsonParser.parseString(gson.toJson(parsed, type)));

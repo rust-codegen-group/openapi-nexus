@@ -149,6 +149,14 @@ private class ChoiceJsonAdapter : TypeAdapter<Choice>() {
                 if (!matches2(candidate, memo)) {
                     throw JsonParseException("serialized value does not match inferred tagged union branch VariantAlpha")
                 }
+                val projected = if (candidate.isJsonObject && candidate.asJsonObject.has("kind")) {
+                    candidate.asJsonObject.deepCopy().apply {
+                        remove("kind")
+                    }
+                } else {
+                    candidate
+                }
+                gson.fromJson<ChoiceAlpha>(projected, object: TypeToken<ChoiceAlpha>() {}.type)
                 treeGson.toJson(candidate, writer)
             }
             is Choice.VariantBeta -> {

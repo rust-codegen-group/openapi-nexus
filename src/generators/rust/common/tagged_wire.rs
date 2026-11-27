@@ -31,6 +31,9 @@ use super::config::ExtraDeriveConfig;
 use super::emit_models::{build_utoipa_one_of_impl, resolve_object, rust_model_type};
 use super::wire_matching::{WireMatching, value_type};
 
+mod nullable_payload;
+use nullable_payload::{DeepNulls, Restoration};
+
 fn needs_common_projection(plan: &UnionWirePlan<'_>) -> bool {
     plan.common_shape().is_some_and(|shape| {
         !matches!(
@@ -104,12 +107,38 @@ impl<'ir> TaggedWirePlans<'ir> {
             .then(|| self.shared.get(name))
             .flatten()
     }
+
+    /// Only raw adopted unions are allowed to consume an explicit null before
+    /// the enclosing model's optional field turns it into absence.
+    pub(super) fn uses_raw_value(&self, mut expr: &'ir IrTypeExpr, ir: &'ir IrSpec) -> bool {
+        if self.strategy != Strategy::Raw {
+            return false;
+        }
+        let mut visited = HashSet::new();
+        loop {
+            match expr.representation() {
+                IrTypeExpr::Nullable(inner) => expr = inner,
+                IrTypeExpr::Named(name) if self.get(name).is_some() => return true,
+                IrTypeExpr::Named(name) if visited.insert(name) => {
+                    let Some(IrSchemaKind::Alias(inner)) =
+                        ir.schemas.get(name).map(|schema| &schema.kind)
+                    else {
+                        return false;
+                    };
+                    expr = inner;
+                }
+                _ => return false,
+            }
+        }
+    }
 }
 
 struct Variant<'a> {
     name: String,
     payload: TypeName,
     tag: Option<CaseTag<'a>>,
+    projected_decoder: Option<(TypeName, TagRead)>,
+    restore_nulls: Option<&'a IrTypeExpr>,
     required_nullable_keys: BTreeSet<&'a str>,
 }
 
@@ -117,6 +146,7 @@ struct CaseTag<'a> {
     wire_name: &'a str,
     ty: TypeName,
     optional: bool,
+    allows_whole_value: bool,
 }
 
 impl CaseTag<'_> {
@@ -161,6 +191,11 @@ pub(super) fn emit(
     }
 
     let mut used = HashSet::new();
+    let mut reserved_tag_types = ir
+        .schemas
+        .values()
+        .map(|schema| schema.name.to_pascal_case())
+        .collect();
     let mut variants = Vec::new();
     // The generated member models have no fields for union-level constraints.
     // Preserve that scope without manufacturing fields on reusable models.
@@ -182,11 +217,16 @@ pub(super) fn emit(
         let domain = plan
             .tag_domain(index)
             .expect("internal inferred discriminator domain");
+        let root = plan.possible_root_kinds(index);
         let finite_nonnull = domain
             .values
             .as_ref()
             .is_some_and(|values| values.iter().all(|value| !value.is_null()));
+        let unit = root.object
+            && crate::generators::closed_sum::is_tagged_unit_variant(ir, union, variant);
+        let deep_nulls = nullable_payload::plan(&variant.content_type, ir, wire_plans);
         let payload_can_hold_tag = !needs_common_projection
+            && deep_nulls != DeepNulls::Project
             && owner == TagOwner::Payload
             && read == TagRead::Keep
             && payload_preserves_tag(
@@ -198,9 +238,16 @@ pub(super) fn emit(
                 &mut HashSet::new(),
             );
         let raw_payload = needs_common_projection
+            || deep_nulls == DeepNulls::Project
             || owner == TagOwner::CaseWithPayloadProjection
             || owner == TagOwner::Payload && !payload_can_hold_tag
-            || crate::generators::closed_sum::is_tagged_unit_variant(ir, union, variant);
+            || unit;
+        // A tag-only shell does not decode the projected payload. Likewise,
+        // multiple flattened readers can consume the same key in Serde; their
+        // original allOf model is not a compatible decoder for this projection.
+        let projected_decoder =
+            (raw_payload && !unit && owner != TagOwner::CaseWithPayloadProjection)
+                .then(|| (rust_model_type(&variant.content_type), read));
         let mut required_nullable_keys = BTreeSet::new();
         let payload = if raw_payload {
             // A projected JSON object can drop the discriminator even when the
@@ -217,23 +264,32 @@ pub(super) fn emit(
             required_nullable_keys.remove(field);
             rust_model_type(&variant.content_type)
         };
-        let tag = if payload_can_hold_tag {
+        let tag = if payload_can_hold_tag || !root.object {
             None
         } else {
-            let (ty, declaration) = tag_type(&name, index, domain.values.as_deref(), ir)?;
+            let (ty, declaration) = tag_type(
+                &name,
+                index,
+                domain.values.as_deref(),
+                &mut reserved_tag_types,
+            )?;
             if let Some(declaration) = declaration {
                 file = file.add_closed_sum(declaration);
             }
             Some(CaseTag {
                 wire_name: field,
                 ty,
-                optional: domain.allows_absent,
+                optional: domain.allows_absent || root.non_object,
+                allows_whole_value: root.non_object,
             })
         };
         variants.push(Variant {
             name: case_name,
             payload,
             tag,
+            projected_decoder,
+            restore_nulls: (!raw_payload && deep_nulls == DeepNulls::Restore)
+                .then_some(&variant.content_type),
             required_nullable_keys,
         });
     }
@@ -297,10 +353,18 @@ pub(super) fn emit(
             let wire = tag.wire_name;
             let tag_type = &tag.ty;
             let optional = tag.optional;
+            let validate_before = variant.projected_decoder.as_ref().and_then(|(ty, read)| (*read == TagRead::Keep).then_some(ty));
+            let validate_after = variant.projected_decoder.as_ref().and_then(|(ty, read)| (*read == TagRead::Strip).then_some(ty));
             sigil_quote!(RustLang {
                 Some($L(index)) => {
+                    $if(validate_before.is_some()) {
+                        let _: $T(validate_before.unwrap().clone()) = serde::Deserialize::deserialize(&candidate).map_err(serde::de::Error::custom)?;
+                    }
                     let mut candidate = candidate;
                     let discriminator = candidate.as_object_mut().and_then(|object| object.remove($S(wire)));
+                    $if(validate_after.is_some()) {
+                        let _: $T(validate_after.unwrap().clone()) = serde::Deserialize::deserialize(&candidate).map_err(serde::de::Error::custom)?;
+                    }
                     $if(optional) {
                         let discriminator = discriminator.map(serde_json::from_value::<$T(tag_type.clone())>)
                             .transpose().map_err(serde::de::Error::custom)?;
@@ -311,6 +375,14 @@ pub(super) fn emit(
                     }
                     let payload = serde_json::from_value::<$T(payload.clone())>(candidate).map_err(serde::de::Error::custom)?;
                     Ok(Self::$N(name) { discriminator, payload })
+                }
+            })
+        } else if let Some((decoder, _)) = &variant.projected_decoder {
+            // A whole-value alternative has no tag to remove before its codec.
+            sigil_quote!(RustLang {
+                Some($L(index)) => {
+                    let _: $T(decoder.clone()) = serde::Deserialize::deserialize(&candidate).map_err(serde::de::Error::custom)?;
+                    Ok(Self::$N(name)(candidate))
                 }
             })
         } else {
@@ -346,6 +418,7 @@ pub(super) fn emit(
         impl<'de> serde::Deserialize<'de> for $N(&name) { $C(deserialize) }
     })?);
 
+    let mut nulls = Restoration::new(ir, wire_plans);
     let encode = variants.iter().enumerate().map(|(index, variant)| {
         let name = &variant.name;
         let source = sigil_quote!(RustLang { &value })?;
@@ -355,8 +428,25 @@ pub(super) fn emit(
         let use_memo = std::iter::once(&plan.branches()[index]).chain(plan.common_shape())
             .any(WireMatching::needs_memo);
         let nullable_keys = &variant.required_nullable_keys;
+        let restore_nulls = variant.restore_nulls.map(|expr| nulls.root(expr, &union.discriminator_field)).transpose()?.flatten();
+        // Projection changes storage, not nested selection policy. Check the
+        // assembled value before returning it, without reserializing it.
+        let projected_check = variant.projected_decoder.as_ref().map(|(ty, read)| {
+            let field = variant.tag.as_ref().and_then(|tag| (*read == TagRead::Strip).then_some(tag.wire_name));
+            sigil_quote!(RustLang {
+                $if(field.is_some()) {
+                    let mut projected = value.clone();
+                    if let Some(object) = projected.as_object_mut() { object.remove($S(field.unwrap())); }
+                }
+                let _: $T(ty.clone()) = serde::Deserialize::deserialize($if(field.is_some()) { &projected } $else { &value })
+                    .map_err(serde::ser::Error::custom)?;
+            })
+        }).transpose()?;
         let check = sigil_quote!(RustLang {
-            $if(!nullable_keys.is_empty()) {
+            $if(restore_nulls.is_some()) {
+                let mut value = value;
+                $C(restore_nulls.unwrap())
+            } $else_if(!nullable_keys.is_empty()) {
                 let mut value = value;
                 if let Some(object) = value.as_object_mut() {
                     $for(key in nullable_keys) {
@@ -369,27 +459,40 @@ pub(super) fn emit(
                 if $C(common_check.unwrap()) == 0 { return Err(serde::ser::Error::custom($S(&invalid))); }
             }
             if $C(condition) == 0 { return Err(serde::ser::Error::custom($S(invalid))); }
+            $if(projected_check.is_some()) { $C(projected_check.unwrap()) }
             value
         })?;
         if let Some(tag) = &variant.tag {
             let wire = tag.wire_name;
             let optional = tag.optional;
+            let allows_whole_value = tag.allows_whole_value;
+            let write_tag = sigil_quote!(RustLang {
+                if let Some(existing) = object.get($S(wire)) {
+                    if Some(existing) != discriminator.as_ref() {
+                        return Err(serde::ser::Error::custom("conflicting inferred discriminator in payload"));
+                    }
+                } else if let Some(tag) = discriminator {
+                    object.insert($S(wire).to_owned(), tag);
+                }
+            })?;
             sigil_quote!(RustLang {
                 Self::$N(name) { discriminator, payload } => {
                     let mut value = serde_json::to_value(payload).map_err(serde::ser::Error::custom)?;
-                    let object = value.as_object_mut().ok_or_else(|| serde::ser::Error::custom("inferred tagged payload must be an object"))?;
+                    $if(!allows_whole_value) {
+                        let object = value.as_object_mut().ok_or_else(|| serde::ser::Error::custom("inferred tagged payload must be an object"))?;
+                    }
                     $if(optional) {
                         let discriminator = discriminator.as_ref().map(serde_json::to_value).transpose().map_err(serde::ser::Error::custom)?;
                     } $else {
                         let discriminator = Some(serde_json::to_value(discriminator).map_err(serde::ser::Error::custom)?);
                     }
-                    if let Some(existing) = object.get($S(wire)) {
-                        if Some(existing) != discriminator.as_ref() {
-                            return Err(serde::ser::Error::custom("conflicting inferred discriminator in payload"));
+                    $if(allows_whole_value) {
+                        if let Some(object) = value.as_object_mut() {
+                            $C(write_tag)
+                        } else if discriminator.is_some() {
+                            return Err(serde::ser::Error::custom("inferred discriminator requires an object payload"));
                         }
-                    } else if let Some(tag) = discriminator {
-                        object.insert($S(wire).to_owned(), tag);
-                    }
+                    } $else { $C(write_tag) }
                     $C(check)
                 }
             })
@@ -417,7 +520,7 @@ pub(super) fn emit(
     file = file.add_code(sigil_quote!(RustLang {
         impl serde::Serialize for $N(&name) { $C(serialize) }
     })?);
-    for function in matcher.functions(ir)? {
+    for function in matcher.functions(ir)?.into_iter().chain(nulls.functions()?) {
         file = file.add_function(function);
     }
     if utoipa {
@@ -538,7 +641,7 @@ fn tag_type(
     union: &str,
     index: usize,
     values: Option<&[serde_json::Value]>,
-    ir: &IrSpec,
+    reserved: &mut HashSet<String>,
 ) -> Result<
     (
         TypeName,
@@ -567,12 +670,7 @@ fn tag_type(
             (value_type(), None)
         });
     }
-    let mut reserved = ir
-        .schemas
-        .values()
-        .map(|schema| schema.name.to_pascal_case())
-        .collect();
-    let name = unique_name(format!("{union}Discriminator{}", index + 1), &mut reserved);
+    let name = unique_name(format!("{union}Discriminator{}", index + 1), reserved);
     let mut sum = ClosedSumSpec::builder(&name)
         .visibility(Visibility::Public)
         .annotate(AnnotationSpec::new("derive").args([

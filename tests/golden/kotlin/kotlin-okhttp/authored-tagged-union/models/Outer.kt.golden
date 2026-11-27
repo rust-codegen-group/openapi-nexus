@@ -134,6 +134,7 @@ private class OuterJsonAdapter : TypeAdapter<Outer>() {
                 if (!matches1(candidate, memo)) {
                     throw JsonParseException("serialized value does not match inferred tagged union branch VariantHolder")
                 }
+                gson.fromJson<Holder>(candidate, object: TypeToken<Holder>() {}.type)
                 treeGson.toJson(candidate, writer)
             }
             is Outer.VariantText -> {
@@ -160,6 +161,7 @@ private class OuterJsonAdapter : TypeAdapter<Outer>() {
                 if (!matches19(candidate, memo)) {
                     throw JsonParseException("serialized value does not match inferred tagged union branch VariantText")
                 }
+                gson.fromJson<Inner>(candidate, object: TypeToken<Inner>() {}.type)
                 treeGson.toJson(candidate, writer)
             }
             is Outer.VariantOther -> {
@@ -186,6 +188,14 @@ private class OuterJsonAdapter : TypeAdapter<Outer>() {
                 if (!matches23(candidate)) {
                     throw JsonParseException("serialized value does not match inferred tagged union branch VariantOther")
                 }
+                val projected = if (candidate.isJsonObject && candidate.asJsonObject.has("kind")) {
+                    candidate.asJsonObject.deepCopy().apply {
+                        remove("kind")
+                    }
+                } else {
+                    candidate
+                }
+                gson.fromJson<OuterOther>(projected, object: TypeToken<OuterOther>() {}.type)
                 treeGson.toJson(candidate, writer)
             }
         }
