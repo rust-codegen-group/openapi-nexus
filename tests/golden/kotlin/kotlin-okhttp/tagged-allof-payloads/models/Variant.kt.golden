@@ -53,7 +53,9 @@ private class VariantJsonAdapter: TypeAdapter<Variant>() {
     override fun read (reader: JsonReader): Variant? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["type"]?.asString) {
+        val tag = jsonObject["type"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "variant_a" -> Variant.VariantVariantA(gson.fromJson(jsonObject, object: TypeToken<VariantVariantA>() {}.type))
             "variant_b" -> Variant.VariantVariantB(gson.fromJson(jsonObject, object: TypeToken<VariantVariantB>() {}.type))
             "variant_c" -> Variant.VariantVariantC(gson.fromJson(jsonObject, object: TypeToken<VariantVariantC>() {}.type))

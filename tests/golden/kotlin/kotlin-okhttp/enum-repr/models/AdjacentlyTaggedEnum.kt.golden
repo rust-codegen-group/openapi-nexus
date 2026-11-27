@@ -45,7 +45,9 @@ private class AdjacentlyTaggedEnumJsonAdapter: TypeAdapter<AdjacentlyTaggedEnum>
     override fun read (reader: JsonReader): AdjacentlyTaggedEnum? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["ty"]?.asString) {
+        val tag = jsonObject["ty"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "ADJACENTLY_TAGGED_ENUM_VARIANT_A" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(jsonObject["data"], object: TypeToken<VariantA>() {}.type))
             "ADJACENTLY_TAGGED_ENUM_VARIANT_B" -> AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantB(gson.fromJson(jsonObject["data"], object: TypeToken<VariantB>() {}.type))
             else -> throw JsonParseException("unknown AdjacentlyTaggedEnum discriminator")

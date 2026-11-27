@@ -55,7 +55,8 @@ final class EventJsonAdapter extends TypeAdapter<Event> {
     public Event read (JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
-        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        JsonElement tag = object.get("kind");
+        String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
         if ("EVENT_UNSPECIFIED".equals(discriminator)) {
             return Event.VariantEventUnspecified.INSTANCE;
         }

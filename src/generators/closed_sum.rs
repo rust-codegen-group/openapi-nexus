@@ -109,6 +109,10 @@ pub(crate) fn plan_tagged_union(
                 variant.discriminator_value.to_pascal_case()
             };
             let case_name = unique_case_name(&desired_name, union_name(name), &mut used_names);
+            // For external tags the literal is the value inside the variant key,
+            // not the discriminator itself.
+            let literal_is_unit = !matches!(union.tagging, TaggingStyle::External)
+                && matches!(variant.content_type, IrTypeExpr::StringLiteral(_));
             ClosedSumCasePlan {
                 name: case_name,
                 payload: (!is_tag_only_variant(
@@ -116,8 +120,8 @@ pub(crate) fn plan_tagged_union(
                     &union.discriminator_field,
                     &variant.discriminator_value,
                     &variant.content_type,
-                ) && !matches!(variant.content_type, IrTypeExpr::StringLiteral(_)))
-                .then(|| variant.content_type.clone()),
+                ) && !literal_is_unit)
+                    .then(|| variant.content_type.clone()),
                 doc: variant.description.clone(),
                 wire_name: Some(variant.discriminator_value.clone()),
                 is_null: false,

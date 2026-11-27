@@ -39,7 +39,8 @@ final class VeryLongDiscriminatedUnionTypeNameForTesting20260630JsonAdapter exte
     public VeryLongDiscriminatedUnionTypeNameForTesting20260630 read (JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
-        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        JsonElement tag = object.get("kind");
+        String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
         if ("ALPHA".equals(discriminator)) {
             return new VeryLongDiscriminatedUnionTypeNameForTesting20260630.VariantAlpha(gson.fromJson(object, new TypeToken<VeryLongDiscriminatedUnionTypeNameAlpha20260630>() {}.getType()));
         }

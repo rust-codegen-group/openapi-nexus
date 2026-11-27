@@ -46,7 +46,8 @@ final class AdjacentlyTaggedEnumJsonAdapter extends TypeAdapter<AdjacentlyTagged
     public AdjacentlyTaggedEnum read (JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
-        String discriminator = object.has("ty") ? object.get("ty").getAsString() : null;
+        JsonElement tag = object.get("ty");
+        String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
         if ("ADJACENTLY_TAGGED_ENUM_VARIANT_A".equals(discriminator)) {
             return new AdjacentlyTaggedEnum.VariantAdjacentlyTaggedEnumVariantA(gson.fromJson(object.get("data"), new TypeToken<VariantA>() {}.getType()));
         }

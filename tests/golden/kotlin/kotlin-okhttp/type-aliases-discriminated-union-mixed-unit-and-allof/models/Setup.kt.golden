@@ -43,7 +43,9 @@ private class SetupJsonAdapter: TypeAdapter<Setup>() {
     override fun read (reader: JsonReader): Setup? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["kind"]?.asString) {
+        val tag = jsonObject["kind"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "SETUP_UNSPECIFIED" -> Setup.VariantSetupUnspecified
             "SETUP_QUICK" -> Setup.VariantSetupQuick(gson.fromJson(jsonObject, object: TypeToken<SetupQuick>() {}.type))
             "SETUP_CUSTOM" -> Setup.VariantSetupCustom(gson.fromJson(jsonObject, object: TypeToken<SetupCustom>() {}.type))

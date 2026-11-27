@@ -38,7 +38,8 @@ final class ContainerKindJsonAdapter extends TypeAdapter<ContainerKind> {
     public ContainerKind read (JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
-        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        JsonElement tag = object.get("kind");
+        String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
         if ("CONTAINER_KIND_MANAGED".equals(discriminator)) {
             return new ContainerKind.VariantContainerKindManaged(gson.fromJson(object, new TypeToken<ContainerKindManaged>() {}.getType()));
         }

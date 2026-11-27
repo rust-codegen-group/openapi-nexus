@@ -33,7 +33,9 @@ private class EventJsonAdapter: TypeAdapter<Event>() {
     override fun read (reader: JsonReader): Event? {
         val element = JsonParser.parseReader(reader)
         val jsonObject = element.asJsonObject
-        return when (jsonObject["type"]?.asString) {
+        val tag = jsonObject["type"]
+        val discriminator = if (tag != null && tag.isJsonPrimitive && tag.asJsonPrimitive.isString) tag.asString else null
+        return when (discriminator) {
             "active" -> Event.VariantActive(gson.fromJson(jsonObject, object: TypeToken<EventActive>() {}.type))
             "completed" -> Event.VariantCompleted(gson.fromJson(jsonObject, object: TypeToken<EventCompleted>() {}.type))
             else -> throw JsonParseException("unknown Event discriminator")

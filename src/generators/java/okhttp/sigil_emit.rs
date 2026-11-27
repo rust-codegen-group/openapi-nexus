@@ -24,7 +24,8 @@ use super::util::{
 };
 
 use crate::generators::jvm::{
-    TaggedCase, TaggedUnionStrategy, TaggedWire, TaggedWirePlans, discriminator_type,
+    NativeTagLookup, NativeTagged, TaggedCase, TaggedUnionStrategy, TaggedWire, TaggedWirePlans,
+    discriminator_type,
 };
 
 const RENDER_WIDTH: usize = 100;
@@ -489,15 +490,15 @@ fn emit_tagged_union(
         false,
     );
     let (adapter, cases) = match &authored {
-        Some(TaggedWire::Typed(wire)) => (
+        TaggedWire::Typed(wire) => (
             super::tagged::adapter(&plan, wire, ir)?,
             Some(wire.cases.as_slice()),
         ),
-        Some(TaggedWire::Raw) => (
+        TaggedWire::Raw => (
             super::union::adapter(schema, &plan, ir, UntaggedUnionStrategy::Raw, None)?,
             None,
         ),
-        None => (java_closed_sum_adapter(&plan)?, None),
+        TaggedWire::Native(native) => (java_closed_sum_adapter(&plan, native)?, None),
     };
     emit_closed_sum(&plan, package_name, adapter, cases)
 }
@@ -634,9 +635,12 @@ fn java_adapter_imports() -> [ImportSpec; 11] {
     ]
 }
 
-fn java_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
+fn java_closed_sum_adapter(
+    plan: &ClosedSumPlan,
+    native: &NativeTagged,
+) -> Result<CodeBlock, SigilStitchError> {
     let read_dispatch =
-        java_adapter_read_dispatch(plan).map_err(|error| SigilStitchError::Render {
+        java_adapter_read_dispatch(plan, native).map_err(|error| SigilStitchError::Render {
             context: format!("Java {} Gson adapter read dispatch", plan.name),
             message: error.to_string(),
         })?;
@@ -681,45 +685,35 @@ fn java_closed_sum_adapter(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitc
     })
 }
 
-fn java_adapter_read_dispatch(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilStitchError> {
-    match &plan.encoding {
-        ClosedSumEncoding::Untagged => {
-            unreachable!("untagged adapters own structural member selection")
-        }
-        ClosedSumEncoding::Internal {
-            discriminator_field,
-        } => {
+fn java_adapter_read_dispatch(
+    plan: &ClosedSumPlan,
+    native: &NativeTagged,
+) -> Result<CodeBlock, SigilStitchError> {
+    match native {
+        NativeTagged::Field { tag, content_field } => {
+            let read_tag = match tag {
+                NativeTagLookup::JsonString(field) => sigil_quote!(Java {
+                    JsonElement tag = object.get($S(field));
+                    String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
+                })?,
+                NativeTagLookup::ScalarMappingKey(field) => sigil_quote!(Java {
+                    JsonElement tag = object.get($S(field));
+                    String discriminator = tag != null && tag.isJsonPrimitive() ? tag.getAsString() : null;
+                })?,
+            };
             let branches = plan
                 .cases
                 .iter()
-                .map(|case| java_tagged_read_case(plan, case, discriminator_field, None))
+                .map(|case| java_tagged_read_case(plan, case, content_field.as_deref()))
                 .collect::<Result<Vec<_>, _>>()?;
             sigil_quote!(Java {
                 JsonObject object = element.getAsJsonObject();
-                String discriminator = object.has($S(discriminator_field)) ? object.get($S(discriminator_field)).getAsString() : null;
+                $C(read_tag)
                 $C_each(branches)
                 throw new JsonParseException($S(format!("unknown {} discriminator", plan.name)));
             })
         }
-        ClosedSumEncoding::Adjacent {
-            discriminator_field,
-            content_field,
-        } => {
-            let branches = plan
-                .cases
-                .iter()
-                .map(|case| {
-                    java_tagged_read_case(plan, case, discriminator_field, Some(content_field))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            sigil_quote!(Java {
-                JsonObject object = element.getAsJsonObject();
-                String discriminator = object.has($S(discriminator_field)) ? object.get($S(discriminator_field)).getAsString() : null;
-                $C_each(branches)
-                throw new JsonParseException($S(format!("unknown {} discriminator", plan.name)));
-            })
-        }
-        ClosedSumEncoding::External => {
+        NativeTagged::ExternalKey => {
             let branches = plan
                 .cases
                 .iter()
@@ -737,12 +731,11 @@ fn java_adapter_read_dispatch(plan: &ClosedSumPlan) -> Result<CodeBlock, SigilSt
 fn java_tagged_read_case(
     plan: &ClosedSumPlan,
     case: &ClosedSumCasePlan,
-    _discriminator_field: &str,
-    content_field: Option<&String>,
+    content_field: Option<&str>,
 ) -> Result<CodeBlock, SigilStitchError> {
     let wire_name = case.wire_name.as_deref().unwrap_or_default();
     let source = match content_field {
-        Some(content_field) => sigil_quote!(Java { object.get($S(content_field.as_str())) })?,
+        Some(content_field) => sigil_quote!(Java { object.get($S(content_field)) })?,
         None => sigil_quote!(Java { object })?,
     };
     let result = match &case.payload {
@@ -765,6 +758,15 @@ fn java_external_read_case(
     let wire_name = case.wire_name.as_deref().unwrap_or_default();
     let source = sigil_quote!(Java { object.get($S(wire_name)) })?;
     let result = match &case.payload {
+        Some(IrTypeExpr::StringLiteral(literal)) => {
+            let json_primitive = TypeName::qualified("com.google.gson", "JsonPrimitive");
+            sigil_quote!(Java {
+                if (!new $T(json_primitive)($S(literal)).equals($C(source))) {
+                    throw new JsonParseException($S(format!("invalid {} payload for {}", plan.name, wire_name)));
+                }
+                return new $N(plan.name.as_str()).$N(case.name.as_str())($S(literal));
+            })?
+        }
         Some(payload) => java_adapter_read_value(plan, case, payload, source)?,
         None => sigil_quote!(Java {
             return $N(plan.name.as_str()).$N(case.name.as_str()).INSTANCE;
@@ -899,7 +901,16 @@ pub(super) fn java_adapter_write_case(
         ClosedSumEncoding::External => {
             let wire_name = case.wire_name.as_deref().unwrap_or_default();
             if case.payload.is_some() {
+                let check_literal = match &case.payload {
+                    Some(IrTypeExpr::StringLiteral(literal)) => vec![sigil_quote!(Java {
+                        if (!$S(literal).equals((( $N(root_name).$N(case_name) ) value).value0())) {
+                            throw new JsonParseException($S(format!("invalid {} payload for {}", plan.name, wire_name)));
+                        }
+                    })?],
+                    _ => Vec::new(),
+                };
                 sigil_quote!(Java {
+                    $C_each(check_literal)
                     JsonObject object = new JsonObject();
                     object.add($S(wire_name), gson.toJsonTree((( $N(root_name).$N(case_name) ) value).value0()));
                     treeGson.toJson(object, writer);

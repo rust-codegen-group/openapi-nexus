@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashSet};
 use serde::{Deserialize, Serialize};
 use sigil_stitch::prelude::TypeName;
 
-use super::closed_sum::{ClosedSumCasePlan, ClosedSumPlan};
+use super::closed_sum::{ClosedSumCasePlan, ClosedSumEncoding, ClosedSumPlan};
 use super::union_match::{
     JsonShape, MatchScope, PropertyMatch, ShapePolicy, TagProjection, selection_shapes,
 };
@@ -95,8 +95,38 @@ impl<'ir> TaggedWirePlans<'ir> {
         sum: &mut ClosedSumPlan,
         is_composed: impl Fn(&IrIntersection) -> bool,
         kotlin_aliases: bool,
-    ) -> Option<TaggedWire<'ir>> {
-        let plan = self.get(name)?;
+    ) -> TaggedWire<'ir> {
+        let Some(plan) = self.get(name) else {
+            let lookup = match &sum.encoding {
+                ClosedSumEncoding::Internal {
+                    discriminator_field,
+                }
+                | ClosedSumEncoding::Adjacent {
+                    discriminator_field,
+                    ..
+                } => {
+                    let content_field = match &sum.encoding {
+                        ClosedSumEncoding::Adjacent { content_field, .. } => {
+                            Some(content_field.clone())
+                        }
+                        _ => None,
+                    };
+                    // An explicit discriminator maps scalar values to string
+                    // keys. Authored string literals instead compare by JSON value.
+                    let tag = if self.plans.get(name).is_some() {
+                        NativeTagLookup::JsonString(discriminator_field.clone())
+                    } else {
+                        NativeTagLookup::ScalarMappingKey(discriminator_field.clone())
+                    };
+                    NativeTagged::Field { tag, content_field }
+                }
+                ClosedSumEncoding::External => NativeTagged::ExternalKey,
+                ClosedSumEncoding::Untagged => {
+                    unreachable!("ordinary unions plan their own lookup")
+                }
+            };
+            return TaggedWire::Native(lookup);
+        };
         if self.strategy == Strategy::Raw {
             sum.cases = vec![ClosedSumCasePlan {
                 name: if sum.name == "VariantRaw" {
@@ -110,7 +140,7 @@ impl<'ir> TaggedWirePlans<'ir> {
                 wire_name: None,
                 is_null: false,
             }];
-            return Some(TaggedWire::Raw);
+            return TaggedWire::Raw;
         }
         let common = plan
             .common_shape()
@@ -188,12 +218,12 @@ impl<'ir> TaggedWirePlans<'ir> {
                 required_nullable,
             });
         }
-        Some(TaggedWire::Typed(TypedWire {
+        TaggedWire::Typed(TypedWire {
             field: plan.tag_domain(0).expect("tagged union has branches").field,
             common,
             cases,
             strict: self.strategy == Strategy::Strict,
-        }))
+        })
     }
 }
 
@@ -316,6 +346,21 @@ impl<F: Fn(&IrIntersection) -> bool> PayloadContext<'_, '_, F> {
 pub(super) enum TaggedWire<'ir> {
     Typed(TypedWire<'ir>),
     Raw,
+    Native(NativeTagged),
+}
+
+/// Native codecs only need a lookup and, for an adjacent tag, a payload key.
+pub(super) enum NativeTagged {
+    ExternalKey,
+    Field {
+        tag: NativeTagLookup,
+        content_field: Option<String>,
+    },
+}
+
+pub(super) enum NativeTagLookup {
+    JsonString(String),
+    ScalarMappingKey(String),
 }
 
 pub(super) struct TypedWire<'ir> {

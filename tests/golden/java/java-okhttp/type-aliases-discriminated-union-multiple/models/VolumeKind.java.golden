@@ -38,7 +38,8 @@ final class VolumeKindJsonAdapter extends TypeAdapter<VolumeKind> {
     public VolumeKind read (JsonReader reader) throws java.io.IOException {
         JsonElement element = JsonParser.parseReader(reader);
         JsonObject object = element.getAsJsonObject();
-        String discriminator = object.has("kind") ? object.get("kind").getAsString() : null;
+        JsonElement tag = object.get("kind");
+        String discriminator = tag != null && tag.isJsonPrimitive() && tag.getAsJsonPrimitive().isString() ? tag.getAsString() : null;
         if ("VOLUME_KIND_LOCAL".equals(discriminator)) {
             return new VolumeKind.VariantVolumeKindLocal(gson.fromJson(object, new TypeToken<VolumeKindLocal>() {}.getType()));
         }
