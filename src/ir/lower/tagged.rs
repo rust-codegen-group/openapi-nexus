@@ -190,3 +190,50 @@ fn collect_enum<S: CompositionSchema>(
         .collect();
     (!values.is_empty()).then_some(values)
 }
+
+/// Decide whether the alternatives can share one inferred tag envelope.
+/// An adjacent payload codec receives the content field's value alone, so it
+/// cannot preserve an omitted field. An independently wrapped member can only
+/// join this group if it actually declares the common field as its entire tag.
+/// Otherwise reuse ordinary whole-object union lowering.
+pub(super) fn envelope_style<S: CompositionSchema>(
+    members: &[S::Member],
+    patterns: &[Option<crate::ir::tagged_enum_pattern::TaggedEnumPattern>],
+    common_tag: &str,
+) -> Option<crate::ir::types::TaggingStyle> {
+    use crate::ir::{tagged_enum_pattern::TaggedEnumPattern, types::TaggingStyle};
+
+    let mut internal = false;
+    let mut adjacent = None;
+    let mut required_content = true;
+    for (member, pattern) in members.iter().zip(patterns) {
+        match pattern.as_ref()? {
+            TaggedEnumPattern::AdjacentlyTagged { content_field, .. } => {
+                required_content &= S::object(member)?.required().contains(content_field);
+                internal |= adjacent.is_some_and(|field| field != content_field);
+                adjacent = Some(content_field);
+            }
+            TaggedEnumPattern::InternallyTagged { .. } => internal = true,
+            TaggedEnumPattern::ExternallyTagged { .. } => {
+                let object = S::object(member)?;
+                // The external pattern identifies a single declared property
+                // and proves it is required. Check the raw key and label; a
+                // referenced payload is not a proven tag-only alternative.
+                let property = S::object(object.property(common_tag)?)?;
+                if !object.all_of().is_empty()
+                    || object.required().iter().any(|field| field != common_tag)
+                    || !matches!(property.enum_values(), [serde_json::Value::String(_)])
+                {
+                    return None;
+                }
+            }
+            TaggedEnumPattern::Untagged { .. } => {}
+        }
+    }
+    match adjacent {
+        Some(field) if !internal => required_content.then(|| TaggingStyle::Adjacent {
+            content_field: field.clone(),
+        }),
+        _ => Some(TaggingStyle::Internal),
+    }
+}

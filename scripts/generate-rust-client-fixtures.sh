@@ -22,6 +22,18 @@ for fixture in typed-error-responses rust-error-payload-shapes nested-nullable u
     --generators "rust-$backend"
 done
 
+if [ "$backend" = ureq ]; then
+  output="$project/generated/adjacent-envelope-presence"
+  # Reset the dedicated generated output, not the consumer test sources.
+  rm -rf "$output"
+  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
+    --config "$root/tests/generated-clients/config.toml" \
+    --input "$root/tests/fixtures/valid/adjacent-envelope-presence.yaml" \
+    --output "$output" \
+    --generators "rust-$backend" \
+    --generator-config "rust-$backend.crate_name=rust-adjacent-envelopes"
+fi
+
 for strategy in firstMatch strict raw; do
   suffix="$strategy"
   if [ "$strategy" = firstMatch ]; then suffix=first-match; fi

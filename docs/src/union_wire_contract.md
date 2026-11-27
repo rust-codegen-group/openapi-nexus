@@ -44,6 +44,13 @@ it in its input. Do not rewrite a reusable referenced model or discard a tag
 that its codec needs. Serialization emits the tag at its original path at most
 once; competing payload or extension values must not overwrite it silently.
 
+An inferred adjacent envelope projects the content field as the payload. Keep
+that projection only when each payload-bearing alternative requires the
+content field; this does not require the tag itself to be present. A tag-only
+alternative can share the envelope when its declared property is the common
+tag and has a required, fixed string label. Otherwise keep the original object
+alternatives rather than treating a missing or unrelated field as the payload.
+
 `additionalProperties` is local to each object schema. Evaluate each `allOf`
 conjunct against the full object using only that conjunct's property declarations.
 A tag declared by an object is not an extra property of that object, even when

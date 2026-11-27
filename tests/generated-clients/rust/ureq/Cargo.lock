@@ -410,6 +410,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust-adjacent-envelopes"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "serde_repr",
+ "ureq",
+]
+
+[[package]]
 name = "rust-error-payload-shapes-api"
 version = "0.1.0"
 dependencies = [
@@ -796,6 +807,7 @@ name = "ureq-client-tests"
 version = "0.0.0"
 dependencies = [
  "nested-nullable-api",
+ "rust-adjacent-envelopes",
  "rust-error-payload-shapes-api",
  "rust-tagged-first-match",
  "rust-tagged-raw",
