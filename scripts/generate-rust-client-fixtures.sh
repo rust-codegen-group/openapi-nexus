@@ -59,3 +59,15 @@ for strategy in firstMatch strict raw; do
       --generator-config "rust-$backend.tagged_union_strategy=$strategy"
   fi
 done
+
+if [ "$backend" = aioduct ]; then
+  output="$project/generated/fixed-single-field-tags"
+  # Refresh only this disposable fixture, never the consumer's sources.
+  rm -rf "$output"
+  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
+    --config "$root/tests/generated-clients/config.toml" \
+    --input "$root/tests/fixtures/valid/fixed-single-field-tags.yaml" \
+    --output "$output" \
+    --generators rust-aioduct \
+    --generator-config "rust-aioduct.crate_name=single-field-tags-contract"
+fi

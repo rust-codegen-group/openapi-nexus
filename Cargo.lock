@@ -986,6 +986,8 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-test",
+ "unicode-ident",
+ "unicode-normalization",
  "url",
 ]
 

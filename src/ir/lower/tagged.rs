@@ -8,6 +8,79 @@ use std::collections::HashSet;
 
 use super::composition::CompositionSchema;
 
+/// A shared property name is not sufficient for an external tag. Look for a
+/// value discriminator across the whole union before interpreting the key as
+/// the branch identity.
+pub(super) fn fixed_single_field_patterns<S: super::wire::WireSchema>(
+    members: &[S::Member],
+) -> Option<Vec<Option<crate::ir::tagged_enum_pattern::TaggedEnumPattern>>> {
+    use crate::ir::{tagged_enum_pattern::TaggedEnumPattern, types::IrJsonKind};
+    use serde_json::Value;
+
+    if members.len() < 2 {
+        return None;
+    }
+    let mut field = None;
+    let mut labels = HashSet::new();
+    members
+        .iter()
+        .map(|member| {
+            let object = S::object(member)?;
+            let (key, property) = sole_required_property::<S>(object)?;
+            if object.kinds() != [IrJsonKind::Object]
+                || !uncomposed(object)
+                || !object.enum_values().is_empty()
+                || field.get_or_insert(key) != &key
+            {
+                return None;
+            }
+            let property = S::object(property)?;
+            let [Value::String(label)] = property.enum_values() else {
+                return None;
+            };
+            let kinds = property.kinds();
+            if (!kinds.is_empty() && kinds != [IrJsonKind::String])
+                || !uncomposed(property)
+                || !labels.insert(label.as_str())
+            {
+                return None;
+            }
+            Some(Some(TaggedEnumPattern::InternallyTagged {
+                variant_name: label.clone(),
+                tag_field: key.to_owned(),
+            }))
+        })
+        .collect()
+}
+
+fn uncomposed<S: super::wire::WireSchema>(schema: &S) -> bool {
+    schema.all_of().is_empty()
+        && schema.one_of().is_empty()
+        && schema.any_of().is_empty()
+        && schema.constant().is_none()
+}
+
+fn sole_required_property<S: super::wire::WireSchema>(object: &S) -> Option<(&str, &S::Member)> {
+    let mut properties = object.properties().iter();
+    let (key, property) = properties.next()?;
+    // No other required property may be hidden in additional properties.
+    (properties.next().is_none() && object.required() == [key.as_str()])
+        .then_some((key.as_str(), property))
+}
+
+/// Validate key-based dispatch using authored property names, not the names
+/// already normalized by pattern detection for target identifiers.
+pub(super) fn has_distinct_external_keys<S: super::wire::WireSchema>(
+    members: &[S::Member],
+) -> bool {
+    let mut keys = HashSet::new();
+    members.iter().all(|member| {
+        S::object(member)
+            .and_then(|object| object.properties().first_key_value())
+            .is_some_and(|(key, _)| keys.insert(key.as_str()))
+    })
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct Facts {
     pub values: Vec<String>,

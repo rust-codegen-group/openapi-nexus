@@ -599,8 +599,13 @@ fn emit_tagged_union(
     );
 
     let mut variant_blocks: Vec<CodeBlock> = Vec::new();
-    for variant in &tu.variants {
-        let variant_name = variant.discriminator_value.to_pascal_case();
+    let mut used = HashSet::new();
+    for (index, variant) in tu.variants.iter().enumerate() {
+        let variant_name = super::tagged_wire::tagged_variant_identifier(
+            &variant.discriminator_value,
+            index,
+            &mut used,
+        );
 
         let rename_attr = if variant_name != variant.discriminator_value {
             format!(

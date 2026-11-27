@@ -201,16 +201,7 @@ pub(super) fn emit(
     // Preserve that scope without manufacturing fields on reusable models.
     let needs_common_projection = needs_common_projection(plan);
     for (index, variant) in union.variants.iter().enumerate() {
-        let base = variant.discriminator_value.to_pascal_case();
-        let base = if base.is_empty()
-            || base == "Self"
-            || base.starts_with(|ch: char| ch.is_ascii_digit())
-        {
-            format!("Variant{index}")
-        } else {
-            base
-        };
-        let case_name = unique_name(base, &mut used);
+        let case_name = tagged_variant_identifier(&variant.discriminator_value, index, &mut used);
         let Some(WireBinding::Internal { field, owner, read }) = plan.binding(index) else {
             unreachable!("inferred internal wire binding");
         };
@@ -624,6 +615,27 @@ fn payload_preserves_tag<'ir>(
         }
         _ => false,
     }
+}
+
+pub(super) fn tagged_variant_identifier(
+    label: &str,
+    index: usize,
+    used: &mut HashSet<String>,
+) -> String {
+    use unicode_normalization::UnicodeNormalization as _;
+
+    // Rust compares identifiers in NFC, while distinct discriminator strings
+    // must remain distinct byte-for-byte on the wire.
+    let stem: String = label.to_pascal_case().nfc().collect();
+    let mut chars = stem.chars();
+    let is_identifier = chars.next().is_some_and(unicode_ident::is_xid_start)
+        && chars.all(unicode_ident::is_xid_continue);
+    let base = if stem == "Self" || !is_identifier {
+        format!("Variant{index}")
+    } else {
+        stem
+    };
+    unique_name(base, used)
 }
 
 fn unique_name(base: String, used: &mut HashSet<String>) -> String {
