@@ -764,6 +764,7 @@ dependencies = [
  "rust-union-first-match",
  "rust-union-raw",
  "rust-union-strict",
+ "rust-union-string-const",
  "serde",
  "serde_json",
  "snafu",
@@ -893,6 +894,17 @@ dependencies = [
  "serde_json",
  "serde_repr",
  "utoipa",
+]
+
+[[package]]
+name = "rust-union-string-const"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "serde_repr",
 ]
 
 [[package]]

@@ -15,6 +15,7 @@ union-selection-contract = { path = "generated/union-selection" }
 rust-union-first-match = { path = "generated/union-first-match" }
 rust-union-strict = { path = "generated/union-strict" }
 rust-union-raw = { path = "generated/union-raw" }
+rust-union-string-const = { path = "generated/union-string-const" }
 rust-tagged-first-match = { path = "generated/tagged-first-match" }
 rust-tagged-strict = { path = "generated/tagged-strict" }
 rust-tagged-raw = { path = "generated/tagged-raw" }

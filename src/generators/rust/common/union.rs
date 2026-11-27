@@ -17,9 +17,8 @@ use sigil_stitch::spec::{
 };
 
 use crate::generators::type_application;
-use crate::generators::union_match::plan_members;
-#[cfg(test)]
-use crate::generators::union_match::plan_union_members;
+use crate::generators::union_match::{JsonShape, UnionMemberMatch, plan_members};
+use crate::generators::union_wire::UnionWirePlan;
 use crate::ir::types::{IrSchema, IrSpec, IrUnion};
 
 use super::config::{ExtraDeriveConfig, RustGeneratorConfig, UntaggedUnionStrategy};
@@ -78,12 +77,21 @@ pub(super) fn emit_union(
     if !raw {
         let mut matching = MatchPlan::with_wire(wire_plans);
         let callback = |name: &str| matching.named_override(name);
-        let members = plan_members(
+        let mut members = plan_members(
             &union.members,
             ir,
             Some(&schema.name),
             MatchPlan::policy(&callback),
         );
+        // Lowering can move null alternatives out of the model member list.
+        // Only join by source index when authored and model indices align.
+        if let Some(plan) = wire_plans.authored(&schema.name)
+            && plan.branches().len() == union.members.len()
+        {
+            for member in &mut members {
+                refine_required_string_literals(plan, member);
+            }
+        }
         for member in &members {
             matching.register(&member.shape, ir);
         }
@@ -164,6 +172,25 @@ pub(super) fn emit_union(
     file.build()
 }
 
+/// Recover the authored value where the ordinary payload model keeps only a
+/// required string. Other predicates, member order, and codecs stay unchanged.
+fn refine_required_string_literals(plan: &UnionWirePlan<'_>, member: &mut UnionMemberMatch) {
+    let (JsonShape::Object(properties) | JsonShape::ObjectWithAdditional { properties, .. }) =
+        &mut member.shape
+    else {
+        return;
+    };
+    for property in properties {
+        if property.required
+            && property.shape == JsonShape::String
+            && let Some(literal) =
+                plan.required_string_literal(member.source_index, &property.wire_name)
+        {
+            property.shape = JsonShape::Literal(serde_json::Value::String(literal));
+        }
+    }
+}
+
 fn derives(extra: Option<&ExtraDeriveConfig>, raw: bool, utoipa: bool) -> AnnotationSpec {
     let mut names = vec!["Debug", "Clone", "Serialize"];
     if raw {
@@ -192,6 +219,7 @@ fn derives(extra: Option<&ExtraDeriveConfig>, raw: bool, utoipa: bool) -> Annota
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::generators::union_match::plan_union_members;
     use crate::ir::types::{IrPrimitive, IrSchemaKind, IrTypeExpr};
     use sigil_stitch::assert_rendered;
 

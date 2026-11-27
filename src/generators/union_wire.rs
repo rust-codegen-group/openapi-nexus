@@ -204,6 +204,23 @@ impl<'ir> UnionWirePlan<'ir> {
         })
     }
 
+    /// Prove a required singleton string property from one authored branch.
+    /// This is a necessary condition for that branch, not an eligibility check
+    /// for the whole object or an inference of a discriminator.
+    pub(crate) fn required_string_literal(&self, branch: usize, field: &str) -> Option<String> {
+        let shape = self.branches.get(branch)?;
+        let schemas = &self.ir.wire_schemas;
+        let projection = field_projection(shape, field, schemas, &mut HashSet::new());
+        if projection.allows_absent {
+            return None;
+        }
+        let values = finite_values(&projection.present, schemas, &mut HashSet::new())?;
+        let [Value::String(value)] = values.as_slice() else {
+            return None;
+        };
+        Some(value.clone())
+    }
+
     /// Reference implementation of the selection contract. This is structural
     /// dispatch, not a full JSON Schema validator, and never invokes a decoder.
     pub fn select<'wire>(&self, value: &'wire Value) -> Result<Selection<'wire>, SelectionError> {
