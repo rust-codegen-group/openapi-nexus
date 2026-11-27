@@ -356,11 +356,13 @@ impl<'a> LowerCtx<'a> {
 
         // Then check tagged enum patterns
         use crate::ir::tagged_enum_pattern::TaggedEnumPattern;
-        let patterns: Vec<Option<TaggedEnumPattern>> = obj
-            .one_of
-            .iter()
-            .map(TaggedEnumPattern::detect_from_schema_v32)
-            .collect();
+        let patterns = super::tagged::fixed_single_field_patterns::<ObjectSchema>(&obj.one_of)
+            .unwrap_or_else(|| {
+                obj.one_of
+                    .iter()
+                    .map(TaggedEnumPattern::detect_from_schema_v32)
+                    .collect()
+            });
 
         // All must match for it to be a tagged union
         let all_tagged = patterns.iter().all(|p| p.is_some());
@@ -374,6 +376,9 @@ impl<'a> LowerCtx<'a> {
             .all(|p| matches!(p, Some(TaggedEnumPattern::ExternallyTagged { .. })));
 
         if all_external {
+            if !super::tagged::has_distinct_external_keys::<ObjectSchema>(&obj.one_of) {
+                return Ok(None);
+            }
             // Externally tagged: no tag field, discrimination is by property name
             let mut variants = Vec::new();
             for (member, pattern) in obj.one_of.iter().zip(patterns.iter()) {

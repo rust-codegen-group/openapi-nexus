@@ -1,0 +1,103 @@
+openapi: 3.1.0
+info: {title: Single-field discriminator choices, version: '1'}
+paths: {}
+components:
+  schemas:
+    FormatChoice:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [plain]}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [structured]}
+    IdentifierChoice:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [a-b]}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [a_b]}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [self]}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: ['2nd']}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: ["\u212B"]}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: ["\u00C5"]}
+    NamedPlain: {type: string, enum: [plain]}
+    NamedStructured: {type: string, enum: [structured]}
+    ReferencedValues:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {$ref: '#/components/schemas/NamedPlain'}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {$ref: '#/components/schemas/NamedStructured'}
+    OverlappingValues:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [plain, shared]}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [structured, shared]}
+    NonStringSingletonLookalike:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: {enum: [plain, null]}
+        - type: object
+          required: [kind]
+          properties:
+            kind: {type: string, enum: [structured]}
+    CountPayload:
+      type: object
+      required: [count]
+      properties:
+        count: {type: integer}
+    TextPayload:
+      type: object
+      required: [label]
+      properties:
+        label: {type: string}
+    SharedWrapper:
+      oneOf:
+        - type: object
+          required: [item]
+          properties:
+            item: {$ref: '#/components/schemas/CountPayload'}
+        - type: object
+          required: [item]
+          properties:
+            item: {$ref: '#/components/schemas/TextPayload'}
+    DistinctWrappers:
+      oneOf:
+        - type: object
+          required: [sized]
+          properties:
+            sized: {$ref: '#/components/schemas/CountPayload'}
+        - type: object
+          required: [note]
+          properties:
+            note: {$ref: '#/components/schemas/TextPayload'}
