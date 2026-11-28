@@ -6,14 +6,13 @@ golden="$root/tests/golden/go/go-http"
 
 # shellcheck source=./scripts/golden-build-common.sh
 source "$root/scripts/golden-build-common.sh"
-golden_require_projects "$golden" go.mod.golden
+projects=$(golden_select_projects "$root" go-http "$golden" go.mod.golden)
 
 total=0; passed=0; failed=0; fails=()
 
-for test_dir in "$golden"/*/; do
-  [ -f "$test_dir/go.mod.golden" ] || continue
+while IFS= read -r name <&3; do
+  test_dir="$golden/$name/"
   total=$((total + 1))
-  name=$(basename "$test_dir")
   printf "[%d] %s... " "$total" "$name"
 
   tmp=$(mktemp -d)
@@ -39,10 +38,9 @@ for test_dir in "$golden"/*/; do
 
   rm -rf "$tmp" "$log"
   trap - EXIT
-done
+done 3<<< "$projects"
 
 echo
-golden_require_selection "$total"
 echo "Go: $passed/$total passed"
 if [ "$failed" -gt 0 ]; then
   echo "failed:"

@@ -2,7 +2,6 @@
 
 use std::{fs, path::Path};
 
-#[path = "../build_support/fixture_tests.rs"]
 mod fixture_tests;
 
 #[test]

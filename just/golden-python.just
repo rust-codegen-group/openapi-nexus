@@ -17,6 +17,15 @@ update: update-httpx update-requests
 @ruff-check:
     uvx --from ruff==0.17.5 ruff format --isolated --line-length 100 --extension golden:python --config 'include = ["*.py.golden"]' --check --diff tests/golden/python/python-httpx tests/golden/python/python-requests
 
+# Check the registered Python golden packages without generating fresh clients.
+compile: compile-httpx compile-requests
+
+@compile-httpx:
+    ./scripts/golden-build-python.sh httpx --compile-only
+
+@compile-requests:
+    ./scripts/golden-build-python.sh requests --compile-only
+
 # Validate all Python goldens, public declarations and native consumers
 build: build-httpx build-requests
 

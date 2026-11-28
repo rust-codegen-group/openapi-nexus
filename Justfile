@@ -140,17 +140,9 @@ check-ts OUTPUT_DIR:
 
 # ---------- Golden (top-level convenience) ----------
 
-# Run all golden tests (verify generated output matches .golden files)
+# Compare generated output against registered golden snapshots (no native builds)
 golden-check:
-    cargo test --test golden_tests_typescript_fetch
-    cargo test --test golden_tests_go_http
-    cargo test --test golden_tests_rust_reqwest
-    cargo test --test golden_tests_rust_ureq
-    cargo test --test golden_tests_rust_aioduct
-    cargo test --test golden_tests_python_httpx
-    cargo test --test golden_tests_python_requests
-    cargo test --test golden_tests_java_okhttp
-    cargo test --test golden_tests_kotlin_okhttp
+    cargo test --test 'golden_tests_*' --test python_authored_tagged
 
 # Update .golden files for all generators
 golden-update: golden-typescript::update golden-go::update golden-rust::update golden-python::update golden-java::update golden-kotlin::update

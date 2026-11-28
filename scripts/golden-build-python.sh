@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-backend="${1:?Usage: golden-build-python.sh <httpx|requests>}"
+backend="${1:?Usage: golden-build-python.sh <httpx|requests> [--compile-only]}"
+case "${2:-}" in
+  ''|--compile-only) ;;
+  *) echo 'expected --compile-only or no second argument' >&2; exit 2 ;;
+esac
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 golden="$root/tests/golden/python/python-$backend"
 
 # shellcheck source=./scripts/golden-build-common.sh
 source "$root/scripts/golden-build-common.sh"
-golden_require_projects "$golden" pyproject.toml.golden
+projects=$(golden_select_projects "$root" "python-$backend" "$golden" pyproject.toml.golden)
 
 # One active-interpreter environment for goldens and fresh native consumers.
 deps=$(mktemp -d)
@@ -30,10 +34,9 @@ fi
 
 total=0; passed=0; failed=0; fails=()
 
-for test_dir in "$golden"/*/; do
-  [ -f "$test_dir/pyproject.toml.golden" ] || continue
+while IFS= read -r name <&3; do
+  test_dir="$golden/$name/"
   total=$((total + 1))
-  name=$(basename "$test_dir")
   printf "[%d] %s... " "$total" "$name"
 
   tmp=$(mktemp -d)
@@ -66,10 +69,9 @@ PYRIGHT
 
   rm -rf "$tmp" "$log"
   tmp=""; log=""
-done
+done 3<<< "$projects"
 
 echo
-golden_require_selection "$total"
 echo "Python-$backend: $passed/$total passed"
 if [ "$failed" -gt 0 ]; then
   echo "failed:"
@@ -77,7 +79,8 @@ if [ "$failed" -gt 0 ]; then
   exit 1
 fi
 
-# The public golden-build entrypoint owns the complete backend contract. CI and
-# `just ci` must not append a second, Python-specific validation path.
-export PYTHON="$python" PYRIGHT="$checker"
-(cd "$root" && just golden-python-clients::test "$backend")
+if [[ "${2:-}" != --compile-only ]]; then
+  # The combined entrypoint reuses the same interpreter and checker.
+  export PYTHON="$python" PYRIGHT="$checker"
+  (cd "$root" && just golden-python-clients::test "$backend")
+fi

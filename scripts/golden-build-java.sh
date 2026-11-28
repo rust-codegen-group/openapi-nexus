@@ -6,7 +6,7 @@ golden="$root/tests/golden/java/java-okhttp"
 
 # shellcheck source=./scripts/golden-build-common.sh
 source "$root/scripts/golden-build-common.sh"
-golden_require_projects "$golden" build.gradle.golden
+projects=$(golden_select_projects "$root" java-okhttp "$golden" build.gradle.golden)
 
 tmp=$(mktemp -d)
 log=$(mktemp)
@@ -23,10 +23,9 @@ SETTINGS
 total=0
 tasks=()
 
-for test_dir in "$golden"/*/; do
-  [ -f "$test_dir/build.gradle.golden" ] || continue
+while IFS= read -r name <&3; do
+  test_dir="$golden/$name/"
   total=$((total + 1))
-  name=$(basename "$test_dir")
   tasks+=(":$name:compileJava")
 
   mkdir -p "$tmp/$name"
@@ -41,10 +40,9 @@ for test_dir in "$golden"/*/; do
 include(":$name")
 project(":$name").projectDir = file("$name")
 SETTINGS
-done
+done 3<<< "$projects"
 
 echo
-golden_require_selection "$total"
 
 echo "Java: compiling $total golden projects"
 if (cd "$tmp" && gradle --no-daemon --quiet --parallel --continue "${tasks[@]}") >"$log" 2>&1; then

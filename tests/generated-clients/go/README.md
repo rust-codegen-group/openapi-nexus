@@ -1,9 +1,10 @@
 # Go generated-client consumers
 
 Run `just golden-go::test` to generate the SDKs and execute all registered Go
-consumer modules in a fresh temporary tree. `just golden-go::build` includes
-these tests before compiling goldens. `just golden-go::prepare` only refreshes
-`generated/` for checkout-local use; validation leaves that directory alone.
+consumer modules in a fresh temporary tree. `just golden-go::compile` compiles
+only checked-in golden projects; `just golden-go::build` runs both checks.
+`just golden-go::prepare` refreshes `generated/` for checkout-local use;
+validation leaves that directory alone.
 
 [The fixture manifest](fixtures.txt) lists each consumer directory, its input
 schema, and any generator override. The consumer directory name also identifies

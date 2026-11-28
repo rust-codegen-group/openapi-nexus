@@ -4,11 +4,13 @@ Golden tests are the primary correctness mechanism for openapi-nexus. They ensur
 
 ## How It Works
 
-There are two layers:
+There are two independent golden checks. Both use the
+[golden case registry](../../tests/golden_cases.tsv) as their expected inventory.
+Freshly generated client runtime tests are a separate check.
 
-### Layer 1: Snapshot comparison (Rust)
+### Snapshot comparison (Rust)
 
-Each generator has a test file that:
+Cargo registers one ordinary named Rust test per registry test name. Each test:
 1. Reads an OpenAPI fixture from `tests/fixtures/valid/`
 2. Runs it through the full pipeline (parse, lower, generate)
 3. Resolves artifact paths through the same layout and preflight as the CLI writer
@@ -42,9 +44,13 @@ tests/golden/go/go-http/petstore/
 └── runtime/errors.go.golden
 ```
 
-### Layer 2: Compile check
+### Native compile check
 
-CI materializes each golden directory into a temp folder (stripping the `.golden` suffix) and runs the target language's compiler:
+Before invoking a compiler, the script compares the backend's full expected
+project list with the checkout. A missing project, extra entry, missing build
+manifest, or mismatched TypeScript marker fails preflight. The script then
+materializes only the selected projects in a temporary directory, strips the
+`.golden` suffix, and calls the native tool:
 
 | Language | Command | Marker file |
 |----------|---------|-------------|
@@ -59,11 +65,15 @@ This catches type errors that snapshot comparison alone cannot.
 
 ### TypeScript: `vp pack` vs `tsc --noEmit`
 
-The TypeScript golden build script selects the toolchain per-test based on whether
-`vite.config.ts.golden` exists in the test directory:
+The registry selects the TypeScript toolchain and the build script verifies that
+`vite.config.ts.golden` agrees. Both commands check the full expected TypeScript
+inventory before compiling their respective subsets:
 
-- **With `vite.config.ts`** — runs `vp install && vp check && vp pack && vp check`. This is the `toolchain = "vp"` path: installs deps, checks the original generated files for formatting and type-aware linting/types, then builds the library bundle. The second check verifies that formatting still passes after packing; generated `dist/` output is excluded from formatting.
-- **Without `vite.config.ts`** — runs `tsc --noEmit`. This is the `toolchain = "tsc"` path: type-checks only.
+- **`vp`** — requires the Vite config and sets the generator's `toolchain = "vp"`.
+  Runs `vp install && vp check && vp pack && vp check`. The second check verifies
+  formatting after packing; the generated formatter excludes `dist/`.
+- **`tsc`** (including `native` TypeScript rows) — requires no Vite config and
+  type-checks with `tsc --noEmit`.
 
 Both paths are always exercised in CI. Both `vp` and `tsc` must be available.
 
@@ -73,8 +83,8 @@ Both paths are always exercised in CI. Both `vp` and `tsc` must be available.
 ## Running Golden Tests
 
 ```bash
-# Run all snapshot tests
-cargo test
+# Run all snapshot suites, including the selected-file comparisons
+just golden-check
 
 # Run specific generator's golden tests
 cargo test --test golden_tests_typescript_fetch
@@ -90,6 +100,32 @@ cargo test --test golden_tests_kotlin_okhttp
 # Run a single test by name
 cargo test --test golden_tests_go_http -- minimal
 ```
+
+## Registering Golden Cases
+
+To add a whole-package case, add one tab-separated row to the registry:
+
+| Field | Meaning |
+| --- | --- |
+| `backends` | `all` or comma-separated generator slugs, such as `rust-reqwest,rust-ureq` |
+| `mode` | `native` for the default compiler, or `tsc`/`vp` for TypeScript |
+| `case` | Directory basename under `tests/golden/<language>/<backend>/` |
+| `test` | `-` for `test_<case_with_underscores>_golden`, or an explicit Rust test name |
+| `fixture` | Input under `tests/fixtures/`, including its `valid/` prefix |
+| `TOML settings` | `-` for defaults, or generator overrides with literal `\n` between TOML lines |
+
+Multiple cases may share a test name within one backend; Cargo runs their
+comparisons in registry order. Rust policy variants can use the
+`@rust-union-policies\n` prefix to load the backend's
+[shared policy settings](../../tests/generated-clients/rust/union-policies.toml)
+before applying the overrides. Use the `mode` field, not a TOML override, to
+select TypeScript's toolchain.
+
+The `fragment` mode is reserved for explicit selected-file assertions. These
+rows put a path relative to `tests/golden/` in `case`, use a fragment ID in
+`test`, and put `-` in both remaining columns. Only whole packages are compiled.
+The Go selected files support snapshot updates; the Python and TypeScript
+selected files are read-only assertions.
 
 ## Updating Golden Files
 
@@ -118,13 +154,16 @@ After updating, verify the compile check passes:
 
 ```bash
 just golden-typescript::build
-just golden-go::build
+just golden-go::compile
 just golden-rust::build
-just golden-python::build
+just golden-python::compile
 just golden-java::build
 just golden-kotlin::build
-just golden-build-all           # all languages
 ```
+
+The combined `golden-go::build`, `golden-python::build`, and `golden-build-all`
+recipes still include their existing fresh-client checks. Use the compile-only
+recipes above to validate checked-in projects without regenerating clients.
 
 ## TypeScript Client Runtime Tests
 

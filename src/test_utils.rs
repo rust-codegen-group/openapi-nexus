@@ -97,12 +97,5 @@ fn compare_with_golden_files(
     }
 }
 
-/// Helper to build a test case list from a slice of `(name, fixture_path)` pairs.
-pub fn test_cases_from_slice(
-    cases: &[(&'static str, &'static str)],
-) -> HashMap<&'static str, &'static str> {
-    cases.iter().copied().collect()
-}
-
 #[cfg(test)]
 mod golden_update_tests;

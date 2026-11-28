@@ -8,6 +8,8 @@ use openapi_nexus::generators::python::{
 use openapi_nexus::ir::lower::lower;
 use openapi_nexus::parser::parse_content_yaml;
 
+include!(concat!(env!("OUT_DIR"), "/golden_fragments.rs"));
+
 fn generators(strategy: &str) -> [Box<dyn CodeGenerator>; 2] {
     let config = toml::toml! { tagged_union_strategy = strategy };
     [
@@ -33,7 +35,11 @@ fn authored_models_have_the_same_public_case_and_helpers_for_both_transports() {
         let files = generator.generate(&ir).unwrap();
         assert_eq!(
             model(&files, "message.py"),
-            include_str!("golden/python/authored-tagged-message.py.golden")
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/",
+                golden_fragment_path!(python_authored_tagged_message)
+            ))
         );
         assert!(model(&files, "__init__.py").contains("MessageTextCase as MessageTextCase"));
     }

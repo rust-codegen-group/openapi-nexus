@@ -6,9 +6,12 @@ set working-directory := '..'
 @update:
     UPDATE_GOLDEN=1 cargo test --test golden_tests_go_http -- --nocapture
 
-# Compile-check Go goldens with go build
-@build: test
+# Compile-check all registered Go golden projects.
+@compile:
     ./scripts/golden-build-go.sh
+
+# Preserve the combined golden and fresh-client validation entrypoint.
+@build: compile test
 
 # Refresh generated dependencies for direct Go or IDE use.
 @prepare: (_fixtures "prepare")
