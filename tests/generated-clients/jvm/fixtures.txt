@@ -1,4 +1,4 @@
-# Consumer project name and input under tests/fixtures/.
+# Shared consumer name, input under tests/fixtures/, and optional generator setting.
 typed-error-responses valid/typed-error-responses.yaml
 closed-sum valid/type-aliases/closed-sum-payload-shapes.yaml
 object-union valid/comprehensive-schemas.yaml
@@ -11,3 +11,9 @@ authored-tagged-strict valid/inferred-union-selection.yaml tagged_union_strategy
 authored-tagged-raw valid/inferred-union-selection.yaml tagged_union_strategy=raw
 authored-tagged-finite valid/jvm-authored-tagged-union.yaml tagged_union_strategy=strict
 tagged-literal-codecs valid/jvm-tagged-literal-codecs.yaml
+union-selection valid/union-selection.yaml
+union-first-match valid/java-union-policies.yaml untagged_union_strategy=firstMatch
+union-strict valid/java-union-policies.yaml untagged_union_strategy=strict
+union-raw valid/java-union-policies.yaml untagged_union_strategy=raw
+union-helper-types valid/java-union-helper-types.yaml untagged_union_strategy=firstMatch
+union-helper-types-strict valid/java-union-helper-types.yaml untagged_union_strategy=strict

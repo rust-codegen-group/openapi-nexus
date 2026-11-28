@@ -1,12 +1,15 @@
 # JVM generated-client tests
 
-Java and Kotlin each have an independent Gradle consumer build. The public CLI
-generates the inputs in `fixtures.txt` into ignored `generated/` directories.
-Each backend can add independent cases through its own `java/fixtures.txt` or
-`kotlin/fixtures.txt`; the same manifests drive generation and Gradle discovery.
-An optional third column selects `firstMatch`, `strict`, or `raw`. Java's union
-consumers cover finite constraints, recursive checks, wrapped alias/composition
-boundaries, raw null preservation, and OkHttp response/error-body integration.
+Java and Kotlin each have an independent Gradle consumer build. The CLI
+uses the same case manifests as Gradle: [shared fixture inputs](fixtures.txt),
+[Java-only inputs](java/fixtures.txt), and [Kotlin-only inputs](kotlin/fixtures.txt).
+Register a common input and its settings once, even when the native consumers
+live under each backend's `cases/` separately. The optional third column is a
+`key=value` generator override, for example `untagged_union_strategy=strict`.
+Before generation, each backend checks that its registry and consumer
+directories match. Java's union consumers cover finite constraints, recursive
+checks, wrapped alias/composition boundaries, raw null preservation, and OkHttp
+response/error-body integration.
 Independent helper-type projects also compile recursive and primitive unions
 alongside models named `Integer`, `Long`, `Float`, `Double` and `Boolean`. They
 verify numeric scalar delegates, primitive lists/maps and nested Boolean containers
@@ -43,6 +46,11 @@ just golden-jvm::prepare java
 gradle -p tests/generated-clients/jvm/java test
 gradle -p tests/generated-clients/jvm/java :cases:any-union:test
 ```
+
+`prepare` refreshes the backend's ignored `generated/` directory after all SDKs
+have been generated. To generate for a separate copy of the Gradle consumer
+project, pass its empty `generated/` directory as the second argument to
+[the fixture generator](../../../scripts/generate-jvm-client-fixtures.sh).
 
 Test sources and dependency lockfiles are checked in under each build's `cases/`
 tree. Update locks intentionally with

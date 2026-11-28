@@ -172,6 +172,13 @@ directions, including strict declaration and type-guard checks. The shared IR
 preserves these facts for all OpenAPI versions; the current runtime regression is
 intentionally scoped to the TypeScript target.
 
+## Go Client Runtime Tests
+
+`just golden-go::test` reads the [Go fixture plan](../../tests/generated-clients/go/fixtures.txt)
+to generate fresh SDKs and select the native Go modules to test. Each module's
+`go.mod` must link to its own generated SDK. Tests run in a disposable tree;
+`just golden-go::prepare` refreshes the checkout-local IDE output.
+
 ## Rust Client Runtime Tests
 
 Generated Rust clients also have standalone consumer test projects under
@@ -184,17 +191,20 @@ just golden-rust::test          # reqwest, ureq, and aioduct
 just golden-rust::test-reqwest  # one backend
 ```
 
-Preparation runs the public generator CLI against the fixtures. Each consumer
+Preparation runs the public generator CLI using the
+[Rust fixture plan](../../tests/generated-clients/rust/fixtures.txt). Each consumer
 project has its own checked-in manifest, lockfile, and ordinary Rust test files;
-generated clients are unmodified path dependencies in an ignored directory. One
-Cargo invocation runs all cases for a backend, with a persistent dependency cache.
+generated clients are unmodified path dependencies in an ignored directory. An
+in-process registration check compares the planned directories with those Cargo
+path dependencies. One Cargo invocation runs all cases for a backend, with a
+persistent dependency cache.
 
 These projects are intentionally outside the generator workspace. `just test-all`
 and generator coverage do not recursively build client crates. CI has a separate
 Rust Client Tests matrix, and `just ci` includes these tests. They complement,
 rather than replace, snapshot comparison and the all-golden compile checks.
 
-See [the consumer test README](https://github.com/rust-codegen-group/openapi-nexus/tree/main/tests/generated-clients/rust)
+See the [Rust consumer guide](../../tests/generated-clients/rust/README.md)
 for direct Cargo/IDE use and the retained coverage per fixture.
 
 ## JVM Client Runtime Tests
@@ -202,9 +212,12 @@ for direct Cargo/IDE use and the retained coverage per fixture.
 Java and Kotlin runtime checks are standalone Gradle consumer builds under
 `tests/generated-clients/jvm/`. `just golden-jvm::test` prepares fresh generated
 dependencies and runs normal JUnit tests, one Gradle invocation per backend.
-Generated manifests are never patched. Each fixture has an isolated consumer
-classpath, and both backends assert union precedence and complete payload
-round-trips, not only wrapper identity or discriminator substrings.
+The generator and Gradle project discovery use the same
+[shared JVM fixture plan](../../tests/generated-clients/jvm/fixtures.txt), with
+backend-specific entries only where needed. Generated manifests are never
+patched. Each fixture has an isolated consumer classpath. Both backends assert
+union precedence and complete payload round-trips, not only wrapper identity or
+discriminator substrings.
 
 There are no JVM build subprocesses or global directory locks in the Rust test
 suite. The independent JVM Client Tests CI matrix and `just ci` run these checks.
@@ -252,7 +265,7 @@ not a claim that the native tests execute on the minimum runtime. See the
   to create the temporary environment; the active `pyright` is used when
   available, otherwise npm resolves it once.
 - Development and ordinary CI validation select current Rust `stable` (locally
-  validated with Rust 1.100.0). MSRV checks explicitly select Rust 1.90.0; they do
+  validated with Rust 1.100.1). MSRV checks explicitly select Rust 1.90.0; they do
   not substitute for stable validation.
 - Local TypeScript validation uses TypeScript 7.0.2 and project-local Vite+
   1.8.0 on Node 26.13.1, resolving Vite 8.3.8, Rolldown 1.2.19 and Oxfmt 0.79.0.

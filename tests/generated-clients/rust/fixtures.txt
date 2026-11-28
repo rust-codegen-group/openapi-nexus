@@ -1,0 +1,16 @@
+# backend   output                         fixture (under tests/fixtures/valid)    config    generator options
+all         typed-error-responses          typed-error-responses.yaml            standard
+all         rust-error-payload-shapes       rust-error-payload-shapes.yaml         standard
+all         nested-nullable                 nested-nullable.yaml                   standard
+all         union-selection                 union-selection.yaml                   standard
+ureq        adjacent-envelope-presence      adjacent-envelope-presence.yaml        standard  crate_name=rust-adjacent-envelopes
+all         union-first-match               rust-union-policies.yaml                policies  crate_name=rust-union-first-match untagged_union_strategy=firstMatch
+all         tagged-first-match              rust-inferred-tagged-wire.yaml          policies  crate_name=rust-tagged-first-match tagged_union_strategy=firstMatch
+reqwest     union-string-const              rust-union-string-const.yaml           standard  crate_name=rust-union-string-const
+all         union-strict                    rust-union-policies.yaml                policies  crate_name=rust-union-strict untagged_union_strategy=strict
+all         tagged-strict                   rust-inferred-tagged-wire.yaml          policies  crate_name=rust-tagged-strict tagged_union_strategy=strict
+reqwest     tagged-wire-boundaries-strict   rust-tagged-wire-boundaries.yaml       policies  crate_name=rust-tagged-wire-boundaries-strict tagged_union_strategy=strict
+all         union-raw                       rust-union-policies.yaml                policies  crate_name=rust-union-raw untagged_union_strategy=raw
+all         tagged-raw                      rust-inferred-tagged-wire.yaml          policies  crate_name=rust-tagged-raw tagged_union_strategy=raw
+reqwest     tagged-wire-boundaries-raw      rust-tagged-wire-boundaries.yaml       policies  crate_name=rust-tagged-wire-boundaries-raw tagged_union_strategy=raw
+aioduct     fixed-single-field-tags         fixed-single-field-tags.yaml           standard  crate_name=single-field-tags-contract

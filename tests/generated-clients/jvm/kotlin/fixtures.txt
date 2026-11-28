@@ -1,15 +1,9 @@
-# Consumer project name and input under tests/fixtures/.
-union-selection valid/union-selection.yaml
-union-first-match valid/java-union-policies.yaml firstMatch
-union-strict valid/java-union-policies.yaml strict
-union-raw valid/java-union-policies.yaml raw
-union-helper-types valid/java-union-helper-types.yaml firstMatch
-union-helper-types-strict valid/java-union-helper-types.yaml strict
+# Kotlin-only generator inputs; common inputs remain in ../fixtures.txt.
 dictionaries valid/kotlin-dictionaries.yaml
 dictionary-helper-types valid/kotlin-dictionary-helper-types.yaml
 additional-properties valid/kotlin-additional-properties.yaml
-additional-properties-strict valid/kotlin-additional-properties.yaml strict
-additional-properties-raw valid/kotlin-additional-properties.yaml raw
+additional-properties-strict valid/kotlin-additional-properties.yaml untagged_union_strategy=strict
+additional-properties-raw valid/kotlin-additional-properties.yaml untagged_union_strategy=raw
 additional-helper-types valid/kotlin-additional-helper-types.yaml
 allof-composition valid/object-composition.yaml
 allof-raw valid/object-composition.yaml all_of_strategy=raw
