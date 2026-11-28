@@ -1,3 +1,4 @@
+pub(crate) mod artifact_manifest;
 pub mod generator_type;
 pub mod language;
 pub mod naming_convention;

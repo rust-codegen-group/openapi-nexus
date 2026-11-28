@@ -11,7 +11,8 @@ There are two layers:
 Each generator has a test file that:
 1. Reads an OpenAPI fixture from `tests/fixtures/valid/`
 2. Runs it through the full pipeline (parse, lower, generate)
-3. Compares each generated file byte-for-byte against a `.golden` file
+3. Resolves artifact paths through the same layout and preflight as the CLI writer
+4. Compares each generated file byte-for-byte against a `.golden` file without writing generated files to a temporary project
 
 ```
 tests/
@@ -274,9 +275,17 @@ to just/CI, which directly run the golden builds and ordinary consumer projects.
 golden builds, and TypeScript/Python/Rust/JVM consumer tests. Golden comparison is already included
 in `test-all`, so the full recipe does not repeat it as another standalone step.
 
-## Extra File Detection
+## Artifact Paths and Snapshot Differences
 
-The test harness detects when a generator produces files that have no corresponding `.golden` file. This prevents regressions where new output silently goes untested. If a generator adds a new file, the test will fail with a clear message listing the unmatched files and instructing you to run `UPDATE_GOLDEN=1`.
+The CLI writer and snapshot tests resolve paths with the same artifact manifest.
+Paths are relative to the output root and use `/` separators. Invalid relative
+paths, duplicate destinations, and file paths that would also have to be
+directories fail before the writer creates or overwrites generated files.
+
+A whole-case comparison reports added, stale, and changed files together, in
+path order. Changed files include a unified diff; line endings and terminal
+newlines are significant. If the differences are intentional, rerun the case
+with `UPDATE_GOLDEN=1`. Selected-file snapshots still compare only those files.
 
 ## Fixture Generators
 
