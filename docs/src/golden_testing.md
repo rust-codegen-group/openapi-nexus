@@ -103,6 +103,16 @@ UPDATE_GOLDEN=1 cargo test --test golden_tests_typescript_fetch
 UPDATE_GOLDEN=1 cargo test --test golden_tests_rust_reqwest
 ```
 
+Only the exact value `UPDATE_GOLDEN=1` enables writes. An unset variable, an
+empty value, or `UPDATE_GOLDEN=0` leaves the harness in comparison mode.
+
+Complete snapshot cases are written to a sibling staging directory before the
+old case is replaced. A staging error leaves the old snapshots intact. Update
+mode refuses to replace a case that contains non-snapshot files or symlinks.
+Do not remove a leftover `.<case>.update` while an update is running. If an
+interrupted update left its `previous` backup and the case directory is missing,
+restore that backup before retrying.
+
 After updating, verify the compile check passes:
 
 ```bash
