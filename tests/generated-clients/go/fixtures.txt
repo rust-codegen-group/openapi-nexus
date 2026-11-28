@@ -1,7 +1,8 @@
-composition valid/go-allof-composition.yaml
-raw valid/go-allof-composition.yaml raw
-nullable valid/go-allof-nullable.yaml
-tagged valid/go-inferred-tagged-wire.yaml
-tagged-strict valid/go-inferred-tagged-wire.yaml tagged_union_strategy=strict
-tagged-raw valid/go-inferred-tagged-wire.yaml tagged_union_strategy=raw
-tagged-dynamic valid/go-inferred-tagged-wire.yaml tagged_union_strategy=dynamic
+# Consumer directory (and SDK basename), fixture under tests/fixtures/valid, optional override.
+composition    go-allof-composition.yaml
+raw            go-allof-composition.yaml  all_of_strategy=raw
+nullable       go-allof-nullable.yaml
+tagged         go-inferred-tagged-wire.yaml
+tagged-strict  go-inferred-tagged-wire.yaml tagged_union_strategy=strict
+tagged-raw     go-inferred-tagged-wire.yaml tagged_union_strategy=raw
+tagged-dynamic go-inferred-tagged-wire.yaml tagged_union_strategy=dynamic

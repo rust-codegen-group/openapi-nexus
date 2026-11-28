@@ -28,10 +28,17 @@ cargo test --locked --manifest-path tests/generated-clients/rust/reqwest/Cargo.t
 cargo test --locked --manifest-path tests/generated-clients/rust/reqwest/Cargo.toml --test nested_nullable
 ```
 
-Regenerate after changing the generator or a fixture. Preparation removes the
-managed fixture output directories before regenerating them, preventing
-stale declarations from masking missing output. The manifests and lockfiles are
-checked in; do not edit the ignored generated clients to make a test pass.
+Add or change generation cases in the [Rust fixture plan](fixtures.txt). The
+plan selects each output's backends, input, config profile, and overrides. The
+in-process registration check (`cargo test --test rust_client_fixture_plan` from
+the repository root) requires the planned paths to match the generated path
+dependencies in each checked-in Cargo manifest. Cargo itself validates dependency
+package names and the lockfiles when running the native consumers.
+
+Regenerate after changing the generator or a fixture. Preparation generates into
+a sibling staging directory and replaces the managed `generated/` tree only
+once all of that backend's crates are ready. Do not edit ignored generated
+clients to make a test pass.
 
 ## Coverage
 

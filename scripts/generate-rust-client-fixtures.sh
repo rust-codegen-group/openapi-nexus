@@ -7,90 +7,91 @@ case "$backend" in
   *) echo "unsupported Rust backend: $backend" >&2; exit 1 ;;
 esac
 
-root="$(cd "$(dirname "$0")/.." && pwd)"
-project="$root/tests/generated-clients/rust/$backend"
+root="$(cd "$(dirname "$0")/.." && pwd -P)"
+rust="$root/tests/generated-clients/rust"
+manifest="$rust/fixtures.txt"
+project="$rust/$backend"
+fixtures="$root/tests/fixtures/valid"
+generator="rust-$backend"
 
-for fixture in typed-error-responses rust-error-payload-shapes nested-nullable union-selection; do
-  output="$project/generated/$fixture"
-  # These fixed fixture directories contain only disposable generated output.
-  # Remove stale source files so a deleted declaration cannot pass unnoticed.
-  rm -rf "$output"
-  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-    --config "$root/tests/generated-clients/config.toml" \
-    --input "$root/tests/fixtures/valid/$fixture.yaml" \
-    --output "$output" \
-    --generators "rust-$backend"
+fail() {
+  echo "$manifest:$line_number: $1" >&2
+  exit 1
+}
+
+# Preflight the plan before replacing any generated Cargo dependency.
+rows=() names=()
+line_number=0
+while IFS= read -r line || [[ -n "$line" ]]; do
+  ((line_number += 1))
+  read -r -a fields <<< "$line"
+  scope="${fields[0]:-}"
+  case "$scope" in
+    ''|\#*) continue ;;
+    all|reqwest|ureq|aioduct) ;;
+    *) fail "unknown backend: $scope" ;;
+  esac
+  name="${fields[1]:-}"
+  fixture="${fields[2]:-}"
+  profile="${fields[3]:-}"
+  [[ "$name" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || fail "invalid output basename: $name"
+  [[ "$fixture" =~ ^[a-z0-9_-]+\.(yaml|yml|json)$ && -f "$fixtures/$fixture" ]] || fail "invalid or missing fixture: $fixture"
+  case "$profile" in standard|policies) ;; *) fail "invalid config profile: $profile" ;; esac
+  keys=' '
+  for option in "${fields[@]:4}"; do
+    key="${option%%=*}"
+    case "$option" in
+      crate_name=*) [[ "${option#*=}" =~ ^[a-z][a-z0-9_-]*$ ]] || fail "invalid crate name: $option" ;;
+      untagged_union_strategy=firstMatch|untagged_union_strategy=strict|untagged_union_strategy=raw|tagged_union_strategy=firstMatch|tagged_union_strategy=strict|tagged_union_strategy=raw) ;;
+      *) fail "invalid generator option: $option" ;;
+    esac
+    [[ "$keys" != *" $key "* ]] || fail "duplicate generator option: $key"
+    keys+="$key "
+  done
+  if [[ "$scope" == all || "$scope" == "$backend" ]]; then
+    for previous in "${names[@]+"${names[@]}"}"; do
+      [[ "$name" != "$previous" ]] || fail "duplicate output basename for $backend: $name"
+    done
+    names+=("$name")
+    rows+=("$line")
+  fi
+done < "$manifest"
+[[ -n "${rows[0]:-}" ]] || fail "no fixtures for $backend"
+
+[[ "$(cd "$project" && pwd -P)" == "$project" ]]
+output="$project/generated"
+if [[ -e "$output" || -L "$output" ]]; then
+  [[ -d "$output" && ! -L "$output" && "$(cd "$output" && pwd -P)" == "$output" ]]
+fi
+stage="$(mktemp -d "$project/.nexus-rust.XXXXXX")"
+cleanup() {
+  if [[ -d "$stage" && ! -L "$stage" && "$(cd "$stage" && pwd -P)" == "$stage" ]]; then
+    rm -rf -- "$stage"
+  fi
+}
+trap cleanup EXIT
+
+for row in "${rows[@]}"; do
+  read -r -a fields <<< "$row"
+  case "${fields[3]}" in
+    standard) config="$root/tests/generated-clients/config.toml" ;;
+    policies) config="$rust/union-policies.toml" ;;
+  esac
+  dest="$stage/${fields[1]}"
+  options=(--config "$config" --input "$fixtures/${fields[2]}" --output "$dest" --generators "$generator")
+  for option in "${fields[@]:4}"; do
+    options+=(--generator-config "$generator.$option")
+  done
+  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate "${options[@]}"
+  if [[ ! -f "$dest/Cargo.toml" ]]; then
+    echo "missing generated Cargo manifest: $dest/Cargo.toml" >&2
+    exit 1
+  fi
 done
 
-if [ "$backend" = ureq ]; then
-  output="$project/generated/adjacent-envelope-presence"
-  # Reset the dedicated generated output, not the consumer test sources.
-  rm -rf "$output"
-  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-    --config "$root/tests/generated-clients/config.toml" \
-    --input "$root/tests/fixtures/valid/adjacent-envelope-presence.yaml" \
-    --output "$output" \
-    --generators "rust-$backend" \
-    --generator-config "rust-$backend.crate_name=rust-adjacent-envelopes"
+if [[ -e "$output" || -L "$output" ]]; then
+  [[ -d "$output" && ! -L "$output" && "$(cd "$output" && pwd -P)" == "$output" ]]
+  rm -rf -- "$output"
 fi
-
-for strategy in firstMatch strict raw; do
-  suffix="$strategy"
-  if [ "$strategy" = firstMatch ]; then suffix=first-match; fi
-  output="$project/generated/union-$suffix"
-  # Fixed disposable output, never a consumer source directory.
-  rm -rf "$output"
-  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-    --config "$root/tests/generated-clients/rust/union-policies.toml" \
-    --input "$root/tests/fixtures/valid/rust-union-policies.yaml" \
-    --output "$output" \
-    --generators "rust-$backend" \
-    --generator-config "rust-$backend.crate_name=rust-union-$suffix" \
-    --generator-config "rust-$backend.untagged_union_strategy=$strategy"
-
-  output="$project/generated/tagged-$suffix"
-  # The tagged fixture is independent of the untagged-policy crate.
-  rm -rf "$output"
-  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-    --config "$root/tests/generated-clients/rust/union-policies.toml" \
-    --input "$root/tests/fixtures/valid/rust-inferred-tagged-wire.yaml" \
-    --output "$output" \
-    --generators "rust-$backend" \
-    --generator-config "rust-$backend.crate_name=rust-tagged-$suffix" \
-    --generator-config "rust-$backend.tagged_union_strategy=$strategy"
-
-  if [ "$backend" = reqwest ] && [ "$strategy" = firstMatch ]; then
-    output="$project/generated/union-string-const"
-    rm -rf "$output"
-    cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-      --config "$root/tests/generated-clients/config.toml" \
-      --input "$root/tests/fixtures/valid/rust-union-string-const.yaml" \
-      --output "$output" \
-      --generators "rust-$backend" \
-      --generator-config "rust-$backend.crate_name=rust-union-string-const"
-  fi
-
-  if [ "$backend" = reqwest ] && [ "$strategy" != firstMatch ]; then
-    output="$project/generated/tagged-wire-boundaries-$strategy"
-    rm -rf "$output"
-    cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-      --config "$root/tests/generated-clients/rust/union-policies.toml" \
-      --input "$root/tests/fixtures/valid/rust-tagged-wire-boundaries.yaml" \
-      --output "$output" \
-      --generators "rust-$backend" \
-      --generator-config "rust-$backend.crate_name=rust-tagged-wire-boundaries-$strategy" \
-      --generator-config "rust-$backend.tagged_union_strategy=$strategy"
-  fi
-done
-
-if [ "$backend" = aioduct ]; then
-  output="$project/generated/fixed-single-field-tags"
-  # Refresh only this disposable fixture, never the consumer's sources.
-  rm -rf "$output"
-  cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
-    --config "$root/tests/generated-clients/config.toml" \
-    --input "$root/tests/fixtures/valid/fixed-single-field-tags.yaml" \
-    --output "$output" \
-    --generators rust-aioduct \
-    --generator-config "rust-aioduct.crate_name=single-field-tags-contract"
-fi
+[[ "$(cd "$stage" && pwd -P)" == "$stage" ]]
+mv -- "$stage" "$output"
