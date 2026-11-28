@@ -6,32 +6,18 @@ golden="$root/tests/golden/typescript/typescript-fetch"
 
 # shellcheck source=./scripts/golden-build-common.sh
 source "$root/scripts/golden-build-common.sh"
-golden_require_projects "$golden" tsconfig.json.golden
-
 toolchain="${1:-}"
 if [ "$toolchain" != "tsc" ] && [ "$toolchain" != "vp" ]; then
   echo "usage: $0 <tsc|vp>" >&2
   exit 1
 fi
+projects=$(golden_select_projects "$root" typescript-fetch "$golden" tsconfig.json.golden "$toolchain")
 
 total=0; passed=0; failed=0; fails=()
 
-for test_dir in "$golden"/*/; do
-  [ -f "$test_dir/tsconfig.json.golden" ] || continue
-
-  # Select tests by toolchain: vp tests have vite.config.ts, tsc tests don't
-  has_vp_config=0
-  [ -f "$test_dir/vite.config.ts.golden" ] && has_vp_config=1
-
-  if [ "$toolchain" = "vp" ] && [ "$has_vp_config" = "0" ]; then
-    continue
-  fi
-  if [ "$toolchain" = "tsc" ] && [ "$has_vp_config" = "1" ]; then
-    continue
-  fi
-
+while IFS= read -r name <&3; do
+  test_dir="$golden/$name/"
   total=$((total + 1))
-  name=$(basename "$test_dir")
   printf "[%d] %s... " "$total" "$name"
 
   tmp=$(mktemp -d)
@@ -69,10 +55,9 @@ for test_dir in "$golden"/*/; do
 
   rm -rf "$tmp" "$log"
   trap - EXIT
-done
+done 3<<< "$projects"
 
 echo
-golden_require_selection "$total"
 echo "TypeScript ($toolchain): $passed/$total passed"
 if [ "$failed" -gt 0 ]; then
   echo "failed:"

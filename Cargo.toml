@@ -74,6 +74,14 @@ path = "src/main.rs"
 name = "openapi_nexus"
 path = "src/lib.rs"
 
+[[test]]
+name = "fixture_discovery"
+path = "build_support/fixture_discovery.rs"
+
+[[test]]
+name = "golden_case_registry"
+path = "build_support/golden_cases.rs"
+
 [features]
 default = []
 test-utils = ["dep:similar"]
@@ -100,6 +108,9 @@ unicode-ident.workspace = true
 unicode-normalization.workspace = true
 url.workspace = true
 similar = { workspace = true, optional = true }
+
+[build-dependencies]
+sigil-stitch.workspace = true
 
 [dev-dependencies]
 tracing-test.workspace = true

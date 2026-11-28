@@ -1,0 +1,155 @@
+# backends	mode	case	test or fragment id	fixture	TOML settings
+# Default generator configurations; `-` derives the standard Rust test name.
+kotlin-okhttp	native	additional-helper-types	-	valid/kotlin-additional-helper-types.yaml	-
+all	native	additional-properties	-	valid/additional-properties/additional-properties.yaml	-
+kotlin-okhttp	native	allof-composition	-	valid/object-composition.yaml	-
+go-http	native	allof-composition	-	valid/go-allof-composition.yaml	-
+java-okhttp	native	allof-composition	-	valid/java-allof-composition.yaml	-
+go-http	native	allof-nullable	-	valid/go-allof-nullable.yaml	-
+kotlin-okhttp	native	any-alias	-	valid/kotlin-any-alias.yaml	-
+typescript-fetch	native	api-interface	-	valid/typescript-api-interface.yaml	-
+all	native	array-empty-items	-	valid/array-empty-items.yaml	-
+java-okhttp,kotlin-okhttp	native	authored-tagged-union	-	valid/jvm-authored-tagged-union.yaml	-
+all	native	binary-transfer-media-types	-	valid/binary-transfer-media-types.yaml	-
+all	native	comprehensive-schemas	-	valid/comprehensive-schemas.yaml	-
+all	native	delete-with-response-schema	-	valid/delete-with-response-schema.yaml	-
+kotlin-okhttp	native	dictionaries	-	valid/kotlin-dictionaries.yaml	-
+kotlin-okhttp	native	dictionary-helper-types	-	valid/kotlin-dictionary-helper-types.yaml	-
+all	native	duplicate-param-names	-	valid/duplicate-param-names.yaml	-
+all	native	enum-repr	-	valid/enum-repr/enum-repr.yaml	-
+all	native	inline-additional-union	-	valid/inline-additional-union.yaml	-
+all	native	interface-with-enum-reference	-	valid/interface-with-enum-reference.yaml	-
+kotlin-okhttp	native	kotlin-adapter-symbol-collision	-	valid/kotlin-adapter-symbol-collision.yaml	-
+all	native	media-type-selection	-	valid/media-type-selection.yaml	-
+all	native	minimal	-	valid/minimal.yaml	-
+kotlin-okhttp	native	mixed-additional-properties	-	valid/kotlin-additional-properties.yaml	-
+rust-aioduct,rust-reqwest,rust-ureq	native	multiline-docs-and-primitive-alias	-	valid/multiline-docs-and-primitive-alias.yaml	-
+all	native	multipart-edge-cases	-	valid/multipart-edge-cases.yaml	-
+all	native	multipart-explicit-encoding	-	valid/multipart-explicit-encoding.yaml	-
+all	native	multipart-nested-object-parts	-	valid/multipart-nested-object-parts.yaml	-
+all	native	multipart-unsupported-schema	-	valid/multipart-unsupported-schema.yaml	-
+all	native	multiple-similar-request-schemas	-	valid/multiple-similar-request-schemas.yaml	-
+all	native	naming-conventions	-	valid/naming-conventions.yaml	-
+all	native	nested-nullable	-	valid/nested-nullable.yaml	-
+java-okhttp	native	object-extension-helper-types	-	valid/java-additional-helper-types.yaml	-
+java-okhttp	native	object-extensions	-	valid/java-additional-properties.yaml	-
+python-httpx,python-requests	native	object-extensions	-	valid/python-additional-properties.yaml	-
+all	native	open-tagged-additional-properties	-	valid/open-tagged-additional-properties.yaml	-
+typescript-fetch	native	optional-discriminator-union	-	valid/optional-discriminator-union.yaml	-
+all	native	optional-request-bodies	-	valid/optional-request-bodies.yaml	-
+all	native	petstore	-	valid/petstore.yaml	-
+java-okhttp	native	primitive-union-helper-identity	-	valid/java-primitive-union-helper-identity.yaml	-
+all	native	query-param-enum	-	valid/query/query-param-enum.yaml	-
+all	native	recursive-json-all-optional-properties	-	valid/recursive-json/all-optional-properties.yaml	-
+all	native	recursive-json-array-of-inline-objects	-	valid/recursive-json/array-of-inline-objects.yaml	-
+all	native	recursive-json-array-of-referenced-types	-	valid/recursive-json/array-of-referenced-types.yaml	-
+all	native	recursive-json-array-with-reference-property	-	valid/recursive-json/array-with-reference-property.yaml	-
+all	native	recursive-json-complex-array-structure	-	valid/recursive-json/complex-array-structure.yaml	-
+all	native	recursive-json-deeply-nested-inline	-	valid/recursive-json/deeply-nested-inline.yaml	-
+all	native	recursive-json-empty-array	-	valid/recursive-json/empty-array.yaml	-
+all	native	recursive-json-inline-object	-	valid/recursive-json/inline-object.yaml	-
+all	native	recursive-json-inline-object-with-array	-	valid/recursive-json/inline-object-with-array.yaml	-
+all	native	recursive-json-mixed-property-types	-	valid/recursive-json/mixed-property-types.yaml	-
+all	native	recursive-json-nested-object-reference	-	valid/recursive-json/nested-object-reference.yaml	-
+all	native	recursive-json-optional-array-of-inline-objects	-	valid/recursive-json/optional-array-of-inline-objects.yaml	-
+all	native	recursive-json-optional-array-of-referenced-types	-	valid/recursive-json/optional-array-of-referenced-types.yaml	-
+all	native	recursive-json-optional-inline-object	-	valid/recursive-json/optional-inline-object.yaml	-
+all	native	recursive-json-optional-nested-object-reference	-	valid/recursive-json/optional-nested-object-reference.yaml	-
+all	native	recursive-json-primitive-array	-	valid/recursive-json/primitive-array.yaml	-
+all	native	recursive-json-self-referential-object	-	valid/recursive-json/self-referential-object.yaml	-
+all	native	request-body-content-types	-	valid/request-body-content-types.yaml	-
+java-okhttp,kotlin-okhttp	native	reserved-word-fields	-	valid/reserved-word-fields.yaml	-
+all	native	response-body-default-and-exact	-	valid/response-body/default-and-exact.yaml	-
+all	native	response-body-fallback	-	valid/response-body/fallback.yaml	-
+all	native	response-body-multi-status-responses	-	valid/response-body/multi-status-responses.yaml	-
+all	native	response-body-no-response-body	-	valid/response-body/no-response-body.yaml	-
+typescript-fetch	native	response-dispatch	-	valid/typescript-response-dispatch.yaml	-
+all	native	server-object	-	valid/server-object.yaml	-
+all	native	server-path-prefix	-	valid/server-path-prefix.yaml	-
+python-httpx,python-requests	native	tagged-alias-scope	-	valid/python-tagged-alias-scope.yaml	-
+go-http,java-okhttp,kotlin-okhttp,rust-aioduct,rust-reqwest,rust-ureq	native	tagged-allof-payloads	-	valid/tagged-allof-payloads.yaml	-
+python-httpx,python-requests	native	tagged-cycle-symbols	-	valid/python-tagged-cycle-symbols.yaml	-
+java-okhttp,kotlin-okhttp	native	type-aliases-closed-sum-payload-shapes	-	valid/type-aliases/closed-sum-payload-shapes.yaml	-
+all	native	type-aliases-complex-union	-	valid/type-aliases/complex-union.yaml	-
+all	native	type-aliases-discriminated-union-inline-discriminator-only	-	valid/type-aliases/discriminated-union-inline-discriminator-only.yaml	-
+all	native	type-aliases-discriminated-union-internally-tagged	-	valid/type-aliases/discriminated-union-internally-tagged.yaml	-
+all	native	type-aliases-discriminated-union-long-names	-	valid/type-aliases/discriminated-union-long-names.yaml	-
+all	native	type-aliases-discriminated-union-mixed-unit-and-allof	-	valid/type-aliases/discriminated-union-mixed-unit-and-allof.yaml	-
+all	native	type-aliases-discriminated-union-multiple	-	valid/type-aliases/discriminated-union-multiple.yaml	-
+all	native	type-aliases-discriminated-union-with-refs	-	valid/type-aliases/discriminated-union-with-refs.yaml	-
+all	native	type-aliases-intersection-allof	-	valid/type-aliases/intersection-allof.yaml	-
+all	native	type-aliases-intersection-with-nullable-reference	-	valid/type-aliases/intersection-with-nullable-reference.yaml	-
+all	native	type-aliases-nested-union	-	valid/type-aliases/nested-union.yaml	-
+all	native	type-aliases-simple-type-alias	-	valid/type-aliases/simple-type-alias.yaml	-
+all	native	type-aliases-union-mixed	-	valid/type-aliases/union-mixed.yaml	-
+all	native	type-aliases-union-with-any	-	valid/type-aliases/union-with-any.yaml	-
+all	native	type-aliases-union-with-inline-objects	-	valid/type-aliases/union-with-inline-objects.yaml	-
+all	native	type-aliases-union-with-interfaces	-	valid/type-aliases/union-with-interfaces.yaml	-
+all	native	type-aliases-union-with-primitives	-	valid/type-aliases/union-with-primitives.yaml	-
+all	native	typed-error-responses	-	valid/typed-error-responses.yaml	-
+java-okhttp	native	typed-union-tree-null	-	valid/java-typed-union-tree-null.yaml	-
+typescript-fetch	native	typescript-additional-properties	-	valid/typescript-additional-properties.yaml	-
+java-okhttp	native	union-selection	-	valid/union-selection.yaml	-
+typescript-fetch	native	untagged-union	-	valid/typescript-untagged-union.yaml	-
+python-httpx,python-requests	native	untagged-union	-	valid/python-untagged-union.yaml	-
+# Configured and intentionally grouped whole-package tests.
+go-http	native	inferred-tagged	inferred_tagged_wire_golden	valid/go-inferred-tagged-wire.yaml	-
+go-http	native	allof-raw	raw_allof_composition_golden	valid/go-allof-composition.yaml	all_of_strategy = 'raw'
+java-okhttp	native	allof-raw	test_allof_raw_golden	valid/java-allof-composition.yaml	all_of_strategy = 'raw'
+java-okhttp	native	union-first-match	test_untagged_union_policies_golden	valid/java-union-policies.yaml	untagged_union_strategy = 'firstMatch'
+java-okhttp	native	union-strict	test_untagged_union_policies_golden	valid/java-union-policies.yaml	untagged_union_strategy = 'strict'
+java-okhttp	native	union-raw	test_untagged_union_policies_golden	valid/java-union-policies.yaml	untagged_union_strategy = 'raw'
+java-okhttp	native	union-helper-types	test_recursive_union_helper_types_golden	valid/java-union-helper-types.yaml	untagged_union_strategy = 'firstMatch'
+java-okhttp	native	union-helper-types-strict	test_recursive_union_helper_types_golden	valid/java-union-helper-types.yaml	untagged_union_strategy = 'strict'
+kotlin-okhttp	native	allof-raw	test_allof_raw_golden	valid/object-composition.yaml	all_of_strategy = 'raw'
+kotlin-okhttp	native	union-first-match	untagged_union_policies_preserve_typed_or_raw_apis	valid/java-union-policies.yaml	untagged_union_strategy = 'firstMatch'
+kotlin-okhttp	native	union-strict	untagged_union_policies_preserve_typed_or_raw_apis	valid/java-union-policies.yaml	untagged_union_strategy = 'strict'
+kotlin-okhttp	native	union-raw	untagged_union_policies_preserve_typed_or_raw_apis	valid/java-union-policies.yaml	untagged_union_strategy = 'raw'
+kotlin-okhttp	native	union-selection	untagged_union_policies_preserve_typed_or_raw_apis	valid/union-selection.yaml	-
+kotlin-okhttp	native	union-helper-types	untagged_union_policies_preserve_typed_or_raw_apis	valid/java-union-helper-types.yaml	untagged_union_strategy = 'firstMatch'
+kotlin-okhttp	native	union-helper-types-strict	untagged_union_policies_preserve_typed_or_raw_apis	valid/java-union-helper-types.yaml	untagged_union_strategy = 'strict'
+python-httpx,python-requests	native	untagged-union-strict	test_untagged_union_policies_golden	valid/python-untagged-union.yaml	untagged_union_strategy = 'strict'
+python-httpx,python-requests	native	untagged-union-raw	test_untagged_union_policies_golden	valid/python-untagged-union.yaml	untagged_union_strategy = 'raw'
+rust-aioduct,rust-reqwest,rust-ureq	native	utoipa-mixed	test_utoipa_mixed_golden	valid/utoipa/utoipa-mixed.yaml	[utoipa]\nenabled = true\ndependency = '{ version = "5" }'
+rust-aioduct,rust-reqwest,rust-ureq	native	utoipa-untagged-union	test_utoipa_untagged_union_golden	valid/utoipa/utoipa-untagged-union.yaml	[utoipa]\nenabled = true\ndependency = '{ version = "5" }'
+rust-aioduct,rust-reqwest,rust-ureq	native	utoipa-with-extra-derives	test_utoipa_with_extra_derives_golden	valid/utoipa/utoipa-with-extra-derives.yaml	[utoipa]\nenabled = true\ndependency = '{ version = "5" }'\n[extra_derives.structs]\nderives = ["PartialEq", "Eq"]\n[extra_derives.enums]\nderives = ["PartialEq", "Eq", "Hash"]
+rust-aioduct,rust-reqwest,rust-ureq	native	union-selection	test_union_selection_golden	valid/union-selection.yaml	-
+rust-aioduct	native	inferred-internal-tagged-wire	test_inferred_internal_tagged_wire_golden	valid/optional-discriminator-union.yaml	-
+rust-aioduct,rust-reqwest,rust-ureq	native	union-first-match	test_untagged_union_policies_golden	valid/rust-union-policies.yaml	@rust-union-policies\ncrate_name = 'rust-union-first-match'\nuntagged_union_strategy = 'firstMatch'
+rust-aioduct,rust-reqwest,rust-ureq	native	union-strict	test_untagged_union_policies_golden	valid/rust-union-policies.yaml	@rust-union-policies\ncrate_name = 'rust-union-strict'\nuntagged_union_strategy = 'strict'
+rust-aioduct,rust-reqwest,rust-ureq	native	union-raw	test_untagged_union_policies_golden	valid/rust-union-policies.yaml	@rust-union-policies\ncrate_name = 'rust-union-raw'\nuntagged_union_strategy = 'raw'
+typescript-fetch	tsc	ts-enum-const	test_enum_const_object_golden	valid/ts-enum-const.yaml	emit_enum_constants = true
+typescript-fetch	tsc	ts-type-guards	test_type_guards_golden	valid/ts-type-guards.yaml	emit_type_guards = true
+typescript-fetch	tsc	ts-property-naming-camel-case	test_property_naming_camel_case_golden	valid/naming-conventions.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-multipart-parts	test_property_naming_camel_case_multipart_parts_golden	valid/multipart-nested-object-parts.yaml	property_naming = "camelCase"
+typescript-fetch	vp	ts-property-naming-camel-case-additional-properties	test_property_naming_camel_case_additional_properties_golden	valid/typescript-additional-properties.yaml	property_naming = 'camelCase'
+typescript-fetch	vp	tagged-allof-payloads-preserve	test_tagged_allof_payloads_golden	valid/tagged-allof-payloads.yaml	property_naming = 'preserve'\nemit_type_guards = true
+typescript-fetch	vp	tagged-allof-payloads-camel-case	test_tagged_allof_payloads_golden	valid/tagged-allof-payloads.yaml	property_naming = 'camelCase'\nemit_type_guards = true
+typescript-fetch	vp	overlapping-allof	test_overlapping_allof_golden	valid/typescript-overlapping-allof.yaml	property_naming = 'camelCase'\nuntagged_union_strategy = 'strict'
+typescript-fetch	vp	ts-untagged-union-first-match	test_camel_case_untagged_union_golden	valid/typescript-untagged-union.yaml	property_naming = 'camelCase'\nuntagged_union_strategy = 'firstMatch'
+typescript-fetch	vp	ts-untagged-union-strict	test_camel_case_untagged_union_golden	valid/typescript-untagged-union.yaml	property_naming = 'camelCase'\nuntagged_union_strategy = 'strict'
+typescript-fetch	vp	ts-untagged-union-raw	test_camel_case_untagged_union_golden	valid/typescript-untagged-union.yaml	property_naming = 'camelCase'\nuntagged_union_strategy = 'raw'
+typescript-fetch	tsc	ts-property-naming-camel-case-response-only-types	test_property_naming_camel_case_response_only_types_golden	valid/delete-with-response-schema.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-response-dispatch	test_property_naming_camel_case_response_dispatch_golden	valid/typescript-response-dispatch.yaml	property_naming = 'camelCase'
+typescript-fetch	tsc	ts-property-naming-camel-case-tagged-union	test_property_naming_camel_case_tagged_union_golden	valid/type-aliases/discriminated-union-with-refs.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-tagged-union-variant-with-discriminator	test_property_naming_camel_case_tagged_union_variant_with_discriminator_golden	valid/type-aliases/discriminated-union-variant-with-discriminator-field.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-tagged-union-plain-internal	test_property_naming_camel_case_tagged_union_plain_internal_golden	valid/type-aliases/discriminated-union-plain-internal.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-intersection	test_property_naming_camel_case_intersection_golden	valid/type-aliases/intersection-allof.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-union	test_property_naming_camel_case_union_golden	valid/type-aliases/union-with-interfaces.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-enum-ref	test_property_naming_camel_case_enum_ref_golden	valid/interface-with-enum-reference.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-intersection-enum-ref	test_property_naming_camel_case_intersection_enum_ref_golden	valid/type-aliases/intersection-with-enum-ref.yaml	property_naming = "camelCase"
+typescript-fetch	tsc	ts-property-naming-camel-case-externally-tagged	test_property_naming_camel_case_externally_tagged_golden	valid/type-aliases/discriminated-union-externally-tagged.yaml	property_naming = "camelCase"
+typescript-fetch	vp	ts-toolchain-vp-petstore	test_toolchain_vp_petstore_golden	valid/petstore.yaml	-
+typescript-fetch	vp	ts-toolchain-vp-comprehensive	test_toolchain_vp_comprehensive_golden	valid/comprehensive-schemas.yaml	-
+typescript-fetch	vp	ts-toolchain-vp	test_toolchain_vp_camel_case_golden	valid/type-aliases/discriminated-union-with-refs.yaml	property_naming = "camelCase"
+typescript-fetch	vp	ts-toolchain-vp-delete-response	test_toolchain_vp_delete_response_golden	valid/delete-with-response-schema.yaml	property_naming = "camelCase"
+typescript-fetch	vp	ts-toolchain-vp-enum-repr	test_toolchain_vp_enum_repr_golden	valid/enum-repr/enum-repr.yaml	emit_enum_constants = true
+typescript-fetch	vp	ts-toolchain-vp-self-referential-object	test_toolchain_vp_self_referential_object_golden	valid/recursive-json/self-referential-object.yaml	property_naming = "camelCase"
+typescript-fetch	vp	ts-toolchain-vp-reserved-property-key	test_toolchain_vp_reserved_property_key_golden	valid/typescript-reserved-property-key.yaml	property_naming = "camelCase"
+typescript-fetch	vp	ts-toolchain-vp-authored-discriminators	test_toolchain_vp_camel_case_authored_discriminators_golden	valid/optional-discriminator-union.yaml	emit_type_guards = true\nproperty_naming = "camelCase"
+typescript-fetch	vp	ts-toolchain-vp-camel-case-tagged-nullable-unions	test_toolchain_vp_camel_case_tagged_nullable_unions_golden	valid/type-aliases/typescript-fetch-vp-camel-case-tagged-nullable-unions.yaml	emit_enum_constants = true\nemit_type_guards = true\nproperty_naming = "camelCase"
+# Selected files: paths relative to tests/golden, not native projects.
+go-http	fragment	go/go-http/inferred-tagged-strict_ambiguous.go.golden	go_inferred_tagged_strict_ambiguous	-	-
+go-http	fragment	go/go-http/inferred-tagged-raw_choice.go.golden	go_inferred_tagged_raw_choice	-	-
+python-httpx,python-requests	fragment	python/authored-tagged-message.py.golden	python_authored_tagged_message	-	-
+typescript-fetch	fragment	typescript/authored-whole-choice.ts.golden	typescript_authored_whole_choice	-	-

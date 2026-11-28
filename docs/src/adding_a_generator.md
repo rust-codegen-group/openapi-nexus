@@ -73,10 +73,15 @@ GeneratorType::MyLang => {
 
 ## 6. Add golden tests
 
-1. Create `tests/golden_tests_my_lang.rs`
-2. Use the `run_golden_test` harness from `openapi_nexus::codegen::test_utils`
-3. Create golden files: `tests/golden/my_lang/my-lang/<fixture>/`
-4. Generate initial goldens with `UPDATE_GOLDEN=1 cargo test --test golden_tests_my_lang`
+1. Add the generator slug to the supported backends in
+   [the golden registration module](../../build_support/golden_cases.rs).
+2. Follow an [existing suite](../../tests/golden_tests_python_httpx.rs) to bind
+   the generator to the tests emitted by the build script.
+3. Register fixture rows in [the golden case registry](../../tests/golden_cases.tsv).
+   Rows scoped to `all` also apply to the new generator; narrow those selectors
+   where the fixture is not yet supported.
+4. Generate initial snapshots with `UPDATE_GOLDEN=1 cargo test --test golden_tests_my_lang`,
+   using the new backend's test target name.
 
 See the [Golden Testing](golden_testing.md) chapter for details.
 
