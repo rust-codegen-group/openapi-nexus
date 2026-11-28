@@ -1,29 +1,57 @@
 # Native Python consumers of freshly generated, unmodified output.
 
 set working-directory := '..'
+set positional-arguments
 
-@prepare backend:
+@prepare backend: (_fixtures backend "prepare")
+
+@build backend: (_fixtures backend "build")
+
+@test backend: (_fixtures backend "test")
+
+@_fixtures backend action:
     #!/usr/bin/env bash
     set -euo pipefail
-    case '{{backend}}' in httpx|requests) ;; *) echo 'Expected httpx or requests' >&2; exit 2 ;; esac
-    authored="tests/generated-clients/python/generated/{{backend}}/authored"
-    for policy in default strict raw; do
-        strategy="$policy"
-        [ "$policy" != default ] || strategy=firstMatch
-        cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/python-untagged-union.yaml --output "tests/generated-clients/python/generated/{{backend}}/$policy" --generators 'python-{{backend}}' --generator-config "python-{{backend}}.package_name=union_$policy" --generator-config "python-{{backend}}.untagged_union_strategy=$strategy"
-        cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/python-additional-properties.yaml --output "tests/generated-clients/python/generated/{{backend}}/additional/$policy" --generators 'python-{{backend}}' --generator-config "python-{{backend}}.package_name=additional_$policy" --generator-config "python-{{backend}}.untagged_union_strategy=$strategy"
-        cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/inline-additional-union.yaml --output "tests/generated-clients/python/generated/{{backend}}/inline/$policy" --generators 'python-{{backend}}' --generator-config "python-{{backend}}.package_name=inline_$policy" --generator-config "python-{{backend}}.untagged_union_strategy=$strategy"
-        cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/inferred-union-selection.yaml --output "$authored/$policy" --generators 'python-{{backend}}' --generator-config "python-{{backend}}.package_name=authored_$policy" --generator-config "python-{{backend}}.tagged_union_strategy=$strategy"
-        cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/python-tagged-echo.yaml --output "$authored/echo/$policy" --generators 'python-{{backend}}' --generator-config "python-{{backend}}.package_name=authored_echo_$policy" --generator-config "python-{{backend}}.tagged_union_strategy=$strategy"
-    done
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/python-tagged-cycle-symbols.yaml --output "tests/generated-clients/python/generated/{{backend}}/recursive-tagged" --generators 'python-{{backend}}' --generator-config 'python-{{backend}}.package_name=recursive_tagged_payloads'
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/python-tagged-alias-scope.yaml --output "tests/generated-clients/python/generated/{{backend}}/recursive-alias-scope" --generators 'python-{{backend}}' --generator-config 'python-{{backend}}.package_name=alias_tagged_scope'
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/optional-discriminator-union.yaml --output "$authored/four" --generators 'python-{{backend}}' --generator-config 'python-{{backend}}.package_name=authored_four'
-
-@build backend: (prepare backend)
-    "${PYRIGHT:-pyright}" --pythonpath "$(command -v "${PYTHON:-python3}")" --project tests/generated-clients/python/pyrightconfig.{{backend}}.json tests/generated-clients/python/generated/{{backend}}/default/union_default tests/generated-clients/python/generated/{{backend}}/strict/union_strict tests/generated-clients/python/generated/{{backend}}/raw/union_raw tests/generated-clients/python/generated/{{backend}}/additional/default/additional_default tests/generated-clients/python/generated/{{backend}}/additional/strict/additional_strict tests/generated-clients/python/generated/{{backend}}/additional/raw/additional_raw tests/generated-clients/python/generated/{{backend}}/inline/default/inline_default tests/generated-clients/python/generated/{{backend}}/inline/strict/inline_strict tests/generated-clients/python/generated/{{backend}}/inline/raw/inline_raw tests/generated-clients/python/generated/{{backend}}/recursive-tagged/recursive_tagged_payloads tests/generated-clients/python/generated/{{backend}}/recursive-alias-scope/alias_tagged_scope \
-      tests/generated-clients/python/generated/{{backend}}/authored/default/authored_default tests/generated-clients/python/generated/{{backend}}/authored/echo/default/authored_echo_default tests/generated-clients/python/generated/{{backend}}/authored/strict/authored_strict tests/generated-clients/python/generated/{{backend}}/authored/echo/strict/authored_echo_strict tests/generated-clients/python/generated/{{backend}}/authored/raw/authored_raw tests/generated-clients/python/generated/{{backend}}/authored/echo/raw/authored_echo_raw tests/generated-clients/python/generated/{{backend}}/authored/four/authored_four \
-      tests/generated-clients/python/authored_typing_contracts.py tests/generated-clients/python/typing_contracts.py tests/generated-clients/python/additional_typing_contracts.py
-
-@test backend: (build backend)
-    NEXUS_PYTHON_BACKEND={{backend}} PYTHONPATH="tests/generated-clients/python/generated/{{backend}}/authored/default:tests/generated-clients/python/generated/{{backend}}/authored/echo/default:tests/generated-clients/python/generated/{{backend}}/authored/strict:tests/generated-clients/python/generated/{{backend}}/authored/echo/strict:tests/generated-clients/python/generated/{{backend}}/authored/raw:tests/generated-clients/python/generated/{{backend}}/authored/echo/raw:tests/generated-clients/python/generated/{{backend}}/authored/four:tests/generated-clients/python/generated/{{backend}}/default:tests/generated-clients/python/generated/{{backend}}/strict:tests/generated-clients/python/generated/{{backend}}/raw:tests/generated-clients/python/generated/{{backend}}/additional/default:tests/generated-clients/python/generated/{{backend}}/additional/strict:tests/generated-clients/python/generated/{{backend}}/additional/raw:tests/generated-clients/python/generated/{{backend}}/inline/default:tests/generated-clients/python/generated/{{backend}}/inline/strict:tests/generated-clients/python/generated/{{backend}}/inline/raw:tests/generated-clients/python/generated/{{backend}}/recursive-tagged:tests/generated-clients/python/generated/{{backend}}/recursive-alias-scope" "${PYTHON:-python3}" -m unittest discover -v -s tests/generated-clients/python/tests
+    backend="$1"
+    action="$2"
+    case "$backend" in httpx|requests) ;; *) echo 'Expected httpx or requests' >&2; exit 2 ;; esac
+    project="$(pwd -P)/tests/generated-clients/python"
+    if [[ "$action" == prepare ]]; then
+        parent="$project/generated"
+        mkdir -p -- "$parent"
+        [[ "$(cd "$parent" && pwd -P)" == "$parent" ]]
+    else
+        parent="$(cd "${TMPDIR:-/tmp}" && pwd -P)"
+        if [[ "$parent" == *:* ]]; then
+            echo "Python fixture temporary directory cannot contain a colon: $parent" >&2
+            exit 2
+        fi
+    fi
+    run="$(mktemp -d "$parent/.nexus-python-$backend.XXXXXX")"
+    cleanup() {
+        if [[ -d "$run" && ! -L "$run" && "$(cd "$run" && pwd -P)" == "$run" ]]; then
+            rm -rf -- "$run"
+        fi
+    }
+    trap cleanup EXIT
+    bash ./scripts/generate-python-client-fixtures.sh "$backend" "$run"
+    if [[ "$action" == prepare ]]; then
+        output="$parent/$backend"
+        if [[ -e "$output" || -L "$output" ]]; then
+            [[ -d "$output" && ! -L "$output" && "$(cd "$output" && pwd -P)" == "$output" ]]
+            rm -rf -- "$output"
+        fi
+        [[ "$(cd "$run" && pwd -P)" == "$run" ]]
+        mv -- "$run" "$output"
+        exit
+    fi
+    python="$(command -v "${PYTHON:-python3}")"
+    [[ "$python" = /* ]] || python="$(pwd -P)/$python"
+    PYTHONPATH= "${PYRIGHT:-pyright}" --pythonpath "$python" --project "$run/pyrightconfig.json"
+    if [[ "$action" == test ]]; then
+        import_paths=()
+        while IFS= read -r directory; do import_paths+=("$run/$directory"); done < "$run/import-roots.txt"
+        pythonpath="$(IFS=:; printf '%s' "${import_paths[*]}")"
+        (cd "$run" && NEXUS_PYTHON_BACKEND="$backend" PYTHONPATH="$pythonpath" PYTHONDONTWRITEBYTECODE=1 \
+            "$python" -m unittest discover -v -s "$project/tests")
+    fi

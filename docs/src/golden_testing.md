@@ -236,8 +236,12 @@ not a claim that the native tests execute on the minimum runtime. See the
   or the explicitly configured `CARGO_TARGET_DIR`. CI caches the same directory.
 - Python prepares dependencies and resolves pyright once per backend, sharing
   that environment across goldens, declaration checks and runtime consumers.
-  `PYTHON` selects the interpreter used to create the temporary environment;
-  the active `pyright` is used when available, otherwise npm resolves it once.
+  [The native fixture plan](../../tests/generated-clients/python/fixtures.txt)
+  supplies both the Pyright inputs and native import roots. Each validation uses
+  a fresh tree; [`prepare` for IDE use](../../tests/generated-clients/python/README.md)
+  refreshes a separate checkout-local tree. `PYTHON` selects the interpreter used
+  to create the temporary environment; the active `pyright` is used when
+  available, otherwise npm resolves it once.
 - Development and ordinary CI validation select current Rust `stable` (locally
   validated with Rust 1.100.0). MSRV checks explicitly select Rust 1.90.0; they do
   not substitute for stable validation.

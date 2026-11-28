@@ -16,18 +16,25 @@ just golden-python-clients::test httpx
 just golden-python-clients::test requests
 ```
 
-`prepare` generates the union, additional-property and inline additional-property
-fixtures under all three policies, plus the pure tagged recursive fixture in the
-`recursive-tagged` subdirectory with package name `recursive_tagged_payloads`.
-Its named `allOf` payload and plain-object control cover arrays, maps, optional
-recursive values, explicit construction, lossless decode/encode, unknown tags,
-and runtime imports. It also generates `recursive-alias-scope` with package name
-`alias_tagged_scope`, covering alias-wrapped tagged payloads and schema names that
-could shadow converter modules inside comprehensions. `build` runs strict pyright
-against the unchanged output; `test` uses `${PYTHON:-python3}` (locally Python
-3.15.0). The declared SDK minimum remains Python 3.12, which is also the
-type-check target. Both backends run the same contracts. Tests never patch
-generated source.
+[The fixture plan](fixtures.txt) lists each output directory, input schema,
+Python package and optional policy override once for both backends. The same plan
+supplies the generated packages to Pyright and their import roots to Pyright
+and `unittest`. Add a fixture there; do not maintain another list of generated
+paths.
+
+`build <backend>` type-checks, and `test <backend>` type-checks and runs native
+tests, against a fresh, disposable tree allocated for that invocation. Both
+commands leave the checkout's prepared SDKs alone. For IDE use, run
+`just golden-python-clients::prepare <backend>` to refresh `generated/<backend>/`
+and use its generated `pyrightconfig.json` for declaration checks. Both backends
+use the same contracts. The interpreter is `${PYTHON:-python3}` (locally Python
+3.15.2), while the SDK minimum and type-check target remain Python 3.12.
+
+The union, additional-property and inline fixtures cover all three policies.
+The tagged recursive fixture covers arrays, maps, optional recursive values,
+lossless decode/encode, unknown tags and runtime imports. The recursive alias
+fixture covers alias-wrapped tagged payloads and schema names that could shadow
+converter modules inside comprehensions.
 
 The shared [inline additional-property union fixture](../../fixtures/valid/inline-additional-union.yaml)
 uses independent `inline_default`, `inline_strict`, and `inline_raw` packages under
@@ -53,6 +60,7 @@ environment and one checker. These same entrypoints are used by `golden-build-al
 `just ci`, and the CI matrix; no extra Python test step is appended in CI.
 The temporary environment uses the active interpreter (CI `3.x`); pyright retains
 its explicit 3.12 static target. Standalone consumer recipes also accept `PYRIGHT`
+to select a checker.
 
 Run `just golden-python::ruff-check` to check both sets of Python goldens with
 Ruff 0.17.5 at 100 columns. The recipe requires `uvx` and does not rewrite any

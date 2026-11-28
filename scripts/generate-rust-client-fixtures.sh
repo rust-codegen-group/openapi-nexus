@@ -63,6 +63,7 @@ for strategy in firstMatch strict raw; do
     output="$project/generated/union-string-const"
     rm -rf "$output"
     cargo run --quiet --manifest-path "$root/Cargo.toml" --bin openapi-nexus -- generate \
+      --config "$root/tests/generated-clients/config.toml" \
       --input "$root/tests/fixtures/valid/rust-union-string-const.yaml" \
       --output "$output" \
       --generators "rust-$backend" \

@@ -1,0 +1,20 @@
+# Output directory  Fixture under tests/fixtures/valid  Package  Optional generator override
+# Both Python backends consume these cases in the same order.
+default python-untagged-union.yaml union_default untagged_union_strategy=firstMatch
+strict python-untagged-union.yaml union_strict untagged_union_strategy=strict
+raw python-untagged-union.yaml union_raw untagged_union_strategy=raw
+additional/default python-additional-properties.yaml additional_default untagged_union_strategy=firstMatch
+additional/strict python-additional-properties.yaml additional_strict untagged_union_strategy=strict
+additional/raw python-additional-properties.yaml additional_raw untagged_union_strategy=raw
+inline/default inline-additional-union.yaml inline_default untagged_union_strategy=firstMatch
+inline/strict inline-additional-union.yaml inline_strict untagged_union_strategy=strict
+inline/raw inline-additional-union.yaml inline_raw untagged_union_strategy=raw
+recursive-tagged python-tagged-cycle-symbols.yaml recursive_tagged_payloads
+recursive-alias-scope python-tagged-alias-scope.yaml alias_tagged_scope
+authored/default inferred-union-selection.yaml authored_default tagged_union_strategy=firstMatch
+authored/echo/default python-tagged-echo.yaml authored_echo_default tagged_union_strategy=firstMatch
+authored/strict inferred-union-selection.yaml authored_strict tagged_union_strategy=strict
+authored/echo/strict python-tagged-echo.yaml authored_echo_strict tagged_union_strategy=strict
+authored/raw inferred-union-selection.yaml authored_raw tagged_union_strategy=raw
+authored/echo/raw python-tagged-echo.yaml authored_echo_raw tagged_union_strategy=raw
+authored/four optional-discriminator-union.yaml authored_four
