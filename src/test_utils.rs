@@ -10,6 +10,8 @@ use similar::TextDiff;
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::FileWriter;
 
+mod golden_update;
+
 pub fn read_fixture(fixture_path: &str) -> String {
     let possible_paths = [
         Path::new("tests/fixtures").join(fixture_path),
@@ -24,10 +26,6 @@ pub fn read_fixture(fixture_path: &str) -> String {
         }
     }
     panic!("Could not find fixture: {}", fixture_path);
-}
-
-fn to_golden_filename(filename: &str) -> String {
-    format!("{}.golden", filename)
 }
 
 fn from_golden_filename(golden_filename: &str) -> Option<String> {
@@ -99,33 +97,33 @@ pub fn run_golden_test<G: CodeGenerator + FileWriter>(
         panic!("Failed to generate files for {}: {}", spec_name, e);
     });
 
-    if env::var("UPDATE_GOLDEN").is_ok() {
+    if golden_update::requested(env::var_os("UPDATE_GOLDEN").as_deref()) {
         update_golden_files(golden_dir, spec_name, &generated);
     } else {
         compare_with_golden_files(golden_dir, spec_name, &generated, update_hint);
     }
 }
 
+/// Compare a selected (.golden) file, or safely refresh it in update mode.
+pub fn run_golden_file_test(path: &Path, generated: &str) {
+    if golden_update::requested(env::var_os("UPDATE_GOLDEN").as_deref()) {
+        golden_update::replace_file(path, generated)
+            .unwrap_or_else(|error| panic!("Could not update {}: {error}", path.display()));
+    } else {
+        let expected = fs::read_to_string(path)
+            .unwrap_or_else(|error| panic!("Could not read {}: {error}", path.display()));
+        assert_eq!(generated, expected, "{}", path.display());
+    }
+}
+
 fn update_golden_files(golden_dir: &Path, spec_name: &str, generated: &HashMap<String, String>) {
-    let spec_dir = golden_dir.join(spec_name);
-
-    if spec_dir.exists() {
-        fs::remove_dir_all(&spec_dir).unwrap();
-    }
-    fs::create_dir_all(&spec_dir).unwrap();
-
-    for (filename, content) in generated {
-        let golden_filename = to_golden_filename(filename);
-        let file_path = spec_dir.join(&golden_filename);
-
-        if let Some(parent) = file_path.parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-
-        fs::write(&file_path, content).unwrap();
-        println!("Updated: {}", file_path.display());
-    }
-    println!("Updated golden files for {}", spec_name);
+    golden_update::replace_tree(golden_dir, spec_name, generated).unwrap_or_else(|error| {
+        panic!(
+            "Could not update {}: {error}",
+            golden_dir.join(spec_name).display()
+        )
+    });
+    println!("Updated golden files for {spec_name}");
 }
 
 fn compare_with_golden_files(
@@ -238,3 +236,6 @@ pub fn test_cases_from_slice(
 ) -> HashMap<&'static str, &'static str> {
     cases.iter().copied().collect()
 }
+
+#[cfg(test)]
+mod golden_update_tests;

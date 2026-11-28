@@ -11,7 +11,7 @@ use tracing_test::traced_test;
 
 use openapi_nexus::generators::go::http::GoHttpCodeGenerator;
 use openapi_nexus::test_utils::{
-    generate_files, read_fixture, run_golden_test, test_cases_from_slice,
+    generate_files, read_fixture, run_golden_file_test, run_golden_test, test_cases_from_slice,
 };
 
 fn golden_dir() -> &'static Path {
@@ -220,15 +220,7 @@ fn inferred_tagged_strategy_rendering() {
         ("raw_choice.go.golden", &raw["models/choice.go"]),
     ] {
         let path = golden_dir().join(format!("inferred-tagged-{snapshot}"));
-        if std::env::var_os("UPDATE_GOLDEN").is_some() {
-            std::fs::write(&path, content).unwrap();
-        } else {
-            assert_eq!(
-                *content,
-                std::fs::read_to_string(path).unwrap(),
-                "{snapshot}"
-            );
-        }
+        run_golden_file_test(&path, content);
     }
     // The dynamic output is the pre-change Go alias, including its exact spacing.
     assert_eq!(
