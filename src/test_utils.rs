@@ -1,15 +1,13 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
 
-use similar::TextDiff;
-
+use crate::codegen::artifact_manifest::plan_output;
 use crate::codegen::traits::code_generator::CodeGenerator;
 use crate::codegen::traits::file_writer::FileWriter;
 
+mod golden_compare;
 mod golden_update;
 
 pub fn read_fixture(fixture_path: &str) -> String {
@@ -28,12 +26,6 @@ pub fn read_fixture(fixture_path: &str) -> String {
     panic!("Could not find fixture: {}", fixture_path);
 }
 
-fn from_golden_filename(golden_filename: &str) -> Option<String> {
-    golden_filename
-        .strip_suffix(".golden")
-        .map(|s| s.to_string())
-}
-
 pub fn generate_files<G: CodeGenerator + FileWriter>(
     generator: &G,
     spec_content: &str,
@@ -42,47 +34,10 @@ pub fn generate_files<G: CodeGenerator + FileWriter>(
     let ir = crate::ir::lower::lower(parsed)?;
     let generated_files = generator.generate(&ir)?;
 
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
-    let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
-    let temp_dir = env::temp_dir().join(format!(
-        "openapi_nexus_test_{}_{}_{}",
-        std::process::id(),
-        timestamp,
-        seq,
-    ));
-    fs::create_dir_all(&temp_dir).unwrap();
-
-    generator.write_files(&temp_dir, &generated_files)?;
-
-    let mut result = HashMap::new();
-    read_directory_recursive(&temp_dir, &temp_dir, &mut result);
-    fs::remove_dir_all(&temp_dir).unwrap();
-
-    Ok(result)
-}
-
-fn read_directory_recursive(
-    base_dir: &Path,
-    current_dir: &Path,
-    result: &mut HashMap<String, String>,
-) {
-    for entry in fs::read_dir(current_dir).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-
-        if path.is_dir() {
-            read_directory_recursive(base_dir, &path, result);
-        } else if path.is_file() {
-            let relative_path = path.strip_prefix(base_dir).unwrap();
-            let filename = relative_path.to_string_lossy().replace('\\', "/");
-            let content = fs::read_to_string(&path).unwrap();
-            result.insert(filename, content);
-        }
-    }
+    Ok(plan_output(generator.source_dir(), &generated_files)?
+        .into_iter()
+        .map(|(path, content)| (path, content.to_owned()))
+        .collect())
 }
 
 pub fn run_golden_test<G: CodeGenerator + FileWriter>(
@@ -133,100 +88,12 @@ fn compare_with_golden_files(
     update_hint: &str,
 ) {
     let spec_dir = golden_dir.join(spec_name);
-    let mut golden_filenames = HashSet::new();
-    compare_directories_recursive(
-        &spec_dir,
-        &spec_dir,
-        generated,
-        spec_name,
-        update_hint,
-        &mut golden_filenames,
-    );
-
-    let extra: Vec<&String> = generated
-        .keys()
-        .filter(|k| !golden_filenames.contains(k.as_str()))
-        .collect();
-    if !extra.is_empty() {
-        let mut sorted = extra.iter().map(|s| s.as_str()).collect::<Vec<_>>();
-        sorted.sort();
-        panic!(
-            "Generated files not present in golden directory for {}:\n  {}\n\nTo update golden files, run:\n   {}",
-            spec_name,
-            sorted.join("\n  "),
-            update_hint,
-        );
-    }
-
-    println!("Golden file test passed for {}", spec_name);
-}
-
-fn compare_directories_recursive(
-    base_dir: &Path,
-    current_dir: &Path,
-    generated: &HashMap<String, String>,
-    spec_name: &str,
-    update_hint: &str,
-    golden_filenames: &mut HashSet<String>,
-) {
-    assert!(
-        current_dir.exists(),
-        "Golden directory not found: {}",
-        current_dir.display()
-    );
-
-    for entry in fs::read_dir(current_dir).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-
-        if path.is_dir() {
-            compare_directories_recursive(
-                base_dir,
-                &path,
-                generated,
-                spec_name,
-                update_hint,
-                golden_filenames,
-            );
-        } else if path.is_file() {
-            let relative_path = path.strip_prefix(base_dir).unwrap();
-            let golden_filename = relative_path.to_string_lossy().replace('\\', "/");
-
-            let filename = from_golden_filename(&golden_filename).unwrap_or_else(|| {
-                panic!(
-                    "Golden file does not have .golden suffix: {}",
-                    golden_filename
-                );
-            });
-
-            golden_filenames.insert(filename.clone());
-
-            let generated_content = generated.get(&filename).unwrap_or_else(|| {
-                panic!(
-                    "Generated file not found for golden file: {}",
-                    golden_filename
-                );
-            });
-
-            let golden_content = fs::read_to_string(&path).unwrap();
-
-            if generated_content != &golden_content {
-                let diff = TextDiff::from_lines(&golden_content, generated_content);
-                let unified = diff
-                    .unified_diff()
-                    .context_radius(3)
-                    .header("golden", "generated")
-                    .to_string();
-                panic!(
-                    "Content mismatch in: {}/{}\n{}\n{}\nTo update golden files, run:\n   {}",
-                    spec_name,
-                    filename,
-                    "=".repeat(80),
-                    unified,
-                    update_hint,
-                );
-            }
-        }
+    match golden_compare::compare(&spec_dir, generated) {
+        Ok(Some(report)) => panic!(
+            "Golden snapshots differ for {spec_name}:\n{report}\nTo update golden files, run:\n   {update_hint}"
+        ),
+        Ok(None) => println!("Golden file test passed for {spec_name}"),
+        Err(error) => panic!("Could not compare golden snapshots for {spec_name}: {error}"),
     }
 }
 
