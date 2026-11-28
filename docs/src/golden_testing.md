@@ -132,25 +132,23 @@ just golden-build-all           # all languages
 just golden-typescript-clients::test
 ```
 
-This generates fresh preserve/camelCase clients, validates, and packs
-them with Vite+, checks their packed declarations with strict TypeScript, and
-runs ordinary Node tests against the real bundle. Full additional-property payload equality,
-typed dictionary conversion, allOf and search-event composition, renamed-key
-collisions, optional-field absence, and prototype-sensitive keys are covered.
-The preserve client supplies type-contract coverage, not a second runtime
-conversion path (it does not emit converters).
+The [TypeScript fixture plan](../../tests/generated-clients/typescript/fixtures.txt)
+marks each case as `pack` or `source`. Packed cases get full Vite+ checks and a
+bundle; consumer contracts use the packed declarations and Node loads the real
+bundles. The source-only case compiles and runs just the model graph selected
+by its consumer. This intentionally excludes an unrelated unsupported graph.
+The preserve client supplies declaration coverage, not a second conversion path.
 
-Generation, compilation, and execution are separate just recipes. Builds run in
-temporary directories so Vite+ does not skip gitignored generated sources; no
-generated manifests or source files receive compatibility patches or formatter
-rewrites. Full `vp check` runs on the original generated output, then runs again
-after packing. The consumer type check uses the generated package's installed
-compiler rather than the global `tsc` selection.
-The current global Vite+ CLI also needs TypeScript installed alongside the CLI
-for declaration packing (`npm install -g typescript@7.0.2 vite-plus@1.6.0`). CI
-reuses that bootstrap and its generator cache in the existing TypeScript/Vite+
-golden-build job; no separate consumer job is added. `just ci` includes these checks too. See
-`tests/generated-clients/typescript/README.md` for details.
+`build` and `test` generate into fresh temporary trees so Vite+ does not skip
+gitignored sources. Only explicit `prepare` refreshes the checkout-local IDE
+output. Generated manifests and source files are not patched or reformatted.
+Full `vp check` runs before and after packing, and the consumer type checks use
+an installed generated package's local compiler rather than the global `tsc`.
+The global Vite+ CLI also needs TypeScript installed alongside it for packing
+(`npm install -g typescript@7.0.2 vite-plus@1.6.0`). CI reuses that bootstrap and
+the generator cache in the existing TypeScript/Vite+ golden-build job; `just ci`
+includes these checks too. See the
+[TypeScript consumer guide](../../tests/generated-clients/typescript/README.md).
 
 The `tagged-allof-payloads` fixture has recurring golden compile coverage for
 TypeScript, Go, all three Rust transports, Java and Kotlin. Native TypeScript
@@ -257,7 +255,7 @@ not a claim that the native tests execute on the minimum runtime. See the
   validated with Rust 1.100.0). MSRV checks explicitly select Rust 1.90.0; they do
   not substitute for stable validation.
 - Local TypeScript validation uses TypeScript 7.0.2 and project-local Vite+
-  1.7.0 on Node 26.13.1, resolving Vite 8.3.8, Rolldown 1.2.19 and Oxfmt 0.79.0.
+  1.8.0 on Node 26.13.1, resolving Vite 8.3.8, Rolldown 1.2.19 and Oxfmt 0.79.0.
   The native validators use the active `tsc` and `vp` on `PATH`. To select
   that compiler explicitly, `npm exec --package=typescript@7.0.2 -- just
   golden-typescript::build-tsc` supplies it without changing generated packages.
