@@ -15,21 +15,22 @@ The current global Vite+ CLI resolves the TypeScript API beside the CLI when
 packing declarations, so the generated package's compiler alone is insufficient.
 The strict consumer check itself uses that package's installed compiler.
 
-- `prepare` runs the public generator CLI with an explicit empty configuration,
-  producing fresh, unmodified preserve and camelCase clients plus untagged-union
-  clients using the default, strict, and raw policies with tagged type guards.
-   Separate camelCase/preserve packages cover tagged allOf payload composition.
-   A separate overlapping-allOf package covers compatible nested object views.
-   An optional-discriminator-union package covers absent variant tags and
-   referenced multi-valued discriminator values.
-- `build` copies each client to a temporary build directory, runs `vp install`,
-  reports the resolved Vite+ component versions with `vp --version`, runs
-  full `vp check` and `vp pack`, then checks again after packing and
-  copies its bundle/declarations back.
-  Building outside the repository avoids Vite+ skipping gitignored generated
-  sources. Checks run directly on the original generated source, manifests,
-  and configuration, without formatter rewrites or compatibility patches. The generated formatter
-  configuration excludes `dist/`, so checks do not reformat build output.
+[The fixture plan](fixtures.txt) records each SDK's source spec and generator
+options once, and marks it `pack` or `source`. All cases use the explicit
+[repository test configuration](../config.toml). Consumer imports still select
+which declarations, bundles, and source graphs the contracts exercise.
+
+- `prepare` refreshes the stable `generated/` directory for IDE use. It only
+  generates SDKs; it does not install dependencies or produce bundles.
+- `build` generates into a fresh temporary tree outside the checkout. Each
+  `pack` case runs `vp install`, `vp --version`, `vp check`, `vp pack`, then
+  `vp check` again. The strict declaration contracts use an installed package's
+  local compiler. The `source` case takes a different route: the compiler
+  builds only the graph selected by the isolation consumer, without packing it.
+- `test` performs the same build, then runs the native Node tests against its
+  bundles and compiled isolation consumer. Both validation commands clean up
+  their own tree and leave the IDE output alone. No generated files are patched
+  or formatted by the validation recipes.
 - `typecheck.ts` checks the actual packed declarations with strict typing and
   `exactOptionalPropertyTypes`, including negative dictionary-type and readonly
   `allOf` assertions for preserve, ergonomic, and wire declarations, as well as
@@ -81,16 +82,10 @@ The strict consumer check itself uses that package's installed compiler.
   native `tsc` project and Node test prove helper imports do not pull unrelated
   model graphs into that consumer. The separate isolation fixture intentionally
   contains an unsupported same-value circular alias: only the selected usable
-   graph is compiled here, not its entire barrel. The nine supported packages
-  above still receive their full unmodified Vite+ checks and packed-declaration
-  checks. Compilation stays in the just recipe, never inside a test program.
+  graph is compiled here, not its entire barrel. `pack` cases still receive
+  their full Vite+ checks and are consumed through their packed outputs.
 
-Generation and build orchestration stays in just/CI, not in the tests. After a
-build, the runtime suite can be rerun directly:
-
-```sh
-node --test tests/generated-clients/typescript/tests/*.test.mjs
-```
+Generation, compilation, and invocation of the native runner stay in just/CI.
 
 CI runs this in the existing TypeScript/Vite+ golden-build job, after its snapshot
 builds, reusing the installed toolchain and generator cache. No separate CI job is

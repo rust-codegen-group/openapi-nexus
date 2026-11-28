@@ -1,52 +1,79 @@
-# Native TypeScript consumer tests against freshly generated clients checked directly by Vite+.
+# Native consumers of packed TypeScript SDKs and an isolated generated source graph.
 
 set working-directory := '..'
+set positional-arguments
 
-@prepare:
-    rm -rf tests/generated-clients/typescript/generated/authored-tagged-composed tests/generated-clients/typescript/generated/authored-whole-and-finite tests/generated-clients/typescript/generated/authored-whole-and-finite-preserve
-    rm -rf tests/generated-clients/typescript/generated/camel-case tests/generated-clients/typescript/generated/preserve tests/generated-clients/typescript/generated/union-default tests/generated-clients/typescript/generated/union-strict tests/generated-clients/typescript/generated/union-raw tests/generated-clients/typescript/generated/isolation tests/generated-clients/typescript/generated/tagged-allof tests/generated-clients/typescript/generated/tagged-allof-preserve tests/generated-clients/typescript/generated/overlapping-allof tests/generated-clients/typescript/generated/optional-discriminator-union tests/generated-clients/typescript/generated/inferred-union-selection tests/generated-clients/typescript/generated/inferred-union-strict tests/generated-clients/typescript/generated/inferred-union-preserve tests/generated-clients/typescript/generated/inferred-union-raw tests/generated-clients/typescript/generated/authored-tagged tests/generated-clients/typescript/generated/authored-tagged-strict tests/generated-clients/typescript/generated/authored-tagged-preserve tests/generated-clients/typescript/generated/authored-tagged-raw
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-additional-properties.yaml --output tests/generated-clients/typescript/generated/camel-case --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-additional-properties.yaml --output tests/generated-clients/typescript/generated/preserve --generators typescript-fetch --generator-config typescript-fetch.toolchain=vp
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-untagged-union.yaml --output tests/generated-clients/typescript/generated/union-default --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-untagged-union.yaml --output tests/generated-clients/typescript/generated/union-strict --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true --generator-config typescript-fetch.untagged_union_strategy=strict
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-untagged-union.yaml --output tests/generated-clients/typescript/generated/union-raw --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true --generator-config typescript-fetch.untagged_union_strategy=raw
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-helper-isolation.yaml --output tests/generated-clients/typescript/generated/isolation --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/tagged-allof-payloads.yaml --output tests/generated-clients/typescript/generated/tagged-allof --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/tagged-allof-payloads.yaml --output tests/generated-clients/typescript/generated/tagged-allof-preserve --generators typescript-fetch --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-overlapping-allof.yaml --output tests/generated-clients/typescript/generated/overlapping-allof --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.untagged_union_strategy=strict
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/optional-discriminator-union.yaml --output tests/generated-clients/typescript/generated/optional-discriminator-union --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
+@prepare: (_fixtures "prepare")
 
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/inferred-union-selection.yaml --output tests/generated-clients/typescript/generated/inferred-union-selection --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/inferred-union-selection.yaml --output tests/generated-clients/typescript/generated/inferred-union-strict --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.tagged_union_strategy=strict
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/inferred-union-selection.yaml --output tests/generated-clients/typescript/generated/inferred-union-preserve --generators typescript-fetch --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/optional-discriminator-union.yaml --output tests/generated-clients/typescript/generated/inferred-union-raw --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.tagged_union_strategy=raw
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-authored-tagged-projections.yaml --output tests/generated-clients/typescript/generated/authored-tagged --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-authored-tagged-projections.yaml --output tests/generated-clients/typescript/generated/authored-tagged-strict --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.tagged_union_strategy=strict
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-authored-tagged-projections.yaml --output tests/generated-clients/typescript/generated/authored-tagged-preserve --generators typescript-fetch --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-authored-tagged-projections.yaml --output tests/generated-clients/typescript/generated/authored-tagged-raw --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.tagged_union_strategy=raw --generator-config typescript-fetch.emit_type_guards=true
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/rust-inferred-tagged-wire.yaml --output tests/generated-clients/typescript/generated/authored-tagged-composed --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.tagged_union_strategy=strict
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-authored-whole-and-finite.yaml --output tests/generated-clients/typescript/generated/authored-whole-and-finite --generators typescript-fetch --generator-config typescript-fetch.property_naming=camelCase --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true --generator-config typescript-fetch.tagged_union_strategy=strict
-    cargo run --quiet --bin openapi-nexus -- generate --config tests/generated-clients/config.toml --input tests/fixtures/valid/typescript-authored-whole-and-finite.yaml --output tests/generated-clients/typescript/generated/authored-whole-and-finite-preserve --generators typescript-fetch --generator-config typescript-fetch.toolchain=vp --generator-config typescript-fetch.emit_type_guards=true
+@build: (_fixtures "build")
 
-@build: prepare
+@test: (_fixtures "test")
+
+@_fixtures action:
     #!/usr/bin/env bash
     set -euo pipefail
-    project="$PWD/tests/generated-clients/typescript"
-    builds=()
-    trap 'rm -rf "${builds[@]}"' EXIT
-    for mode in camel-case preserve union-default union-strict union-raw tagged-allof tagged-allof-preserve overlapping-allof optional-discriminator-union inferred-union-selection inferred-union-strict inferred-union-preserve inferred-union-raw authored-tagged authored-tagged-strict authored-tagged-preserve authored-tagged-raw authored-tagged-composed authored-whole-and-finite authored-whole-and-finite-preserve; do
-        output="$project/generated/$mode"
-        build=$(mktemp -d)
-        builds+=("$build")
-        # Like golden builds, validate outside the ignored generated directory:
-        # Vite+ otherwise skips every source file because of the repository ignore.
-        tar --exclude=node_modules --exclude=dist -C "$output" -cf - . | tar -C "$build" -xf -
-        (cd "$build" && vp install && vp --version && vp check && vp pack && vp check)
-        mkdir -p "$output/dist"
-        cp "$build"/dist/* "$output/dist/"
-    done
-    "$build/node_modules/.bin/tsc" --project "$project/tsconfig.json"
-    "$build/node_modules/.bin/tsc" --project "$project/tsconfig.isolation.json"
+    action="$1"
+    root="$(pwd -P)"
+    relative="tests/generated-clients/typescript"
+    project="$root/$relative"
+    if [[ "$action" == prepare ]]; then
+        parent="$project"
+        [[ "$(cd "$parent" && pwd -P)" == "$parent" ]]
+    else
+        parent="$(cd "${TMPDIR:-/tmp}" && pwd -P)"
+        case "$parent/" in "$root/"*) echo 'TypeScript validation requires TMPDIR outside the checkout' >&2; exit 2 ;; esac
+    fi
+    run="$(mktemp -d "$parent/.nexus-typescript.XXXXXX")"
+    cleanup() {
+        if [[ -d "$run" && ! -L "$run" && "$(cd "$run" && pwd -P)" == "$run" ]]; then
+            rm -rf -- "$run"
+        fi
+    }
+    trap cleanup EXIT
+    if [[ "$action" == prepare ]]; then
+        bash ./scripts/generate-typescript-client-fixtures.sh "$run"
+        output="$project/generated"
+        if [[ -e "$output" || -L "$output" ]]; then
+            [[ -d "$output" && ! -L "$output" && "$(cd "$output" && pwd -P)" == "$output" ]]
+            rm -rf -- "$output"
+        fi
+        [[ "$(cd "$run" && pwd -P)" == "$run" ]]
+        mv -- "$run" "$output"
+        exit
+    fi
 
-@test: build
-    node --test tests/generated-clients/typescript/tests/*.test.mjs
+    # Preserve the relative paths used by the real declaration and runtime consumers.
+    consumer="$run/$relative"
+    generated="$consumer/generated"
+    mkdir -p -- "$generated"
+    cp -- "$project/"*.ts "$project/"tsconfig*.json "$consumer/"
+    cp -R -- "$project/tests" "$consumer/"
+    bash ./scripts/generate-typescript-client-fixtures.sh "$generated"
+
+    # Vite+ checks the original projects outside the checkout, where sources are
+    # not affected by the repository ignore rules. No copying dist back to the IDE.
+    tsc=''
+    while IFS= read -r mode <&3; do
+        package="$generated/$mode"
+        printf '\nChecking and packing TypeScript fixture: %s\n' "$mode"
+        (cd "$package" && vp install && vp --version && vp check && vp pack && vp check)
+        if [[ ! -s "$package/dist/index.mjs" || ! -s "$package/dist/index.d.mts" ]]; then
+            echo "Missing packed bundle or declarations for fixture: $mode" >&2
+            exit 1
+        fi
+        if [[ -z "$tsc" ]]; then tsc="$package/node_modules/.bin/tsc"; fi
+    done 3< "$generated/pack-roots.txt"
+    if [[ ! -x "$tsc" ]]; then
+        echo "Missing TypeScript compiler from the packed fixture: $tsc" >&2
+        exit 1
+    fi
+
+    printf '\nChecking packed TypeScript declarations\n'
+    "$tsc" --project "$consumer/tsconfig.json"
+    printf '\nChecking selected TypeScript source graphs (not packed):\n'
+    while IFS= read -r mode; do printf '  %s\n' "$mode"; done < "$generated/source-roots.txt"
+    "$tsc" --project "$consumer/tsconfig.isolation.json"
+
+    if [[ "$action" == test ]]; then
+        (cd "$consumer" && node --test tests/*.test.mjs)
+    fi

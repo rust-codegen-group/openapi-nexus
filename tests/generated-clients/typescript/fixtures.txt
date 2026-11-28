@@ -1,0 +1,22 @@
+# kind   output                              fixture (under tests/fixtures/valid)       generator options
+pack     camel-case                          typescript-additional-properties.yaml      property_naming=camelCase
+pack     preserve                            typescript-additional-properties.yaml
+pack     union-default                       typescript-untagged-union.yaml             property_naming=camelCase emit_type_guards=true
+pack     union-strict                        typescript-untagged-union.yaml             property_naming=camelCase emit_type_guards=true untagged_union_strategy=strict
+pack     union-raw                           typescript-untagged-union.yaml             property_naming=camelCase emit_type_guards=true untagged_union_strategy=raw
+source   isolation                           typescript-helper-isolation.yaml           property_naming=camelCase
+pack     tagged-allof                        tagged-allof-payloads.yaml                 property_naming=camelCase emit_type_guards=true
+pack     tagged-allof-preserve               tagged-allof-payloads.yaml                 emit_type_guards=true
+pack     overlapping-allof                   typescript-overlapping-allof.yaml          property_naming=camelCase untagged_union_strategy=strict
+pack     optional-discriminator-union        optional-discriminator-union.yaml          property_naming=camelCase emit_type_guards=true
+pack     inferred-union-selection            inferred-union-selection.yaml              property_naming=camelCase emit_type_guards=true
+pack     inferred-union-strict               inferred-union-selection.yaml              property_naming=camelCase tagged_union_strategy=strict
+pack     inferred-union-preserve             inferred-union-selection.yaml              emit_type_guards=true
+pack     inferred-union-raw                  optional-discriminator-union.yaml          property_naming=camelCase tagged_union_strategy=raw
+pack     authored-tagged                     typescript-authored-tagged-projections.yaml property_naming=camelCase emit_type_guards=true
+pack     authored-tagged-strict              typescript-authored-tagged-projections.yaml property_naming=camelCase tagged_union_strategy=strict
+pack     authored-tagged-preserve            typescript-authored-tagged-projections.yaml emit_type_guards=true
+pack     authored-tagged-raw                 typescript-authored-tagged-projections.yaml property_naming=camelCase tagged_union_strategy=raw emit_type_guards=true
+pack     authored-tagged-composed            rust-inferred-tagged-wire.yaml             property_naming=camelCase tagged_union_strategy=strict
+pack     authored-whole-and-finite           typescript-authored-whole-and-finite.yaml  property_naming=camelCase emit_type_guards=true tagged_union_strategy=strict
+pack     authored-whole-and-finite-preserve  typescript-authored-whole-and-finite.yaml  emit_type_guards=true
